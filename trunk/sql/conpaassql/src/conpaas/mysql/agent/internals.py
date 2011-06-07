@@ -24,7 +24,7 @@ E_ARGS_MISSING = 7
 E_STRINGS = [  
   'Unexpected arguments %s', # 1 param (a list)
   'No configuration exists',
-  'Failed to read configuration state of %s from %s' # 2 params
+  'Failed to read configuration state of %s from %s', # 2 params
   'Configuration file already exists',
   'Invalid arguments',
   'Unknown error',
