@@ -1,0 +1,14 @@
+#!/bin/bash
+
+. /etc/ec2/params
+
+wget -P /root/ http://hppc644.few.vu.nl/contrail/ConPaaSWeb.tar.gz
+wget -P /root/ http://hppc644.few.vu.nl/contrail/ec2-manager-start
+
+export EC2_USER=
+export EC2_PASSWORD=
+export PUBLIC_IP=$EC2_PUBLIC_IP
+
+chmod 755 /root/ec2-manager-start
+
+/root/ec2-manager-start

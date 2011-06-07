@@ -1,0 +1,33 @@
+#!/bin/bash
+
+# setup and run manager
+tar -zxf /root/ConPaaSWeb.tar.gz -C /root/
+export PYTHONPATH=/root/ConPaaSWeb/src/:/root/ConPaaSWeb/contrib/
+export LD_LIBRARY_PATH=/conpaas/lib
+export PATH=/conpaas/bin:/conpaas/sbin:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:$PATH
+
+/etc/init.d/memcached start
+scalarisctl -d -f -s start
+
+cat <<EOF > /root/config.cfg
+[iaas]
+DRIVER = EC2
+
+## EC2
+EC2_USER = $EC2_USER
+EC2_PASSWORD = $EC2_PASSWORD
+EC2_IMAGE_ID = ami-7a6c9213
+EC2_SIZE_ID = t1.micro
+EC2_SECURITY_GROUP_NAME = contrail
+EC2_KEY_NAME = contrail
+
+[manager]
+MEMCACHE_ADDR = 127.0.0.1:11211
+CODE_REPO = /conpaas/code
+LOG_FILE = /var/log/conpaas.log
+EOF
+
+python /root/ConPaaSWeb/src/deployment_config.py -c /root/config.cfg
+python /root/ConPaaSWeb/src/conpaas/web/manager/server.py -p 5555 -c /root/config.cfg -s $PUBLIC_IP 1>/root/manager.out 2>/root/manager.err &
+manager_pid=$!
+echo $manager_pid > /root/manager.pid
