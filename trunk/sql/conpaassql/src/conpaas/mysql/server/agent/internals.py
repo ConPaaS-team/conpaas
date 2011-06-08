@@ -1,6 +1,6 @@
 from threading import Lock
 from string import Template
-from os import kill, makedirs
+from os import kill, makedirs, remove
 from os.path import join, devnull, exists
 from subprocess import Popen
 
@@ -70,7 +70,7 @@ mysql {
 
   }
 }
-  '''
+'''
   
     cmd='/etc/init.d/mysql'
     cmd_start=join(cmd,' start')
@@ -78,7 +78,7 @@ mysql {
   
     def __init__(self, configuration):
         '''Creates a new MySQLServer object.    
-        port   : port to wich the web server listens for incoming connections.
+        port   : port to which the web server listens for incoming connections.
         '''
         self.state = S_INIT
         self.restart_count = 0
@@ -254,3 +254,26 @@ def createMySQLServer(post_params):
                     return {'opState': 'ERROR', 'error': ex.message}
                 else:
                     return {'opState': 'OK'}
+                
+@expose('POST')
+def stopMySQLServer(kwargs):
+    """KILL the WebServer"""
+    if len(kwargs) != 0:
+        return {'opState': 'ERROR', 'error': AgentException(E_ARGS_UNEXPECTED, kwargs.keys()).message}
+    with web_lock:
+        try:
+            try:
+                fd = open(mysql_file, 'r')
+                p = pickle.load(fd)
+                fd.close()
+            except Exception as e:
+                ex = AgentException(E_CONFIG_READ_FAILED, detail=e)
+                logger.exception(ex.message)
+                return {'opState': 'ERROR', 'error': ex.message}
+            p.stop()
+            remove(mysql_file)
+            return {'opState': 'OK'}
+        except Exception as e:
+            ex = AgentException(E_UNKNOWN, detail=e)
+            logger.exception(e)
+            return {'opState': 'ERROR', 'error': ex.message}        

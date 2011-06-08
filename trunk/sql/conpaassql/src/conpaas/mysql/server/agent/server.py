@@ -17,7 +17,7 @@ class AgentServer(HTTPServer, ThreadingMixIn):
         HTTPServer.__init__(self, server_address, RequestHandlerClass)
         self.callback_dict = {'GET': {}, 'POST': {}}
     
-        from conpaas.mysql.agent import internals
+        from conpaas.mysql.server.agent import internals
         for http_method in internals.exposed_functions:
             for func_name in internals.exposed_functions[http_method]:
                 print 'Going to register ', http_method, func_name
