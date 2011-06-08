@@ -42,7 +42,7 @@ S_STARTING    = 'STARTING'
 S_RUNNING     = 'RUNNING'
 S_STOPPING    = 'STOPPING'
 S_STOPPED     = 'STOPPED'
-S_MYSQL_HOME  = S_PREFIX.join('conpaas/conf/mysql')
+S_MYSQL_HOME  = S_PREFIX + 'conpaas/conf/mysql'
 
 class MySQLServerConfiguration:
     
@@ -76,19 +76,22 @@ mysql {
     cmd_start=join(cmd,' start')
     cmd_stop=join(cmd,' stop')
   
-    def __init__(self, configuration):
+    def __init__(self, port):        
         '''Creates a new MySQLServer object.    
         port   : port to which the web server listens for incoming connections.
         '''
+        logger.debug('Entering MySQLServer.__init__')
+        logger.debug('Server port ', port)
         self.state = S_INIT
         self.restart_count = 0
-        self.configure(configuration)
+        self.configure(port)
         self.start()
         self.stop_sig = SIGINT
+        logger.debug('Leaving MySQLServer.__init__')
   
-    def configure(self, configuration=None):
-        port = int(configuration.port)      
-        verify_port(port)
+    def configure(self, port=None):
+        logger.debug('Entering MySQLServer.configure')
+        verify_port(int(port))
         if self.state == S_INIT:
             if not exists(S_MYSQL_HOME):
                 makedirs(S_MYSQL_HOME)
@@ -98,21 +101,25 @@ mysql {
         self.error_log = join(self.config_dir, 'error.log')
         self.pid_file = join(self.config_dir, 'mysql.pid')
         self.user = 'www-data'
-        self.port = port
+        self.port = int(port)
         self._write_config()
         self.start_args = [self.cmd_start]
+        logger.debug('Leaving MySQLServer.configure')
   
     def _write_config(self):
-        '''Write configuration file.'''    
+        '''Write configuration file.'''
+        logger.debug('Entering MySQLServer._write_config')
         template = Template(self.CONF_TEMPLATE)
         conf_fd = open(self.config_file, 'w')
         conf_fd.write(template.substitute(ACCESS_LOG=self.access_log, ERROR_LOG=self.error_log,
-                        PID_FILE=self._current_pid_file(),
+                        PID_FILE=self.pid_file,
                         USER=self.user, PORT=self.port))
         conf_fd.close()
-        logger.debug('MySQLServer configuration written to %s' % (self.config_file))  
+        logger.debug('MySQLServer configuration written to %s' % (self.config_file))
+        logger.debug('Leaving MySQLServer._write_config')  
    
     def start(self):
+        logger.debug('Entering MySQLServer.start')
         self.state = S_STARTING
         devnull_fd = open(devnull, 'w')
         proc = Popen(self.start_args, stdout=devnull_fd, stderr=devnull_fd, close_fds=True)
@@ -121,8 +128,10 @@ mysql {
         raise OSError('Failed to start mysql server (code=%d)' % proc.returncode)
         self.state = S_RUNNING
         logger.info('MySql started')
+        logger.debug('Leaving MySQLServer.start')
   
     def stop(self):
+        logger.debug('Entering MySQLServer.stop')
         if self.state == S_RUNNING:
             self.state = S_STOPPING
             if exists(self._current_pid_file()):
@@ -146,11 +155,12 @@ mysql {
                 raise IOError('Could not find PID file %s to kill WebServer' % (self._current_pid_file()))
         else:
             logger.warning('Request to kill WebServer while it is not running')
+        logger.debug('Leaving MySQLServer.stop')
 
     def restart(self):
+        logger.debug('Entering MySQLServer.restart')
         self.restart_count += 1
-        self._write_config()
-    
+        self._write_config()    
         try:
             pid = int(open(self._current_pid_file(increment=-1), 'r').read().strip())
         except IOError as e:
@@ -168,10 +178,13 @@ mysql {
         else:
             self.post_restart()
             logger.info('WebServer restarted')
+        logger.debug('Leaving MySQLServer.restart')
   
     def post_restart(self): pass
   
     def status(self):
+        logger.debug('Entering MySQLServer.status')
+        logger.debug('Leaving MySQLServer.status')
         return {'state': self.state,                
                 'port': self.port}
 
@@ -197,6 +210,7 @@ class AgentException(Exception):
 def _mysqlserver_get_params(post_params):
     '''TODO: check for file inclusion. Add aditional parameters. '''
     ret = {}
+    logger.debug('Got post_params' % post_params)
     if 'port' not in post_params:
         raise AgentException(E_ARGS_MISSING, 'port')
     if not post_params['port'].isdigit():
