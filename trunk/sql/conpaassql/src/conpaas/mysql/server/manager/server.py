@@ -7,7 +7,7 @@ from BaseHTTPServer import HTTPServer
 from conpaas.web.http import AbstractRequestHandler
 import httplib
 import json
-from conpaas.mysql.manager import internals
+from conpaas.mysql.server.manager import internals
 
 class SQLServerRequestHandler(AbstractRequestHandler):
 	

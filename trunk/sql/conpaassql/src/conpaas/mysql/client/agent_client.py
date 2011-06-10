@@ -17,7 +17,7 @@ def __check_reply(body):
     if 'opState' not in ret: raise AgentException('Response does not contain "opState"')
     if ret['opState'] != 'OK':
         if 'ERROR' in ret['opState']: raise AgentException(ret['opState'], ret['error'])
-    else: raise AgentException(ret['opState'])
+        else: raise AgentException(ret['opState'])
     return True
 
 def getMySQLServerState(host, port):

@@ -72,8 +72,9 @@ mysql {
 }
 '''
   
-    cmd='/etc/init.d/mysql'
+    cmd='service mysql'
     cmd_start=join(cmd,' start')
+    cmd_start=join(cmd,' restart')
     cmd_stop=join(cmd,' stop')
   
     def __init__(self, port):        
@@ -81,7 +82,7 @@ mysql {
         port   : port to which the web server listens for incoming connections.
         '''
         logger.debug('Entering MySQLServer.__init__')
-        logger.debug('Server port ', port)
+        logger.debug('Server port %s' % port)
         self.state = S_INIT
         self.restart_count = 0
         self.configure(port)
@@ -104,6 +105,8 @@ mysql {
         self.port = int(port)
         self._write_config()
         self.start_args = [self.cmd_start]
+        self.stop_args = [self.cmd_stop]
+        self.restart_args = [self.cmd_restart]
         logger.debug('Leaving MySQLServer.configure')
   
     def _write_config(self):
@@ -121,11 +124,16 @@ mysql {
     def start(self):
         logger.debug('Entering MySQLServer.start')
         self.state = S_STARTING
-        devnull_fd = open(devnull, 'w')
-        proc = Popen(self.start_args, stdout=devnull_fd, stderr=devnull_fd, close_fds=True)
-        if proc.wait() != 0:
-            logger.critical('Failed to start mysql server (code=%d)' % proc.returncode)
-        raise OSError('Failed to start mysql server (code=%d)' % proc.returncode)
+        #devnull_fd = open(devnull, 'w')
+        #proc = Popen(self.start_args, stdout=devnull_fd, stderr=devnull_fd, close_fds=True)
+        #proc.wait()
+        logger.debug("SErver started.")
+        if exists(self.pid_file) == False:
+            logger.critical('Failed to start mysql server.)')
+            raise OSError('Failed to start mysql server.')
+        #if proc.wait() != 0:
+        #    logger.critical('Failed to start mysql server (code=%d)' % proc.returncode)
+        #    raise OSError('Failed to start mysql server (code=%d)' % proc.returncode)
         self.state = S_RUNNING
         logger.info('MySql started')
         logger.debug('Leaving MySQLServer.start')
@@ -134,25 +142,33 @@ mysql {
         logger.debug('Entering MySQLServer.stop')
         if self.state == S_RUNNING:
             self.state = S_STOPPING
-            if exists(self._current_pid_file()):
-                try:
-                    pid = int(open(self._current_pid_file(), 'r').read().strip())
-                except IOError as e:
-                    logger.exception('Failed to open PID file "%s"' % (self._current_pid_file()))
-                    raise e
-                except (ValueError, TypeError) as e:
-                    logger.exception('PID in "%s" is invalid' % (self._current_pid_file()))
-                    raise e                
-                try:
-                    kill(pid, self.stop_sig)
-                    self.state = S_STOPPED
-                    logger.info('WebServer stopped')
-                except (IOError, OSError) as e:
-                    logger.exception('Failed to kill WebServer PID=%d' % (pid))
-                    raise e
+            if exists(self.pid_file):
+                #try:
+                    #pid = int(open(self.pid_file, 'r').read().strip())
+                    
+                #devnull_fd = open(devnull, 'w')
+                #proc = Popen(self.stop_args, stdout=devnull_fd, stderr=devnull_fd, close_fds=True)
+                logger.debug("Stopping server")
+                #proc.wait()                                        
+                if exists(self.pid_file) == False:
+                    logger.critical('Failed to stop mysql server.)')
+                    raise OSError('Failed to stop mysql server.')
+                #except IOError as e:
+                #    logger.exception('Failed to open PID file "%s"' % (self.pid_file))
+                #    raise e
+                #except (ValueError, TypeError) as e:
+                #    logger.exception('PID in "%s" is invalid' % (self.pid_file))
+                #    raise e                
+                #try:
+                #    kill(pid, self.stop_sig)
+                #    self.state = S_STOPPED
+                #    logger.info('WebServer stopped')
+                #except (IOError, OSError) as e:
+                #    logger.exception('Failed to kill WebServer PID=%d' % (pid))
+                #    raise e
             else:
-                logger.critical('Could not find PID file %s to kill WebServer' % (self._current_pid_file()))
-                raise IOError('Could not find PID file %s to kill WebServer' % (self._current_pid_file()))
+                logger.critical('Could not find PID file %s to kill WebServer' % (self.pid_file))
+                raise IOError('Could not find PID file %s to kill WebServer' % (self.pid_file))
         else:
             logger.warning('Request to kill WebServer while it is not running')
         logger.debug('Leaving MySQLServer.stop')
@@ -162,7 +178,7 @@ mysql {
         self.restart_count += 1
         self._write_config()    
         try:
-            pid = int(open(self._current_pid_file(increment=-1), 'r').read().strip())
+            pid = int(open(self.pid_file, 'r').read().strip())
         except IOError as e:
             logger.exception('Failed to open PID file "%s"' % (self._current_pid_file(increment=-1)))
             raise e
@@ -210,7 +226,7 @@ class AgentException(Exception):
 def _mysqlserver_get_params(post_params):
     '''TODO: check for file inclusion. Add aditional parameters. '''
     ret = {}
-    logger.debug('Got post_params' % post_params)
+    logger.debug('Got post_params %s' % post_params)
     if 'port' not in post_params:
         raise AgentException(E_ARGS_MISSING, 'port')
     if not post_params['port'].isdigit():
