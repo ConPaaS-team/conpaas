@@ -775,7 +775,7 @@ def uploadCodeVersion(kwargs):
       os.remove(name)
       return {'opState': 'ERROR', 'error': ManagerException(E_ARGS_INVALID, detail='Absolute file names are not allowed in archive members').message}
   archive_close(arch)
-  config.codeVersions[codeVersionId] = CodeVersion(codeVersionId, code['filename'], archive_get_type(name), description=description)
+  config.codeVersions[codeVersionId] = CodeVersion(codeVersionId, os.path.basename(code['filename']), archive_get_type(name), description=description)
   _configuration_set(config)
   return {'opState': 'OK', 'codeVersionId': os.path.basename(codeVersionId)}
 
@@ -863,7 +863,12 @@ def do_updateConfiguration(config, codeVersionId, phpconf):
 
 @expose('GET')
 def getHighLevelMonitoring(kwargs):
-  return {'opState': 'OK', 'avg_request_rate': 0, 'avg_error_rate': 0, 'avg_throughput': 0}
+  return {'opState': 'OK',
+          'request_rate': 0,
+          'error_rate': 0,
+          'throughput': 0,
+          'response_time': 0,
+          }
 
 @expose('GET')
 def getLog(kwargs):

@@ -6,7 +6,7 @@ Created on Mar 29, 2011
 '''
 
 from optparse import OptionParser
-import sys, time
+import sys, time, urlparse
 
 from conpaas.web.manager import client
 from inspect import isfunction, currentframe
@@ -21,7 +21,7 @@ def getState(args):
   else:
     response = client.getState(host, port)
     if 'opState' not in response or response['opState'] != 'OK':
-      print response
+      print response['error']
     else:
       print response['state']
 
@@ -34,10 +34,13 @@ def getStateChanges(args):
   else:
     response = client.getStateChanges(host, port)
     if 'opState' not in response or response['opState'] != 'OK':
-      print response
+      print response['error']
     else:
-      for state in response['state_log']:
-        print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(state['time'])), state['state'], state['reason']
+      if response['state_log']:
+        for state in response['state_log']:
+          print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(state['time'])), state['state'], state['reason']
+      else:
+        print 'No changes in history'
 
 def startup(args):
   '''Startup a deployment'''
@@ -48,7 +51,7 @@ def startup(args):
   else:
     response = client.startup(host, port)
     if 'opState' not in response or response['opState'] != 'OK':
-      print response
+      print response['error']
     else:
       print response['state']
 
@@ -61,7 +64,7 @@ def shutdown(args):
   else:
     response = client.shutdown(host, port)
     if 'opState' not in response or response['opState'] != 'OK':
-      print response
+      print response['error']
     else:
       print response['state']
 
@@ -79,7 +82,7 @@ def add(args):
   else:
     response = client.addServiceNodes(host, port, proxy=opts.proxy, web=opts.web, php=opts.php)
     if 'opState' not in response or response['opState'] != 'OK':
-      print response
+      print response['error']
 
 def remove(args):
   '''Remove some service nodes from a deployment'''
@@ -95,7 +98,7 @@ def remove(args):
   else:
     response = client.removeServiceNodes(host, port, proxy=opts.proxy, web=opts.web, php=opts.php)
     if 'opState' not in response or response['opState'] != 'OK':
-      print response
+      print response['error']
 
 def listServiceNodes(args):
   '''Get a list of service nodes'''
@@ -106,15 +109,15 @@ def listServiceNodes(args):
   else:
     response = client.listServiceNodes(host, port)
     if 'opState' not in response or response['opState'] != 'OK':
-      print response
+      print response['error']
     else:
+      print '%-20s %s' % ('Service Node', 'Role(s)')
       all = list(set(response['proxy'] + response['web'] + response['php']))
       for i in all:
-        print i,
-        if i in response['proxy']: print 'PROXY',
-        if i in response['web']: print 'WEB',
-        if i in response['php']: print 'PHP',
-        print
+        print '%-20s%s' % (i,
+                            (i in response['proxy'] and ' PROXY' or '')
+                              + (i in response['web'] and ' WEB' or '')
+                              + (i in response['php'] and ' PHP' or ''))
 
 def getServiceNode(args):
   '''Get information about a single service node'''
@@ -125,9 +128,10 @@ def getServiceNode(args):
   else:
     response = client.getServiceNodeById(host, port, args[0])
     if 'opState' not in response or response['opState'] != 'OK':
-      print response
+      print response['error']
     else:
-      print response['serviceNode']['id'], response['serviceNode']['ip'],
+      print '%-20s %-20s %s' % ('Service Node', 'Address', 'Role(s)')
+      print '%-20s %-20s' % (response['serviceNode']['id'], response['serviceNode']['ip']),
       if  response['serviceNode']['isRunningProxy']: print 'PROXY',
       if  response['serviceNode']['isRunningWeb']: print 'WEB',
       if  response['serviceNode']['isRunningPHP']: print 'PHP',
@@ -142,16 +146,19 @@ def listCodeVersions(args):
   else:
     response = client.listCodeVersions(host, port)
     if 'opState' not in response or response['opState'] != 'OK':
-      print response
+      print response['error']
     else:
+      print '%-21s %-20s %-20s %-20s %s' % ('Upload Date', 'Identifier', 'Live', 'Name', 'Description')
       for c in response['codeVersions']:
-        print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(c['time'])),
-        print c['codeVersionId'],
-        if 'current' in c and c['current']: print 'CURRENT',
-        print c['filename'], c['description']
+        print '%-21s %-20s %-20s %-20s %s' % (
+          time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(c['time'])),
+          c['codeVersionId'],
+          ('current' in c and c['current'] and 'YES') or '-',
+          c['filename'],
+          c['description'])
 
 def downloadCodeVersion(args):
-  '''Get a URL to the code version'''
+  '''Download a code version'''
   parser = OptionParser(usage='downloadCodeVersion <codeVersionId>')
   opts, pargs = parser.parse_args(args)
   if len(pargs) != 1:
@@ -169,7 +176,7 @@ def uploadCodeVersion(args):
   else:
     response = client.uploadCodeVersion(host, port, args[0])
     if 'opState' not in response or response['opState'] != 'OK':
-      print response
+      print response['error']
     else:
       print 'codeVersionId:', response['codeVersionId']
 
@@ -182,7 +189,7 @@ def getConfiguration(args):
   else:
     response = client.getConfiguration(host, port)
     if 'opState' not in response or response['opState'] != 'OK':
-      print response
+      print response['error']
     else:
       print 'Current codeVersions:', response['codeVersionId']
       print 'PHP configuration:'
@@ -207,7 +214,7 @@ def updateConfiguration(args):
   else:
     response = client.updateConfiguration(host, port, codeVersionId=opts.codeVersionId, phpconf=php)
     if 'opState' not in response or response['opState'] != 'OK':
-      print response
+      print response['error']
 
 def getHighLevelMonitoring(args):
   '''Get the average request rate and throughput'''
@@ -218,7 +225,7 @@ def getHighLevelMonitoring(args):
   else:
     response = client.getHighLevelMonitoring(host, port)
     if 'opState' not in response or response['opState'] != 'OK':
-      print response
+      print response['error']
     else:
       print 'Avg. Throughput:', response['avg_throughput']
       print 'Avg. Request rate:', response['avg_throughput']
@@ -233,7 +240,7 @@ def getLog(args):
   else:
     response = client.getLog(host, port)
     if 'opState' not in response or response['opState'] != 'OK':
-      print response
+      print response['error']
     else:
       print response['log']
 
@@ -258,7 +265,7 @@ def help(args=[]):
   l.sort()
   module = sys.modules[__name__]
   l = [ getattr(module, i) for i in l ]
-  print 'Usage:', sys.argv[0], 'host port action [options]'
+  print 'Usage:', sys.argv[0], 'URL ACTION [options]'
   print
   print 'Action could be one of:'
   print ' %-25s   %s' % ('[ACTION]', '[DESCRIPTION]')
@@ -266,17 +273,27 @@ def help(args=[]):
     print ' %-25s   %s' % (func.__name__, func.__doc__)
 
 if __name__ == '__main__':
-  if len(sys.argv) < 4:
+  if len(sys.argv) < 3:
     help()
     sys.exit(1)
   global host, port
-  host, port = sys.argv[1:3]
-  if hasattr(sys.modules[__name__], sys.argv[3]):
-    func = getattr(sys.modules[__name__], sys.argv[3])
+  try:
+    url = urlparse.urlparse(sys.argv[1], scheme='http')
+    host = url.hostname
+    port = url.port or 80
+  except:
+    print >>sys.stderr, 'Invalid URL'
+    sys.exit(1)
+  
+  if hasattr(sys.modules[__name__], sys.argv[2]):
+    func = getattr(sys.modules[__name__], sys.argv[2])
     if not isfunction(func):
       help()
       sys.exit(1)
-    func(sys.argv[4:])
+    try:
+      func(sys.argv[3:])
+    except Exception as e:
+      print e
   else:
     help()
     sys.exit(1)
