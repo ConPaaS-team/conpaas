@@ -25,7 +25,7 @@ Created on Feb 8, 2011
 '''
 
 from threading import Thread
-import tempfile, os, os.path, tarfile, time
+import tempfile, os, os.path, tarfile, time, stat
 
 from conpaas.log import create_logger
 from conpaas.web.agent import client
@@ -894,11 +894,25 @@ def createInitialCodeVersion():
   if not os.path.exists(code_repo):
     os.makedirs(code_repo)
   
+  fileno, path = tempfile.mkstemp()
+  fd = os.fdopen(fileno, 'w')
+  fd.write('''<html>
+<head>
+<title>Welcome to ConPaaS!</title>
+</head>
+<body bgcolor="white" text="black">
+<center><h1>Welcome to ConPaaS!</h1></center>
+</body>
+</html>''')
+  fd.close()
+  os.chmod(path, stat.S_IROTH | stat.S_IXOTH)
+  
   if len(config.codeVersions) > 0: return
   tfile = tarfile.TarFile(name=os.path.join(code_repo,'code-default'), mode='w')
-  tfile.add('/conpaas/html/index.html', 'index.html')
+  tfile.add(path, 'index.html')
   tfile.close()
-  config.codeVersions['code-default'] = CodeVersion('code-default', 'code-default', 'tar', description='Initial version')
+  os.remove(path)
+  config.codeVersions['code-default'] = CodeVersion('code-default', 'code-default.tar', 'tar', description='Initial version')
   config.currentCodeVersion = 'code-default'
   _configuration_set(config)
 
