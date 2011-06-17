@@ -74,7 +74,7 @@ mysql {
   
     cmd='service mysql'
     cmd_start=join(cmd,' start')
-    cmd_start=join(cmd,' restart')
+    cmd_restart=join(cmd,' restart')
     cmd_stop=join(cmd,' stop')
   
     def __init__(self, port):        
@@ -124,16 +124,16 @@ mysql {
     def start(self):
         logger.debug('Entering MySQLServer.start')
         self.state = S_STARTING
-        #devnull_fd = open(devnull, 'w')
-        #proc = Popen(self.start_args, stdout=devnull_fd, stderr=devnull_fd, close_fds=True)
-        #proc.wait()
-        logger.debug("SErver started.")
+        devnull_fd = open(devnull, 'w')
+        proc = Popen(self.start_args, stdout=devnull_fd, stderr=devnull_fd, close_fds=True)
+        proc.wait()
+        logger.debug("Server started.")
         if exists(self.pid_file) == False:
             logger.critical('Failed to start mysql server.)')
             raise OSError('Failed to start mysql server.')
-        #if proc.wait() != 0:
-        #    logger.critical('Failed to start mysql server (code=%d)' % proc.returncode)
-        #    raise OSError('Failed to start mysql server (code=%d)' % proc.returncode)
+        if proc.wait() != 0:
+            logger.critical('Failed to start mysql server (code=%d)' % proc.returncode)
+            raise OSError('Failed to start mysql server (code=%d)' % proc.returncode)
         self.state = S_RUNNING
         logger.info('MySql started')
         logger.debug('Leaving MySQLServer.start')
@@ -297,7 +297,7 @@ def stopMySQLServer(kwargs):
                 p = pickle.load(fd)
                 fd.close()
             except Exception as e:
-                ex = AgentException(E_CONFIG_READ_FAILED, detail=e)
+                ex = AgentException(E_CONFIG_READ_FAILED, 'stopMySQLServer',str(mysql_file), detail=e)
                 logger.exception(ex.message)
                 return {'opState': 'ERROR', 'error': ex.message}
             p.stop()
