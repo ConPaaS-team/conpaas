@@ -5,7 +5,6 @@ Created on Mar 9, 2011
 '''
 from BaseHTTPServer import HTTPServer
 from os.path import exists
-import httplib, json
 
 import memcache
 from conpaas.iaas import IaaSClient

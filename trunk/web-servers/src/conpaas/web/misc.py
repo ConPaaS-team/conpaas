@@ -4,7 +4,7 @@ Created on Feb 8, 2011
 @author: ielhelw
 '''
 
-import re, zipfile, tarfile, socket
+import zipfile, tarfile, socket
 
 def verify_port(port):
   '''Raise Type Error if port is not an integer.

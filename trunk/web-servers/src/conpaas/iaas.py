@@ -5,11 +5,10 @@ Created on Jan 21, 2011
 '''
 
 import urlparse
-from socket import gethostbyname
 
 from libcloud.types import Provider, NodeState
 from libcloud.providers import get_driver
-from libcloud.base import NodeImage, NodeSize
+from libcloud.base import NodeImage
 from libcloud.drivers.opennebula import OpenNebulaNodeDriver
 from libcloud.drivers.ec2 import EC2NodeDriver
 

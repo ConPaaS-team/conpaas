@@ -9,7 +9,6 @@ from os import kill, makedirs
 from signal import SIGINT, SIGTERM, SIGUSR2, SIGHUP
 from string import Template
 from subprocess import Popen
-from tempfile import mkdtemp
 
 
 from conpaas.web.misc import verify_port, verify_ip_port_list, verify_ip_or_domain

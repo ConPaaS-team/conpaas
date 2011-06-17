@@ -8,7 +8,7 @@ from os.path import exists, join
 from os import remove
 from shutil import rmtree
 from threading import Lock
-import pickle, mimetypes, zipfile, tarfile
+import pickle, zipfile, tarfile
 
 from conpaas.log import create_logger
 from conpaas.web.agent.role import NginxProxy, PHPProcessManager, Nginx

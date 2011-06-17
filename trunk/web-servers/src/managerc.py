@@ -9,13 +9,12 @@ from optparse import OptionParser
 import sys, time, urlparse
 
 from conpaas.web.manager import client
-from inspect import isfunction, currentframe
-from pprint import pprint
+from inspect import isfunction
 
 def getState(args):
   '''Get the state of a deployment'''
   parser = OptionParser(usage='getState')
-  options, pargs = parser.parse_args(args)
+  _, pargs = parser.parse_args(args)
   if pargs:
     parser.print_help()
   else:
@@ -28,7 +27,7 @@ def getState(args):
 def getStateChanges(args):
   '''Get the state change history of a deployment'''
   parser = OptionParser(usage='getStateChanges')
-  options, pargs = parser.parse_args(args)
+  _, pargs = parser.parse_args(args)
   if pargs:
     parser.print_help()
   else:
@@ -45,7 +44,7 @@ def getStateChanges(args):
 def startup(args):
   '''Startup a deployment'''
   parser = OptionParser(usage='startup')
-  options, pargs = parser.parse_args(args)
+  _, pargs = parser.parse_args(args)
   if pargs:
     parser.print_help()
   else:
@@ -58,7 +57,7 @@ def startup(args):
 def shutdown(args):
   '''Shutdown a deployment'''
   parser = OptionParser(usage='shutdown')
-  options, pargs = parser.parse_args(args)
+  _, pargs = parser.parse_args(args)
   if pargs:
     parser.print_help()
   else:
@@ -103,7 +102,7 @@ def remove(args):
 def listServiceNodes(args):
   '''Get a list of service nodes'''
   parser = OptionParser(usage='listServiceNodes')
-  opts, pargs = parser.parse_args(args)
+  _, pargs = parser.parse_args(args)
   if len(pargs) != 0:
     parser.print_help()
   else:
@@ -122,7 +121,7 @@ def listServiceNodes(args):
 def getServiceNode(args):
   '''Get information about a single service node'''
   parser = OptionParser(usage='getServiceNode <nodeId>')
-  opts, pargs = parser.parse_args(args)
+  _, pargs = parser.parse_args(args)
   if len(pargs) != 1:
     parser.print_help()
   else:
@@ -140,7 +139,7 @@ def getServiceNode(args):
 def listCodeVersions(args):
   '''List identifiers of all code versions stored by a deployment'''
   parser = OptionParser(usage='listCodeVersions')
-  opts, pargs = parser.parse_args(args)
+  _, pargs = parser.parse_args(args)
   if pargs:
     parser.print_help()
   else:
@@ -160,7 +159,7 @@ def listCodeVersions(args):
 def downloadCodeVersion(args):
   '''Download a code version'''
   parser = OptionParser(usage='downloadCodeVersion <codeVersionId>')
-  opts, pargs = parser.parse_args(args)
+  _, pargs = parser.parse_args(args)
   if len(pargs) != 1:
     parser.print_help()
   else:
@@ -170,7 +169,7 @@ def downloadCodeVersion(args):
 def uploadCodeVersion(args):
   '''Upload a new code version'''
   parser = OptionParser(usage='uploadCodeVersion <filename>')
-  opts, pargs = parser.parse_args(args)
+  _, pargs = parser.parse_args(args)
   if len(pargs) != 1:
     parser.print_help()
   else:
@@ -183,7 +182,7 @@ def uploadCodeVersion(args):
 def getConfiguration(args):
   '''Get the configuration of a deployment'''
   parser = OptionParser(usage='getConfiguration')
-  opts, pargs = parser.parse_args(args)
+  _, pargs = parser.parse_args(args)
   if pargs:
     parser.print_help()
   else:
@@ -219,7 +218,7 @@ def updateConfiguration(args):
 def getHighLevelMonitoring(args):
   '''Get the average request rate and throughput'''
   parser = OptionParser(usage='getHighLevelMonitoring')
-  opts, pargs = parser.parse_args(args)
+  _, pargs = parser.parse_args(args)
   if pargs:
     parser.print_help()
   else:
@@ -234,7 +233,7 @@ def getHighLevelMonitoring(args):
 def getLog(args):
   '''Get raw logging'''
   parser = OptionParser(usage='getLog')
-  opts, pargs = parser.parse_args(args)
+  _, pargs = parser.parse_args(args)
   if pargs:
     parser.print_help()
   else:

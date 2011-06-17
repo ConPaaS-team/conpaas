@@ -29,7 +29,7 @@ import tempfile, os, os.path, tarfile, time, stat
 
 from conpaas.log import create_logger
 from conpaas.web.agent import client
-from conpaas.web.manager.config import ServiceNode, CodeVersion, Configuration
+from conpaas.web.manager.config import ServiceNode, CodeVersion
 from conpaas.web.misc import archive_supported_name, archive_open,\
   archive_get_members, archive_close, archive_supported_extensions,\
   archive_get_type
@@ -179,9 +179,9 @@ def do_startup(config):
   else:
     if config.proxy_count < 1: config.proxy_count = 1 # have to have at least one proxy
     if config.php_count < 1: config.php_count = 1 # have to have at least one php
-    serviceNodeKwargs = [ {'runProxy':True} for i in range(config.proxy_count) ]
-    serviceNodeKwargs.extend([ {'runWeb':True} for i in range(config.web_count) ])
-    serviceNodeKwargs.extend([ {'runPHP':True} for i in range(config.php_count) ])
+    serviceNodeKwargs = [ {'runProxy':True} for _ in range(config.proxy_count) ]
+    serviceNodeKwargs.extend([ {'runWeb':True} for _ in range(config.web_count) ])
+    serviceNodeKwargs.extend([ {'runPHP':True} for _ in range(config.php_count) ])
   
   logger.debug('do_startup: Going to request %d new nodes' % len(serviceNodeKwargs))
   node_instances = []
@@ -213,7 +213,7 @@ def do_startup(config):
     for serviceNode in config.serviceNodes.values():
       try:
         client.updateCode(serviceNode.ip, 5555, config.currentCodeVersion, config.codeVersions[config.currentCodeVersion].type, os.path.join(code_repo, config.currentCodeVersion))
-      except client.AgentException as e:
+      except client.AgentException:
         logger.exception('Failed to update code at node %s' % str(serviceNode))
         _state_set(S_ERROR, msg='Failed to update code at node %s' % str(serviceNode))
         return
@@ -222,7 +222,7 @@ def do_startup(config):
   for serviceNode in config.getPHPServiceNodes():
     try:
       client.createPHP(serviceNode.ip, 5555, config.php_config.port, config.php_config.scalaris, config.php_config.php_conf.conf)
-    except client.AgentException as e:
+    except client.AgentException:
         logger.exception('Failed to start php at node %s' % str(serviceNode))
         _state_set(S_ERROR, msg='Failed to start php at node %s' % str(serviceNode))
         return
@@ -232,7 +232,7 @@ def do_startup(config):
   for serviceNode in config.getWebServiceNodes():
     try:
       client.createWebServer(serviceNode.ip, 5555, config.web_config.doc_root, config.web_config.port, config.web_config.php_backends)
-    except client.AgentException as e:
+    except client.AgentException:
         logger.exception('Failed to start web at node %s' % str(serviceNode))
         _state_set(S_ERROR, msg='Failed to start web at node %s' % str(serviceNode))
         return
@@ -244,7 +244,7 @@ def do_startup(config):
         client.createHttpProxy(serviceNode.ip, 5555, config.proxy_config.port, config.proxy_config.web_backends, config.currentCodeVersion)
       else:
         client.createHttpProxy(serviceNode.ip, 5555, config.proxy_config.port, config.proxy_config.web_backends, '')
-    except client.AgentException as e:
+    except client.AgentException:
         logger.exception('Failed to start proxy at node %s' % str(serviceNode))
         _state_set(S_ERROR, msg='Failed to start proxy at node %s' % str(serviceNode))
         return
@@ -269,21 +269,21 @@ def shutdown(kwargs):
 def do_shutdown(config):
   for serviceNode in config.getProxyServiceNodes():
     try: client.stopHttpProxy(serviceNode.ip, 5555)
-    except client.AgentException as e:
+    except client.AgentException:
         logger.exception('Failed to stop proxy at node %s' % str(serviceNode))
         _state_set(S_ERROR, msg='Failed to stop proxy at node %s' % str(serviceNode))
         return
     
   for serviceNode in config.getWebServiceNodes():
     try: client.stopWebServer(serviceNode.ip, 5555)
-    except client.AgentException as e:
+    except client.AgentException:
         logger.exception('Failed to stop web at node %s' % str(serviceNode))
         _state_set(S_ERROR, msg='Failed to stop web at node %s' % str(serviceNode))
         return
   
   for serviceNode in config.getPHPServiceNodes():
     try: client.stopPHP(serviceNode.ip, 5555)
-    except client.AgentException as e:
+    except client.AgentException:
         logger.exception('Failed to stop php at node %s' % str(serviceNode))
         _state_set(S_ERROR, msg='Failed to stop php at node %s' % str(serviceNode))
         return
@@ -432,7 +432,7 @@ def do_addServiceNodes(config, proxy, web, php):
     for node in newNodes:
       if node not in config.serviceNodes:
         try: client.updateCode(node.ip, 5555, config.currentCodeVersion, config.codeVersions[config.currentCodeVersion].type, os.path.join(code_repo, config.currentCodeVersion))
-        except client.AgentException as e:
+        except client.AgentException:
           logger.exception('Failed to update code at node %s' % str(node))
           _state_set(S_ERROR, msg='Failed to update code at node %s' % str(node))
           return
@@ -440,13 +440,13 @@ def do_addServiceNodes(config, proxy, web, php):
   # create new service nodes
   for phpNode in [ node for node in newNodes if node.isRunningPHP ]:
     try: client.createPHP(phpNode.ip, 5555, config.php_config.port, config.php_config.scalaris, config.php_config.php_conf.conf)
-    except client.AgentException as e:
+    except client.AgentException:
         logger.exception('Failed to start php at node %s' % str(phpNode))
         _state_set(S_ERROR, msg='Failed to start php at node %s' % str(phpNode))
         return
   for webNode in [ node for node in newNodes if node.isRunningWeb ]:
     try: client.createWebServer(webNode.ip, 5555, config.web_config.doc_root, config.web_config.port, config.web_config.php_backends)
-    except client.AgentException as e:
+    except client.AgentException:
         logger.exception('Failed to start web at node %s' % str(webNode))
         _state_set(S_ERROR, msg='Failed to start web at node %s' % str(webNode))
         return
@@ -456,7 +456,7 @@ def do_addServiceNodes(config, proxy, web, php):
         client.createHttpProxy(proxyNode.ip, 5555, config.proxy_config.port, config.proxy_config.web_backends, config.currentCodeVersion)
       else:
         client.createHttpProxy(proxyNode.ip, 5555, config.proxy_config.port, config.proxy_config.web_backends, '')
-    except client.AgentException as e:
+    except client.AgentException:
       logger.exception('Failed to start proxy at node %s' % str(proxyNode))
       _state_set(S_ERROR, msg='Failed to start proxy at node %s' % str(proxyNode))
       return
@@ -465,7 +465,7 @@ def do_addServiceNodes(config, proxy, web, php):
   if phpNodesNew:
     for webNode in [ i for i in config.serviceNodes.values() if i.isRunningWeb and i not in newNodes ]:
       try: client.updateWebServer(webNode.ip, 5555, config.web_config.doc_root, config.web_config.port, config.web_config.php_backends)
-      except client.AgentException as e:
+      except client.AgentException:
         logger.exception('Failed to update web at node %s' % str(webNode))
         _state_set(S_ERROR, msg='Failed to update web at node %s' % str(webNode))
         return
@@ -476,7 +476,7 @@ def do_addServiceNodes(config, proxy, web, php):
           client.updateHttpProxy(proxyNode.ip, 5555, config.proxy_config.port, config.proxy_config.web_backends, config.currentCodeVersion)
         else:
           client.updateHttpProxy(proxyNode.ip, 5555, config.proxy_config.port, config.proxy_config.web_backends, '')
-      except client.AgentException as e:
+      except client.AgentException:
         logger.exception('Failed to update proxy at node %s' % str(proxyNode))
         _state_set(S_ERROR, msg='Failed to update proxy at node %s' % str(proxyNode))
         return
@@ -484,13 +484,13 @@ def do_addServiceNodes(config, proxy, web, php):
   # remove old ones
   for phpNode in phpNodesKill:
     try: client.stopPHP(phpNode.ip, 5555)
-    except client.AgentException as e:
+    except client.AgentException:
       logger.exception('Failed to stop php at node %s' % str(phpNode))
       _state_set(S_ERROR, msg='Failed to stop php at node %s' % str(phpNode))
       return
   for webNode in webNodesKill:
     try: client.stopWebServer(webNode.ip, 5555)
-    except client.AgentException as e:
+    except client.AgentException:
       logger.exception('Failed to stop web at node %s' % str(webNode))
       _state_set(S_ERROR, msg='Failed to stop web at node %s' % str(webNode))
       return
@@ -597,13 +597,13 @@ def do_removeServiceNodes(config, proxy, web, php):
   # new nodes
   for webNode in webNodesNew:
     try: client.createWebServer(webNode.ip, 5555, config.web_config.doc_root, config.web_config.port, config.web_config.php_backends)
-    except client.AgentException as e:
+    except client.AgentException:
       logger.exception('Failed to start web at node %s' % str(webNode))
       _state_set(S_ERROR, msg='Failed to start web at node %s' % str(webNode))
       return
   for phpNode in phpNodesNew:
     try: client.createPHP(phpNode.ip, 5555, config.php_config.port, config.php_config.scalaris, config.php_config.php_conf.conf)
-    except client.AgentException as e:
+    except client.AgentException:
       logger.exception('Failed to start php at node %s' % str(phpNode))
       _state_set(S_ERROR, msg='Failed to start php at node %s' % str(phpNode))
       return
@@ -611,7 +611,7 @@ def do_removeServiceNodes(config, proxy, web, php):
   if phpNodesKill:
     for webNode in [ i for i in config.serviceNodes.values() if i.isRunningWeb and i not in webNodesKill ]:
       try: client.updateWebServer(webNode.ip, 5555, config.web_config.doc_root, config.web_config.port, config.web_config.php_backends)
-      except client.AgentException as e:
+      except client.AgentException:
         logger.exception('Failed to update web at node %s' % str(webNode))
         _state_set(S_ERROR, msg='Failed to update web at node %s' % str(webNode))
         return
@@ -622,7 +622,7 @@ def do_removeServiceNodes(config, proxy, web, php):
           client.updateHttpProxy(proxyNode.ip, 5555, config.proxy_config.port, config.proxy_config.web_backends, config.currentCodeVersion)
         else:
           client.updateHttpProxy(proxyNode.ip, 5555, config.proxy_config.port, config.proxy_config.web_backends, '')
-      except client.AgentException as e:
+      except client.AgentException:
         logger.exception('Failed to update proxy at node %s' % str(proxyNode))
         _state_set(S_ERROR, msg='Failed to update proxy at node %s' % str(proxyNode))
         return
@@ -630,19 +630,19 @@ def do_removeServiceNodes(config, proxy, web, php):
   # remove nodes
   for phpNode in phpNodesKill:
     try: client.stopPHP(phpNode.ip, 5555)
-    except client.AgentException as e:
+    except client.AgentException:
       logger.exception('Failed to stop php at node %s' % str(phpNode))
       _state_set(S_ERROR, msg='Failed to stop php at node %s' % str(phpNode))
       return
   for webNode in webNodesKill:
     try: client.stopWebServer(webNode.ip, 5555)
-    except client.AgentException as e:
+    except client.AgentException:
       logger.exception('Failed to stop web at node %s' % str(webNode))
       _state_set(S_ERROR, msg='Failed to stop web at node %s' % str(webNode))
       return
   for proxyNode in proxyNodesKill:
     try: client.stopHttpProxy(proxyNode.ip, 5555)
-    except client.AgentException as e:
+    except client.AgentException:
       logger.exception('Failed to stop proxy at node %s' % str(proxyNode))
       _state_set(S_ERROR, msg='Failed to stop proxy at node %s' % str(proxyNode))
       return  
@@ -838,7 +838,7 @@ def do_updateConfiguration(config, codeVersionId, phpconf):
       config.php_config.php_conf.conf[key] = phpconf[key]
     for serviceNode in config.getPHPServiceNodes():
       try: client.updatePHP(serviceNode.ip, 5555, config.php_config.port, config.php_config.scalaris, config.php_config.php_conf.conf)
-      except client.AgentException as e:
+      except client.AgentException:
         logger.exception('Failed to update php at node %s' % str(serviceNode))
         _state_set(S_ERROR, msg='Failed to update php at node %s' % str(serviceNode))
         return
@@ -846,14 +846,14 @@ def do_updateConfiguration(config, codeVersionId, phpconf):
   if codeVersionId != None:
     for serviceNode in config.serviceNodes.values():
       try: client.updateCode(serviceNode.ip, 5555, codeVersionId, config.codeVersions[codeVersionId].type, os.path.join(code_repo, codeVersionId))
-      except client.AgentException as e:
+      except client.AgentException:
         logger.exception('Failed to update code at node %s' % str(serviceNode))
         _state_set(S_ERROR, msg='Failed to update code at node %s' % str(serviceNode))
         return
     config.currentCodeVersion = codeVersionId
     for serviceNode in config.getProxyServiceNodes():
       try: client.updateHttpProxy(serviceNode.ip, 5555, config.proxy_config.port, config.proxy_config.web_backends, config.currentCodeVersion)
-      except client.AgentException as e:
+      except client.AgentException:
         logger.exception('Failed to update proxy at node %s' % str(serviceNode))
         _state_set(S_ERROR, msg='Failed to update proxy at node %s' % str(serviceNode))
         return
