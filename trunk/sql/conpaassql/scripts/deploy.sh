@@ -22,15 +22,13 @@ USER=$1
 DEST_SERVER_IP=$2
 COMMAND=$3
 
-ssh-agent
-tar cvfz ${TAR_DEST} --exclude=.svn ${SOURCE}
+echo "tar-ing new code on local node - code to be deployed"
+tar cvfz ${TAR_DEST} --exclude=.svn ${SOURCE} 1> /dev/null 2> /dev/null
+echo "scp-ing new code to remote node"
 scp ${TAR_DEST} ${USER}@${DEST_SERVER_IP}:~
-#echo "Removing ${PACKAGE_DIR} on remote server ${DEST_SERVER_IP}"
-#ssh ${USER}@${DEST_SERVER_IP} rm -fr ${PACKAGE_DIR}
-#echo "Untaring deployment package"
-#ssh ${USER}@${DEST_SERVER_IP} tar xvfz ~/${PACKAGE_NAME}
-ssh ${USER}@${DEST_SERVER_IP} "rm -fr ${PACKAGE_DIR}; tar xvfz ~/${PACKAGE_NAME}; if [ -e ${CONPAASSQLPID} ]; then kill -9 `cat ${CONPAASSQLPID}`; else exit 0; fi"
+echo "Installing new and killing old remote existing instances."
+ssh ${USER}@${DEST_SERVER_IP} "rm -fr ${PACKAGE_DIR}; tar xvfz ~/${PACKAGE_NAME} 1> /dev/null 2> /dev/null; if [ -e ${CONPAASSQLPID} ]; then kill -9 \`cat ${CONPAASSQLPID}\`; else exit 0; fi"
 if [ ${COMMAND} == "start-agent" ]
 then
-	ssh ${USER}@${DEST_SERVER_IP} "cd ${PACKAGE_DIR}/scripts/; ./run-agent-server.sh 1> ${CONPAASSQLOUT} 2> ${CONPAASSQLERR} &"
+	ssh ${USER}@${DEST_SERVER_IP} "cd ${PACKAGE_DIR}/scripts/; ./run-agent-server.sh"
 fi

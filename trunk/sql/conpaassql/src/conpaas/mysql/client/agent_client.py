@@ -46,8 +46,8 @@ def stopMySQLServer(host, port):
     return __check_reply(body)
 
 if __name__ == '__main__':
-    #host = '172.16.117.228'
-    host = '127.0.0.1'
+    host = '172.16.117.228'
+    #host = '127.0.0.1'
     port = 60000
     if sys.argv.__len__() in (2, 3):
         if sys.argv[1] in ("getMySQLServerState", "status"):
