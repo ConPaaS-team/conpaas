@@ -18,7 +18,7 @@ def __check_reply(body):
     if ret['opState'] != 'OK':
         if 'ERROR' in ret['opState']: raise AgentException(ret['opState'], ret['error'])
         else: raise AgentException(ret['opState'])
-    return True
+    return ret
 
 def getMySQLServerState(host, port):
     params = {'action': 'getMySQLServerState'}
@@ -51,7 +51,8 @@ if __name__ == '__main__':
     port = 60000
     if sys.argv.__len__() in (2, 3):
         if sys.argv[1] in ("getMySQLServerState", "status"):
-            getMySQLServerState(host, port)    
+            ret = getMySQLServerState(host, port)
+            print ret
         if sys.argv[1] in ("createMySQLServer", "create"):
             if sys.argv.__len__() == 3:
                 _port = int(sys.argv[2])
@@ -59,8 +60,10 @@ if __name__ == '__main__':
                 raise Exception('Please provide a port number')
                 printUsage()
                 exit()
-            createMySQLServer(host, port, _port)
+            ret = createMySQLServer(host, port, _port)
+            print ret
         if sys.argv[1] in ("stopMySQLServer", "stop"):
-            stopMySQLServer(host, port)          
+            ret = stopMySQLServer(host, port)
+            print ret          
     else:
         printUsage()
