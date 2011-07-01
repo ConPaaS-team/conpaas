@@ -3,12 +3,19 @@ Created on Jan 25, 2011
 
 @author: ielhelw
 '''
-from conpaas.web.agent.role import Nginx, NginxProxy, S_RUNNING, S_STOPPED
-
 from tempfile import mkdtemp
 from shutil import rmtree
 from socket import gethostbyname
-import unittest, time, inspect
+import unittest, time
+from ConfigParser import ConfigParser
+
+config_parser = ConfigParser()
+config_parser.add_section('manager')
+config_parser.set('manager', 'LOG_FILE', '/tmp/conpaas-unittest.log')
+
+from conpaas import log
+log.init(config_parser)
+from conpaas.web.agent.role import Nginx, NginxProxy, S_RUNNING, S_STOPPED
 
 
 class TestNginxValidation(unittest.TestCase):

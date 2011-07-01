@@ -2,13 +2,35 @@
 
 . /etc/ec2/params
 
-wget -P /root/ http://hppc644.few.vu.nl/contrail/ConPaaSWeb.tar.gz
-wget -P /root/ http://hppc644.few.vu.nl/contrail/ec2-manager-start
-
+export SOURCE=
 export EC2_USER=
 export EC2_PASSWORD=
 export PUBLIC_IP=$EC2_PUBLIC_IP
 
-chmod 755 /root/ec2-manager-start
+wget -P /root/ $SOURCE/ConPaaSWeb.tar.gz
+wget -P /root/ $SOURCE/manager-start
+wget -P /root/ $SOURCE/ec2-agent-user-data
 
-/root/ec2-manager-start
+cat <<EOF > /root/config.cfg
+[iaas]
+DRIVER = EC2
+
+## EC2
+EC2_USER = $EC2_USER
+EC2_PASSWORD = $EC2_PASSWORD
+EC2_IMAGE_ID = ami-7a6c9213
+EC2_SIZE_ID = t1.micro
+EC2_SECURITY_GROUP_NAME = contrail
+EC2_KEY_NAME = contrail
+EC2_AGENT_USERDATA = /root/ec2-agent-user-data
+
+[manager]
+MEMCACHE_ADDR = 127.0.0.1:11211
+CODE_REPO = /conpaas/code
+LOG_FILE = /var/log/conpaas.log
+BOOTSTRAP = $SOURCE
+EOF
+
+
+chmod 755 /root/manager-start
+/root/manager-start

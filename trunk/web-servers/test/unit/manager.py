@@ -5,6 +5,7 @@ Created on Mar 28, 2011
 '''
 import unittest
 import memcache
+import copy
 from subprocess import Popen
 from tempfile import mkdtemp
 from os import mkdir, getuid
@@ -15,11 +16,19 @@ from time import sleep
 from tarfile import TarFile
 from random import randint
 
+from mock import agentClient
+from mock.iaas import IaaSClient
+from ConfigParser import ConfigParser
+
+config_parser = ConfigParser()
+config_parser.add_section('manager')
+config_parser.set('manager', 'LOG_FILE', '/tmp/conpaas-unittest.log')
+
+from conpaas import log
+log.init(config_parser)
+
 from conpaas.web.manager import server, internals, client
 from conpaas.web.manager.config import Configuration, CodeVersion
-
-from conpaas.test.mock import agentClient
-from conpaas.test.mock.iaas import IaaSClient
 
 # PATCH the real implementations with mock
 server.IaaSClient = IaaSClient
@@ -42,7 +51,6 @@ class Setup:
       self.mc_proc = Popen(['/usr/bin/memcached', '-u', 'www-data', '-p', str(self.mc_port)], close_fds=True)
     sleep(2)
     self.mc = memcache.Client(['localhost:'+str(self.mc_port)])
-    self.mc.set(internals.NODES, [str(i) for i in range(1,100)])
     self.mc.set(internals.CONFIG, Configuration())
     self.mc.set(internals.DEPLOYMENT_STATE, internals.S_INIT)
     
@@ -51,7 +59,11 @@ class Setup:
     self.code_repo = join(self.dir, 'code-repo')
     mkdir(self.code_repo)
     
-    self.server = server.DelpoymentManager(('0.0.0.0', self.server_port), 'localhost:'+str(self.mc_port), '', self.code_repo)
+    self.server = server.DelpoymentManager(('0.0.0.0', self.server_port),
+                                           'localhost:'+str(self.mc_port),
+                                           config_parser,
+                                           self.code_repo,
+                                           '')
     self.t = Thread(target=self.server.serve_forever)
     self.t.start()
   
@@ -73,32 +85,45 @@ class Setup:
     self.assertEqual(ret, {'opState': 'OK', 'state': state})
 
 class ManagerConfigTest(Setup, unittest.TestCase):
-  
+  phpconf_default = { 'memory_limit': '128M',
+                      'max_execution_time': '30',
+                      'display_errors': 'Off',
+                      'log_errors': 'Off',
+                      'upload_max_filesize': '2M',
+                      'error_reporting': 'E_ALL & ~E_DEPRECATED'}
   def test_configCodeVersion(self):
     self._upload_codeVersions()
     self.assertEqual(client.getConfiguration('localhost', self.server_port),
-                     {'opState': 'OK', 'codeVersionId': None, 'phpconf': {}})
+                     {'codeVersionId': 'code-default',
+                      'phpconf': self.phpconf_default,
+                      'opState': 'OK'})
     self.assertEqual(client.updateConfiguration('localhost', self.server_port, codeVersionId=self.id1),
                      {'opState': 'OK'})
     self.assertEqual(client.getConfiguration('localhost', self.server_port),
-                     {'opState': 'OK', 'codeVersionId': self.id1, 'phpconf': {}})
+                     {'opState': 'OK',
+                      'codeVersionId': self.id1,
+                      'phpconf': self.phpconf_default})
   
   def test_configPHP(self):
+    phpconf_update = copy.deepcopy(self.phpconf_default)
+    phpconf_update['upload_max_filesize'] = '10M'
     self.assertEqual(client.getConfiguration('localhost', self.server_port),
-                     {'opState': 'OK', 'codeVersionId': None, 'phpconf': {}})
-    self.assertEqual(client.updateConfiguration('localhost', self.server_port, phpconf={'file_uploads': '0'}),
+                     {'opState': 'OK', 'codeVersionId': 'code-default', 'phpconf': self.phpconf_default})
+    self.assertEqual(client.updateConfiguration('localhost', self.server_port, phpconf={'upload_max_filesize': '10M'}),
                      {'opState': 'OK'})
     self.assertEqual(client.getConfiguration('localhost', self.server_port),
-                     {'opState': 'OK', 'codeVersionId': None, 'phpconf': {'file_uploads': '0'}})
+                     {'opState': 'OK', 'codeVersionId': 'code-default', 'phpconf': phpconf_update})
   
   def test_configCodeVersionAndPHP(self):
     self._upload_codeVersions()
+    phpconf_update = copy.deepcopy(self.phpconf_default)
+    phpconf_update['upload_max_filesize'] = '10M'
     self.assertEqual(client.getConfiguration('localhost', self.server_port),
-                     {'opState': 'OK', 'codeVersionId': None, 'phpconf': {}})
-    self.assertEqual(client.updateConfiguration('localhost', self.server_port, codeVersionId=self.id2, phpconf={'file_uploads': '0'}),
+                     {'opState': 'OK', 'codeVersionId': 'code-default', 'phpconf': self.phpconf_default})
+    self.assertEqual(client.updateConfiguration('localhost', self.server_port, codeVersionId=self.id2, phpconf={'upload_max_filesize': '10M'}),
                      {'opState': 'OK'})
     self.assertEqual(client.getConfiguration('localhost', self.server_port),
-                     {'opState': 'OK', 'codeVersionId': self.id2, 'phpconf': {'file_uploads': '0'}})
+                     {'opState': 'OK', 'codeVersionId': self.id2, 'phpconf': phpconf_update})
 
   def test_startupShutdown(self):
     self.test_configCodeVersionAndPHP()
@@ -137,10 +162,10 @@ class ManagerConfigTest(Setup, unittest.TestCase):
     
     ret = client.listCodeVersions('localhost', self.server_port)
     self.assertEqual('OK', ret['opState'])
-    self.assertEqual(1, len(ret['codeVersions']))
-    self.assertEqual(ret['codeVersions'][self.id1]['codeVersionId'], self.id1)
-    self.assertEqual(ret['codeVersions'][self.id1]['filename'], 'version1.tar')
-    self.assertEqual(ret['codeVersions'][self.id1]['description'], '')
+    self.assertEqual(2, len(ret['codeVersions']))
+    self.assertEqual(ret['codeVersions'][0]['codeVersionId'], self.id1)
+    self.assertEqual(ret['codeVersions'][0]['filename'], 'version1.tar')
+    self.assertEqual(ret['codeVersions'][0]['description'], '')
     
     # upload second
     ret = client.uploadCodeVersion('localhost', self.server_port, version2)
@@ -149,13 +174,13 @@ class ManagerConfigTest(Setup, unittest.TestCase):
     self.id2 = ret['codeVersionId']
     ret = client.listCodeVersions('localhost', self.server_port)
     self.assertEqual('OK', ret['opState'])
-    self.assertEqual(2, len(ret['codeVersions']))
-    self.assertEqual(ret['codeVersions'][self.id1]['codeVersionId'], self.id1)
-    self.assertEqual(ret['codeVersions'][self.id1]['filename'], 'version1.tar')
-    self.assertEqual(ret['codeVersions'][self.id1]['description'], '')
-    self.assertEqual(ret['codeVersions'][self.id2]['codeVersionId'], self.id2)
-    self.assertEqual(ret['codeVersions'][self.id2]['filename'], 'version2.tar')
-    self.assertEqual(ret['codeVersions'][self.id2]['description'], '')
+    self.assertEqual(3, len(ret['codeVersions']))
+    self.assertEqual(ret['codeVersions'][1]['codeVersionId'], self.id1)
+    self.assertEqual(ret['codeVersions'][1]['filename'], 'version1.tar')
+    self.assertEqual(ret['codeVersions'][1]['description'], '')
+    self.assertEqual(ret['codeVersions'][0]['codeVersionId'], self.id2)
+    self.assertEqual(ret['codeVersions'][0]['filename'], 'version2.tar')
+    self.assertEqual(ret['codeVersions'][0]['description'], '')
 
 
 class ManagerScaleOutFromMinimalTest(Setup, unittest.TestCase):
@@ -190,18 +215,8 @@ class ManagerScaleOutFromMinimalTest(Setup, unittest.TestCase):
     
     proxyNode = ret['proxy'][0]
     self.assertEqual(client.addServiceNodes('localhost', self.server_port, web=1),
-                     {'opState': 'OK'})
-    self._waitTillState(internals.S_ADAPTING, internals.S_RUNNING)
-    ret = client.listServiceNodes('localhost', self.server_port)
-    self.assertTrue('opState' in ret and ret['opState'] == 'OK')
-    self.assertTrue('proxy' in ret and ret['proxy'] == [proxyNode])
-    self.assertTrue('php' in ret and len(ret['php']) == 1)
-    self.assertTrue('web' in ret and len(ret['web']) == 2)
-    self.assertTrue(ret['web'][0] != ret['web'][1])
-    self.assertEqual(intersection(ret['proxy'], ret['web']), [])
-    self.assertEqual(intersection(ret['proxy'], ret['php']), [])
-    self.assertEqual(intersection(ret['web'], ret['php']), [])
-    
+                     {'opState': 'ERROR',
+                      'error': 'Invalid arguments DETAIL:Cannot add more web servers without at least one "proxy"'})
     if shutdown:
       client.shutdown('localhost', self.server_port)
       self._waitTillState(internals.S_EPILOGUE, internals.S_STOPPED)
@@ -241,16 +256,9 @@ class ManagerScaleOutFromMinimalTest(Setup, unittest.TestCase):
     self.assertTrue(phpNode != proxyNode)
     self.assertTrue(ret['web'] == [proxyNode])
     ret = client.addServiceNodes('localhost', self.server_port, web=1)
-    self._waitTillState(internals.S_ADAPTING, internals.S_RUNNING)
-    ret = client.listServiceNodes('localhost', self.server_port)
-    self.assertTrue('opState' in ret and ret['opState'] == 'OK')
-    self.assertTrue('proxy' in ret and ret['proxy'] == [proxyNode])
-    self.assertTrue('php' in ret and ret['php'] == [phpNode])
-    self.assertTrue('web' in ret and len(ret['web']) == 2)
-    self.assertTrue(ret['web'][0] != ret['web'][1])
-    self.assertEqual(intersection(ret['proxy'], ret['web']), [])
-    self.assertEqual(intersection(ret['proxy'], ret['php']), [])
-    self.assertEqual(intersection(ret['web'], ret['php']), [])
+    self.assertEqual(ret,
+                     {'opState': 'ERROR',
+                      'error': 'Invalid arguments DETAIL:Cannot add more web servers without at least one "proxy"'})
     
     client.shutdown('localhost', self.server_port)
     self._waitTillState(internals.S_EPILOGUE, internals.S_STOPPED)
@@ -310,17 +318,9 @@ class ManagerScaleOutFromMinimalTest(Setup, unittest.TestCase):
     proxyNode = ret['proxy'][0]
     self.assertTrue(oldWebNode != proxyNode)
     ret = client.addServiceNodes('localhost', self.server_port, web=1)
-    self._waitTillState(internals.S_ADAPTING, internals.S_RUNNING)
-    ret = client.listServiceNodes('localhost', self.server_port)
-    self.assertTrue('opState' in ret and ret['opState'] == 'OK')
-    self.assertTrue('proxy' in ret and ret['proxy'] == [proxyNode])
-    self.assertTrue('php' in ret and len(ret['php']) == 1)
-    self.assertTrue('web' in ret and len(ret['web']) == 2)
-    self.assertTrue(ret['web'][0] != ret['web'][1])
-    self.assertEqual(intersection(ret['proxy'], ret['web']), [])
-    self.assertEqual(intersection(ret['proxy'], ret['php']), [])
-    self.assertEqual(intersection(ret['web'], ret['php']), [])
-    
+    self.assertEqual(ret,
+                     {'opState': 'ERROR',
+                      'error': 'Invalid arguments DETAIL:Cannot add more web servers without at least one "php"'})
     client.shutdown('localhost', self.server_port)
     ret = client.getState('localhost', self.server_port)
     self._waitTillState(internals.S_EPILOGUE, internals.S_STOPPED)
@@ -349,7 +349,7 @@ class ManagerScaleOutFromMinimalTest(Setup, unittest.TestCase):
     client.shutdown('localhost', self.server_port)
     self._waitTillState(internals.S_EPILOGUE, internals.S_STOPPED)
   
-  def test_request4Web5PHP(self):
+  def test_request1Proxy4Web5PHP(self):
     client.startup('localhost', self.server_port)
     self._waitTillState(internals.S_PROLOGUE, internals.S_RUNNING)
     ret = client.listServiceNodes('localhost', self.server_port)
@@ -361,7 +361,7 @@ class ManagerScaleOutFromMinimalTest(Setup, unittest.TestCase):
     self.assertTrue(ret['proxy'] == ret['web'] == ret['php'])
     
     proxyNode = ret['proxy'][0]
-    self.assertEqual(client.addServiceNodes('localhost', self.server_port, web=4, php=5),
+    self.assertEqual(client.addServiceNodes('localhost', self.server_port, proxy=1, web=4, php=5),
                      {'opState': 'OK'})
     self._waitTillState(internals.S_ADAPTING, internals.S_RUNNING)
     ret = client.listServiceNodes('localhost', self.server_port)
@@ -377,7 +377,7 @@ class ManagerScaleOutFromMinimalTest(Setup, unittest.TestCase):
     ret = client.getState('localhost', self.server_port)
     self._waitTillState(internals.S_EPILOGUE, internals.S_STOPPED)
   
-  def test_request3Web2Proxy(self):
+  def test_request3Web2Proxy1PHP(self):
     client.startup('localhost', self.server_port)
     self._waitTillState(internals.S_PROLOGUE, internals.S_RUNNING)
     ret = client.listServiceNodes('localhost', self.server_port)
@@ -389,7 +389,7 @@ class ManagerScaleOutFromMinimalTest(Setup, unittest.TestCase):
     self.assertTrue(ret['proxy'] == ret['web'] == ret['php'])
     
     proxyNode = ret['proxy'][0]
-    self.assertEqual(client.addServiceNodes('localhost', self.server_port, web=3, proxy=2),
+    self.assertEqual(client.addServiceNodes('localhost', self.server_port, web=3, proxy=2, php=1),
                      {'opState': 'OK'})
     self._waitTillState(internals.S_ADAPTING, internals.S_RUNNING)
     ret = client.listServiceNodes('localhost', self.server_port)

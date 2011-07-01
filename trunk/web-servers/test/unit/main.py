@@ -5,13 +5,9 @@ Created on Jan 25, 2011
 '''
 
 import unittest
-from conpaas.test.unit import role, agent, manager
-import logging
+from unit import role, agent, manager
 
 if __name__ == '__main__':
-  from conpaas.log import set_logging_level
-  set_logging_level(logging.CRITICAL)
-  
   suite = unittest.TestSuite()
   loader = unittest.TestLoader()
   

@@ -137,6 +137,7 @@ ${FCGI}
     listen       ${PORT} default;
     root           ${DOC_ROOT}/$$http_conpaasversion;
     server_name  localhost;
+    port_in_redirect off;
     
     if ( $$document_root = '${DOC_ROOT}/' ) {
       return 404;
@@ -266,7 +267,8 @@ ${BACKENDS}
     
     location    / {
       proxy_set_header Conpaasversion '${CODE_VERSION}';
-      proxy_redirect http://backend:8080/ http://$$http_host:$$server_port/;
+      proxy_set_header Host $$host;
+      proxy_set_header X-Real-IP $$remote_addr;
       proxy_pass http://backend;
     }
   }
@@ -433,8 +435,6 @@ pm.max_requests = ${MAX_REQUESTS}
 ;; eg:
 ; php_admin_value[upload_max_filesize] = 50M
 
-php_admin_value[session.save_handler] = user
-php_admin_value[session.save_path] = http://${SCALARIS_IP}:8000/jsonrpc.yaws
 '''
   cmd = '/conpaas/sbin/php-fpm'
   
@@ -453,6 +453,7 @@ php_admin_value[session.save_path] = http://${SCALARIS_IP}:8000/jsonrpc.yaws
       if not exists('/conpaas/conf/fpm'):
         makedirs('/conpaas/conf/fpm')
       self.config_dir = '/conpaas/conf/fpm'
+      self.scalaris_config = join(self.config_dir, 'scalaris.conf')
       self.config_file = join(self.config_dir, 'fpm.conf')
       self.error_log = join(self.config_dir, 'error.log')
       self.pid_file = join(self.config_dir, 'fpm.pid')
@@ -471,12 +472,15 @@ php_admin_value[session.save_path] = http://${SCALARIS_IP}:8000/jsonrpc.yaws
                  MAX_CHILDREN=self.max_children, MAX_REQUESTS=self.max_requests,\
                  SERVERS_START=self.servers_start,\
                  SERVERS_SPARE_MIN=self.servers_spare_min,\
-                 SERVERS_SPARE_MAX=self.servers_spare_max,
-                 SCALARIS_IP=scalaris))
+                 SERVERS_SPARE_MAX=self.servers_spare_max))
     fd.write('\n\n')
     if configuration:
       for k in configuration:
         fd.write('php_admin_value[%s] = %s\n' % (k, configuration[k]))
+    fd.close()
+    
+    fd = open(self.scalaris_config, 'w')
+    fd.write("http://%s:8000/jsonrpc.yaws" % (scalaris))
     fd.close()
     self.port = port
     self.configuration = configuration

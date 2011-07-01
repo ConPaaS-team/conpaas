@@ -6,14 +6,50 @@ Created on Mar 9, 2011
 from BaseHTTPServer import HTTPServer
 from os.path import exists
 
-import memcache
+import memcache, httplib
 from conpaas.iaas import IaaSClient
 from conpaas.web.http import AbstractRequestHandler
 from conpaas import log
 
 
+class ManagerRequestHandler(AbstractRequestHandler):
+  def _render_arguments(self, method, params):
+    ret = '<p>Arguments:<table>'
+    ret += '<tr><th>Method</th><td>' + method + '</td></tr>'
+    for param in params:
+      if isinstance(params[param], dict):
+        ret += '<tr><th>' + param + '</th><td>Contents of: ' + params[param].filename + '</td></tr>'
+      else:
+        ret += '<tr><th>' + param + '</th><td>' + params[param] + '</td></tr>'
+    ret += '</table></p>'
+    return ret
+  
+  def send_action_missing(self, method, params):
+    self.send_custom_response(httplib.BAD_REQUEST, '''<html>
+<head>
+<title>BAD REQUEST</title>
+</head>
+<body>
+<h1>ConPaaS PHP</h1>
+<p>No "action" specified.</p>
+<p>This URL is used to access the service manager directly.
+You may want to copy-paste the URL as a parameter to the 'managerc.py' command-line utility.</p>
+''' + self._render_arguments(method, params) + '</body></html>')
+  
+  def send_action_not_found(self, method, params):
+    self.send_custom_response(httplib.NOT_FOUND, '''<html>
+<head>
+<title>ACTION NOT FOUND</title>
+</head>
+<body>
+<h1>ConPaaS PHP</h1>
+<p>The specified "action" was not found.</p>
+<p>You may want to review the list of supported actions provided by the 'managerc.py' command-line utility.</p>
+''' + self._render_arguments(method, params) + '</body></html>')
+
+
 class DelpoymentManager(HTTPServer):
-  def __init__(self, server_address, memcache_addr, config_parser, code_repository, scalaris_addr, RequestHandlerClass=AbstractRequestHandler):
+  def __init__(self, server_address, memcache_addr, config_parser, code_repository, scalaris_addr, RequestHandlerClass=ManagerRequestHandler):
     HTTPServer.__init__(self, server_address, RequestHandlerClass)
     log.init(config_parser)
     self.memcache = memcache.Client([memcache_addr])
@@ -59,7 +95,8 @@ if __name__ == '__main__':
   if not config_parser.has_section('manager')\
   or not config_parser.has_option('manager', 'MEMCACHE_ADDR')\
   or not config_parser.has_option('manager', 'CODE_REPO')\
-  or not config_parser.has_option('manager', 'LOG_FILE'):
+  or not config_parser.has_option('manager', 'LOG_FILE')\
+  or not config_parser.has_option('manager', 'BOOTSTRAP'):
     print >>sys.stderr, 'Missing configuration variables for section "manager"'
     sys.exit(1)
   

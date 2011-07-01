@@ -13,7 +13,6 @@ class IaaSClient:
     ret = {}
     for vm in self.vms:
       ret[vm] = {'id': str(vm),
-                 'user': 'oneadmin',
                  'state': 'running',
                  'name': 'conpaasweb',
                  'ip': '192.168.0.%s' % str(vm)
@@ -28,10 +27,15 @@ class IaaSClient:
       raise Exception('Failed to find vm id = "%s"' % str(vm_id))
     return vms[vm_id]
   
-  def newInstance(self):
-    n = self.nodes.pop()
-    self.vms.append(n)
-    return self.getVMInfo(n)
+  def newInstances(self, count):
+    instances = []
+    ret = []
+    for i in range(count):
+      n = self.nodes.pop()
+      instances.append(n)
+      self.vms.append(n)
+      ret.append(self.getVMInfo(n))
+    return ret
   
   def killInstance(self, vm_id):
     self.vms.remove(vm_id)

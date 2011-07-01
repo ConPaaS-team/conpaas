@@ -13,11 +13,11 @@ def __check_reply(body):
   try:
     ret = json.loads(body)
   except Exception as e: raise AgentException(*e.args)
-  if not isinstance(ret, dict): raise AgentException('Response not a JSON object')
-  if 'opState' not in ret: raise AgentException('Response does not contain "opState"')
+  if not isinstance(ret, dict): raise AgentException('Response not a JSON object', body)
+  if 'opState' not in ret: raise AgentException('Response does not contain "opState"', body)
   if ret['opState'] != 'OK':
     if 'ERROR' in ret: raise AgentException(ret['opState'], ret['ERROR'])
-    else: raise AgentException(ret['opState'])
+    else: raise AgentException(ret['opState'], body)
   return True
 
 def getWebServerState(host, port):

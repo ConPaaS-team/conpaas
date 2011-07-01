@@ -29,7 +29,7 @@ import tempfile, os, os.path, tarfile, time, stat
 
 from conpaas.log import create_logger
 from conpaas.web.agent import client
-from conpaas.web.manager.config import ServiceNode, CodeVersion
+from conpaas.web.manager.config import ServiceNode, CodeVersion, memcache
 from conpaas.web.misc import archive_supported_name, archive_open,\
   archive_get_members, archive_close, archive_supported_extensions,\
   archive_get_type
@@ -85,12 +85,20 @@ def _state_get():
 def _state_set(target_state, msg=''):
   memcache.set(DEPLOYMENT_STATE, target_state)
   state_log.append({'time': time.time(), 'state': target_state, 'reason': msg})
+  logger.debug('STATE %s: %s' % (target_state, msg))
 
 def _configuration_get():
   return memcache.get(CONFIG)
 
 def _configuration_set(config):
   memcache.set(CONFIG, config)
+
+def adapting_set_count(count):
+  memcache.set('adapting_count', count)
+
+def adapting_get_count():
+  return memcache.get('adapting_count')
+
 
 class ManagerException(Exception):
   def __init__(self, code, *args, **kwargs):
@@ -107,6 +115,7 @@ def expose(http_method):
       exposed_functions[http_method] = {}
     exposed_functions[http_method][func.__name__] = func
     def wrapped(*args, **kwargs):
+      logger.debug('CALL %s %s %s' % (func.__name__, http_method, str((args, kwargs))))
       return func(*args, **kwargs)
     return wrapped
   return decorator
@@ -125,7 +134,9 @@ def getState(kwargs):
 def wait_for_nodes(nodes, poll_interval=10):
   logger.debug('wait_for_nodes: going to start polling')
   done = []
+  poll_cycles = 0
   while len(nodes) > 0:
+    poll_cycles += 1
     for i in nodes:
       up = True
       try:
@@ -139,6 +150,9 @@ def wait_for_nodes(nodes, poll_interval=10):
         done.append(i)
     nodes = [ i for i in nodes if i not in done]
     if len(nodes):
+      if poll_cycles * poll_interval > 120:
+        # at least 2mins of sleeping + poll time
+        return (done, nodes)
       logger.debug('wait_for_nodes: waiting for %d nodes' % len(nodes))
       time.sleep(poll_interval)
       no_ip_nodes = [ i for i in nodes if i['ip'] == '' ]
@@ -148,7 +162,40 @@ def wait_for_nodes(nodes, poll_interval=10):
         for i in no_ip_nodes:
           i['ip'] = refreshed_list[i['id']]['ip']
   logger.debug('wait_for_nodes: All nodes are ready %s' % str(done))
-  
+  return (done, [])
+
+def kill_nodesById(ids):
+  for id in ids:
+    logger.debug('kill_nodes: killing ' + str(id))
+    try: iaas.killInstance(id)
+    except: logger.critical('kill_nodes: Failed to kill node %s', id)
+
+def kill_nodes(nodes):
+  kill_nodesById([ i['id'] for i in nodes ])
+
+def create_nodes(count):
+  ready = []
+  iteration = 0
+  while len(ready) < count:
+    iteration += 1
+    logger.debug('create_nodes: iteration %d: creating %d nodes' % (iteration, count - len(ready)))
+    try:
+      poll = iaas.newInstances(count - len(ready))
+      memcache.set('nodes_additional', [ i['id'] for i in (poll + ready) ])
+    except Exception as e:
+      logger.critical('create_nodes: Failed to request new nodes')
+      _state_set(S_ERROR, msg='Failed to request new nodes')
+      kill_nodes(ready)
+      memcache.set('nodes_additional', [])
+      raise e
+    poll, failed = wait_for_nodes(poll)
+    ready += poll
+    poll = []
+    if failed:
+      logger.debug('create_nodes: %d nodes failed to startup properly: %s' % (len(failed), str(failed)))
+      kill_nodes(failed)
+  memcache.set('nodes_additional', [ i['id'] for i in ready ])
+  return ready
 
 @expose('POST')
 def startup(kwargs):
@@ -184,23 +231,17 @@ def do_startup(config):
     serviceNodeKwargs.extend([ {'runPHP':True} for _ in range(config.php_count) ])
   
   logger.debug('do_startup: Going to request %d new nodes' % len(serviceNodeKwargs))
-  node_instances = []
-  try:
-    for kwargs in serviceNodeKwargs:
-      node_instances.append(iaas.newInstance())
-  except:
-    logger.critical('do_startup: Failed to request new nodes. Need %d, got %d only' % (len(serviceNodeKwargs), len(node_instances)))
-    logger.critical('do_startup: Going to release %d nodes' % (len(node_instances)))
-    for node in node_instances:
-      try:
-        iaas.killInstance(node['id'])
-      except:
-        logger.critical('do_startup: Failed to kill node %s', node['id'])
-    _state_set(S_ERROR, msg='Failed to request new nodes')
-    return
   
-#  update mappings after waiting for all nodes (wait for IPs)
-  wait_for_nodes(node_instances)
+  try:
+    adapting_set_count(len(serviceNodeKwargs))
+    node_instances = create_nodes(len(serviceNodeKwargs))
+  except:
+    logger.critical('do_startup: Failed to request new nodes. Needed %d' % (len(serviceNodeKwargs)))
+    _state_set(S_STOPPED, msg='Failed to request new nodes')
+    return
+  finally:
+    adapting_set_count(0)
+  
   config.serviceNodes.clear()
   i = 0
   for kwargs in serviceNodeKwargs:
@@ -251,6 +292,7 @@ def do_startup(config):
   
   _configuration_set(config) # update configuration
   _state_set(S_RUNNING)
+  memcache.set('nodes_additional', [])
 
 @expose('POST')
 def shutdown(kwargs):
@@ -288,8 +330,7 @@ def do_shutdown(config):
         _state_set(S_ERROR, msg='Failed to stop php at node %s' % str(serviceNode))
         return
   
-  for serviceNode in config.serviceNodes.values():
-    iaas.killInstance(serviceNode.vmid)
+  kill_nodesById([serviceNode.vmid for serviceNode in config.serviceNodes.values()])
   
   config.serviceNodes = {}
   
@@ -328,6 +369,12 @@ def addServiceNodes(kwargs):
     return {'opState': 'ERROR', 'error': ManagerException(E_ARGS_MISSING, ['php', 'web', 'proxy'], detail='Need a positive value for at least one').message}
   if len(kwargs) != 0:
     return {'opState': 'ERROR', 'error': ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message}
+  
+  if (proxy + config.proxy_count) < 1 and (web + config.web_count) > 1:
+    return {'opState': 'ERROR', 'error': ManagerException(E_ARGS_INVALID, detail='Cannot add more web servers without at least one "proxy"').message}
+  
+  if (web + config.web_count) > 1 and (php + config.php_count) < 1:
+    return {'opState': 'ERROR', 'error': ManagerException(E_ARGS_INVALID, detail='Cannot add more web servers without at least one "php"').message}
   
   _state_set(S_ADAPTING, msg='Going to add proxy=%d, web=%d, php=%d' % (proxy, web, php))
   Thread(target=do_addServiceNodes, args=[config, proxy, web, php]).start()
@@ -402,24 +449,16 @@ def do_addServiceNodes(config, proxy, web, php):
   for i in phpNodesKill: i.isRunningPHP = False
   
   newNodes = []
-  node_instances = []
   try:
-    for i in proxyNodesNew + webNodesNew + phpNodesNew:
-      node_instances.append(iaas.newInstance())
+    adapting_set_count(len(proxyNodesNew) + len(webNodesNew) + len(phpNodesNew))
+    node_instances = create_nodes(len(proxyNodesNew) + len(webNodesNew) + len(phpNodesNew))
   except:
-    logger.critical('do_addServiceNodes: Failed to request new nodes. Need %d, got %d only' % (len(proxyNodesNew + webNodesNew + phpNodesNew), len(node_instances)))
-    # FIXME: What is the policy for failing to create new instances
-    logger.critical('do_addServiceNodes: Going to release %d nodes' % (len(node_instances)))
-    for node in node_instances:
-      try:
-        iaas.killInstance(node['id'])
-      except:
-        logger.critical('do_addServiceNodes: Failed to kill node %s', node['id'])
-    _state_set(S_RUNNING, msg='Failed to request new nodes. Going to old configuration')
+    logger.critical('do_addServiceNodes: Failed to request new nodes. Needed %d' % (len(proxyNodesNew + webNodesNew + phpNodesNew)))
+    _state_set(S_RUNNING, msg='Failed to request new nodes. Reverting to old configuration')
     return
+  finally:
+    adapting_set_count(0)
   
-  # update mappings after waiting for all nodes (wait for IPs)
-  wait_for_nodes(node_instances)
   i = 0
   for kwargs in proxyNodesNew + webNodesNew + phpNodesNew:
     config.serviceNodes[node_instances[i]['id']] = ServiceNode(node_instances[i]['id'], **kwargs)
@@ -505,6 +544,7 @@ def do_addServiceNodes(config, proxy, web, php):
   
   _state_set(S_RUNNING)
   _configuration_set(config)
+  memcache.set('nodes_additional', [])
 
 @expose('POST')
 def removeServiceNodes(kwargs):
@@ -650,7 +690,7 @@ def do_removeServiceNodes(config, proxy, web, php):
   for i in config.serviceNodes.values():
     if not i.isRunningPHP and not i.isRunningWeb and not i.isRunningProxy:
       del config.serviceNodes[i.vmid]
-      iaas.killInstance(i.vmid)
+      kill_nodesById([i.vmid])
   
   config.web_count = len(config.getWebServiceNodes())
   config.php_count = len(config.getPHPServiceNodes())
@@ -889,6 +929,17 @@ def getLog(kwargs):
 def getStateChanges(kwargs):
   return {'opState': 'OK', 'state_log': state_log}
 
+@expose('GET')
+def getSummerSchool(kwargs):
+  pac = memcache.get_multi([DEPLOYMENT_STATE, CONFIG, 'adapting_count', 'nodes_additional'])
+  ret = [pac[DEPLOYMENT_STATE], len(pac[CONFIG].serviceNodes)]
+  if 'adapting_count' in pac: ret += [pac['adapting_count']]
+  else: ret += [0]
+  nodes = [ i.vmid for i in pac[CONFIG].serviceNodes.values() ]
+  if 'nodes_additional' in pac: nodes += pac['nodes_additional']
+  ret += [str(nodes)]
+  return ret
+
 def createInitialCodeVersion():
   config = _configuration_get()
   if not os.path.exists(code_repo):
@@ -905,7 +956,7 @@ def createInitialCodeVersion():
 </body>
 </html>''')
   fd.close()
-  os.chmod(path, stat.S_IROTH | stat.S_IXOTH)
+  os.chmod(path, stat.S_IRWXU | stat.S_IROTH | stat.S_IXOTH)
   
   if len(config.codeVersions) > 0: return
   tfile = tarfile.TarFile(name=os.path.join(code_repo,'code-default'), mode='w')

@@ -11,14 +11,25 @@ from os import mkdir
 from os.path import join
 from threading import Thread
 
-from conpaas.test.mock import agentClient
-from conpaas.test.mock.iaas import IaaSClient
+from mock import agentClient
+from mock.iaas import IaaSClient
 from optparse import OptionParser
 from ConfigParser import ConfigParser
 
+
+parser = OptionParser()
+parser.add_option('-p', '--port', type='int', dest='port', default=None)
+parser.add_option('-m', '--memcacheport', type='int', dest='mc', default=None)
+parser.add_option('-l', '--logfile', type='string', dest='logfile', default=None)
+opts, args = parser.parse_args()
+
+if not opts.port or not opts.mc or not opts.logfile:
+  parser.print_help()
+  sys.exit(1)
+
 config_parser = ConfigParser()
 config_parser.add_section('manager')
-config_parser.set('manager', 'LOG_FILE', '/var/log/conpaas.log')
+config_parser.set('manager', 'LOG_FILE', opts.logfile)
 
 from conpaas import log
 log.init(config_parser)
@@ -28,15 +39,6 @@ from conpaas.web.manager import server, internals
 from conpaas.web.manager.config import Configuration
 server.IaaSClient = IaaSClient
 internals.client = agentClient
-
-parser = OptionParser()
-parser.add_option('-p', type='int', dest='port', default=None)
-parser.add_option('-m', type='int', dest='mc', default=None)
-opts, args = parser.parse_args()
-
-if not opts.port or not opts.mc:
-  parser.print_help()
-  sys.exit(1)
 
 mc = memcache.Client(['localhost:'+str(opts.mc)])
 mc.set(internals.CONFIG, Configuration())

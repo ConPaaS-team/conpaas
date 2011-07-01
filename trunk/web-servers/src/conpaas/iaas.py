@@ -5,6 +5,7 @@ Created on Jan 21, 2011
 '''
 
 import urlparse
+from string import Template
 
 from libcloud.types import Provider, NodeState
 from libcloud.providers import get_driver
@@ -57,12 +58,24 @@ class IaaSClient:
     
     if not iaas_config.has_option('iaas', 'EC2_SECURITY_GROUP_NAME'): raise Exception('Configuration error: [iaas] EC2_SECURITY_GROUP_NAME not set')
     if not iaas_config.has_option('iaas', 'EC2_KEY_NAME'): raise Exception('Configuration error: [iaas] EC2_KEY_NAME not set')
+    if not iaas_config.has_option('iaas', 'EC2_AGENT_USERDATA'): raise Exception('Configuration error: [iaas] EC2_AGENT_USERDATA not set')
     
     self.username = iaas_config.get('iaas', 'EC2_USER')
     self.password = iaas_config.get('iaas', 'EC2_PASSWORD')
     
     self.ec2_ex_securitygroup = iaas_config.get('iaas', 'EC2_SECURITY_GROUP_NAME')
     self.ec2_ex_keyname = iaas_config.get('iaas', 'EC2_KEY_NAME')
+    
+    fd = open(iaas_config.get('iaas', 'EC2_AGENT_USERDATA'), 'r')
+    self.ec2_ex_agent_userdata = ''
+    buf = fd.read()
+    while len(buf) != 0:
+      self.ec2_ex_agent_userdata += buf
+      buf = fd.read()
+    fd.close()
+    
+    self.ec2_ex_agent_userdata = Template(self.ec2_ex_agent_userdata).substitute(SOURCE=self.bootstrap)
+    print self.ec2_ex_agent_userdata
     
     self.img_id = iaas_config.get('iaas', 'EC2_IMAGE_ID')
     self.size_id = iaas_config.get('iaas', 'EC2_SIZE_ID')
@@ -79,6 +92,7 @@ class IaaSClient:
       self.__config_ec2(iaas_config)
   
   def __init__(self, iaas_config):
+    self.bootstrap = iaas_config.get('manager', 'BOOTSTRAP')
     self.__setdriver(iaas_config)
   
   def listVMs(self):
@@ -94,34 +108,38 @@ class IaaSClient:
   def getVMInfo(self, vm_id):
     return self.listVMs()[vm_id]
   
-  def newInstance(self):
+  def newInstances(self, count):
     size = [ i for i in self.driver.list_sizes() if i.id == self.size_id ][0]
     img = NodeImage(self.img_id, '', None)
     kwargs = {'size': size,
               'image': img
               }
+    nodes = []
     if isinstance(self.driver, OpenNebulaNodeDriver):
       kwargs['ex_network_id'] = self.on_ex_network_id
       kwargs['ex_network_gateawy'] = self.on_ex_network_gateawy
+      
+      for _ in count:
+        node = self.driver.create_node(name='conpaas', **kwargs)
+        nodes.append({'id': node.id,
+                      'state': node.state,
+                      'name': node.name,
+                      'ip': node.public_ip[0]})
     if isinstance(self.driver, EC2NodeDriver):
+      kwargs['ex_mincount'] = str(count)
+      kwargs['ex_maxcount'] = str(count)
       kwargs['ex_securitygroup'] = self.ec2_ex_securitygroup
       kwargs['ex_keyname'] = self.ec2_ex_keyname
-      kwargs['ex_userdata'] = '''#!/bin/bash
-wget -P /root/ http://hppc644.few.vu.nl/contrail/ConPaaSWeb.tar.gz
-wget -P /root/ http://hppc644.few.vu.nl/contrail/agent-start
-wget -P /root/ http://hppc644.few.vu.nl/contrail/agent-stop
-
-chmod 755 /root/agent-start
-chmod 755 /root/agent-stop
-
-/root/agent-start
-'''
-    
-    node = self.driver.create_node(name='conpaas', **kwargs)
-    return {'id': node.id,
-        'state': node.state,
-        'name': node.name,
-        'ip': node.public_ip[0]}
+      kwargs['ex_userdata'] = self.ec2_ex_agent_userdata
+      instances = self.driver.create_node(name='conpaas', **kwargs)
+      if count == 1: instances = [instances]
+      for node in instances:
+        nodes.append({'id': node.id,
+                      'state': node.state,
+                      'name': node.name,
+                      'ip': node.public_ip[0]})
+    return nodes
+  
   
   def killInstance(self, vm_id):
     nodes = self.driver.list_nodes()

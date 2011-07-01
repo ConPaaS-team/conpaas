@@ -10,6 +10,15 @@ from os import remove, mkdir, chmod
 from shutil import rmtree
 from tempfile import mkdtemp
 
+from ConfigParser import ConfigParser
+
+config_parser = ConfigParser()
+config_parser.add_section('manager')
+config_parser.set('manager', 'LOG_FILE', '/tmp/conpaas-unittest.log')
+
+from conpaas import log
+log.init(config_parser)
+
 from conpaas.web.agent.server import AgentServer
 from conpaas.web.agent.internals import webserver_file, httpproxy_file, php_file
 from conpaas.web.agent.client import createWebServer, updateWebServer, stopWebServer, getWebServerState,\
@@ -24,7 +33,7 @@ class TestAgentServer(unittest.TestCase):
     self.proxy_port = 5700
     self.php_port = 5800
     self.dir = mkdtemp(prefix='conpaas-web-agent', dir='/tmp')
-    chmod(self.dir, stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+    chmod(self.dir, stat.S_IRWXU | stat.S_IROTH | stat.S_IXOTH)
     self.www_dir = join(self.dir, 'www')
     self.code_version1 = 'MYVERSION1'
     self.code_version2 = 'MYVERSION2'
@@ -74,7 +83,7 @@ class TestAgentServer(unittest.TestCase):
   def test_proxyUpdateCodeVersion(self):
     host = 'localhost'
     port = self.agent_port
-    self.assertTrue(createPHP(host, port, self.php_port, {}))
+    self.assertTrue(createPHP(host, port, self.php_port, '', {}))
     self.assertTrue(createWebServer(host, port, self.www_dir, self.web_port, [['127.0.0.1', self.php_port]]))
     self.assertTrue(createHttpProxy(host, port, self.proxy_port, [['127.0.0.1', self.web_port]], self.code_version1))
     
@@ -94,7 +103,7 @@ class TestAgentServer(unittest.TestCase):
   def test_webUsesCodeVersion(self):
     host = 'localhost'
     port = self.agent_port
-    self.assertTrue(createPHP(host, port, self.php_port, {}))
+    self.assertTrue(createPHP(host, port, self.php_port, '', {}))
     self.assertTrue(createWebServer(host, port, self.www_dir, self.web_port, [['127.0.0.1', self.php_port]]))
     
     request1 = urllib2.Request('http://localhost:' + str(self.web_port), headers={'conpaasversion': self.code_version1})
@@ -116,7 +125,7 @@ class TestAgentServer(unittest.TestCase):
   def test_phpConfiguration(self):
     host = 'localhost'
     port = self.agent_port
-    self.assertTrue(createPHP(host, port, self.php_port, {'max_file_uploads': '10', 'file_uploads': '1'}))
+    self.assertTrue(createPHP(host, port, self.php_port, '', {'max_file_uploads': '10', 'file_uploads': '1'}))
     self.assertTrue(createWebServer(host, port, self.www_dir, self.web_port, [['127.0.0.1', self.php_port]]))
     self.assertTrue(createHttpProxy(host, port, self.proxy_port, [['127.0.0.1', self.web_port]], self.code_version1))
     
@@ -130,7 +139,7 @@ class TestAgentServer(unittest.TestCase):
     self.assertEqual(r.read(), 'XX 1 10 YY')
     r.close()
     
-    self.assertTrue(updatePHP(host, port, self.php_port, {'max_file_uploads': '7', 'file_uploads': '0'}))
+    self.assertTrue(updatePHP(host, port, self.php_port, '', {'max_file_uploads': '7', 'file_uploads': '0'}))
     time.sleep(5)
     
     r = urllib2.urlopen('http://127.0.0.1:' + str(self.proxy_port) + '/index.php')

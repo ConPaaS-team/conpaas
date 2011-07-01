@@ -67,9 +67,9 @@ class AbstractRequestHandler(BaseHTTPRequestHandler):
   
   def _dispatch(self, method, params):
     if 'action' not in params:
-      self.send_custom_response(httplib.BAD_REQUEST, 'Did not specify "action"')
+      self.send_action_missing(method, params)
     elif params['action'] not in self.server.callback_dict[method]:
-      self.send_custom_response(httplib.NOT_FOUND, 'action not found')
+      self.send_action_not_found(method, params)
     else:
       callback_name = params['action']
       del params['action']
@@ -100,6 +100,12 @@ class AbstractRequestHandler(BaseHTTPRequestHandler):
     while fd.tell() != stat.st_size:
       print >>self.wfile, fd.read(),
     fd.close()
+  
+  def send_action_missing(self, method, params):
+    self.send_custom_response(httplib.BAD_REQUEST, 'Did not specify "action"')
+  
+  def send_action_not_found(self, method, params):
+    self.send_custom_response(httplib.NOT_FOUND, 'action not found')
   
   def log_message(self, format, *args):
     '''Override logging to disable it.'''

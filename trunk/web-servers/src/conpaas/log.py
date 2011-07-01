@@ -30,5 +30,6 @@ def init(config_parser):
   handlers = []
   loggers = []
   file_handler = logging.FileHandler(config_parser.get('manager', 'LOG_FILE'))
+  file_handler.setFormatter(log_formatter)
   handlers.append(file_handler)
 

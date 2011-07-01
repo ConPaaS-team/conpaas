@@ -1,0 +1,10 @@
+#!/bin/bash
+
+wget -P /root/ $SOURCE/ConPaaSWeb.tar.gz
+wget -P /root/ $SOURCE/agent-start
+wget -P /root/ $SOURCE/agent-stop
+
+chmod 755 /root/agent-start
+chmod 755 /root/agent-stop
+
+/root/agent-start
