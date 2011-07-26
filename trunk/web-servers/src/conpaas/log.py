@@ -32,4 +32,9 @@ def init(config_parser):
   file_handler = logging.FileHandler(config_parser.get('manager', 'LOG_FILE'))
   file_handler.setFormatter(log_formatter)
   handlers.append(file_handler)
+  
+#  import sys
+#  err_handler = logging.StreamHandler(sys.stderr)
+#  err_handler.setFormatter(log_formatter)
+#  handlers.append(err_handler)
 

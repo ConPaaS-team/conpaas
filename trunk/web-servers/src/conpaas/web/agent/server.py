@@ -18,24 +18,12 @@ class AgentServer(HTTPServer, ThreadingMixIn):
     config_parser.add_section('manager')
     config_parser.set('manager', 'LOG_FILE', '/var/log/conpaas.log')
     log.init(config_parser)
-    self.callback_dict = {'GET': {}, 'POST': {}}
+    self.callback_dict = {'GET': {}, 'POST': {}, 'UPLOAD': {}}
     
     from conpaas.web.agent import internals
     for http_method in internals.exposed_functions:
       for func_name in internals.exposed_functions[http_method]:
-        # print 'Going to register ', http_method, func_name
         self.register_method(http_method, func_name, getattr(internals, func_name))
   
   def register_method(self, http_method, func_name, callback):
     self.callback_dict[http_method][func_name] = callback
-
-
-if __name__ == '__main__':
-  from optparse import OptionParser
-  parser = OptionParser()
-  parser.add_option('-p', '--port', type='int', default=5555, dest='port')
-  parser.add_option('-b', '--bind', type='string', default='0.0.0.0', dest='address')
-  options, args = parser.parse_args()
-  print options.address, options.port
-  a = AgentServer((options.address, options.port))
-  a.serve_forever()

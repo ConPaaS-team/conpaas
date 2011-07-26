@@ -21,8 +21,8 @@ def verify_ip_or_domain(ip):
     raise TypeError('IP is should be a string')
   try:
     socket.gethostbyname(ip)
-  except:
-    raise ValueError('Invalid IP string')
+  except Exception as e:
+    raise ValueError('Invalid IP string "%s" -- %s' % (ip, e))
 
 def verify_ip_port_list(l):
   '''Check l is a list of [IP, PORT]. Raise appropriate Error if invalid types
@@ -35,18 +35,6 @@ def verify_ip_port_list(l):
       raise TypeError('List should contain IP,PORT values')
     verify_ip_or_domain(pair[0])
     verify_port(pair[1])
-
-zip = ['.zip']
-tar = ['.tar', '.tar.gz', '.tar.bz2']
-
-def archive_supported_extensions():
-  return tar + zip
-
-def archive_supported_name(name):
-  for ext in tar + zip:
-    if name.endswith(ext):
-      return True
-  return False
 
 def archive_get_type(name):
   if tarfile.is_tarfile(name):

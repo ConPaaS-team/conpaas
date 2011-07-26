@@ -4,163 +4,171 @@ Created on Mar 9, 2011
 @author: ielhelw
 '''
 
-from conpaas.web.http import _http_get, _http_post
+from conpaas.web.http import _jsonrpc_get, _jsonrpc_post, _http_post
 import httplib, json
 
 class AgentException(Exception): pass
 
-def __check_reply(body):
-  try:
-    ret = json.loads(body)
+def _check(response):
+  code, body = response
+  if code != httplib.OK: raise AgentException('Received http response code %d' % (code))
+  try: data = json.loads(body)
   except Exception as e: raise AgentException(*e.args)
-  if not isinstance(ret, dict): raise AgentException('Response not a JSON object', body)
-  if 'opState' not in ret: raise AgentException('Response does not contain "opState"', body)
-  if ret['opState'] != 'OK':
-    if 'ERROR' in ret: raise AgentException(ret['opState'], ret['ERROR'])
-    else: raise AgentException(ret['opState'], body)
-  return True
+  if data['error']: raise AgentException(data['error'])
+  else: return True
 
 def getWebServerState(host, port):
-  params = {'action': 'getWebServerState'}
-  code, body = _http_get(host, port, '/', params=params)
-  if code != httplib.OK: raise Exception('Received http response code %d' % (code))
-  return __check_reply(body)
+  method = 'getWebServerState'
+  return _check(_jsonrpc_get(host, port, '/', method))
 
-def createWebServer(host, port, doc_root, web_port, php):
+def createWebServer(host, port, doc_root, web_port, codeVersion, php, prevCodeVersion=None):
+  method = 'createWebServer'
   params = {
-    'action': 'createWebServer',
     'doc_root': doc_root,
     'port': web_port,
+    'codeVersion': codeVersion,
+    'backends': php,
   }
-  i = 0
-  for pair in php:
-    params['php.%d.ip' % i], params['php.%d.port' % i] = pair
-    i += 1
-  code, body = _http_post(host, port, '/', params=params)
-  if code != httplib.OK: raise Exception('Received http response code %d' % (code))
-  return __check_reply(body)
+  if prevCodeVersion:
+    params['prevCodeVersion'] = prevCodeVersion;
+  return _check(_jsonrpc_post(host, port, '/', method, params=params))
 
-def updateWebServer(host, port, doc_root, web_port, php):
+def updateWebServer(host, port, doc_root, web_port, codeVersion, php, prevCodeVersion=None):
+  method = 'updateWebServer'
   params = {
-    'action': 'updateWebServer',
     'doc_root': doc_root,
     'port': web_port,
+    'codeVersion': codeVersion,
+    'backends': php,
   }
-  i = 0
-  for pair in php:
-    params['php.%d.ip' % i], params['php.%d.port' % i] = pair
-    i += 1
-  code, body = _http_post(host, port, '/', params=params)
-  if code != httplib.OK: raise Exception('Received http response code %d' % (code))
-  return __check_reply(body)
+  if prevCodeVersion:
+    params['prevCodeVersion'] = prevCodeVersion;
+  return _check(_jsonrpc_post(host, port, '/', method, params=params))
 
 def stopWebServer(host, port):
-  params = {'action': 'stopWebServer'}
-  code, body = _http_post(host, port, '/', params=params)
-  if code != httplib.OK: raise Exception('Received http response code %d' % (code))
-  return __check_reply(body)
+  method = 'stopWebServer'
+  return _check(_jsonrpc_post(host, port, '/', method))
+
+def getTomcatWebServerState(host, port):
+  method = 'getTomcatWebServerState'
+  return _check(_jsonrpc_get(host, port, '/', method))
+
+def createTomcatWebServer(host, port, doc_root, web_port, php, codeCurrent,
+               servletsCurrent, codeOld=None, servletsOld=[]):
+  method = 'createTomcatWebServer'
+  params = {
+    'doc_root': doc_root,
+    'port': web_port,
+    'backends': php,
+    'codeCurrent': codeCurrent,
+    'servletsCurrent': servletsCurrent,
+  }
+  if codeOld:
+    params['codeOld'] = codeOld
+    params['servletsOld'] = servletsOld
+  return _check(_jsonrpc_post(host, port, '/', method, params=params))
+
+def updateTomcatWebServer(host, port, doc_root, web_port, php, codeCurrent,
+               servletsCurrent, codeOld=None, servletsOld=[]):
+  method = 'updateTomcatWebServer'
+  params = {
+    'doc_root': doc_root,
+    'port': web_port,
+    'backends': php,
+    'codeCurrent': codeCurrent,
+    'servletsCurrent': servletsCurrent,
+  }
+  if codeOld:
+    params['codeOld'] = codeOld
+    params['servletsOld'] = servletsOld
+  return _check(_jsonrpc_post(host, port, '/', method, params=params))
+
+def stopTomcatWebServer(host, port):
+  method = 'stopTomcatWebServer'
+  return _check(_jsonrpc_post(host, port, '/', method))
 
 def getHttpProxyState(host, port):
-  params = {'action': 'getHttpProxyState'}
-  code, body = _http_get(host, port, '/', params=params)
-  if code != httplib.OK: raise Exception('Received http response code %d' % (code))
-  return __check_reply(body)
+  method = 'getHttpProxyState'
+  return _check(_jsonrpc_get(host, port, '/', method))
 
 def createHttpProxy(host, port, proxy_port, backends, codeversion):
+  method = 'createHttpProxy'
   params = {
-    'action': 'createHttpProxy',
     'port': proxy_port,
     'codeversion': codeversion,
+    'backends': backends,
   }
-  i = 0
-  for pair in backends:
-    params['backends.%d.ip' % i], params['backends.%d.port' % i] = pair
-    i += 1
-  code, body = _http_post(host, port, '/', params=params)
-  if code != httplib.OK: raise Exception('Received http response code %d' % (code))
-  return __check_reply(body)
+  return _check(_jsonrpc_post(host, port, '/', method, params=params))
 
 def updateHttpProxy(host, port, proxy_port, backends, codeversion):
+  method = 'updateHttpProxy'
   params = {
-    'action': 'updateHttpProxy',
     'port': proxy_port,
     'codeversion': codeversion,
+    'backends': backends,
   }
-  i = 0
-  for pair in backends:
-    params['backends.%d.ip' % i], params['backends.%d.port' % i] = pair
-    i += 1
-  code, body = _http_post(host, port, '/', params=params)
-  if code != httplib.OK: raise Exception('Received http response code %d' % (code))
-  return __check_reply(body)
+  return _check(_jsonrpc_post(host, port, '/', method, params=params))
 
 def stopHttpProxy(host, port):
-  params = {'action': 'stopHttpProxy'}
-  code, body = _http_post(host, port, '/', params=params)
-  if code != httplib.OK: raise Exception('Received http response code %d' % (code))
-  return __check_reply(body)
+  method = 'stopHttpProxy'
+  return _check(_jsonrpc_post(host, port, '/', method))
 
 def getPHPState(host, port):
-  params = {'action': 'getPHPState'}
-  code, body = _http_get(host, port, '/', params=params)
-  if code != httplib.OK: raise Exception('Received http response code %d' % (code))
-  return __check_reply(body)
+  method = 'getPHPState'
+  return _check(_jsonrpc_get(host, port, '/', method))
 
 def createPHP(host, port, php_port, scalaris, php_conf):
+  method = 'createPHP'
   params = {
-    'action': 'createPHP',
     'port': php_port,
     'scalaris': scalaris,
+    'configuration': php_conf,
   }
-  
-  i = 0
-  for key in php_conf:
-    params['configuration.%d.key' % (i)] = key
-    params['configuration.%d.value' % (i)] = php_conf[key]
-    i += 1
-  
-  code, body = _http_post(host, port, '/', params=params)
-  if code != httplib.OK: raise Exception('Received http response code %d' % (code))
-  return __check_reply(body)
+  return _check(_jsonrpc_post(host, port, '/', method, params=params))
 
 def updatePHP(host, port, php_port, scalaris, php_conf):
+  method = 'updatePHP'
   params = {
-    'action': 'updatePHP',
     'port': php_port,
     'scalaris': scalaris,
+    'configuration': php_conf
   }
-  
-  i = 0
-  for key in php_conf:
-    params['configuration.%d.key' % (i)] = key
-    params['configuration.%d.value' % (i)] = php_conf[key]
-    i += 1
-  
-  code, body = _http_post(host, port, '/', params=params)
-  if code != httplib.OK: raise Exception('Received http response code %d' % (code))
-  return __check_reply(body)
+  return _check(_jsonrpc_post(host, port, '/', method, params=params))
 
 def stopPHP(host, port):
-  params = {'action': 'stopPHP'}
-  code, body = _http_post(host, port, '/', params=params)
-  if code != httplib.OK: raise Exception('Received http response code %d' % (code))
-  return __check_reply(body)
+  method = 'stopPHP'
+  return _check(_jsonrpc_post(host, port, '/', method))
 
-def updateCode(host, port, codeVersionId, filetype, filepath):
-  params = {'action': 'updateCode',
-            'codeVersionId': codeVersionId,
-            'filetype': filetype}
+def updatePHPCode(host, port, codeVersionId, filetype, filepath):
+  params = {
+    'method': 'updatePHPCode',
+    'codeVersionId': codeVersionId,
+    'filetype': filetype
+  }
   files = {'file': filepath}
-  code, body = _http_post(host, port, '/', params, files)
-  if code != httplib.OK: raise Exception('Received http response code %d' % (code))
-  return __check_reply(body)
+  return _check(_http_post(host, port, '/', params, files=files))
 
-if __name__ == '__main__':
-  host = 'localhost'
-  port = 5555
-#  print getWebServerState(host, port)
-#  print createWebServer(host, port, '/', 5588, [])
-#  print updateWebServer(host, port, '/', 5590, [])
-  print stopWebServer(host, port)
+def getTomcatState(host, port):
+  method = 'getTomcatState'
+  return _check(_jsonrpc_get(host, port, '/', method))
 
+def createTomcat(host, port, tomcat_port):
+  method = 'createTomcat'
+  params = {
+    'tomcat_port': tomcat_port,
+  }
+  return _check(_jsonrpc_post(host, port, '/', method, params=params))
+
+def stopTomcat(host, port):
+  method = 'stopTomcat'
+  return _check(_jsonrpc_post(host, port, '/', method))
+
+def updateTomcatCode(host, port, codeVersionId, filetype, filepath):
+  params = {
+    'method': 'updateTomcatCode',
+    'codeVersionId': codeVersionId,
+    'filetype': filetype
+  }
+  files = {'file': filepath}
+  return _check(_http_post(host, port, '/', params, files=files))
 

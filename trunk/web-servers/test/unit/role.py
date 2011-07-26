@@ -7,51 +7,37 @@ from tempfile import mkdtemp
 from shutil import rmtree
 from socket import gethostbyname
 import unittest, time
-from ConfigParser import ConfigParser
 
-config_parser = ConfigParser()
-config_parser.add_section('manager')
-config_parser.set('manager', 'LOG_FILE', '/tmp/conpaas-unittest.log')
-
-from conpaas import log
-log.init(config_parser)
-from conpaas.web.agent.role import Nginx, NginxProxy, S_RUNNING, S_STOPPED
+from conpaas.web.agent.role import NginxPHP, NginxProxy, S_RUNNING, S_STOPPED
 
 
-class TestNginxValidation(unittest.TestCase):
-  """Input validation tests for Nginx"""
+class NginxValidationTest(unittest.TestCase):
   
-  def test_CreationMissingRequiresParamenter(self):
-    """Nginx Verify handling of missing parameters"""
-    self.assertRaises(TypeError, Nginx)
-    self.assertRaises(TypeError, Nginx, doc_root='/')
-    self.assertRaises(TypeError, Nginx, port=2222)
+  def test_creationMissingRequiredParamenter(self):
+    self.assertRaises(TypeError, NginxPHP)
+    self.assertRaises(TypeError, NginxPHP, doc_root='/')
+    self.assertRaises(TypeError, NginxPHP, port=2222)
   
-  def test_CreationTypeChecks(self):
-    """Nginx Check parameter types"""
-    self.assertRaises(TypeError, Nginx, doc_root=11, port=2222)
-    self.assertRaises(TypeError, Nginx, doc_root='/', port=2222, php='')
-    self.assertRaises(TypeError, Nginx, doc_root='/', port=2222, php=[[]])
-    self.assertRaises(TypeError, Nginx, doc_root='/', port=2222, php=[''])
-    self.assertRaises(TypeError, Nginx, doc_root='/', port=2222, php=[['1.1.1.1', '1111']])
-    self.assertRaises(ValueError, Nginx, doc_root='/', port=2222, php=[['1.1.1.f', 1111]])
+  def test_creationTypeChecks(self):
+    self.assertRaises(TypeError, NginxPHP, doc_root=11, port=2222)
+    self.assertRaises(TypeError, NginxPHP, doc_root='/', port=2222, php='')
+    self.assertRaises(TypeError, NginxPHP, doc_root='/', port=2222, php=[[]])
+    self.assertRaises(TypeError, NginxPHP, doc_root='/', port=2222, php=[''])
+    self.assertRaises(TypeError, NginxPHP, doc_root='/', port=2222, php=[['1.1.1.1', '1111']])
+    self.assertRaises(ValueError, NginxPHP, doc_root='/', port=2222, php=[['1.1.1.f', 1111]])
 
 
-class TestNginxProxyValidation(unittest.TestCase):
-  """Input validation tests for NginxProxy"""
+class NginxProxyValidationTest(unittest.TestCase):
   
-  def test_CreationMissingRequiredParameter(self):
-    """NginxProxy Verify handling of missing parameters"""
+  def test_creationMissingRequiredParameter(self):
     self.assertRaises(TypeError, NginxProxy)
     self.assertRaises(TypeError, NginxProxy, backends=[])
     self.assertRaises(TypeError, NginxProxy, port=2222)
   
-  def test_CreationTypeChecks(self):
-    """NginxProxy Check parameter types"""
+  def test_creationTypeChecks(self):
     self.assertRaises(TypeError, NginxProxy, port=9999, backends='BLAH')
   
-  def test_CreationValueChecks(self):
-    """NginxProxy Check parameter values"""
+  def test_creationValueChecks(self):
     self.assertRaises(ValueError, NginxProxy, backends=[], port=-1)
     self.assertRaises(ValueError, NginxProxy, backends=[], port=65536)
     self.assertRaises(TypeError, NginxProxy, port=9999, backends=[''])
@@ -60,8 +46,7 @@ class TestNginxProxyValidation(unittest.TestCase):
     self.assertRaises(TypeError, NginxProxy, port=9999, backends=[['1.1.1.1', '3333']])
 
 
-class TestNginx(unittest.TestCase):
-  """Simple tests for Nginx"""
+class NginxTest(unittest.TestCase):
   
   def setUp(self):
     '''Create a temporary directory to act as doc_root and place an intial
@@ -94,7 +79,7 @@ class TestNginx(unittest.TestCase):
       return True
   
   def __startNginx(self):
-    w = Nginx(doc_root=self.doc_root, port=self.port)
+    w = NginxPHP(doc_root=self.doc_root, port=self.port)
     self.assertEqual(w.state, S_RUNNING)
     self.assertEqual(w.port, self.port)
     self.assertEqual(w.doc_root, self.doc_root)
@@ -109,12 +94,10 @@ class TestNginx(unittest.TestCase):
     self.assertFalse(self.__performRequest('GET', '/'), 'Web server still running after call to stop()')
   
   def test_runNoFCGI(self):
-    """Nginx Start/Stop"""
     w = self.__startNginx()
     self.__stopNginx(w)
   
   def test_reconfigureNoFCGI(self):
-    """Nginx reconfiguration (change port number)"""
     w = self.__startNginx()
     time.sleep(2)
     w.configure(self.doc_root, port=self.port + 1)
@@ -127,8 +110,7 @@ class TestNginx(unittest.TestCase):
     self.__stopNginx(w)
   
 
-class TestNginxProxy(unittest.TestCase):
-  """Simple tets for NginxProxy"""
+class NginxProxyTest(unittest.TestCase):
   
   def setUp(self):
     self.service_port = 60000
@@ -160,27 +142,21 @@ class TestNginxProxy(unittest.TestCase):
     self.assertEquals(p.status(), {'state': S_STOPPED, 'port': self.port, 'backends': backends})
     self.assertFalse(self.__isAlive(self.port), 'http port is bound after stop()')
   
-  def test_run(self):
-    """NginxProxy Start/Stop"""
+  def test_startStop(self):
     backends = [[gethostbyname('www.example.com'), 80]]
     p = self.__startProxy(backends)
     time.sleep(1)
     self.__stopProxy(p, backends)
   
-  def test_reconfigure(self):
-    """NginxProxy Start/Reconfigure/Stop"""
+  def test_startReconfigureStop(self):
     backends1 = [[gethostbyname('www.example.com'), 80], [gethostbyname('www.cs.vu.nl'), 80], [gethostbyname('www.vu.nl'), 80]]
     backends2 = [[gethostbyname('www.example.com'), 80], [gethostbyname('www.cs.vu.nl'), 80]]
     backends3 = [[gethostbyname('www.vu.nl'), 80]]
     p = self.__startProxy(backends1)
-    
     p.configure(self.port, backends2, codeversion='AAAA')
-    
     # also change port
     self.port = self.port + 2
-    
     p.configure(self.port, backends3, codeversion='AAAA')
-    
     self.__stopProxy(p, backends3)
 
 if __name__ == '__main__':

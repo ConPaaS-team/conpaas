@@ -9,13 +9,27 @@ class AgentException(Exception): pass
 def getWebServerState(host, port):
   return True
 
-def createWebServer(host, port, doc_root, web_port, php):
+def createWebServer(host, port, doc_root, web_port, codeVersion, php, prevCodeVersion=None):
   return True
 
-def updateWebServer(host, port, doc_root, web_port, php):
+def updateWebServer(host, port, doc_root, web_port, codeVersion, php, prevCodeVersion=None):
   return True
 
 def stopWebServer(host, port):
+  return True
+
+def getTomcatWebServerState(host, port):
+  return True
+
+def createTomcatWebServer(host, port, doc_root, web_port, php, codeCurrent,
+               servletsCurrent, codeOld=None, servletsOld=[]):
+  return True
+
+def updateTomcatWebServer(host, port, doc_root, web_port, php, codeCurrent,
+               servletsCurrent, codeOld=None, servletsOld=[]):
+  return True
+
+def stopTomcatWebServer(host, port):
   return True
 
 def getHttpProxyState(host, port):
@@ -42,5 +56,17 @@ def updatePHP(host, port, php_port, scalaris, conf):
 def stopPHP(host, port):
   return True
 
-def updateCode(host, port, codeVersionId, filename, filepath):
+def updatePHPCode(host, port, codeVersionId, filename, filepath):
+  return True
+
+def getTomcatState(host, port):
+  return True
+
+def createTomcat(host, port, tomcat_port):
+  return True
+
+def stopTomcat(host, port):
+  return True
+
+def updateTomcatCode(host, port, codeVersionId, filetype, filepath):
   return True

@@ -2,10 +2,12 @@
 
 # setup and run local agent
 tar -zxf /root/ConPaaSWeb.tar.gz -C /root/
-export PYTHONPATH=/root/ConPaaSWeb/src/
+export PYTHONPATH=/root/ConPaaSWeb/src/:/root/ConPaaSWeb/contrib
 export LD_LIBRARY_PATH=/conpaas/lib
 export PATH=/conpaas/bin:/conpaas/sbin:$PATH
 
-python /root/ConPaaSWeb/src/conpaas/web/agent/server.py 1>/root/agent.out 2>/root/agent.err &
+tar -zxf /root/tomcat-6.tar.gz -C /conpaas/
+
+python /root/ConPaaSWeb/bin/agent.py 1>/root/agent.out 2>/root/agent.err &
 agent_pid=$!
 echo $agent_pid > /root/agent.pid

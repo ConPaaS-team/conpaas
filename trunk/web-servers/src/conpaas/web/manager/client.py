@@ -6,113 +6,92 @@ Created on Mar 29, 2011
 
 import httplib, json
 
-from conpaas.web.http import _http_get, _http_post
+from conpaas.web.http import HttpError, _jsonrpc_get, _jsonrpc_post, _http_post, _http_get
 
-def getState(host, port):
-  params = {'action': 'getState'}
-  code, body = _http_get(host, port, '/', params=params)
-  if code != httplib.OK: raise Exception('Received http response code %d' % (code))
-  return json.loads(body)
+class ClientError(Exception): pass
 
-def getStateChanges(host, port):
-  params = {'action': 'getStateChanges'}
-  code, body = _http_get(host, port, '/', params=params)
-  if code != httplib.OK: raise Exception('Received http response code %d' % (code))
-  return json.loads(body)
+def _check(response):
+  code, body = response
+  if code != httplib.OK: raise HttpError('Received http response code %d' % (code))
+  try: data = json.loads(body)
+  except Exception as e: raise ClientError(*e.args)
+  if data['error']: raise ClientError(data['error'])
+  else: return data['result']
+
+def get_service_info(host, port):
+  method = 'get_service_info'
+  return _check(_jsonrpc_get(host, port, '/', method))
+
+def get_service_history(host, port):
+  method = 'get_service_history'
+  return _check(_jsonrpc_get(host, port, '/', method))
 
 def getLog(host, port):
-  params = {'action': 'getLog'}
-  code, body = _http_get(host, port, '/', params=params)
-  if code != httplib.OK: raise Exception('Received http response code %d' % (code))
-  return json.loads(body)
+  method = 'getLog'
+  return _check(_jsonrpc_get(host, port, '/', method))
 
 def startup(host, port):
-  params = {'action': 'startup'}
-  code, body = _http_post(host, port, '/', params=params)
-  if code != httplib.OK: raise Exception('Received http response code %d' % (code))
-  return json.loads(body)
+  method = 'startup'
+  return _check(_jsonrpc_post(host, port, '/', method))
 
 def shutdown(host, port):
-  params = {'action': 'shutdown'}
-  code, body = _http_post(host, port, '/', params=params)
-  if code != httplib.OK: raise Exception('Received http response code %d' % (code))
-  return json.loads(body)
+  method = 'shutdown'
+  return _check(_jsonrpc_post(host, port, '/', method))
 
-def addServiceNodes(host, port, proxy=None, web=None, php=None):
-  params = {'action': 'addServiceNodes'}
+def add_nodes(host, port, proxy=None, web=None, backend=None):
+  method = 'add_nodes'
+  params = {}
   if proxy: params['proxy'] = proxy
   if web: params['web'] = web
-  if php: params['php'] = php
-  code, body = _http_post(host, port, '/', params=params)
-  if code != httplib.OK: raise Exception('Received http response code %d' % (code))
-  return json.loads(body)
+  if backend: params['backend'] = backend
+  return _check(_jsonrpc_post(host, port, '/', method, params=params))
 
-def removeServiceNodes(host, port, proxy=None, web=None, php=None):
-  params = {'action': 'removeServiceNodes'}
+def remove_nodes(host, port, proxy=None, web=None, backend=None):
+  method = 'remove_nodes'
+  params = {}
   if proxy: params['proxy'] = proxy
   if web: params['web'] = web
-  if php: params['php'] = php
-  code, body = _http_post(host, port, '/', params=params)
-  if code != httplib.OK: raise Exception('Received http response code %d' % (code))
-  return json.loads(body)
+  if backend: params['backend'] = backend
+  return _check(_jsonrpc_post(host, port, '/', method, params=params))
 
-def listServiceNodes(host, port):
-  params = {'action': 'listServiceNodes'}
-  code, body = _http_get(host, port, '/', params=params)
-  if code != httplib.OK: raise Exception('Received http response code %d' % (code))
-  return json.loads(body)
+def list_nodes(host, port):
+  method = 'list_nodes'
+  return _check(_jsonrpc_get(host, port, '/', method))
 
-def getServiceNodeById(host, port, serviceNodeId):
-  params = {
-            'action': 'getServiceNodeById',
-            'serviceNodeId': serviceNodeId,
-            }
-  code, body = _http_get(host, port, '/', params=params)
-  if code != httplib.OK: raise Exception('Received http response code %d' % (code))
-  return json.loads(body)
+def get_node_info(host, port, serviceNodeId):
+  method = 'get_node_info'
+  params = {'serviceNodeId': serviceNodeId}
+  return _check(_jsonrpc_get(host, port, '/', method, params=params))
 
-def listCodeVersions(host, port):
-  params = {'action': 'listCodeVersions'}
-  code, body = _http_get(host, port, '/', params=params)
-  if code != httplib.OK: raise Exception('Received http response code %d' % (code))
-  return json.loads(body)
+def list_code_versions(host, port):
+  method = 'list_code_versions'
+  return _check(_jsonrpc_get(host, port, '/', method))
 
-def downloadCodeVersion(host, port, codeVersionId):
-  params = {
-            'action': 'downloadCodeVersion',
-            'codeVersionId': codeVersionId,
-            }
-  code, body = _http_get(host, port, '/', params=params)
-  if code != httplib.OK: raise Exception('Received http response code %d' % (code))
-  return body
-
-def uploadCodeVersion(host, port, filename):
-  params = {'action': 'uploadCodeVersion'}
+def upload_code_version(host, port, filename):
+  params = {'method': 'upload_code_version'}
   files = {'code': filename}
-  code, body = _http_post(host, port, '/', params=params, files=files)
-  if code != httplib.OK: raise Exception('Received http response code %d' % (code))
-  return json.loads(body)
+  return _check(_http_post(host, port, '/', params, files=files))
 
-def getConfiguration(host, port):
-  params = {'action': 'getConfiguration'}
-  code, body = _http_get(host, port, '/', params=params)
-  if code != httplib.OK: raise Exception('Received http response code %d' % (code))
-  return json.loads(body)
+def get_configuration(host, port):
+  method = 'get_configuration'
+  return _check(_jsonrpc_get(host, port, '/', method))
 
-def updateConfiguration(host, port, codeVersionId=None, phpconf={}):
-  params = {'action': 'updateConfiguration'}
+def update_php_configuration(host, port, codeVersionId=None, phpconf={}):
+  method = 'update_php_configuration'
+  params = {}
   if codeVersionId != None:
     params['codeVersionId'] = codeVersionId
   i = 0
   for key in phpconf:
     params['phpconf.%s' % key] = phpconf[key]
     i += 1
-  code, body = _http_post(host, port, '/', params=params)
-  if code != httplib.OK: raise Exception('Received http response code %d' % (code))
-  return json.loads(body)
+  return _check(_jsonrpc_post(host, port, '/', method, params=params))
 
-def getHighLevelMonitoring(host, port):
-  params = {'action': 'getHighLevelMonitoring'}
-  code, body = _http_get(host, port, '/', params=params)
-  if code != httplib.OK: raise Exception('Received http response code %d' % (code))
-  return json.loads(body)
+def update_java_configuration(host, port, codeVersionId):
+  method = 'update_java_configuration'
+  params = {'codeVersionId': codeVersionId}
+  return _check(_jsonrpc_post(host, port, '/', method, params=params))
+
+def get_service_performance(host, port):
+  method = 'get_service_performance'
+  return _check(_jsonrpc_get(host, port, '/', method))

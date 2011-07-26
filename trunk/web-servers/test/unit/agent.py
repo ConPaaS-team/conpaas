@@ -10,23 +10,12 @@ from os import remove, mkdir, chmod
 from shutil import rmtree
 from tempfile import mkdtemp
 
-from ConfigParser import ConfigParser
-
-config_parser = ConfigParser()
-config_parser.add_section('manager')
-config_parser.set('manager', 'LOG_FILE', '/tmp/conpaas-unittest.log')
-
-from conpaas import log
-log.init(config_parser)
-
 from conpaas.web.agent.server import AgentServer
 from conpaas.web.agent.internals import webserver_file, httpproxy_file, php_file
 from conpaas.web.agent.client import createWebServer, updateWebServer, stopWebServer, getWebServerState,\
   createPHP, createHttpProxy, stopPHP, stopHttpProxy, updateHttpProxy, updatePHP
 
-class TestAgentServer(unittest.TestCase):
-  """AgentServer tests"""
-  
+class AgentServerTest(unittest.TestCase):
   def setUp(self):
     self.agent_port = 5500
     self.web_port = 5600
@@ -84,7 +73,7 @@ class TestAgentServer(unittest.TestCase):
     host = 'localhost'
     port = self.agent_port
     self.assertTrue(createPHP(host, port, self.php_port, '', {}))
-    self.assertTrue(createWebServer(host, port, self.www_dir, self.web_port, [['127.0.0.1', self.php_port]]))
+    self.assertTrue(createWebServer(host, port, self.www_dir, self.web_port, self.code_version1, [['127.0.0.1', self.php_port]], self.code_version2))
     self.assertTrue(createHttpProxy(host, port, self.proxy_port, [['127.0.0.1', self.web_port]], self.code_version1))
     
     time.sleep(5)
@@ -104,10 +93,16 @@ class TestAgentServer(unittest.TestCase):
     host = 'localhost'
     port = self.agent_port
     self.assertTrue(createPHP(host, port, self.php_port, '', {}))
-    self.assertTrue(createWebServer(host, port, self.www_dir, self.web_port, [['127.0.0.1', self.php_port]]))
+    self.assertTrue(createWebServer(host, port, self.www_dir, self.web_port, self.code_version1, [['127.0.0.1', self.php_port]], self.code_version2))
     
-    request1 = urllib2.Request('http://localhost:' + str(self.web_port), headers={'conpaasversion': self.code_version1})
-    request2 = urllib2.Request('http://localhost:' + str(self.web_port), headers={'conpaasversion': self.code_version2})
+    request1 = urllib2.Request('http://localhost:' + str(self.web_port),
+                               headers={'host': self.code_version1,
+                                        'conpaasversion': self.code_version1,
+                                        'conpaashost': 'localhost'})
+    request2 = urllib2.Request('http://localhost:' + str(self.web_port),
+                               headers={'host': self.code_version2,
+                                        'conpaasversion': self.code_version2,
+                                        'conpaashost': 'localhost'})
     
     r = urllib2.urlopen(request1)
     self.assertEqual(r.read(), 'MY FIRST INDEX')
@@ -126,7 +121,7 @@ class TestAgentServer(unittest.TestCase):
     host = 'localhost'
     port = self.agent_port
     self.assertTrue(createPHP(host, port, self.php_port, '', {'max_file_uploads': '10', 'file_uploads': '1'}))
-    self.assertTrue(createWebServer(host, port, self.www_dir, self.web_port, [['127.0.0.1', self.php_port]]))
+    self.assertTrue(createWebServer(host, port, self.www_dir, self.web_port, self.code_version1, [['127.0.0.1', self.php_port]]))
     self.assertTrue(createHttpProxy(host, port, self.proxy_port, [['127.0.0.1', self.web_port]], self.code_version1))
     
     time.sleep(5)

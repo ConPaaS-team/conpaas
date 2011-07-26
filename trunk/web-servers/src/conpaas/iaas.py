@@ -75,7 +75,6 @@ class IaaSClient:
     fd.close()
     
     self.ec2_ex_agent_userdata = Template(self.ec2_ex_agent_userdata).substitute(SOURCE=self.bootstrap)
-    print self.ec2_ex_agent_userdata
     
     self.img_id = iaas_config.get('iaas', 'EC2_IMAGE_ID')
     self.size_id = iaas_config.get('iaas', 'EC2_SIZE_ID')

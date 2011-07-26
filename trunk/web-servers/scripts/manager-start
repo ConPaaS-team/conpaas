@@ -8,7 +8,6 @@ export PATH=/conpaas/bin:/conpaas/sbin:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/
 /etc/init.d/memcached start
 scalarisctl -d -f -s start
 
-python /root/ConPaaSWeb/src/deployment_config.py -c /root/config.cfg
-python /root/ConPaaSWeb/src/conpaas/web/manager/server.py -p 80 -c /root/config.cfg -s $PUBLIC_IP 1>/root/manager.out 2>/root/manager.err &
+python /root/ConPaaSWeb/bin/manager.py -p 80 -c /root/config.cfg -s $PUBLIC_IP 1>/root/manager.out 2>/root/manager.err &
 manager_pid=$!
 echo $manager_pid > /root/manager.pid

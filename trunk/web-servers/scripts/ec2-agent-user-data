@@ -3,6 +3,7 @@
 wget -P /root/ $SOURCE/ConPaaSWeb.tar.gz
 wget -P /root/ $SOURCE/agent-start
 wget -P /root/ $SOURCE/agent-stop
+wget -P /root/ $SOURCE/tomcat-6.tar.gz
 
 chmod 755 /root/agent-start
 chmod 755 /root/agent-stop

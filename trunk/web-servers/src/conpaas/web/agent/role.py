@@ -105,9 +105,17 @@ class BaseWebServer:
     'doc_root': self.doc_root,
     'port': self.port,
     'php': self.php}
+  
+  def _get_upstream(self, backends):
+    upstream = ''
+    if backends:
+      upstream = 'upstream backend {\n'
+      for f in backends:
+        upstream += 'server %s:%d;\n' % (f[0], f[1])
+      upstream += '}\n'
+    return upstream
 
-
-class Nginx(BaseWebServer):
+class NginxPHP(BaseWebServer):
   CONF_TEMPLATE = '''
 user ${USER};
 worker_processes  1;
@@ -132,56 +140,72 @@ http {
   gzip_disable "MSIE [1-6]\.(?!.*SV1)";
 
 ${FCGI}
-  
+${SERVERS}
   server {
-    listen       ${PORT} default;
-    root           ${DOC_ROOT}/$$http_conpaasversion;
-    server_name  localhost;
+    listen ${PORT} default;
     port_in_redirect off;
-    
-    if ( $$document_root = '${DOC_ROOT}/' ) {
+    location / {
       return 404;
     }
-    
+  }
+}
+  '''
+  CONF_SERVER_TEMPLATE = '''
+  server {
+    listen       ${PORT};
+    root         ${DOC_ROOT}/${CODE_VERSION};
+    server_name  ${CODE_VERSION};
+    port_in_redirect off;
     location    / {
       index         index.html index.htm index.php;
     }
-    ${PHP_HANDLER}
+    location ~ \.php$$ {
+      include        /conpaas/etc/nginx/fastcgi_params;
+      fastcgi_param  SCRIPT_FILENAME $$document_root$$fastcgi_script_name;
+      fastcgi_param  SERVER_NAME $$http_conpaashost;
+      fastcgi_pass   backend;
+    }
   }
-}
   '''
   
   cmd = '/conpaas/sbin/nginx'
   
-  def __init__(self, doc_root=None, port=None, php=None):
-    BaseWebServer.__init__(self, doc_root, port, php, SIGINT)
+  def __init__(self, doc_root=None, port=None, codeVersion=None, php=None, prevCodeVersion=None):
+    self.state = S_INIT
+    self.restart_count = 0
+    self.configure(doc_root, port, codeVersion, php, prevCodeVersion)
+    self.start()
+    self.stop_sig = SIGINT
   
   def _write_config(self):
     '''Write configuration file.'''
-    fcgi_conf = ''
-    php_handler = ''
     if self.php:
-      fcgi_conf = 'upstream backend {\n'
-      for f in self.php:
-        fcgi_conf += 'server %s:%d;\n' % (f[0], f[1])
-      fcgi_conf += '}\n'
-      php_handler = '''
-      location ~ \.php$ {
-      include         /conpaas/etc/nginx/fastcgi_params;
-      fastcgi_param  SCRIPT_FILENAME $document_root$fastcgi_script_name;
-      fastcgi_pass    backend;
-    }'''
+      fcgi_conf = self._get_upstream(self.php)
+      servers_template = Template(self.CONF_SERVER_TEMPLATE)
+      servers = servers_template.substitute(DOC_ROOT=self.doc_root,
+                                            CODE_VERSION=self.codeVersion,
+                                            PORT=self.port)
+      if self.prevCodeVersion:
+        servers += servers_template.substitute(DOC_ROOT=self.doc_root,
+                                            CODE_VERSION=self.prevCodeVersion,
+                                            PORT=self.port)
+    else:
+      fcgi_conf = ''
+      servers = ''
     
     template = Template(self.CONF_TEMPLATE)
     conf_fd = open(self.config_file, 'w')
-    conf_fd.write(template.substitute(DOC_ROOT=self.doc_root,
-                        ACCESS_LOG=self.access_log, ERROR_LOG=self.error_log,
-                        PID_FILE=self._current_pid_file(),
-                        USER=self.user, PORT=self.port, FCGI=fcgi_conf, PHP_HANDLER=php_handler))
+    conf_fd.write(template.substitute(ACCESS_LOG=self.access_log,
+                                      ERROR_LOG=self.error_log,
+                                      PID_FILE=self._current_pid_file(),
+                                      USER=self.user,
+                                      PORT=self.port,
+                                      FCGI=fcgi_conf,
+                                      SERVERS=servers))
     conf_fd.close()
     logger.debug('WebServer configuration written to %s' % (self.config_file))
   
-  def configure(self, doc_root=None, port=None, php=None):
+  def configure(self, doc_root=None, port=None, codeVersion=None, php=None, prevCodeVersion=None):
     port = int(port)
     if doc_root == None: raise TypeError('doc_root is required')
     if port == None: raise TypeError('port is required')
@@ -202,8 +226,222 @@ ${FCGI}
     self.doc_root = doc_root
     self.port = port
     self.php = php
+    self.codeVersion = codeVersion
+    self.prevCodeVersion = prevCodeVersion
     self._write_config()
     self.start_args = [self.cmd, '-c', self.config_file]
+
+
+class NginxTomcat(BaseWebServer):
+  CONF_TEMPLATE = '''
+#user ${USER};
+worker_processes  1;
+
+error_log  ${ERROR_LOG};
+pid        ${PID_FILE};
+
+events {
+  worker_connections  1024;
+  # multi_accept on;
+}
+
+http {
+  include       /conpaas/etc/nginx/mime.types;
+  access_log  ${ACCESS_LOG};
+  sendfile        on;
+  #tcp_nopush     on;
+  #keepalive_timeout  0;
+  keepalive_timeout  65;
+  tcp_nodelay        on;
+  gzip  on;
+  gzip_disable "MSIE [1-6]\.(?!.*SV1)";
+
+${UPSTREAM}
+${SERVERS}
+  server {
+    listen ${PORT} default;
+    port_in_redirect off;
+    location / {
+      return 404;
+    }
+  }
+}
+  '''
+  CONF_SERVER_TEMPLATE='''
+  server {
+    listen       ${PORT};
+    root           ${DOC_ROOT}/${CODE_VERSION};
+    server_name  ${CODE_VERSION};
+    port_in_redirect off;
+    
+    location    / {
+      index         index.html index.htm index.jsp;
+    }
+    
+    ${JSP}
+  }
+  '''
+  CONF_JSP_TEMPLATE='''
+      location ${LOCATION} {
+        rewrite  ^(.*)$$  /$$http_conpaasversion$$1  break;
+        proxy_set_header Host $$http_conpaashost;
+        proxy_set_header X-Real-IP $$remote_addr;
+        proxy_pass       http://backend;
+      }
+  '''
+  cmd = '/conpaas/sbin/nginx'
+  
+  def __init__(self, doc_root=None, port=None, php=None, codeCurrent=None,
+               codeOld=None, servletsCurrent=[], servletsOld=[]):
+    self.state = S_INIT
+    self.restart_count = 0
+    self.configure(doc_root, port, php, codeCurrent, codeOld,
+                   servletsCurrent, servletsOld)
+    self.start()
+    self.stop_sig = SIGINT
+  
+  def _get_server_definition(self, codeVersionId, servlet_urls):
+    jsp_template = Template(self.CONF_JSP_TEMPLATE)
+    server_template = Template(self.CONF_SERVER_TEMPLATE)
+    jsp_handler = jsp_template.substitute(LOCATION='~ \.jsp$')
+    for i in servlet_urls:
+      jsp_handler += jsp_template.substitute(LOCATION='= %s' % (i))
+    return server_template.substitute(PORT=self.port,
+                                      DOC_ROOT=self.doc_root,
+                                      CODE_VERSION=codeVersionId,
+                                      JSP=jsp_handler)
+  
+  def _write_config(self):
+    '''Write configuration file.'''
+    ###
+    if self.tomcat:
+      upstream = self._get_upstream(self.tomcat)
+      servers = self._get_server_definition(self.codeCurrent, self.servletsCurrent)
+      if self.codeOld:
+        servers += self._get_server_definition(self.codeOld, self.servletsOld)
+    else:
+      upstream = ''
+      servers = ''
+    template = Template(self.CONF_TEMPLATE)
+    conf_fd = open(self.config_file, 'w')
+    conf_fd.write(template.substitute(DOC_ROOT=self.doc_root,
+                        ACCESS_LOG=self.access_log, ERROR_LOG=self.error_log,
+                        PID_FILE=self._current_pid_file(),
+                        USER=self.user, PORT=self.port, UPSTREAM=upstream, SERVERS=servers))
+    conf_fd.close()
+    logger.debug('WebServer configuration written to %s' % (self.config_file))
+  
+  def configure(self, doc_root=None, port=None, php=None, codeCurrent=None,
+               codeOld=None, servletsCurrent=[], servletsOld=[]):
+    port = int(port)
+    if doc_root == None: raise TypeError('doc_root is required')
+    if port == None: raise TypeError('port is required')
+    if type(doc_root) != str and type(doc_root) != unicode:
+      raise TypeError('doc_root must be a valid string (%s)' % type(doc_root).__name__)
+    verify_port(port)
+    if php != None:
+      verify_ip_port_list(php)
+    if self.state == S_INIT:
+      if not exists('/conpaas/conf/nginx-web'):
+        makedirs('/conpaas/conf/nginx-web')
+      self.config_dir = '/conpaas/conf/nginx-web'
+      self.config_file = join(self.config_dir, 'nginx.conf')
+      self.access_log = join(self.config_dir, 'access.log')
+      self.error_log = join(self.config_dir, 'error.log')
+      self.pid_file = join(self.config_dir, 'nginx.pid')
+      self.user = 'www-data'
+    self.doc_root = doc_root
+    self.port = port
+    self.tomcat = php
+    self.codeCurrent = codeCurrent
+    self.codeOld = codeOld
+    self.servletsCurrent = servletsCurrent
+    self.servletsOld = servletsOld
+    self._write_config()
+    self.start_args = [self.cmd, '-c', self.config_file]
+
+
+class Tomcat6:
+  start_args = ['/conpaas/tomcat-6/bin/startup.sh']
+  shutdown_args = ['/conpaas/tomcat-6/bin/shutdown.sh']
+  
+  config_file = '/conpaas/tomcat-6/conf/server.xml'
+  
+  CONF_TEMPLATE = '''<?xml version='1.0' encoding='utf-8'?>
+<Server port="8005" shutdown="SHUTDOWN">
+  <Listener className="org.apache.catalina.core.AprLifecycleListener" SSLEngine="on" />
+  <Listener className="org.apache.catalina.core.JasperListener" />
+  <Listener className="org.apache.catalina.core.JreMemoryLeakPreventionListener" />
+  <Listener className="org.apache.catalina.mbeans.ServerLifecycleListener" />
+  <Listener className="org.apache.catalina.mbeans.GlobalResourcesLifecycleListener" />
+  <GlobalNamingResources>
+    <Resource name="UserDatabase" auth="Container"
+              type="org.apache.catalina.UserDatabase"
+              description="User database that can be updated and saved"
+              factory="org.apache.catalina.users.MemoryUserDatabaseFactory"
+              pathname="conf/tomcat-users.xml" />
+  </GlobalNamingResources>
+  <Service name="Catalina">
+    <Connector port="${PORT}" protocol="HTTP/1.1" 
+               connectionTimeout="20000" 
+               redirectPort="8443" />
+    <!--
+      <Connector port="8009" protocol="AJP/1.3" redirectPort="8443" />
+    -->
+    <Engine name="Catalina" defaultHost="localhost">
+      <Realm className="org.apache.catalina.realm.UserDatabaseRealm"
+             resourceName="UserDatabase"/>
+      <Host name="localhost"  appBase="webapps"
+            unpackWARs="true" autoDeploy="true"
+            xmlValidation="false" xmlNamespaceAware="false">
+      </Host>
+    </Engine>
+  </Service>
+</Server>
+'''
+  
+  def __init__(self, tomcat_port=None):
+    self.state = S_INIT
+    self.configure(tomcat_port=tomcat_port)
+    self.start()
+  
+  def configure(self, tomcat_port=None):
+    if tomcat_port == None: raise TypeError('tomcat_port is required')
+    verify_port(tomcat_port)
+    self.port = tomcat_port
+    conf_template = Template(self.CONF_TEMPLATE)
+    fd = open(self.config_file, 'w')
+    fd.write(conf_template.substitute(PORT=self.port))
+    fd.close()
+  
+  def restart(self): pass
+  
+  def start(self):
+    self.state = S_STARTING
+    devnull_fd = open(devnull, 'w')
+    proc = Popen(self.start_args, stdout=devnull_fd, stderr=devnull_fd, close_fds=True)
+    if proc.wait() != 0:
+      logger.critical('Failed to start tomcat (code=%d)' % proc.returncode)
+      raise OSError('Failed to start tomcat (code=%d)' % proc.returncode)
+    self.state = S_RUNNING
+    logger.info('Tomcat started')
+  
+  def stop(self):
+    if self.state == S_RUNNING:
+      self.state = S_STOPPING
+      devnull_fd = open(devnull, 'w')
+      proc = Popen(self.shutdown_args, stdout=devnull_fd, stderr=devnull_fd, close_fds=True)
+      if proc.wait() != 0:
+        logger.critical('Failed to stop tomcat (code=%d)' % proc.returncode)
+        raise OSError('Failed to stop tomcat (code=%d)' % proc.returncode)
+      self.state = S_STOPPED
+      logger.info('Tomcat stopped')
+    else:
+      logger.warning('Request to kill tomcat while it is not running')
+  
+  def status(self):
+    return {'state': self.state}
+  
 
 
 class BaseProxy:
@@ -267,7 +505,8 @@ ${BACKENDS}
     
     location    / {
       proxy_set_header Conpaasversion '${CODE_VERSION}';
-      proxy_set_header Host $$host;
+      proxy_set_header Conpaashost $$host;
+      proxy_set_header Host '${CODE_VERSION}';
       proxy_set_header X-Real-IP $$remote_addr;
       proxy_pass http://backend;
     }
@@ -410,7 +649,7 @@ ${BACKENDS}
     else:
       logger.info('WebServer restarted')
 
-  
+
 class PHPProcessManager:
   
   CONF_TEMPLATE = '''[global]
@@ -547,6 +786,3 @@ pm.max_requests = ${MAX_REQUESTS}
   def status(self):
     return {'state': self.state, 'port': self.port}
 
-if __name__ == '__main__':
-  p = NginxProxy(7777, [['127.0.0.1', 80]], '')
-  
