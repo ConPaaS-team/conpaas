@@ -9,4 +9,6 @@ $sid = $_GET['sid'];
 $service_data = ServiceData::getServiceById($sid);
 $service = ServiceFactory::createInstance($service_data);
 
-echo $service->fetchState();
+$response = $service->fetchState();
+$obj = json_decode($response, true);
+echo json_encode($obj['result']);

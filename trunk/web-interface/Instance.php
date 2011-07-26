@@ -16,8 +16,8 @@ class Instance {
 		if ($this->info['isRunningWeb']) {
 			$html .= '<div class="tag blue">web</div>';
 		}
-		if ($this->info['isRunningPHP']) {
-			$html .= '<div class="tag purple">php</div>';
+		if ($this->info['isRunningBackend']) {
+			$html .= '<div class="tag purple">' . $this->info['service_type'] . '</div>';
 		}
 		return $html;
 	}

@@ -7,6 +7,7 @@ require_once('Cluster.php');
 require_once('StatusLed.php');
 require_once('TimeHelper.php');
 require_once('LinkUI.php');
+require_once('Service.php');
 
 class ServicePage extends Page {
 	
@@ -43,11 +44,11 @@ class ServicePage extends Page {
 		if ($responseObj === null) {
 			return 'UNREACHABLE';
 		}
-		if ($responseObj->opState != 'OK') {
+		if ($responseObj->error != null) {
 			throw new Exception('Something went wrong when fetching the state: `'
 			.$json_text.'`');
 		}
-		return $responseObj->state;
+		return $responseObj->result->state;
 	}
 	
 	public function renderActions() {
@@ -116,9 +117,14 @@ class ServicePage extends Page {
 				$this->getVersionDownloadURL($versions[$i]['codeVersionId']);
 			$versionUI = Version($versions[$i])
 				->setLinkable($this->service->isRunning());
-			if ($active == $i) {
-				$versionUI->setActive(true, $this->service->getAccessLocation());
-			}
+		if ($active == $i) {
+		  if ($this->service->isRunning()) {
+			$versionUI->setActive(true, $this->service->getAccessLocation());
+		  }
+		  else {
+		    $versionUI->setActive(true);
+		  }
+		}
 			if ($i == count($versions) - 1) {
 				$versionUI->setLast();
 			}
@@ -188,10 +194,14 @@ class ServicePage extends Page {
 		$nodesLists = $this->service->getNodesLists();
 		foreach ($nodesLists as $role => $nodesList) {
 			if (count($nodesList) > 1) {
-				$cluster = new Cluster($role);
+			    if ($role === 'backend')
+				  $cluster = new Cluster($role, $this->service->getType());
+				else
+				  $cluster = new Cluster($role);
 				foreach ($nodesList as $node) {
 					$info = $this->service->getNodeInfo($node);
 					if ($info !== false) {
+					    $info['service_type'] = $this->service->getType();
 						$cluster->addNode($info);
 					}
 				}
@@ -201,6 +211,7 @@ class ServicePage extends Page {
 				$info = $this->service->getNodeInfo($nodesList[0]);
 				$id = $info['id'];
 				if ($info !== false && !array_key_exists($id, $selected)) {
+				    $info['service_type'] = $this->service->getType();
 					$nodes_info[] = new Instance($info);
 					$selected[$id] = true;
 				}
@@ -313,6 +324,97 @@ class ServicePage extends Page {
 	  		.'</div>'
 	  		.'<div class="clear"></div>'
 	  	.'</div>';
+	}
+	
+	public function renderSettings() {
+	  if ($this->service instanceof PHPService)
+	    return $this->renderPHPSettings();
+	  elseif ($this->service instanceof JavaService)
+	    return $this->renderJavaSettings();
+	  else
+	    throw new Exception('Unknown service type');
+	}
+	
+	private function renderJavaSettings() {
+	  return '<div class="box infobox">No modifiable settings.</div>';
+	}
+	
+	private function renderPHPSettings() {
+	  $html = <<<EOD
+	    <table class="form settings-form">
+			<tr>
+	  			<td class="description">Software version </td>
+	  			<td class="input">
+	  				<select onchange="confirm('Are you sure you want to change the software version?')">
+	  					<option>5.3</option>
+	  				</select>
+	  			</td>
+	  		</tr>
+			<tr>
+				<td class="description">Maximum script execution time</td>
+				<td class="input">
+	              {$this->renderExecTimeOptions()}
+				</td>
+			</tr>
+			<tr>
+				<td class="description">Memory limit </td>
+				<td class="input">
+	              {$this->renderMemLimitOptions()}
+				</td>
+			</tr>
+			<tr>
+				<td class="description"></td>
+				<td class="input actions">
+					<input id="saveconf" type="button" disabled="disabled" value="save" />
+					 <i class="positive" style="display: none;">Submitted successfully</i>
+				</td>
+			</tr>
+		</table>
+			
+		<script type="text/javascript">
+		$(document).ready(function() {
+			$('#conf-maxexec, #conf-memlim').change(function() {
+				$('#saveconf').removeAttr('disabled');
+			});
+
+			function pack_parameters_aws(params, name) {
+				data = {};
+				for (key in params) {
+					data[name + '.' + key] = params[key];
+				}
+				return data;
+			}
+				
+			$('#saveconf').click(function() {
+				params = pack_parameters_aws({
+					'max_execution_time': $('#conf-maxexec').val(),
+					'memory_limit': $('#conf-memlim').val()
+				}, 'phpconf');
+					
+				$(this).attr('disabled', 'disabled');
+				transientRequest({
+					url: 'services/sendConfiguration.php?sid=' + sid,
+					method: 'post',
+					data: params,
+					poll: false,
+					status: 'Changing PHP configuration...',
+					success: function(response) {
+					  	$('.settings-form .actions .positive').show();
+					  	setTimeout(
+							"$('.settings-form .actions .positive').fadeOut();", 
+							2000
+						);
+					},
+					error: function(error) {
+						$(this).removeAttr('disabled');
+						alert('#saveconf.click() error: ' + error);
+					}
+				});
+			});
+		});
+		</script>
+EOD;
+		return $html;
 	}
 	
 }

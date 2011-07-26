@@ -5,7 +5,7 @@ require_once('Service.php');
 require_once('DB.php');
 require_once('lib/aws-sdk/sdk.class.php');
 
-class EC2Service extends Service {
+class EC2 {
 	
 	protected $vmid;
 	
@@ -16,9 +16,10 @@ class EC2Service extends Service {
 	private $keypair;
 	private $user_data_file;
 	private $instance_type;
+	private $service_type;
 	
 	public function __construct($data) {
-		parent::__construct($data);
+		$this->service_type = $data['type'];
 		$this->vmid = $data['vmid'];
 		$this->ec2 = new AmazonEC2();
 		$this->loadConfiguration();
@@ -47,6 +48,7 @@ class EC2Service extends Service {
 			throw new Exception('could not read manager user data: '.
 				$this->user_data_file);
 		}
+		$user_data = str_replace('%CONPAAS_SERVICE_TYPE%', strtoupper($this->service_type), $user_data);
 		$response = $this->ec2->run_instances($this->manager_ami, 1, 1, array(
 			'InstanceType' => $this->instance_type,
 			'KeyName' => $this->keypair,
@@ -85,21 +87,6 @@ class EC2Service extends Service {
 		return $instance->dnsName;
 	}
 	
-	/**
-	 * @return true if updated 
-	 */
-	public function checkManagerInstance() {
-		$manager_addr = $this->getManagerAddress();
-		if ($manager_addr !== false) {
-			$manager_url = 'http://'.$manager_addr.':5555';
-			if ($manager_url != $this->manager) {
-				ServiceData::updateManagerAddress($this->sid, $manager_url);
-				return true;
-			}
-		}
-		return false;
-	}
-
 	public function terminateService() {
 		$response = $this->ec2->terminate_instances($this->vmid);
 		if (!$response->isOK()) {
@@ -107,7 +94,6 @@ class EC2Service extends Service {
 			throw new Exception('terminate_instances('.$this->vmid.') '.
 				'failed for service '.$this->name.'['.$this->sid.']');
 		}
-		parent::terminateService();
 	}
 	
 }

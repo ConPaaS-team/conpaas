@@ -45,7 +45,7 @@ try {
 	/* start the instance */
 	$service_data = ServiceData::getServiceById($sid);
 	$service = ServiceFactory::createInstance($service_data);
-	$vmid = $service->createManagerInstance();
+	$vmid = $service->getCloudInstance()->createManagerInstance();
 	ServiceData::updateVmid($sid, $vmid);
 	
 	echo json_encode(array(

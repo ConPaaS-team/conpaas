@@ -12,8 +12,8 @@ $logging_conf = loadLoggingConfiguration();
 $logfile = fopen($logging_conf['file'], 'a');
 
 function dlog($var) {
-	global $logfile;
-	fwrite($logfile, date('d-m-Y h:i:s').' '.print_r($var, true)."\n");
+        global $logfile;
+        fwrite($logfile, date('d-m-Y h:i:s').' '.print_r($var, true)."\n");
 }
 
 ?>

@@ -1,5 +1,6 @@
 <?php 
 
+
 require_once('../__init__.php');
 require_once('../Service.php');
 require_once('../ServiceData.php');
@@ -22,6 +23,8 @@ foreach ($_POST as $key => $value) {
 	$params[$key] = $value;
 }
 
-echo $service->sendConfiguration($params);
+$response = $service->sendConfiguration($params);
+echo $response;
+
 
 ?>

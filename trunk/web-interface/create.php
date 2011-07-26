@@ -33,6 +33,7 @@ $page = new Page();
   				<td class="input">
   					<select id="type" size="3">
   						<option value="php" selected="selected">PHP Service</option>
+  						<option value="java">Java Service</option>
   						<option value="mysql" disabled="disabled">MySQL Service</option>
   						<option value="hadoop" disabled="disabled">Map-Reduce Service</option>
   					</select>

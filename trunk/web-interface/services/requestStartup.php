@@ -11,4 +11,6 @@ $service = ServiceFactory::createInstance($service_data);
 
 $response = $service->requestStartup();
 ServiceData::updateState($sid, Service::STATE_RUNNING);
-echo $response;
+
+$obj = json_decode($response, true);
+echo json_encode($obj['result']);

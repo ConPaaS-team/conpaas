@@ -2,10 +2,9 @@
 
 require_once('Service.php');
 
-class LocalService extends Service {
+class LocalCloud {
 	
 	public function __construct($service_data) {
-		parent::__construct($service_data);
 	}
 	
 	public function getManagerAddress() {

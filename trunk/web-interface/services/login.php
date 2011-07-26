@@ -50,18 +50,19 @@ function auth($uid, $username) {
 }
 
 $action = $_POST['action'];
-$username = $_POST['username'];
 $uid = null;
 if (isset($_SESSION['uid'])) {
 	$uid = $_SESSION['uid'];
 }
 
 if ($action == 'auth') {
+    $username = $_POST['username'];
 	$response = auth($uid, $username);
 } else if ($action == 'logout') {
 	unset($_SESSION['uid']);
 	$response = array('logout' => 1);
 } else if ($action == 'register') {
+    $username = $_POST['username'];
 	$response = register($username);
 }
 

@@ -9,6 +9,7 @@ $sid = $_GET['sid'];
 $service_data = ServiceData::getServiceById($sid);
 $service = ServiceFactory::createInstance($service_data);
 
-echo $service->removeServiceNodes($_POST);
+$response = $service->removeServiceNodes($_POST);
+echo $response;
 
 ?>

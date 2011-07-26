@@ -3,7 +3,7 @@
 require_once('logging.php');
 require_once('ServiceData.php');
 
-class Service {
+abstract class Service {
 	
 	protected $sid,
 		$name,
@@ -13,7 +13,8 @@ class Service {
 		$creation_date,
 		$manager,
 		$uid,
-		$cloud;
+		$cloud,
+		$cloud_instance;
 
 	private $nodesLists;
 	private $nodesCount = 0;
@@ -58,9 +59,9 @@ class Service {
 		try {
 			$json = $this->fetchState();
 			$state = json_decode($json, true);
-			if ($state !== null && isset($state['opState'])) {
+			if ($state !== null && isset($state['result'])) {
 				$this->reachable = true;
-				$this->stable = self::stateIsStable($state['state']);
+				$this->stable = self::stateIsStable($state['result']['state']);
 			}
 		} catch (Exception $e) {
 			// nothing
@@ -68,10 +69,11 @@ class Service {
 		}
 	}
 	
-	public function __construct($data) {
+	public function __construct($data, $cloud_instance) {
 		foreach ($data as $key => $value) {
 			$this->$key = $value;
 		}
+		$this->cloud_instance = $cloud_instance;
 		$this->pingManager();
 		/* fetch the nodes and arrange them */
 		if ($this->reachable && $this->state == self::STATE_RUNNING) {
@@ -117,22 +119,39 @@ class Service {
 				 $this->state == self::STATE_PREINIT));
 	}
 	
-	private function managerRequest($params, $method='get', $ping=false) {
+	protected function managerRequest($method, $params, $http_method='get', $ping=false, $rpc=true) {
 		$opts = self::$CURL_OPTS;
-		$opts[CURLOPT_HTTPHEADER] = array('Expect:');
-		
+		if ($rpc) {
+		  $opts[CURLOPT_HTTPHEADER] = array('Expect:', 'Content-Type: application/json');
+		}
+		else {
+		  $opts[CURLOPT_HTTPHEADER] = array('Expect:');
+		}
 		if ($ping) {
 			$opts[CURLOPT_CONNECTTIMEOUT] = 1;
 		}
 		
 		$url = $this->manager;
-		$method = strtolower($method);
-		if ($method == 'post') {
+		$http_method = strtolower($http_method);
+		if ($http_method == 'post') {
 			$opts[CURLOPT_POST] = 1;
-			$opts[CURLOPT_POSTFIELDS] = $params;
+			if ($rpc) {
+  			  $opts[CURLOPT_POSTFIELDS] = json_encode(array(
+  							'method' => $method,
+  							'params' => $params,
+  							'id' =>1 ));
+			}
+			else {
+			  $opts[CURLOPT_POSTFIELDS] = array_merge($params, array('method' => $method));
+			}
 		} else {
 			/* default is GET */
-			$url .= '?'.http_build_query($params, null, '&');
+			$url .= '?'.http_build_query(
+					array(
+						'method' => $method,
+						'params' => json_encode($params),
+						'id' => 1),
+					null, '&');
 		}
 		$opts[CURLOPT_URL] = $url;
 		
@@ -153,132 +172,116 @@ class Service {
 	}
 	
 	public function getNodeInfo($node) {
-		$json_info = $this->managerRequest(array(
-			'action' => 'getServiceNodeById',
+		$json_info = $this->managerRequest('get_node_info', array(
 			'serviceNodeId' => $node,
 		));
 		$info = json_decode($json_info, true);
 		if ($info == null) {
 			return false;
 		}
-		return $info['serviceNode'];
+		return $info['result']['serviceNode'];
 	}
 	
 	private function fetchNodesLists() {
 		if (!isset($this->manager)) {
 			return false;
 		}
-		$json = $this->managerRequest(array(
-			'action' => 'listServiceNodes',
-		));
+		$json = $this->managerRequest('list_nodes', array());
 		$response = json_decode($json, true);
-		if ($response == null) {
+		if ($response == null || $response['error'] != null) {
 			return false;
 		}
-		unset($response['opState']);
-		return $response;
+		return $response['result'];
 	}
 	
 	public function fetchState() {
-	   	return $this->managerRequest(
-	   		array('action' => 'getState'), 
+	   	$ret = $this->managerRequest(
+	   	    'get_service_info',
+	   		array(), 
 	   		'get', 
 	   		true
 	   );
+	   return $ret;
 	}
 	
 	public function fetchCodeVersions() {
-		$json = $this->managerRequest(array('action' => 'listCodeVersions'));
+		$json = $this->managerRequest('list_code_versions', array());
 		$versions = json_decode($json, true);
 		if ($versions == null) {
 			return false;
 		}
-		return $versions['codeVersions'];
+		return $versions['result']['codeVersions'];
 	}
 	
 	public function fetchHighLevelMonitoringInfo() {
-		$json = $this->managerRequest(array(
-			'action' => 'getHighLevelMonitoring')
-		);
+		$json = $this->managerRequest('get_service_performance', array());
 		$monitoring = json_decode($json, true);
 		if ($monitoring == null) {
 			return false;
 		}
-		return $monitoring;
+		return $monitoring['result'];
 	}
 	
 	public function getConfiguration() {
-		$json_conf = $this->managerRequest(array(
-			'action' => 'getConfiguration')
-		);
+		$json_conf = $this->managerRequest('get_configuration', array());
 		$responseObj = json_decode($json_conf);
 		if ($responseObj == null) {
 			return null;
 		}
-		if (!isset($responseObj->phpconf)) {
+		if (!isset($responseObj->result->phpconf)) {
 			return null;
 		}
-		return $this->conf = $responseObj->phpconf;
+		return $this->conf = $responseObj->result->phpconf;
 	}
 	
- 	public function sendConfiguration($params) {
- 		$params = array_merge($params, array(
- 			'action' => 'updateConfiguration', 
- 		));
- 		return $this->managerRequest($params, 'post');
- 	}
+ 	abstract public function sendConfiguration($params);
  	
  	public function uploadCodeVersion($params) {
- 		$params = array_merge($params, array(
- 			'action' => 'uploadCodeVersion'
- 		));
- 		return $this->managerRequest($params, 'post');
+ 		return $this->managerRequest('upload_code_version', $params, 'post', false, false);
  	}
  	
  	public function fetchStateLog() {
- 		$json = $this->managerRequest(array('action' => 'getStateChanges'));
+ 		$json = $this->managerRequest('get_service_history', array());
  		$log = json_decode($json, true);
- 		return $log['state_log'];
+ 		if ($log != null) {
+ 		  return $log['result']['state_log'];
+ 		}
+ 		else return array();
  	}
  	
  	public function fetchLog() {
- 		$json = $this->managerRequest(array('action' => 'getLog'));
+ 		$json = $this->managerRequest('getLog', array());
  		$log = json_decode($json, true);
- 		return $log['log'];
+ 		return $log['result']['log'];
  	}
  	
  	public function addServiceNodes($params) {
- 		$params = array_merge($params, array(
- 			'action' => 'addServiceNodes'
- 		));
- 		return $this->managerRequest($params, 'post');
+		if (isset($params['backend'])) $params['backend'] = intval($params['backend']);
+		if (isset($params['web'])) $params['web'] = intval($params['web']);
+		if (isset($params['proxy'])) $params['proxy'] = intval($params['proxy']);
+ 		return $this->managerRequest('add_nodes', $params, 'post');
  	}
  	
  	public function removeServiceNodes($params) {
- 		$params = array_merge($params, array(
- 			'action' => 'removeServiceNodes'
- 		));
- 		return $this->managerRequest($params, 'post');
+		if (isset($params['backend'])) $params['backend'] = intval($params['backend']);
+		if (isset($params['web'])) $params['web'] = intval($params['web']);
+		if (isset($params['proxy'])) $params['proxy'] = intval($params['proxy']);
+ 		return $this->managerRequest('remove_nodes', $params, 'post');
  	}
  	
  	public function requestShutdown() {
- 		return $this->managerRequest(
- 			array('action' => 'shutdown'), 
- 			'post'
- 		);
+ 		return $this->managerRequest('shutdown', array(), 'post');
  	}
  	
  	public function requestStartup() {
- 		return $this->managerRequest(
- 			array('action' => 'startup'),
- 			'post'
- 		);
+ 		return $this->managerRequest('startup', array(), 'post');
  	}
  	
  	/**
  	 * Deletes the service entry from the database
  	 */
  	public function terminateService() {
+ 	  $this->cloud_instance->terminateService();
  		ServiceData::deleteService($this->sid);
  	}
  	
@@ -335,4 +338,43 @@ class Service {
 		return $this->uid;
 	}
 	
+	public function getCloudInstance() {
+	  return $this->cloud_instance;
+	}
+	
+	/**
+	 * @return true if updated 
+	 */
+	public function checkManagerInstance() {
+		$manager_addr = $this->cloud_instance->getManagerAddress();
+		if ($manager_addr !== false) {
+			$manager_url = 'http://'.$manager_addr.':80';
+			if ($manager_url != $this->manager) {
+				ServiceData::updateManagerAddress($this->sid, $manager_url);
+				return true;
+			}
+		}
+		return false;
+	}
+}
+
+
+class PHPService extends Service {
+  public function __construct($data, $cloud_instance) {
+    parent::__construct($data, $cloud_instance);
+  }
+  
+  public function sendConfiguration($params) {
+    return $this->managerRequest('update_php_configuration', $params, 'post');
+  }
+}
+
+class JavaService extends Service {
+  public function __construct($data, $cloud_instance) {
+    parent::__construct($data, $cloud_instance);
+  }
+  
+  public function sendConfiguration($params) {
+    return $this->managerRequest('update_java_configuration', $params, 'post');
+  }
 }

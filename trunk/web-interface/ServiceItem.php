@@ -74,17 +74,17 @@ class ServiceItem {
 			
 		if ($this->service->getType() == 'php') {
 			$resptime = 
-				'<i class="text">'.$monitor['avg_throughput'].'ms</i>'.
+				'<i class="text">'.$monitor['throughput'].'ms</i>'.
 				'<img src="images/green-down.png" />';
 				
 			return 
 				$this->renderStatistic(
 					'<i class="text">'
-						.$monitor['avg_error_rate'].'%'
+						.$monitor['error_rate'].'%'
 					.'</i> <img src="images/red-up.png" />',
 					'error rate')
 				.$this->renderStatistic(
-					'<i class="text">'.$monitor['avg_request_rate'].'/s'
+					'<i class="text">'.$monitor['request_rate'].'/s'
 					.'</i> <img src="images/blue-up.png" />', 
 					'requests rate')
 				.$this->renderStatistic($resptime, 'response time')

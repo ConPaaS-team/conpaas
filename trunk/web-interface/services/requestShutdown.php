@@ -11,4 +11,5 @@ $service = ServiceFactory::createInstance($service_data);
 
 $response = $service->requestShutdown();
 ServiceData::updateState($sid, Service::STATE_STOPPED);
-echo $response;
+$obj = json_decode($response, true);
+echo json_encode($response['result']);

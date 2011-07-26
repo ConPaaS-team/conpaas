@@ -9,6 +9,7 @@ $sid = $_GET['sid'];
 $service_data = ServiceData::getServiceById($sid);
 $service = ServiceFactory::createInstance($service_data);
 
-echo $service->addServiceNodes($_POST);
+$response = $service->addServiceNodes($_POST);
+echo $response;
 
 ?>

@@ -17,6 +17,7 @@ $service = ServiceFactory::createInstance($service_data);
 
 $page = new ServicePage($service);
 $state = $page->getState();
+$backendType = $service->getType();
 
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
@@ -130,7 +131,7 @@ $state = $page->getState();
   	  	  		url: params.url, type: params.method, dataType: 'json',
   	  	  		data: params.data,
   	  	  		success: function(response) {
-  	  	  	  		if (typeof response.error != 'undefined') {
+  	  	  	  		if (typeof response.error != 'undefined' && response.error != null ) {
   	  	  	  	  		freezeInput(false);
   	  	  	  	  		showLoading(false);
   	  	  	  	  		if (params.error != null) {
@@ -257,13 +258,13 @@ $(document).ready(function() {
 			return {
 				'proxy': parseInt($('#proxy').html()),
 				'web': parseInt($('#web').html()),
-				'php': parseInt($('#php').html())
+				'backend': parseInt($('#backend').html())
 			};
 		}
 		return [
 			parseInt($('#proxy').html()), 
 			parseInt($('#web').html()),
-			parseInt($('#php').html())
+			parseInt($('#backend').html())
 		];
 	}
 	
@@ -279,7 +280,7 @@ $(document).ready(function() {
 			success: function(response) {
 				$('.actionsbar .loading').hide();			
 				reloadInstances();
-				$('#proxy, #web, #php').each(function() {
+				$('#proxy, #web, #backend').each(function() {
 					$(this).html('0');
 				});
 				$('#submitnodes').attr('disabled', 'disabled');
@@ -349,7 +350,7 @@ $(document).ready(function() {
 			}
 		});
 
-		$('#proxy, #web, #php').click(function() {
+		$('#proxy, #web, #backend').click(function() {
 			value = prompt('no. of instances (e.g. +1, -2)', $(this).html());
 			if (value != null && value != "") {
 				intValue = parseInt(value);
@@ -371,7 +372,7 @@ $(document).ready(function() {
 		<div class="actionsbar">
 			<div class="tag orange"> <b id="proxy" class="editable" title="click to edit">0</b> proxy</div>
 			<div class="tag blue"> <b id="web" class="editable" title="click to edit">0</b> web</div>
-			<div class="tag purple"> <b id="php" class="editable" title="click to edit">0</b> php</div>
+			<div class="tag purple"> <b id="backend" class="editable" title="click to edit">0</b> <?php echo $backendType ?></div>
 			<input type="button" id="submitnodes" value="submit" disabled="disabled" />
 			<img class="loading" src="images/icon_loading.gif" style="display: none;" />
 		</div>
@@ -411,7 +412,7 @@ $(document).ready(function() {
 					
 			<form id="fileForm" action="<?php echo $page->getUploadURL() ?>" enctype="multipart/form-data">
 				<input id="file" type="file" name="code" />
-				<input type="hidden" name="action" value="uploadCodeVersion" />
+				<input type="hidden" name="method" value="uploadCodeVersion" />
 				<input type="hidden" name="description" value="no description" />
 			</form>
 			<div class="additional">
@@ -430,12 +431,13 @@ $(document).ready(function() {
 					dataType: 'json',
 					success: function(response) {
 						$('.additional .loading').toggleClass('invisible');
-						if (typeof response.error != 'undefined') {
+						if (typeof response.error != 'undefined' && response.error != null) {
 							alert('Error: ' + response.error);
 							$('#file').val('');
 							return;
 						}
 						// request ended ok
+						$('#file').val('');
 						$('.additional .positive').show();
 						setTimeout('$(".additional .positive").fadeOut();', 1000);
 						reloadVersions();
@@ -514,83 +516,10 @@ $(document).ready(function() {
 
 	<div class="form-section">
 		<div class="form-header">
-			<div class="title">PHP Settings</div>
+			<div class="title">Settings</div>
 			<div class="clear"></div>
 		</div>
-			
-		<table class="form settings-form">
-			<tr>
-	  			<td class="description">Software version </td>
-	  			<td class="input">
-	  				<select onchange="confirm('Are you sure you want to change the software version?')">
-	  					<option>5.3</option>
-	  				</select>
-	  			</td>
-	  		</tr>
-			<tr>
-				<td class="description">Maximum script execution time</td>
-				<td class="input">
-					<?php echo $page->renderExecTimeOptions(); ?>
-				</td>
-			</tr>
-			<tr>
-				<td class="description">Memory limit </td>
-				<td class="input">
-					<?php echo $page->renderMemLimitOptions(); ?>
-				</td>
-			</tr>
-			<tr>
-				<td class="description"></td>
-				<td class="input actions">
-					<input id="saveconf" type="button" disabled="disabled" value="save" />
-					 <i class="positive" style="display: none;">Submitted successfully</i>
-				</td>
-			</tr>
-		</table>
-			
-		<script type="text/javascript">
-		$(document).ready(function() {
-			$('#conf-maxexec, #conf-memlim').change(function() {
-				$('#saveconf').removeAttr('disabled');
-			});
-
-			function pack_parameters_aws(params, name) {
-				data = {};
-				for (key in params) {
-					data[name + '.' + key] = params[key];
-				}
-				return data;
-			}
-				
-			$('#saveconf').click(function() {
-				params = pack_parameters_aws({
-					'max_execution_time': $('#conf-maxexec').val(),
-					'memory_limit': $('#conf-memlim').val()
-				}, 'phpconf');
-				params.action = 'updateConfiguration';
-					
-				$(this).attr('disabled', 'disabled');
-				transientRequest({
-					url: 'services/sendConfiguration.php?sid=' + sid,
-					method: 'post',
-					data: params,
-					poll: false,
-					status: 'Changing PHP configuration...',
-					success: function(response) {
-					  	$('.settings-form .actions .positive').show();
-					  	setTimeout(
-							"$('.settings-form .actions .positive').fadeOut();", 
-							2000
-						);
-					},
-					error: function(error) {
-						$(this).removeAttr('disabled');
-						alert('#saveconf.click() error: ' + error);
-					}
-				});
-			});
-		});
-		</script>
+		<?php echo $page->renderSettings(); ?>
 	</div>
 
 	<?php if (!$service->isStable()): ?>
