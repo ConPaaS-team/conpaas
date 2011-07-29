@@ -23,12 +23,15 @@ class SQLServerRequestHandler(AbstractRequestHandler):
 
 class MySQLServerManager(HTTPServer):
 	
+	def register_method(self, http_method, func_name, callback):
+		self.callback_dict[http_method][func_name] = callback
+	
 	def __init__(self, server_address, RequestHandlerClass=SQLServerRequestHandler):
 		HTTPServer.__init__(self, server_address, RequestHandlerClass)
 		self.callback_dict = {'GET': {}, 'POST': {}}
 		for http_method in internals.exposed_functions:
 			for func_name in internals.exposed_functions[http_method]:
-				#print 'Going to register ', http_method, func_name
+				print 'Going to register ', http_method, func_name
 				self.register_method(http_method, func_name, getattr(internals, func_name))
 
 if __name__ == '__main__':

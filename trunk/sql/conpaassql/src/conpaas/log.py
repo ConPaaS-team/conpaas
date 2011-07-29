@@ -5,6 +5,7 @@ Created on Feb 9, 2011
 '''
 
 import logging
+import os
 
 logging_level = logging.DEBUG
 
@@ -29,6 +30,6 @@ def create_logger(name):
     logger = logging.getLogger(name)
     logger.setLevel(logging_level)
     register_logger(logger)
-    hdlr = logging.FileHandler('/tmp/contrail.log')
+    hdlr = logging.FileHandler(os.getcwd() + '/contrail.log')
     logger.addHandler(hdlr)
     return logger
