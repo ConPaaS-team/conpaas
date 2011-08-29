@@ -15,9 +15,9 @@ import MySQLdb
 import pickle
 
 
-logger = create_logger(__name__)
-
 exposed_functions = {}
+
+CONFIGURATION_FILE='configuration.cnf'
 
 E_ARGS_UNEXPECTED = 0
 E_CONFIG_NOT_EXIST = 1
@@ -87,7 +87,7 @@ class MySQLServerConfiguration:
             logger.debug("Trying to get params from configuration file ")
             config = ConfigParser.ConfigParser()
             #config.readfp(open("/home/danaia/Desktop/worskpace_eclipse/conpaas-sql-trunk-rev-107/conpaassql/src/configuration.cnf"))
-            config.readfp(open(os.getcwd() + "/configuration.cnf"))
+            config.readfp(open(os.getcwd() + "/" + CONFIGURATION_FILE))
             self.conn_location = config.get("MySQL_root_connection", "location")
             self.conn_password = config.get("MySQL_root_connection", "password")
             self.conn_username = config.get("MySQL_root_connection", "username")
@@ -412,6 +412,17 @@ def stopMySQLServer_old(kwargs):
             logger.exception(e)
             return {'opState': 'ERROR', 'error': ex.message}        
 
+'''
+    Shuts down the whole Agent together with MySQL server.
+'''
+def shutdownMySQLServerAgent(kwargs):
+    """Shutdown the Agent"""
+    niam.stop()    
+    from conpaas.mysql.server.agent.server import agentServer
+    agentServer.shutdown()
+    import sys
+    sys.exit(0)
+    
 @expose('POST')
 def stopMySQLServer(params):
     logger.debug("Entering stopMySQLServer")
@@ -515,5 +526,6 @@ def create_with_MySQLdump(params):
     f = params['mysqldump']['file']
     ret = niam.config.create_MySQL_with_dump(f)
     return ret   
+
   
 niam = MySQLServer()

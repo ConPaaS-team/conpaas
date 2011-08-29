@@ -10,7 +10,11 @@ from conpaas.web.http import AbstractRequestHandler
 from conpaas.log import create_logger
 
 logger = create_logger(__name__)
+agentServer = None
 
+'''
+    Class AgentServer
+'''
 class AgentServer(HTTPServer, ThreadingMixIn):
     
     def __init__(self, server_address, RequestHandlerClass=AbstractRequestHandler):
@@ -34,5 +38,5 @@ if __name__ == '__main__':
     parser.add_option('-b', '--bind', type='string', default='0.0.0.0', dest='address')
     options, args = parser.parse_args()
     print 'Starting the MySQL server at ', options.address, options.port
-    a = AgentServer((options.address, options.port))
-    a.serve_forever()
+    agentServer = AgentServer((options.address, options.port))
+    agentServer.serve_forever()    

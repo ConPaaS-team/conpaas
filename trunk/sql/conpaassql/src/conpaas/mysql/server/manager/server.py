@@ -8,6 +8,8 @@ from conpaas.web.http import AbstractRequestHandler
 import httplib
 import json
 from conpaas.mysql.server.manager import internals
+from conpaas.iaas import IaaSClient
+from conpaas.mysql.server.manager.internals import MySQLServerManager
 
 class SQLServerRequestHandler(AbstractRequestHandler):
 	
@@ -21,19 +23,23 @@ class SQLServerRequestHandler(AbstractRequestHandler):
 			del params['action']
 			self.send_custom_response(httplib.OK, json.dumps(self.server.callback_dict[method][callback_name](params)))
 
-class MySQLServerManager(HTTPServer):
+class ManagerServer(HTTPServer):
 	
 	def register_method(self, http_method, func_name, callback):
 		self.callback_dict[http_method][func_name] = callback
 	
-	def __init__(self, server_address, RequestHandlerClass=SQLServerRequestHandler):
+	def __init__(self, server_address, iaas_config, RequestHandlerClass=SQLServerRequestHandler):
 		HTTPServer.__init__(self, server_address, RequestHandlerClass)
-		self.callback_dict = {'GET': {}, 'POST': {}}
+		self.callback_dict = {'GET': {}, 'POST': {}}		
+		from conpaas.mysql.server.manager import internals
+		internals.iaas = IaaSClient(iaas_config)
+		internals.config = iaas_config
+		internals.managerServer=MySQLServerManager(iaas_config)
 		for http_method in internals.exposed_functions:
 			for func_name in internals.exposed_functions[http_method]:
 				print 'Going to register ', http_method, func_name
 				self.register_method(http_method, func_name, getattr(internals, func_name))
-
+		
 if __name__ == '__main__':
 	from optparse import OptionParser
 	from ConfigParser import ConfigParser	
@@ -45,5 +51,5 @@ if __name__ == '__main__':
 	config_parser = ConfigParser()
 	config_parser.read(options.config)
 	print options.address, options.port
-	d = MySQLServerManager((options.address, options.port),  config_parser)
+	d = ManagerServer((options.address, options.port), config_parser)
 	d.serve_forever()

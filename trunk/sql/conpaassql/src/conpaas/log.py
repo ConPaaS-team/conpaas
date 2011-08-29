@@ -31,5 +31,6 @@ def create_logger(name):
     logger.setLevel(logging_level)
     register_logger(logger)
     hdlr = logging.FileHandler(os.getcwd() + '/contrail.log')
+    
     logger.addHandler(hdlr)
     return logger
