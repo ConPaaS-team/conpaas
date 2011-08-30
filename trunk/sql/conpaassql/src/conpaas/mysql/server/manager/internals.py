@@ -7,6 +7,9 @@ from conpaas.log import create_logger
 from conpaas.mysql.server.manager.config import Configuration, ManagerException,\
     E_ARGS_UNEXPECTED, ServiceNode
 from threading import Thread
+from conpaas.mysql.client import agent_client
+import time
+import conpaas
 
 S_INIT = 'INIT'
 S_PROLOGUE = 'PROLOGUE'
@@ -26,9 +29,9 @@ managerServer = None
 
 class MySQLServerManager():
     
-    def __init__(self, config):        
+    def __init__(self, conf):        
         logger.debug("Entering MySQLServerManager initialization")
-        self.config = Configuration(config)                        
+        conpaas.mysql.server.manager.internals.config = Configuration(conf)                                 
         self.state = S_INIT
         logger.debug("Leaving MySQLServer initialization")
 
@@ -66,13 +69,47 @@ def createServiceNode(kwargs):
         return {'opState': 'ERROR', 'error': ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message}
     Thread(target=createServiceNodeThread).start()
     sn=ServiceNode(1, True)
-    sn.ip="127.0.0.1"    
-    managerServer.config.addMySQLServiceNode(1,sn)
+    #sn.ip="127.0.0.1"    
+    #managerServer.config.addMySQLServiceNode(1,sn)
     return {
-          'opState': 'OK',
-          'sql': [ sn.vmid ]
+          'opState': 'OK'
+          #'sql': [ sn.vmid ]
     }
     
 def createServiceNodeThread ():
-    pass
+    node_instances = []
+    new_vm=iaas.newInstance()
+    vm=iaas.listVMs()[new_vm['id']]
+    node_instances.append(vm)
+    config.addMySQLServiceNode(new_vm['id'], new_vm)
+    #wait_for_nodes(node_instances)
 
+'''
+    Wait for nodes to get ready.
+'''
+def wait_for_nodes(nodes, poll_interval=10):
+    logger.debug('wait_for_nodes: going to start polling')
+    done = []
+    while len(nodes) > 0:
+        for i in nodes:
+            up = True
+            try:
+                if i['ip'] != '':
+                    agent_client.getMySQLServerState((i['ip'], 60000))
+                else:
+                    up = False
+            except agent_client.AgentException: pass
+            except: up = False
+            if up:
+                done.append(i)
+        nodes = [ i for i in nodes if i not in done]
+        if len(nodes):
+            logger.debug('wait_for_nodes: waiting for %d nodes' % len(nodes))
+            time.sleep(poll_interval)
+            no_ip_nodes = [ i for i in nodes if i['ip'] == '' ]
+            if no_ip_nodes:
+                logger.debug('wait_for_nodes: refreshing %d nodes' % len(no_ip_nodes))
+                refreshed_list = iaas.listVMs()
+                for i in no_ip_nodes:
+                    i['ip'] = refreshed_list[i['id']]['ip']
+        logger.debug('wait_for_nodes: All nodes are ready %s' % str(done))

@@ -42,10 +42,10 @@ if __name__ == '__main__':
     #host = '172.16.118.185'
     port = 50000
     if sys.argv.__len__() in (2, 3):
-        if sys.argv[1] in ("getListServiceNodes", "status"):
+        if sys.argv[1] in ("listServiceNodes"):
             ret = getListServiceNodes(host, port)
             print ret            
-        if sys.argv[1] in ("addServiceNode"):
+        if sys.argv[1] in ("createServiceNode"):
             ret = addServiceNode(host, port)
             print ret            
     else:

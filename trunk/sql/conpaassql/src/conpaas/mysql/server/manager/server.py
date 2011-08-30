@@ -33,7 +33,7 @@ class ManagerServer(HTTPServer):
 		self.callback_dict = {'GET': {}, 'POST': {}}		
 		from conpaas.mysql.server.manager import internals
 		internals.iaas = IaaSClient(iaas_config)
-		internals.config = iaas_config
+		#internals.config = iaas_config
 		internals.managerServer=MySQLServerManager(iaas_config)
 		for http_method in internals.exposed_functions:
 			for func_name in internals.exposed_functions[http_method]:

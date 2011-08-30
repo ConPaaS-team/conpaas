@@ -24,11 +24,12 @@ logger = create_logger(__name__)
 
 class OneXmlrpcNode():
     
-    def __init__(self, id, state, name, ip):
-        self.id = id
-        self.state = state
-        self.name = name
-        self.public_ip=ip
+    def __init__(self, node):
+        self.id = node.id
+        self.state = node.str_state
+        self.name = node.name
+        self.template = node.template
+        self.public_ip = node.template.nics[0].ip
 
 '''
     XMLRPC driver for OpenNebula
@@ -45,8 +46,60 @@ class OneXmlrpc(NodeDriver):
         nodes={}        
         for i in vm_pool:            
             logger.debug( str(i.id) + ": " +str(i.name) + ", " +str(i.str_state))
-            nodes[i.id]=OneXmlrpcNode(i.id, i.str_state, i.name, "127.0.0.1")
+            nodes[i.id]=OneXmlrpcNode(i)
         return nodes
+    
+    '''
+        Create new node.
+    '''
+    def create_node(self, **kwargs):
+        logger.debug("Entering create_node")
+        template='''NAME   = conpaassql_server
+CPU    = 0.2
+MEMORY = 512
+   OS     = [
+   arch = "i686",
+   boot = "hd",
+   root     = "hda" ]
+DISK   = [
+   image_id = "''' + str(kwargs['image'].id) + '''",
+   bus = "scsi",
+   readonly = "no" ]
+NIC    = [ NETWORK_ID = '''+str(kwargs['ex_network_id'])+''' ]
+GRAPHICS = [
+  type="vnc"
+  ]
+'''
+        logger.debug('Provisioning VM:' + template)
+        rez=oca.VirtualMachine.allocate(self.client, template)        
+        logger.debug('Result:' + str(rez))
+        logger.debug("Exiting create_node")
+        return rez
+
+    def list_sizes(self, location=None):
+        return [
+          NodeSize(id=1,
+                   name="small",
+                   ram=None,
+                   disk=None,
+                   bandwidth=None,
+                   price=None,
+                   driver=self),
+          NodeSize(id=2,
+                   name="medium",
+                   ram=None,
+                   disk=None,
+                   bandwidth=None,
+                   price=None,
+                   driver=self),
+          NodeSize(id=3,
+                   name="large",
+                   ram=None,
+                   disk=None,
+                   bandwidth=None,
+                   price=None,
+                   driver=self),
+        ]
 
 class IaaSClient:
     RUNNING = NodeState.RUNNING
@@ -59,6 +112,9 @@ class IaaSClient:
         if not iaas_config.has_option('iaas', 'OPENNEBULA_URL'): raise Exception('Configuration error: [iaas] OPENNEBULA_URL not set')
         if not iaas_config.has_option('iaas', 'OPENNEBULA_USER'): raise Exception('Configuration error: [iaas] OPENNEBULA_USER not set')
         if not iaas_config.has_option('iaas', 'OPENNEBULA_PASSWORD'): raise Exception('Configuration error: [iaas] OPENNEBULA_PASSWORD not set')
+        if not iaas_config.has_option('iaas', 'OPENNEBULA_NETWORK_ID'): raise Exception('Configuration error: [iaas] OPENNEBULA_NETWORK_ID not set')
+        if not iaas_config.has_option('iaas', 'OPENNEBULA_SIZE_ID'): raise Exception('Configuration error: [iaas] OPENNEBULA_SIZE_ID not set')
+        if not iaas_config.has_option('iaas', 'OPENNEBULA_IMAGE_ID'): raise Exception('Configuration error: [iaas] OPENNEBULA_IMAGE_ID not set')
         
         parsed = urlparse.urlparse(iaas_config.get('iaas', 'OPENNEBULA_URL'))
         self.scheme = parsed.scheme
@@ -66,8 +122,11 @@ class IaaSClient:
         self.port = parsed.port
         self.path = parsed.path
         self.username = iaas_config.get('iaas', 'OPENNEBULA_USER')
-        self.password = iaas_config.get('iaas', 'OPENNEBULA_PASSWORD')
-                            
+        self.password = iaas_config.get('iaas', 'OPENNEBULA_PASSWORD')                            
+        self.img_id = iaas_config.get('iaas', 'OPENNEBULA_IMAGE_ID')
+        self.size_id = iaas_config.get('iaas', 'OPENNEBULA_SIZE_ID')    
+        self.on_ex_network_id = iaas_config.get('iaas', 'OPENNEBULA_NETWORK_ID')
+        
         self.driver = OneXmlrpc(self.username, self.password, self.scheme, self.host, self.port)
   
     def __config_opennebula(self, iaas_config):
@@ -136,19 +195,22 @@ class IaaSClient:
         for node in nodes.values():
             vms[node.id] = {'id': node.name,
             'state': node.state,
-            'name': node.name}
-            #'ip': i.public_ip[0]}
+            'name': node.name,
+            'ip': node.public_ip}
         return vms
   
     def getVMInfo(self, vm_id):
         return self.listVMs()[vm_id]
   
     def newInstance(self):
-        size = [ i for i in self.driver.list_sizes() if i.id == self.size_id ][0]
+        size_one = [ i for i in self.driver.list_sizes() if i.id == self.size_id ]
+        size = size_one[0]
         img = NodeImage(self.img_id, '', None)
         kwargs = {'size': size,
                   'image': img
                   }
+        if isinstance(self.driver, OneXmlrpc):
+            kwargs['ex_network_id'] = self.on_ex_network_id
         if isinstance(self.driver, OpenNebulaNodeDriver):
             kwargs['ex_network_id'] = self.on_ex_network_id
             kwargs['ex_network_gateawy'] = self.on_ex_network_gateawy
@@ -167,10 +229,12 @@ class IaaSClient:
     '''
         
         node = self.driver.create_node(name='conpaas', **kwargs)
-        return {'id': node.id,
-            'state': node.state,
-            'name': node.name,
-            'ip': node.public_ip[0]}
+        nodes = self.driver.list_nodes()
+        
+        return {'id': nodes[node].id,
+            'state': nodes[node].state,
+            'name': nodes[node].name,
+            'ip': nodes[node].public_ip}
   
     def killInstance(self, vm_id):
         nodes = self.driver.list_nodes()
