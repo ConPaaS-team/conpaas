@@ -377,20 +377,13 @@ class ServicePage extends Page {
 				$('#saveconf').removeAttr('disabled');
 			});
 
-			function pack_parameters_aws(params, name) {
-				data = {};
-				for (key in params) {
-					data[name + '.' + key] = params[key];
-				}
-				return data;
-			}
-				
 			$('#saveconf').click(function() {
-				params = pack_parameters_aws({
-					'max_execution_time': $('#conf-maxexec').val(),
-					'memory_limit': $('#conf-memlim').val()
-				}, 'phpconf');
-					
+				var phpconf = {};
+				phpconf['max_execution_time'] = $('#conf-maxexec').val();
+				phpconf['memory_limit'] = $('#conf-memlim').val();
+				var params = {};
+				params['phpconf'] = phpconf;
+				
 				$(this).attr('disabled', 'disabled');
 				transientRequest({
 					url: 'services/sendConfiguration.php?sid=' + sid,

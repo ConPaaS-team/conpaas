@@ -26,22 +26,7 @@ try {
 	$cloud = $_POST['cloud'];
 	$uid = $_SESSION['uid'];
 	
-	$query = sprintf("INSERT INTO services ".
-		"(name, type, cloud, state, creation_date, uid) VALUES ".
-		"('%s', '%s', '%s', %d, now(), %d)",
-		$default_name,
-		$type,
-		$cloud,
-		Service::STATE_PREINIT,
-		$uid
-	);
-	$res = mysql_query($query, DB::getConn());
-	if ($res === false) {
-		throw new DBException(DB::getConn());
-	}
-	
-	/* get the service id */
-	$sid = mysql_insert_id(DB::getConn());
+	$sid = ServiceData::createService($default_name, $type, $cloud, $uid);
 	/* start the instance */
 	$service_data = ServiceData::getServiceById($sid);
 	$service = ServiceFactory::createInstance($service_data);

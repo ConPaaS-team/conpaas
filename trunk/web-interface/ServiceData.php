@@ -5,10 +5,30 @@ require_once('Service.php');
 
 class ServiceData {
 	
+    public static function createService($default_name, $type, $cloud, $uid) {
+        $query = sprintf("INSERT INTO services ".
+    		"(name, type, cloud, state, creation_date, uid) VALUES ".
+    		"('%s', '%s', '%s', %d, now(), %d)",
+    		mysql_escape_string($default_name),
+    		mysql_escape_string($type),
+    		mysql_escape_string($cloud),
+    		mysql_escape_string(Service::STATE_PREINIT),
+    		mysql_escape_string($uid)
+    	);
+    	$res = mysql_query($query, DB::getConn());
+    	if ($res === false) {
+    		throw new DBException(DB::getConn());
+    	}
+    	
+    	/* get the service id */
+    	$sid = mysql_insert_id(DB::getConn());
+    	return $sid;
+    }
+    
 	public static function getServicesByUser($uid) {
 		$query = sprintf("SELECT * FROM services WHERE uid='%s' ".
 			" ORDER BY sid DESC",
-			$uid);
+			mysql_escape_string($uid));
 		$res = mysql_query($query, DB::getConn());
 		if ($res === false) {
 			throw new DBException(DB::getConn());
@@ -18,7 +38,7 @@ class ServiceData {
 	
 	public static function getServiceById($sid) {
 		$query = sprintf("SELECT * FROM services WHERE sid='%s' LIMIT 1",
-			$sid);
+			mysql_escape_string($sid));
 		$res = mysql_query($query, DB::getConn());
 		if ($res === false) {
 			throw new DBException(DB::getConn());
@@ -32,7 +52,7 @@ class ServiceData {
 	
 	public static function updateVmid($sid, $vmid) {
 		$query = sprintf("UPDATE services SET vmid='%s' WHERE sid=%d", 
-			$vmid, $sid); 
+			mysql_escape_string($vmid), mysql_escape_string($sid)); 
 		$res = mysql_query($query, DB::getConn());
 		if ($res === false) {
 			throw new DBException(DB::getConn());
@@ -42,7 +62,7 @@ class ServiceData {
 	public static function updateName($sid, $name) {
 		$query = sprintf("UPDATE services SET name='%s' WHERE sid=%d",
 			mysql_escape_string($name), 
-			$sid); 
+			mysql_escape_string($sid)); 
 		$res = mysql_query($query, DB::getConn());
 		if ($res === false) {
 			throw new DBException(DB::getConn());
@@ -53,7 +73,9 @@ class ServiceData {
 	public static function updateManagerAddress($sid, $manager) {
 		$query = sprintf("UPDATE services SET manager='%s', state=%d ".
 			" WHERE sid=%d",
-			$manager, Service::STATE_INIT, $sid); 
+			mysql_escape_string($manager),
+			mysql_escape_string(Service::STATE_INIT),
+			mysql_escape_string($sid)); 
 		$res = mysql_query($query, DB::getConn());
 		if ($res === false) {
 			throw new DBException(DB::getConn());
@@ -62,7 +84,8 @@ class ServiceData {
 	
 	public static function updateState($sid, $state) {
 		$query = sprintf("UPDATE services SET state=%d WHERE sid=%d",
-			$state, $sid); 
+			mysql_escape_string($state),
+			mysql_escape_string($sid)); 
 		$res = mysql_query($query, DB::getConn());
 		if ($res === false) {
 			throw new DBException(DB::getConn());
@@ -70,7 +93,8 @@ class ServiceData {
 	}
 	
 	public static function deleteService($sid) {
-		$query = sprintf("DELETE FROM services WHERE sid=%d", $sid);
+		$query = sprintf("DELETE FROM services WHERE sid=%d",
+		    mysql_escape_string($sid));
 		$res = mysql_query($query, DB::getConn());
 		if ($res === false) {
 			throw new DBException(DB::getConn());

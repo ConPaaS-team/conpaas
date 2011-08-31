@@ -13,12 +13,13 @@ function register($username) {
 			'error' => 'username <b>'.$username.'</b> already exists'
 		);
 	}
-	$query = sprintf("INSERT INTO users (username, created) ".
-		"VALUES ('%s', now())",
-		$username);
-	$res = mysql_query($query, DB::getConn());
-	if ($res === false) {
-		throw new DBException(DB::getConn());
+	try {
+	    UserData::createUser($username);
+	} catch (DBException $e) {
+	    return array(
+			'register' => 0,
+			'error' => 'user could not be added into the database',
+		);
 	}
 	$uinfo = UserData::getUserByName($username);
 	if ($uinfo === false) {
