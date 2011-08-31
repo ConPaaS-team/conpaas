@@ -7,6 +7,8 @@ Created on Jan 21, 2011
 import urlparse
 from string import Template
 
+from conpaas.web.misc import get_ip_address
+
 from libcloud.types import Provider, NodeState
 from libcloud.providers import get_driver
 from libcloud.base import NodeImage
@@ -74,7 +76,9 @@ class IaaSClient:
       buf = fd.read()
     fd.close()
     
-    self.ec2_ex_agent_userdata = Template(self.ec2_ex_agent_userdata).substitute(SOURCE=self.bootstrap)
+    self.ec2_ex_agent_userdata = Template(self.ec2_ex_agent_userdata).substitute(SOURCE=self.bootstrap,
+                                                                                 MANAGER_IP=get_ip_address('eth0'))
+    print self.ec2_ex_agent_userdata
     
     self.img_id = iaas_config.get('iaas', 'EC2_IMAGE_ID')
     self.size_id = iaas_config.get('iaas', 'EC2_SIZE_ID')

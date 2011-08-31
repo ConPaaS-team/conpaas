@@ -48,10 +48,18 @@ class CodeVersion(object):
 class PHPINIConfiguration(object):
   defaults = {'max_execution_time': '30',
               'memory_limit': '128M',
-              'error_reporting': 'E_ALL & ~E_DEPRECATED',
               'log_errors': 'Off',
               'display_errors': 'Off',
               'upload_max_filesize': '2M',
+              }
+  ## Do not use $ to match end of string because it matches the end of the
+  ## string or just before the newline at the end of the string.
+  ## Use \Z matches the end of string
+  format = {'max_execution_time': '^\d+\Z',
+              'memory_limit': '^\d+[KkMmGg]?\Z',
+              'log_errors': '^On|Off\Z',
+              'display_errors': '^On|Off\Z',
+              'upload_max_filesize': '^\d+[KkMmGg]?\Z',
               }
   def __init__(self):
     self.conf = {}
@@ -66,9 +74,8 @@ class PHP_FPM_Configuration(object):
     self.scalaris = scalaris
 
 class WebServerConfiguration(object):
-  def __init__(self, port=WEB_PORT, doc_root='/var/www', php=[]):
+  def __init__(self, port=WEB_PORT, php=[]):
     self.port = port
-    self.doc_root = doc_root
     self.backends = php
 
 class ProxyConfiguration(object):
@@ -109,10 +116,10 @@ class ServiceConfiguration(object):
     return [ serviceNode for serviceNode in self.serviceNodes.values() if serviceNode.isRunningBackend ]
   
   def getBackendTuples(self):
-    return [ [serviceNode.ip, BACKEND_PORT] for serviceNode in self.serviceNodes.values() if serviceNode.isRunningBackend ]
+    return [ {'ip': serviceNode.ip, 'port': BACKEND_PORT} for serviceNode in self.serviceNodes.values() if serviceNode.isRunningBackend ]
   
   def getWebTuples(self):
-    return [ [serviceNode.ip, WEB_PORT] for serviceNode in self.serviceNodes.values() if serviceNode.isRunningWeb ]
+    return [ {'ip': serviceNode.ip, 'port': WEB_PORT} for serviceNode in self.serviceNodes.values() if serviceNode.isRunningWeb ]
   
   def getBackendIPs(self):
     return [ serviceNode.ip for serviceNode in self.serviceNodes.values() if serviceNode.isRunningBackend ]

@@ -39,6 +39,44 @@ class JavaInternal(InternalsBase):
         self._state_set(self.S_ERROR, msg='Failed to update code at node %s' % str(serviceNode))
         return
   
+  def _start_proxy(self, config, nodes):
+    kwargs = {
+              'web_list': config.getWebTuples(),
+              'tomcat_list': config.getBackendTuples(),
+              'tomcat_servlets': self._get_servlet_urls(config.currentCodeVersion),
+              }
+    
+    for proxyNode in nodes:
+      try:
+        if config.currentCodeVersion != None:
+          client.createHttpProxy(proxyNode.ip, 5555,
+                                 config.proxy_config.port,
+                                 config.currentCodeVersion,
+                                 **kwargs)
+      except client.AgentException:
+          self.logger.exception('Failed to start proxy at node %s' % str(proxyNode))
+          self._state_set(self.S_ERROR, msg='Failed to start proxy at node %s' % str(proxyNode))
+          raise
+  
+  def _update_proxy(self, config, nodes):
+    kwargs = {
+              'web_list': config.getWebTuples(),
+              'tomcat_list': config.getBackendTuples(),
+              'tomcat_servlets': self._get_servlet_urls(config.currentCodeVersion),
+              }
+    
+    for proxyNode in nodes:
+        try:
+          if config.currentCodeVersion != None:
+            client.updateHttpProxy(proxyNode.ip, 5555,
+                                 config.proxy_config.port,
+                                 config.currentCodeVersion,
+                                 **kwargs)
+        except client.AgentException:
+          self.logger.exception('Failed to update proxy at node %s' % str(proxyNode))
+          self._state_set(self.S_ERROR, msg='Failed to update proxy at node %s' % str(proxyNode))
+          raise
+  
   def _start_backend(self, config, nodes):
     for serviceNode in nodes:
       try:
@@ -46,7 +84,7 @@ class JavaInternal(InternalsBase):
       except client.AgentException:
           self.logger.exception('Failed to start Tomcat at node %s' % str(serviceNode))
           self._state_set(self.S_ERROR, msg='Failed to start Tomcat at node %s' % str(serviceNode))
-          return
+          raise
   
   def _stop_backend(self, config, nodes):
     for serviceNode in nodes:
@@ -54,54 +92,7 @@ class JavaInternal(InternalsBase):
       except client.AgentException:
           self.logger.exception('Failed to stop Tomcat at node %s' % str(serviceNode))
           self._state_set(self.S_ERROR, msg='Failed to stop Tomcat at node %s' % str(serviceNode))
-          return
-  
-  def _start_web(self, config, nodes):
-    servlets_current = self._get_servlet_urls(config.currentCodeVersion)
-    kwargs = {}
-    if config.prevCodeVersion and config.prevCodeVersion != config.currentCodeVersion:
-      kwargs['codeOld'] = config.prevCodeVersion
-      kwargs['servletsOld'] = self._get_servlet_urls(config.prevCodeVersion)
-    for serviceNode in nodes:
-      try:
-        client.createTomcatWebServer(serviceNode.ip, 5555,
-                                     config.web_config.doc_root,
-                                     config.web_config.port,
-                                     config.web_config.backends,
-                                     config.currentCodeVersion,
-                                     servlets_current,
-                                     **kwargs)
-      except client.AgentException:
-          self.logger.exception('Failed to start web at node %s' % str(serviceNode))
-          self._state_set(self.S_ERROR, msg='Failed to start web at node %s' % str(serviceNode))
-          return
-  
-  def _update_web(self, config, nodes):
-    servlets_current = self._get_servlet_urls(config.currentCodeVersion)
-    kwargs = {}
-    if config.prevCodeVersion and config.prevCodeVersion != config.currentCodeVersion:
-      kwargs['codeOld'] = config.prevCodeVersion
-      kwargs['servletsOld'] = self._get_servlet_urls(config.prevCodeVersion)
-    for webNode in nodes:
-        try: client.updateTomcatWebServer(webNode.ip, 5555,
-                                          config.web_config.doc_root,
-                                          config.web_config.port,
-                                          config.web_config.backends,
-                                          config.currentCodeVersion,
-                                          servlets_current,
-                                          **kwargs)
-        except client.AgentException:
-          self.logger.exception('Failed to update web at node %s' % str(webNode))
-          self._state_set(self.S_ERROR, msg='Failed to update web at node %s' % str(webNode))
-          return
-  
-  def _stop_web(self, config, nodes):
-    for serviceNode in nodes:
-      try: client.stopTomcatWebServer(serviceNode.ip, 5555)
-      except client.AgentException:
-          self.logger.exception('Failed to stop web at node %s' % str(serviceNode))
-          self._state_set(self.S_ERROR, msg='Failed to stop web at node %s' % str(serviceNode))
-          return
+          raise
   
   def get_service_info(self, kwargs):
     if len(kwargs) != 0:
@@ -109,17 +100,12 @@ class JavaInternal(InternalsBase):
     return HttpJsonResponse({'state': self._state_get(), 'type': 'JAVA'})
   
   def get_configuration(self, kwargs):
-#    try: check_nofiles(kwargs)
-#    except ManagerException as e: return {'opState': 'ERROR', 'error': e.message}
     if len(kwargs) != 0:
       return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
     config = self._configuration_get()
     return HttpJsonResponse({'codeVersionId': config.currentCodeVersion})
   
   def update_java_configuration(self, kwargs):
-#    try: check_nofiles(kwargs)
-#    except ManagerException as e: return {'opState': 'ERROR', 'error': e.message}
-    
     if 'codeVersionId' not in kwargs:
       return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_MISSING, 'at least one of "codeVersionId"').message)
     codeVersionId = kwargs.pop('codeVersionId')
@@ -168,8 +154,8 @@ class JavaInternal(InternalsBase):
   def _create_initial_configuration(self):
     config = JavaServiceConfiguration()
     config.backend_count = 0
-    config.web_count = 1
-    config.proxy_count = 0
+    config.web_count = 0
+    config.proxy_count = 1
     
     if not os.path.exists(self.code_repo):
       os.makedirs(self.code_repo)

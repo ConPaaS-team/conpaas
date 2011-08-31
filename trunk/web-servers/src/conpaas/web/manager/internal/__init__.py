@@ -7,7 +7,7 @@ Created on Feb 8, 2011
   A set of VMs logically grouped into 3 roles; web servers, php and load balancers.
 
 - What is the configuration?
-  web servers:    port, doc_root and list of php (ip, port)
+  web servers:    port, list of php (ip, port)
   php:           port
   load balancer:  port, list of web servers (ip, port)
   CODE to be placed at doc_root of all webserver VMs. Any file ending with
@@ -27,7 +27,7 @@ Created on Feb 8, 2011
 from threading import Thread
 import tempfile, os, os.path, tarfile, time, stat
 
-from conpaas.log import create_logger
+from conpaas.web.log import create_logger
 from conpaas.web.agent import client
 from conpaas.web.manager.config import ServiceNode, CodeVersion
 from conpaas.web.misc import archive_open, archive_get_members, archive_close,\
@@ -167,7 +167,7 @@ class InternalsBase(object):
     for id in ids:
       self.logger.debug('_kill_nodes: killing ' + str(id))
       try: self.iaas.killInstance(id)
-      except: self.logger.critical('_kill_nodes: Failed to kill node %s', id)
+      except: self.logger.exception('_kill_nodes: Failed to kill node %s', id)
   
   def _kill_nodes(self, nodes):
     self._kill_nodesById([ i['id'] for i in nodes ])
@@ -182,7 +182,7 @@ class InternalsBase(object):
         poll = self.iaas.newInstances(count - len(ready))
         self.memcache.set('nodes_additional', [ i['id'] for i in (poll + ready) ])
       except Exception as e:
-        self.logger.critical('_create_nodes: Failed to request new nodes')
+        self.logger.exception('_create_nodes: Failed to request new nodes')
         self._state_set(self.S_ERROR, msg='Failed to request new nodes')
         self._kill_nodes(ready)
         self.memcache.set('nodes_additional', [])
@@ -196,43 +196,55 @@ class InternalsBase(object):
     self.memcache.set('nodes_additional', [ i['id'] for i in ready ])
     return ready
   
-  def _start_proxy(self, config, nodes):
-    for serviceNode in nodes:
-      try:
-        if config.currentCodeVersion != None:
-          client.createHttpProxy(serviceNode.ip, 5555, config.proxy_config.port, config.proxy_config.web_backends, config.currentCodeVersion)
-        else:
-          client.createHttpProxy(serviceNode.ip, 5555, config.proxy_config.port, config.proxy_config.web_backends, '')
-      except client.AgentException:
-          self.logger.exception('Failed to start proxy at node %s' % str(serviceNode))
-          self._state_set(self.S_ERROR, msg='Failed to start proxy at node %s' % str(serviceNode))
-          return
-  
-  def _update_proxy(self, config, nodes):
-    for proxyNode in nodes:
-        try:
-          if config.currentCodeVersion != None:
-            client.updateHttpProxy(proxyNode.ip, 5555, config.proxy_config.port, config.proxy_config.web_backends, config.currentCodeVersion)
-          else:
-            client.updateHttpProxy(proxyNode.ip, 5555, config.proxy_config.port, config.proxy_config.web_backends, '')
-        except client.AgentException:
-          self.logger.exception('Failed to update proxy at node %s' % str(proxyNode))
-          self._state_set(self.S_ERROR, msg='Failed to update proxy at node %s' % str(proxyNode))
-          return
-  
   def _stop_proxy(self, config, nodes):
     for serviceNode in nodes:
       try: client.stopHttpProxy(serviceNode.ip, 5555)
       except client.AgentException:
           self.logger.exception('Failed to stop proxy at node %s' % str(serviceNode))
           self._state_set(self.S_ERROR, msg='Failed to stop proxy at node %s' % str(serviceNode))
-          return
+          raise
+
+  def _start_web(self, config, nodes):
+    if config.prevCodeVersion == None:
+      code_versions = [config.currentCodeVersion]
+    else:
+      code_versions = [config.currentCodeVersion, config.prevCodeVersion]
+    for serviceNode in nodes:
+      try:
+        client.createWebServer(serviceNode.ip, 5555,
+                               config.web_config.port,
+                               code_versions)
+      except client.AgentException:
+          self.logger.exception('Failed to start web at node %s' % str(serviceNode))
+          self._state_set(self.S_ERROR, msg='Failed to start web at node %s' % str(serviceNode))
+          raise
   
+  def _update_web(self, config, nodes):
+    if config.prevCodeVersion == None:
+      code_versions = [config.currentCodeVersion]
+    else:
+      code_versions = [config.currentCodeVersion, config.prevCodeVersion]
+    for webNode in nodes:
+        try: client.updateWebServer(webNode.ip, 5555,
+                                    config.web_config.port,
+                                    code_versions)
+        except client.AgentException:
+          self.logger.exception('Failed to update web at node %s' % str(webNode))
+          self._state_set(self.S_ERROR, msg='Failed to update web at node %s' % str(webNode))
+          raise
+  
+  def _stop_web(self, config, nodes):
+    for serviceNode in nodes:
+      try: client.stopWebServer(serviceNode.ip, 5555)
+      except client.AgentException:
+          self.logger.exception('Failed to stop web at node %s' % str(serviceNode))
+          self._state_set(self.S_ERROR, msg='Failed to stop web at node %s' % str(serviceNode))
+          raise
+
   def startup(self, kwargs):
     if len(kwargs) != 0:
       return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
     config = self._configuration_get()
-  #  nodes = memcache.get(NODES) # Get list of available vm IDs
     
     dstate = self._state_get()
     if dstate != self.S_INIT and dstate != self.S_STOPPED:
@@ -256,19 +268,19 @@ class InternalsBase(object):
     return HttpJsonResponse({'state': self.S_EPILOGUE})
   
   def do_startup(self, config):
-    if config.web_count == 1 \
-    and (config.proxy_count == 0 or config.backend_count == 0):# at least one is packed
-      if config.proxy_count == 0 and config.backend_count == 0:# packed
+    if config.proxy_count == 1 \
+    and (config.web_count == 0 or config.backend_count == 0):# at least one is packed
+      if config.web_count == 0 and config.backend_count == 0:# packed
         serviceNodeKwargs = [ {'runProxy':True, 'runWeb':True, 'runBackend':True} ]
-      elif config.proxy_count == 0 and config.backend_count > 0:# proxy packed, php separated
-        serviceNodeKwargs = [ {'runProxy':True, 'runWeb':True},
-                         {'runBackend':True} ]
-      elif config.proxy_count > 0 and config.backend_count == 0:# proxy separated, php packed
-        serviceNodeKwargs = [ {'runProxy':True},
-                         {'runWeb':True, 'runBackend':True} ]
+      elif config.web_count == 0 and config.backend_count > 0:# web packed, backend separated
+        serviceNodeKwargs = [ {'runBackend':True} for _ in range(config.backend_count) ]
+        serviceNodeKwargs.append({'runProxy':True, 'runWeb':True})
+      elif config.web_count > 0 and config.backend_count == 0:# proxy separated, backend packed
+        serviceNodeKwargs = [ {'runWeb':True} for _ in range(config.web_count) ]
+        serviceNodeKwargs.append({'runProxy':True, 'runBackend':True})
     else:
-      if config.proxy_count < 1: config.proxy_count = 1 # have to have at least one proxy
-      if config.backend_count < 1: config.backend_count = 1 # have to have at least one php
+      if config.web_count < 1: config.web_count = 1 # have to have at least one web
+      if config.backend_count < 1: config.backend_count = 1 # have to have at least one backend
       serviceNodeKwargs = [ {'runProxy':True} for _ in range(config.proxy_count) ]
       serviceNodeKwargs.extend([ {'runWeb':True} for _ in range(config.web_count) ])
       serviceNodeKwargs.extend([ {'runBackend':True} for _ in range(config.backend_count) ])
@@ -279,7 +291,7 @@ class InternalsBase(object):
       self._adapting_set_count(len(serviceNodeKwargs))
       node_instances = self._create_nodes(len(serviceNodeKwargs))
     except:
-      self.logger.critical('do_startup: Failed to request new nodes. Needed %d' % (len(serviceNodeKwargs)))
+      self.logger.exception('do_startup: Failed to request new nodes. Needed %d' % (len(serviceNodeKwargs)))
       self._state_set(self.S_STOPPED, msg='Failed to request new nodes')
       return
     finally:
@@ -292,12 +304,16 @@ class InternalsBase(object):
       i += 1
     config.update_mappings()
     
-    # stage the code files
-    if config.currentCodeVersion != None:
-      self._update_code(config, config.serviceNodes.values())
-    
     # issue orders to agents to start PHP inside
     self._start_backend(config, config.getBackendServiceNodes())
+    
+    # stage the code files
+    # NOTE: Code update is done after starting the backend
+    #       because tomcat-create-instance complains if its
+    #       directory exists when it is run and placing the
+    #       code can only be done after creating the instance
+    if config.currentCodeVersion != None:
+      self._update_code(config, config.serviceNodes.values())
     
     # issue orders to agents to start web servers inside
     self._start_web(config, config.getWebServiceNodes())
@@ -319,9 +335,6 @@ class InternalsBase(object):
     self._configuration_set(config)
   
   def add_nodes(self, kwargs):
-#    try: check_nofiles(kwargs)
-#    except ManagerException as e: return {'opState': 'ERROR', 'error': e.message}
-    
     config = self._configuration_get()
     dstate = self._state_get()
     if dstate != self.S_RUNNING:
@@ -350,11 +363,8 @@ class InternalsBase(object):
     if len(kwargs) != 0:
       return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
     
-    if (proxy + config.proxy_count) < 1 and (web + config.web_count) > 1:
-      return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_INVALID, detail='Cannot add more web servers without at least one "proxy"').message)
-    
-    if (web + config.web_count) > 1 and (backend + config.backend_count) < 1:
-      return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_INVALID, detail='Cannot add more web servers without at least one "backend"').message)
+    if (proxy + config.proxy_count) > 1 and ( (web + config.web_count) == 0 or (backend + config.backend_count) == 0 ):
+      return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_INVALID, detail='Cannot add more proxy servers without at least one "web" and one "backend"').message)
     
     self._state_set(self.S_ADAPTING, msg='Going to add proxy=%d, web=%d, backend=%d' % (proxy, web, backend))
     Thread(target=self.do_add_nodes, args=[config, proxy, web, backend]).start()
@@ -368,37 +378,24 @@ class InternalsBase(object):
     webNodesKill = []
     backendNodesKill = []
     
-    packBackend = False
-    
     if backend > 0 and config.backend_count == 0:
       backendNodesKill.append(config.getBackendServiceNodes()[0])
-    
-    if proxy > 0 and config.proxy_count == 0:
+    if web > 0 and config.web_count == 0:
       webNodesKill.append(config.getWebServiceNodes()[0])
-      proxy -= 1
-      web += 1
-      if config.backend_count == 0 and backend == 0:# backend was packed, did not request a new one
-        backendNodesKill.append(config.getBackendServiceNodes()[0])
-        packBackend = True
     
-    for i in range(backend): backendNodesNew.append({'runBackend':True})
-    for i in range(web): webNodesNew.append({'runWeb':True})
-    for i in range(proxy): proxyNodesNew.append({'runProxy':True})
+    for _ in range(backend): backendNodesNew.append({'runBackend':True})
+    for _ in range(web): webNodesNew.append({'runWeb':True})
+    for _ in range(proxy): proxyNodesNew.append({'runProxy':True})
     
     for i in webNodesKill: i.isRunningWeb = False
     for i in backendNodesKill: i.isRunningBackend = False
-    
-    if packBackend:
-      webNodesNew[0]['runBackend'] = True
-      if len(webNodesNew) > 1:
-        raise Exception('Unexpected packing state')
     
     newNodes = []
     try:
       self._adapting_set_count(len(proxyNodesNew) + len(webNodesNew) + len(backendNodesNew))
       node_instances = self._create_nodes(len(proxyNodesNew) + len(webNodesNew) + len(backendNodesNew))
     except:
-      self.logger.critical('do_add_nodes: Failed to request new nodes. Needed %d' % (len(proxyNodesNew + webNodesNew + backendNodesNew)))
+      self.logger.exception('do_add_nodes: Failed to request new nodes. Needed %d' % (len(proxyNodesNew + webNodesNew + backendNodesNew)))
       self._state_set(self.S_RUNNING, msg='Failed to request new nodes. Reverting to old configuration')
       return
     finally:
@@ -411,31 +408,33 @@ class InternalsBase(object):
       i += 1
     config.update_mappings()
     
+    # create new service nodes
+    self._start_backend(config, [ node for node in newNodes if node.isRunningBackend ])
     # stage code files in all new VMs
+    # NOTE: Code update is done after starting the backend
+    #       because tomcat-create-instance complains if its
+    #       directory exists when it is run and placing the
+    #       code can only be done after creating the instance
     if config.currentCodeVersion != None:
       self._update_code(config, [ node for node in newNodes if node not in config.serviceNodes ])
     
-    # create new service nodes
-    self._start_backend(config, [ node for node in newNodes if node.isRunningBackend ])
     self._start_web(config, [ node for node in newNodes if node.isRunningWeb ])
     self._start_proxy(config, [ node for node in newNodes if node.isRunningProxy ])
     
     # update services
-    if backendNodesNew:
-      self._update_web(config, [ i for i in config.serviceNodes.values() if i.isRunningWeb and i not in newNodes ])
-    if webNodesNew:
+    if webNodesNew or backendNodesNew:
       self._update_proxy(config, [ i for i in config.serviceNodes.values() if i.isRunningProxy and i not in newNodes ])
     # remove_nodes old ones
     self._stop_backend(config, backendNodesKill)
     self._stop_web(config, webNodesKill)
     
-    config.web_count = len(config.getWebServiceNodes())
-    config.backend_count = len(config.getBackendServiceNodes())
-    if config.backend_count == 1 and config.getBackendServiceNodes()[0] in config.getWebServiceNodes():
-      config.backend_count = 0
     config.proxy_count = len(config.getProxyServiceNodes())
-    if config.proxy_count == 1 and config.getProxyServiceNodes()[0] in config.getWebServiceNodes():
-      config.proxy_count = 0
+    config.backend_count = len(config.getBackendServiceNodes())
+    if config.backend_count == 1 and config.getBackendServiceNodes()[0] in config.getProxyServiceNodes():
+      config.backend_count = 0
+    config.web_count = len(config.getWebServiceNodes())
+    if config.web_count == 1 and config.getWebServiceNodes()[0] in config.getProxyServiceNodes():
+      config.web_count = 0
     
     self._state_set(self.S_RUNNING)
     self._configuration_set(config)
@@ -467,13 +466,13 @@ class InternalsBase(object):
     if len(kwargs) != 0:
       return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
     
-    if config.web_count - web < 1: return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_INVALID, detail='Not enough web nodes  will be left').message)
+    if config.proxy_count - proxy < 1: return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_INVALID, detail='Not enough proxy nodes  will be left').message)
     
-    if config.proxy_count - proxy < 1 and config.web_count - web > 1:
-      return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_INVALID, detail='Not enough proxy nodes will be left').message)
-    if config.proxy_count - proxy < 0: return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_INVALID, detail='Cannot remove_nodes that many proxy nodes').message)
+    if config.web_count - web < 1 and config.proxy_count - proxy > 1:
+      return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_INVALID, detail='Not enough web nodes will be left').message)
+    if config.web_count - web < 0: return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_INVALID, detail='Cannot remove_nodes that many web nodes').message)
     
-    if config.backend_count - backend < 1 and config.web_count - web > 1:
+    if config.backend_count - backend < 1 and config.proxy_count - proxy > 1:
       return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_INVALID, detail='Not enough backend nodes will be left').message)
     if config.backend_count - backend < 0:
       return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_INVALID, detail='Cannot remove_nodes that many backend nodes').message)
@@ -497,27 +496,18 @@ class InternalsBase(object):
     
     if web > 0:
       webNodesKill += config.getWebServiceNodes()[-web:]
+      if config.web_count - web == 0:
+        packWeb = True
     
     if backend > 0:
       backendNodesKill += config.getBackendServiceNodes()[-backend:]
       if config.backend_count - backend == 0:
-        # pack backend
         packBackend = True
     
     if proxy > 0:
-      if config.proxy_count - proxy == 0:
-        if proxy > 1:
-          proxyNodesKill += config.getProxyServiceNodes()[-(proxy - 1):]
-        webNodesKill += [config.getWebServiceNodes()[0]]
-        packWeb = True
-      else:
-        proxyNodesKill += config.getProxyServiceNodes()[-proxy:]
+      proxyNodesKill += config.getProxyServiceNodes()[-proxy:]
     
-    if config.proxy_count - proxy == 0:
-      packingNode = config.getProxyServiceNodes()[-proxy]
-    elif config.web_count - web == 1:
-      packingNode = config.getWebServiceNodes()[0]
-    
+    packingNode = config.getProxyServiceNodes()[0]
     for i in webNodesKill: i.isRunningWeb = False
     for i in backendNodesKill: i.isRunningBackend = False
     for i in proxyNodesKill: i.isRunningProxy = False
@@ -527,12 +517,16 @@ class InternalsBase(object):
     config.update_mappings()
     
     # new nodes
-    if packBackend: self._start_backend(config, [packingNode])
+    if packBackend:
+      # NOTE: Code update is done after starting the backend
+      #       because tomcat-create-instance complains if its
+      #       directory exists when it is run and placing the
+      #       code can only be done after creating the instance
+      self._start_backend(config, [packingNode])
+      self._update_code(config, [packingNode])
     if packWeb: self._start_web(config, [packingNode])
     
-    if backendNodesKill:
-      self._update_web(config, [ i for i in config.serviceNodes.values() if i.isRunningWeb and i not in webNodesKill ])
-    if webNodesKill:
+    if webNodesKill or backendNodesKill:
       self._update_proxy(config, [ i for i in config.serviceNodes.values() if i.isRunningProxy and i not in proxyNodesKill ])
     
     # remove_nodes nodes
@@ -545,13 +539,14 @@ class InternalsBase(object):
         del config.serviceNodes[i.vmid]
         self._kill_nodesById([i.vmid])
     
-    config.web_count = len(config.getWebServiceNodes())
-    config.backend_count = len(config.getBackendServiceNodes())
-    if config.backend_count == 1 and config.getBackendServiceNodes()[0] in config.getWebServiceNodes():
-      config.backend_count = 0
+    
     config.proxy_count = len(config.getProxyServiceNodes())
-    if config.proxy_count == 1 and config.getProxyServiceNodes()[0] in config.getWebServiceNodes():
-      config.proxy_count = 0
+    config.backend_count = len(config.getBackendServiceNodes())
+    if config.backend_count == 1 and config.getBackendServiceNodes()[0] in config.getProxyServiceNodes():
+      config.backend_count = 0
+    config.web_count = len(config.getWebServiceNodes())
+    if config.web_count == 1 and config.getWebServiceNodes()[0] in config.getProxyServiceNodes():
+      config.web_count = 0
     
     self._state_set(self.S_RUNNING)
     self._configuration_set(config)
@@ -572,9 +567,6 @@ class InternalsBase(object):
             })
   
   def get_node_info(self, kwargs):
-#    try: check_nofiles(kwargs)
-#    except ManagerException as e: return {'opState': 'ERROR', 'error': e.message}
-    
     if 'serviceNodeId' not in kwargs: return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_MISSING, 'serviceNodeId').message)
     serviceNodeId = kwargs.pop('serviceNodeId')
     if len(kwargs) != 0:
@@ -664,6 +656,8 @@ class InternalsBase(object):
     return HttpJsonResponse({'codeVersionId': os.path.basename(codeVersionId)})
   
   def get_service_performance(self, kwargs):
+    if len(kwargs) != 0:
+      return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
     return HttpJsonResponse({
             'request_rate': 0,
             'error_rate': 0,
@@ -672,6 +666,8 @@ class InternalsBase(object):
             })
   
   def getLog(self, kwargs):
+    if len(kwargs) != 0:
+      return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
     try:
       fd = open(self.logfile)
       ret = ''
@@ -686,6 +682,8 @@ class InternalsBase(object):
       return HttpErrorResponse('Failed to read log')
   
   def get_service_history(self, kwargs):
+    if len(kwargs) != 0:
+      return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
     return HttpJsonResponse({'state_log': self.state_log})
   
   def getSummerSchool(self, kwargs):

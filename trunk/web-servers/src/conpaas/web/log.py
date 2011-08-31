@@ -22,14 +22,14 @@ def create_logger(name):
   loggers.append(logger)
   return logger
 
-def init(config_parser):
+def init(log_file):
   global _inited
   if _inited: return
   _inited = True
   global handlers, loggers
   handlers = []
   loggers = []
-  file_handler = logging.FileHandler(config_parser.get('manager', 'LOG_FILE'))
+  file_handler = logging.FileHandler(log_file)
   file_handler.setFormatter(log_formatter)
   handlers.append(file_handler)
   

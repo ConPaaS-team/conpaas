@@ -37,11 +37,11 @@ mkdir(code_repo)
 config_parser = ConfigParser()
 config_parser.add_section('manager')
 config_parser.set('manager', 'LOG_FILE', opts.logfile)
-config_parser.set('manager', 'MEMCACHE_ADDR', 'localhost:'+str(opts.mc))
+config_parser.set('manager', 'MEMCACHE_ADDR', '127.0.0.1:'+str(opts.mc))
 config_parser.set('manager', 'CODE_REPO', code_repo)
 config_parser.set('manager', 'TYPE', opts.type)
 
-from conpaas import log
+from conpaas.web import log
 log.init(config_parser)
 
 # PATCH the real implementations with mock
@@ -61,7 +61,7 @@ elif config_parser.get('manager', 'TYPE') == 'JAVA':
 else:
   raise Exception('Did not set manager TYPE')
 
-mc = memcache.Client(['localhost:'+str(opts.mc)])
+mc = memcache.Client(['127.0.0.1:'+str(opts.mc)])
 mc.set(internal.InternalsBase.CONFIG, ConfigurationToUse())
 mc.set(internal.InternalsBase.DEPLOYMENT_STATE, internal.InternalsBase.S_INIT)
 

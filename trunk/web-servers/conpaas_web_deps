@@ -6,107 +6,49 @@
 # hosting any of the ConPaaSWeb components such as web servers, proxies and
 # PHP processes.
 # 
-# The startup script /etc/rc.local is edited to run the contextualization as
-# recommended by OpenNebula documentation.
-#
-# FIXME: this script is interactive. (cpan)
+# NOTE: This is an interactive script! The user must accept licenses and attend
+#       to other prompts.
 ##
 
 
-PREFIX=/conpaas
-SRC_URL=http://hppc644.few.vu.nl/contrail
+PREFIX=/
 
 function install_deb() {
-  apt-get -f update
+  sed --in-place 's/main/main contrib non-free/' /etc/apt/sources.list
+  apt-get -f -y update
   # install packages
-  apt-get -y install mime-support gcc g++ make perl wget less bzip2 libxml2 libxml2-dev libbz2-dev zlib1g-dev libexpat-dev libdb-dev libncurses-dev libreadline-dev libpcre3-dev memcached libcurl4-openssl-dev libmysql++-dev libmysqlclient15-dev
+  apt-get -f -y install openssh-server \
+        python python-pycurl python-cheetah nginx tomcat6-user memcached \
+        make gcc g++ sun-java6-jdk erlang ant libxslt1-dev yaws subversion
   update-rc.d -f memcached remove
-}
-
-function install_rpm() {
-  yum install gcc gcc-c++ make perl wget less bzip2 libxml2 libxml2-devel openssl-devel libcurl libcurl-devel bzip2-devel zlib-devel expat-devel db4-devel ncurses-devel readline-devel pcre-devel memcached
-  #FIXME: disable memcached startup
-}
-
-function install_nginx() {
-  wget $SRC_URL/nginx-0.8.54.tar.gz
-  tar -zxf nginx-0.8.54.tar.gz
-  rm -f nginx-0.8.54.tar.gz
-  cd nginx-0.8.54
-  ./configure --prefix=$PREFIX \
-  --sbin-path=$PREFIX/sbin/nginx \
-  --conf-path=$PREFIX/etc/nginx/nginx.conf \
-  --error-log-path=$PREFIX/var/log/nginx/error.log \
-  --http-log-path=$PREFIX/var/log/nginx/access.log \
-  --pid-path=$PREFIX/var/run/nginx.pid \
-  --lock-path=$PREFIX/var/run/nginx.lock \
-  --http-proxy-temp-path=$PREFIX/var/nginx/proxy-temp \
-  --http-fastcgi-temp-path=$PREFIX/var/nginx/fastcgi-temp \
-  --http-uwsgi-temp-path=$PREFIX/var/nginx/uwsgi-temp \
-  --http-scgi-temp-path=$PREFIX/var/nginx/scgi-temp \
-  --http-client-body-temp-path=$PREFIX/var/nginx/client-body-temp
-  make
-  make install
-  cd ..
-  rm -rf nginx-0.8.54
-  
-  mkdir -p $PREFIX/var/nginx
-}
-
-function install_php() {
-  # install PHP deps
-  wget $SRC_URL/php-5.3.4.tar.bz2
-  tar -jxf php-5.3.4.tar.bz2
-  rm -f php-5.3.4.tar.bz2
-  cd php-5.3.4
-  ./configure --prefix=$PREFIX \
-              --enable-fpm \
-              --with-mysql \
-              --with-curl
-  make
-  make install
-  cd ..
-  rm -rf php-5.3.4
-}
-
-function install_python() {
-  # install Python 2.7
-  wget $SRC_URL/Python-2.7.1.tar.bz2
-  tar -jxf Python-2.7.1.tar.bz2
-  rm -f Python-2.7.1.tar.bz2
-  cd Python-2.7.1
-  ./configure --prefix=$PREFIX \
-              --with-threads \
-              --enable-shared
-  make
-  make install
-  cd ..
-  rm -rf Python-2.7.1
-}
-
-function install_pycurl() {
-  export PATH=$PREFIX/bin:$PATH
-  export LD_LIBRARY_PATH=$PREFIX/lib
-  
-  wget $SRC_URL/pycurl-7.18.2.tar.gz
-  tar -zxf pycurl-7.18.2.tar.gz
-  rm -f pycurl-7.18.2.tar.gz
-  cd pycurl-7.18.2
-  python setup.py install
-  cd ..
-  rm -rf pycurl-7.18.2
-}
-
-function install_scalaris() {
-  cat <<EOF > /etc/apt/sources.list
-  deb http://ftp.us.debian.org/debian squeeze main contrib non-free
-  deb http://security.debian.org/ lenny/updates main contrib non-free
-  deb http://volatile.debian.org/debian-volatile lenny/volatile main contrib non-free
-EOF
-
-  apt-get update
-  apt-get -y install make gcc g++ sun-java6-jdk erlang ant libxslt1-dev yaws subversion
+  update-rc.d -f nginx remove
+  /etc/init.d/memcached stop
+  /etc/init.d/nginx stop
   update-rc.d -f yaws remove
+  /etc/init.d/yaws stop
+  
+  # add dotdeb repo for fpm
+  echo "deb http://packages.dotdeb.org stable all" >> /etc/apt/sources.list
+  wget -O - http://www.dotdeb.org/dotdeb.gpg 2>/dev/null | apt-key add -
+  apt-get -f -y update
+  apt-get -f -y install php5-fpm php5-curl php5-mcrypt php5-mysql php5-odbc php5-pgsql php5-sqlite php5-sybase php5-xmlrpc php5-xsl php5-adodb php5-memcache
+  update-rc.d -f php5-fpm remove
+  /etc/init.d/php5-fpm stop
+  # remove dotdeb repo
+  sed --in-place 's%deb http://packages.dotdeb.org stable all%%' /etc/apt/sources.list
+  apt-get -f -y update
+  
+  echo > /var/log/cpsagent.web.log
+  mkdir /etc/cpsagent.web/
+  mkdir /var/tmp/cpsagent.web/
+  mkdir /var/run/cpsagent.web/
+  mkdir /var/cache/cpsagent.web/
+  
+  echo > /var/log/cpsmanager.web.log
+  mkdir /etc/cpsmanager.web/
+  mkdir /var/tmp/cpsmanager.web/
+  mkdir /var/run/cpsmanager.web/
+  mkdir /var/cache/cpsmanager.web/
   
   svn checkout http://scalaris.googlecode.com/svn/trunk/ scalaris-read-only
   cd scalaris-read-only
@@ -116,71 +58,6 @@ EOF
   rm -rf scalaris-read-only
 }
 
-function remove_udev_rules() {
-  # remove udev net rules
-  mkdir /root/udev_rules
-  mv /etc/udev/rules.d/70-persistent-net.rules /root/udev_rules/
-  mv /etc/udev/rules.d/75-persistent-net-generator.rules /root/udev_rules/
-}
-
-function network_config() {
-  # set network configuration to static
-  cat <<EOF > /etc/network/interfaces
-# This file describes the network interfaces available on your system
-# and how to activate them. For more information, see interfaces(5).
-
-# The loopback network interface
-auto lo
-iface lo inet loopback
-
-# The primary network interface
-allow-hotplug eth0
-iface eth0 inet static
-EOF
-}
-
-function context() {
-  # contextualization
-  cat <<EOF > /etc/rc.local
-#!/bin/sh -e
-#
-# rc.local
-#
-# This script is executed at the end of each multiuser runlevel.
-# Make sure that the script will "exit 0" on success or any other
-# value on error.
-#
-# In order to enable or disable this script just change the execution
-# bits.
-#
-# By default this script does nothing.
-
-mount -t iso9660 /dev/hdc /mnt
-
-if [ -f /mnt/context.sh ]; then
-  . /mnt/init.sh
-fi
-
-umount /mnt
-
-exit 0
-EOF
-}
-
 mkdir -p $PREFIX
 
-if [ -z `which apt-get` ]; then
-  install_deb
-else
-  install_rpm
-fi
-
-#remove_udev_rules
-#network_config
-#context
-
-install_nginx
-install_php
-install_python
-install_pycurl
-install_scalaris
+install_deb

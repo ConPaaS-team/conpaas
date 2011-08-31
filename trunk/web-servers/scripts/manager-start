@@ -2,12 +2,10 @@
 
 tar -zxf /root/ConPaaSWeb.tar.gz -C /root/
 export PYTHONPATH=/root/ConPaaSWeb/src/:/root/ConPaaSWeb/contrib/
-export LD_LIBRARY_PATH=/conpaas/lib
-export PATH=/conpaas/bin:/conpaas/sbin:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:$PATH
 
 /etc/init.d/memcached start
 scalarisctl -d -f -s start
 
-python /root/ConPaaSWeb/bin/manager.py -p 80 -c /root/config.cfg -s $PUBLIC_IP 1>/root/manager.out 2>/root/manager.err &
+/root/ConPaaSWeb/sbin/cpsmanager.web -p 80 -c /root/config.cfg -s $PUBLIC_IP 1>/root/manager.out 2>/root/manager.err &
 manager_pid=$!
 echo $manager_pid > /root/manager.pid

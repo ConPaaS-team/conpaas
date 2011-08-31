@@ -5,14 +5,15 @@ Created on Jan 21, 2011
 '''
 
 from os.path import join, devnull, exists
-from os import kill, makedirs
+from os import kill, chown, setuid, setgid
+from pwd import getpwnam
 from signal import SIGINT, SIGTERM, SIGUSR2, SIGHUP
-from string import Template
 from subprocess import Popen
-
+from shutil import rmtree, copy2
+from Cheetah.Template import Template
 
 from conpaas.web.misc import verify_port, verify_ip_port_list, verify_ip_or_domain
-from conpaas.log import create_logger
+from conpaas.web.log import create_logger
 
 S_INIT        = 'INIT'
 S_STARTING    = 'STARTING'
@@ -22,23 +23,30 @@ S_STOPPED     = 'STOPPED'
 
 logger = create_logger(__name__)
 
-class BaseWebServer:
-  
-  def __init__(self, doc_root, port, php, stop_sig):
-    '''Creates a new WebServer object.
-    
-    doc_root: filesystem path where the webserver should serve documents from.
-    port: port to wich the web server listens for incoming connections.
-    php: list of [IP, PORT] values of the backend PHP processes.
-    '''
-    self.state = S_INIT
-    self.restart_count = 0
-    self.configure(doc_root, port, php)
-    self.start()
-    self.stop_sig = stop_sig
-  
-  def _current_pid_file(self, increment=0):
-    return self.pid_file
+NGINX_CMD = None
+PHP_FPM = None
+TOMCAT_INSTANCE_CREATE = None
+TOMCAT_STARTUP = None
+
+VAR_TMP = None
+VAR_CACHE = None
+VAR_RUN = None
+ETC = None
+
+def init(config_parser):
+  global NGINX_CMD, PHP_FPM, TOMCAT_INSTANCE_CREATE, TOMCAT_STARTUP
+  NGINX_CMD = config_parser.get('nginx', 'NGINX')
+  PHP_FPM = config_parser.get('php', 'PHP_FPM')
+  TOMCAT_INSTANCE_CREATE = config_parser.get('tomcat', 'TOMCAT_INSTANCE_CREATE')
+  TOMCAT_STARTUP = config_parser.get('tomcat', 'TOMCAT_STARTUP')
+  global VAR_TMP, VAR_CACHE, VAR_RUN, ETC
+  VAR_TMP = config_parser.get('agent', 'VAR_TMP')
+  VAR_CACHE = config_parser.get('agent', 'VAR_CACHE')
+  VAR_RUN = config_parser.get('agent', 'VAR_RUN')
+  ETC = config_parser.get('agent', 'ETC')
+
+
+class Nginx:
   
   def start(self):
     self.state = S_STARTING
@@ -53,14 +61,14 @@ class BaseWebServer:
   def stop(self):
     if self.state == S_RUNNING:
       self.state = S_STOPPING
-      if exists(self._current_pid_file()):
+      if exists(self.pid_file):
         try:
-          pid = int(open(self._current_pid_file(), 'r').read().strip())
+          pid = int(open(self.pid_file, 'r').read().strip())
         except IOError as e:
-          logger.exception('Failed to open PID file "%s"' % (self._current_pid_file()))
+          logger.exception('Failed to open PID file "%s"' % (self.pid_file))
           raise e
         except (ValueError, TypeError) as e:
-          logger.exception('PID in "%s" is invalid' % (self._current_pid_file()))
+          logger.exception('PID in "%s" is invalid' % (self.pid_file))
           raise e
         
         try:
@@ -71,22 +79,21 @@ class BaseWebServer:
           logger.exception('Failed to kill WebServer PID=%d' % (pid))
           raise e
       else:
-        logger.critical('Could not find PID file %s to kill WebServer' % (self._current_pid_file()))
-        raise IOError('Could not find PID file %s to kill WebServer' % (self._current_pid_file()))
+        logger.critical('Could not find PID file %s to kill WebServer' % (self.pid_file))
+        raise IOError('Could not find PID file %s to kill WebServer' % (self.pid_file))
     else:
       logger.warning('Request to kill WebServer while it is not running')
   
   def restart(self):
-    self.restart_count += 1
     self._write_config()
     
     try:
-      pid = int(open(self._current_pid_file(increment=-1), 'r').read().strip())
+      pid = int(open(self.pid_file, 'r').read().strip())
     except IOError as e:
-      logger.exception('Failed to open PID file "%s"' % (self._current_pid_file(increment=-1)))
+      logger.exception('Failed to open PID file "%s"' % (self.pid_file))
       raise e
     except (ValueError, TypeError) as e:
-      logger.exception('PID in "%s" is invalid' % (self._current_pid_file(increment=-1)))
+      logger.exception('PID in "%s" is invalid' % (self.pid_file))
       raise e
     
     try:
@@ -99,327 +106,171 @@ class BaseWebServer:
       logger.info('WebServer restarted')
   
   def post_restart(self): pass
+
+
+class NginxStatic(Nginx):
+  def __init__(self, port=None, code_versions=None):
+    self.cmd = NGINX_CMD
+    self.config_template = join(ETC, 'nginx-static.tmpl')
+    self.state = S_INIT
+    self.configure(port=port, code_versions=code_versions)
+    self.start()
+    self.stop_sig = SIGINT
+  
+  def configure(self, port=None, code_versions=None):
+    verify_port(port)
+    self.port = port
+    if not isinstance(code_versions, list):
+      raise TypeError('code_versions should be a list of strings')
+    for i in code_versions:
+      if not isinstance(i, basestring):
+        raise TypeError('code_versions should be a list of strings')
+    
+    self.code_versions = code_versions
+    if self.state == S_INIT:
+      self.config_file = join(VAR_CACHE, 'nginx-static.conf')
+      self.access_log = join(VAR_CACHE, 'nginx-static-access.log')
+      self.error_log = join(VAR_CACHE, 'nginx-static-error.log')
+      self.pid_file = join(VAR_RUN, 'nginx-static.pid')
+      self.user = 'www-data'
+    self._write_config()
+    self.start_args = [self.cmd, '-c', self.config_file]
+  
+  def _write_config(self):
+    tmpl = open(self.config_template).read()
+    template = Template(tmpl,
+                        {
+                         'user'         : self.user,
+                         'port'         : self.port,
+                         'error_log'    : self.error_log,
+                         'access_log'   : self.access_log,
+                         'pid_file'     : self.pid_file,
+                         'doc_root'     : join(VAR_CACHE, 'www'),
+                         'code_versions': self.code_versions})
+    conf_fd = open(self.config_file, 'w')
+    conf_fd.write(str(template))
+    conf_fd.close()
+    logger.debug('web server configuration written to %s' % (self.config_file))
+    
+  def status(self):
+    return {'state': self.state,
+    'port': self.port,
+    'code_versions': self.code_versions}
+
+
+class NginxProxy(Nginx):
+  
+  def __init__(self, port=None, code_version=None, web_list=[], fpm_list=[], tomcat_list=[], tomcat_servlets=[]):
+    self.cmd = NGINX_CMD
+    self.config_template = join(ETC, 'nginx-proxy.tmpl')
+    self.state = S_INIT
+    self.configure(port, code_version=code_version, web_list=web_list, fpm_list=fpm_list, tomcat_list=tomcat_list, tomcat_servlets=tomcat_servlets)
+    self.start()
+    self.stop_sig = SIGINT
+  
+  def _write_config(self):
+    tmpl = open(self.config_template).read()
+    conf_fd = open(self.config_file, 'w')
+    template = Template(tmpl, {
+                               'user'             : self.user,
+                               'port'             : self.port,
+                               'error_log'        : self.error_log,
+                               'access_log'       : self.access_log,
+                               'pid_file'         : self.pid_file,
+                               'doc_root'         : join(VAR_CACHE, 'www'),
+                               'code_version'     : self.codeversion,
+                               'web_list'         : self.web_list,
+                               'fpm_list'         : self.fpm_list,
+                               'tomcat_list'      : self.tomcat_list,
+                               'tomcat_servlets'  : self.tomcat_servlets,
+                               })
+    conf_fd.write(str(template))
+    conf_fd.close()
+    logger.debug('WebServer configuration written to %s' % (self.config_file))
+  
+  def configure(self, port=None, code_version=None, web_list=[], fpm_list=[], tomcat_list=[], tomcat_servlets=[]):
+    verify_port(port)
+    port = int(port)
+    verify_ip_port_list(web_list)
+    verify_ip_port_list(fpm_list)
+    verify_ip_port_list(tomcat_list)
+    if self.state == S_INIT:
+      self.config_file = join(VAR_CACHE, 'nginx-proxy.conf')
+      self.access_log = join(VAR_CACHE, 'nginx-proxy-access.log')
+      self.error_log = join(VAR_CACHE, 'nginx-proxy-error.log')
+      self.pid_file = join(VAR_RUN, 'nginx-proxy.pid')
+      self.user = 'www-data'
+    self.port = port
+    self.codeversion = code_version
+    self.web_list = web_list
+    self.fpm_list = fpm_list
+    self.tomcat_list = tomcat_list
+    self.tomcat_servlets = tomcat_servlets
+    self._write_config()
+    self.start_args = [self.cmd, '-c', self.config_file]
   
   def status(self):
     return {'state': self.state,
-    'doc_root': self.doc_root,
-    'port': self.port,
-    'php': self.php}
-  
-  def _get_upstream(self, backends):
-    upstream = ''
-    if backends:
-      upstream = 'upstream backend {\n'
-      for f in backends:
-        upstream += 'server %s:%d;\n' % (f[0], f[1])
-      upstream += '}\n'
-    return upstream
-
-class NginxPHP(BaseWebServer):
-  CONF_TEMPLATE = '''
-user ${USER};
-worker_processes  1;
-
-error_log  ${ERROR_LOG};
-pid        ${PID_FILE};
-
-events {
-  worker_connections  1024;
-  # multi_accept on;
-}
-
-http {
-  include       /conpaas/etc/nginx/mime.types;
-  access_log  ${ACCESS_LOG};
-  sendfile        on;
-  #tcp_nopush     on;
-  #keepalive_timeout  0;
-  keepalive_timeout  65;
-  tcp_nodelay        on;
-  gzip  on;
-  gzip_disable "MSIE [1-6]\.(?!.*SV1)";
-
-${FCGI}
-${SERVERS}
-  server {
-    listen ${PORT} default;
-    port_in_redirect off;
-    location / {
-      return 404;
-    }
-  }
-}
-  '''
-  CONF_SERVER_TEMPLATE = '''
-  server {
-    listen       ${PORT};
-    root         ${DOC_ROOT}/${CODE_VERSION};
-    server_name  ${CODE_VERSION};
-    port_in_redirect off;
-    location    / {
-      index         index.html index.htm index.php;
-    }
-    location ~ \.php$$ {
-      include        /conpaas/etc/nginx/fastcgi_params;
-      fastcgi_param  SCRIPT_FILENAME $$document_root$$fastcgi_script_name;
-      fastcgi_param  SERVER_NAME $$http_conpaashost;
-      fastcgi_pass   backend;
-    }
-  }
-  '''
-  
-  cmd = '/conpaas/sbin/nginx'
-  
-  def __init__(self, doc_root=None, port=None, codeVersion=None, php=None, prevCodeVersion=None):
-    self.state = S_INIT
-    self.restart_count = 0
-    self.configure(doc_root, port, codeVersion, php, prevCodeVersion)
-    self.start()
-    self.stop_sig = SIGINT
-  
-  def _write_config(self):
-    '''Write configuration file.'''
-    if self.php:
-      fcgi_conf = self._get_upstream(self.php)
-      servers_template = Template(self.CONF_SERVER_TEMPLATE)
-      servers = servers_template.substitute(DOC_ROOT=self.doc_root,
-                                            CODE_VERSION=self.codeVersion,
-                                            PORT=self.port)
-      if self.prevCodeVersion:
-        servers += servers_template.substitute(DOC_ROOT=self.doc_root,
-                                            CODE_VERSION=self.prevCodeVersion,
-                                            PORT=self.port)
-    else:
-      fcgi_conf = ''
-      servers = ''
-    
-    template = Template(self.CONF_TEMPLATE)
-    conf_fd = open(self.config_file, 'w')
-    conf_fd.write(template.substitute(ACCESS_LOG=self.access_log,
-                                      ERROR_LOG=self.error_log,
-                                      PID_FILE=self._current_pid_file(),
-                                      USER=self.user,
-                                      PORT=self.port,
-                                      FCGI=fcgi_conf,
-                                      SERVERS=servers))
-    conf_fd.close()
-    logger.debug('WebServer configuration written to %s' % (self.config_file))
-  
-  def configure(self, doc_root=None, port=None, codeVersion=None, php=None, prevCodeVersion=None):
-    port = int(port)
-    if doc_root == None: raise TypeError('doc_root is required')
-    if port == None: raise TypeError('port is required')
-    if type(doc_root) != str and type(doc_root) != unicode:
-      raise TypeError('doc_root must be a valid string (%s)' % type(doc_root).__name__)
-    verify_port(port)
-    if php != None:
-      verify_ip_port_list(php)
-    if self.state == S_INIT:
-      if not exists('/conpaas/conf/nginx-web'):
-        makedirs('/conpaas/conf/nginx-web')
-      self.config_dir = '/conpaas/conf/nginx-web'
-      self.config_file = join(self.config_dir, 'nginx.conf')
-      self.access_log = join(self.config_dir, 'access.log')
-      self.error_log = join(self.config_dir, 'error.log')
-      self.pid_file = join(self.config_dir, 'nginx.pid')
-      self.user = 'www-data'
-    self.doc_root = doc_root
-    self.port = port
-    self.php = php
-    self.codeVersion = codeVersion
-    self.prevCodeVersion = prevCodeVersion
-    self._write_config()
-    self.start_args = [self.cmd, '-c', self.config_file]
-
-
-class NginxTomcat(BaseWebServer):
-  CONF_TEMPLATE = '''
-#user ${USER};
-worker_processes  1;
-
-error_log  ${ERROR_LOG};
-pid        ${PID_FILE};
-
-events {
-  worker_connections  1024;
-  # multi_accept on;
-}
-
-http {
-  include       /conpaas/etc/nginx/mime.types;
-  access_log  ${ACCESS_LOG};
-  sendfile        on;
-  #tcp_nopush     on;
-  #keepalive_timeout  0;
-  keepalive_timeout  65;
-  tcp_nodelay        on;
-  gzip  on;
-  gzip_disable "MSIE [1-6]\.(?!.*SV1)";
-
-${UPSTREAM}
-${SERVERS}
-  server {
-    listen ${PORT} default;
-    port_in_redirect off;
-    location / {
-      return 404;
-    }
-  }
-}
-  '''
-  CONF_SERVER_TEMPLATE='''
-  server {
-    listen       ${PORT};
-    root           ${DOC_ROOT}/${CODE_VERSION};
-    server_name  ${CODE_VERSION};
-    port_in_redirect off;
-    
-    location    / {
-      index         index.html index.htm index.jsp;
-    }
-    
-    ${JSP}
-  }
-  '''
-  CONF_JSP_TEMPLATE='''
-      location ${LOCATION} {
-        rewrite  ^(.*)$$  /$$http_conpaasversion$$1  break;
-        proxy_set_header Host $$http_conpaashost;
-        proxy_set_header X-Real-IP $$remote_addr;
-        proxy_pass       http://backend;
-      }
-  '''
-  cmd = '/conpaas/sbin/nginx'
-  
-  def __init__(self, doc_root=None, port=None, php=None, codeCurrent=None,
-               codeOld=None, servletsCurrent=[], servletsOld=[]):
-    self.state = S_INIT
-    self.restart_count = 0
-    self.configure(doc_root, port, php, codeCurrent, codeOld,
-                   servletsCurrent, servletsOld)
-    self.start()
-    self.stop_sig = SIGINT
-  
-  def _get_server_definition(self, codeVersionId, servlet_urls):
-    jsp_template = Template(self.CONF_JSP_TEMPLATE)
-    server_template = Template(self.CONF_SERVER_TEMPLATE)
-    jsp_handler = jsp_template.substitute(LOCATION='~ \.jsp$')
-    for i in servlet_urls:
-      jsp_handler += jsp_template.substitute(LOCATION='= %s' % (i))
-    return server_template.substitute(PORT=self.port,
-                                      DOC_ROOT=self.doc_root,
-                                      CODE_VERSION=codeVersionId,
-                                      JSP=jsp_handler)
-  
-  def _write_config(self):
-    '''Write configuration file.'''
-    ###
-    if self.tomcat:
-      upstream = self._get_upstream(self.tomcat)
-      servers = self._get_server_definition(self.codeCurrent, self.servletsCurrent)
-      if self.codeOld:
-        servers += self._get_server_definition(self.codeOld, self.servletsOld)
-    else:
-      upstream = ''
-      servers = ''
-    template = Template(self.CONF_TEMPLATE)
-    conf_fd = open(self.config_file, 'w')
-    conf_fd.write(template.substitute(DOC_ROOT=self.doc_root,
-                        ACCESS_LOG=self.access_log, ERROR_LOG=self.error_log,
-                        PID_FILE=self._current_pid_file(),
-                        USER=self.user, PORT=self.port, UPSTREAM=upstream, SERVERS=servers))
-    conf_fd.close()
-    logger.debug('WebServer configuration written to %s' % (self.config_file))
-  
-  def configure(self, doc_root=None, port=None, php=None, codeCurrent=None,
-               codeOld=None, servletsCurrent=[], servletsOld=[]):
-    port = int(port)
-    if doc_root == None: raise TypeError('doc_root is required')
-    if port == None: raise TypeError('port is required')
-    if type(doc_root) != str and type(doc_root) != unicode:
-      raise TypeError('doc_root must be a valid string (%s)' % type(doc_root).__name__)
-    verify_port(port)
-    if php != None:
-      verify_ip_port_list(php)
-    if self.state == S_INIT:
-      if not exists('/conpaas/conf/nginx-web'):
-        makedirs('/conpaas/conf/nginx-web')
-      self.config_dir = '/conpaas/conf/nginx-web'
-      self.config_file = join(self.config_dir, 'nginx.conf')
-      self.access_log = join(self.config_dir, 'access.log')
-      self.error_log = join(self.config_dir, 'error.log')
-      self.pid_file = join(self.config_dir, 'nginx.pid')
-      self.user = 'www-data'
-    self.doc_root = doc_root
-    self.port = port
-    self.tomcat = php
-    self.codeCurrent = codeCurrent
-    self.codeOld = codeOld
-    self.servletsCurrent = servletsCurrent
-    self.servletsOld = servletsOld
-    self._write_config()
-    self.start_args = [self.cmd, '-c', self.config_file]
+            'port': self.port,
+            'code_version': self.codeversion,
+            'web_list': self.web_list,
+            'fpm_list': self.fpm_list,
+            'tomcat_list': self.tomcat_list,
+            'tomcat_servlets': self.tomcat_servlets,
+            }
 
 
 class Tomcat6:
-  start_args = ['/conpaas/tomcat-6/bin/startup.sh']
-  shutdown_args = ['/conpaas/tomcat-6/bin/shutdown.sh']
-  
-  config_file = '/conpaas/tomcat-6/conf/server.xml'
-  
-  CONF_TEMPLATE = '''<?xml version='1.0' encoding='utf-8'?>
-<Server port="8005" shutdown="SHUTDOWN">
-  <Listener className="org.apache.catalina.core.AprLifecycleListener" SSLEngine="on" />
-  <Listener className="org.apache.catalina.core.JasperListener" />
-  <Listener className="org.apache.catalina.core.JreMemoryLeakPreventionListener" />
-  <Listener className="org.apache.catalina.mbeans.ServerLifecycleListener" />
-  <Listener className="org.apache.catalina.mbeans.GlobalResourcesLifecycleListener" />
-  <GlobalNamingResources>
-    <Resource name="UserDatabase" auth="Container"
-              type="org.apache.catalina.UserDatabase"
-              description="User database that can be updated and saved"
-              factory="org.apache.catalina.users.MemoryUserDatabaseFactory"
-              pathname="conf/tomcat-users.xml" />
-  </GlobalNamingResources>
-  <Service name="Catalina">
-    <Connector port="${PORT}" protocol="HTTP/1.1" 
-               connectionTimeout="20000" 
-               redirectPort="8443" />
-    <!--
-      <Connector port="8009" protocol="AJP/1.3" redirectPort="8443" />
-    -->
-    <Engine name="Catalina" defaultHost="localhost">
-      <Realm className="org.apache.catalina.realm.UserDatabaseRealm"
-             resourceName="UserDatabase"/>
-      <Host name="localhost"  appBase="webapps"
-            unpackWARs="true" autoDeploy="true"
-            xmlValidation="false" xmlNamespaceAware="false">
-      </Host>
-    </Engine>
-  </Service>
-</Server>
-'''
   
   def __init__(self, tomcat_port=None):
+    self.config_template = join(ETC, 'tomcat-server-xml.tmpl')
+    self.instance_dir = join(VAR_CACHE, 'tomcat_instance')
+    self.config_file = join(self.instance_dir, 'conf', 'server.xml')
+    self.start_args = [TOMCAT_STARTUP, '-security']
+    self.shutdown_args = [join(self.instance_dir, 'bin', 'shutdown.sh')]
+    verify_port(tomcat_port)
+    devnull_fd = open(devnull, 'w')
+    proc = Popen([TOMCAT_INSTANCE_CREATE, '-p', str(tomcat_port), self.instance_dir], stdout=devnull_fd, stderr=devnull_fd, close_fds=True)
+    if proc.wait() != 0:
+      logger.critical('Failed to initialize tomcat (code=%d)' % proc.returncode)
+      raise OSError('Failed to initialize tomcat (code=%d)' % proc.returncode)
+    try: self.www_user = getpwnam('www-data')
+    except KeyError:
+      logger.exception('Failed to find user id of www-data')
+      raise OSError('Failed to find user id of www-data')
+    for child in ['logs', 'temp', 'work']:
+      try:
+        chown(join(self.instance_dir, child), self.www_user.pw_uid, self.www_user.pw_gid)
+      except OSError:
+        logger.exception('Failed to change ownership of %s' % child)
+        raise
     self.state = S_INIT
     self.configure(tomcat_port=tomcat_port)
     self.start()
   
   def configure(self, tomcat_port=None):
     if tomcat_port == None: raise TypeError('tomcat_port is required')
-    verify_port(tomcat_port)
     self.port = tomcat_port
-    conf_template = Template(self.CONF_TEMPLATE)
+    tmpl = open(self.config_template).read()
+    template = Template(tmpl, {'port': self.port})
     fd = open(self.config_file, 'w')
-    fd.write(conf_template.substitute(PORT=self.port))
+    fd.write(str(template))
     fd.close()
+    copy2(join(ETC, 'tomcat-catalina.policy'),
+          join(self.instance_dir, 'work', 'catalina.policy'))
+  
+  def demote(self):
+    setgid(self.www_user.pw_gid)
+    setuid(self.www_user.pw_uid)
   
   def restart(self): pass
   
   def start(self):
     self.state = S_STARTING
     devnull_fd = open(devnull, 'w')
-    proc = Popen(self.start_args, stdout=devnull_fd, stderr=devnull_fd, close_fds=True)
+    proc = Popen(self.start_args, env={'CATALINA_BASE': self.instance_dir},
+                 preexec_fn=self.demote, # run tomcat under user www-data
+                 stdout=devnull_fd, stderr=devnull_fd, close_fds=True)
     if proc.wait() != 0:
       logger.critical('Failed to start tomcat (code=%d)' % proc.returncode)
       raise OSError('Failed to start tomcat (code=%d)' % proc.returncode)
@@ -436,6 +287,7 @@ class Tomcat6:
         raise OSError('Failed to stop tomcat (code=%d)' % proc.returncode)
       self.state = S_STOPPED
       logger.info('Tomcat stopped')
+      rmtree(self.instance_dir, ignore_errors=True)
     else:
       logger.warning('Request to kill tomcat while it is not running')
   
@@ -443,241 +295,11 @@ class Tomcat6:
     return {'state': self.state}
   
 
-
-class BaseProxy:
-  def __init__(self, port=None, backends=None, codeversion=None):
-    if port == None: raise TypeError('port is required')
-    self.state = S_INIT
-    self.configure(port=port, backends=backends, codeversion=codeversion)
-    self.start()
-  
-  def configure(self, port=None, backends=None, codeversion=None): pass
-  
-  def start(self):
-    self.state = S_STARTING
-    devnull_fd = open(devnull, 'w')
-#    proc = Popen(self.start_args, stdout=devnull_fd, stderr=devnull_fd, close_fds=True)
-    proc = Popen(self.start_args, close_fds=True)
-    if proc.wait() != 0:
-      logger.critical('Failed to start the proxy')
-      raise OSError('Failed to start the proxy')
-    self.state = S_RUNNING
-    logger.info('Proxy started')
-  
-  def stop(self): pass
-  
-  def restart(self): pass
-  
-  def status(self):
-    return {'state': self.state, 'port': self.port, 'backends': self.backends}
-
-
-class NginxProxy(BaseProxy):
-  CONF_TEMPLATE = '''
-#user ${USER};
-worker_processes  1;
-
-error_log  ${ERROR_LOG};
-pid        ${PID_FILE};
-
-events {
-  worker_connections  1024;
-  # multi_accept on;
-}
-
-http {
-  include       /conpaas/etc/nginx/mime.types;
-  include         /conpaas/etc/nginx/fastcgi_params;
-  access_log  ${ACCESS_LOG};
-  sendfile        on;
-  #tcp_nopush     on;
-  keepalive_timeout  65;
-  tcp_nodelay        on;
-  gzip  off;
-
-upstream backend {
-${BACKENDS}
-}
-  
-  server {
-    listen       ${PORT} default;
-    server_name  localhost;
-    
-    location    / {
-      proxy_set_header Conpaasversion '${CODE_VERSION}';
-      proxy_set_header Conpaashost $$host;
-      proxy_set_header Host '${CODE_VERSION}';
-      proxy_set_header X-Real-IP $$remote_addr;
-      proxy_pass http://backend;
-    }
-  }
-}
-  '''
-  CONF_TEMPLATE_NO_VERSION = '''
-#user ${USER};
-worker_processes  1;
-
-error_log  ${ERROR_LOG};
-pid        ${PID_FILE};
-
-events {
-  worker_connections  1024;
-  # multi_accept on;
-}
-
-http {
-  include       /conpaas/etc/nginx/mime.types;
-  include         /conpaas/etc/nginx/fastcgi_params;
-  access_log  ${ACCESS_LOG};
-  sendfile        on;
-  #tcp_nopush     on;
-  keepalive_timeout  65;
-  tcp_nodelay        on;
-  gzip  off;
-
-upstream backend {
-${BACKENDS}
-}
-  
-  server {
-    listen       ${PORT} default;
-    server_name  localhost;
-    
-    location    / {
-      root /conpaas/html;
-      rewrite ^(.*)$$ /default.html break;
-    }
-  }
-}
-  '''
-  
-  cmd = '/conpaas/sbin/nginx'
-  
-  def __init__(self, port=None, backends=None, codeversion=None):
-    BaseProxy.__init__(self, port=port, backends=backends, codeversion=codeversion)
-  
-  def _current_pid_file(self, increment=0):
-    return self.pid_file
-  
-  def _write_config(self):
-    '''Write configuration file.'''
-    backends_conf = ''
-    if self.backends:
-      backends_conf = ''
-      for f in self.backends:
-        backends_conf += 'server %s:%d;\n' % (f[0], f[1])
-    
-    conf_fd = open(self.config_file, 'w')
-    if self.codeversion != '':
-      template = Template(self.CONF_TEMPLATE)
-      conf_fd.write(template.substitute(ACCESS_LOG=self.access_log, ERROR_LOG=self.error_log,
-                          PID_FILE=self._current_pid_file(),
-                          USER=self.user, PORT=self.port, BACKENDS=backends_conf, CODE_VERSION=self.codeversion))
-    else:
-      template = Template(self.CONF_TEMPLATE_NO_VERSION)
-      conf_fd.write(template.substitute(ACCESS_LOG=self.access_log, ERROR_LOG=self.error_log,
-                          PID_FILE=self._current_pid_file(),
-                          USER=self.user, PORT=self.port, BACKENDS=backends_conf))
-    conf_fd.close()
-    logger.debug('WebServer configuration written to %s' % (self.config_file))
-  
-  def configure(self, port=None, backends=None, codeversion=None):
-    port = int(port)
-    if port == None: raise TypeError('port is required')
-    verify_port(port)
-    if backends != None:
-      verify_ip_port_list(backends)
-    if codeversion == None: raise TypeError('codeversion is required')
-    if self.state == S_INIT:
-      if not exists('/conpaas/conf/nginx-proxy'):
-        makedirs('/conpaas/conf/nginx-proxy')
-      self.config_dir = '/conpaas/conf/nginx-proxy'
-      self.config_file = join(self.config_dir, 'nginx.conf')
-      self.access_log = join(self.config_dir, 'access.log')
-      self.error_log = join(self.config_dir, 'error.log')
-      self.pid_file = join(self.config_dir, 'nginx.pid')
-      self.user = 'www-data'
-    self.port = port
-    self.backends = backends
-    self.codeversion = codeversion
-    self._write_config()
-    self.start_args = [self.cmd, '-c', self.config_file]
-  
-  def stop(self):
-    if self.state == S_RUNNING:
-      self.state = S_STOPPING
-      if exists(self._current_pid_file()):
-        try:
-          pid = int(open(self._current_pid_file(), 'r').read().strip())
-        except IOError as e:
-          logger.exception('Failed to open PID file "%s"' % (self._current_pid_file()))
-          raise e
-        except (ValueError, TypeError) as e:
-          logger.exception('PID in "%s" is invalid' % (self._current_pid_file()))
-          raise e
-        
-        try:
-          kill(pid, SIGINT)
-          self.state = S_STOPPED
-          logger.info('nginx proxy stopped')
-        except (IOError, OSError) as e:
-          logger.exception('Failed to kill nginx proxy PID=%d' % (pid))
-          raise e
-      else:
-        logger.critical('Could not find PID file %s to kill nginx proxy' % (self._current_pid_file()))
-        raise IOError('Could not find PID file %s to kill nginx proxy' % (self._current_pid_file()))
-    else:
-      logger.warning('Request to kill nginx proxy while it is not running')
-  
-  def restart(self):
-    self._write_config()
-    
-    try:
-      pid = int(open(self._current_pid_file(increment=-1), 'r').read().strip())
-    except IOError as e:
-      logger.exception('Failed to open PID file "%s"' % (self._current_pid_file(increment=-1)))
-      raise e
-    except (ValueError, TypeError) as e:
-      logger.exception('PID in "%s" is invalid' % (self._current_pid_file(increment=-1)))
-      raise e
-    
-    try:
-      kill(pid, SIGHUP)
-    except (IOError, OSError):
-      logger.exception('Failed to "gracefully" restart nginx proxy PID=%d' % (pid))
-      raise e
-    else:
-      logger.info('WebServer restarted')
-
-
 class PHPProcessManager:
   
-  CONF_TEMPLATE = '''[global]
-pid = ${PID_FILE}
-error_log = ${ERROR_LOG}
-;log_level = notice
-daemonize = yes
-[www]
-listen = 0.0.0.0:${PORT}
-;listen.allowed_clients = 127.0.0.1
-user = ${USER}
-group = ${GROUP}
-pm = dynamic
-pm.max_children = ${MAX_CHILDREN}
-pm.start_servers = ${SERVERS_START}
-pm.min_spare_servers = ${SERVERS_SPARE_MIN}
-pm.max_spare_servers = ${SERVERS_SPARE_MAX}
-pm.max_requests = ${MAX_REQUESTS}
-
-;; PHP configuration variables can be passed as follows
-; php_admin_value[VAR_NAME] = VALUE
-;; eg:
-; php_admin_value[upload_max_filesize] = 50M
-
-'''
-  cmd = '/conpaas/sbin/php-fpm'
-  
   def __init__(self, port=None, scalaris=None, configuration=None):
+    self.config_template = join(ETC, 'fpm.tmpl')
+    self.cmd = PHP_FPM
     self.state = S_INIT
     self.configure(port=port, scalaris=scalaris, configuration=configuration)
     self.start()
@@ -689,13 +311,10 @@ pm.max_requests = ${MAX_REQUESTS}
     if configuration and not isinstance(configuration, dict):
       raise TypeError('configuration is not a dict')
     if self.state == S_INIT:
-      if not exists('/conpaas/conf/fpm'):
-        makedirs('/conpaas/conf/fpm')
-      self.config_dir = '/conpaas/conf/fpm'
-      self.scalaris_config = join(self.config_dir, 'scalaris.conf')
-      self.config_file = join(self.config_dir, 'fpm.conf')
-      self.error_log = join(self.config_dir, 'error.log')
-      self.pid_file = join(self.config_dir, 'fpm.pid')
+      self.scalaris_config = join(VAR_CACHE, 'fpm-scalaris.conf')
+      self.config_file = join(VAR_CACHE, 'fpm.conf')
+      self.error_log = join(VAR_CACHE, 'fpm-error.log')
+      self.pid_file = join(VAR_RUN, 'fpm.pid')
       self.user = 'www-data'
       self.group = 'www-data'
       self.max_children = 1
@@ -704,18 +323,21 @@ pm.max_requests = ${MAX_REQUESTS}
       self.servers_spare_min = 1
       self.servers_spare_max = 1
       self.scalaris = scalaris
+    tmpl = open(self.config_template).read()
     fd = open(self.config_file, 'w')
-    t = Template(self.CONF_TEMPLATE)
-    fd.write(t.substitute(PID_FILE=self.pid_file, ERROR_LOG=self.error_log,\
-                 PORT=port, USER=self.user, GROUP=self.group,\
-                 MAX_CHILDREN=self.max_children, MAX_REQUESTS=self.max_requests,\
-                 SERVERS_START=self.servers_start,\
-                 SERVERS_SPARE_MIN=self.servers_spare_min,\
-                 SERVERS_SPARE_MAX=self.servers_spare_max))
-    fd.write('\n\n')
-    if configuration:
-      for k in configuration:
-        fd.write('php_admin_value[%s] = %s\n' % (k, configuration[k]))
+    template = Template(tmpl, {
+                               'pid_file':          self.pid_file,
+                               'error_log':         self.error_log,
+                               'port':              port,
+                               'user':              self.user,
+                               'group':             self.group,
+                               'max_children':      self.max_children,
+                               'max_requests':      self.max_requests,
+                               'servers_start':     self.servers_start,
+                               'servers_spare_min': self.servers_spare_min,
+                               'servers_spare_max': self.servers_spare_max,
+                               'properties':        configuration})
+    fd.write(str(template))
     fd.close()
     
     fd = open(self.scalaris_config, 'w')

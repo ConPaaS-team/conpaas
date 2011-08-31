@@ -19,9 +19,9 @@ class FakeManagerInternals(InternalsBase):
   def _update_code(self, config, nodes): pass
   def _start_backend(self, config, nodes): pass
   def _stop_backend(self, config, nodes): pass
-  def _start_web(self, config, nodes): pass
-  def _update_web(self, config, nodes): pass
-  def _stop_web(self, config, nodes): pass
+  def _start_proxy(self, config, nodes): pass
+  def _update_proxy(self, config, nodes): pass
+  def _stop_proxy(self, config, nodes): pass
   
   def get_service_info(self, kwargs):
     if len(kwargs) != 0:

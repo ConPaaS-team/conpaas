@@ -75,6 +75,13 @@ class AbstractRequestHandler(BaseHTTPRequestHandler):
     if parsed_url.path != '/':
       self.send_error(httplib.NOT_FOUND)
       return
+    
+    ## if whitelist specified
+    if self.server.whitelist_addresses \
+    and self.client_address[0] not in self.server.whitelist_addresses:
+      self.send_custom_response(httplib.FORBIDDEN)
+      return
+    
     # require content-type header
     if 'content-type' not in self.headers:
       self.send_error(httplib.UNSUPPORTED_MEDIA_TYPE)
@@ -156,7 +163,6 @@ class AbstractRequestHandler(BaseHTTPRequestHandler):
         elif isinstance(response, HttpErrorResponse):
           self.send_custom_response(httplib.OK, json.dumps({'error': response.message, 'id': request_id}))
         elif isinstance(response, HttpJsonResponse):
-          
           self.send_custom_response(httplib.OK, json.dumps({'result': response.obj, 'error': None, 'id': request_id}))
       except Exception as e:
         print e

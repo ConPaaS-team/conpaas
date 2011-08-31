@@ -5,7 +5,7 @@ Created on Jul 11, 2011
 '''
 
 from threading import Thread
-import tarfile, tempfile, stat, os.path, traceback, sys
+import re, tarfile, tempfile, stat, os.path
 
 from conpaas.web.manager.config import CodeVersion, PHPServiceConfiguration
 from conpaas.web.agent import client
@@ -33,6 +33,42 @@ class PHPInternal(InternalsBase):
         self._state_set(self.S_ERROR, msg='Failed to update code at node %s' % str(serviceNode))
         raise
   
+  def _start_proxy(self, config, nodes):
+    kwargs = {
+              'web_list': config.getWebTuples(),
+              'fpm_list': config.getBackendTuples(),
+              }
+    
+    for proxyNode in nodes:
+      try:
+        if config.currentCodeVersion != None:
+          client.createHttpProxy(proxyNode.ip, 5555,
+                                 config.proxy_config.port,
+                                 config.currentCodeVersion,
+                                 **kwargs)
+      except client.AgentException:
+          self.logger.exception('Failed to start proxy at node %s' % str(proxyNode))
+          self._state_set(self.S_ERROR, msg='Failed to start proxy at node %s' % str(proxyNode))
+          raise
+  
+  def _update_proxy(self, config, nodes):
+    kwargs = {
+              'web_list': config.getWebTuples(),
+              'fpm_list': config.getBackendTuples(),
+              }
+    
+    for proxyNode in nodes:
+        try:
+          if config.currentCodeVersion != None:
+            client.updateHttpProxy(proxyNode.ip, 5555,
+                                 config.proxy_config.port,
+                                 config.currentCodeVersion,
+                                 **kwargs)
+        except client.AgentException:
+          self.logger.exception('Failed to update proxy at node %s' % str(proxyNode))
+          self._state_set(self.S_ERROR, msg='Failed to update proxy at node %s' % str(proxyNode))
+          raise
+  
   def _start_backend(self, config, nodes):
     for serviceNode in nodes:
       try:
@@ -58,45 +94,14 @@ class PHPInternal(InternalsBase):
         self._state_set(self.S_ERROR, msg='Failed to stop php at node %s' % str(serviceNode))
         raise
   
-  def _start_web(self, config, nodes):
-    for serviceNode in nodes:
-      try:
-        client.createWebServer(serviceNode.ip, 5555, config.web_config.doc_root, config.web_config.port, config.currentCodeVersion, config.web_config.backends)
-      except client.AgentException:
-        self.logger.exception('Failed to start web at node %s' % str(serviceNode))
-        self._state_set(self.S_ERROR, msg='Failed to start web at node %s' % str(serviceNode))
-        raise
-  
-  def _update_web(self, config, nodes):
-    kwargs = {}
-    if config.prevCodeVersion:
-      kwargs['prevCodeVersion'] = config.prevCodeVersion
-    for webNode in nodes:
-      try: client.updateWebServer(webNode.ip, 5555, config.web_config.doc_root, config.web_config.port, config.currentCodeVersion, config.web_config.backends, **kwargs)
-      except client.AgentException:
-        self.logger.exception('Failed to update web at node %s' % str(webNode))
-        self._state_set(self.S_ERROR, msg='Failed to update web at node %s' % str(webNode))
-        raise
-  
-  def _stop_web(self, config, nodes):
-    for serviceNode in nodes:
-      try:
-        client.stopWebServer(serviceNode.ip, 5555)
-      except client.AgentException:
-        self.logger.exception('Failed to stop web at node %s' % str(serviceNode))
-        self._state_set(self.S_ERROR, msg='Failed to stop web at node %s' % str(serviceNode))
-        raise
-  
   def get_service_info(self, kwargs):
     if len(kwargs) != 0:
       return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
     return HttpJsonResponse({'state': self._state_get(), 'type': 'PHP'})
   
   def get_configuration(self, kwargs):
-#    try: check_nofiles(kwargs)
-#    except ManagerException as e: return {'opState': 'ERROR', 'error': e.message}
     if len(kwargs) != 0:
-      return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_UNEXPECTED, kwargs.keys()).message())
+      return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
     config = self._configuration_get()
     phpconf = {}
     for key in config.backend_config.php_conf.defaults:
@@ -107,25 +112,24 @@ class PHPInternal(InternalsBase):
     return HttpJsonResponse({'codeVersionId': config.currentCodeVersion, 'phpconf': phpconf})
   
   def update_php_configuration(self, kwargs):
-#    try: check_nofiles(kwargs)
-#    except ManagerException as e: return {'opState': 'ERROR', 'error': e.message}
-    
     codeVersionId = None
     if 'codeVersionId' in kwargs:
       codeVersionId = kwargs.pop('codeVersionId')
-    phpconf = {}
     config = self._configuration_get()
-    
-    for key in kwargs.keys():
-      if not key.startswith('phpconf.') or key[8:] not in config.backend_config.php_conf.defaults:
-        return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_UNEXPECTED, key).message)
-      phpconf[key[8:]] = kwargs.pop(key)
+    phpconf = {}
+    if 'phpconf' in kwargs:
+      phpconf = kwargs.pop('phpconf')
+      for key in phpconf.keys():
+        if key not in config.backend_config.php_conf.defaults:
+          return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_UNEXPECTED, 'phpconf attribute "%s"' % (str(key))).message)
+        if not re.match(config.backend_config.php_conf.format[key], phpconf[key]):
+          return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_INVALID).message)
     
     if len(kwargs) != 0:
       return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
     
     if codeVersionId == None and  not phpconf:
-      return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_MISSING, 'at least one of "codeVersionId" or "phpconf.n.key" and phpconf.n.value pairs').message)
+      return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_MISSING, 'at least one of "codeVersionId" or "phpconf"').message)
     
     if codeVersionId and codeVersionId not in config.codeVersions:
       return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_INVALID, detail='Invalid codeVersionId').message)
@@ -160,8 +164,8 @@ class PHPInternal(InternalsBase):
   def _create_initial_configuration(self):
     config = PHPServiceConfiguration()
     config.backend_count = 0
-    config.web_count = 1
-    config.proxy_count = 0
+    config.web_count = 0
+    config.proxy_count = 1
     
     if not os.path.exists(self.code_repo):
       os.makedirs(self.code_repo)

@@ -21,92 +21,52 @@ def getWebServerState(host, port):
   method = 'getWebServerState'
   return _check(_jsonrpc_get(host, port, '/', method))
 
-def createWebServer(host, port, doc_root, web_port, codeVersion, php, prevCodeVersion=None):
+def createWebServer(host, port, web_port, code_versions):
   method = 'createWebServer'
   params = {
-    'doc_root': doc_root,
     'port': web_port,
-    'codeVersion': codeVersion,
-    'backends': php,
+    'code_versions': code_versions,
   }
-  if prevCodeVersion:
-    params['prevCodeVersion'] = prevCodeVersion;
   return _check(_jsonrpc_post(host, port, '/', method, params=params))
 
-def updateWebServer(host, port, doc_root, web_port, codeVersion, php, prevCodeVersion=None):
+def updateWebServer(host, port, web_port, code_versions):
   method = 'updateWebServer'
   params = {
-    'doc_root': doc_root,
     'port': web_port,
-    'codeVersion': codeVersion,
-    'backends': php,
+    'code_versions': code_versions,
   }
-  if prevCodeVersion:
-    params['prevCodeVersion'] = prevCodeVersion;
   return _check(_jsonrpc_post(host, port, '/', method, params=params))
 
 def stopWebServer(host, port):
   method = 'stopWebServer'
   return _check(_jsonrpc_post(host, port, '/', method))
 
-def getTomcatWebServerState(host, port):
-  method = 'getTomcatWebServerState'
-  return _check(_jsonrpc_get(host, port, '/', method))
-
-def createTomcatWebServer(host, port, doc_root, web_port, php, codeCurrent,
-               servletsCurrent, codeOld=None, servletsOld=[]):
-  method = 'createTomcatWebServer'
-  params = {
-    'doc_root': doc_root,
-    'port': web_port,
-    'backends': php,
-    'codeCurrent': codeCurrent,
-    'servletsCurrent': servletsCurrent,
-  }
-  if codeOld:
-    params['codeOld'] = codeOld
-    params['servletsOld'] = servletsOld
-  return _check(_jsonrpc_post(host, port, '/', method, params=params))
-
-def updateTomcatWebServer(host, port, doc_root, web_port, php, codeCurrent,
-               servletsCurrent, codeOld=None, servletsOld=[]):
-  method = 'updateTomcatWebServer'
-  params = {
-    'doc_root': doc_root,
-    'port': web_port,
-    'backends': php,
-    'codeCurrent': codeCurrent,
-    'servletsCurrent': servletsCurrent,
-  }
-  if codeOld:
-    params['codeOld'] = codeOld
-    params['servletsOld'] = servletsOld
-  return _check(_jsonrpc_post(host, port, '/', method, params=params))
-
-def stopTomcatWebServer(host, port):
-  method = 'stopTomcatWebServer'
-  return _check(_jsonrpc_post(host, port, '/', method))
-
 def getHttpProxyState(host, port):
   method = 'getHttpProxyState'
   return _check(_jsonrpc_get(host, port, '/', method))
 
-def createHttpProxy(host, port, proxy_port, backends, codeversion):
+def createHttpProxy(host, port, proxy_port, code_version, web_list=[], fpm_list=[], tomcat_list=[], tomcat_servlets=[]):
   method = 'createHttpProxy'
   params = {
     'port': proxy_port,
-    'codeversion': codeversion,
-    'backends': backends,
+    'code_version': code_version,
   }
+  if web_list: params['web_list'] = web_list
+  if fpm_list: params['fpm_list'] = fpm_list
+  if tomcat_list: params['tomcat_list'] = tomcat_list
+  if tomcat_servlets: params['tomcat_servlets'] = tomcat_servlets
   return _check(_jsonrpc_post(host, port, '/', method, params=params))
 
-def updateHttpProxy(host, port, proxy_port, backends, codeversion):
+def updateHttpProxy(host, port, proxy_port, code_version, web_list=[], fpm_list=[], tomcat_list=[], tomcat_servlets=[]):
   method = 'updateHttpProxy'
   params = {
     'port': proxy_port,
-    'codeversion': codeversion,
-    'backends': backends,
+    'code_version': code_version,
   }
+  if web_list: params['web_list'] = web_list
+  if fpm_list: params['fpm_list'] = fpm_list
+  if tomcat_list: params['tomcat_list'] = tomcat_list
+  if tomcat_servlets: params['tomcat_servlets'] = tomcat_servlets
   return _check(_jsonrpc_post(host, port, '/', method, params=params))
 
 def stopHttpProxy(host, port):

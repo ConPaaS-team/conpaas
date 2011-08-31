@@ -52,7 +52,7 @@ class Setup:
     else:
       self.mc_proc = Popen(['/usr/bin/memcached', '-u', 'www-data', '-p', str(self.mc_port)], close_fds=True)
     sleep(2)
-    self.mc = memcache.Client(['localhost:'+str(self.mc_port)])
+    self.mc = memcache.Client(['127.0.0.1:'+str(self.mc_port)])
     self.mc.set(InternalsBase.CONFIG, self.CONFIGURATION_CLASS())
     self.mc.set(InternalsBase.DEPLOYMENT_STATE, InternalsBase.S_INIT)
     
@@ -64,7 +64,7 @@ class Setup:
     config_parser = ConfigParser()
     config_parser.add_section('manager')
     config_parser.set('manager', 'LOG_FILE', '/dev/null')
-    config_parser.set('manager', 'MEMCACHE_ADDR', 'localhost:'+str(self.mc_port))
+    config_parser.set('manager', 'MEMCACHE_ADDR', '127.0.0.1:'+str(self.mc_port))
     config_parser.set('manager', 'CODE_REPO', self.code_repo)
     config_parser.set('manager', 'TYPE', self.TYPE)
     
@@ -91,9 +91,9 @@ class Setup:
     self.mc = None
   
   def _waitTillState(self, transient, state):
-    ret = client.get_service_info('localhost', self.server_port)
+    ret = client.get_service_info('127.0.0.1', self.server_port)
     while ret['state'] == transient:
       sleep(1)
-      ret = client.get_service_info('localhost', self.server_port)
+      ret = client.get_service_info('127.0.0.1', self.server_port)
     self.assertEqual(ret['state'], state)
 

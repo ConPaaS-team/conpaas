@@ -6,9 +6,9 @@ Created on Mar 9, 2011
 from BaseHTTPServer import HTTPServer
 
 import memcache, httplib, inspect
-from conpaas.iaas import IaaSClient
+from conpaas.web.manager.iaas import IaaSClient
 from conpaas.web.http import AbstractRequestHandler
-from conpaas import log
+from conpaas.web import log
 
 
 class ManagerRequestHandler(AbstractRequestHandler):
@@ -56,7 +56,10 @@ class DeploymentManager(HTTPServer):
                reset_config=False,
                RequestHandlerClass=ManagerRequestHandler):
     HTTPServer.__init__(self, server_address, RequestHandlerClass)
-    log.init(config_parser)
+    log.init(config_parser.get('manager', 'LOG_FILE'))
+    
+    self.whitelist_addresses = []
+    
     # init configuration storage and iaas
     self.memcache = memcache.Client([config_parser.get('manager', 'MEMCACHE_ADDR')])
     self.iaas = IaaSClient(config_parser)

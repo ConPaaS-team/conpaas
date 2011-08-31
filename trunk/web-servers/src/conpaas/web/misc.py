@@ -4,7 +4,7 @@ Created on Feb 8, 2011
 @author: ielhelw
 '''
 
-import zipfile, tarfile, socket
+import zipfile, tarfile, socket, fcntl, struct
 
 def verify_port(port):
   '''Raise Type Error if port is not an integer.
@@ -33,8 +33,10 @@ def verify_ip_port_list(l):
   for pair in l:
     if len(pair) != 2:
       raise TypeError('List should contain IP,PORT values')
-    verify_ip_or_domain(pair[0])
-    verify_port(pair[1])
+    if 'ip' not in pair or 'port' not in pair:
+      raise TypeError('List should contain IP,PORT values')
+    verify_ip_or_domain(pair['ip'])
+    verify_port(pair['port'])
 
 def archive_get_type(name):
   if tarfile.is_tarfile(name):
@@ -67,3 +69,11 @@ def archive_close(arch):
   if isinstance(arch, zipfile.ZipFile)\
   or isinstance(arch, tarfile.TarFile):
     arch.close()
+
+def get_ip_address(ifname):
+  s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+  return socket.inet_ntoa(fcntl.ioctl(
+      s.fileno(),
+      0x8915,  # SIOCGIFADDR
+      struct.pack('256s', ifname[:15])
+  )[20:24])

@@ -5,17 +5,17 @@ Created on Mar 7, 2011
 '''
 
 from os.path import exists, join
-from os import remove
+from os import remove, makedirs
 from shutil import rmtree
 from threading import Lock
 import pickle, zipfile, tarfile
 
-from conpaas.log import create_logger
-from conpaas.web.agent.role import NginxProxy, PHPProcessManager, NginxPHP,\
-                                   NginxTomcat, Tomcat6
+from conpaas.web.log import create_logger
+from conpaas.web.agent.role import NginxStatic, NginxProxy,\
+                                   PHPProcessManager, Tomcat6
 from conpaas.web.http import HttpErrorResponse, HttpJsonResponse, FileUploadField
 
-WebServer = NginxPHP
+WebServer = NginxStatic
 HttpProxy = NginxProxy
 
 logger = create_logger(__name__)
@@ -64,10 +64,34 @@ def expose(http_method):
     return wrapped
   return decorator
 
-#def check_nofiles(kwargs, exceptfor=[]):
-#  for key in kwargs:
-#    if isinstance(kwargs[key], dict) and key not in exceptfor:
-#      raise AgentException(E_ARGS_UNEXPECTED, [key], detail='Not expecting a file in "%s"' % key)
+VAR_TMP = None
+VAR_CACHE = None
+VAR_RUN = None
+
+webserver_file = None
+web_lock = Lock()
+webservertomcat_file = None
+webservertomcat_lock = Lock()
+httpproxy_file = None
+httpproxy_lock = Lock()
+php_file = None
+php_lock = Lock()
+tomcat_file = None
+tomcat_lock = Lock()
+
+def init(config_parser):
+  global VAR_TMP, VAR_CACHE, VAR_RUN
+  VAR_TMP = config_parser.get('agent', 'VAR_TMP')
+  VAR_CACHE = config_parser.get('agent', 'VAR_CACHE')
+  VAR_RUN = config_parser.get('agent', 'VAR_RUN')
+  global webserver_file, webservertomcat_file, httpproxy_file, php_file, tomcat_file
+  webserver_file = join(VAR_TMP, 'web-php.pickle')
+  webservertomcat_file = join(VAR_TMP, 'web-tomcat.pickle')
+  httpproxy_file = join(VAR_TMP, 'proxy.pickle')
+  php_file = join(VAR_TMP, 'php.pickle')
+  tomcat_file = join(VAR_TMP, 'tomcat.pickle')
+  
+  
 
 def _get(get_params, class_file, pClass):
   if not exists(class_file):
@@ -156,16 +180,8 @@ def _stop(get_params, class_file, pClass):
     return HttpErrorResponse(ex.message)
 
 
-webserver_file = '/tmp/webserverfile'
-
-web_lock = Lock()
-
 def _webserver_get_params(kwargs):
   ret = {}
-  
-  if 'doc_root' not in kwargs:
-    raise AgentException(E_ARGS_MISSING, 'doc_root')
-  ret['doc_root'] = kwargs.pop('doc_root')
   
   if 'port' not in kwargs:
     raise AgentException(E_ARGS_MISSING, 'port')
@@ -173,14 +189,9 @@ def _webserver_get_params(kwargs):
     raise AgentException(E_ARGS_INVALID, detail='Invalid "port" value')
   ret['port'] = int(kwargs.pop('port'))
   
-  if 'codeVersion' not in kwargs:
-    raise AgentException(E_ARGS_MISSING, 'port')
-  ret['codeVersion'] = kwargs.pop('codeVersion')
-  
-  if 'prevCodeVersion' in kwargs:
-    ret['prevCodeVersion'] = kwargs.pop('prevCodeVersion')
-  if 'backends' in kwargs:
-    ret['php'] = kwargs.pop('backends')
+  if 'code_versions' not in kwargs:
+    raise AgentException(E_ARGS_MISSING, 'code_versions')
+  ret['code_versions'] = kwargs.pop('code_versions')
   
   if len(kwargs) != 0:
     raise AgentException(E_ARGS_UNEXPECTED, kwargs.keys())
@@ -222,81 +233,6 @@ def stopWebServer(kwargs):
   with web_lock:
     return _stop(kwargs, webserver_file, WebServer)
 
-
-webservertomcat_file = '/tmp/webservertomcatfile'
-
-webservertomcat_lock = Lock()
-
-def _tomcatwebserver_get_params(kwargs):
-  ret = {}
-  
-  if 'doc_root' not in kwargs:
-    raise AgentException(E_ARGS_MISSING, 'doc_root')
-  ret['doc_root'] = kwargs.pop('doc_root')
-  
-  if 'port' not in kwargs:
-    raise AgentException(E_ARGS_MISSING, 'port')
-  if not isinstance(kwargs['port'], int):
-    raise AgentException(E_ARGS_INVALID, detail='Invalid "port" value')
-  ret['port'] = int(kwargs.pop('port'))
-  
-  if 'backends' in kwargs:
-    ret['php'] = kwargs.pop('backends')
-  
-  if 'codeCurrent' not in kwargs:
-    raise AgentException(E_ARGS_MISSING, 'codeCurrent')
-  ret['codeCurrent'] = kwargs.pop('codeCurrent')
-  ret['servletsCurrent'] = kwargs.pop('servletsCurrent')
-  
-  if 'codeOld' in kwargs:
-    ret['codeOld'] = kwargs.pop('codeOld')
-    ret['servletsOld'] = kwargs.pop('servletsOld')
-  
-  if len(kwargs) != 0:
-    raise AgentException(E_ARGS_UNEXPECTED, kwargs.keys())
-  return ret
-
-@expose('GET')
-def getTomcatWebServerState(kwargs):
-  """GET state of NginxTomcat"""
-  if len(kwargs) != 0:
-    return HttpErrorResponse(AgentException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
-  with webservertomcat_lock:
-    return _get(kwargs, webservertomcat_file, NginxTomcat)
-
-@expose('POST')
-def createTomcatWebServer(kwargs):
-  """Create the NginxTomcat"""
-  try: kwargs = _tomcatwebserver_get_params(kwargs)
-  except AgentException as e:
-    return HttpErrorResponse(e.message)
-  else:
-    with webservertomcat_lock:
-      return _create(kwargs, webservertomcat_file, NginxTomcat)
-
-@expose('POST')
-def updateTomcatWebServer(kwargs):
-  """UPDATE the NginxTomcat"""
-  try: kwargs = _tomcatwebserver_get_params(kwargs)
-  except AgentException as e:
-    return HttpErrorResponse(e.message)
-  else:
-    with webservertomcat_lock:
-      return _update(kwargs, webservertomcat_file, NginxTomcat)
-
-@expose('POST')
-def stopTomcatWebServer(kwargs):
-  """KILL the NginxTomcat"""
-  if len(kwargs) != 0:
-    return HttpErrorResponse(AgentException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
-  with webservertomcat_lock:
-    return _stop(kwargs, webservertomcat_file, NginxTomcat)
-
-
-httpproxy_file = '/tmp/httpproxyfile'
-
-httpproxy_lock = Lock()
-
 def _httpproxy_get_params(kwargs):
   ret = {}
   if 'port' not in kwargs:
@@ -305,17 +241,25 @@ def _httpproxy_get_params(kwargs):
     raise AgentException(E_ARGS_INVALID, detail='Invalid "port" value')
   ret['port'] = int(kwargs.pop('port'))
   
-  if 'backends' in kwargs:
-    backends = kwargs.pop('backends')
-  else:
-    backends = []
-  if len(backends) == 0:
-    raise AgentException(E_ARGS_INVALID, detail='At least one backend is required')
-  ret['backends'] = backends
+  if 'code_version' not in kwargs:
+    raise AgentException(E_ARGS_MISSING, 'code_version')
+  ret['code_version'] = kwargs.pop('code_version')
   
-  if 'codeversion' not in kwargs:
-    raise AgentException(E_ARGS_MISSING, 'codeversion')
-  ret['codeversion'] = kwargs.pop('codeversion')
+  if 'web_list' in kwargs:
+    web_list = kwargs.pop('web_list')
+  else:
+    web_list = []
+  if len(web_list) == 0:
+    raise AgentException(E_ARGS_INVALID, detail='At least one web_list is required')
+  ret['web_list'] = web_list
+  
+  if 'fpm_list' in kwargs:
+    ret['fpm_list'] = kwargs.pop('fpm_list')
+  
+  if 'tomcat_list' in kwargs:
+    ret['tomcat_list'] = kwargs.pop('tomcat_list')
+    if 'tomcat_servlets' in kwargs:
+      ret['tomcat_servlets'] = kwargs.pop('tomcat_servlets')
   
   if len(kwargs) != 0:
     raise AgentException(E_ARGS_UNEXPECTED, kwargs.keys())
@@ -357,13 +301,9 @@ def stopHttpProxy(kwargs):
   with httpproxy_lock:
     return _stop(kwargs, httpproxy_file, HttpProxy)
 
-php_file = '/tmp/phpfile'
-
-php_lock = Lock()
 
 def _php_get_params(kwargs):
   ret = {}
-  
   if 'port' not in kwargs:
     raise AgentException(E_ARGS_MISSING, 'port')
   if not isinstance(kwargs['port'], int):
@@ -372,6 +312,10 @@ def _php_get_params(kwargs):
   if 'scalaris' not in kwargs:
     raise AgentException(E_ARGS_MISSING, 'scalaris')
   ret['scalaris'] = kwargs.pop('scalaris')
+  if 'configuration' not in kwargs:
+    raise AgentException(E_ARGS_MISSING, 'configuration')
+  if not isinstance(kwargs['configuration'], dict):
+    raise AgentException(E_ARGS_INVALID, detail='invalid "configuration" object')
   ret['configuration'] = kwargs.pop('configuration')
   
   if len(kwargs) != 0:
@@ -417,33 +361,33 @@ def stopPHP(kwargs):
 @expose('UPLOAD')
 def updatePHPCode(kwargs):
   if 'file' not in kwargs:
-    return HttpErrorResponse(AgentException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
+    return HttpErrorResponse(AgentException(E_ARGS_MISSING, 'file').message)
   file = kwargs.pop('file')
-  
-  if 'filetype' not in kwargs:
-    return HttpErrorResponse(AgentException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
-  filetype = kwargs.pop('filetype')
-  
-  if 'codeVersionId' not in kwargs:
-    return HttpErrorResponse(AgentException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
-  codeVersionId = kwargs.pop('codeVersionId')
-  if len(kwargs) != 0:
-    return HttpErrorResponse(AgentException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
   if not isinstance(file, FileUploadField):
     return HttpErrorResponse(AgentException(E_ARGS_INVALID, detail='"file" should be a file').message)
   
+  if 'filetype' not in kwargs:
+    return HttpErrorResponse(AgentException(E_ARGS_MISSING, 'filetype').message)
+  filetype = kwargs.pop('filetype')
+  
+  if 'codeVersionId' not in kwargs:
+    return HttpErrorResponse(AgentException(E_ARGS_MISSING, 'codeVersionId').message)
+  codeVersionId = kwargs.pop('codeVersionId')
+  if len(kwargs) != 0:
+    return HttpErrorResponse(AgentException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
+
   if filetype == 'zip': source = zipfile.ZipFile(file.file, 'r')
   elif filetype == 'tar': source = tarfile.open(fileobj=file.file)
   else: return HttpErrorResponse('Unknown archive type ' + str(filetype))
   
-  target_dir = join('/var/www/', codeVersionId)
+  if not exists(join(VAR_CACHE, 'www')):
+    makedirs(join(VAR_CACHE, 'www'))
+  
+  target_dir = join(VAR_CACHE, 'www', codeVersionId)
   if exists(target_dir):
     rmtree(target_dir)
   source.extractall(target_dir)
   return HttpJsonResponse()
-
-tomcat_file = '/tmp/tomcat'
-tomcat_lock = Lock()
 
 @expose('GET')
 def getTomcatState(kwargs):
@@ -478,26 +422,26 @@ def stopTomcat(kwargs):
 @expose('UPLOAD')
 def updateTomcatCode(kwargs):
   if 'file' not in kwargs:
-    return HttpErrorResponse(AgentException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
+    return HttpErrorResponse(AgentException(E_ARGS_MISSING, 'file').message)
   file = kwargs.pop('file')
+  if not isinstance(file, FileUploadField):
+    return HttpErrorResponse(AgentException(E_ARGS_INVALID, detail='"file" should be a file').message)
   
   if 'filetype' not in kwargs:
-    return HttpErrorResponse(AgentException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
+    return HttpErrorResponse(AgentException(E_ARGS_MISSING, 'filetype').message)
   filetype = kwargs.pop('filetype')
   
   if 'codeVersionId' not in kwargs:
-    return HttpErrorResponse(AgentException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
+    return HttpErrorResponse(AgentException(E_ARGS_MISSING, 'codeVersionId').message)
   codeVersionId = kwargs.pop('codeVersionId')
   if len(kwargs) != 0:
     return HttpErrorResponse(AgentException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
-  if not isinstance(file, FileUploadField):
-    return HttpErrorResponse(AgentException(E_ARGS_INVALID, detail='"file" should be a file').message)
   
   if filetype == 'zip': source = zipfile.ZipFile(file.file, 'r')
   elif filetype == 'tar': source = tarfile.open(fileobj=file.file)
   else: return HttpErrorResponse('Unsupported archive type ' + str(filetype))
   
-  target_dir = join('/conpaas/tomcat-6/webapps/', codeVersionId)
+  target_dir = join(VAR_CACHE, 'tomcat_instance', 'webapps', codeVersionId)
   if exists(target_dir):
     rmtree(target_dir)
   source.extractall(target_dir)

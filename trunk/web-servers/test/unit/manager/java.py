@@ -21,7 +21,7 @@ class JavaConfigTest(Setup, unittest.TestCase):
   
   def test_startupShutdown(self):
     self._startup()
-    ret = client.list_nodes('localhost', self.server_port)
+    ret = client.list_nodes('127.0.0.1', self.server_port)
     self.assertTrue('proxy' in ret)
     self.assertTrue('web' in ret)
     self.assertTrue('backend' in ret)
@@ -33,31 +33,31 @@ class JavaConfigTest(Setup, unittest.TestCase):
   
   def test_configCodeVersion(self):
     self._upload_codeVersions()
-    self.assertEqual(client.update_java_configuration('localhost',
+    self.assertEqual(client.update_java_configuration('127.0.0.1',
                                                       self.server_port,
                                                       codeVersionId=self.id1),
                                                       {})
-    self.assertEqual(client.get_configuration('localhost', self.server_port),
+    self.assertEqual(client.get_configuration('127.0.0.1', self.server_port),
                      {'codeVersionId': self.id1})
     self._startup()
-    self.assertEqual(client.update_java_configuration('localhost',
+    self.assertEqual(client.update_java_configuration('127.0.0.1',
                                                       self.server_port,
                                                       codeVersionId=self.id2),
                                                       {})
     self._waitTillState(InternalsBase.S_ADAPTING, InternalsBase.S_RUNNING)
-    self.assertEqual(client.get_configuration('localhost', self.server_port),
+    self.assertEqual(client.get_configuration('127.0.0.1', self.server_port),
                      {'codeVersionId': self.id2})
     self._shutdown()
-    self.assertEqual(client.get_configuration('localhost', self.server_port),
+    self.assertEqual(client.get_configuration('127.0.0.1', self.server_port),
                      {'codeVersionId': self.id2})
   
   def _startup(self):
-    self.assertEqual(client.startup('localhost', self.server_port),
+    self.assertEqual(client.startup('127.0.0.1', self.server_port),
                      {'state': InternalsBase.S_PROLOGUE})
     self._waitTillState(InternalsBase.S_PROLOGUE, InternalsBase.S_RUNNING)
   
   def _shutdown(self):
-    self.assertEqual(client.shutdown('localhost', self.server_port),
+    self.assertEqual(client.shutdown('127.0.0.1', self.server_port),
                      {'state': InternalsBase.S_EPILOGUE})
     self._waitTillState(InternalsBase.S_EPILOGUE, InternalsBase.S_STOPPED)
   
@@ -80,20 +80,20 @@ class JavaConfigTest(Setup, unittest.TestCase):
     remove(fname)
     
     # upload first
-    ret = client.upload_code_version('localhost', self.server_port, version1)
+    ret = client.upload_code_version('127.0.0.1', self.server_port, version1)
     self.assertTrue('codeVersionId' in ret)
     self.id1 = ret['codeVersionId']
     
-    ret = client.list_code_versions('localhost', self.server_port)
+    ret = client.list_code_versions('127.0.0.1', self.server_port)
     self.assertEqual(2, len(ret['codeVersions']))
     self.assertEqual(ret['codeVersions'][0]['codeVersionId'], self.id1)
     self.assertEqual(ret['codeVersions'][0]['filename'], 'version1.tar')
     self.assertEqual(ret['codeVersions'][0]['description'], '')
     # upload second
-    ret = client.upload_code_version('localhost', self.server_port, version2)
+    ret = client.upload_code_version('127.0.0.1', self.server_port, version2)
     self.assertTrue('codeVersionId' in ret)
     self.id2 = ret['codeVersionId']
-    ret = client.list_code_versions('localhost', self.server_port)
+    ret = client.list_code_versions('127.0.0.1', self.server_port)
     self.assertEqual(3, len(ret['codeVersions']))
     self.assertEqual(ret['codeVersions'][1]['codeVersionId'], self.id1)
     self.assertEqual(ret['codeVersions'][1]['filename'], 'version1.tar')
@@ -102,3 +102,5 @@ class JavaConfigTest(Setup, unittest.TestCase):
     self.assertEqual(ret['codeVersions'][0]['filename'], 'version2.tar')
     self.assertEqual(ret['codeVersions'][0]['description'], '')
 
+if __name__ == '__main__':
+  unittest.main()

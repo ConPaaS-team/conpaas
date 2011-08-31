@@ -81,10 +81,8 @@ def update_php_configuration(host, port, codeVersionId=None, phpconf={}):
   params = {}
   if codeVersionId != None:
     params['codeVersionId'] = codeVersionId
-  i = 0
-  for key in phpconf:
-    params['phpconf.%s' % key] = phpconf[key]
-    i += 1
+  if phpconf:
+    params['phpconf'] = phpconf
   return _check(_jsonrpc_post(host, port, '/', method, params=params))
 
 def update_java_configuration(host, port, codeVersionId):

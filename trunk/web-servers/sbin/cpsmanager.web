@@ -1,3 +1,4 @@
+#!/usr/bin/python
 '''
 Created on Jul 4, 2011
 
@@ -32,13 +33,24 @@ if __name__ == '__main__':
   except:
     print >>sys.stderr, 'Failed to read configuration file'
     sys.exit(1)
-  if not config_parser.has_section('manager')\
-  or not config_parser.has_option('manager', 'TYPE')\
-  or not config_parser.has_option('manager', 'MEMCACHE_ADDR')\
-  or not config_parser.has_option('manager', 'CODE_REPO')\
-  or not config_parser.has_option('manager', 'LOG_FILE')\
-  or not config_parser.has_option('manager', 'BOOTSTRAP'):
-    print >>sys.stderr, 'Missing configuration variables for section "manager"'
+  config_vars = {
+    'manager': ['TYPE', 'BOOTSTRAP', 'MEMCACHE_ADDR', 'LOG_FILE',
+                'ETC', 'VAR_TMP', 'VAR_CACHE', 'VAR_RUN', 'CODE_REPO'],
+    'iaas': ['DRIVER'],
+  }
+  config_ok = True
+  for section in config_vars:
+    if not config_parser.has_section(section):
+      print >>sys.stderr, 'Missing configuration section "%s"' % (section)
+      print >>sys.stderr, 'Section "%s" should contain variables %s' % (section, str(config_vars[section]))
+      config_ok = False
+      continue
+    for field in config_vars[section]:
+      if not config_parser.has_option(section, field)\
+      or config_parser.get(section, field) == '':
+        print >>sys.stderr, 'Missing configuration variable "%s" in section "%s"' % (field, section)
+        config_ok = False
+  if not config_ok:
     sys.exit(1)
   
   print options.address, options.port
