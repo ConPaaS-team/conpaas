@@ -30,6 +30,12 @@ def getListServiceNodes(host, port):
     if code != httplib.OK: raise Exception('Received HTTP response code %d' % (code))
     return __check_reply(body)
 
+def getMySQLServerState(host, port):
+    params = {'action': 'getMySQLServerManagerState'}
+    code, body = _http_get(host, port, '/', params=params)
+    if code != httplib.OK: raise Exception('Received HTTP response code %d' % (code))
+    return __check_reply(body)
+
 def addServiceNode(host, port):
     params = {'action': 'createServiceNode'}
     code, body = _http_post(host, port, '/', params=params)
@@ -47,6 +53,9 @@ if __name__ == '__main__':
             print ret            
         if sys.argv[1] in ("createServiceNode"):
             ret = addServiceNode(host, port)
+            print ret            
+        if sys.argv[1] in ("getMySQLServerState"):
+            ret = getMySQLServerState(host, port)
             print ret            
     else:
         printUsage()

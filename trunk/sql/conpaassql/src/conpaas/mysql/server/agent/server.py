@@ -24,8 +24,7 @@ class AgentServer(HTTPServer, ThreadingMixIn):
         from conpaas.mysql.server.agent import internals
         for http_method in internals.exposed_functions:
             for func_name in internals.exposed_functions[http_method]:
-                print 'Going to register ', http_method, func_name
-                logger.debug('Registering')
+                logger.debug( 'Going to register ' + " " + http_method + " " +func_name)
                 self.register_method(http_method, func_name, getattr(internals, func_name))
   
     def register_method(self, http_method, func_name, callback):

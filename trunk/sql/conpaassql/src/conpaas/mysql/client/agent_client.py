@@ -27,8 +27,6 @@ def getMySQLServerState(host, port):
     if code != httplib.OK: raise Exception('Received HTTP response code %d' % (code))
     return __check_reply(body)
 
-    
-
 def createMySQLServer(host, port):
     params = {
               'action': 'createMySQLServer'

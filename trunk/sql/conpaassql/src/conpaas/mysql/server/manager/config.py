@@ -15,12 +15,14 @@ CONFIGURATION_FILE=os.getcwd() + "/sql_manager_configuration.cnf"
 
 E_ARGS_UNEXPECTED = 0,
 E_CONFIG_READ_FAILED = 1,
-E_CONFIG_NOT_EXIST=2
+E_CONFIG_NOT_EXIST=2,
+E_UNKNOWN=3
 
 E_STRINGS = [  
   'Unexpected arguments %s',
   'Unable to open configuration file: %s',
-  'Configuration file does not exist: %s'
+  'Configuration file does not exist: %s',
+  'Unknown error.'
 ]
 
 iaas = None

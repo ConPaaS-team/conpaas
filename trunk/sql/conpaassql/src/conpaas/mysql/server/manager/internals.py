@@ -5,7 +5,7 @@ Created on Jun 7, 2011
 '''
 from conpaas.log import create_logger
 from conpaas.mysql.server.manager.config import Configuration, ManagerException,\
-    E_ARGS_UNEXPECTED, ServiceNode
+    E_ARGS_UNEXPECTED, ServiceNode, E_UNKNOWN
 from threading import Thread
 from conpaas.mysql.client import agent_client
 import time
@@ -75,7 +75,7 @@ def createServiceNode(kwargs):
           'opState': 'OK'
           #'sql': [ sn.vmid ]
     }
-    
+  
 def createServiceNodeThread ():
     node_instances = []
     new_vm=iaas.newInstance()
@@ -83,6 +83,18 @@ def createServiceNodeThread ():
     node_instances.append(vm)
     config.addMySQLServiceNode(new_vm['id'], new_vm)
     #wait_for_nodes(node_instances)
+
+@expose('GET')
+def getMySQLServerManagerState(params):
+    logger.debug("Entering getMySQLServerManagerState")
+    try: 
+        logger.debug("Leaving getMySQLServerManagerState")
+        return {'opState':'OK', 'return': managerServer.state}
+    except Exception as e:
+        ex = ManagerException(E_UNKNOWN, detail=e)
+        logger.exception(e)
+        logger.debug('Leaving getMySQLServerManagerState')
+        return {'opState': 'ERROR', 'error': ex.message}
 
 '''
     Wait for nodes to get ready.
