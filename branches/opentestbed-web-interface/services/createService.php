@@ -27,6 +27,9 @@ try {
 	$uid = $_SESSION['uid'];
 	
 	$sid = ServiceData::createService($default_name, $type, $cloud, $uid);
+	if ($sid === false) {
+	  throw new Exception("Not enough credit");
+	}
 	/* start the instance */
 	$service_data = ServiceData::getServiceById($sid);
 	$service = ServiceFactory::createInstance($service_data);

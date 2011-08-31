@@ -16,6 +16,11 @@ $service_data = ServiceData::getServiceById($sid);
 $service = ServiceFactory::createInstance($service_data);
 
 $page = new ServicePage($service);
+
+if ($service->getUID() !== $page->getUID()) {
+    $page->redirect('index.php');
+}
+
 $state = $page->getState();
 $backendType = $service->getType();
 
