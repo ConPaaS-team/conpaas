@@ -24,8 +24,8 @@ Created on Feb 8, 2011
   
 '''
 
-from threading import Thread
-import tempfile, os, os.path, tarfile, time, stat
+from threading import Thread, Lock, Timer, Event
+import tempfile, os, os.path, tarfile, time, stat, json, urlparse
 
 from conpaas.web.log import create_logger
 from conpaas.web.agent import client
@@ -34,7 +34,7 @@ from conpaas.web.misc import archive_open, archive_get_members, archive_close,\
   archive_get_type
 from conpaas.web.http import HttpJsonResponse, HttpErrorResponse,\
                              HttpFileDownloadResponse, HttpRequest,\
-                             FileUploadField
+                             FileUploadField, HttpError, _http_post
 
 class ManagerException(Exception):
   E_CONFIG_READ_FAILED = 0
@@ -45,7 +45,8 @@ class ManagerException(Exception):
   E_IAAS_REQUEST_FAILED = 5
   E_STATE_ERROR = 6
   E_CODE_VERSION_ERROR = 7
-  E_UNKNOWN = 8
+  E_NOT_ENOUGH_CREDIT = 8
+  E_UNKNOWN = 9
   
   E_STRINGS = [
     'Failed to read configuration',
@@ -56,6 +57,7 @@ class ManagerException(Exception):
     'Failed to request resources from IAAS',
     'Cannot perform requested operation in current state',
     'No code version selected',
+    'Not enough credits',
     'Unknown error',
   ]
   
@@ -66,6 +68,37 @@ class ManagerException(Exception):
       self.message = '%s DETAIL:%s' % ( (self.E_STRINGS[code] % args), str(kwargs['detail']) )
     else:
       self.message = self.E_STRINGS[code] % args
+
+reservation_logger = create_logger('ReservationTimer')
+
+class ReservationTimer(Thread):
+  def __init__(self, nodes, delay, callback, interval=3600):
+    Thread.__init__(self)
+    self.nodes = nodes
+    self.event = Event()
+    self.delay = delay
+    self.interval = interval
+    self.callback = callback
+    self.lock = Lock()
+    reservation_logger.debug('RTIMER Creating timer for %s' % (str(self.nodes)))
+  
+  def remove_node(self, node_id):
+    with self.lock:
+      self.nodes.remove(node_id)
+      reservation_logger.debug('RTIMER removed node %s, updated list %s' % (node_id, str(self.nodes)))
+      return len(self.nodes)
+  
+  def run(self):
+    self.event.wait(self.delay)
+    while not self.event.is_set():
+      with self.lock:
+        list_size = len(self.nodes)
+        reservation_logger.debug('RTIMER charging user credit for hour of %d instances %s' % (list_size, str(self.nodes)))
+      Thread(target=self.callback, args=[list_size]).start()
+      self.event.wait(self.interval)
+  
+  def stop(self):
+    self.event.set()
 
 
 class InternalsBase(object):
@@ -81,13 +114,23 @@ class InternalsBase(object):
   S_STOPPED = 'STOPPED'
   S_ERROR = 'ERROR'
   
-  def __init__(self, memcache_in, iaas_in, code_repo_in, logfile_in):
+  def __init__(self, memcache_in, iaas_in, code_repo_in, logfile_in, **kwargs):
     self.memcache = memcache_in
     self.iaas = iaas_in
     self.code_repo = code_repo_in 
     self.logfile = logfile_in
     self.state_log = []
     self.logger = create_logger(__name__)
+    self.fe_creditUrl = kwargs['fe_credit_url']
+    self.fe_terminateUrl = kwargs['fe_terminate_url']
+    self.fe_service_id = kwargs['fe_service_id']
+    self.reservation_map = {
+      'manager': ReservationTimer(['manager'],
+                                  55 * 60,# 55mins
+                                  self._deduct_and_check_credit)
+    }
+    self.reservation_map['manager'].start()
+    self.force_terminate_lock = Lock()
     self.exposed_functions = {
       'GET': {
               'list_nodes': self.list_nodes,
@@ -166,7 +209,13 @@ class InternalsBase(object):
   def _kill_nodesById(self, ids):
     for id in ids:
       self.logger.debug('_kill_nodes: killing ' + str(id))
-      try: self.iaas.killInstance(id)
+      try:
+        # node may not be in map if it failed to start
+        if id in self.reservation_map:
+          timer = self.reservation_map.pop(id)
+          if timer.remove_node(id) < 1:
+            timer.stop()
+        self.iaas.killInstance(id)
       except: self.logger.exception('_kill_nodes: Failed to kill node %s', id)
   
   def _kill_nodes(self, nodes):
@@ -179,6 +228,8 @@ class InternalsBase(object):
       iteration += 1
       self.logger.debug('_create_nodes: iteration %d: creating %d nodes' % (iteration, count - len(ready)))
       try:
+        self.force_terminate_lock.acquire()
+        if iteration == 1: request_start = time.time()
         poll = self.iaas.newInstances(count - len(ready))
         self.memcache.set('nodes_additional', [ i['id'] for i in (poll + ready) ])
       except Exception as e:
@@ -187,6 +238,8 @@ class InternalsBase(object):
         self._kill_nodes(ready)
         self.memcache.set('nodes_additional', [])
         raise e
+      finally:
+        self.force_terminate_lock.release()
       poll, failed = self._wait_for_nodes(poll)
       ready += poll
       poll = []
@@ -194,7 +247,57 @@ class InternalsBase(object):
         self.logger.debug('_create_nodes: %d nodes failed to startup properly: %s' % (len(failed), str(failed)))
         self._kill_nodes(failed)
     self.memcache.set('nodes_additional', [ i['id'] for i in ready ])
+    
+    # start reservation timer with slack of 3 mins + time already wasted
+    # this should be enough time to terminate instances before
+    # hitting the following hour
+    timer = ReservationTimer([ i['id'] for i in ready ],
+                             (55 * 60) - (time.time() - request_start),
+                             self._deduct_and_check_credit)
+    timer.start()
+    # set mappings
+    for i in ready: self.reservation_map[i['id']] = timer
     return ready
+  
+  def _force_terminate_service(self):
+    # DO NOT release lock after acquiring it
+    # to prevent the creation of more nodes
+    self.force_terminate_lock.acquire()
+    self.logger.debug('OUT OF CREDIT, TERMINATING SERVICE')
+    # kill all configured nodes
+    config = self._configuration_get()
+    self._kill_nodesById([serviceNode.vmid for serviceNode in config.serviceNodes.values()])
+    
+    # kill all unconfigured nodes
+    additional_nodes = self.memcache.get('nodes_additional')
+    if additional_nodes:
+      self._kill_nodesById(additional_nodes)
+    
+    # notify front-end, attempt 10 times until successful
+    for _ in range(10):
+      try:
+        parsed_url = urlparse.urlparse(self.fe_terminateUrl)
+        _, body = _http_post(parsed_url.hostname, parsed_url.port or 80, parsed_url.path, {'sid': self.fe_service_id})
+        obj = json.loads(body)
+        if not obj['error']: break
+      except:
+        self.logger.exception('Failed to terminate service')
+  
+  def _deduct_credit(self, value):
+    try:
+      parsed_url = urlparse.urlparse(self.fe_creditUrl)
+      _, body = _http_post(parsed_url.hostname, parsed_url.port or 80,
+                           parsed_url.path, {'sid': self.fe_service_id,
+                                             'decrement': value})
+      obj = json.loads(body)
+      return not obj['error']
+    except:
+      self.logger.exception('Failed to deduct credit')
+      return False
+  
+  def _deduct_and_check_credit(self, value):
+    if not self._deduct_credit(value):
+      self._force_terminate_service()
   
   def _stop_proxy(self, config, nodes):
     for serviceNode in nodes:
@@ -240,7 +343,7 @@ class InternalsBase(object):
           self.logger.exception('Failed to stop web at node %s' % str(serviceNode))
           self._state_set(self.S_ERROR, msg='Failed to stop web at node %s' % str(serviceNode))
           raise
-
+  
   def startup(self, kwargs):
     if len(kwargs) != 0:
       return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
@@ -250,24 +353,6 @@ class InternalsBase(object):
     if dstate != self.S_INIT and dstate != self.S_STOPPED:
       return HttpErrorResponse(ManagerException(ManagerException.E_STATE_ERROR).message)
     
-    self._state_set(self.S_PROLOGUE, msg='Starting up')
-    Thread(target=self.do_startup, args=[config]).start()
-    return HttpJsonResponse({'state': self.S_PROLOGUE})
-  
-  def shutdown(self, kwargs):
-    if len(kwargs) != 0:
-      return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
-    
-    dstate = self._state_get()
-    if dstate != self.S_RUNNING:
-      return HttpErrorResponse(ManagerException(ManagerException.E_STATE_ERROR).message)
-    
-    config = self._configuration_get()
-    self._state_set(self.S_EPILOGUE, msg='Shutting down')
-    Thread(target=self.do_shutdown, args=[config]).start()
-    return HttpJsonResponse({'state': self.S_EPILOGUE})
-  
-  def do_startup(self, config):
     if config.proxy_count == 1 \
     and (config.web_count == 0 or config.backend_count == 0):# at least one is packed
       if config.web_count == 0 and config.backend_count == 0:# packed
@@ -285,6 +370,27 @@ class InternalsBase(object):
       serviceNodeKwargs.extend([ {'runWeb':True} for _ in range(config.web_count) ])
       serviceNodeKwargs.extend([ {'runBackend':True} for _ in range(config.backend_count) ])
     
+    if not self._deduct_credit(len(serviceNodeKwargs)):
+      return HttpErrorResponse(ManagerException(ManagerException.E_NOT_ENOUGH_CREDIT).message)
+    
+    self._state_set(self.S_PROLOGUE, msg='Starting up')
+    Thread(target=self.do_startup, args=[config, serviceNodeKwargs]).start()
+    return HttpJsonResponse({'state': self.S_PROLOGUE})
+  
+  def shutdown(self, kwargs):
+    if len(kwargs) != 0:
+      return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
+    
+    dstate = self._state_get()
+    if dstate != self.S_RUNNING:
+      return HttpErrorResponse(ManagerException(ManagerException.E_STATE_ERROR).message)
+    
+    config = self._configuration_get()
+    self._state_set(self.S_EPILOGUE, msg='Shutting down')
+    Thread(target=self.do_shutdown, args=[config]).start()
+    return HttpJsonResponse({'state': self.S_EPILOGUE})
+  
+  def do_startup(self, config, serviceNodeKwargs):
     self.logger.debug('do_startup: Going to request %d new nodes' % len(serviceNodeKwargs))
     
     try:
@@ -365,6 +471,9 @@ class InternalsBase(object):
     
     if (proxy + config.proxy_count) > 1 and ( (web + config.web_count) == 0 or (backend + config.backend_count) == 0 ):
       return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_INVALID, detail='Cannot add more proxy servers without at least one "web" and one "backend"').message)
+    
+    if not self._deduct_credit(backend + web + proxy):
+      return HttpErrorResponse(ManagerException(ManagerException.E_NOT_ENOUGH_CREDIT).message)
     
     self._state_set(self.S_ADAPTING, msg='Going to add proxy=%d, web=%d, backend=%d' % (proxy, web, backend))
     Thread(target=self.do_add_nodes, args=[config, proxy, web, backend]).start()

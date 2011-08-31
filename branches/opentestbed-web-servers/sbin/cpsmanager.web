@@ -35,7 +35,8 @@ if __name__ == '__main__':
     sys.exit(1)
   config_vars = {
     'manager': ['TYPE', 'BOOTSTRAP', 'MEMCACHE_ADDR', 'LOG_FILE',
-                'ETC', 'VAR_TMP', 'VAR_CACHE', 'VAR_RUN', 'CODE_REPO'],
+                'ETC', 'VAR_TMP', 'VAR_CACHE', 'VAR_RUN', 'CODE_REPO',
+                'FE_CREDIT_URL', 'FE_TERMINATE_URL', 'FE_SERVICE_ID'],
     'iaas': ['DRIVER'],
   }
   config_ok = True
