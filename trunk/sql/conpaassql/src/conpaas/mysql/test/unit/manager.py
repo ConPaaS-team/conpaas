@@ -32,8 +32,9 @@ class Test(unittest.TestCase):
         self.t.join()
         self.t = None  
 
-    def test_getNodes(self):
+    def testGetNodes(self):
         self.assertTrue(self.managerServer.getListServiceNodes())     
+         
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

@@ -14,7 +14,6 @@ import ConfigParser
 import MySQLdb
 import pickle
 
-
 exposed_functions = {}
 
 CONFIGURATION_FILE='configuration.cnf'
@@ -53,62 +52,49 @@ S_STOPPING    = 'STOPPING'
 S_STOPPED     = 'STOPPED'
 S_MYSQL_HOME  = S_PREFIX + 'conpaas/conf/mysql'
 
+agent = None
+
 class MySQLServerConfiguration:
     
-    def __init__(self):
+    pid_file = None
+    
+    def __init__(self, config):
         '''holds the configuration of the server.
-        '''
+        '''        
         logger.debug("Entering init MySQLServerConfiguration")
         self.hostname = socket.gethostname()
         self.restart_count = 0
-        self.pid_file = "/var/lib/mysql/" + self.hostname + ".pid"
-        self.config_dir = os.getcwd()
-        self.access_log = os.getcwd() + '/access.log'
-        self.error_log =  os.getcwd() + '/error.log'        
-        
-        self.conn_location = ''
-        self.conn_username = ''
-        self.conn_password = ''
-        
-        self.mycnf_filepath = ''
-        self.path_mysql_ssr = ''
-        self.port_client = ''
-        self.port_mysqld = ''
-        self.bind_address = ''
-        self.data_dir = ''
-        
-        self.read_config()
-        
-        logger.debug("Leaving init MySQLServerConfiguration")
-        
-    def read_config(self):
-        logger.debug("Entering read_config")
+        '''Default mysql pid file.
+        '''
         try:
-            logger.debug("Trying to get params from configuration file ")
-            config = ConfigParser.ConfigParser()
-            #config.readfp(open("/home/danaia/Desktop/worskpace_eclipse/conpaas-sql-trunk-rev-107/conpaassql/src/configuration.cnf"))
-            config.readfp(open(os.getcwd() + "/" + CONFIGURATION_FILE))
+            '''This is always like that.
+            '''
+            self.pid_file = "/var/lib/mysql/" + self.hostname + ".pid"
+            logger.debug("Trying to get params from configuration file ")        
             self.conn_location = config.get("MySQL_root_connection", "location")
-            self.conn_password = config.get("MySQL_root_connection", "password")
             self.conn_username = config.get("MySQL_root_connection", "username")
+            self.conn_password = config.get("MySQL_root_connection", "password")      
             logger.debug("Got parameters for root connection to MySQL")
             self.mycnf_filepath = config.get("MySQL_configuration","my_cnf_file")
             self.path_mysql_ssr = config.get("MySQL_configuration","path_mysql_ssr")
             file = open(self.mycnf_filepath)
             my_cnf_text = file.read()
-            config.readfp( self.MySQLConfigParser(my_cnf_text))    
-            self.port_mysqld = config.get ("mysqld", "port")      
-            self.bind_address = config.get ("mysqld", "bind-address")
-            self.data_dir = config.get ("mysqld", "datadir")
-            os.system("rm temp.cnf")
+            mysqlconfig = ConfigParser.ConfigParser()            
+            mysqlconfig.readfp( self.MySQLConfigParser(my_cnf_text))    
+            self.port_mysqld = mysqlconfig.get ("mysqld", "port")      
+            self.bind_address = mysqlconfig.get ("mysqld", "bind-address")
+            self.data_dir = mysqlconfig.get ("mysqld", "datadir")
             logger.debug("Got configuration parameters")
+            '''Removing temporary file created in MySQLConfigParser
+            '''
+            os.system("rm temp.cnf")            
         except ConfigParser.Error, err:
             ex = AgentException(E_CONFIG_READ_FAILED, str(err))
             logger.critical(ex.message)
         except IOError, err:
             ex = AgentException(E_CONFIG_NOT_EXIST, str(err))
-            logger.critical(ex.message)  
-        logger.debug("Leaving read_config")
+            logger.critical(ex.message)                
+        logger.debug("Leaving init MySQLServerConfiguration")
         
     def change_config(self, id_param, param):
         if id_param == 'datadir':
@@ -124,6 +110,8 @@ class MySQLServerConfiguration:
             ex = AgentException(E_CONFIG_READ_FAILED, "cant find id: " + id_param)
             raise Exception(ex.message)
     
+    '''Read mysqld configuration. Creates a temporary file in the working directory. Needs to be erased. 
+    '''
     def MySQLConfigParser(self, text):
         #comments inside
         while text.count("#")>0:
@@ -192,9 +180,10 @@ class MySQLServerConfiguration:
             return {'opState': 'ERROR', 'error': e.message}   
     
 class MySQLServer:
-    def __init__(self):
+    
+    def __init__(self, configInput):
         logger.debug("Entering MySQLServer initialization")
-        self.config = MySQLServerConfiguration()
+        self.config = MySQLServerConfiguration(configInput)
         self.state = S_INIT
         logger.debug("Leaving MySQLServer initialization")
         
@@ -263,7 +252,7 @@ class MySQLServer:
         self.config.restart_count += 1 
         logger.debug("Restart count just increased to: " + str(self.config.restart_count))
         try:
-            int(open(self.config.pid_file, 'r').read().strip())
+            #int(open(self.config.pid_file, 'r').read().strip())
             devnull_fd = open(devnull, 'w')
             logger.debug('Restarting with arguments:' + self.config.path_mysql_ssr + " restart")
             proc = Popen([self.config.path_mysql_ssr, "restart"] , stdout=devnull_fd, stderr=devnull_fd, close_fds=True)
@@ -348,7 +337,7 @@ def getMySQLServerState_old(kwargs):
 def createMySQLServer(post_params):
     logger.debug("Entering createMySQLServer")
     try:
-        niam.start()
+        agent.start()
         logger.debug("Leaving createMySQLServer")
         return {'opState': 'OK'}
     except Exception as e:
@@ -417,7 +406,7 @@ def stopMySQLServer_old(kwargs):
 '''
 def shutdownMySQLServerAgent(kwargs):
     """Shutdown the Agent"""
-    niam.stop()    
+    agent.stop()    
     from conpaas.mysql.server.agent.server import agentServer
     agentServer.shutdown()
     import sys
@@ -427,11 +416,11 @@ def shutdownMySQLServerAgent(kwargs):
 def stopMySQLServer(params):
     logger.debug("Entering stopMySQLServer")
     try:
-        niam.stop()
+        agent.stop()
         logger.debug("Leaving stopMySQLServer")
         return {'opState':'OK'}
     except Exception as e:
-        ex = AgentException(E_UNKNOWN, detail=e)
+        ex = AgentException(E_UNKNOWN, 'stopMySQLServer', detail=e)
         logger.exception(e)
         logger.debug('Leaving createMySQLServer')
         return {'opState': 'ERROR', 'error': ex.message}
@@ -440,11 +429,11 @@ def stopMySQLServer(params):
 def restartMySQLServer(params):
     logger.debug("Entering restartMySQLServer")
     try:
-        niam.restart()
+        agent.restart()
         logger.debug("Leaving restartMySQLServer")
         return {'opState':'OK'}
     except Exception as e:
-        ex = AgentException(E_UNKNOWN, detail=e)
+        ex = AgentException(E_UNKNOWN, 'restartMySQLServer', detail=e)
         logger.exception(e)
         logger.debug('Leaving createMySQLServer')
         return {'opState': 'ERROR', 'error': ex.message}
@@ -453,11 +442,11 @@ def restartMySQLServer(params):
 def getMySQLServerState(params):
     logger.debug("Entering getMySQLServerState")
     try: 
-        status = niam.status()
+        status = agent.status()
         logger.debug("Leaving getMySQLServerState")
         return {'opState':'OK', 'return': status}
     except Exception as e:
-        ex = AgentException(E_UNKNOWN, detail=e)
+        ex = AgentException(E_UNKNOWN, 'getMySQLServerState', detail=e)
         logger.exception(e)
         logger.debug('Leaving createMySQLServer')
         return {'opState': 'ERROR', 'error': ex.message}
@@ -466,11 +455,11 @@ def getMySQLServerState(params):
 def setMySQLServerConfiguration(params):
     logger.debug("Entering setMySQLServerConfiguration")
     try:
-        niam.config.change_config(params['id_param'], params["value"])  
+        agent.config.change_config(params['id_param'], params["value"])  
         logger.debug("Leaving setMySQLServerConfiguration")
         return {'opState':'OK'}
     except Exception as e:
-        ex = AgentException(E_UNKNOWN, detail=e)
+        ex = AgentException(E_UNKNOWN, 'setMySQLServerConfiguration', detail=e)
         logger.exception(e)
         logger.debug('Leaving createMySQLServer')
         return {'opState': 'ERROR', 'error': ex.message}  
@@ -483,7 +472,7 @@ def createNewMySQLuser(params):
         logger.exception(ex.message) 
         return {'opState': 'ERROR', 'error': ex.message}
     try:
-        niam.config.add_user_to_MySQL(params['username'], params['password'])
+        agent.config.add_user_to_MySQL(params['username'], params['password'])
         logger.debug("Leaving createNewMySQLuser")
         return {'opState': 'OK'}
     except MySQLdb.Error, e:
@@ -499,7 +488,7 @@ def removeMySQLuser(params):
         logger.exception(ex.message) 
         return {'opState': 'ERROR', 'error': ex.message}  
     try:
-        niam.config.remove_user_to_MySQL(params['username'])
+        agent.config.remove_user_to_MySQL(params['username'])
         logger.debug("Leaving removeMySQLuser")
         return {'opState': 'OK'}
     except MySQLdb.Error, e:
@@ -511,7 +500,7 @@ def removeMySQLuser(params):
 def listAllMySQLusers(params):
     logger.debug("Entering listAllMySQLusers")
     try:
-        ret = niam.config.get_users_in_MySQL()
+        ret = agent.config.get_users_in_MySQL()
         logger.debug("Leaving listAllMySQLusers")
         return ret
     except MySQLdb.Error, e:
@@ -524,8 +513,5 @@ def create_with_MySQLdump(params):
     logger.debug("Entering create_with_MySQLdump")
     params['mysqldump']  
     f = params['mysqldump']['file']
-    ret = niam.config.create_MySQL_with_dump(f)
+    ret = agent.config.create_MySQL_with_dump(f)
     return ret   
-
-  
-niam = MySQLServer()
