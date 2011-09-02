@@ -221,7 +221,14 @@ instance_type = "t1.micro"
 file = "FULL_PATH_TO_LOG_FILE"
 \end{verbatim}\end{framedbox}
 Where FULL\_PATH\_TO\_LOG\_FILE is the full path to the file where errors will be reported.
-\item edit lib/aws-sdk/config.inc.php, fill in AWS\_KEY/AWS\_SECRET\_KEY with access key and secret key
+\item Download the AWS sdk for PHP from
+\href{http://aws.amazon.com/sdkforphp/}{http://aws.amazon.com/sdkforphp/}.
+Extract the sdk directory and rename it to aws-sdk. Place it under the lib
+directory of the front-end source code such that lib/aws-sdk/ contains a file
+named config-sample.inc.php.
+\item Rename lib/aws-sdk/config-sample.inc.php to lib/aws-sdk/config.inc.php
+and fill in AWS\_KEY, AWS\_SECRET\_KEY, AWS\_ACCOUNT\_ID and
+AWS\_CANONICAL\_ID as instructed in the file's documentation.
 \end{enumerate}
 
 \end{document}
