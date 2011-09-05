@@ -1,7 +1,7 @@
 <?php
 
 require_once('../__init__.php');
-require_once('../Service.php');
+require_once('../ServiceFactory.php');
 require_once('../ServiceData.php');
 
 if (!isset($_SESSION['uid'])) {
