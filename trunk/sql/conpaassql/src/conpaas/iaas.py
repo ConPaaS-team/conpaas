@@ -76,6 +76,18 @@ GRAPHICS = [
         logger.debug("Exiting create_node")
         return rez
 
+    '''
+        Destroying ONE node with XML RPC.
+    '''
+    def destroy_node(self, id):
+        logger.debug("Entering destroy_node")
+        #oca.VirtualMachine.finalize(self.client.id)
+        vm_pool=oca.VirtualMachinePool(self.client)
+        vm_pool.info(-2)
+        vm = vm_pool.get_by_id(id)
+        vm.finalize(self.client.id)
+        logger.debug("Exiting destroy_node")
+
     def list_sizes(self, location=None):
         return [
           NodeSize(id=1,

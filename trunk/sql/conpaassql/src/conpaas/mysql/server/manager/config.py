@@ -99,6 +99,6 @@ class Configuration(object):
     '''
       Remove Service Node to the server (configuration).
     '''
-    def removeMySQLServiceNode(self, vmid, accesspoint):
+    def removeMySQLServiceNode(self, vmid):
         del self.serviceNodes[vmid]
         self.mysql_count-=1

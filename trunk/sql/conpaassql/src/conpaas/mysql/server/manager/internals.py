@@ -68,14 +68,24 @@ def createServiceNode(kwargs):
     if len(kwargs) != 0:
         return {'opState': 'ERROR', 'error': ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message}
     Thread(target=createServiceNodeThread).start()
-    sn=ServiceNode(1, True)
+    #sn=ServiceNode(1, True)
     #sn.ip="127.0.0.1"    
     #managerServer.config.addMySQLServiceNode(1,sn)
     return {
           'opState': 'OK'
           #'sql': [ sn.vmid ]
     }
-  
+
+@expose('POST')
+def deleteServiceNode(kwargs):
+    if len(kwargs) != 1:
+        return {'opState': 'ERROR', 'error': ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message}
+    iaas.
+    config.removeMySQLServiceNode(kwargs['id'])
+    return {
+          'opState': 'OK'    
+    }
+
 def createServiceNodeThread ():
     node_instances = []
     new_vm=iaas.newInstance()
