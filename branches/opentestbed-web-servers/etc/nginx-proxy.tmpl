@@ -81,7 +81,7 @@ http {
       include        /etc/nginx/fastcgi_params;
       fastcgi_param  SCRIPT_FILENAME \$document_root/\$fastcgi_script_name;
       fastcgi_param  SERVER_NAME \$host;
-      fastcgi_intercept_errors on;
+      fastcgi_intercept_errors off;
       fastcgi_pass   fpm_upstream;
     }
     #end if
