@@ -10,5 +10,5 @@ install:
 	# Untar there
 	tar xvf $(DEST_DIR_PCKG) -C $(DIR)
 	# Remove the package
-	rm $(DEST_DIR_PCKG)
+	#rm $(DEST_DIR_PCKG)
 	# Installation complete!

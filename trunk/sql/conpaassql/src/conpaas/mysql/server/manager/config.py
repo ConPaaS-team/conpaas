@@ -82,6 +82,7 @@ class Configuration(object):
       
     def getMySQLServiceNodes(self):
         return [ serviceNode for serviceNode in self.serviceNodes.values() if serviceNode.isRunningMySQL ]
+        #return self.serviceNodes
   
     def getMySQLTuples(self):
         return [ [serviceNode.ip, MYSQL_PORT] for serviceNode in self.serviceNodes.values() if serviceNode.isRunningMySQL ]
@@ -101,4 +102,4 @@ class Configuration(object):
     '''
     def removeMySQLServiceNode(self, vmid):
         del self.serviceNodes[vmid]
-        self.mysql_count-=1
+        self.mysql_count-=1            

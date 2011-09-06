@@ -52,25 +52,31 @@ def listServiceNodes(kwargs):
         return {'opState': 'ERROR', 'error': ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message}
     #dstate = memcache.get(DEPLOYMENT_STATE)    
     vms = iaas.listVMs()
+    vms_mysql = config.getMySQLServiceNodes()    
+    for vm_id in vms.keys():
+        if not (vm_id in [ vm['id'] for vm in vms_mysql] ):
+        #if not (vm_id in vms_mysql.keys()):
+            logger.debug('Removing instance ' + str(vm_id) + ' since it is not responsing.')
+            config.removeMySQLServiceNode(vm_id)
     #if dstate != S_RUNNING and dstate != S_ADAPTING:
-    #    return {'opState': 'ERROR', 'error': ManagerException(E_STATE_ERROR).message}
-    
+    #    return {'opState': 'ERROR', 'error': ManagerException(E_STATE_ERROR).message}    
     #config = memcache.get(CONFIG)
     logger.debug("Exiting listServiceNode")
     return {
           'opState': 'OK',
           #'sql': [ serviceNode.vmid for serviceNode in managerServer.config.getMySQLServiceNodes() ]
-          'sql': [ vms.keys() ]
+          #'sql': [ vms.keys() ]
+          'sql': [ serviceNode.vmid for serviceNode in config.getMySQLServiceNodes() ]
     }
 
 @expose('POST')
 def createServiceNode(kwargs):
-    if len(kwargs) != 0:
+    if not(len(kwargs) in (0,1)):
         return {'opState': 'ERROR', 'error': ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message}
-    Thread(target=createServiceNodeThread).start()
-    #sn=ServiceNode(1, True)
-    #sn.ip="127.0.0.1"    
-    #managerServer.config.addMySQLServiceNode(1,sn)
+    if len(kwargs) == 0:
+        Thread(target=createServiceNodeThread).start()
+    else:
+        Thread(target=createServiceNodeThread(kwargs['function'])).start()
     return {
           'opState': 'OK'
           #'sql': [ sn.vmid ]
@@ -80,19 +86,22 @@ def createServiceNode(kwargs):
 def deleteServiceNode(kwargs):
     if len(kwargs) != 1:
         return {'opState': 'ERROR', 'error': ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message}
-    iaas.
-    config.removeMySQLServiceNode(kwargs['id'])
+    logger.debug('deleteServiceNode ' + str(kwargs['id']))
+    if iaas.killInstance(kwargs['id']):
+        config.removeMySQLServiceNode(kwargs['id'])
+    '''TODO: If false, return false response.
+    '''
     return {
           'opState': 'OK'    
     }
 
-def createServiceNodeThread ():
+def createServiceNodeThread (function):
     node_instances = []
-    new_vm=iaas.newInstance()
+    new_vm=iaas.newInstance(function)
     vm=iaas.listVMs()[new_vm['id']]
-    node_instances.append(vm)
+    node_instances.append(vm)    
+    wait_for_nodes(node_instances)
     config.addMySQLServiceNode(new_vm['id'], new_vm)
-    #wait_for_nodes(node_instances)
 
 @expose('GET')
 def getMySQLServerManagerState(params):

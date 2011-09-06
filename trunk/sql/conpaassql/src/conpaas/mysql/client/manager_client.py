@@ -36,26 +36,36 @@ def getMySQLServerState(host, port):
     if code != httplib.OK: raise Exception('Received HTTP response code %d' % (code))
     return __check_reply(body)
 
-def addServiceNode(host, port):
-    params = {'action': 'createServiceNode'}
+def addServiceNode(host, port, function):
+    params = {'action': 'createServiceNode', 'function':function}
+    code, body = _http_post(host, port, '/', params=params)
+    if code != httplib.OK: raise Exception('Received HTTP response code %d' % (code))
+    return __check_reply(body)
+
+def deleteServiceNode(host, port, id):
+    params = {'action': 'deleteServiceNode','id':str(id)}
     code, body = _http_post(host, port, '/', params=params)
     if code != httplib.OK: raise Exception('Received HTTP response code %d' % (code))
     return __check_reply(body)
 
 if __name__ == '__main__':
-    #host = '172.16.117.228'
-    host = '0.0.0.0'
-    #host = '172.16.118.185'
-    port = 50000
-    if sys.argv.__len__() in (2, 3):
+    for each in range(sys.argv.__len__()):
+        print sys.argv[each]
+    if sys.argv.__len__() in (4, 5):
+        host = sys.argv[2]
+        port = sys.argv[3]
         if sys.argv[1] in ("listServiceNodes"):
             ret = getListServiceNodes(host, port)
             print ret            
         if sys.argv[1] in ("createServiceNode"):
-            ret = addServiceNode(host, port)
+            ret = addServiceNode(host, port, sys.argv[4])
             print ret            
         if sys.argv[1] in ("getMySQLServerState"):
             ret = getMySQLServerState(host, port)
+            print ret            
+        if sys.argv[1] in ("deleteServiceNode"):            
+            id = sys.argv[4]
+            ret = deleteServiceNode(host, port, id)
             print ret            
     else:
         printUsage()

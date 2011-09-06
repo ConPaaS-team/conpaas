@@ -54,7 +54,52 @@ class OneXmlrpc(NodeDriver):
     '''
     def create_node(self, **kwargs):
         logger.debug("Entering create_node")
-        template='''NAME   = conpaassql_server
+        if kwargs['function'] == 'agent':
+            logger.debug("creating agent")
+            template='''NAME   = conpaassql_server
+CPU    = 0.2
+MEMORY = 512
+   OS     = [
+   arch = "i686",
+   boot = "hd",
+   root     = "hda" ]
+DISK   = [
+   image_id = "''' + str(kwargs['image'].id) + '''",
+   bus = "scsi",
+   readonly = "no" ]
+NIC    = [ NETWORK_ID = '''+str(kwargs['ex_network_id'])+''' ]
+GRAPHICS = [
+  type="vnc"
+  ]
+CONTEXT = [
+  target=sdc,
+  files = /home/leo/agent/ts.sh
+  ]
+'''
+        elif kwargs['function'] == 'manager':
+            logger.debug("creating manager")
+            template='''NAME   = conpaassql_server
+CPU    = 0.2
+MEMORY = 512
+   OS     = [
+   arch = "i686",
+   boot = "hd",
+   root     = "hda" ]
+DISK   = [
+   image_id = "''' + str(kwargs['image'].id) + '''",
+   bus = "scsi",
+   readonly = "no" ]
+NIC    = [ NETWORK_ID = '''+str(kwargs['ex_network_id'])+''' ]
+GRAPHICS = [
+  type="vnc"
+  ]
+CONTEXT = [
+  target=sdc,
+  files = /home/leo/manager/ts.sh]
+'''
+        else:
+            logger.debug("creating")
+            template='''NAME   = conpaassql_server
 CPU    = 0.2
 MEMORY = 512
    OS     = [
@@ -85,7 +130,7 @@ GRAPHICS = [
         vm_pool=oca.VirtualMachinePool(self.client)
         vm_pool.info(-2)
         vm = vm_pool.get_by_id(id)
-        vm.finalize(self.client.id)
+        vm.finalize()
         logger.debug("Exiting destroy_node")
 
     def list_sizes(self, location=None):
@@ -201,6 +246,8 @@ class IaaSClient:
     def __init__(self, iaas_config):
         self.__setdriver(iaas_config)
       
+    '''List VMs which are part of my configuration.
+    '''
     def listVMs(self):
         nodes = self.driver.list_nodes()
         vms = {}
@@ -214,12 +261,13 @@ class IaaSClient:
     def getVMInfo(self, vm_id):
         return self.listVMs()[vm_id]
   
-    def newInstance(self):
+    def newInstance(self, function):
         size_one = [ i for i in self.driver.list_sizes() if i.id == self.size_id ]
         size = size_one[0]
         img = NodeImage(self.img_id, '', None)
         kwargs = {'size': size,
-                  'image': img
+                  'image': img,
+                  'function' : function
                   }
         if isinstance(self.driver, OneXmlrpc):
             kwargs['ex_network_id'] = self.on_ex_network_id
@@ -251,6 +299,6 @@ class IaaSClient:
     def killInstance(self, vm_id):
         nodes = self.driver.list_nodes()
         for i in nodes:
-            if i.id == vm_id:
+            if int(i) == int(vm_id):
                 return self.driver.destroy_node(i)
         return False
