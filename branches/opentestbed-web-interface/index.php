@@ -51,7 +51,7 @@ $services = ServiceData::getServicesByUser($page->getUID());
   			</script>
   		<?php else: ?>
 		<div class="box infobox">
-			You have no services in the dashboard. Go ahead and <a href="create.php">create a service</a>.
+			You have no services in the dashboard. Go ahead and <a href="create.php">create a service</a>. You may also find the <a href="http://www.conpaas.eu/?page_id=32">help</a> useful.
 		</div>
   		<?php endif; ?>
   	</div>
