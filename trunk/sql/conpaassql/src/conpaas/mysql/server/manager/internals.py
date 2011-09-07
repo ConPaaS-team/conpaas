@@ -45,6 +45,10 @@ def expose(http_method):
         return wrapped
     return decorator
 
+'''
+    For each of the node from the list of the manager check that it is alive (in the list
+    returned by the ONE).
+'''
 @expose('GET')
 def listServiceNodes(kwargs):
     logger.debug("Entering listServiceNode")
@@ -52,12 +56,11 @@ def listServiceNodes(kwargs):
         return {'opState': 'ERROR', 'error': ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message}
     #dstate = memcache.get(DEPLOYMENT_STATE)    
     vms = iaas.listVMs()
-    vms_mysql = config.getMySQLServiceNodes()    
-    for vm_id in vms.keys():
-        if not (vm_id in [ vm['id'] for vm in vms_mysql] ):
-        #if not (vm_id in vms_mysql.keys()):
-            logger.debug('Removing instance ' + str(vm_id) + ' since it is not responsing.')
-            config.removeMySQLServiceNode(vm_id)
+    vms_mysql = config.getMySQLServiceNodes()
+    for vm in vms_mysql:
+        if not(vm['id'] in vms.keys()):
+            logger.debug('Removing instance ' + str(vm['id']) + ' since it is not in the list returned by the listVMs().')
+            config.removeMySQLServiceNode(vm['id'])         
     #if dstate != S_RUNNING and dstate != S_ADAPTING:
     #    return {'opState': 'ERROR', 'error': ManagerException(E_STATE_ERROR).message}    
     #config = memcache.get(CONFIG)
@@ -69,17 +72,24 @@ def listServiceNodes(kwargs):
           'sql': [ serviceNode.vmid for serviceNode in config.getMySQLServiceNodes() ]
     }
 
+'''Creates a new service node. 
+@param function: None, "manager" or "agent". If None, empty image is provisioned. If "manager"
+new manager is awaken and if the function equals "agent", new instance of the agent is 
+provisioned.     
+'''
 @expose('POST')
 def createServiceNode(kwargs):
     if not(len(kwargs) in (0,1)):
-        return {'opState': 'ERROR', 'error': ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message}
+        return {'opState': 'ERROR', 'error': ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message}    
     if len(kwargs) == 0:
-        Thread(target=createServiceNodeThread).start()
+        new_vm=iaas.newInstance(None)
+        Thread(target=createServiceNodeThread(None, new_vm)).start()
     else:
-        Thread(target=createServiceNodeThread(kwargs['function'])).start()
+        new_vm=iaas.newInstance(kwargs['function'])
+        Thread(target=createServiceNodeThread(kwargs['function'], new_vm)).start()
     return {
-          'opState': 'OK'
-          #'sql': [ sn.vmid ]
+          'opState': 'OK',
+          'sql': [ new_vm['id'] ]
     }
 
 @expose('POST')
@@ -95,9 +105,13 @@ def deleteServiceNode(kwargs):
           'opState': 'OK'    
     }
 
-def createServiceNodeThread (function):
-    node_instances = []
-    new_vm=iaas.newInstance(function)
+'''
+    Waits for new VMs to awake. 
+    @param function: None, agent or manager.
+    @param new_vm: new VM's details.  
+'''
+def createServiceNodeThread (function, new_vm):
+    node_instances = []    
     vm=iaas.listVMs()[new_vm['id']]
     node_instances.append(vm)    
     wait_for_nodes(node_instances)
@@ -116,7 +130,10 @@ def getMySQLServerManagerState(params):
         return {'opState': 'ERROR', 'error': ex.message}
 
 '''
-    Wait for nodes to get ready.
+    Wait for nodes to get ready. It tries to call a function of the agent. If exception
+    is thrown, wait for poll_interval seconds.
+    @param nodes: a list of nodes
+    @param poll_intervall: how many seconds to wait. 
 '''
 def wait_for_nodes(nodes, poll_interval=10):
     logger.debug('wait_for_nodes: going to start polling')

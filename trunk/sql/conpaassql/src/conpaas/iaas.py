@@ -73,7 +73,7 @@ GRAPHICS = [
   ]
 CONTEXT = [
   target=sdc,
-  files = /home/leo/agent/ts.sh
+  files = '''+str(kwargs['ex_userdata_agent'])+'''
   ]
 '''
         elif kwargs['function'] == 'manager':
@@ -95,7 +95,7 @@ GRAPHICS = [
   ]
 CONTEXT = [
   target=sdc,
-  files = /home/leo/manager/ts.sh]
+  files = '''+str(kwargs['ex_userdata_manager'])+''']
 '''
         else:
             logger.debug("creating")
@@ -172,6 +172,8 @@ class IaaSClient:
         if not iaas_config.has_option('iaas', 'OPENNEBULA_NETWORK_ID'): raise Exception('Configuration error: [iaas] OPENNEBULA_NETWORK_ID not set')
         if not iaas_config.has_option('iaas', 'OPENNEBULA_SIZE_ID'): raise Exception('Configuration error: [iaas] OPENNEBULA_SIZE_ID not set')
         if not iaas_config.has_option('iaas', 'OPENNEBULA_IMAGE_ID'): raise Exception('Configuration error: [iaas] OPENNEBULA_IMAGE_ID not set')
+        if not iaas_config.has_option('iaas', 'OPENNEBULA_CONTEXT_SCRIPT_MANAGER'): raise Exception('Configuration error: [iaas] OPENNEBULA_CONTEXT_SCRIPT_MANAGER not set')
+        if not iaas_config.has_option('iaas', 'OPENNEBULA_CONTEXT_SCRIPT_AGENT'): raise Exception('Configuration error: [iaas] OPENNEBULA_CONTEXT_SCRIPT_AGENT not set')
         
         parsed = urlparse.urlparse(iaas_config.get('iaas', 'OPENNEBULA_URL'))
         self.scheme = parsed.scheme
@@ -183,6 +185,8 @@ class IaaSClient:
         self.img_id = iaas_config.get('iaas', 'OPENNEBULA_IMAGE_ID')
         self.size_id = iaas_config.get('iaas', 'OPENNEBULA_SIZE_ID')    
         self.on_ex_network_id = iaas_config.get('iaas', 'OPENNEBULA_NETWORK_ID')
+        self.one_context_manager_script = iaas_config.get('iaas', 'OPENNEBULA_CONTEXT_SCRIPT_MANAGER')        
+        self.one_context_agent_script = iaas_config.get('iaas', 'OPENNEBULA_CONTEXT_SCRIPT_AGENT')        
         
         self.driver = OneXmlrpc(self.username, self.password, self.scheme, self.host, self.port)
   
@@ -271,6 +275,8 @@ class IaaSClient:
                   }
         if isinstance(self.driver, OneXmlrpc):
             kwargs['ex_network_id'] = self.on_ex_network_id
+            kwargs['ex_userdata_manager'] = self.one_context_manager_script        
+            kwargs['ex_userdata_agent'] = self.one_context_agent_script
         if isinstance(self.driver, OpenNebulaNodeDriver):
             kwargs['ex_network_id'] = self.on_ex_network_id
             kwargs['ex_network_gateawy'] = self.on_ex_network_gateawy
