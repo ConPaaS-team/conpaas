@@ -2,6 +2,7 @@
 
 require_once('LocalService.php');
 require_once('EC2Service.php');
+require_once('OpenNebulaService.php');
 require_once('Service.php');
 
 class ServiceFactory {
@@ -17,6 +18,9 @@ class ServiceFactory {
 				break;
 			case 'ec2':
 				$cloud_instance = new EC2($service_data);
+				break;
+			case 'opennebula':
+			    $cloud_instance = new OpenNebula($service_data);
 				break;
 			default:
 				throw new Exception('Unknown cloud');
