@@ -49,8 +49,6 @@ def deleteServiceNode(host, port, id):
     return __check_reply(body)
 
 if __name__ == '__main__':
-    for each in range(sys.argv.__len__()):
-        print sys.argv[each]
     if sys.argv.__len__() in (4, 5):
         host = sys.argv[2]
         port = sys.argv[3]

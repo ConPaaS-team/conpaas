@@ -143,6 +143,7 @@ def wait_for_nodes(nodes, poll_interval=10):
             up = True
             try:
                 if i['ip'] != '':
+                    logger.debug('Probing ' + i['ip'] + ' for state.')
                     agent_client.getMySQLServerState((i['ip'], 60000))
                 else:
                     up = False

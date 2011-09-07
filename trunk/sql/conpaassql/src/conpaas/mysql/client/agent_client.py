@@ -28,15 +28,22 @@ def getMySQLServerState(host, port):
     return __check_reply(body)
 
 def createMySQLServer(host, port):
-    params = {
-              'action': 'createMySQLServer'
-    }
+    params = {'action': 'createMySQLServer'}
     code, body = _http_post(host, port, '/', params=params)
     if code != httplib.OK: raise Exception('Received HTTP response code %d' % (code))
     return __check_reply(body)
 
 def printUsage():
-    print 'TODO: Usage of agent_client.py.'
+    print 'Usage: agent_ip agent_port function function_params\n\
+Functions:  getMySQLServerState - no params\n \
+            createMySQLServer - no params\n \
+            restartMySQLServer - no params\n \
+            stopMySQLServer - no params\n \
+            configure_user - username, port \n \
+            get_all_users - no params\n \
+            remove_user - name \n \
+            setMySQLServerConfiguration - paramid value\n \
+            send_mysqldump -  location on disc\n'
     pass
 
 def restartMySQLServer(host, port):
@@ -90,26 +97,48 @@ def send_mysqldump(host,port,location):
     return __check_reply(body)
 
 if __name__ == '__main__':
-    #host = '172.16.117.228'
-    host = '127.0.0.1'
-    #host = '172.16.118.185'
-    port = 60000
-    if sys.argv.__len__() in (2, 3):
-        if sys.argv[1] in ("getMySQLServerState", "status"):
+    if sys.argv.__len__() > 3:
+        host = sys.argv[1]
+        port = sys.argv[2]
+        if sys.argv[3] == 'getMySQLServerState':
             ret = getMySQLServerState(host, port)
             print ret
-        if sys.argv[1] in ("createMySQLServer", "create"):
-            if sys.argv.__len__() == 3:
-                _port = int(sys.argv[2])
-            else: 
-                raise Exception('Please provide a port number')
-                printUsage()
-                exit()
+        if sys.argv[3] == 'createMySQLServer':
             ret = createMySQLServer(host, port)
             print ret
-        if sys.argv[1] in ("stopMySQLServer", "stop"):
+        if sys.argv[3] == 'restartMySQLServer':
+            ret = restartMySQLServer(host, port)
+            print ret
+        if sys.argv[3] == 'stopMySQLServer':
             ret = stopMySQLServer(host, port)
-            print ret     
+            print ret
+        if sys.argv[3] == 'configure_user':
+            if sys.argv.__len__ == 6:
+                ret = configure_user(host, port, sys.argv[4], sys.argv[5])
+                print ret
+            else:
+                print 'additional parameters required'
+        if sys.argv[3] == 'get_all_users':
+            ret =get_all_users(host, port)
+            print ret
+        if sys.argv[3] == 'remove_user':
+            if sys.argv.__len__ == 5:               
+                ret = remove_user(host,port,sys.argv[4])
+                print ret
+            else:
+                print 'additional parameters required'
+        if sys.argv[3] == 'setMySQLServerConfiguration':
+            if sys.argv.__len__ == 6:
+                ret = setMySQLServerConfiguration(host,port, sys.argv[4], sys.argv[5])
+                print ret
+            else:
+                print 'additional parameters required'                
+        if sys.argv[3] == 'send_mysqldump':
+            if sys.argv.__len__ == 5:
+                ret = send_mysqldump(host,port,sys.argv[4])
+                print ret
+            else:
+                print 'additional parameters required' 
     else:
         printUsage()
         #setMySQLServerConfiguration('127.0.0.1', 60000, "/home/danaia/Desktop/bla.txt")

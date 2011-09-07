@@ -161,7 +161,7 @@ class MySQLServerConfiguration:
         i = 0
         for row in rows:
             i = i+1
-            ret['info' + str(i)] = {'location': row[0], 'username': row[1]}
+            ret['info' + str(i)] = {'location': row[1], 'username': row[0]}
         return ret
     
     def create_MySQL_with_dump(self, f):
@@ -455,7 +455,8 @@ def getMySQLServerState(params):
 def setMySQLServerConfiguration(params):
     logger.debug("Entering setMySQLServerConfiguration")
     try:
-        agent.config.change_config(params['id_param'], params["value"])  
+        agent.config.change_config(params['id_param'], params["value"])
+        restartMySQLServer(None)
         logger.debug("Leaving setMySQLServerConfiguration")
         return {'opState':'OK'}
     except Exception as e:
