@@ -10,6 +10,7 @@ import json
 from conpaas.mysql.server.manager import internals
 from conpaas.iaas import IaaSClient
 from conpaas.mysql.server.manager.internals import MySQLServerManager
+from SocketServer import ThreadingMixIn
 
 class SQLServerRequestHandler(AbstractRequestHandler):
 	
@@ -23,13 +24,16 @@ class SQLServerRequestHandler(AbstractRequestHandler):
 			del params['action']
 			self.send_custom_response(httplib.OK, json.dumps(self.server.callback_dict[method][callback_name](params)))
 
-class ManagerServer(HTTPServer):
+#class MultithreadedHTTPServer(ThreadingMixIn, HTTPServer):
+#	pass
+
+class ManagerServer(ThreadingMixIn, HTTPServer):
 	
 	def register_method(self, http_method, func_name, callback):
 		self.callback_dict[http_method][func_name] = callback
 	
 	def __init__(self, server_address, iaas_config, RequestHandlerClass=SQLServerRequestHandler):
-		HTTPServer.__init__(self, server_address, RequestHandlerClass)
+		HTTPServer.__init__(self, server_address, RequestHandlerClass)		
 		self.callback_dict = {'GET': {}, 'POST': {}}		
 		from conpaas.mysql.server.manager import internals
 		internals.iaas = IaaSClient(iaas_config)

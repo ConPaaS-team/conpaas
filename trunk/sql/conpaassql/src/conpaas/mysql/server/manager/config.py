@@ -40,11 +40,13 @@ class ManagerException(Exception):
 
 class ServiceNode(object):
     
-    def __init__(self, vmid, runMySQL=False):
-        self.vmid = vmid
-        #self.ip = iaas.getVMInfo(vmid)['ip']
-        #self.ip = object
+    def __init__(self, vm, runMySQL=False):
+        self.vmid = vm['id']
+        self.ip = vm['ip']
+        self.name = vm['name']
+        self.state = vm['state']
         self.isRunningMySQL = runMySQL
+        self.port = 60000
   
     def __repr__(self):
         return 'ServiceNode(vmid=%s, ip=%s, mysql=%s)' % (str(self.vmid), self.ip, str(self.isRunningMySQL))
@@ -92,10 +94,13 @@ class Configuration(object):
     
     '''
       Add new Service Node to the server (configuration).
+      @param accesspoint: new VM
     '''
-    def addMySQLServiceNode(self, vmid, accesspoint):
-        self.serviceNodes[vmid]=accesspoint
+    def addMySQLServiceNode(self, accesspoint):
+        logger.debug('Entering addMySQLServiceNode') 
+        self.serviceNodes[accesspoint['id']]=ServiceNode(accesspoint, True)
         self.mysql_count+=1
+        logger.debug('Exiting addMySQLServiceNode')
         
     '''
       Remove Service Node to the server (configuration).

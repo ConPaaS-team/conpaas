@@ -6,6 +6,7 @@ Created on Jun 8, 2011
 from conpaas.web.http import _http_get, _http_post
 import httplib, json
 import sys
+from threading import Thread
 
 class ManagerException(Exception): pass
 
@@ -38,9 +39,16 @@ def getMySQLServerState(host, port):
 
 def addServiceNode(host, port, function):
     params = {'action': 'createServiceNode', 'function':function}
+    #Thread(target=wait_for_reply(params)).start()
     code, body = _http_post(host, port, '/', params=params)
     if code != httplib.OK: raise Exception('Received HTTP response code %d' % (code))
     return __check_reply(body)
+    
+
+#def wait_for_reply(prms):
+#    code, body = _http_post(host, port, '/', params=prms)
+#    if code != httplib.OK: raise Exception('Received HTTP response code %d' % (code))
+#    return __check_reply(body)
 
 def deleteServiceNode(host, port, id):
     params = {'action': 'deleteServiceNode','id':str(id)}

@@ -33,7 +33,33 @@ class MySQLServerManager():
         logger.debug("Entering MySQLServerManager initialization")
         conpaas.mysql.server.manager.internals.config = Configuration(conf)                                 
         self.state = S_INIT
+        self.__findAlreadyRunningInstances()
         logger.debug("Leaving MySQLServer initialization")
+
+    '''
+        Adds running instances of mysql agents to the list.
+    '''
+    def __findAlreadyRunningInstances(self):
+        logger.debug("Entering __findAlreadyRunningInstances")
+        list = iaas.listVMs()
+        logger.debug('List obtained: ' + str(list))
+        for i in list.values():
+            up = True
+            try:
+                if i['ip'] != '':
+                    logger.debug('Probing ' + i['ip'] + ' for state.')
+                    ret = agent_client.getMySQLServerState(i['ip'], 60000)                    
+                    logger.debug('Returned query:' + str(ret))
+                else:
+                    up = False
+            except agent_client.AgentException as e: logger.error('Exception: ' + str(e))
+            except Exception as e:
+                logger.error('Exception: ' + str(e))                
+                up = False
+            if up:
+                logger.debug('Adding service node ' + i['ip'])
+                conpaas.mysql.server.manager.internals.config.addMySQLServiceNode(i)
+        logger.debug("Exiting __findAlreadyRunningInstances")        
 
 def expose(http_method):
     def decorator(func):
@@ -58,9 +84,9 @@ def listServiceNodes(kwargs):
     vms = iaas.listVMs()
     vms_mysql = config.getMySQLServiceNodes()
     for vm in vms_mysql:
-        if not(vm['id'] in vms.keys()):
-            logger.debug('Removing instance ' + str(vm['id']) + ' since it is not in the list returned by the listVMs().')
-            config.removeMySQLServiceNode(vm['id'])         
+        if not(vm.vmid in vms.keys()):
+            logger.debug('Removing instance ' + str(vm.vmid) + ' since it is not in the list returned by the listVMs().')
+            config.removeMySQLServiceNode(vm.vmid)         
     #if dstate != S_RUNNING and dstate != S_ADAPTING:
     #    return {'opState': 'ERROR', 'error': ManagerException(E_STATE_ERROR).message}    
     #config = memcache.get(CONFIG)
@@ -69,7 +95,7 @@ def listServiceNodes(kwargs):
           'opState': 'OK',
           #'sql': [ serviceNode.vmid for serviceNode in managerServer.config.getMySQLServiceNodes() ]
           #'sql': [ vms.keys() ]
-          'sql': [ serviceNode.vmid for serviceNode in config.getMySQLServiceNodes() ]
+          'sql': [ [serviceNode.vmid, serviceNode.ip, serviceNode.port, serviceNode.state ] for serviceNode in config.getMySQLServiceNodes() ]
     }
 
 '''Creates a new service node. 
@@ -115,7 +141,7 @@ def createServiceNodeThread (function, new_vm):
     vm=iaas.listVMs()[new_vm['id']]
     node_instances.append(vm)    
     wait_for_nodes(node_instances)
-    config.addMySQLServiceNode(new_vm['id'], new_vm)
+    config.addMySQLServiceNode(new_vm)
 
 @expose('GET')
 def getMySQLServerManagerState(params):
@@ -144,7 +170,7 @@ def wait_for_nodes(nodes, poll_interval=10):
             try:
                 if i['ip'] != '':
                     logger.debug('Probing ' + i['ip'] + ' for state.')
-                    agent_client.getMySQLServerState((i['ip'], 60000))
+                    agent_client.getMySQLServerState(i['ip'], 60000)
                 else:
                     up = False
             except agent_client.AgentException: pass

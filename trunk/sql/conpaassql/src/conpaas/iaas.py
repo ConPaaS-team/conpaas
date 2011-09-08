@@ -256,7 +256,7 @@ class IaaSClient:
         nodes = self.driver.list_nodes()
         vms = {}
         for node in nodes.values():
-            vms[node.id] = {'id': node.name,
+            vms[node.id] = {'id': node.id,
             'state': node.state,
             'name': node.name,
             'ip': node.public_ip}
