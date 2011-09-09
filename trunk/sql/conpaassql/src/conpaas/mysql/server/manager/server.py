@@ -11,6 +11,7 @@ from conpaas.mysql.server.manager import internals
 from conpaas.iaas import IaaSClient
 from conpaas.mysql.server.manager.internals import MySQLServerManager
 from SocketServer import ThreadingMixIn
+from conpaas.log import log_dir_path
 
 class SQLServerRequestHandler(AbstractRequestHandler):
 	
@@ -36,7 +37,7 @@ class ManagerServer(ThreadingMixIn, HTTPServer):
 		HTTPServer.__init__(self, server_address, RequestHandlerClass)		
 		self.callback_dict = {'GET': {}, 'POST': {}}		
 		from conpaas.mysql.server.manager import internals
-		internals.iaas = IaaSClient(iaas_config)
+		internals.iaas = IaaSClient(iaas_config)		
 		#internals.config = iaas_config
 		internals.managerServer=MySQLServerManager(iaas_config)
 		for http_method in internals.exposed_functions:
@@ -53,7 +54,7 @@ if __name__ == '__main__':
 	parser.add_option('-c', '--config', type='string', default='./config.cfg', dest='config')  		
 	options, args = parser.parse_args()
 	config_parser = ConfigParser()
-	config_parser.read(options.config)
+	config_parser.read(options.config)	
 	print options.address, options.port
 	d = ManagerServer((options.address, options.port), config_parser)
 	d.serve_forever()

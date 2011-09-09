@@ -113,32 +113,20 @@ if __name__ == '__main__':
             ret = stopMySQLServer(host, port)
             print ret
         if sys.argv[3] == 'configure_user':
-            if sys.argv.__len__ == 6:
-                ret = configure_user(host, port, sys.argv[4], sys.argv[5])
-                print ret
-            else:
-                print 'additional parameters required'
+            ret = configure_user(host, port, sys.argv[4], sys.argv[5])
+            print ret
         if sys.argv[3] == 'get_all_users':
             ret =get_all_users(host, port)
             print ret
         if sys.argv[3] == 'remove_user':
-            if sys.argv.__len__ == 5:               
-                ret = remove_user(host,port,sys.argv[4])
-                print ret
-            else:
-                print 'additional parameters required'
+            ret = remove_user(host,port,sys.argv[4])
+            print ret            
         if sys.argv[3] == 'setMySQLServerConfiguration':
-            if sys.argv.__len__ == 6:
-                ret = setMySQLServerConfiguration(host,port, sys.argv[4], sys.argv[5])
-                print ret
-            else:
-                print 'additional parameters required'                
+            ret = setMySQLServerConfiguration(host,port, sys.argv[4], sys.argv[5])
+            print ret                        
         if sys.argv[3] == 'send_mysqldump':
-            if sys.argv.__len__ == 5:
-                ret = send_mysqldump(host,port,sys.argv[4])
-                print ret
-            else:
-                print 'additional parameters required' 
+            ret = send_mysqldump(host,port,sys.argv[4])
+            print ret            
     else:
         printUsage()
         #setMySQLServerConfiguration('127.0.0.1', 60000, "/home/danaia/Desktop/bla.txt")

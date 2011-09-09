@@ -56,7 +56,7 @@ class OneXmlrpc(NodeDriver):
         logger.debug("Entering create_node")
         if kwargs['function'] == 'agent':
             logger.debug("creating agent")
-            template='''NAME   = conpaassql_server
+            template='''NAME   = conpaassql-server
 CPU    = 0.2
 MEMORY = 512
    OS     = [
@@ -78,7 +78,7 @@ CONTEXT = [
 '''
         elif kwargs['function'] == 'manager':
             logger.debug("creating manager")
-            template='''NAME   = conpaassql_server
+            template='''NAME   = conpaassql-server
 CPU    = 0.2
 MEMORY = 512
    OS     = [

@@ -105,14 +105,16 @@ provisioned.
 '''
 @expose('POST')
 def createServiceNode(kwargs):
-    if not(len(kwargs) in (0,1)):
+    if not(len(kwargs) in (0,1, 3)):
         return {'opState': 'ERROR', 'error': ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message}    
     if len(kwargs) == 0:
         new_vm=iaas.newInstance(None)
         Thread(target=createServiceNodeThread(None, new_vm)).start()
-    else:
+    elif len(kwargs) == 1:
         new_vm=iaas.newInstance(kwargs['function'])
         Thread(target=createServiceNodeThread(kwargs['function'], new_vm)).start()
+    else:
+        pass
     return {
           'opState': 'OK',
           'sql': [ new_vm['id'] ]
