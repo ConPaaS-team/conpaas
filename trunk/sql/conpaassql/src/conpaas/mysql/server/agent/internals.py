@@ -515,4 +515,12 @@ def create_with_MySQLdump(params):
     params['mysqldump']  
     f = params['mysqldump']['file']
     ret = agent.config.create_MySQL_with_dump(f)
-    return ret   
+    return ret
+
+@expose('POST')
+def setUpReplicaMaster(params):
+    pass
+
+@expose('POST')
+def setUpReplicaSlave(params):
+    pass

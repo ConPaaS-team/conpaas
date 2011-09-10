@@ -120,6 +120,25 @@ def createServiceNode(kwargs):
           'sql': [ new_vm['id'] ]
     }
 
+'''Creating a service replication.
+'''
+@expose('POST')
+def createReplica(kwargs):
+    if not(len(kwargs) in (2)):
+        return {'opState': 'ERROR', 'error': ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message}    
+    new_vm=iaas.newInstance('agent')
+    master_id=kwargs['master_id']
+    createServiceNodeThread('agent', new_vm)    
+    '''new_vm is a new replica instance
+    '''
+    '''TODO: insert code for initializing a replica master'''
+    '''TODO: insert code for initializing a replica client'''
+    
+    return {
+          'opState': 'OK',
+          'sql': [ new_vm['id'] ]
+    }
+
 @expose('POST')
 def deleteServiceNode(kwargs):
     if len(kwargs) != 1:
