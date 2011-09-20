@@ -15,7 +15,7 @@
   // GNU General Public License for more details.
   //
   // You should have received a copy of the GNU General Public License
-  // along with Bash.  If not, see <http://www.gnu.org/licenses/>.
+  // along with ConPaaS.  If not, see <http://www.gnu.org/licenses/>.
 
 session_set_cookie_params(60 * 60 * 24 * 15); // expires in 15 days
 session_start();
