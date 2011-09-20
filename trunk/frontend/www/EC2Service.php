@@ -20,6 +20,7 @@ class EC2 {
 	
 	public function __construct($data) {
 		$this->service_type = $data['type'];
+		$this->sid = $data['sid'];
 		$this->vmid = $data['vmid'];
 		$this->ec2 = new AmazonEC2();
 		$this->loadConfiguration();
@@ -48,7 +49,10 @@ class EC2 {
 			throw new Exception('could not read manager user data: '.
 				$this->user_data_file);
 		}
-		$user_data = str_replace('%CONPAAS_SERVICE_TYPE%', strtoupper($this->service_type), $user_data);
+		$user_data = str_replace(
+						array('%CONPAAS_SERVICE_TYPE%', '%CONPAAS_SERVICE_ID%'),
+						array(strtoupper($this->service_type), $this->sid),
+						$user_data);
 		$response = $this->ec2->run_instances($this->manager_ami, 1, 1, array(
 			'InstanceType' => $this->instance_type,
 			'KeyName' => $this->keypair,

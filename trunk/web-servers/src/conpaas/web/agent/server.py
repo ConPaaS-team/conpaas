@@ -11,7 +11,7 @@ from conpaas.web.http import AbstractRequestHandler
 from conpaas.web import log
 from conpaas.web.misc import verify_ip_or_domain
 
-class AgentServer(HTTPServer, ThreadingMixIn):
+class AgentServer(ThreadingMixIn, HTTPServer):
   def __init__(self, server_address, config_parser, RequestHandlerClass=AbstractRequestHandler):
     HTTPServer.__init__(self, server_address, RequestHandlerClass)
     log.init(config_parser.get('agent', 'LOG_FILE'))

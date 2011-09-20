@@ -1,11 +1,16 @@
 <?php 
 
 require_once('DB.php');
+require_once('UserData.php');
 require_once('Service.php');
 
 class ServiceData {
 	
     public static function createService($default_name, $type, $cloud, $uid) {
+        if (UserData::updateUserCredit($uid, -1) === false) {
+          /* not enough credit */
+          return false;
+        }
         $query = sprintf("INSERT INTO services ".
     		"(name, type, cloud, state, creation_date, uid) VALUES ".
     		"('%s', '%s', '%s', %d, now(), %d)",

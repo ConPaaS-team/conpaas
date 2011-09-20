@@ -39,7 +39,7 @@ $page = new Page();
   					</select>
   				</td>
   				<td class="info">
-  					for now only the PHP Service is available
+  					for now only selectable services available
   				</td>
   			</tr>
   			<tr>
@@ -55,7 +55,7 @@ $page = new Page();
   				<td class="input">
   					<select id="cloud">
   						<option value="ec2" selected="selected">Amazon EC2</option>
-  						<option disabled="disabled">OpenNebula</option>
+  						<option value="opennebula">OpenNebula</option>
   					</select>
   				</td>  			
   			</tr>

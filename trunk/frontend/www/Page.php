@@ -1,6 +1,7 @@
 <?php 
 
 require_once('UserData.php');
+require_once('ServiceData.php');
 
 class Page {
 	
@@ -38,7 +39,24 @@ class Page {
 			throw new Exception('User does not exist');
 		}
 		$this->username = $uinfo['username'];
+		$this->user_credit = $uinfo['credit'];
+		$this->instances = $uinfo['instances'];
 		$this->fetchBrowser();
+	}
+	
+	public function getUserCredit() {
+	    return $this->user_credit;
+	}
+	
+	public function getInstances() {
+       	 $instances = 0;
+	 $services_data = ServiceData::getServicesByUser($this->uid);
+
+	 foreach ($services_data as $service_data) {
+	   $service = ServiceFactory::createInstance($service_data);
+	   $instances += $service->getNodesCount()+1;
+	 }
+	 return $instances;
 	}
 	
 	public function getBrowserClass() {
@@ -59,7 +77,19 @@ class Page {
 			'<div class="header">'.
   				'<a id="logo" href="index.php"></a>'.
   				'<div class="user">'.
-  					$this->getUsername().' | '. 
+  					$this->getUsername().' | '.
+  					'<span id="user_instances_container">'.
+  					    '<span id="user_instances">' .
+  					        $this->getInstances() .
+  					    '</span>'.
+  					    ' active VMs'.
+		                        '</span> |' .
+		                        ' <span id="user_credit_container">'.
+  					    '<span id="user_credit">'.
+  					      $this->getUserCredit().
+  					    '</span>'.
+  					    ' credits'.
+  					'</span> | <a href="http://www.conpaas.eu/?page_id=32" target="_blank">help</a> | '.
   					'<a href="javascript: void(0);" id="logout">logout</a>'.
   				'</div>'.
   				'<div class="clear"></div>'.

@@ -4,6 +4,7 @@ Created on Mar 9, 2011
 @author: ielhelw
 '''
 from BaseHTTPServer import HTTPServer
+from SocketServer import ThreadingMixIn
 
 import memcache, httplib, inspect
 from conpaas.web.manager.iaas import IaaSClient
@@ -48,12 +49,12 @@ You may want to copy-paste the URL as a parameter to the 'managerc.py' command-l
 ''' + self._render_arguments(method, params) + '</body></html>')
 
 
-class DeploymentManager(HTTPServer):
+class DeploymentManager(ThreadingMixIn, HTTPServer):
   def __init__(self,
                server_address,
                config_parser,
                scalaris_addr,
-               reset_config=False,
+               reset_config=True,
                RequestHandlerClass=ManagerRequestHandler):
     HTTPServer.__init__(self, server_address, RequestHandlerClass)
     log.init(config_parser.get('manager', 'LOG_FILE'))
@@ -66,6 +67,10 @@ class DeploymentManager(HTTPServer):
     self.scalaris_addr = scalaris_addr
     self.reset_config = reset_config
     self.config_parser = config_parser
+    
+    self.fe_kwargs = {'fe_credit_url': config_parser.get('manager', 'FE_CREDIT_URL'),
+                      'fe_terminate_url': config_parser.get('manager', 'FE_TERMINATE_URL'),
+                      'fe_service_id': config_parser.get('manager', 'FE_SERVICE_ID')}
     
     if hasattr(self, '_create_%s_service' % (config_parser.get('manager', 'TYPE').lower())):
       func = getattr(self, '_create_%s_service' % (config_parser.get('manager', 'TYPE').lower()))
@@ -91,7 +96,7 @@ class DeploymentManager(HTTPServer):
                                 self.config_parser.get('manager', 'CODE_REPO'),
                                 self.config_parser.get('manager', 'LOG_FILE'),
                                 self.scalaris_addr,
-                                self.reset_config)
+                                self.reset_config, **self.fe_kwargs)
   
   def _create_java_service(self):
     from conpaas.web.manager.internal import java
@@ -100,7 +105,7 @@ class DeploymentManager(HTTPServer):
                             self.iaas,
                             self.config_parser.get('manager', 'CODE_REPO'),
                             self.config_parser.get('manager', 'LOG_FILE'),
-                            self.reset_config)
+                            self.reset_config, **self.fe_kwargs)
   
   def register_method(self, http_method, func_name, callback):
     self.callback_dict[http_method][func_name] = callback

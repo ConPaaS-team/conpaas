@@ -294,10 +294,10 @@ class ServicePage extends Page {
 			'<div class="subname">'
 				.$this->renderStateChange()
 				.' &middot; '
-				.LinkUI('access manager', $this->service->getManager())
+				.LinkUI('service manager', $this->service->getManager())
 					->setExternal(true)
 				.' &middot; '
-				.LinkUI('raw log', 'viewlog.php?sid='.$this->service->getSID())
+				.LinkUI('manager log', 'viewlog.php?sid='.$this->service->getSID())
 					->setExternal(true)
 			.'</div>';
 	}

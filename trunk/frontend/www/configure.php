@@ -52,7 +52,7 @@ $backendType = $service->getType();
   		function pollState(delay) {
   	  		delay = (typeof delay == 'undefined') ? 1000 : delay + 1000;
   	  		count = delay / 1000;
-  	  		showLoading(true, 'performing changes - wait (' + count + ')...');
+  	  		showLoading(true, 'performing changes - please wait (' + count + ')...');
 		  	$.ajax({
 			  	url: 'services/getState.php?sid=<?php echo $sid;?>',
 			  	dataType: 'json',
@@ -394,7 +394,7 @@ $(document).ready(function() {
 			<div class="access-box">
 				<?php
 				if ($service->isRunning()) {
-					echo LinkUI('access active version', 
+					echo LinkUI('Access the application', 
 								$service->getAccessLocation())
 								->setExternal(true);
 				}
@@ -426,7 +426,7 @@ $(document).ready(function() {
 				</div>
 				<div class="clear"></div>
 				<div class="hint">
-					example: <b>.zip</b>, <b>.tar</b> of your source tree 
+	  example: <b>.zip</b>, <b>.tar</b> of your source tree <br> (expanding in the <b>current directory</b>) <br> or <b>.war</b> for Java servlets 
 				</div>
 
 			<script type="text/javascript">

@@ -22,24 +22,64 @@ if (isset($_SESSION['uid'])) {
 	<div class="login">
 		<div class="descr">
 			<div class="logo" style="text-align: center;">
-				<img src="images/contrail_paas_logo_large.png" />
+				<a href="http://www.conpaas.eu/"><img src="images/contrail_paas_logo_large.png" border=0 /></a>
 			</div>
 		</div>
 		<div class="formwrap">
 		<div class="form">
 			<h2 class="title" id="login-title">Login</h2>
-			<h2 class="title" id="register-title" style="display: none;">Register</h2>
+			<h2 class="register_form" align="center" id="register-title" style="display: none;">Register a new user</h2>
+<p class="register_form" style="display: none"><blink>Attention:</blink> <font color="red"> new accounts have zero credit.</font><br>
+                                               This means you cannot use the system yet.<br> 
+                                               You will receive free credit after we review<br>
+                                               your registration.</p>
 			<table>
 				<tr>
-					<td class="name">username</td>
+					<td class="name">Username</td>
 					<td class="input">
-						<input type="text" id="username" />
+						<input type="text" id="username" style="width:170px" />
+					</td>
+				</tr>
+				<tr class="register_form" style="display: none">
+					<td class="name">Email</td>
+					<td class="input">
+						<input type="text" id="email" style="width:170px" />
+					</td>
+				</tr>
+				<tr>
+					<td class="name">Password</td>
+					<td class="input">
+						<input type="password" id="passwd" style="width:172px" onkeypress="return enterKey(event,this.form)" />
+					</td>
+				</tr>
+				<tr class="register_form" style="display: none">
+					<td class="name">Confirm password</td>
+					<td class="input">
+						<input type="password" id="passwd2" style="width:172px" />
+					</td>
+				</tr>
+				<tr class="register_form" style="display: none">
+					<td class="name">First name</td>
+					<td class="input">
+						<input type="text" id="fname" style="width:170px" />
+					</td>
+				</tr>
+				<tr class="register_form" style="display: none">
+					<td class="name">Last name</td>
+					<td class="input">
+						<input type="text" id="lname" style="width:170px" />
+					</td>
+				</tr>
+				<tr class="register_form" style="display: none">
+					<td class="name">Affiliation</td>
+					<td class="input">
+						<input type="text" id="affiliation"  style="width:170px" />
 					</td>
 				</tr>
 				<tr>
 					<td></td>
 					<td>
-						<div class="hint">enter your name or email address</div>
+						<div class="hint">Enter your name or email address</div>
 					</td>
 				</tr>
 				<tr>
@@ -50,9 +90,9 @@ if (isset($_SESSION['uid'])) {
 					<td>
 						<input class="active" type="button" value="login" 
 							id="login" />
-						<input type="button" value="register" id="register" 
+						<input type="button" value="Register" id="register" 
 							style="display: none;" />
-						<a id="toregister" href="javascript: void(0);">register</a>
+						<a id="toregister" href="javascript: void(0);">New user</a>
 					</td>
 				</tr>
 				<tr>
@@ -75,17 +115,42 @@ if (isset($_SESSION['uid'])) {
 	 * success is the callback function, in case of normal response 
 	 */
 	function userRequest(type, success) {
-		if ($('#username').val() == '') {
-			$('#username').focus();
-			return;
+		if (type == 'register') {
+			fields = ['#username', '#email', '#passwd', '#passwd2', '#fname', '#lname','#affiliation'];
+			if ($('#passwd').val() != $('#passwd2').val()) {
+				$('#error').html('Passwords do not match').show();
+				setTimeout("$('#error').fadeOut();", 2000);
+				return;
+			}
+			$data = {
+	  			action: type,
+	  			username: $('#username').val(),
+	  			email: $('#email').val(),
+	  			passwd: $('#passwd').val(),
+	  			fname: $('#fname').val(),
+	  			lname: $('#lname').val(),
+	  			affiliation: $('#affiliation').val()
+  			};
 		}
+		else {
+			fields = ['#username', '#passwd'];
+			$data = {
+	  			action: type,
+	  			username: $('#username').val(),
+	  			passwd: $('#passwd').val(),
+  			}
+		}
+		for (i in fields) {
+    		if ($(fields[i]).val() == '') {
+    			$(fields[i]).focus();
+    			return;
+    		}
+		}
+		
 		$('.login .loading').show();
   		$.ajax({
   			url: 'services/login.php',
-  			data: {
-	  			action: type,
-	  			username: $('#username').val()
-  			},
+  			data: $data,
   			dataType: 'json',
   			type: 'post',
 			success: function (response) {
@@ -141,13 +206,25 @@ if (isset($_SESSION['uid'])) {
 		$('#toregister').click(function() {
 			$('#login-title').hide("slow");
 			$(this).hide();
+			$('.register_form').show("slow");
 			$('#login').toggleClass('active');
 			$('#register').toggleClass('active');
 			$('#login').hide();
 			$('#register').show();
 			$('#username').focus();
 		});
+
 	});
+
+        function enterKey(event,ourform) {
+	  if (event && event.which == 13) {
+	    login();
+	  }
+	  else {
+	    return true;
+	  }
+	}
+
 	</script>
 </body>
 </html>

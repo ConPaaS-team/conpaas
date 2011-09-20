@@ -1,28 +1,34 @@
 #!/bin/bash
 
-. /etc/ec2/params
+if [ -f /mnt/context.sh ]; then
+  . /mnt/context.sh
+fi
 
-export SOURCE=
-export EC2_USER=
-export EC2_PASSWORD=
-export PUBLIC_IP=$EC2_PUBLIC_IP
+/sbin/ifconfig eth0 $IP_PUBLIC
+/sbin/ip route add default via $IP_GATEWAY
+echo "nameserver $NAMESERVER" > /etc/resolv.conf
+
+SOURCE=
 
 wget -P /root/ $SOURCE/ConPaaSWeb.tar.gz
 wget -P /root/ $SOURCE/manager-start
-wget -P /root/ $SOURCE/ec2-agent-user-data
+wget -P /root/ $SOURCE/opennebula-agent-user-data
+
 
 cat <<EOF > /root/config.cfg
 [iaas]
-DRIVER = EC2
+DRIVER = OPENNEBULA
 
-## EC2
-EC2_USER = $EC2_USER
-EC2_PASSWORD = $EC2_PASSWORD
-EC2_IMAGE_ID = ami-5fc70136
-EC2_SIZE_ID = t1.micro
-EC2_SECURITY_GROUP_NAME = contrail
-EC2_KEY_NAME = contrail
-EC2_AGENT_USERDATA = /root/ec2-agent-user-data
+## OPENNEBULA
+OPENNEBULA_URL = 
+OPENNEBULA_USER = 
+OPENNEBULA_PASSWORD = 
+OPENNEBULA_IMAGE_ID = 
+OPENNEBULA_SIZE_ID = 
+OPENNEBULA_NETWORK_ID = 
+OPENNEBULA_NETWORK_GATEWAY = 
+OPENNEBULA_NETWORK_NAMESERVER = 
+OPENNEBULA_AGENT_USERDATA = /root/opennebula-agent-user-data
 
 [manager]
 TYPE = %CONPAAS_SERVICE_TYPE%
@@ -42,5 +48,8 @@ FE_TERMINATE_URL = PATH_TO/callback/terminateService.php
 EOF
 
 
+export PUBLIC_IP=$IP_PUBLIC
+
 chmod 755 /root/manager-start
 /root/manager-start
+

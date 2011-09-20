@@ -349,7 +349,7 @@ class PHPProcessManager:
   def start(self):
     self.state = S_STARTING
     devnull_fd = open(devnull, 'w')
-    proc = Popen([self.cmd, '-n', '--fpm-config', self.config_file], stdout=devnull_fd, stderr=devnull_fd, close_fds=True)
+    proc = Popen([self.cmd, '--fpm-config', self.config_file], stdout=devnull_fd, stderr=devnull_fd, close_fds=True)
     if proc.wait() != 0:
       logger.critical('Failed to start the php-fpm')
       raise OSError('Failed to start the php-fpm')

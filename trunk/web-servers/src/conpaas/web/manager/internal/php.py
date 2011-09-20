@@ -15,8 +15,8 @@ from . import InternalsBase, ManagerException
 
 class PHPInternal(InternalsBase):
   
-  def __init__(self, memcache_in, iaas_in, code_repo_in, logfile_in, scalaris_addr, reset_config):
-    InternalsBase.__init__(self, memcache_in, iaas_in, code_repo_in, logfile_in)
+  def __init__(self, memcache_in, iaas_in, code_repo_in, logfile_in, scalaris_addr, reset_config, **kwargs):
+    InternalsBase.__init__(self, memcache_in, iaas_in, code_repo_in, logfile_in, **kwargs)
     self.exposed_functions['GET']['get_service_info'] = self.get_service_info
     self.exposed_functions['GET']['get_configuration'] = self.get_configuration
     self.exposed_functions['POST']['update_php_configuration'] = self.update_php_configuration
@@ -162,6 +162,7 @@ class PHPInternal(InternalsBase):
     self._configuration_set(config)
   
   def _create_initial_configuration(self):
+    print 'CREATING INIT CONFIG'
     config = PHPServiceConfiguration()
     config.backend_count = 0
     config.web_count = 0
