@@ -18,15 +18,15 @@
   // along with ConPaaS.  If not, see <http://www.gnu.org/licenses/>.
 
 function loadLoggingConfiguration() {
-  $conf = parse_ini_file(Conf::CONF_DIR.'/log.ini', true);
+  $conf = parse_ini_file(Conf::CONF_DIR.'/main.ini', true);
   if ($conf === false) {
-    throw new Exception('Could not read log configuration file db.ini');
+    throw new Exception('Could not read log configuration file main.ini');
   }
-  return $conf['log'];
+  return $conf['main'];
 }
 
 $logging_conf = loadLoggingConfiguration();
-$logfile = fopen($logging_conf['file'], 'a');
+$logfile = fopen($logging_conf['logfile'], 'a');
 
 function dlog($var) {
         global $logfile;
