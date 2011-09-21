@@ -76,7 +76,7 @@ all inbound traffic. Therefore, one needs to specify a whitelist of
 protocols and destination ports that are accesible from the outside.
 The Web Hosting Service uses TCP ports 80, 8080 and 9000. All three
 ports should be open for all running instances.  AWS documentation is
-at
+at\\
 \href{http://docs.amazonwebservices.com/AWSEC2/latest/UserGuide/index.html?using-network-security.html}{http://docs.amazonwebservices.com/AWSEC2/latest/UserGuide/index.html?using-network-security.html}.
 
 
@@ -138,6 +138,15 @@ configuration of the Front-end.
 \end{enumerate}
 
 At this point, your front-end should be working!
+
+\section{The credit system}
+
+The frontend is designed to maintain accounting of resources used by
+each user. When a new user is created, (s)he receives a number of
+credits as specified in the ``main.ini'' configuration file. Later on,
+one credit is substracted each time a VM is executed for (a fraction
+of) one hour. The administrator can change the number of credits by
+directly editing the frontend's database. 
 
 \section{Sandboxing}
 
