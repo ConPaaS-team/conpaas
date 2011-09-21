@@ -22,14 +22,15 @@ require_once('logging.php');
 
 class UserData {
     public static function createUser($username, $email, $fname, $lname, $affiliation, $passwd) {
-        $query = sprintf("INSERT INTO users (username, email, fname, lname, affiliation, passwd, created) ".
+        $query = sprintf("INSERT INTO users (username, email, fname, lname, affiliation, passwd, created, $credit) ".
     		"VALUES ('%s', '%s', '%s', '%s', '%s', '%s', now())",
     		mysql_escape_string($username),
     		mysql_escape_string($email),
     		mysql_escape_string($fname),
     		mysql_escape_string($lname),
     		mysql_escape_string($affiliation),
-    		mysql_escape_string(md5($passwd)));
+    		mysql_escape_string(md5($passwd)),
+    		mysql_escape_string($credit));
     	$res = mysql_query($query, DB::getConn());
     	if ($res === false) {
     		throw new DBException(DB::getConn());

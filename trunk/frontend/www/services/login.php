@@ -22,6 +22,14 @@ require_once('../UserData.php');
 require_once('../Page.php');
 require_once('../DB.php');
 
+function loadMainConfiguration() {
+  $conf = parse_ini_file(Conf::CONF_DIR.'/main.ini', true);
+  if ($conf === false) {
+    throw new Exception('Could not read log configuration file main.ini');
+  }
+  return $conf['main'];
+}
+
 function register() {
     if (!isset($_POST['username'])
         || !isset($_POST['email'])
@@ -42,8 +50,10 @@ function register() {
 			'error' => 'username <b>'.$username.'</b> already exists'
 		);
 	}
+	$mainconf = loadMainConfiguration();
 	try {
-	    UserData::createUser($username, $_POST['email'], $_POST['fname'], $_POST['lname'], $_POST['affiliation'], $_POST['passwd']);
+	  $initialcredit = $mainconf['initial_credit'];
+	  UserData::createUser($username, $_POST['email'], $_POST['fname'], $_POST['lname'], $_POST['affiliation'], $_POST['passwd'], $initialcredit);
 	} catch (DBException $e) {
 	    return array(
 			'register' => 0,
@@ -57,7 +67,8 @@ function register() {
 			'error' => 'user could not be added into the database',
 		);
 	}
-	$mailr = mail('testbed@conpaas.eu', 'New user - ' . $username,
+	$adminemail = $mainconf['admin_email'];
+	$mailr = mail($adminemail, 'New user - ' . $username,
 	  'New user:'
 	  .'Username: ' . $_POST['username'] . "\r\n"
 	  .'First name: ' . $_POST['fname'] . "\r\n"
@@ -65,8 +76,8 @@ function register() {
 	  .'email: ' . $_POST['email'] . "\r\n"
 	  .'Affiliation: ' . $_POST['affiliation'] . "\r\n"
 	  ."\r\n",
-	  "From: frontend@conpaas.eu\r\n".
-	  "Reply-To: frontend@conpaas.eu\r\n"
+	  "From: " . $adminemail . "\r\n".
+	  "Reply-To: " . $adminemail . "\r\n"
       );
 	  if ( $mailr !== TRUE ) {
 	    return array(
