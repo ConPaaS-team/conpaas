@@ -1,8 +1,12 @@
+              ConPaaS: an integrated runtime environment
+		   for elastic Cloud applications 
+                       http://www.conpaas.eu
+
+
 Introduction
 ============
 
-This is ConPaaS: an integrated runtime environment for elastic Cloud
-applications. ConPaaS aims at simplifying the deployment of
+ConPaaS aims at simplifying the deployment and management of
 applications in the Cloud. In ConPaaS, an application is defined as a
 composition of one or more services. Each service is an elastic
 component dedicated to the hosting of a particular type of
@@ -30,7 +34,8 @@ ConPaaS currently contains:
   applications written in PHP.
 
 - More services are currently being developed. They will be released
-  as soon as they are fully tested and integrated with the frontend.
+  as soon as they are reasonably well tested and integrated with the
+  frontend.
 
 
 Installation

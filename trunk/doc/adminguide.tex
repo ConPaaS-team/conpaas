@@ -1,12 +1,13 @@
-\documentclass[12pt]{article}
+\documentclass[10pt]{article}
+
 \usepackage{listings}
 \usepackage{framed}
 \usepackage{hyperref}
+\usepackage{url}
 
-
-\newenvironment{what}
-{\begin{description} \item [What is happening now?] \hfill \\}
-{\end{description}}
+% \newenvironment{what}
+% {\begin{description} \item [What is happening now?] \hfill \\}
+% {\end{description}}
 
 \newenvironment{framedbox}[1]%
 {\begin{framed}
@@ -18,27 +19,18 @@
  \end{framed}
 }
 
-\pagestyle{myheadings}
-\markright{Administrator Guide:ConPaaS Web Hosting Service}
 
 \begin{document}
-\title{Administrator Guide: ConPaaS Web Hosting Service}
-\date{August 15, 2011}
-\thispagestyle{empty}
+\title{ConPaaS -- Administrator guide}
+\author{Ismail El Helw \and Guillaume Pierre}
+\maketitle
 
-\begin{center}
-\begingroup
-\fontsize{20pt}{20pt}\selectfont
-\textbf{Administrator Manual: ConPaaS \linebreak \linebreak Web Hosting Service} \linebreak
-\endgroup
+\vfil
+\tableofcontents
+\vfil
+\newpage
 
-\begingroup
-\fontsize{16pt}{16pt}\selectfont
-August 15, 2011
-\endgroup
-\end{center}
-
-\section{Using Amazon Web Services}
+\section{Creating a ConPaaS image for Amazon EC2}
 
 The Web Hosting Service is capable of running over the Elastic Compute
 Cloud (EC2) of Amazon Web Services (AWS). This section describes the
@@ -47,25 +39,30 @@ process of configuring an AWS account to run the Web Hosting Service.
 \subsection{Create an EBS backed AMI on Amazon EC2}
 
 The Web Hosting Service requires the creation of an Amazon Machine
-Image(AMI) to contain the dependencies of it's processes.  The easiest
-method of creating a new Elastic Block Store backed Amazon Machine
-Image is to start from an already existing one, customize it and save
-the resulting filesystem as a new AMI. The following steps explains
-how to setup an AMI using this methodology.
+Image (AMI) to contain the dependencies of it's processes.  The
+easiest method of creating a new Elastic Block Store backed Amazon
+Machine Image is to start from an already existing one, customize it
+and save the resulting filesystem as a new AMI. The following steps
+explains how to setup an AMI using this methodology.
 
 \begin{enumerate}
 \item Search the public AMIs for a Debian squeeze EBS AMI and run an
   instance of it.
-\item Download conpaas\_web\_deps script and run it inside the
-  instance.  This script will install all of the dependencies of the
-  manager and agent processes as well as create the necessary
-  directory structure.
+
+\item Download the \verb+web-servers/conpaas_web_deps+ script and run
+  it inside the instance. This script will install all of the
+  dependencies of the manager and agent processes as well as create
+  the necessary directory structure.
+
 \item Clean the filesystem by removing any temporary files you may
   have created.
+
 \item Go to the EC2 administration page at the AWS website, right
-  click on the running instance and click on "Create Image (EBS AMI)".
-  AWS documentation is at 
-  \href{http://docs.amazonwebservices.com/AWSEC2/latest/UserGuide/index.html?Tutorial_CreateImage.html}{http://docs.amazonwebservices.com/AWSEC2/latest/UserGuide/index.html?Tutorial\_CreateImage.html}.
+  click on the running instance and click on ``\emph{Create Image (EBS
+    AMI)}''.  AWS documentation is available at
+  \url{http://docs.amazonwebservices.com/AWSEC2/latest/UserGuide/index.html?Tutorial_CreateImage.html}.
+
+\item Stop the instance.
 \end{enumerate}
 
 \subsection{Create a Security Group}
@@ -76,33 +73,44 @@ all inbound traffic. Therefore, one needs to specify a whitelist of
 protocols and destination ports that are accesible from the outside.
 The Web Hosting Service uses TCP ports 80, 8080 and 9000. All three
 ports should be open for all running instances.  AWS documentation is
-at\\
-\href{http://docs.amazonwebservices.com/AWSEC2/latest/UserGuide/index.html?using-network-security.html}{http://docs.amazonwebservices.com/AWSEC2/latest/UserGuide/index.html?using-network-security.html}.
+available at
+\url{http://docs.amazonwebservices.com/AWSEC2/latest/UserGuide/index.html?using-network-security.html}.
 
+\section{Creating a ConPaaS image for OpenNebula}
+
+The Web Hosting Service is capable of running over an OpenNebula
+installation. This section describes the process of configuring an AWS
+account to run the Web Hosting Service.
+
+\emph{To be written\ldots}
 
 \section{Setup ConPaaS Front-end}
 
 The ConPaaS Front-end is a web application that allows users to
 manager their ConPaaS services. Users can create, configure and
-terminate services through it. The Front-end supports running ConPaaS
-over AWS only. This section describes the process of setting up a
-ConPaaS Front-end.
+terminate services through it. This section describes the process of
+setting up a ConPaaS frontend.
 
 \subsection{Create a MySQL Database}
 
 The ConPaaS frontend uses a MySQL database to store data about users
 and their services. The script located in
-``frontend/scripts/frontend-db.sql'' creates a new user DB\_USER with
-password DB\_PASSWD and a database DB\_NAME. It grants all access
-permissions to user DB\_USER on the new database. Finally, it creates
-the database schema. Update the first four lines to change DB\_USER,
-DB\_PASSWD and DB\_NAME to reasonable values.
+\verb+frontend/scripts/frontend-db.sql+ creates a new user
+\verb+DB_USER+ with password \verb+DB_PASSWD+ and a database
+\verb+DB_NAME+. It grants all access permissions to user
+\verb+DB_USER+ on the new database. Finally, it creates the database
+schema. You must update the first four lines to change \verb+DB_USER+,
+\verb+DB_PASSWD+ and \verb+DB_NAME+ to reasonable values.
 
-You can create the database schema using this command:
+Install a MysQL database if you don't have one already. You can now
+create the database schema using this command, replacing \verb+ADMIN+
+and \verb+ADMINPASSWORD+ with the MySQL administrator's name and
+password:
 
 \begin{framedbox}{8pt}\begin{verbatim}
 mysql -u ADMIN -p ADMINPASSWORD  < frontend-db.sql
 \end{verbatim}\end{framedbox}
+
 
 
 \subsection{Configure the Front-end}
@@ -112,34 +120,45 @@ on any PHP-enabled Web server. The following instructions detail the
 configuration of the Front-end.
 
 \begin{enumerate}
-\item Place the PHP code found in directory ``frontend/www'' at the
-  document root of the target web server such that the file named
-  \_\_init\_\_.php is directly underneath it.
-
-\item Edit the CONF\_DIR variable in \_\_init\_\_.php such that it
-  points to the configuration directory path.
-
-\item Copy all files from the ``frontend/conf'' directory to a
+\item Copy all files from the \verb+frontend/conf+ directory to a
   location \emph{outside} of the Web server's document root. A good
-  location could be for example /etc/conpaas. Edit each of these files
-  to setup the required configuration parameters. Each variable should
-  be described in the config file itself.
+  location could be for example \verb+/etc/conpaas+. Edit each of
+  these files to setup the required configuration parameters. Each
+  variable should be described in the config file itself.
+
+\item Place the PHP code found in directory \verb+frontend/www+ at the
+  document root of the target web server such that the file named
+  \verb+__init__.php+ is directly underneath it.
+
+\item Edit the \verb+CONF_DIR+ variable in \verb+__init__.php+ such
+  that it points to the configuration directory path.
 
 \item Download the AWS sdk for PHP from
-  \href{http://aws.amazon.com/sdkforphp/}{http://aws.amazon.com/sdkforphp/}.
-  Extract the sdk directory and rename it to aws-sdk. Place it under
-  the lib directory of the front-end source code such that
-  lib/aws-sdk/ contains a file named config-sample.inc.php.
+  \url{http://aws.amazon.com/sdkforphp/}.  Extract the sdk directory
+  and rename it to \verb+aws-sdk+. Place it under the lib directory of
+  the front-end source code such that \verb+lib/aws-sdk/+ contains a
+  file named \verb+config-sample.inc.php+ (among others).
 
-\item Rename lib/aws-sdk/config-sample.inc.php to
-  lib/aws-sdk/config.inc.php and fill in AWS\_KEY, AWS\_SECRET\_KEY,
-  AWS\_ACCOUNT\_ID and AWS\_CANONICAL\_ID as instructed in the file's
-  documentation.
+\item Copy \verb+lib/aws-sdk/config-sample.inc.php+ to
+  \verb+lib/aws-sdk/config.inc.php+ and fill in \verb+AWS_KEY+,
+  \verb+AWS_SECRET_KEY+, \verb+AWS_ACCOUNT_ID+ and
+  \verb+AWS_CANONICAL_ID+ as instructed in the file's documentation.
+
+\item Make sure that the Web server's document directory contains a
+  subdirectory named \verb+code+ and containing the following files:
+  \verb+agent-start+, \verb+agent-stop+, \verb+ConPaaSWeb.tar.gz+,
+  \verb+ec2-agent-user-data+, \verb+ec2-manager-user-data+, and
+  \verb+manager-start+. These files contain the entire implementation
+  of the Web hosting service. They are downloaded by newly created VM
+  instances upon startup. Make sure that variable \verb+SOURCE+ from
+  the frontend's configuration file \verb+manager-user-data+
+  points to the URL of this directory.
 \end{enumerate}
 
 At this point, your front-end should be working!
 
-\section{The credit system}
+\section{Miscellaneous}
+\subsection{The credit system}
 
 The frontend is designed to maintain accounting of resources used by
 each user. When a new user is created, (s)he receives a number of
@@ -148,7 +167,7 @@ one credit is substracted each time a VM is executed for (a fraction
 of) one hour. The administrator can change the number of credits by
 directly editing the frontend's database. 
 
-\section{Sandboxing}
+\subsection{Application sandboxing}
 
 The default ConPaaS configuration creates strong snadboxing so that
 applications cannot open sockets, access the file system, execute
@@ -159,11 +178,11 @@ measures to a more usable level, you need to edit two files:
 
 \begin{itemize}
 \item To change restrictions applied to PHP applications, edit file
-  ``web-servers/etc/fpm.tmpl'' to change the list of
-  ``disable\_functions''. Do not forget to recreate a file
-  ConPaaSWeb.tar.gz out of the entire ``web-servers'' directory, and
-  to copy it at the URL specified in file
-  ``frontend/conf/manager-user-data''.
+  \verb+web-servers/etc/fpm.tmpl+ to change the list of
+  \verb+disable\_functions+. Do not forget to recreate a file
+  \verb+ConPaaSWeb.tar.gz+ out of the entire \verb+web-servers+
+  directory, and to copy it at the URL specified in file
+  \verb+frontend/conf/manager-user-data+.
 \item To change restrictions applied to Java applications, edit file
   ``web-servers/etc/tomcat-catalina.policy''. Do not forget to
   recreate a file ConPaaSWeb.tar.gz out of the entire ``web-servers''

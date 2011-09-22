@@ -1,8 +1,8 @@
-ConPaaS is developed by Vrije Universiteit Amsterdam, Zuse Institut
-Berlin, and XLAB in the Contrail European research project
-(http://contrail-project.eu/). Contrail is partially funded by the FP7
-Programme of the European Commission under Grant Agreement
-FP7-ICT-257438.
+ConPaaS (http://www.conpaas.eu) is developed by Vrije Universiteit
+Amsterdam, Zuse Institut Berlin, and XLAB in the Contrail European
+research project (http://contrail-project.eu/). Contrail is partially
+funded by the FP7 Programme of the European Commission under Grant
+Agreement FP7-ICT-257438.
 
 The main ConPaaS developers are:
 
