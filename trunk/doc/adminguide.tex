@@ -227,8 +227,12 @@ server.
   location \uline{\emph{outside}} of the Web server's document root. A
   good location could be for example \verb+/etc/conpaas+. Edit each of
   these files to setup the required configuration parameters. Each
-  variable should be described in the config file itself. If you are
-  installing ConPaaS on EC2 you do not need to edit file
+  variable should be described in the config file itself. Files in
+  this directory should be readable by the Web server (in Debian and
+  Ubuntu distributions the Web server runs under username
+  \verb+www-data+). 
+
+  If you are installing ConPaaS on EC2 you do not need to edit file
   \verb+opennebula.ini+. If your are installing ConPaaS on OpenNebula
   you do not need to edit file \verb+aws.ini+.
 
