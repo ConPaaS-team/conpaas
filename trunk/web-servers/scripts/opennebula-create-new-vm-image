@@ -1,6 +1,6 @@
 #!/bin/bash -e
 
-FILENAME=conpaas.img
+FILENAME=conpaastest.img
 FILESIZE=2048 #MB
 DEBIAN_DIST=squeeze
 ARCH=amd64

@@ -1,23 +1,30 @@
 \documentclass[10pt]{article}
 
-\usepackage{listings}
-\usepackage{framed}
+%\usepackage{listings}
+%\usepackage{framed}
 \usepackage{hyperref}
 \usepackage{url}
+\usepackage{ulem} \normalem
+
+\usepackage{fancyvrb}
+\DefineVerbatimEnvironment%
+  {code}%
+  {Verbatim}%
+  {frame=single,framesep=1mm,fontsize=\scriptsize\rm,resetmargins=true}
 
 % \newenvironment{what}
 % {\begin{description} \item [What is happening now?] \hfill \\}
 % {\end{description}}
 
-\newenvironment{framedbox}[1]%
-{\begin{framed}
- \begingroup
- \fontsize{#1}{#1}\selectfont
-}
-{
- \endgroup
- \end{framed}
-}
+% \newenvironment{framedbox}[1]%
+% {\begin{framed}
+%  \begingroup
+%  \fontsize{#1}{#1}\selectfont
+% }
+% {
+%  \endgroup
+%  \end{framed}
+% }
 
 
 \begin{document}
@@ -36,6 +43,11 @@ The Web Hosting Service is capable of running over the Elastic Compute
 Cloud (EC2) of Amazon Web Services (AWS). This section describes the
 process of configuring an AWS account to run the Web Hosting Service.
 
+If you are new to EC2, you will need to create an account at
+\url{http://aws.amazon.com/ec2/}. A very good EC2 documentation can be
+found at
+\url{http://docs.amazonwebservices.com/AWSEC2/latest/GettingStartedGuide/}.
+
 \subsection{Create an EBS backed AMI on Amazon EC2}
 
 The Web Hosting Service requires the creation of an Amazon Machine
@@ -47,22 +59,37 @@ explains how to setup an AMI using this methodology.
 
 \begin{enumerate}
 \item Search the public AMIs for a Debian squeeze EBS AMI and run an
-  instance of it.
+  instance of it. If you are going to use micro-instances then the AMI
+  with ID \verb+ami-e0e11289+ could be a good choice.
 
-\item Download the \verb+web-servers/conpaas_web_deps+ script and run
-  it inside the instance. This script will install all of the
-  dependencies of the manager and agent processes as well as create
-  the necessary directory structure.
+\item Upload the \verb+web-servers/conpaas_web_deps+ script to the instance:
+  \begin{code}
+    chmod 0400 yourpublickey.pem
+    scp -i yourpublickey.pem web-servers/conpaas_web_deps root@instancename.com:
+  \end{code}
 
-\item Clean the filesystem by removing any temporary files you may
-  have created.
+\item Now, ssh to your instance:
+  \begin{code}
+    chmod 0400 yourpublickey.pem
+    ssh -i yourpublickey.pem root@your.instancename.com:
+  \end{code}
+  Run the \verb+conpaas_web_deps+ script inside the instance. This
+  script will install all of the dependencies of the manager and agent
+  processes as well as create the necessary directory structure. At
+  some point the script requests to accept licenses, accept them.
+
+\item Clean the filesystem by removing the
+  \verb+web-servers/conpaas_web_deps+ file and any other temporary
+  files you might have created.
 
 \item Go to the EC2 administration page at the AWS website, right
-  click on the running instance and click on ``\emph{Create Image (EBS
-    AMI)}''.  AWS documentation is available at
+  click on the running instance and select ``\emph{Create Image (EBS
+    AMI)}''.  AWS
+  documentation is available at
   \url{http://docs.amazonwebservices.com/AWSEC2/latest/UserGuide/index.html?Tutorial_CreateImage.html}.
 
-\item Stop the instance.
+\item After the image has been fully created, you can return to the
+  EC2 dashboard, right-click on your instance, and terminate it.
 \end{enumerate}
 
 \subsection{Create a Security Group}
@@ -82,14 +109,89 @@ The Web Hosting Service is capable of running over an OpenNebula
 installation. This section describes the process of configuring an AWS
 account to run the Web Hosting Service.
 
-\emph{To be written\ldots}
+To create an image for OpenNebula you can execute the script\\
+\verb+web-servers/scripts/opennebula-create-new-vm-image+ in any
+64-bit Debian or Ubuntu machine. Start by editing the first couple of
+lines of the script, then run it as root. The script generates an
+image file called \verb+conpaasweb.img+ by default. You can register
+it in OpenNebula:
 
-\section{Setup ConPaaS Front-end}
+\begin{code}
+  oneimage register conpaasweb.img
+\end{code}
 
-The ConPaaS Front-end is a web application that allows users to
-manager their ConPaaS services. Users can create, configure and
-terminate services through it. This section describes the process of
-setting up a ConPaaS frontend.
+\paragraph{If things go wrong}~\\
+
+Note that if anything fails during the image file creation, the script
+will stop. However, it will not always reset your system to its
+original state. To undo everything the script has done, follow these
+instructions:
+
+\begin{enumerate}
+\item The image has been mounted as a separate file system. Find the
+  mounted directory using command \verb+df -h+. The directory should
+  be in the form of \verb+/tmp/tmp.X+.
+  
+\item There may be a \verb+dev+ and a \verb+proc+ directories mounted
+  inside it. Unmount everything using:
+  \begin{code}
+    sudo umount /tmp/tmp.X/dev /tmp/tmp.X/proc /tmp/tmp.X
+  \end{code}
+  
+\item Find which loop device your using:
+  \begin{code}
+    sudo losetup -a
+  \end{code}
+  
+\item Remove the device mapping:
+  \begin{code}
+    sudo kpartx -d /dev/loopX
+  \end{code}
+  
+\item Remove the binding of the loop device:
+  \begin{code}
+    sudo losetup -d /dev/loopX
+  \end{code}
+
+\item Delete the image file 
+
+\item Your system should be back to its original state.
+\end{enumerate}
+
+\subsection{Make sure your OpenNebula is properly configured}
+
+There are two main topics that you should pay attention to:
+
+\begin{enumerate}
+\item Make sure your started OpenNebula's OCCI deamon. ConPaaS relies
+  on it to communicate with OpenNebula.
+\item Modify the \verb+occi_templates/common.erb+ OCCI profile as follows:
+  \begin{code}
+#----
+<% @vm_info.each('OS') do |os| %>
+        <% if os.attr('TYPE', 'arch') %>
+          OS = [ arch = "<%= os.attr('TYPE', 'arch').split('/').last %>" ]
+        <% end %>
+<% end %>
+GRAPHICS = [type="vnc",listen="0.0.0.0",port="-1"]
+#----    
+  \end{code}
+  \begin{enumerate}
+  \item The match for OS TYPE:arch allows the caller to specify the
+    architecture of the machine.
+  \item The graphics line allows for using vnc to connect to the VM.
+    This is very useful for debugging purposes and is not necessary
+    once testing is complete.
+  \end{enumerate}
+\end{enumerate}
+
+\section{Setup ConPaaS's Frontend}
+
+The ConPaaS frontend is a web application that allows users to manager
+their ConPaaS services. Users can create, configure and terminate
+services through it. This section describes the process of setting up
+a ConPaaS frontend.
+
 
 \subsection{Create a MySQL Database}
 
@@ -107,33 +209,38 @@ create the database schema using this command, replacing \verb+ADMIN+
 and \verb+ADMINPASSWORD+ with the MySQL administrator's name and
 password:
 
-\begin{framedbox}{8pt}\begin{verbatim}
-mysql -u ADMIN -p ADMINPASSWORD  < frontend-db.sql
-\end{verbatim}\end{framedbox}
-
+\begin{code}
+  mysql -u ADMIN -p ADMINPASSWORD  < frontend-db.sql
+\end{code}
 
 
 \subsection{Configure the Front-end}
 
 The ConPaaS Front-end code is a collection of PHP scripts. It can run
-on any PHP-enabled Web server. The following instructions detail the
-configuration of the Front-end.
+on any PHP-enabled Web server. We recommend using Apache with the
+\verb+mod_php+ module. The following instructions detail the
+configuration of the frontend once you have a working PHP-enabled Web
+server.
 
 \begin{enumerate}
 \item Copy all files from the \verb+frontend/conf+ directory to a
-  location \emph{outside} of the Web server's document root. A good
-  location could be for example \verb+/etc/conpaas+. Edit each of
+  location \uline{\emph{outside}} of the Web server's document root. A
+  good location could be for example \verb+/etc/conpaas+. Edit each of
   these files to setup the required configuration parameters. Each
-  variable should be described in the config file itself.
+  variable should be described in the config file itself. If you are
+  installing ConPaaS on EC2 you do not need to edit file
+  \verb+opennebula.ini+. If your are installing ConPaaS on OpenNebula
+  you do not need to edit file \verb+aws.ini+.
 
 \item Place the PHP code found in directory \verb+frontend/www+ at the
   document root of the target web server such that the file named
   \verb+__init__.php+ is directly underneath it.
 
 \item Edit the \verb+CONF_DIR+ variable in \verb+__init__.php+ such
-  that it points to the configuration directory path.
+  that it points to the configuration directory path chosen in step 1.
 
-\item Download the AWS sdk for PHP from
+\item (Only if you are installing ConPaaS from the svn repository)
+  Download the AWS sdk for PHP from
   \url{http://aws.amazon.com/sdkforphp/}.  Extract the sdk directory
   and rename it to \verb+aws-sdk+. Place it under the lib directory of
   the front-end source code such that \verb+lib/aws-sdk/+ contains a
@@ -144,15 +251,18 @@ configuration of the Front-end.
   \verb+AWS_SECRET_KEY+, \verb+AWS_ACCOUNT_ID+ and
   \verb+AWS_CANONICAL_ID+ as instructed in the file's documentation.
 
-\item Make sure that the Web server's document directory contains a
+\item (Only if you are installing ConPaaS from the svn repository)
+  Make sure that the Web server's document directory contains a
   subdirectory named \verb+code+ and containing the following files:
   \verb+agent-start+, \verb+agent-stop+, \verb+ConPaaSWeb.tar.gz+,
   \verb+ec2-agent-user-data+, \verb+ec2-manager-user-data+, and
   \verb+manager-start+. These files contain the entire implementation
   of the Web hosting service. They are downloaded by newly created VM
-  instances upon startup. Make sure that variable \verb+SOURCE+ from
-  the frontend's configuration file \verb+manager-user-data+
-  points to the URL of this directory.
+  instances upon startup. 
+
+\item Make sure that variable \verb+SOURCE+ from the frontend's
+  configuration file \verb+manager-user-data+ points to the URL of the
+  \verb+http://www.yourfrontend.com/code/+ directory of the frontend.
 \end{enumerate}
 
 At this point, your front-end should be working!
