@@ -21,9 +21,9 @@ require_once('DB.php');
 require_once('logging.php');
 
 class UserData {
-    public static function createUser($username, $email, $fname, $lname, $affiliation, $passwd) {
-        $query = sprintf("INSERT INTO users (username, email, fname, lname, affiliation, passwd, created, $credit) ".
-    		"VALUES ('%s', '%s', '%s', '%s', '%s', '%s', now())",
+  public static function createUser($username, $email, $fname, $lname, $affiliation, $passwd, $credit) {
+        $query = sprintf("INSERT INTO users (username, email, fname, lname, affiliation, passwd, created, credit) ".
+    		"VALUES ('%s', '%s', '%s', '%s', '%s', '%s', now(), '%s')",
     		mysql_escape_string($username),
     		mysql_escape_string($email),
     		mysql_escape_string($fname),

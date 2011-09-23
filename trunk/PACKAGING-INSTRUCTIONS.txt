@@ -17,20 +17,28 @@ svn checkout svn+ssh://yourusername@svn.forge.objectweb.org/svnroot/contrail/con
 
 5. Rename directory "web-servers" into "ConPaaSWeb"
    (case-sensitive). Build a gzipped tarball of this directory, move
-   the tarball to directory "frontend/code", then rename directory
+   the tarball to directory "frontend/www/code", then rename directory
    "ConPaaSWeb" back to "web-servers". (I know, this is ugly).
 
    mv web-servers ConPaaSWeb
    tar czvf ConPaaSWeb.tar.gz ConPaaSWeb
-   mv ConPaaSWeb.tar.gz frontend/code/
+   mv ConPaaSWeb.tar.gz frontend/www/code/
    mv ConPaaSWeb web-servers
 
 6. Copy all scripts from directory "web-servers/scripts" into
    "frontend/code": 
 
-   cp web-servers/scripts/* frontend/code/
+   cp web-servers/scripts/* frontend/www/code/
 
-7. Download the AWS sdk for PHP from
+7. Move the "ec2-manager-user-data" and "opennebula-manager-user-data"
+   files fron the "frontend/www/code" directory to the "frontend/conf"
+   directory. Files called "ec2-agent-user-data" and
+   "opennebula-agent-user-data" must stay where they are.
+
+   mv frontend/www/code/ec2-manager-user-data frontend/conf/
+   mv frontend/www/code/opennebula-manager-user-data frontend/conf/
+
+8. Download the AWS sdk for PHP from
    http://aws.amazon.com/sdkforphp/. Expand it and move it to
    directory "frontend/www/lib/aws-sdk/" such that file
    config-sample.inc.php is directly beneath it:
@@ -40,10 +48,12 @@ svn checkout svn+ssh://yourusername@svn.forge.objectweb.org/svnroot/contrail/con
    mv sdk-1.4.2.1/sdk-1.4.2.1 frontend/www/lib/aws-sdk 
    rm -Rf sdk-1.4.2.1 sdk-latest.zip
 
-8. Remove the file you are currently reading:
+9. Remove the file you are currently reading:
+
    rm PACKAGING-INSTRUCTIONS.txt
 
-9. Move one directory up, and create the final tarball:
-   tar czvf conpaas-0.1rc1.tar.gz conpaas-0.1rc1
+10. Move one directory up, and create the final tarball:
 
-10. That's it!
+    tar czvf conpaas-0.1rc1.tar.gz conpaas-0.1rc1
+
+11. That's it!

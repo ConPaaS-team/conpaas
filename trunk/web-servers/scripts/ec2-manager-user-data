@@ -17,11 +17,35 @@
 # You should have received a copy of the GNU General Public License
 # along with ConPaaS.  If not, see <http://www.gnu.org/licenses/>.
 
+# Do not change this line
 . /etc/ec2/params
 
-export SOURCE=
-export EC2_USER=
-export EC2_PASSWORD=
+
+# SOURCE should be set to a URL directory containing files
+# agent-start, agent-stop, ec2-agent-user-data, ec2-manager-user-data,
+# manager-start and a file ConPaaSWeb.tar.gz. This directory is
+# typically located in the /code directory in your frontend's document root
+export SOURCE='http://www.your-frontend-url.com/code/'
+
+# EC2_USER should be set to your EC2 user name. Beware: this is not the
+# email address you normally use to login at the AWS management console. 
+# An EC2 user name is a long opaque string. It can be found at
+# https://aws-portal.amazon.com/gp/aws/developer/account/index.html?action=access-key#account_identifiers
+# under the name "Access key ID"
+export EC2_USER=''
+
+# EC2_PASSWORD should be set to the corresponding password.
+# Again, this is a long opaque string. You can find it next to your
+# Access Key ID by clicking "Show Secret Access Key".
+export EC2_PASSWORD=''
+
+
+###############################################
+#### Do not edit beyond this point unless  ####
+#### you REALLY know what you are doing... ####
+#### You have been warned!                 ####
+###############################################
+
 export PUBLIC_IP=$EC2_PUBLIC_IP
 
 wget -P /root/ $SOURCE/ConPaaSWeb.tar.gz

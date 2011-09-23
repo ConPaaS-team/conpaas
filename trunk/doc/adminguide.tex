@@ -208,9 +208,12 @@ and \verb+ADMINPASSWORD+ with the MySQL administrator's name and
 password:
 
 \begin{code}
-  mysql -u ADMIN -p ADMINPASSWORD  < frontend-db.sql
+  mysql -u ADMIN -p < frontend-db.sql
 \end{code}
 
+
+You will be prompted for the administrator's password, then the
+database schema will be created automatically.
 
 \subsection{Configure the Front-end}
 
@@ -249,7 +252,8 @@ server.
   the front-end source code such that \verb+lib/aws-sdk/+ contains a
   file named \verb+config-sample.inc.php+ (among others).
 
-\item Copy \verb+lib/aws-sdk/config-sample.inc.php+ to
+\item Inside the web document's root, copy
+  \verb+lib/aws-sdk/config-sample.inc.php+ to
   \verb+lib/aws-sdk/config.inc.php+ and fill in \verb+AWS_KEY+,
   \verb+AWS_SECRET_KEY+, \verb+AWS_ACCOUNT_ID+ and
   \verb+AWS_CANONICAL_ID+ as instructed in the file's documentation.
@@ -258,14 +262,14 @@ server.
   Make sure that the Web server's document directory contains a
   subdirectory named \verb+code+ and containing the following files:
   \verb+agent-start+, \verb+agent-stop+, \verb+ConPaaSWeb.tar.gz+,
-  \verb+ec2-agent-user-data+, \verb+ec2-manager-user-data+, and
-  \verb+manager-start+. These files contain the entire implementation
-  of the Web hosting service. They are downloaded by newly created VM
-  instances upon startup. 
+  \verb+ec2-agent-user-data+ and \verb+manager-start+. These files
+  contain the entire implementation of the Web hosting service. They
+  are downloaded by newly created VM instances upon startup.
 
-\item Make sure that variable \verb+SOURCE+ from the frontend's
-  configuration file \verb+manager-user-data+ points to the URL of the
-  \verb+http://www.yourfrontend.com/code/+ directory of the frontend.
+  Files \verb+ec2-manager-user-data+ and \verb+opennebula-user-data+
+  must be placed in the frontend's configuration directory, and edited
+  with configuration information.
+ 
 \end{enumerate}
 
 At this point, your front-end should be working!
