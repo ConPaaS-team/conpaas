@@ -10,7 +10,7 @@
 \DefineVerbatimEnvironment%
   {code}%
   {Verbatim}%
-  {frame=single,framesep=1mm,fontsize=\scriptsize\rm,resetmargins=true}
+  {frame=single,framesep=1mm,fontsize=\rm,resetmargins=true}
 
 % \newenvironment{what}
 % {\begin{description} \item [What is happening now?] \hfill \\}
@@ -42,6 +42,8 @@
 The Web Hosting Service is capable of running over the Elastic Compute
 Cloud (EC2) of Amazon Web Services (AWS). This section describes the
 process of configuring an AWS account to run the Web Hosting Service.
+You can skip this section if you plan to install ConPaaS over
+OpenNebula.
 
 If you are new to EC2, you will need to create an account at
 \url{http://aws.amazon.com/ec2/}. A very good EC2 documentation can be
@@ -65,7 +67,8 @@ explains how to setup an AMI using this methodology.
 \item Upload the \verb+web-servers/conpaas_web_deps+ script to the instance:
   \begin{code}
     chmod 0400 yourpublickey.pem
-    scp -i yourpublickey.pem web-servers/conpaas_web_deps root@instancename.com:
+    scp -i yourpublickey.pem web-servers/conpaas_web_deps \
+      root@instancename.com:
   \end{code}
 
 \item Now, ssh to your instance:
@@ -106,15 +109,16 @@ available at
 \section{Creating a ConPaaS image for OpenNebula}
 
 The Web Hosting Service is capable of running over an OpenNebula
-installation. This section describes the process of configuring an AWS
-account to run the Web Hosting Service.
+installation. This section describes the process of configuring
+OpenNebula to run ConPaaS. You can skip this section if you plan to
+deploy ConPaaS over Amazon Web Services.
 
 To create an image for OpenNebula you can execute the script\\
 \verb+web-servers/scripts/opennebula-create-new-vm-image+ in any
 64-bit Debian or Ubuntu machine. Start by editing the first couple of
 lines of the script, then run it as root. The script generates an
-image file called \verb+conpaasweb.img+ by default. You can register
-it in OpenNebula:
+image file called \verb+conpaasweb.img+ by default. You can now
+register it in OpenNebula:
 
 \begin{code}
   oneimage register conpaasweb.img
@@ -163,26 +167,20 @@ instructions:
 There are two main topics that you should pay attention to:
 
 \begin{enumerate}
-\item Make sure your started OpenNebula's OCCI deamon. ConPaaS relies
+\item Make sure you started OpenNebula's OCCI deamon. ConPaaS relies
   on it to communicate with OpenNebula.
-\item Modify the \verb+occi_templates/common.erb+ OCCI profile as follows:
-  \begin{code}
-#----
-<% @vm_info.each('OS') do |os| %>
-        <% if os.attr('TYPE', 'arch') %>
-          OS = [ arch = "<%= os.attr('TYPE', 'arch').split('/').last %>" ]
-        <% end %>
-<% end %>
-GRAPHICS = [type="vnc",listen="0.0.0.0",port="-1"]
-#----    
-  \end{code}
-  \begin{enumerate}
-  \item The match for OS TYPE:arch allows the caller to specify the
-    architecture of the machine.
+
+\item Replace the \verb+occi_templates/common.erb+ OCCI profile from
+  your OpenNebula installation with the one from
+  \verb+misc/common.erb+. This new version features a number of
+  improvements from the standard version:
+  \begin{itemize}
+  \item The match for \verb+OS TYPE:arch+ allows the caller to specify
+    the architecture of the machine.
   \item The graphics line allows for using vnc to connect to the VM.
     This is very useful for debugging purposes and is not necessary
     once testing is complete.
-  \end{enumerate}
+  \end{itemize}
 \end{enumerate}
 
 \section{Setup ConPaaS's Frontend}
@@ -224,20 +222,21 @@ server.
 
 \begin{enumerate}
 \item Copy all files from the \verb+frontend/conf+ directory to a
-  location \uline{\emph{outside}} of the Web server's document root. A
-  good location could be for example \verb+/etc/conpaas+. Edit each of
-  these files to setup the required configuration parameters. Each
-  variable should be described in the config file itself. Files in
-  this directory should be readable by the Web server (in Debian and
-  Ubuntu distributions the Web server runs under username
-  \verb+www-data+). 
+  location \uline{\emph{outside}} of the Web server's document root.
+  This directory contains sensitive configuration parameters which
+  must not be accesible by external users. A good location could be
+  for example \verb+/etc/conpaas+. Note that files in this
+  directory must be readable by the Web server (in Debian and Ubuntu
+  distributions the Web server runs under username \verb+www-data+).
 
-  If you are installing ConPaaS on EC2 you do not need to edit file
-  \verb+opennebula.ini+. If your are installing ConPaaS on OpenNebula
-  you do not need to edit file \verb+aws.ini+.
+  Edit each of these files to setup the required configuration
+  parameters. Each variable should be described in the config file
+  itself. If you are installing ConPaaS on EC2 you do not need to edit
+  file \verb+opennebula.ini+. If you are installing ConPaaS on
+  OpenNebula you do not need to edit file \verb+aws.ini+.
 
 \item Place the PHP code found in directory \verb+frontend/www+ at the
-  document root of the target web server such that the file named
+  document root of the frontend web server such that the file named
   \verb+__init__.php+ is directly underneath it.
 
 \item Edit the \verb+CONF_DIR+ variable in \verb+__init__.php+ such
