@@ -73,7 +73,6 @@ explains how to setup an AMI using this methodology.
 
 \item Now, ssh to your instance:
   \begin{code}
-    chmod 0400 yourpublickey.pem
     ssh -i yourpublickey.pem root@your.instancename.com:
   \end{code}
   Run the \verb+conpaas_web_deps+ script inside the instance. This
@@ -82,8 +81,8 @@ explains how to setup an AMI using this methodology.
   some point the script requests to accept licenses, accept them.
 
 \item Clean the filesystem by removing the
-  \verb+web-servers/conpaas_web_deps+ file and any other temporary
-  files you might have created.
+  \verb+conpaas_web_deps+ file and any other temporary files you might
+  have created.
 
 \item Go to the EC2 administration page at the AWS website, right
   click on the running instance and select ``\emph{Create Image (EBS
