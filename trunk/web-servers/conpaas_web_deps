@@ -73,6 +73,9 @@ function install_deb() {
   make install
   cd ..
   rm -rf scalaris-read-only
+	
+  # To allow copntextualization to run after snapshotting this instance
+  rm /var/lib/ec2-bootstrap/*
 }
 
 mkdir -p $PREFIX
