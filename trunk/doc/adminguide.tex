@@ -114,14 +114,29 @@ deploy ConPaaS over Amazon Web Services.
 
 To create an image for OpenNebula you can execute the script\\
 \verb+web-servers/scripts/opennebula-create-new-vm-image+ in any
-64-bit Debian or Ubuntu machine. Start by editing the first couple of
-lines of the script, then run it as root. The script generates an
-image file called \verb+conpaasweb.img+ by default. You can now
-register it in OpenNebula:
+64-bit Debian or Ubuntu machine.
 
+\begin{enumerate}
+\item Make sure your system has the following executables installed
+  (they are usually located in \verb+/sbin+ or \verb+/usr/sbin+, so
+  make sure these directories are in your \verb+$PATH+): % $
+  \emph{dd parted losetup kpartx mkfs.ext3 tune2fs mount debootstrap
+    chroot umount grub-install}
+\item It is particularly important that you use Grub version 2. To
+  install it:
+  \begin{code}
+  sudo apt-get install grub2
+  \end{code}
+\item Edit the first lines of the
+  \verb+web-servers/scripts/opennebula-create-new-vm-image+ script,
+  then execute it as root.
+\item The script generates an image file called \verb+conpaasweb.img+
+  by default. You can now register it in OpenNebula:
 \begin{code}
   oneimage register conpaasweb.img
 \end{code}
+\end{enumerate}
+
 
 \paragraph{If things go wrong}~\\
 
@@ -161,7 +176,7 @@ instructions:
 \item Your system should be back to its original state.
 \end{enumerate}
 
-\subsection{Make sure your OpenNebula is properly configured}
+\subsection{Make sure OpenNebula is properly configured}
 
 There are two main topics that you should pay attention to:
 
@@ -189,6 +204,13 @@ their ConPaaS services. Users can create, configure and terminate
 services through it. This section describes the process of setting up
 a ConPaaS frontend.
 
+To setup your frontend, you will need a PHP-enabled web server and a
+MySQL database. The easiest way to install them is:
+
+\begin{code}
+  apt-get install libapache2-mod-php5 php5-curl php5-mysql \
+     mysql-server
+\end{code}
 
 \subsection{Create a MySQL Database}
 
