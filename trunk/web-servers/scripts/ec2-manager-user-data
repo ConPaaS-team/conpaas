@@ -20,11 +20,8 @@
 # Do not change this line
 . /etc/ec2/params
 
-# SOURCE should be set to a URL directory containing files
-# agent-start, agent-stop, ec2-agent-user-data, ec2-manager-user-data,
-# manager-start and a file ConPaaSWeb.tar.gz. This directory is
-# typically located in the /code directory in your frontend's document root
-export SOURCE='http://www.your-frontend-url.com/code/'
+# FRONTEND should be set to the URL of the ConPaaS frontend.
+export FRONTEND='http://www.your-frontend-url.com/'
 
 # EC2_USER should be set to your EC2 user name. Beware: this is not the
 # email address you normally use to login at the AWS management console. 
@@ -76,6 +73,7 @@ export KEYPAIR=''
 ###############################################
 
 export PUBLIC_IP=`/usr/bin/curl http://169.254.169.254/latest/meta-data/public-ipv4`
+export SOURCE=$FRONTEND/code/
 
 wget -P /root/ $SOURCE/ConPaaSWeb.tar.gz
 wget -P /root/ $SOURCE/manager-start
@@ -107,8 +105,8 @@ VAR_CACHE = %(ROOT)s/var/cache/cpsmanager.web/
 VAR_RUN = %(ROOT)s/var/run/cpsmanager.web/
 CODE_REPO = %(VAR_CACHE)s/code_repo
 FE_SERVICE_ID = %CONPAAS_SERVICE_ID%
-FE_CREDIT_URL = PATH_TO/callback/decrementUserCredit.php
-FE_TERMINATE_URL = PATH_TO/callback/terminateService.php
+FE_CREDIT_URL = $FRONTEND/callback/decrementUserCredit.php
+FE_TERMINATE_URL = $FRONTEND/callback/terminateService.php
 EOF
 
 
