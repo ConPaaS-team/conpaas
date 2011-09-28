@@ -73,7 +73,7 @@ explains how to setup an AMI using this methodology.
 
 \item Now, ssh to your instance:
   \begin{code}
-    ssh -i yourpublickey.pem root@your.instancename.com:
+    ssh -i yourpublickey.pem root@your.instancename.com
   \end{code}
   Run the \verb+conpaas_web_deps+ script inside the instance. This
   script will install all of the dependencies of the manager and agent
@@ -205,11 +205,12 @@ services through it. This section describes the process of setting up
 a ConPaaS frontend.
 
 To setup your frontend, you will need a PHP-enabled web server and a
-MySQL database. The easiest way to install them is:
+MySQL database. The easiest way to install them on a Debian or Ubuntu
+machine is:
 
 \begin{code}
-  apt-get install libapache2-mod-php5 php5-curl php5-mysql \
-     mysql-server
+  sudo apt-get install libapache2-mod-php5 php5-curl \
+     php5-mysql mysql-server
 \end{code}
 
 \subsection{Create a MySQL Database}
