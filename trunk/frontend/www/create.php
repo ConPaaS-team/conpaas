@@ -21,6 +21,36 @@ require_once('__init__.php');
 require_once('logging.php');
 require_once('Page.php');
 
+function loadBackendConfiguration() {
+  $conf = parse_ini_file(Conf::CONF_DIR.'/main.ini', true);
+  if ($conf === false) {
+    throw new Exception('Could not read configuration file main.ini');
+  }
+  if ($conf['main']['enable_ec2']=="yes") {
+    $conf['main']['default_backend']="ec2";
+  } elseif ($conf['main']['enable_opennebula']=="yes") {
+    $conf['main']['default_backend']="opennebula";
+  } else {
+    $conf['main']['default_backend']="";
+  }
+  return $conf['main'];
+}
+
+$backend_conf = loadBackendConfiguration();
+$ec2conf = "";
+$opennebulaconf = "";
+
+if ($backend_conf['enable_ec2'] != "yes") {
+  $ec2conf = " disabled=\"disabled\"";
+} else if ($backend_conf['default_backend'] == "ec2") {
+  $ec2conf = " selected";
+}
+if ($backend_conf['enable_opennebula'] != "yes") {
+  $opennebulaconf = " disabled=\"disabled\"";
+} else if ($backend_conf['default_backend'] == "opennebula") {
+  $opennebulaconf = " selected";
+}
+
 $page = new Page();
 
 ?>
@@ -71,8 +101,8 @@ $page = new Page();
   				<td class="description">cloud provider</td>
   				<td class="input">
   					<select id="cloud">
-  						<option value="ec2" selected="selected">Amazon EC2</option>
-  						<option value="opennebula">OpenNebula</option>
+                                                <option value="ec2" <?php echo $ec2conf; ?>>Amazon EC2</option>
+  						<option value="opennebula"  <?php echo $opennebulaconf; ?>>OpenNebula</option>
   					</select>
   				</td>  			
   			</tr>
