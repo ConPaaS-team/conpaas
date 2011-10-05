@@ -5,11 +5,13 @@ Created on Jun 7, 2011
 '''
 from conpaas.log import create_logger
 from conpaas.mysql.server.manager.config import Configuration, ManagerException,\
-    E_ARGS_UNEXPECTED, ServiceNode, E_UNKNOWN
+    E_ARGS_UNEXPECTED, ServiceNode, E_UNKNOWN, E_ARGS_MISSING
 from threading import Thread
 from conpaas.mysql.client import agent_client
 import time
 import conpaas
+from conpaas.web.http import HttpErrorResponse, HttpJsonResponse
+from conpaas.mysql.server.agent.internals import E_ARGS_INVALID
 
 S_INIT = 'INIT'
 S_PROLOGUE = 'PROLOGUE'
@@ -33,7 +35,8 @@ class MySQLServerManager():
         logger.debug("Entering MySQLServerManager initialization")
         conpaas.mysql.server.manager.internals.config = Configuration(conf)                                 
         self.state = S_INIT
-        self.__findAlreadyRunningInstances()
+        # TODO:
+        #self.__findAlreadyRunningInstances()
         logger.debug("Leaving MySQLServer initialization")
 
     '''
@@ -97,6 +100,20 @@ def listServiceNodes(kwargs):
           #'sql': [ vms.keys() ]
           'sql': [ [serviceNode.vmid, serviceNode.ip, serviceNode.port, serviceNode.state ] for serviceNode in config.getMySQLServiceNodes() ]
     }
+
+@expose('GET')
+def list_nodes(self, kwargs):
+    if len(kwargs) != 0:
+        return HttpErrorResponse(ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
+    vms = iaas.listVMs()
+    vms_mysql = config.getMySQLServiceNodes()
+    for vm in vms_mysql:
+        if not(vm.vmid in vms.keys()):
+            logger.debug('Removing instance ' + str(vm.vmid) + ' since it is not in the list returned by the listVMs().')
+            config.removeMySQLServiceNode(vm.vmid)                 
+    return HttpJsonResponse({
+        'sql': [ [serviceNode.vmid] for serviceNode in config.getMySQLServiceNodes() ],
+        })
 
 '''Creates a new service node. 
 @param function: None, "manager" or "agent". If None, empty image is provisioned. If "manager"
@@ -175,6 +192,28 @@ def getMySQLServerManagerState(params):
         logger.exception(e)
         logger.debug('Leaving getMySQLServerManagerState')
         return {'opState': 'ERROR', 'error': ex.message}
+
+@expose('GET')
+def get_node_info(self, kwargs):
+    logger.debug("Entering get_node_info")
+    if 'serviceNodeId' not in kwargs: return HttpErrorResponse(ManagerException(E_ARGS_MISSING, 'serviceNodeId').message)
+    serviceNodeId = kwargs.pop('serviceNodeId')
+    if len(kwargs) != 0:
+        return HttpErrorResponse(ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
+    
+    config = self._configuration_get()
+    if serviceNodeId not in config.serviceNodes: return HttpErrorResponse(ManagerException(E_ARGS_INVALID, detail='Invalid "serviceNodeId"').message)
+    serviceNode = config.serviceNodes[serviceNodeId]
+    return HttpJsonResponse({
+            'serviceNode': {
+                            'id': serviceNode.vmid,
+                            'ip': serviceNode.ip,
+                            'isRunningProxy': serviceNode.isRunningProxy,
+                            'isRunningWeb': serviceNode.isRunningWeb,
+                            'isRunningBackend': serviceNode.isRunningBackend,
+                            'isRunningMySQL': serviceNode.isRunningBackend,
+                            }
+            })
 
 '''
     Wait for nodes to get ready. It tries to call a function of the agent. If exception

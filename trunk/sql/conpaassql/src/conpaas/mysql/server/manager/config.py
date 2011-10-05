@@ -16,13 +16,15 @@ CONFIGURATION_FILE=os.getcwd() + "/sql_manager_configuration.cnf"
 E_ARGS_UNEXPECTED = 0,
 E_CONFIG_READ_FAILED = 1,
 E_CONFIG_NOT_EXIST=2,
-E_UNKNOWN=3
+E_UNKNOWN=3,
+E_ARGS_MISSING = 4
 
 E_STRINGS = [  
   'Unexpected arguments %s',
   'Unable to open configuration file: %s',
   'Configuration file does not exist: %s',
-  'Unknown error.'
+  'Unknown error.',
+  'Missing argument: %s'
 ]
 
 iaas = None
@@ -46,6 +48,9 @@ class ServiceNode(object):
         self.name = vm['name']
         self.state = vm['state']
         self.isRunningMySQL = runMySQL
+        self.isRunningProxy = False
+        self.isRunningBackend= False        
+        self.isRunningWeb= False
         self.port = 60000
   
     def __repr__(self):

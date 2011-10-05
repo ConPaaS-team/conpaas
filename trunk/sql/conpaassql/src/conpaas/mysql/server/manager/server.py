@@ -15,15 +15,53 @@ from conpaas.log import log_dir_path
 
 class SQLServerRequestHandler(AbstractRequestHandler):
 	
-	def _dispatch(self, method, params):
-		if 'action' not in params:
-			self.send_custom_response(httplib.BAD_REQUEST, 'Did not specify "action"')
-		elif params['action'] not in self.server.callback_dict[method]:
-			self.send_custom_response(httplib.NOT_FOUND, 'action not found')
-		else:
-			callback_name = params['action']
-			del params['action']
-			self.send_custom_response(httplib.OK, json.dumps(self.server.callback_dict[method][callback_name](params)))
+	
+	#===========================================================================
+	# def _dispatch(self, method, params):
+	#	if 'action' not in params:
+	#		self.send_custom_response(httplib.BAD_REQUEST, 'Did not specify "action"')
+	#	elif params['action'] not in self.server.callback_dict[method]:
+	#		self.send_custom_response(httplib.NOT_FOUND, 'action not found')
+	#	else:
+	#		callback_name = params['action']
+	#		del params['action']
+	#		self.send_custom_response(httplib.OK, json.dumps(self.server.callback_dict[method][callback_name](params)))
+	#===========================================================================
+
+	    
+	def _render_arguments(self, method, params):
+		ret = '<p>Arguments:<table>'
+		ret += '<tr><th>Method</th><td>' + method + '</td></tr>'
+		for param in params:
+			if isinstance(params[param], dict):
+				ret += '<tr><th>' + param + '</th><td>Contents of: ' + params[param].filename + '</td></tr>'
+			else:
+				ret += '<tr><th>' + param + '</th><td>' + params[param] + '</td></tr>'
+		ret += '</table></p>'
+		return ret
+	  
+	def send_action_missing(self, method, params):
+	    self.send_custom_response(httplib.BAD_REQUEST, '''<html>
+	<head>
+	<title>BAD REQUEST</title>
+	</head>
+	<body>
+	<h1>ConPaaS MySQL</h1>
+	<p>No "action" specified.</p>
+	<p>This URL is used to access the service manager directly.
+	You may want to copy-paste the URL as a parameter to the 'managerc.py' command-line utility.</p>
+	''' + self._render_arguments(method, params) + '</body></html>')
+	  
+	def send_action_not_found(self, method, params):
+	    self.send_custom_response(httplib.NOT_FOUND, '''<html>
+	<head>
+	<title>ACTION NOT FOUND</title>
+	</head>
+	<body>
+	<h1>ConPaaS MySQL</h1>
+	<p>The specified "action" was not found.</p>
+	<p>You may want to review the list of supported actions provided by the 'managerc.py' command-line utility.</p>
+	''' + self._render_arguments(method, params) + '</body></html>')
 
 #class MultithreadedHTTPServer(ThreadingMixIn, HTTPServer):
 #	pass
@@ -39,6 +77,7 @@ class ManagerServer(ThreadingMixIn, HTTPServer):
 		from conpaas.mysql.server.manager import internals
 		internals.iaas = IaaSClient(iaas_config)		
 		#internals.config = iaas_config
+		self.whitelist_addresses = []
 		internals.managerServer=MySQLServerManager(iaas_config)
 		for http_method in internals.exposed_functions:
 			for func_name in internals.exposed_functions[http_method]:
