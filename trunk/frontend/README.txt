@@ -6,7 +6,7 @@ in the "../doc" directory.
 
 In short:
 
-- All files located in the "www" directory mst be made available in a
+- All files located in the "www" directory must be made available in a
   PHP-enabled Web server.
 
 - All files located in the "conf" directory must be made available
