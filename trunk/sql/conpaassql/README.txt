@@ -10,3 +10,6 @@ Running agent-server
 How to run the agent-server:
 sudo PYTHONPATH=<path to checked out svnroot/contrail/conpaas/trunk/sql/conpaassql> python server.py
 
+Generating documentation
+========================
+../doc$ sphinx-build -a -b html source/ build/

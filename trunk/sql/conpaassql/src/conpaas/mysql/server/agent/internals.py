@@ -13,10 +13,12 @@ import os
 import ConfigParser
 import MySQLdb
 import pickle
+import io
 
 exposed_functions = {}
 
 CONFIGURATION_FILE='configuration.cnf'
+DATABASE_DUMP_LOCATION='/tmp/contrail_dbdump.db'
 
 E_ARGS_UNEXPECTED = 0
 E_CONFIG_NOT_EXIST = 1
@@ -79,11 +81,17 @@ class MySQLServerConfiguration:
             self.path_mysql_ssr = config.get("MySQL_configuration","path_mysql_ssr")
             file = open(self.mycnf_filepath)
             my_cnf_text = file.read()
-            mysqlconfig = ConfigParser.ConfigParser()            
-            mysqlconfig.readfp( self.MySQLConfigParser(my_cnf_text))    
+            #mysqlconfig = ConfigParser.ConfigParser()
+            mysqlconfig = ConfigParser.RawConfigParser(allow_no_value=True)       
+            #mysqlconfig.readfp( self.MySQLConfigParser(my_cnf_text))    
+            mysqlconfig.readfp(io.BytesIO(my_cnf_text))
             self.port_mysqld = mysqlconfig.get ("mysqld", "port")      
             self.bind_address = mysqlconfig.get ("mysqld", "bind-address")
             self.data_dir = mysqlconfig.get ("mysqld", "datadir")
+            #mysqlconfig.set("mysqld", "newOption", value=None)
+            #newfile=open("/tmp/contrial.tmp","w")  
+            #mysqlconfig.write(newfile)
+            #newfile.close()
             logger.debug("Got configuration parameters")
             '''Removing temporary file created in MySQLConfigParser
             '''
@@ -163,6 +171,91 @@ class MySQLServerConfiguration:
             i = i+1
             ret['info' + str(i)] = {'location': row[1], 'username': row[0]}
         return ret
+    
+    '''Before creating a data snapshot or starting 
+    the replication process, you should record the 
+    position of the binary log on the master. You will 
+    need this information when configuring the slave so 
+    that the slave knows where within the binary log to 
+    start executing events. See Section 15.1.1.4, Obtaining 
+    the Replication Master Binary Log Coordinates. 
+
+1st session
+mysql> FLUSH TABLES WITH READ LOCK;
+
+2nd session
+mysql > SHOW MASTER STATUS;
+record the values
+
+close 2nd session
+
+on the master 
+ mysqldump --all-databases --lock-all-tables >dbdump.db
+
+1st session
+mysql>UNLOCK TABLES;
+
+    '''
+    def replication_record_the_position(self):
+        '''1st session
+        '''
+        db1 = MySQLdb.connect(self.conn_location, self.conn_username, self.conn_password)
+        exc = db1.cursor()
+        exc.execute("FLUSH TABLES WITH READ LOCK;")
+        '''2nd session
+        '''
+        db2 = MySQLdb.connect(self.conn_location, self.conn_username, self.conn_password)
+        exc = db2.cursor()
+        exc.execute("SHOW MASTER STATUS;")
+        rows = exc.fetchall()
+        db2.close()
+        i = 0
+        ret = {'opState': 'OK'}
+        for row in rows:
+            i = i+1
+            ret['position' + str(i)] = {'binfile': row[0], 'position': row[1]}        
+        os.system("mysqldump -u " + self.conn_username + " -p"  + self.conn_password + "--all-databases --lock-all-tables > " + DATABASE_DUMP_LOCATION)
+        exc = db1.cursor()
+        exc.execute("UNLOCK TABLES;")
+        db1.close()
+        return ret
+
+    '''
+        @param master_host: hostname of the master node.
+        @param master_log_file: filename of the master log.
+        @param master_log_pos: position of the master log file.
+        @param slave_server_id: id which will be written into my.cnf.
+    
+    '''
+    def set_up_replication_slave(self, master_host, master_log_file, master_log_pos, slave_server_id):
+        logger.debug('Entering set_up_replication_slave')        
+        logger.debug("Creating sql query for replication slave-master connection")
+        db = MySQLdb.connect(self.conn_location, self.conn_username, self.conn_password)
+        exc = db.cursor()
+        query=("CHANGE MASTER TO  MASTER_HOST='%s', " + 
+                    "MASTER_USER='%s', " +
+                    "MASTER_PASSWORD='%s', " 
+                    "MASTER_LOG_FILE='%s', " +  
+                    "MASTER_LOG_POS=%s;" % (master_host, self.conn_username, self.conn_password, master_log_file, master_log_pos))
+        logger.debug("Created query: " + query)
+        exc.execute(query)
+        db.close()
+        logger.debug("Adding server-id into my.cnf")        
+        file = open(self.mycnf_filepath)
+        content = file.read()
+        mysqlconfig = ConfigParser.RawConfigParser(allow_no_value=True)               
+        mysqlconfig.readfp(io.BytesIO(content))
+        mysqlconfig.set("mysqld", "server-id", slave_server_id)      
+        mysqlconfig.set("mysqld", "skip-slave-start", slave_server_id)        
+        file.close()
+        os.remove(self.mycnf_filepath)
+        newfile=open(self.mycnf_filepath,"w")
+        logger.debug("Writing new configuration file.")
+        mysqlconfig.write(newfile)
+        newfile.close()
+        logger.debug("Restarting mysql server due to changed server-id.")
+        agent.restart()
+        logger.debug('Exiting set_up_replication_slave')
     
     def create_MySQL_with_dump(self, f):
         logger.debug("Entering create_MySQL_with_dump")
@@ -518,9 +611,50 @@ def create_with_MySQLdump(params):
     return ret
 
 @expose('POST')
-def setUpReplicaMaster(params):
-    pass
+def set_up_replica_master(params):
+    agent.stop()
+    path=agent.config.mycnf_filepath
+    file = open(path)
+    content = file.read()
+    mysqlconfig = ConfigParser.RawConfigParser(allow_no_value=True)               
+    mysqlconfig.readfp(io.BytesIO(content))
+    mysqlconfig.set("mysqld", "server-id", "1")
+    mysqlconfig.set("mysqld", "log_bin", "/var/log/mysql/mysql-bin.log")
+    file.close()
+    os.remove(path)
+    newfile=open(path,"w")
+    mysqlconfig.write(newfile)
+    newfile.close()
+    position= agent.config.replication_record_the_position()
+    return {'opState': 'OK'}
 
+'''
+    1)Change server id in the my.cnf. 
+    2)You will need to configure the slave with settings 
+    for connecting to the master, such as the host name, login credentials, and binary 
+    log file name and position. See Section 15.1.1.10, Setting the Master Configuration 
+    on the Slave. 
+
+Example:
+    mysql>CHANGE MASTER TO  MASTER_HOST='vm-10-1-0-10', MASTER_USER='root', 
+    MASTER_PASSWORD='topole48', MASTER_LOG_FILE='mysql-bin.000001', MASTER_LOG_POS=106;
+
+    @param master_host: hostname of the master node.
+    @param master_log_file: filename of the master log.
+    @param master_log_pos: position of the master log file.
+    @param slave_server_id: id which will be written into my.cnf.
+    
+'''
 @expose('POST')
-def setUpReplicaSlave(params):
-    pass
+def set_up_replica_slave(params):
+    logger.debug('Entering set_up_replica_slave')
+    if len(params) != 4:
+        ex = AgentException(E_ARGS_UNEXPECTED, params)
+        logger.exception(ex.message) 
+        return {'opState': 'ERROR', 'error': ex.message}  
+    agent.config.set_up_replication_slave(params['master_host'], 
+                                          params['master_log_file'],
+                                          params['master_log_pos'],
+                                          params['slave_server_id'])
+    logger.debug('Entering set_up_replica_slave')
+    return {'opState': 'OK'}    

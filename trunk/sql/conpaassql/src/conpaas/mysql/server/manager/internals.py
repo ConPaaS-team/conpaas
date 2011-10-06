@@ -102,7 +102,7 @@ def listServiceNodes(kwargs):
     }
 
 @expose('GET')
-def list_nodes(self, kwargs):
+def list_nodes(kwargs):
     if len(kwargs) != 0:
         return HttpErrorResponse(ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
     vms = iaas.listVMs()
@@ -137,6 +137,20 @@ def createServiceNode(kwargs):
           'sql': [ new_vm['id'] ]
     }
 
+@expose('POST')
+def add_nodes(kwargs):
+    if not(len(kwargs) in (0,1, 3)):
+        return {'opState': 'ERROR', 'error': ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message}    
+    if len(kwargs) == 0:
+        new_vm=iaas.newInstance(None)
+        Thread(target=createServiceNodeThread(None, new_vm)).start()
+    elif len(kwargs) == 1:
+        new_vm=iaas.newInstance(kwargs['function'])
+        Thread(target=createServiceNodeThread(kwargs['function'], new_vm)).start()
+    else:
+        pass
+    return HttpJsonResponse()
+
 '''Creating a service replication.
 '''
 @expose('POST')
@@ -169,6 +183,17 @@ def deleteServiceNode(kwargs):
           'opState': 'OK'    
     }
 
+@expose('POST')
+def delete_nodes(kwargs):
+    if len(kwargs) != 1:
+        return {'opState': 'ERROR', 'error': ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message}
+    logger.debug('deleteServiceNode ' + str(kwargs['id']))
+    if iaas.killInstance(kwargs['id']):
+        config.removeMySQLServiceNode(kwargs['id'])
+    '''TODO: If false, return false response.
+    '''
+    return HttpJsonResponse()
+
 '''
     Waits for new VMs to awake. 
     @param function: None, agent or manager.
@@ -194,7 +219,7 @@ def getMySQLServerManagerState(params):
         return {'opState': 'ERROR', 'error': ex.message}
 
 @expose('GET')
-def get_node_info(self, kwargs):
+def get_node_info( kwargs):
     logger.debug("Entering get_node_info")
     if 'serviceNodeId' not in kwargs: return HttpErrorResponse(ManagerException(E_ARGS_MISSING, 'serviceNodeId').message)
     serviceNodeId = kwargs.pop('serviceNodeId')
@@ -214,6 +239,47 @@ def get_node_info(self, kwargs):
                             'isRunningMySQL': serviceNode.isRunningBackend,
                             }
             })
+
+'''
+    Sets up a replica master node
+    @param id: new replica master id.
+
+'''
+@expose('POST')
+def set_up_replica_master(params):
+    logger.debug("Entering set_up_replica_master")
+    if len(params) != 1:
+        return {'opState': 'ERROR', 'error': ManagerException(E_ARGS_UNEXPECTED, params.keys()).message}
+    new_master_id = params['id']
+    new_master_ip = ''
+    new_master_port = ''
+    for node in config.getMySQLServiceNodes():
+        if new_master_id == node.id:
+            new_master_ip=node.ip
+            new_master_port=node.port
+    agent_client.set_up_replica_master(new_master_ip, new_master_port)
+    logger.debug("Exiting set_up_replica_master")
+    pass
+
+@expose('POST')
+def set_up_replica_slave(params):
+    logger.debug("Entering set_up_replica_slave")
+    if len(params) != 5:
+        return {'opState': 'ERROR', 'error': ManagerException(E_ARGS_UNEXPECTED, params.keys()).message}
+    _id = params['id']
+    _host = ''
+    _port = ''
+    for node in config.getMySQLServiceNodes():
+        if _id == node.id:
+            _host=node.ip
+            _port=node.port
+    master_host = params['master_host']
+    master_log_file = params['master_log_file']
+    master_log_pos = params['master_log_pos']
+    slave_server_id = params['slave_server_id']
+    agent_client.set_up_replica_slave(_host, _port, master_host, master_log_file, master_log_pos, slave_server_id)
+    logger.debug("Exiting set_up_replica_slave")
+    pass
 
 '''
     Wait for nodes to get ready. It tries to call a function of the agent. If exception

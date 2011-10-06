@@ -78,6 +78,8 @@ class ManagerServer(ThreadingMixIn, HTTPServer):
 		internals.iaas = IaaSClient(iaas_config)		
 		#internals.config = iaas_config
 		self.whitelist_addresses = []
+		#self.callback_dict = {'GET': {}, 'POST': {}, 'UPLOAD': {}}
+		
 		internals.managerServer=MySQLServerManager(iaas_config)
 		for http_method in internals.exposed_functions:
 			for func_name in internals.exposed_functions[http_method]:

@@ -96,6 +96,32 @@ def send_mysqldump(host,port,location):
     if code != httplib.OK: raise Exception('Received HTTP response code %d' % (code))
     return __check_reply(body)
 
+def set_up_replica_master(host,port):
+    params = {
+              'action': 'set_up_replica_master'}
+    code, body = _http_post(host, port, '/', params= params)
+    if code != httplib.OK: raise Exception('Received HTTP response code %d' % (code))
+    return __check_reply(body)
+
+'''
+    @param master_host: hostname of the master node.
+    @param master_log_file: filename of the master log.
+    @param master_log_pos: position of the master log file.
+    @param slave_server_id: id which will be written into my.cnf.
+
+'''
+def set_up_replica_slave(host,port, master_host, master_log_file, master_log_pos, slave_server_id):
+    params = {
+              'action': 'set_up_replica_slave',
+              'master_host': master_host, 
+              'master_log_file': master_log_file, 
+              'master_log_pos': master_log_pos, 
+              'slave_server_id': slave_server_id 
+              }
+    code, body = _http_post(host, port, '/', params= params)
+    if code != httplib.OK: raise Exception('Received HTTP response code %d' % (code))
+    return __check_reply(body)
+
 if __name__ == '__main__':
     if sys.argv.__len__() > 3:
         host = sys.argv[1]
