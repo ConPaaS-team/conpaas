@@ -9,6 +9,7 @@ from conpaas.log import create_logger
 
 import ConfigParser
 import os
+from conpaas.iaas import DummyONEDriver
 
 MYSQL_PORT = 3306
 CONFIGURATION_FILE=os.getcwd() + "/sql_manager_configuration.cnf"
@@ -63,7 +64,9 @@ class ServiceNode(object):
 
 class Configuration(object):
     
-    def __read_config(self,config):
+    dummy_backend = False
+    
+    def __read_config(self,config, _dummy_backend = False):
         logger.debug("Entering read_config")
         try:
             logger.debug("Trying to get params from configuration file ")
@@ -82,10 +85,11 @@ class Configuration(object):
         logger.debug("Leaving read_config")
     
     '''Representation of the deployment configuration'''
-    def __init__(self, configuration):
+    def __init__(self, configuration, _dummy_backend = False):        
+        self.dummy_backend=_dummy_backend        
         self.mysql_count = 0
-        self.serviceNodes = {}
-        self.__read_config(configuration)
+        self.serviceNodes = {}        
+        self.__read_config(configuration, _dummy_backend)
       
     def getMySQLServiceNodes(self):
         return [ serviceNode for serviceNode in self.serviceNodes.values() if serviceNode.isRunningMySQL ]

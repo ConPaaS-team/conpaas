@@ -1,7 +1,7 @@
 [MySQL_root_connection]
 location=
-password=topole48
-username=root
+password=
+username=
 
 [MySQL_configuration]
 my_cnf_file=/etc/mysql/my.cnf

@@ -11,17 +11,19 @@ from conpaas.mysql.client.agent_client import restartMySQLServer
 from conpaas.mysql.client.agent_client import stopMySQLServer
 import threading
 from ConfigParser import ConfigParser
+from conpaas.mysql.server.agent.internals import MySQLServer
+from conpaas.mysql.server.agent import internals
 
 class TestServerAgent(unittest.TestCase):
   
-    host = '0.0.0.0'    
-    port = 60000
+    #host = '0.0.0.0'
+    #port = 60000
     a = None
     
     def setUp(self):        
-        #config = './configuration.cnf'
+        config = './configuration.cnf'
         config_parser = ConfigParser()
-        #config_parser.read(config)
+        config_parser.read(config)
         '''Set up configuration for the parser.
         '''
         config_parser.set('MySQL_configuration', 'my_cnf_file', '/etc/mysql/my.cnf')
@@ -30,29 +32,42 @@ class TestServerAgent(unittest.TestCase):
         config_parser.set('MySQL_root_connection', 'username', '')
         config_parser.set('MySQL_root_connection', 'password', '')
        
-        self.a = AgentServer((self.host, self.port), config_parser)
-        self.t = threading.Thread(target=self.a.serve_forever)        
-        self.t.start()
+        # This is for integration testing
+        #self.a = AgentServer((self.host, self.port), config_parser)
+        #self.t = threading.Thread(target=self.a.serve_forever)        
+        #self.t.start()
+        self.a=MySQLServer(config_parser, True)
+        internals.agent = self.a
+        self.a.start()
         
     def tearDown(self):        
-        self.a.shutdown()
+        self.a.stop()
         self.a = None
-        self.t.join()
-        self.t = None       
+        #self.t.join()
+        #self.t = None       
     
     def testSQLServerState(self):
-        self.assertTrue(getMySQLServerState(self.host, self.port))
-
-    def testStartStopSQLServer(self):
-        ret = createMySQLServer(self.host,self.port)        
+        #self.assertTrue(getMySQLServerState(self.host, self.port))
+        ret=internals.getMySQLServerState(False)
         self.assertTrue(ret)
         self.__check_reply(ret)
-        ret = stopMySQLServer(self.host,self.port)
+
+    def testStartStopSQLServer(self):
+        #ret = createMySQLServer(self.host,self.port)        
+        #self.assertTrue(ret)
+        #self.__check_reply(ret)
+        #ret = stopMySQLServer(self.host,self.port)
+        #self.assertTrue(ret)
+        #self.__check_reply(ret)
+        ret = internals.createMySQLServer(False)
+        self.assertTrue(ret)    
+        self.__check_reply(ret)
+        ret = internals.stopMySQLServer(False)
         self.assertTrue(ret)
-        self.__check_reply(ret)               
+        self.__check_reply(ret)                   
         
     def testRestartSQLServer(self):        
-        ret = restartMySQLServer(self.host,self.port)
+        ret = internals.restartMySQLServer(False)
         self.assertTrue(ret)
         self.__check_reply(ret)        
 

@@ -10,6 +10,7 @@ from threading import Thread
 from conpaas.mysql.client import agent_client
 import time
 import conpaas
+import conpaas.mysql.server.manager
 from conpaas.web.http import HttpErrorResponse, HttpJsonResponse
 from conpaas.mysql.server.agent.internals import E_ARGS_INVALID
 
@@ -28,15 +29,20 @@ config = None
 logger = create_logger(__name__)
 iaas = None
 managerServer = None
+dummy_backend = None
 
 class MySQLServerManager():
     
-    def __init__(self, conf):        
+    dummy_backend = False
+    
+    def __init__(self, conf, _dummy_backend=False):        
         logger.debug("Entering MySQLServerManager initialization")
-        conpaas.mysql.server.manager.internals.config = Configuration(conf)                                 
+        conpaas.mysql.server.manager.internals.config = Configuration(conf, _dummy_backend)         
         self.state = S_INIT
+        self.dummy_backend = _dummy_backend
+        conpaas.mysql.server.manager.internals.dummy_backend = _dummy_backend
         # TODO:
-        #self.__findAlreadyRunningInstances()
+        self.__findAlreadyRunningInstances()
         logger.debug("Leaving MySQLServer initialization")
 
     '''
@@ -46,22 +52,26 @@ class MySQLServerManager():
         logger.debug("Entering __findAlreadyRunningInstances")
         list = iaas.listVMs()
         logger.debug('List obtained: ' + str(list))
-        for i in list.values():
-            up = True
-            try:
-                if i['ip'] != '':
-                    logger.debug('Probing ' + i['ip'] + ' for state.')
-                    ret = agent_client.getMySQLServerState(i['ip'], 60000)                    
-                    logger.debug('Returned query:' + str(ret))
-                else:
-                    up = False
-            except agent_client.AgentException as e: logger.error('Exception: ' + str(e))
-            except Exception as e:
-                logger.error('Exception: ' + str(e))                
-                up = False
-            if up:
-                logger.debug('Adding service node ' + i['ip'])
+        if self.dummy_backend:
+            for i in list.values():
                 conpaas.mysql.server.manager.internals.config.addMySQLServiceNode(i)
+        else:
+            for i in list.values():
+                up = True
+                try:
+                    if i['ip'] != '':
+                        logger.debug('Probing ' + i['ip'] + ' for state.')
+                        ret = agent_client.getMySQLServerState(i['ip'], 60000)                    
+                        logger.debug('Returned query:' + str(ret))
+                    else:
+                        up = False
+                except agent_client.AgentException as e: logger.error('Exception: ' + str(e))
+                except Exception as e:
+                    logger.error('Exception: ' + str(e))                
+                    up = False
+                if up:
+                    logger.debug('Adding service node ' + i['ip'])
+                    conpaas.mysql.server.manager.internals.config.addMySQLServiceNode(i)
         logger.debug("Exiting __findAlreadyRunningInstances")        
 
 def expose(http_method):
@@ -202,7 +212,7 @@ def delete_nodes(kwargs):
 def createServiceNodeThread (function, new_vm):
     node_instances = []    
     vm=iaas.listVMs()[new_vm['id']]
-    node_instances.append(vm)    
+    node_instances.append(vm)
     wait_for_nodes(node_instances)
     config.addMySQLServiceNode(new_vm)
 
@@ -218,27 +228,29 @@ def getMySQLServerManagerState(params):
         logger.debug('Leaving getMySQLServerManagerState')
         return {'opState': 'ERROR', 'error': ex.message}
 
-@expose('GET')
-def get_node_info( kwargs):
-    logger.debug("Entering get_node_info")
-    if 'serviceNodeId' not in kwargs: return HttpErrorResponse(ManagerException(E_ARGS_MISSING, 'serviceNodeId').message)
-    serviceNodeId = kwargs.pop('serviceNodeId')
-    if len(kwargs) != 0:
-        return HttpErrorResponse(ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
-    
-    config = self._configuration_get()
-    if serviceNodeId not in config.serviceNodes: return HttpErrorResponse(ManagerException(E_ARGS_INVALID, detail='Invalid "serviceNodeId"').message)
-    serviceNode = config.serviceNodes[serviceNodeId]
-    return HttpJsonResponse({
-            'serviceNode': {
-                            'id': serviceNode.vmid,
-                            'ip': serviceNode.ip,
-                            'isRunningProxy': serviceNode.isRunningProxy,
-                            'isRunningWeb': serviceNode.isRunningWeb,
-                            'isRunningBackend': serviceNode.isRunningBackend,
-                            'isRunningMySQL': serviceNode.isRunningBackend,
-                            }
-            })
+#===============================================================================
+# @expose('GET')
+# def get_node_info( kwargs):
+#    logger.debug("Entering get_node_info")
+#    if 'serviceNodeId' not in kwargs: return HttpErrorResponse(ManagerException(E_ARGS_MISSING, 'serviceNodeId').message)
+#    serviceNodeId = kwargs.pop('serviceNodeId')
+#    if len(kwargs) != 0:
+#        return HttpErrorResponse(ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
+#    
+#    config = self._configuration_get()
+#    if serviceNodeId not in config.serviceNodes: return HttpErrorResponse(ManagerException(E_ARGS_INVALID, detail='Invalid "serviceNodeId"').message)
+#    serviceNode = config.serviceNodes[serviceNodeId]
+#    return HttpJsonResponse({
+#            'serviceNode': {
+#                            'id': serviceNode.vmid,
+#                            'ip': serviceNode.ip,
+#                            'isRunningProxy': serviceNode.isRunningProxy,
+#                            'isRunningWeb': serviceNode.isRunningWeb,
+#                            'isRunningBackend': serviceNode.isRunningBackend,
+#                            'isRunningMySQL': serviceNode.isRunningBackend,
+#                            }
+#            })
+#===============================================================================
 
 '''
     Sets up a replica master node
@@ -289,28 +301,31 @@ def set_up_replica_slave(params):
 '''
 def wait_for_nodes(nodes, poll_interval=10):
     logger.debug('wait_for_nodes: going to start polling')
-    done = []
-    while len(nodes) > 0:
-        for i in nodes:
-            up = True
-            try:
-                if i['ip'] != '':
-                    logger.debug('Probing ' + i['ip'] + ' for state.')
-                    agent_client.getMySQLServerState(i['ip'], 60000)
-                else:
-                    up = False
-            except agent_client.AgentException: pass
-            except: up = False
-            if up:
-                done.append(i)
-        nodes = [ i for i in nodes if i not in done]
-        if len(nodes):
-            logger.debug('wait_for_nodes: waiting for %d nodes' % len(nodes))
-            time.sleep(poll_interval)
-            no_ip_nodes = [ i for i in nodes if i['ip'] == '' ]
-            if no_ip_nodes:
-                logger.debug('wait_for_nodes: refreshing %d nodes' % len(no_ip_nodes))
-                refreshed_list = iaas.listVMs()
-                for i in no_ip_nodes:
-                    i['ip'] = refreshed_list[i['id']]['ip']
+    if conpaas.mysql.server.manager.internals.dummy_backend:
+        pass
+    else:        
+        done = []
+        while len(nodes) > 0:
+            for i in nodes:
+                up = True
+                try:
+                    if i['ip'] != '':
+                        logger.debug('Probing ' + i['ip'] + ' for state.')
+                        agent_client.getMySQLServerState(i['ip'], 60000)
+                    else:
+                        up = False
+                except agent_client.AgentException: pass
+                except: up = False
+                if up:
+                    done.append(i)
+            nodes = [ i for i in nodes if i not in done]
+            if len(nodes):
+                logger.debug('wait_for_nodes: waiting for %d nodes' % len(nodes))
+                time.sleep(poll_interval)
+                no_ip_nodes = [ i for i in nodes if i['ip'] == '' ]
+                if no_ip_nodes:
+                    logger.debug('wait_for_nodes: refreshing %d nodes' % len(no_ip_nodes))
+                    refreshed_list = iaas.listVMs()
+                    for i in no_ip_nodes:
+                        i['ip'] = refreshed_list[i['id']]['ip']
         logger.debug('wait_for_nodes: All nodes are ready %s' % str(done))
