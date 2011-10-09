@@ -4,15 +4,16 @@ Created on Aug 31, 2011
 @author: ales
 '''
 import unittest
-from conpaas.mysql.server.manager.server import ManagerServer
+#from conpaas.mysql.server.manager.server import ManagerServer
 import threading
 from ConfigParser import ConfigParser
 from conpaas.iaas import IaaSClient
 from conpaas.mysql.server.manager import internals
 from conpaas.mysql.server.manager.internals import MySQLServerManager
+import os
 
 
-class Test(unittest.TestCase):
+class TestServerManager(unittest.TestCase):
 
     def setUp(self):
         # This is prepared for integration unit testing.
@@ -32,7 +33,7 @@ class Test(unittest.TestCase):
         # self.managerServer.serve_forever()       
         # self.t.start()
         #=======================================================================
-        config = './sql_manager_configuration.cnf'
+        config = os.curdir+'/src/conpaas/mysql/test/unit/sql_manager_configuration.cnf'
         config_parser = ConfigParser()
         config_parser.read(config)
         '''Set up configuration for the parser.

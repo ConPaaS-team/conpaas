@@ -13,6 +13,9 @@ import threading
 from ConfigParser import ConfigParser
 from conpaas.mysql.server.agent.internals import MySQLServer
 from conpaas.mysql.server.agent import internals
+import os
+
+config_file=None
 
 class TestServerAgent(unittest.TestCase):
   
@@ -20,10 +23,16 @@ class TestServerAgent(unittest.TestCase):
     #port = 60000
     a = None
     
-    def setUp(self):        
-        config = './configuration.cnf'
+    def setUp(self):
+        from optparse import OptionParser
+        #parser = OptionParser()
+        #parser.add_option('-c', '--config', type='string', default='./configuration.cnf', dest='config')          
+        #options, args = parser.parse_args()
+        
+        config_file=os.curdir+"/src/conpaas/mysql/test/unit/configuration.cnf"
+          
         config_parser = ConfigParser()
-        config_parser.read(config)
+        config_parser.read(config_file)
         '''Set up configuration for the parser.
         '''
         config_parser.set('MySQL_configuration', 'my_cnf_file', '/etc/mysql/my.cnf')
@@ -76,6 +85,7 @@ class TestServerAgent(unittest.TestCase):
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
+
     unittest.main()   
     #suite = unittest.TestLoader().loadTestsFromTestCase(TestServerAgent)
     #unittest.TextTestRunner(verbosity=2).run(suite)

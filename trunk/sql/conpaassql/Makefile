@@ -2,13 +2,14 @@ BASENAME	=	conpaassql
 BINNAME		=	$(PWD)/$(BASENAME)-bin.tar.gz
 BINDIR		=	$(PWD)/bindist
 # This is for deploying (testing).
-PACKAGE_NAME	=	conpaas-sql.tar
+PACKAGE_NAME	=	conpaassql.tar
 DEST_DIR_PCKG	=	$(DESTDIR)/$(PACKAGE_NAME)
 
 all:
 
 check: all
-	#PYTHONPATH=$(PYTHONPATH) python src/conpaas/mysql/test/unit/agent-manager.py
+	PYTHONPATH=./src:./contrib python -m unittest conpaas.mysql.test.unit.agent.TestServerAgent
+	PYTHONPATH=./src:./contrib python -m unittest conpaas.mysql.test.unit.manager.TestServerManager
 
 install: check
 	python $(PWD)/setup.py install --prefix=$(DESTDIR)/usr
