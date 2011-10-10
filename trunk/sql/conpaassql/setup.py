@@ -8,11 +8,11 @@ setup(name = 'conpaassql-server',
       author_email = 'ales.cernivec@xlab.si',
       url = 'http://contrail.eu/',
       #packages = ['conpaas', 'conpaas.mysql','conpaas.mysql.server','conpaas.mysql.server.agent', 'conpaas.mysql.server.manager', 'conpaas.mysql.client','contrib','contrib.libcloud','contrib.libcloud.drivers','contrib.libcloud.storage','contrib.libcloud.storage.drivers','contrib.libcloud.compute','contrib.libcloud.compute.drivers','contrib.libcloud.common'],
-      #package_dir = { 'conpaas': 'src/conpaas','contrib' : 'contrib' }
-      package_dir={'': 'src'},
-      packages=find_packages('src'),
+      #package_dir = { 'src': 'src/conpaas','contrib' : 'contrib' },
+      package_dir={'': 'src', 'contrib' : 'contrib'},
+      packages=find_packages('src', 'contrib'),
       include_package_data=True,
       classifiers=['Operating System :: POSIX :: Linux',
                    'Programming Language :: Python'],
-      zip_safe=False,
+      zip_safe=False
       )
