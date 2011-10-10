@@ -47,17 +47,12 @@ sudo PYTHONPATH=<path to checked out svnroot/contrail/conpaas/trunk/sql/conpaass
 Running unit tests
 ------------------
 
-Try 
+make check
 
-$ PYTHONPATH=./src:./contrib python -m unittest conpaas.mysql.test.unit.agent.TestServerAgent
+or directly invoking by
 
-for running unit tests for agent.
-
-Use 
-
-$ PYTHONPATH=./src:./contrib python -m unittest conpaas.mysql.test.unit.manager.TestServerManager
-
-for running manager unit tests.
+PYTHONPATH=./src:./contrib python src/conpaas/mysql/test/unit/agent.py
+PYTHONPATH=./src:./contrib python src/conpaas/mysql/test/unit/manager.py
 
 Generating documentation
 ========================
