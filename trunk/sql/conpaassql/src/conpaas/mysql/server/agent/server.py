@@ -28,6 +28,8 @@ class AgentServer(HTTPServer, ThreadingMixIn):
              
         from conpaas.mysql.server.agent import internals
         
+        self.whitelist_addresses = []
+        
         internals.agent = MySQLServer(config)
         for http_method in internals.exposed_functions:
             for func_name in internals.exposed_functions[http_method]:
