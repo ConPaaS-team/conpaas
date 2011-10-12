@@ -33,7 +33,8 @@ class TestServerManager(unittest.TestCase):
         # self.managerServer.serve_forever()       
         # self.t.start()
         #=======================================================================
-        config = os.curdir+'/src/conpaas/mysql/test/unit/sql_manager_configuration.cnf'
+        #config = os.curdir+'/src/conpaas/mysql/test/unit/sql_manager_configuration.cnf'
+        config = 'sql_manager_configuration.cnf'
         config_parser = ConfigParser()
         config_parser.read(config)
         '''Set up configuration for the parser.
@@ -57,24 +58,24 @@ class TestServerManager(unittest.TestCase):
         self.a = None
 
     def testAddNodes(self):
-        nodes = internals.listServiceNodes({})
-        len1 = len(nodes['sql'])
-        self.assertTrue( len(nodes['sql']) == 3 )
-        internals.createServiceNode({})
-        nodes = internals.listServiceNodes({})
-        self.assertTrue(len(nodes['sql'])== 4)
+        nodes = internals.list_nodes({})
+        len1 = len(nodes.obj['serviceNode'])
+        internals.add_nodes({})
+        nodes = internals.list_nodes({})
+        self.assertTrue(len(nodes.obj['serviceNode'])== len1+1)
 
-    def testRemoveNodes(self):
-        nodes = internals.listServiceNodes({})
-        len1 = len(nodes['sql'])        
-        internals.deleteServiceNode({'id':1})
-        nodes = internals.listServiceNodes({})
-        self.assertTrue(len(nodes['sql'])== len1-1)
+    def testRemoveNodes(self):           
+        newnode = internals.add_nodes({})
+        nodes = internals.list_nodes({})
+        len1 = len(nodes.obj['serviceNode'])     
+        internals.remove_nodes({'serviceNodeId':nodes.obj['serviceNode'][0]})
+        nodes = internals.list_nodes({})
+        self.assertTrue(len(nodes.obj['serviceNode'])== len1-1)
 
     def testGetNodes(self):
-        nodes = internals.listServiceNodes({})
-        self.assertTrue(nodes)
-        self.assertTrue(nodes['sql'])
+        nodes = internals.list_nodes({})
+        self.assertTrue(nodes.obj)
+        self.assertTrue(nodes.obj['serviceNode']==[])
         
 
 if __name__ == "__main__":

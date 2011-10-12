@@ -36,7 +36,7 @@ E_STRINGS = [
   'Unable to open configuration file: %s',
   'Failed to parse configuration file error: %s',
   'Configuration file already exists',
-  'Invalid arguments',
+  'Invalid arguments: %s',
   'Unknown error. Description: %s',
   'Failed to commit configuration',
   'Missing argument: %s',

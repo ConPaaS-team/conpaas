@@ -14,18 +14,22 @@ from conpaas.iaas import DummyONEDriver
 MYSQL_PORT = 3306
 CONFIGURATION_FILE=os.getcwd() + "/sql_manager_configuration.cnf"
 
-E_ARGS_UNEXPECTED = 0,
-E_CONFIG_READ_FAILED = 1,
-E_CONFIG_NOT_EXIST=2,
-E_UNKNOWN=3,
+E_ARGS_UNEXPECTED = 0
+E_CONFIG_READ_FAILED = 1
+E_CONFIG_NOT_EXIST=2
+E_UNKNOWN=3
 E_ARGS_MISSING = 4
+E_ARGS_INVALID=5
+E_STATE_ERROR=6
 
 E_STRINGS = [  
   'Unexpected arguments %s',
   'Unable to open configuration file: %s',
   'Configuration file does not exist: %s',
   'Unknown error.',
-  'Missing argument: %s'
+  'Missing argument: %s',
+  'Invalid argument: %s',
+  'Service in wrong state'
 ]
 
 iaas = None
@@ -33,6 +37,7 @@ iaas = None
 logger = create_logger(__name__)
 
 class ManagerException(Exception):
+    
     def __init__(self, code, *args, **kwargs):
         self.code = code
         self.args = args
