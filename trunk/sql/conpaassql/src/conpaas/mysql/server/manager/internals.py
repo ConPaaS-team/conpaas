@@ -61,7 +61,7 @@ class MySQLServerManager():
                 try:
                     if i['ip'] != '':
                         logger.debug('Probing ' + i['ip'] + ' for state.')
-                        ret = agent_client.getMySQLServerState(i['ip'], 60000)                    
+                        ret = agent_client.get_server_state(i['ip'], 60000)                    
                         logger.debug('Returned query:' + str(ret))
                     else:
                         up = False
@@ -311,7 +311,7 @@ def wait_for_nodes(nodes, poll_interval=10):
                 try:
                     if i['ip'] != '':
                         logger.debug('Probing ' + i['ip'] + ' for state.')
-                        agent_client.getMySQLServerState(i['ip'], 60000)
+                        agent_client.get_server_state(i['ip'], 60000)
                     else:
                         up = False
                 except agent_client.AgentException: pass

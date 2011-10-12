@@ -5,8 +5,8 @@ Created on Aug 26, 2011
 '''
 import unittest
 from conpaas.mysql.server.agent.server import AgentServer
-from conpaas.mysql.client.agent_client import getMySQLServerState
-from conpaas.mysql.client.agent_client import createMySQLServer
+from conpaas.mysql.client.agent_client import get_server_state
+from conpaas.mysql.client.agent_client import create_server
 from conpaas.mysql.client.agent_client import restartMySQLServer
 from conpaas.mysql.client.agent_client import stopMySQLServer
 import threading
@@ -57,7 +57,7 @@ class TestServerAgent(unittest.TestCase):
     
     def testSQLServerState(self):
         #self.assertTrue(getMySQLServerState(self.host, self.port))
-        ret=internals.getMySQLServerState(False)
+        ret=internals.get_server_state(False)
         self.assertTrue(ret)
         self.__check_reply(ret)
 
@@ -68,15 +68,15 @@ class TestServerAgent(unittest.TestCase):
         #ret = stopMySQLServer(self.host,self.port)
         #self.assertTrue(ret)
         #self.__check_reply(ret)
-        ret = internals.createMySQLServer(False)
+        ret = internals.create_server(False)
         self.assertTrue(ret)    
         self.__check_reply(ret)
-        ret = internals.stopMySQLServer(False)
+        ret = internals.stop_server(False)
         self.assertTrue(ret)
         self.__check_reply(ret)                   
         
     def testRestartSQLServer(self):        
-        ret = internals.restartMySQLServer(False)
+        ret = internals.restart_server(False)
         self.assertTrue(ret)
         self.__check_reply(ret)        
 
