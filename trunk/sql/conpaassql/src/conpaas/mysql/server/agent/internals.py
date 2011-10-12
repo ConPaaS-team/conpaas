@@ -14,6 +14,7 @@ import ConfigParser
 import MySQLdb
 import pickle
 import io
+from conpaas.web.http import HttpJsonResponse
 
 exposed_functions = {}
 
@@ -450,15 +451,15 @@ def getMySQLServerState_old(kwargs):
         
         
 @expose('POST')
-def createMySQLServer(post_params):
-    logger.debug("Entering createMySQLServer")
+def create_server(post_params):
+    logger.debug("Entering create_server")
     try:
         agent.start()
-        logger.debug("Leaving createMySQLServer")
-        return {'opState': 'OK'}
+        logger.debug("Leaving create_server")
+        return HttpJsonResponse({'return': 'OK'})
     except Exception as e:
         logger.exception("Error: " + str(e))
-        return {'opState': 'ERROR', 'error': str(e)}
+        return HttpJsonResponse({'return': 'ERROR', 'error': str(e)})        
     
 def createMySQLServer_old(post_params):
     """Create the MySQLServer"""
@@ -529,68 +530,68 @@ def shutdownMySQLServerAgent(kwargs):
     sys.exit(0)
     
 @expose('POST')
-def stopMySQLServer(params):
-    logger.debug("Entering stopMySQLServer")
+def stop_server(params):
+    logger.debug("Entering stop_server")
     try:
         agent.stop()
-        logger.debug("Leaving stopMySQLServer")
+        logger.debug("Leaving stop_server")
         return {'opState':'OK'}
     except Exception as e:
-        ex = AgentException(E_UNKNOWN, 'stopMySQLServer', detail=e)
+        ex = AgentException(E_UNKNOWN, 'stop_server', detail=e)
         logger.exception(e)
-        logger.debug('Leaving createMySQLServer')
+        logger.debug('Leaving stop_server')
         return {'opState': 'ERROR', 'error': ex.message}
 
 @expose('POST')
-def restartMySQLServer(params):
-    logger.debug("Entering restartMySQLServer")
+def restart_server(params):
+    logger.debug("Entering restart_server")
     try:
         agent.restart()
-        logger.debug("Leaving restartMySQLServer")
+        logger.debug("Leaving restart_server")
         return {'opState':'OK'}
     except Exception as e:
-        ex = AgentException(E_UNKNOWN, 'restartMySQLServer', detail=e)
+        ex = AgentException(E_UNKNOWN, 'restart_server', detail=e)
         logger.exception(e)
-        logger.debug('Leaving createMySQLServer')
+        logger.debug('Leaving restart_server')
         return {'opState': 'ERROR', 'error': ex.message}
 
 @expose('GET')
-def getMySQLServerState(params):
-    logger.debug("Entering getMySQLServerState")
+def get_server_state(params):
+    logger.debug("Entering get_server_state")
     try: 
         status = agent.status()
-        logger.debug("Leaving getMySQLServerState")
-        return {'opState':'OK', 'return': status}
+        logger.debug("Leaving get_server_state")
+        return HttpJsonResponse({'return': status})
     except Exception as e:
-        ex = AgentException(E_UNKNOWN, 'getMySQLServerState', detail=e)
+        ex = AgentException(E_UNKNOWN, 'get_server_state', detail=e)
         logger.exception(e)
-        logger.debug('Leaving createMySQLServer')
-        return {'opState': 'ERROR', 'error': ex.message}
+        logger.debug('Leaving get_server_state')
+        return HttpJsonResponse({'return': status})
     
 @expose('POST')
-def setMySQLServerConfiguration(params):
-    logger.debug("Entering setMySQLServerConfiguration")
+def set_server_configuration(params):
+    logger.debug("Entering set_server_configuration")
     try:
         agent.config.change_config(params['id_param'], params["value"])
         restartMySQLServer(None)
-        logger.debug("Leaving setMySQLServerConfiguration")
+        logger.debug("Leaving set_server_configuration")
         return {'opState':'OK'}
     except Exception as e:
-        ex = AgentException(E_UNKNOWN, 'setMySQLServerConfiguration', detail=e)
+        ex = AgentException(E_UNKNOWN, 'set_server_configuration', detail=e)
         logger.exception(e)
-        logger.debug('Leaving createMySQLServer')
+        logger.debug('Leaving set_server_configuration')
         return {'opState': 'ERROR', 'error': ex.message}  
 
 @expose('POST')
-def createNewMySQLuser(params):
-    logger.debug("Entering createNewMySQLuser")
+def configure_user(params):
+    logger.debug("Entering configure_user")
     if len(params) != 2:
         ex = AgentException(E_ARGS_UNEXPECTED, params)
         logger.exception(ex.message) 
         return {'opState': 'ERROR', 'error': ex.message}
     try:
         agent.config.add_user_to_MySQL(params['username'], params['password'])
-        logger.debug("Leaving createNewMySQLuser")
+        logger.debug("Leaving configure_user")
         return {'opState': 'OK'}
     except MySQLdb.Error, e:
         ex = AgentException(E_MYSQL, 'error "%d, %s' %(e.args[0], e.args[1]))
@@ -598,15 +599,15 @@ def createNewMySQLuser(params):
         return {'opState': 'ERROR', 'error': ex.message}  
     
 @expose('POST')
-def removeMySQLuser(params):
-    logger.debug("Entering removeMySQLuser")
+def delete_user(params):
+    logger.debug("Entering delete_user")
     if len(params) != 1:
         ex = AgentException(E_ARGS_UNEXPECTED, params)
         logger.exception(ex.message) 
         return {'opState': 'ERROR', 'error': ex.message}  
     try:
         agent.config.remove_user_to_MySQL(params['username'])
-        logger.debug("Leaving removeMySQLuser")
+        logger.debug("Leaving delete_user")
         return {'opState': 'OK'}
     except MySQLdb.Error, e:
         ex = AgentException(E_MYSQL, 'error "%d, %s' %(e.args[0], e.args[1]))
@@ -614,16 +615,17 @@ def removeMySQLuser(params):
         return {'opState': 'ERROR', 'error': ex.message}  
     
 @expose('GET')
-def listAllMySQLusers(params):
-    logger.debug("Entering listAllMySQLusers")
+def get_all_users(params):
+    logger.debug("Entering get_all_users")
     try:
         ret = agent.config.get_users_in_MySQL()
-        logger.debug("Leaving listAllMySQLusers")
-        return ret
+        logger.debug("Got response: " + str(ret))
+        logger.debug("Leaving get_all_users")
+        return HttpJsonResponse({'users': ret})        
     except MySQLdb.Error, e:
         ex = AgentException(E_MYSQL, 'error "%d, %s' %(e.args[0], e.args[1]))
         logger.exception(ex.message) 
-        return {'opState': 'ERROR', 'error': ex.message} 
+        return {'users': 'ERROR', 'error': ex.message} 
 
 @expose('POST')
 def create_with_MySQLdump(params):

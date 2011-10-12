@@ -26,6 +26,9 @@ Created on Feb 8, 2011
 from BaseHTTPServer import BaseHTTPRequestHandler
 from StringIO import StringIO
 import urlparse, urllib, cgi, httplib, json, pycurl, os
+from conpaas.log import create_logger
+
+logger = create_logger(__name__)
 
 class HttpError(Exception): pass
 
@@ -89,6 +92,7 @@ class AbstractRequestHandler(BaseHTTPRequestHandler):
         return
     if not self.parse_request(): # An error code has been sent, just exit
         return
+    logger.debug("Obtained: " + self.path)
     parsed_url = urlparse.urlparse(self.path)
     # we allow calls to / only
     if parsed_url.path != '/':

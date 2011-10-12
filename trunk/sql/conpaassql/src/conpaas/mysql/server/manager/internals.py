@@ -42,7 +42,7 @@ class MySQLServerManager():
         self.dummy_backend = _dummy_backend
         conpaas.mysql.server.manager.internals.dummy_backend = _dummy_backend
         # TODO:
-        self.__findAlreadyRunningInstances()
+        #self.__findAlreadyRunningInstances()
         logger.debug("Leaving MySQLServer initialization")
 
     '''

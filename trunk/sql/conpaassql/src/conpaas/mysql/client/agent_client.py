@@ -3,35 +3,49 @@ Created on Jun 8, 2011
 
 @author: ales
 '''
-from conpaas.web.http import _http_get, _http_post
+from conpaas.web.http import _http_get, _http_post, _jsonrpc_get, _jsonrpc_post
 import httplib, json
 import sys
 
 
 class AgentException(Exception): pass
 
-def __check_reply(body):
-    try:
-        ret = json.loads(body)
+def _check(response):
+    code, body = response
+    if code != httplib.OK: raise AgentException('Received http response code %d' % (code))
+    try: data = json.loads(body)
     except Exception as e: raise AgentException(*e.args)
-    if not isinstance(ret, dict): raise AgentException('Response not a JSON object')
-    if 'opState' not in ret: raise AgentException('Response does not contain "opState"')
-    if ret['opState'] != 'OK':
-        if 'ERROR' in ret['opState']: raise AgentException(ret['opState'], ret['error'])
-        else: raise AgentException(ret['opState'])
-    return ret
+    if data['error']: raise AgentException(data['error'])
+    else: return True
 
-def getMySQLServerState(host, port):
-    params = {'action': 'getMySQLServerState'}
-    code, body = _http_get(host, port, '/', params=params)
-    if code != httplib.OK: raise Exception('Received HTTP response code %d' % (code))
-    return __check_reply(body)
+#===============================================================================
+# def __check_reply(body):
+#    try:
+#        ret = json.loads(body)
+#    except Exception as e: raise AgentException(*e.args)
+#    if not isinstance(ret, dict): raise AgentException('Response not a JSON object')
+#    if 'opState' not in ret: raise AgentException('Response does not contain "opState"')
+#    if ret['opState'] != 'OK':
+#        if 'ERROR' in ret['opState']: raise AgentException(ret['opState'], ret['error'])
+#        else: raise AgentException(ret['opState'])
+#    return ret
+#===============================================================================
 
-def createMySQLServer(host, port):
-    params = {'action': 'createMySQLServer'}
-    code, body = _http_post(host, port, '/', params=params)
-    if code != httplib.OK: raise Exception('Received HTTP response code %d' % (code))
-    return __check_reply(body)
+def get_server_state(host, port):
+    method = "get_server_state"
+    result = _jsonrpc_get(host, port, '/', method)
+    if _check(result):
+        return result
+    else:
+        return False
+
+def create_server(host, port):
+    method = "create_server"
+    result = _jsonrpc_post(host, port, '/', method)
+    if _check(result):
+        return result
+    else:
+        return False
 
 def printUsage():
     print 'Usage: agent_ip agent_port function function_params\n\
@@ -47,19 +61,23 @@ Functions:  getMySQLServerState - no params\n \
     pass
 
 def restartMySQLServer(host, port):
-    params = {'action': 'restartMySQLServer'}
-    code, body = _http_post(host, port, '/', params=params)
-    if code != httplib.OK: raise Exception('Received HTTP response code %d' % (code))
-    return __check_reply(body)
+    method = "restartMySQLServer"
+    result = _jsonrpc_post(host, port, '/', method)
+    if _check(result):
+        return result
+    else:
+        return False
     
 def stopMySQLServer(host, port):
-    params = {'action': 'stopMySQLServer'}
-    code, body = _http_post(host, port, '/', params=params)
-    if code != httplib.OK: raise Exception('Received HTTP response code %d' % (code))
-    return __check_reply(body)
+    method = "stop_server"
+    result = _jsonrpc_post(host, port, '/', method)
+    if _check(result):
+        return result
+    else:
+        return False
     
 def configure_user(host, port, username, password):
-    params = {'action': "createNewMySQLuser",
+    params = {'action': "configure_user",
               'username': username,
               'password': password}
     code, body = _http_post(host, port, '/', params=params)
@@ -67,6 +85,14 @@ def configure_user(host, port, username, password):
     return __check_reply(body)
         
 def get_all_users(host, port):
+    method = "get_all_users"
+    result = _jsonrpc_get(host, port, '/', method)
+    if _check(result):
+        return result
+    else:
+        return False
+
+    
     params = {'action': 'listAllMySQLusers'}
     code, body = _http_get(host, port, '/', params=params)
     if code != httplib.OK: raise Exception('Received HTTP response code %d' % (code))
@@ -126,11 +152,11 @@ if __name__ == '__main__':
     if sys.argv.__len__() > 3:
         host = sys.argv[1]
         port = sys.argv[2]
-        if sys.argv[3] == 'getMySQLServerState':
-            ret = getMySQLServerState(host, port)
+        if sys.argv[3] == 'get_server_state':
+            ret = get_server_state(host, port)
             print ret
-        if sys.argv[3] == 'createMySQLServer':
-            ret = createMySQLServer(host, port)
+        if sys.argv[3] == 'create_server':
+            ret = create_server(host, port)
             print ret
         if sys.argv[3] == 'restartMySQLServer':
             ret = restartMySQLServer(host, port)
@@ -154,22 +180,4 @@ if __name__ == '__main__':
             ret = send_mysqldump(host,port,sys.argv[4])
             print ret            
     else:
-        printUsage()
-        #setMySQLServerConfiguration('127.0.0.1', 60000, "/home/danaia/Desktop/bla.txt")
-        
-        #createMySQLServer('127.0.0.1', 60000)
-        #print configure_user('127.0.0.1', 60000, "janez", "rekar")        
-        #print remove_user('127.0.0.1', 60000, "janez")
-        
-        #stopMySQLServer("127.0.0.1", 60000)
-        #createMySQLServer('127.0.0.1', 60000)
-        #print restartMySQLServer("127.0.0.1", 60000)
-        #print getMySQLServerState('127.0.0.1', 60000)
-        #print get_all_users("127.0.0.1", 60000)
-        #ret = get_all_users('127.0.0.1', 60000)
-        #for a in ret:
-            #if a != 'opState':
-                #print "username: " + ret[a]['username'] + " location: " + ret[a]["location"]
-        #print send_mysqldump('127.0.0.1', 60000, "/home/danaia/Desktop/mysqldump")
-        #printUsage()
-        #print setMySQLServerConfiguration('127.0.0.1', 60000, "port", 40000)
+        printUsage()        
