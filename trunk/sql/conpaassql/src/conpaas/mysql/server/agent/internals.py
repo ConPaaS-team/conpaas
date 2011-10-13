@@ -14,7 +14,7 @@ import ConfigParser
 import MySQLdb
 import pickle
 import io
-from conpaas.web.http import HttpJsonResponse
+from conpaas.web.http import HttpJsonResponse, HttpErrorResponse
 
 exposed_functions = {}
 
@@ -585,12 +585,15 @@ def set_server_configuration(params):
 @expose('POST')
 def configure_user(params):
     logger.debug("Entering configure_user")
-    if len(params) != 2:
-        ex = AgentException(E_ARGS_UNEXPECTED, params)
-        logger.exception(ex.message) 
-        return HttpJsonResponse ({'return': 'ERROR', 'error': ex.message})
+    if 'username' not in params: return HttpErrorResponse(AgentException(E_ARGS_MISSING,'username missing' ,'configure_user').message)
+    username = params.pop('username')
+    if 'password' not in params: return HttpErrorResponse(AgentException(E_ARGS_MISSING,'password missing' ,'configure_user').message)
+    password = params.pop('password')
+    if len(params) != 0:
+        return HttpErrorResponse(AgentException(E_ARGS_UNEXPECTED,'too many parameters', AgentException.keys()).message)
     try:
-        agent.config.add_user_to_MySQL(params['username'], params['password'])
+        logger.debug("configuring new user " + username)
+        agent.config.add_user_to_MySQL(username, password)
         logger.debug("Leaving configure_user")
         return HttpJsonResponse ({'return': 'OK'})
     except MySQLdb.Error, e:

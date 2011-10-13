@@ -49,7 +49,7 @@ def create_server(host, port):
 
 def printUsage():
     print 'Usage: agent_ip agent_port function function_params\n\
-Functions:  getMySQLServerState - no params\n \
+Functions:  get_server_state - no params\n \
             createMySQLServer - no params\n \
             restartMySQLServer - no params\n \
             stopMySQLServer - no params\n \
@@ -68,21 +68,19 @@ def restartMySQLServer(host, port):
     else:
         return False
     
-def stopMySQLServer(host, port):
+def stop_server(host, port):
     method = "stop_server"
     result = _jsonrpc_post(host, port, '/', method)
     if _check(result):
         return result
     else:
-        return False
-    
+        return False    
+
 def configure_user(host, port, username, password):
-    params = {'action': "configure_user",
-              'username': username,
+    method = 'configure_user'
+    params = {'username': username,
               'password': password}
-    code, body = _http_post(host, port, '/', params=params)
-    if code != httplib.OK: raise Exception('Received HTTP response code %d' % (code))
-    return __check_reply(body)
+    return _check(_jsonrpc_get(host, port, '/', method, params=params))
         
 def get_all_users(host, port):
     method = "get_all_users"
@@ -92,19 +90,10 @@ def get_all_users(host, port):
     else:
         return False
 
-    
-    params = {'action': 'listAllMySQLusers'}
-    code, body = _http_get(host, port, '/', params=params)
-    if code != httplib.OK: raise Exception('Received HTTP response code %d' % (code))
-    return __check_reply(body)
-
 def remove_user(host,port,name):
-    params = {'action': 'removeMySQLuser',
-            'username': name
-            }
-    code, body = _http_post(host, port, '/', params=params)
-    if code != httplib.OK: raise Exception('Received HTTP response code %d' % (code))
-    return __check_reply(body)
+    method = 'remove_user'
+    params = {'username': name}
+    return _check(_jsonrpc_get(host, port, '/', method, params=params))
 
 def setMySQLServerConfiguration(host,port, param_id, val):
     params = {'action': 'setMySQLServerConfiguration',
@@ -161,8 +150,8 @@ if __name__ == '__main__':
         if sys.argv[3] == 'restartMySQLServer':
             ret = restartMySQLServer(host, port)
             print ret
-        if sys.argv[3] == 'stopMySQLServer':
-            ret = stopMySQLServer(host, port)
+        if sys.argv[3] == 'stop_server':
+            ret = stop_server(host, port)
             print ret
         if sys.argv[3] == 'configure_user':
             ret = configure_user(host, port, sys.argv[4], sys.argv[5])
