@@ -270,11 +270,11 @@ mysql>UNLOCK TABLES;
             os.system("mysql -u " + self.conn_username + " -p"  + self.conn_password + " < " + os.getcwd() + '/mysqldump')
             os.system("rm mysqldump")
             logger.debug("Leaving create_MySQL_with_dump")
-            return {'opState':'OK'}
+            return HttpJsonResponse({'return':'OK'})
         except Exception as e:
             ex = AgentException(E_UNKNOWN,e.message)
             logger.exception(ex.message)
-            return {'opState': 'ERROR', 'error': e.message}   
+            return HttpJsonResponse({'return': 'ERROR', 'error': e.message})   
     
 class MySQLServer:
     
@@ -535,12 +535,12 @@ def stop_server(params):
     try:
         agent.stop()
         logger.debug("Leaving stop_server")
-        return {'opState':'OK'}
+        return HttpJsonResponse ({'return':'OK'})
     except Exception as e:
         ex = AgentException(E_UNKNOWN, 'stop_server', detail=e)
         logger.exception(e)
         logger.debug('Leaving stop_server')
-        return {'opState': 'ERROR', 'error': ex.message}
+        return HttpJsonResponse ({'return': 'ERROR', 'error': ex.message})
 
 @expose('POST')
 def restart_server(params):
@@ -548,12 +548,12 @@ def restart_server(params):
     try:
         agent.restart()
         logger.debug("Leaving restart_server")
-        return {'opState':'OK'}
+        return HttpJsonResponse ({'return':'OK'})
     except Exception as e:
         ex = AgentException(E_UNKNOWN, 'restart_server', detail=e)
         logger.exception(e)
         logger.debug('Leaving restart_server')
-        return {'opState': 'ERROR', 'error': ex.message}
+        return HttpJsonResponse ({'return': 'ERROR', 'error': ex.message})
 
 @expose('GET')
 def get_server_state(params):
@@ -573,14 +573,14 @@ def set_server_configuration(params):
     logger.debug("Entering set_server_configuration")
     try:
         agent.config.change_config(params['id_param'], params["value"])
-        restartMySQLServer(None)
+        restart_server(None)
         logger.debug("Leaving set_server_configuration")
-        return {'opState':'OK'}
+        return HttpJsonResponse ({'return':'OK'})
     except Exception as e:
         ex = AgentException(E_UNKNOWN, 'set_server_configuration', detail=e)
         logger.exception(e)
         logger.debug('Leaving set_server_configuration')
-        return {'opState': 'ERROR', 'error': ex.message}  
+        return HttpJsonResponse ({'return': 'ERROR', 'error': ex.message})  
 
 @expose('POST')
 def configure_user(params):
@@ -588,15 +588,15 @@ def configure_user(params):
     if len(params) != 2:
         ex = AgentException(E_ARGS_UNEXPECTED, params)
         logger.exception(ex.message) 
-        return {'opState': 'ERROR', 'error': ex.message}
+        return HttpJsonResponse ({'return': 'ERROR', 'error': ex.message})
     try:
         agent.config.add_user_to_MySQL(params['username'], params['password'])
         logger.debug("Leaving configure_user")
-        return {'opState': 'OK'}
+        return HttpJsonResponse ({'return': 'OK'})
     except MySQLdb.Error, e:
         ex = AgentException(E_MYSQL, 'error "%d, %s' %(e.args[0], e.args[1]))
         logger.exception(ex.message) 
-        return {'opState': 'ERROR', 'error': ex.message}  
+        return HttpJsonResponse ({'return': 'ERROR', 'error': ex.message})  
     
 @expose('POST')
 def delete_user(params):
@@ -604,15 +604,15 @@ def delete_user(params):
     if len(params) != 1:
         ex = AgentException(E_ARGS_UNEXPECTED, params)
         logger.exception(ex.message) 
-        return {'opState': 'ERROR', 'error': ex.message}  
+        return HttpJsonResponse({'return': 'ERROR', 'error': ex.message})  
     try:
         agent.config.remove_user_to_MySQL(params['username'])
         logger.debug("Leaving delete_user")
-        return {'opState': 'OK'}
+        HttpJsonResponse({'return': 'OK'})
     except MySQLdb.Error, e:
         ex = AgentException(E_MYSQL, 'error "%d, %s' %(e.args[0], e.args[1]))
         logger.exception(ex.message) 
-        return {'opState': 'ERROR', 'error': ex.message}  
+        return HttpJsonResponse({'return': 'ERROR', 'error': ex.message})  
     
 @expose('GET')
 def get_all_users(params):
@@ -625,7 +625,7 @@ def get_all_users(params):
     except MySQLdb.Error, e:
         ex = AgentException(E_MYSQL, 'error "%d, %s' %(e.args[0], e.args[1]))
         logger.exception(ex.message) 
-        return {'users': 'ERROR', 'error': ex.message} 
+        return HttpJsonResponse( {'users': 'ERROR', 'error': ex.message}) 
 
 @expose('POST')
 def create_with_MySQLdump(params):

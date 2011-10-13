@@ -96,6 +96,7 @@ class AbstractRequestHandler(BaseHTTPRequestHandler):
     parsed_url = urlparse.urlparse(self.path)
     # we allow calls to / only
     if parsed_url.path != '/':
+      logger.debug("we allow calls to / only. I got: " + parsed_url.path)
       self.send_error(httplib.NOT_FOUND)
       return
     
@@ -188,7 +189,8 @@ class AbstractRequestHandler(BaseHTTPRequestHandler):
         elif isinstance(response, HttpJsonResponse):
           self.send_custom_response(httplib.OK, json.dumps({'result': response.obj, 'error': None, 'id': request_id}))
       except Exception as e:
-        print e
+          print "Problem in method call " + callback_name
+          print e
   
   def _do_dispatch(self, callback_type, callback_name, params):
     return self.server.callback_dict[callback_type][callback_name](params)

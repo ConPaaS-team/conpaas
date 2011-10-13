@@ -33,8 +33,8 @@ class TestServerManager(unittest.TestCase):
         # self.managerServer.serve_forever()       
         # self.t.start()
         #=======================================================================
-        #config = os.curdir+'/src/conpaas/mysql/test/unit/sql_manager_configuration.cnf'
-        config = 'sql_manager_configuration.cnf'
+        config = os.curdir+'/src/conpaas/mysql/test/unit/sql_manager_configuration.cnf'
+        #config = 'sql_manager_configuration.cnf'
         config_parser = ConfigParser()
         config_parser.read(config)
         '''Set up configuration for the parser.

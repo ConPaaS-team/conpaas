@@ -115,6 +115,7 @@ CONTEXT = [
   target=sdc,
   files = '''+str(kwargs['ex_userdata_agent'])+'''
   ]
+RANK = "- RUNNING_VMS"
 '''
         elif kwargs['function'] == 'manager':
             logger.debug("creating manager")
@@ -136,6 +137,7 @@ GRAPHICS = [
 CONTEXT = [
   target=sdc,
   files = '''+str(kwargs['ex_userdata_manager'])+''']
+RANK = "- RUNNING_VMS"
 '''
         else:
             logger.debug("creating")
@@ -154,6 +156,7 @@ NIC    = [ NETWORK_ID = '''+str(kwargs['ex_network_id'])+''' ]
 GRAPHICS = [
   type="vnc"
   ]
+RANK = "- RUNNING_VMS"
 '''
         logger.debug('Provisioning VM:' + template)
         randid = random.randint(1,100)
@@ -239,6 +242,7 @@ CONTEXT = [
   target=sdc,
   files = '''+str(kwargs['ex_userdata_agent'])+'''
   ]
+RANK = "- RUNNING_VMS"
 '''
         elif kwargs['function'] == 'manager':
             logger.debug("creating manager")
@@ -260,6 +264,7 @@ GRAPHICS = [
 CONTEXT = [
   target=sdc,
   files = '''+str(kwargs['ex_userdata_manager'])+''']
+RANK = "- RUNNING_VMS"
 '''
         else:
             logger.debug("creating")
@@ -278,6 +283,7 @@ NIC    = [ NETWORK_ID = '''+str(kwargs['ex_network_id'])+''' ]
 GRAPHICS = [
   type="vnc"
   ]
+RANK = "- RUNNING_VMS"
 '''
         logger.debug('Provisioning VM:' + template)
         rez=oca.VirtualMachine.allocate(self.client, template)        

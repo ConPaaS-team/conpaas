@@ -41,7 +41,7 @@ class MySQLServerManager():
         self.dummy_backend = _dummy_backend
         conpaas.mysql.server.manager.internals.dummy_backend = _dummy_backend
         # TODO:
-        #self.__findAlreadyRunningInstances()
+        self.__findAlreadyRunningInstances()
         logger.debug("Leaving MySQLServer initialization")
 
     '''
@@ -187,8 +187,10 @@ def get_node_info(kwargs):
     serviceNodeId = kwargs.pop('serviceNodeId')
     if len(kwargs) != 0:
         return HttpErrorResponse(ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
-    if serviceNodeId not in config.serviceNodes: return HttpErrorResponse(ManagerException(E_ARGS_INVALID, detail='Invalid "serviceNodeId"').message)
-    serviceNode = config.serviceNodes[serviceNodeId]
+    #for keys in config.serviceNodes.keys():
+    #    if  keys
+    if int(serviceNodeId) not in config.serviceNodes.keys(): return HttpErrorResponse(ManagerException(E_ARGS_INVALID , "serviceNodeId" , detail='Invalid "serviceNodeId"').message)
+    serviceNode = config.serviceNodes[int(serviceNodeId)]
     return HttpJsonResponse({
             'serviceNode': {
                             'id': serviceNode.vmid,
@@ -225,8 +227,9 @@ provisioned.
 def add_nodes(kwargs):
     function = None
     if 'function' in kwargs:
-        if not isinstance(kwargs['function'], str):
-            return HttpErrorResponse(ManagerException(E_ARGS_INVALID, detail='Expected a string value for "function"').message)
+        #if not isinstance(kwargs['function'], str):
+        #    logger.error("Expected a string value for function")
+        #    return HttpErrorResponse(ManagerException(E_ARGS_INVALID, detail='Expected a string value for "function"').message)
         function = str(kwargs.pop('function'))        
     #if not(len(kwargs) in (0,1, 3)):
     #    return {'opState': 'ERROR', 'error': ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message}    
@@ -279,7 +282,7 @@ def create_replica(kwargs):
 def remove_nodes(kwargs):
     logger.debug("Entering delete_nodes")
     if 'serviceNodeId' not in kwargs: return HttpErrorResponse(ManagerException(E_ARGS_MISSING, 'serviceNodeId').message)
-    serviceNodeId = kwargs.pop('serviceNodeId')
+    serviceNodeId = int(kwargs.pop('serviceNodeId'))
     if len(kwargs) != 0:
         return HttpErrorResponse(ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
     if serviceNodeId not in config.serviceNodes: return HttpErrorResponse(ManagerException(E_ARGS_INVALID, "serviceNodeId", detail='Invalid "serviceNodeId"').message)
@@ -289,7 +292,7 @@ def remove_nodes(kwargs):
         config.removeMySQLServiceNode(serviceNodeId)
     '''TODO: If false, return false response.
     '''
-    return HttpJsonResponse()
+    return HttpJsonResponse({'result': 'OK'})
 
 @expose('GET')
 def get_service_info(kwargs):
@@ -305,7 +308,7 @@ def get_service_info(kwargs):
         ex = ManagerException(E_UNKNOWN, detail=e)
         logger.exception(e)
         logger.debug('Leaving get_service_info')
-        return HttpJsonResponse()
+        return HttpJsonResponse({'result': 'OK'})
  
 #===============================================================================
 # @expose('GET')

@@ -30,6 +30,8 @@ class TestServerAgent(unittest.TestCase):
         #options, args = parser.parse_args()
         
         config_file=os.curdir+"/src/conpaas/mysql/test/unit/configuration.cnf"
+        # This is for testing locally.
+        #config_file="configuration.cnf"
           
         config_parser = ConfigParser()
         config_parser.read(config_file)
@@ -58,8 +60,8 @@ class TestServerAgent(unittest.TestCase):
     def testSQLServerState(self):
         #self.assertTrue(getMySQLServerState(self.host, self.port))
         ret=internals.get_server_state(False)
-        self.assertTrue(ret)
-        self.__check_reply(ret)
+        self.assertTrue(ret.obj != None)
+        #self.__check_reply(ret)
 
     def testStartStopSQLServer(self):
         #ret = createMySQLServer(self.host,self.port)        
@@ -77,11 +79,10 @@ class TestServerAgent(unittest.TestCase):
         
     def testRestartSQLServer(self):        
         ret = internals.restart_server(False)
-        self.assertTrue(ret)
         self.__check_reply(ret)        
 
     def __check_reply(self, ret):            
-        self.assertTrue( ret['opState'] == 'OK')            
+        self.assertTrue( ret.obj['return'] == 'OK')            
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
