@@ -24,7 +24,7 @@ class AgentServer(HTTPServer, ThreadingMixIn):
     
     def __init__(self, server_address, config, RequestHandlerClass=AbstractRequestHandler):
         HTTPServer.__init__(self, server_address, RequestHandlerClass)
-        self.callback_dict = {'GET': {}, 'POST': {}}
+        self.callback_dict = {'GET': {}, 'POST': {}, 'UPLOAD': {}}
              
         from conpaas.mysql.server.agent import internals
         

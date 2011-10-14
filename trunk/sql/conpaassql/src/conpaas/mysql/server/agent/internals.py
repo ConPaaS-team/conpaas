@@ -283,7 +283,7 @@ class MySQLServer:
     def __init__(self, configInput, _dummy_backend=False):
         logger.debug("Entering MySQLServer initialization")
         self.config = MySQLServerConfiguration(configInput, _dummy_backend)
-        self.state = S_INIT
+        self.state = S_RUNNING
         self.dummy_backend = _dummy_backend 
         logger.debug("Leaving MySQLServer initialization")
                     
@@ -630,11 +630,12 @@ def get_all_users(params):
         logger.exception(ex.message) 
         return HttpJsonResponse( {'users': 'ERROR', 'error': ex.message}) 
 
-@expose('POST')
+@expose('UPLOAD')
 def create_with_MySQLdump(params):
     logger.debug("Entering create_with_MySQLdump")
-    params['mysqldump']  
-    f = params['mysqldump']['file']
+    file=params['mysqldump']
+    f=file.file
+    #f = params['mysqldump']['file']
     ret = agent.config.create_MySQL_with_dump(f)
     return ret
 

@@ -80,7 +80,7 @@ def configure_user(host, port, username, password):
     method = 'configure_user'
     params = {'username': username,
               'password': password}
-    return _check(_jsonrpc_get(host, port, '/', method, params=params))
+    return _check(_jsonrpc_post(host, port, '/', method, params=params))
         
 def get_all_users(host, port):
     method = "get_all_users"
@@ -105,11 +105,18 @@ def setMySQLServerConfiguration(host,port, param_id, val):
     return __check_reply(body)
 
 def send_mysqldump(host,port,location):
-    params = {
-              'action': 'create_with_MySQLdump'}
-    code, body = _http_post(host, port, '/', params= params, files={'mysqldump':location})
-    if code != httplib.OK: raise Exception('Received HTTP response code %d' % (code))
-    return __check_reply(body)
+    params = {'method': 'create_with_MySQLdump'}
+    files = {'mysqldump': location}
+    return _check(_http_post(host, port, '/', params, files=files))
+    
+    #method = 'create_with_MySQLdump'
+    #params = {
+    #          'action': 'create_with_MySQLdump'}
+    #_jsonrpc_post(host, port, '/', method, params=params)
+    
+    #code, body = _http_post(host, port, '/', params= params, files={'mysqldump':location})
+    #if code != httplib.OK: raise Exception('Received HTTP response code %d' % (code))
+    #return __check_reply(body)
 
 def set_up_replica_master(host,port):
     params = {

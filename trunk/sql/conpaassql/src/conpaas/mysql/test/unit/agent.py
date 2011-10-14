@@ -7,8 +7,6 @@ import unittest
 from conpaas.mysql.server.agent.server import AgentServer
 from conpaas.mysql.client.agent_client import get_server_state
 from conpaas.mysql.client.agent_client import create_server
-from conpaas.mysql.client.agent_client import restartMySQLServer
-from conpaas.mysql.client.agent_client import stopMySQLServer
 import threading
 from ConfigParser import ConfigParser
 from conpaas.mysql.server.agent.internals import MySQLServer
