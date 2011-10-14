@@ -1,0 +1,72 @@
+#!/bin/bash
+# Copyright (C) 2010-2011 Contrail consortium.
+# 
+# This file is part of ConPaaS, an integrated runtime environment 
+# for elastic cloud applications.
+# 
+# ConPaaS is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# ConPaaS is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with ConPaaS.  If not, see <http://www.gnu.org/licenses/>.
+
+if [ -f /mnt/context.sh ]; then
+  . /mnt/context.sh
+fi
+
+/sbin/ifconfig eth0 $IP_PUBLIC
+/sbin/ip route add default via $IP_GATEWAY
+echo "nameserver $NAMESERVER" > /etc/resolv.conf
+
+SOURCE=
+
+wget -P /root/ $SOURCE/ConPaaSWeb.tar.gz
+wget -P /root/ $SOURCE/manager-start
+wget -P /root/ $SOURCE/opennebula-agent-user-data
+
+
+cat <<EOF > /root/config.cfg
+[iaas]
+DRIVER = OPENNEBULA
+
+## OPENNEBULA
+OPENNEBULA_URL = 
+OPENNEBULA_USER = 
+OPENNEBULA_PASSWORD = 
+OPENNEBULA_IMAGE_ID = 
+OPENNEBULA_SIZE_ID = 
+OPENNEBULA_NETWORK_ID = 
+OPENNEBULA_NETWORK_GATEWAY = 
+OPENNEBULA_NETWORK_NAMESERVER = 
+OPENNEBULA_AGENT_USERDATA = /root/opennebula-agent-user-data
+
+[manager]
+TYPE = %CONPAAS_SERVICE_TYPE%
+BOOTSTRAP = $SOURCE
+MEMCACHE_ADDR = 127.0.0.1:11211
+
+ROOT = 
+LOG_FILE = %(ROOT)s/var/log/cpsmanager.web.log
+ETC = %(ROOT)s/etc/cpsmanager.web/
+VAR_TMP = %(ROOT)s/var/tmp/cpsmanager.web/
+VAR_CACHE = %(ROOT)s/var/cache/cpsmanager.web/
+VAR_RUN = %(ROOT)s/var/run/cpsmanager.web/
+CODE_REPO = %(VAR_CACHE)s/code_repo
+FE_SERVICE_ID = %CONPAAS_SERVICE_ID%
+FE_CREDIT_URL = PATH_TO/callback/decrementUserCredit.php
+FE_TERMINATE_URL = PATH_TO/callback/terminateService.php
+EOF
+
+
+export PUBLIC_IP=$IP_PUBLIC
+
+chmod 755 /root/manager-start
+/root/manager-start
+

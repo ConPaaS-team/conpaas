@@ -1,0 +1,113 @@
+user                 $user;
+worker_processes     1;
+
+error_log            $error_log;
+pid                  $pid_file;
+
+events {
+  worker_connections 1024;
+}
+
+http {
+  ## GENERAL SETTINGS
+  include            /etc/nginx/mime.types;
+  access_log         $access_log;
+  sendfile           on;
+  keepalive_timeout  65;
+  tcp_nodelay        on;
+  gzip               on;
+  gzip_disable       "MSIE [1-6]\.(?!.*SV1)";
+  port_in_redirect   off;
+  index              index.html index.htm #if $fpm_list#index.php#end if# #if $tomcat_list#index.jsp#end if#;
+  error_page         403 = @forbidden;
+  error_page         404 = @notfound;
+  error_page         500 = @internalerror;
+  
+  ## UPSTREAM CONFIG FOR STATIC DOCUMENTS
+  #if $web_list
+  upstream web_upstream {
+    #for $web in $web_list
+    server $web.ip:$web.port;
+    #end for
+  }
+  #end if
+  
+  ## UPSTREAM CONFIG FOR PHP FPM
+  #if $fpm_list
+  upstream fpm_upstream {
+    #for $fpm in $fpm_list
+    server $fpm.ip:$fpm.port;
+    #end for
+  }
+  #end if
+  
+  ## UPSTREAM CONFIG FOR TOMCAT
+  #if $tomcat_list
+  upstream tomcat_upstream {
+    #for $tomcat in $tomcat_list
+    server $tomcat.ip:$tomcat.port;
+    #end for
+  }
+  #end if
+  
+  server {
+    listen  $port default;
+    root    $doc_root/$code_version;
+    location / {
+      #if $web_list
+      proxy_set_header  Host $code_version;
+      proxy_set_header  X-Real-IP \$remote_addr;
+      proxy_intercept_errors on;
+      if ( -f \$request_filename ) {
+        proxy_pass        http://web_upstream;
+        break;
+      }
+      if ( -f \$request_filename/index.html ) {
+        rewrite ^(.*)\$ \$1/index.html last;
+      }
+      #end if
+      #if $fpm_list
+      if ( -f \$request_filename/index.php ) {
+        rewrite ^(.*)\$ \$1/index.php last;
+      }
+      #else if $tomcat_list
+      if ( -f \$request_filename/index.jsp ) {
+        rewrite ^(.*)\$ \$1/index.jsp last;
+      }
+      #end if
+    }
+    #if $fpm_list
+    location ~ \.php\$ {
+      include        /etc/nginx/fastcgi_params;
+      fastcgi_param  SCRIPT_FILENAME \$document_root/\$fastcgi_script_name;
+      fastcgi_param  SERVER_NAME \$host;
+      fastcgi_intercept_errors off;
+      fastcgi_pass   fpm_upstream;
+    }
+    #end if
+      #if $tomcat_list
+      location ~ \.jsp\$ {
+	    rewrite ^(.*)\$  /$code_version\$1  break;
+	    proxy_set_header Host \$host;
+	    proxy_set_header X-Real-IP \$remote_addr;
+	    proxy_intercept_errors on;
+	    proxy_pass       http://tomcat_upstream;
+	  }
+	  #for $servlet in $tomcat_servlets
+	  location = $servlet {
+	    rewrite ^(.*)\$  /$code_version\$1  break;
+	    proxy_set_header Host \$host;
+	    proxy_set_header X-Real-IP \$remote_addr;
+	    proxy_intercept_errors on;
+	    proxy_pass       http://tomcat_upstream;
+	  }
+	  #end for
+    #end if
+    location @forbidden {
+    }
+    location @notfound {
+    }
+    location @internalerror {
+    }
+  }
+}

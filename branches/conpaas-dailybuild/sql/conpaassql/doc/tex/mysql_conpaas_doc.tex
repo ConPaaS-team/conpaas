@@ -1,0 +1,79 @@
+\documentclass[a4paper,10pt]{article}
+\usepackage[cp1250]{inputenc}           % �umnike lahko vna�amo s tipkovnico
+\usepackage{epsfig}
+\usepackage[T1]{fontenc}                % kodiranje pisave
+\usepackage{eurosym}
+\usepackage {algorithmicx}
+\usepackage{algpseudocode}
+\usepackage{algorithm}
+\usepackage{amsfonts}                   % dodatni matemati�ni simboli
+\usepackage{amsmath}                        % za sklice na oznake
+\usepackage{graphicx}
+\usepackage{listings}
+
+\bibliographystyle{plain}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+\title{Technical document on ConPaaS services: ConPaaS MySQL Server}
+\vspace{15pt}
+\author{Ale{\v s} {\v C}ernivec}
+\vspace{50pt}
+\maketitle
+\vspace{15pt}
+\setlength{\parindent}{15pt}
+\newpage
+\tableofcontents
+\newpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Introduction}
+
+\section{Architecture}
+
+\section{Conclusion}
+
+%% \begin{figure}[htb]
+%%	\begin{center}
+%%	\includegraphics[scale=0.6]{../slike/StrukturaOCSP.jpeg}
+%%	\end{center}
+%%	\caption[Shematski prikaz OCSP]{Shematski prikaz protokola OCSP.}
+%%	\label{fig:structure_OCSP}
+%%\end{figure}
+
+%%\begin{small}
+%%\begin{verbatim}
+%%             PKCS10CertificationRequest certRequest = new
+%%PKCS10CertificationRequest(
+%%              "SHA256withRSA",
+%%              new X500Principal(""),
+%%              keyPair.getPublic(),
+%%              null,
+%%              keyPair.getPrivate());
+%%\end{verbatim}
+%%\end{small}
+
+\newpage
+\vspace{4mm}
+
+\begin{thebibliography}{99}
+	\bibitem{seriesX}Series X: Data Networks, Open System Communications and
+Security, X.509, 08/2005
+	\bibitem{rfcCertAndCRL}	R. Housley et al, Internet X.509 Public Key
+Infrastructure Certificate and Certificate Revocation List (CRL) Profile, RSA
+Laboratories, April 2002
+	\bibitem{federal_office}The Office of the Federal Privacy Commissioner,
+Privacy and Public Key Infrastructure: Guidelines for Agencies using PKI to
+communicate or transact with individuals, 21 December 2001
+	\bibitem {ten_risks} Carl Ellison and Bruce Schneier, Ten Risks of PKI:
+What You are not Being Told about Public Key Infrastructure, Computer Security
+Journal, Volume XVI, Number 1, 2000
+	\bibitem {rfcOCSP} X.509 Internet Public Key Infrastructure Online
+Certificate Status Protocol - OCSP http://www.ietf.org/rfc/rfc2560.txt	
+	\bibitem {applied}Alfred J. Menezes, Paul C. Van Oorschot, Scott A.
+Vanstone, Handbook of Applied Cryptography, 5th ED
+	\bibitem{beginning}Hook D., Beginning Cryptography with Java, 2005
+	\bibitem{securityplus}Pastore M., Dulaney M., Security+, Second
+Edition, Exam SYO-101, 2004
+\end{thebibliography}
+
+\end{document}

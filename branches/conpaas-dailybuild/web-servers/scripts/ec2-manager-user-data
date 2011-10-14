@@ -1,0 +1,114 @@
+#!/bin/bash
+# Copyright (C) 2010-2011 Contrail consortium.
+# 
+# This file is part of ConPaaS, an integrated runtime environment 
+# for elastic cloud applications.
+# 
+# ConPaaS is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# ConPaaS is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with ConPaaS.  If not, see <http://www.gnu.org/licenses/>.
+
+# Do not change this line
+. /etc/ec2/params
+
+# FRONTEND should be set to the URL of the ConPaaS frontend.
+export FRONTEND='http://www.your-frontend-url.com/'
+
+# EC2_USER should be set to your EC2 user name. Beware: this is not the
+# email address you normally use to login at the AWS management console. 
+# An EC2 user name is a long opaque string. It can be found at
+# https://aws-portal.amazon.com/gp/aws/developer/account/index.html?action=access-key#account_identifiers
+# under the name "Access key ID"
+export EC2_USER=''
+
+# EC2_PASSWORD should be set to the corresponding password.
+# Again, this is a long opaque string. You can find it next to your
+# Access Key ID by clicking "Show Secret Access Key".
+export EC2_PASSWORD=''
+
+# EC2_IMAGE_ID should be set to the identifier of the Amazon Machine 
+# Image created from the Web hosting service. Your AMIs can be found at  
+# https://console.aws.amazon.com/ec2/home?region=us-east-1#s=Images 
+# Unless you have a specific reason to do otherwise, you should use 
+# the same value as field "ami" from configuration file aws.ini.
+export AMI=''
+
+# This variable should contain the type of EC2 instances to use. A
+# good value to use inexpensive, low-performance instances is
+# "t1.micro". Unless you have a specific reason to do otherwise, you
+# should use the same value as field "instance_type" from
+# configuration file aws.ini.
+export INSTANCE_TYPE='t1.micro'
+
+# This variable should contain the created security group from the Web
+# hosting service. Your security groups can be found at
+# https://console.aws.amazon.com/ec2/home?region=us-east-1#s=SecurityGroups
+# Unless you have a specific reason to do otherwise, you should use
+# the same value as field "security_group" from configuration file
+# aws.ini.
+export SECURITY_GROUP=''
+
+# This variable should contain the Key Pair name to be used.  Your
+# keypairs can be found at
+# https://console.aws.amazon.com/ec2/home?region=us-east-1#s=KeyPairs
+# Unless you have a specific reason to do otherwise, you should use
+# the same value as field "keypair" from configuration file aws.ini.
+export KEYPAIR=''
+
+
+
+###############################################
+#### Do not edit beyond this point unless  ####
+#### you REALLY know what you are doing... ####
+#### You have been warned!                 ####
+###############################################
+
+export PUBLIC_IP=`/usr/bin/curl http://169.254.169.254/latest/meta-data/public-ipv4`
+export SOURCE=$FRONTEND/code/
+
+wget -P /root/ $SOURCE/ConPaaSWeb.tar.gz
+wget -P /root/ $SOURCE/manager-start
+wget -P /root/ $SOURCE/ec2-agent-user-data
+
+cat <<EOF > /root/config.cfg
+[iaas]
+DRIVER = EC2
+
+## EC2
+EC2_USER = $EC2_USER
+EC2_PASSWORD = $EC2_PASSWORD
+EC2_IMAGE_ID = $AMI
+EC2_SIZE_ID = $INSTANCE_TYPE
+EC2_SECURITY_GROUP_NAME = $SECURITY_GROUP
+EC2_KEY_NAME = $KEYPAIR
+EC2_AGENT_USERDATA = /root/ec2-agent-user-data
+
+[manager]
+TYPE = %CONPAAS_SERVICE_TYPE%
+BOOTSTRAP = $SOURCE
+MEMCACHE_ADDR = 127.0.0.1:11211
+
+ROOT = 
+LOG_FILE = %(ROOT)s/var/log/cpsmanager.web.log
+ETC = %(ROOT)s/etc/cpsmanager.web/
+VAR_TMP = %(ROOT)s/var/tmp/cpsmanager.web/
+VAR_CACHE = %(ROOT)s/var/cache/cpsmanager.web/
+VAR_RUN = %(ROOT)s/var/run/cpsmanager.web/
+CODE_REPO = %(VAR_CACHE)s/code_repo
+FE_SERVICE_ID = %CONPAAS_SERVICE_ID%
+FE_CREDIT_URL = $FRONTEND/callback/decrementUserCredit.php
+FE_TERMINATE_URL = $FRONTEND/callback/terminateService.php
+EOF
+
+
+chmod 755 /root/manager-start
+/root/manager-start
