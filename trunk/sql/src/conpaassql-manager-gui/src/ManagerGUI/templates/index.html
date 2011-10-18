@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h2>agents</h2>
+	
+	<p><a href="{{ url_for('agent_create') }}">create new agent</a></p>
+	
+    <table class="data">
+    	<thead>
+    		<tr>
+    			<th>ip</th>
+    			<th>actions</th>
+    		</tr>
+    	</thead>
+		<tbody>
+            {% for agent in agents %}
+                <tr>
+	                <td><a href="{{ url_for('agent_detail', id=agent.id) }}">{{ agent.ip }}</a></td>
+	                <td><a href="{{ url_for('agent_remove', id=agent.id) }}">remove</a></td>
+	            </tr>
+			{% endfor %}
+		</tbody>
+    </table>
+{% endblock %}
