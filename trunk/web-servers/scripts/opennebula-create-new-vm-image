@@ -1,13 +1,32 @@
 #!/bin/bash -e
 
+# This script generates a VM image for ConPaaS, to be used for OpenNebula with KVM.
+# The script should be run on a Debian or Ubuntu system.
+# Before running this script, please make sure that you have the following
+# executables in your $PATH:
+#
+# dd parted losetup kpartx mkfs.ext3 tune2fs mount debootstrap chroot umount grub-install (grub2)
+# 
+# NOTE: This script requires the installation of Grub 2 (we recommend Grub 1.98 or newer,
+# as we experienced problems with 1.96). 
+
+##### TO CUSTOMIZE: #####
+
+# The name and size of the image file that will be generated.
 FILENAME=conpaastest.img
 FILESIZE=2048 #MB
+
+# The Debian distribution that you would like to have installed (we recommend squeeze).
 DEBIAN_DIST=squeeze
+
+# The architecture and kernel version for the OS that will be installed (please make
+# sure to modify the kernel version name accordingly if you modify the architecture).
 ARCH=amd64
 KERNEL_VERSION=2.6.32-5-amd64
 
-# dd parted losetup kpartx mkfs.ext3 tune2fs mount debootstrap chroot umount grub-install (grub2)
+#########################
 
+# Function for displaying highlighted messages.
 function cecho() {
   echo -en "\033[1m"
   echo -n "#" $@
@@ -100,7 +119,7 @@ exit 101
 EOF
 chmod 755 $ROOT_DIR/usr/sbin/policy-rc.d
 
-## install dependencies inside 
+# Generate a script that will install the dependencies in the system. 
 cat <<EOF > $ROOT_DIR/conpaas_install
 #!/bin/bash
 # set root passwd
@@ -157,12 +176,22 @@ rm -rf scalaris-read-only
 exit 0
 EOF
 
+# Execute the script for installing the dependencies.
 chmod a+x $ROOT_DIR/conpaas_install
 chroot $ROOT_DIR /bin/bash /conpaas_install
 rm -f $ROOT_DIR/conpaas_install
 
 rm -f $ROOT_DIR/usr/sbin/policy-rc.d
 
+##### TO CUSTOMIZE: #####
+# This part is for OpenNebula contextualization. The contextualization scripts (and possibly
+# other necessary files) will be provided through OpenNebula to the VM as an ISO image.
+# We need to mount this image and execute the contextualization scripts. You might need
+# to change the dev file associated with the CD-ROM inside your virtual machine from
+# "/dev/sr0" to something else (depending on your operating system and on the virtualization 
+# software, it can be /dev/hdb, /dev/sdb etc.). You can check this in a VM that is already running
+# in your OpenNebula system and that has been configured with contextualization.  
+ 
 cat <<"EOF" > $ROOT_DIR/etc/rc.local
 #!/bin/sh
 mount -t iso9660 /dev/sr0 /mnt
@@ -180,6 +209,8 @@ umount /mnt
 
 exit 0
 EOF
+
+#########################
 
 cecho "Umounting dev and proc"
 umount $ROOT_DIR/dev

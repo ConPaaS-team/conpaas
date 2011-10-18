@@ -101,7 +101,7 @@ limit inbound traffic. The default policy of a new group is to deny
 all inbound traffic. Therefore, one needs to specify a whitelist of
 protocols and destination ports that are accesible from the outside.
 The Web Hosting Service uses TCP ports 80, 5555, 8080 and 9000. All
-three ports should be open for all running instances.  AWS
+these ports should be open for all running instances.  AWS
 documentation is available at
 \url{http://docs.amazonwebservices.com/AWSEC2/latest/UserGuide/index.html?using-network-security.html}.
 
@@ -127,9 +127,13 @@ To create an image for OpenNebula you can execute the script\\
   \begin{code}
   sudo apt-get install grub2
   \end{code}
-\item Edit the first lines of the
-  \verb+web-servers/scripts/opennebula-create-new-vm-image+ script,
-  then execute it as root.
+\item Edit the
+  \verb+web-servers/scripts/opennebula-create-new-vm-image+ script
+  if necessary: there are two sections in the script that you might need
+  to customize with parameters that are specific to your system. These
+  sections are marked by comment lines containing the text "TO CUSTOMIZE:".
+  There are comments explaining each customizable parameter. 
+\item Execute the image generation script as root.
 \item The script generates an image file called \verb+conpaasweb.img+
   by default. You can now register it in OpenNebula:
 \begin{code}
@@ -184,10 +188,10 @@ There are two main topics that you should pay attention to:
 \item Make sure you started OpenNebula's OCCI deamon. ConPaaS relies
   on it to communicate with OpenNebula.
 
-\item Replace the \verb+occi_templates/common.erb+ OCCI profile from
-  your OpenNebula installation with the one from
-  \verb+misc/common.erb+. This new version features a number of
-  improvements from the standard version:
+\item At the end of the OCCI profile file \verb+occi_templates/common.erb+ 
+  from your OpenNebula installation, add the content of the file
+  \verb+misc/common.erb+ from the ConPaaS distribution. This new version 
+  features a number of improvements from the standard version:
   \begin{itemize}
   \item The match for \verb+OS TYPE:arch+ allows the caller to specify
     the architecture of the machine.
@@ -267,11 +271,11 @@ server.
 \item Edit the \verb+CONF_DIR+ variable in \verb+__init__.php+ such
   that it points to the configuration directory path chosen in step 1.
 
-\item (Only if you are installing ConPaaS from the svn repository)
-  Download the AWS sdk for PHP from
+\item (Only if you are installing ConPaaS on EC2, and you obtained it 
+  from the svn repository) Download the AWS sdk for PHP from
   \url{http://aws.amazon.com/sdkforphp/}.  Extract the sdk directory
   and rename it to \verb+aws-sdk+. Place it under the lib directory of
-  the front-end source code such that \verb+lib/aws-sdk/+ contains a
+  the web document root such that \verb+lib/aws-sdk/+ contains a
   file named \verb+config-sample.inc.php+ (among others).
 
 \item Inside the web document's root, copy
@@ -308,7 +312,7 @@ directly editing the frontend's database.
 
 \subsection{Application sandboxing}
 
-The default ConPaaS configuration creates strong snadboxing so that
+The default ConPaaS configuration creates strong sandboxing so that
 applications cannot open sockets, access the file system, execute
 commands, etc. This makes the platform relatively secure against
 malicious applications. On the other hand, it strongly restricts the
