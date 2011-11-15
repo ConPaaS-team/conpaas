@@ -4,6 +4,8 @@ Config
 
 Holds configuration for the ConPaaS SQL Server Manager.
 
+.. automodule:: conpaas.mysql.server.manager.config.ManagerException
+
 .. py:class:: ManagerException(Exception)
 
    Handles exceptions

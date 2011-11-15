@@ -38,6 +38,10 @@ logger = create_logger(__name__)
 
 class ManagerException(Exception):
     
+    '''Gets information about exception and formats apropriate message.
+    @param code: Exception code.
+    @param args: additional exception arguments
+    @param kwargs: parameter detail expected.'''
     def __init__(self, code, *args, **kwargs):
         self.code = code
         self.args = args
@@ -45,8 +49,14 @@ class ManagerException(Exception):
             self.message = '%s DETAIL:%s' % ( (E_STRINGS[code] % args), str(kwargs['detail']) )
         else:
             self.message = E_STRINGS[code] % args
-
+'''
+Holds information on service nodes.
+'''
 class ServiceNode(object):
+    
+    ''' Initializes service node. 
+    @param vm: Service node id
+    @param runMySQL: Indicator if service node is running MySQL'''
     
     def __init__(self, vm, runMySQL=False):
         self.vmid = vm['id']
@@ -59,9 +69,15 @@ class ServiceNode(object):
         self.isRunningWeb= False
         self.port = 60000
   
+    '''String representation of the ServiceNode.
+    @return: returns service nodes information. Id ip and if mysql is running on this service node.'''
+    
     def __repr__(self):
         return 'ServiceNode(vmid=%s, ip=%s, mysql=%s)' % (str(self.vmid), self.ip, str(self.isRunningMySQL))
   
+    ''' Compares this VM and the one passed as a parameter.
+    @param other: other VM which are compared to this one. 
+    @return: returns 0 if id of other and self.id are the same. Returns -1 if other has higher id. If other has lower id returns 1.'''
     def __cmp__(self, other):
         if self.vmid == other.vmid: return 0
         elif self.vmid < other.vmid: return -1
@@ -96,13 +112,15 @@ class Configuration(object):
         self.serviceNodes = {}        
         self.__read_config(configuration, _dummy_backend)
       
+    '''Returns the list of service nodes which are registered in the configuration.'''
     def getMySQLServiceNodes(self):
-        return [ serviceNode for serviceNode in self.serviceNodes.values() if serviceNode.isRunningMySQL ]
-        #return self.serviceNodes
-  
+        return [ serviceNode for serviceNode in self.serviceNodes.values() if serviceNode.isRunningMySQL ]        
+        
+    '''Returns the list of service nodes as tuples <IP, PORT>.'''
     def getMySQLTuples(self):
         return [ [serviceNode.ip, MYSQL_PORT] for serviceNode in self.serviceNodes.values() if serviceNode.isRunningMySQL ]
-  
+      
+    ''' Returns the list of IPs of MySQL instances'''
     def getMySQLIPs(self):
         return [ serviceNode.ip for serviceNode in self.serviceNodes.values() if serviceNode.isRunningMySQL ]
     

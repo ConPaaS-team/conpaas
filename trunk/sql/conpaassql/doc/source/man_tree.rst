@@ -1,6 +1,8 @@
 =======
 Manager
 =======
+
+
 .. toctree::
    
    Server_manager_config
