@@ -2,41 +2,82 @@
 Server manager internals
 ========================
 
-.. py:class:: MySQLServerManager
+.. automodule:: conpaas.mysql.server.manager.internals
+	:members: expose, wait_for_nodes, createServiceNodeThread
 
-   .. py:method:: __init__(self, conf)
+.. py:function:: list_nodes
 
-      Initializes :py:attr:`config` using Config and sets :py:attr:`state` to :py:attr:`S_INIT`
-      
-      .. py:attribute:: state
+   HTTP GET method. Uses :py:meth:`IaaSClient.listVMs()` to get list of all Service nodes. For each service node it gets it checks if it is in servers list. If some of them are missing they are removed from the list. Returns list of all service nodes.
+   
+   :returns: HttpJsonResponse - JSON response with the list of services
+   :raises: HttpErrorResponse
 
-         State of MySQLServerManager.
+.. py:function:: get_node_info
+	
+	HTTP GET method. Gets info of a specific node.
 
-      :param conf: Configuration file. 
+    :param param: serviceNodeId is a VMID of an existing service node.
+    :type param: str
+    :returns: HttpJsonResponse - JSON response with details about the node.
+    :raises: ManagerException
 
-.. py:function:: listServiceNodes(kwargs)
+.. py:function:: add_nodes
 
-   Uses :py:meth:`IaaSClient.listVMs()` to get list of all Service nodes. For each service node it gets it checks if it is in servers list. If some of them are missing they are removed from the list. Returns list of all service nodes.
+    HTTP POST method. Creates new node and adds it to the list of existing nodes in the manager. Makes internal call to :py:meth:`createServiceNodeThread`.
 
-.. py:function:: createServiceNode(kwargs)
+    :param kwargs: string describing a function (agent).
+    :type param: str
+    :returns: HttpJsonResponse - JSON response with details about the node.
+    :raises: ManagerException
 
-   Creates a new service node using :py:meth:`IaaSClient.newInstance()`. Calls :py:func:`createServiceNodeThread`.
+.. py:function:: remove_nodes
 
-.. py:function:: deleteServiceNode(kwargs)
+    HTTP POST method. Deletes specific node from a pool of agent nodes. 
 
-   Using :py:meth:`IaaSClient.killInstance()` removes service node from OpenNebula and after removing calls :py:meth:`Configuration.removeMySQLServiceNode()`
+    :param kwargs: string identifying a node.
+    :type param: str
+    :returns: HttpJsonResponse - JSON response with details about the node. OK if everything went well. ManagerException if something went wrong.
+    :raises: ManagerException
 
-.. py:function:: createServiceNodeThread(function, new_vm)
+.. py:function:: get_service_info
 
-   Calls :py:func:`wait_for_nodes`. And after completing calls :py:meth:`Configuration.addMySQLServiceNode()` to add new service node.
+	HTTP GET method. Returns the current state of the manager. 
 
-.. py:function:: getMySQLServerManagerState(params)
+    :returns: HttpJsonResponse - JSON response with the description of the state.
+    :raises: ManagerException
 
-   :rtype: Returns state of Server manager.
+.. py:function:: set_up_replica_master
 
-.. py:function:: wait_for_nodes(nodes, poll_interval=10)
+    HTTP POST method. Sets up a replica master node 
 
-   Every poll_interval seconds checks if node is up. Calls function getserverstate so it gets state of agent.
+    :param id: new replica master id.
+    :type param: dict
+    :returns: HttpJsonResponse - JSON response with details about the new node. ManagerException if something went wrong.
+    :raises: ManagerException
+
+.. py:function:: set_up_replica_slave
+
+	HTTP POST method. Sets up a replica slave node 
+
+    :param id: new replica slave id.
+    :type param: dict
+    :returns: HttpJsonResponse - JSON response with details about the new node. ManagerException if something went wrong.
+    :raises: ManagerException
+
+.. py:function:: shutdown
+
+	HTTP POST method. Shuts down the manager service. 
+
+    :returns: HttpJsonResponse - JSON response with details about the status of a manager node: :py:attr`S_EPILOGUE`. ManagerException if something went wrong.
+    :raises: ManagerException
+
+.. py:function:: get_service_performance
+	
+	HTTP GET method. Placeholder for obtaining performance metrics.
+     
+    :param kwargs: Additional parameters.
+    :type kwargs: dict 
+    :returns:  HttpJsonResponse -- returns metrics
 
 .. py:attribute:: S_INIT
 
@@ -77,3 +118,5 @@ Server manager internals
    Dictionary that is populated with functions that are registered in :py:func:`ManagerServer.__init__`
 
 .. py:attribute:: iaas
+
+.. autoclass:: MySQLServerManager

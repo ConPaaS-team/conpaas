@@ -37,11 +37,19 @@ iaas = None
 logger = create_logger(__name__)
 
 class ManagerException(Exception):
+    """Gets information about exception and formats appropriate message.  
     
-    '''Gets information about exception and formats apropriate message.
-    @param code: Exception code.
-    @param args: additional exception arguments
-    @param kwargs: parameter detail expected.'''
+    :param code: Exception code.
+    :type code: str.
+    :param args: additional exception arguments
+    :type code: str.
+    :param kwargs: dict
+    :type code: str.    
+    :returns:
+    :raises:            
+    
+    """
+
     def __init__(self, code, *args, **kwargs):
         self.code = code
         self.args = args
@@ -52,11 +60,15 @@ class ManagerException(Exception):
 '''
 Holds information on service nodes.
 '''
-class ServiceNode(object):
+class ServiceNode(object):    
+    ''' Initializes service node.
+     
+    :param vm: Service node id
+    :type vm: array
+    :param runMySQL: Indicator if service node is running MySQL
+    :type runMySQL: boolean
     
-    ''' Initializes service node. 
-    @param vm: Service node id
-    @param runMySQL: Indicator if service node is running MySQL'''
+    '''
     
     def __init__(self, vm, runMySQL=False):
         self.vmid = vm['id']

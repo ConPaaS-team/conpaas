@@ -1,6 +1,10 @@
 ==============
 Client manager
 ==============
+
+.. automodule:: conpaas.mysql.client.manager_client
+   :members:
+
 .. py:function:: AgentException(Exception)
 
    Receives Exception.

@@ -1,8 +1,14 @@
-'''
-Created on Jun 8, 2011
+"""
+Created on September, 2011
 
-@author: ales
-'''
+   This module gives a client methods to trigger a manager methods. See module :py:mod:`conpaas.mysql.server.manager.internals`.
+
+   :platform: Linux, Debian
+   :synopsis: Internals of ConPaaS MySQL Servers.
+   :moduleauthor: Ales Cernivec <ales.cernivec@xlab.si> 
+
+"""
+
 from conpaas.web.http import _http_get, _http_post, HttpError, _jsonrpc_get,\
     _jsonrpc_post
 import httplib, json

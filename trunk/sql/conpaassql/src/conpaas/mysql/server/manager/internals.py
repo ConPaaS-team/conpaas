@@ -1,8 +1,20 @@
-'''
-Created on Jun 7, 2011
+"""
+Created on November, 2011
 
-@author: ales
-'''
+   This module contains internals of the ConPaaS MySQL Server. ConPaaS MySQL Server consists of several
+   nodes with different roles
+     
+     * Manager node
+     * Agent node(s)
+        * Master
+        * Slave(s)
+
+   :platform: Linux, Debian
+   :synopsis: Internals of ConPaaS MySQL Servers.
+   :moduleauthor: Ales Cernivec <ales.cernivec@xlab.si> 
+
+"""
+
 from conpaas.log import create_logger
 from conpaas.mysql.server.manager.config import Configuration, ManagerException,\
     E_ARGS_UNEXPECTED, ServiceNode, E_UNKNOWN, E_ARGS_MISSING, E_STATE_ERROR, E_ARGS_INVALID
@@ -12,6 +24,10 @@ import time
 import conpaas
 import conpaas.mysql.server.manager
 from conpaas.web.http import HttpErrorResponse, HttpJsonResponse
+
+"""
+Members describing state of the Manager node.
+"""
 
 S_INIT = 'INIT'
 S_PROLOGUE = 'PROLOGUE'
@@ -31,6 +47,15 @@ managerServer = None
 dummy_backend = None
 
 class MySQLServerManager():
+    """
+    Initializes :py:attr:`config` using Config and sets :py:attr:`state` to :py:attr:`S_INIT`
+    
+    :param conf: Configuration file.
+    :type conf: str    
+    :param _dummy_backend: Useful for unit testing. What kind of backend are we using. False for none.
+    :type conf: boolean
+    
+    """
     
     dummy_backend = False
     
@@ -43,11 +68,12 @@ class MySQLServerManager():
         # TODO:
         self.__findAlreadyRunningInstances()
         logger.debug("Leaving MySQLServer initialization")
-
-    '''
-        Adds running instances of mysql agents to the list.
-    '''
+   
     def __findAlreadyRunningInstances(self):
+        """
+        Adds running instances of mysql agents to the list.
+                
+        """
         logger.debug("Entering __findAlreadyRunningInstances")
         list = iaas.listVMs()
         logger.debug('List obtained: ' + str(list))
@@ -74,6 +100,14 @@ class MySQLServerManager():
         logger.debug("Exiting __findAlreadyRunningInstances")        
 
 def expose(http_method):
+    """
+    Exposes GET and POSTS methods.
+    
+    :param func: Function to be exposed
+    :type conf: function    
+    :returns: A decorator to be used in the source code. 
+    
+    """
     def decorator(func):
         if http_method not in exposed_functions:
             exposed_functions[http_method] = {}
@@ -83,13 +117,16 @@ def expose(http_method):
         return wrapped
     return decorator
 
-'''
-    Wait for nodes to get ready. It tries to call a function of the agent. If exception
-    is thrown, wait for poll_interval seconds.
-    @param nodes: a list of nodes
-    @param poll_intervall: how many seconds to wait. 
-'''
 def wait_for_nodes(nodes, poll_interval=10):
+    """
+    Waits for nodes to get ready. It tries to call a function of the agent. If exception
+    is thrown, wait for poll_interval seconds.
+    
+    :param nodes: a list of nodes
+    :type nodes: array of nodes
+    :param poll_intervall: how many seconds to wait. 10 secods is default value.
+    :type poll_interfvall: int
+    """
     logger.debug('wait_for_nodes: going to start polling')
     if conpaas.mysql.server.manager.internals.dummy_backend:
         pass
@@ -120,24 +157,27 @@ def wait_for_nodes(nodes, poll_interval=10):
                         i['ip'] = refreshed_list[i['id']]['ip']
         logger.debug('wait_for_nodes: All nodes are ready %s' % str(done))
 
-'''
-    Waits for new VMs to awake. 
-    @param function: None, agent or manager.
-    @param new_vm: new VM's details.  
-'''
 def createServiceNodeThread (function, new_vm):
+    """
+    Waits for new VMs to awake.
+     
+    :param function: None, agent or manager.
+    :type function: str
+    :param new_vm: new VM's details.
+    :type new_vm: array of str  
+    """
     node_instances = []    
     vm=iaas.listVMs()[new_vm['id']]
     node_instances.append(vm)
     wait_for_nodes(node_instances)
     config.addMySQLServiceNode(new_vm)
 
-'''
-    For each of the node from the list of the manager check that it is alive (in the list
-    returned by the ONE).
-'''
 #===============================================================================
 # @expose('GET')
+#'''
+#    For each of the node from the list of the manager check that it is alive (in the list
+#    returned by the ONE).
+#'''
 # def listServiceNodes(kwargs):
 #    logger.debug("Entering listServiceNode")
 #    if len(kwargs) != 0:
@@ -163,6 +203,17 @@ def createServiceNodeThread (function, new_vm):
 
 @expose('GET')
 def list_nodes(kwargs):
+    """
+    HTTP GET method.
+    Uses :py:meth:`IaaSClient.listVMs()` to get list of 
+    all Service nodes. For each service node it gets it 
+    checks if it is in servers list. If some of them are missing 
+    they are removed from the list. Returns list of all service nodes.
+       
+    :returns: HttpJsonResponse - JSON response with the list of services
+    :raises: HttpErrorResponse
+        
+    """    
     logger.debug("Entering list_nodes")
     if len(kwargs) != 0:
         return HttpErrorResponse(ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
@@ -178,11 +229,18 @@ def list_nodes(kwargs):
         'serviceNode': _nodes,
         })
 
-'''Gets info of a specific node.
-@param param: serviceNodeId is a VMID of an existing service node. 
-'''
 @expose('GET')
 def get_node_info(kwargs):
+    """
+    HTTP GET method. Gets info of a specific node.
+
+    :param param: serviceNodeId is a VMID of an existing service node.
+    :type param: str
+    :returns: HttpJsonResponse - JSON response with details about the node.
+    :raises: ManagerException
+        
+    """    
+    
     if 'serviceNodeId' not in kwargs: return HttpErrorResponse(ManagerException(E_ARGS_MISSING, 'serviceNodeId').message)
     serviceNodeId = kwargs.pop('serviceNodeId')
     if len(kwargs) != 0:
@@ -225,6 +283,16 @@ provisioned.
 
 @expose('POST')
 def add_nodes(kwargs):
+    """
+    HTTP POST method. Creates new node and adds it to the list of existing nodes in the manager. Makes internal call to :py:meth:`createServiceNodeThread`.
+
+    :param kwargs: string describing a function (agent).
+    :type param: str
+    :returns: HttpJsonResponse - JSON response with details about the node.
+    :raises: ManagerException
+        
+    """ 
+    
     function = None
     if 'function' in kwargs:
         #if not isinstance(kwargs['function'], str):
@@ -244,10 +312,12 @@ def add_nodes(kwargs):
                         }
          })
 
-'''Creating a service replication.
-'''
 @expose('POST')
 def create_replica(kwargs):
+    """ 
+    HTTP POST method.Creating a service replication.   
+    
+    """
     if not(len(kwargs) in (2)):
         return {'opState': 'ERROR', 'error': ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message}    
     new_vm=iaas.newInstance('agent')
@@ -280,6 +350,16 @@ def create_replica(kwargs):
 
 @expose('POST')
 def remove_nodes(kwargs):
+    """
+    HTTP POST method. Deletes specific node from a pool of agent nodes. 
+
+    :param kwargs: string identifying a node.
+    :type param: str
+    :returns: HttpJsonResponse - JSON response with details about the node. OK if evrything went well. ManagerException if something went wrong.
+    :raises: ManagerException
+        
+    """ 
+    
     logger.debug("Entering delete_nodes")
     if 'serviceNodeId' not in kwargs: return HttpErrorResponse(ManagerException(E_ARGS_MISSING, 'serviceNodeId').message)
     serviceNodeId = int(kwargs.pop('serviceNodeId'))
@@ -296,6 +376,14 @@ def remove_nodes(kwargs):
 
 @expose('GET')
 def get_service_info(kwargs):
+    """    
+    HTTP GET method. Returns the current state of the manager. 
+
+    :returns: HttpJsonResponse - JSON response with the description of the state.
+    :raises: ManagerException
+        
+    """ 
+    
     logger.debug("Entering get_service_info")
     try: 
         logger.debug("Leaving get_service_info")
@@ -334,13 +422,18 @@ def get_service_info(kwargs):
 #            })
 #===============================================================================
 
-'''
-    Sets up a replica master node
-    @param id: new replica master id.
-
-'''
 @expose('POST')
 def set_up_replica_master(params):
+    """
+    HTTP POST method. Sets up a replica master node 
+
+    :param id: new replica master id.
+    :type param: dict
+    :returns: HttpJsonResponse - JSON response with details about the new node. ManagerException if something went wrong.
+    :raises: ManagerException
+        
+    """ 
+    
     logger.debug("Entering set_up_replica_master")
     if len(params) != 1:
         return {'opState': 'ERROR', 'error': ManagerException(E_ARGS_UNEXPECTED, params.keys()).message}
@@ -357,6 +450,16 @@ def set_up_replica_master(params):
 
 @expose('POST')
 def set_up_replica_slave(params):
+    """
+    HTTP POST method. Sets up a replica slave node 
+
+    :param id: new replica slave id.
+    :type param: dict
+    :returns: HttpJsonResponse - JSON response with details about the new node. ManagerException if something went wrong.
+    :raises: ManagerException
+        
+    """ 
+    
     logger.debug("Entering set_up_replica_slave")
     if len(params) != 5:
         return {'opState': 'ERROR', 'error': ManagerException(E_ARGS_UNEXPECTED, params.keys()).message}
@@ -377,6 +480,13 @@ def set_up_replica_slave(params):
 
 @expose('POST')
 def shutdown(self, kwargs):
+    """
+    HTTP POST method. Shuts down the manager service. 
+
+    :returns: HttpJsonResponse - JSON response with details about the status of a manager node: . ManagerException if something went wrong.
+    :raises: ManagerException
+        
+    """ 
     if len(kwargs) != 0:
         return HttpErrorResponse(ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
     
@@ -391,6 +501,14 @@ def shutdown(self, kwargs):
 
 @expose('GET')
 def get_service_performance(self, kwargs):
+    ''' HTTP GET method. Placeholder for obtaining performance metrics.
+     
+    :param kwargs: Additional parameters.
+    :type kwargs: dict 
+    :returns:  HttpJsonResponse -- returns metrics
+    
+    '''
+    
     if len(kwargs) != 0:
         return HttpErrorResponse(ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
     return HttpJsonResponse({

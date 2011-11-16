@@ -19,6 +19,7 @@ import sys, os
 #sys.path.insert(0, os.path.abspath('.'))
 sys.path.insert(0, os.path.abspath(os.path.join('..','..','src')))
 sys.path.insert(1, os.path.abspath(os.path.join('..','..','contrib')))
+sys.path.insert(2, os.path.abspath(os.path.join('..','..','src/conpaas/mysql/server/manager/config.py')))
 
 # -- General configuration -----------------------------------------------------
 
