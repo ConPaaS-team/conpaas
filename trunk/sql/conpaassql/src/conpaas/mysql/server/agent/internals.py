@@ -1,3 +1,16 @@
+"""
+Created on November, 2011
+
+   This module contains internals of the ConPaaS MySQL Server. ConPaaS MySQL Server consists of several
+   nodes with different roles
+     
+
+   :platform: Linux, Debian
+   :synopsis: Internals of agent service for ConPaaS MySQL Servers.
+   :moduleauthor: Ales Cernivec <ales.cernivec@xlab.si> 
+
+"""
+
 from threading import Lock
 from string import Template
 from os import kill, makedirs, remove
@@ -58,12 +71,24 @@ S_MYSQL_HOME  = S_PREFIX + 'conpaas/conf/mysql'
 agent = None
 
 class MySQLServerConfiguration:
+    """
+    Holds configuration of the MySQL server. 
+    """
     
     pid_file = None
     
     dummy_config = False
     
     def __init__(self, config, _dummy_config=False):
+        """
+        Creates a configuration from `config`. 
+        
+        :param config: Configuration read with ConfigParser.
+        :type config: ConfigParser
+        :param  _dummy_config: Set to `True` when used in unit testing.
+        :type boolean: boolean value.
+        """
+        
         self.dummy_config = _dummy_config
         '''holds the configuration of the server.
         '''        
@@ -109,6 +134,16 @@ class MySQLServerConfiguration:
         logger.debug("Leaving init MySQLServerConfiguration")
         
     def change_config(self, id_param, param):
+        """
+        Changes MySQL configuration with `id_param` to value of `param`.
+        
+        :param id_param: What to change.
+        :type id_param: str
+        :param param: value of to change the `id_param` to.
+        :type param: str  
+        
+        """
+        
         if id_param == 'datadir':
             os.system("sed -i 's\datadir\t\t= " + self.data_dir +"|datadir\t\t= " + param + "|g' " + self.mycnf_filepath)
             self.data_dir = param 
@@ -125,6 +160,10 @@ class MySQLServerConfiguration:
     '''Read mysqld configuration. Creates a temporary file in the working directory. Needs to be erased. 
     '''
     def MySQLConfigParser(self, text):
+        """
+        Parses MySQL server configuration into 
+        """
+        
         #comments inside
         while text.count("#")>0:
             text = text[0:text.index("#")] + text[text.index("\n",text.index("#")):]
@@ -277,10 +316,23 @@ mysql>UNLOCK TABLES;
             return HttpJsonResponse({'return': 'ERROR', 'error': e.message})   
     
 class MySQLServer:
+    """
+    Handles MySQL server daemon.
+    
+    :param configInput: Configuration read with ConfigParser.
+    :type configInput: ConfigParser
+      
+    :param _dummy_backend: Set to True for unit testing.
+    :type _dummy_backend: boolean    
+    """
     
     dummy_backend = False
     
     def __init__(self, configInput, _dummy_backend=False):
+        """
+        Creates MySQL configuration. 
+        """
+        
         logger.debug("Entering MySQLServer initialization")
         self.config = MySQLServerConfiguration(configInput, _dummy_backend)
         self.state = S_RUNNING
@@ -289,11 +341,13 @@ class MySQLServer:
                     
     
     def post_restart(self): pass
-    ''' TODO: things that are done after restart
-    '''
+    """ Things that are done after restart. Not implemented yet.
+    """
         
     def start(self):
-        #TODO: could look for PID file ?
+            """
+            Starts MySQL server deamon. It also changes `self.state` to `S_RUNNING`.
+            """                    
             logger.debug("Entering MySQLServer.start")
             self.state = S_STARTING
             if self.dummy_backend == False:
@@ -452,6 +506,23 @@ def getMySQLServerState_old(kwargs):
         
 @expose('POST')
 def create_server(post_params):
+    """
+    Creates an agent server. Calls to :py:meth:`MySQLServer.start`. If no Exception was raised returns:
+    
+    .. code-block:: python
+
+         return HttpJsonResponse({'return': 'OK'})
+         
+    if Exception was raised returns:
+
+    .. code-block:: python
+
+         return HttpJsonResponse({'return': 'ERROR', 'error': str(e)})
+         
+    :returns: HttpJsonResponse
+       
+         
+    """
     logger.debug("Entering create_server")
     try:
         agent.start()
@@ -497,7 +568,10 @@ def createMySQLServer_old(post_params):
                     return {'opState': 'OK'}            
                 
 def stopMySQLServer_old(kwargs):
-    """KILL the WebServer"""
+    """
+    Stops the WebServer
+    """
+    
     if len(kwargs) != 0:
         return {'opState': 'ERROR', 'error': AgentException(E_ARGS_UNEXPECTED, kwargs.keys()).message}
     with web_lock:
@@ -518,11 +592,12 @@ def stopMySQLServer_old(kwargs):
             logger.exception(e)
             return {'opState': 'ERROR', 'error': ex.message}        
 
-'''
-    Shuts down the whole Agent together with MySQL server.
-'''
+
 def shutdownMySQLServerAgent(kwargs):
-    """Shutdown the Agent"""
+    """
+    Shuts down the whole Agent together with MySQL server.
+    """
+    
     agent.stop()    
     from conpaas.mysql.server.agent.server import agentServer
     agentServer.shutdown()
@@ -531,6 +606,21 @@ def shutdownMySQLServerAgent(kwargs):
     
 @expose('POST')
 def stop_server(params):
+    """
+    Stops the MySQL server. Calls to :py:meth:`MySQLServer.stop`. If no Exception was raised returns:
+    
+    .. code-block:: python
+
+         return HttpJsonResponse({'return': 'OK'})
+         
+    if Exception was raised returns:
+
+    .. code-block:: python
+
+         return HttpJsonResponse({'return': 'ERROR', 'error': str(e)})
+         
+    :returns: HttpJsonResponse
+    """
     logger.debug("Entering stop_server")
     try:
         agent.stop()
@@ -544,6 +634,22 @@ def stop_server(params):
 
 @expose('POST')
 def restart_server(params):
+    """
+    Restarts the MySQL server. Calls to :py:meth:`MySQLServer.restart`. If no Exception was raised returns:
+    
+    .. code-block:: python
+
+         return HttpJsonResponse({'return': 'OK'})
+         
+    if Exception was raised returns:
+
+    .. code-block:: python
+
+         return HttpJsonResponse ({'return': 'ERROR', 'error': ex.message})
+         
+    :returns: HttpJsonResponse
+    """
+    
     logger.debug("Entering restart_server")
     try:
         agent.restart()
@@ -557,6 +663,23 @@ def restart_server(params):
 
 @expose('GET')
 def get_server_state(params):
+    """
+    Gets the MySQL server state. Calls to :py:meth:`MySQLServer.status`. If no Exception was raised returns:
+    
+    .. code-block:: python
+
+         return HttpJsonResponse({'return': status})
+         
+    if Exception was raised returns:
+
+    .. code-block:: python
+
+        return HttpJsonResponse({'return': status})
+         
+    :returns: HttpJsonResponse
+    :raises: AgentException
+    """
+    
     logger.debug("Entering get_server_state")
     try: 
         status = agent.status()
@@ -584,6 +707,26 @@ def set_server_configuration(params):
 
 @expose('POST')
 def configure_user(params):
+    """
+    Configures the new MySQL server user. Calls to :py:meth:`MySQLServerConfiguration.add_user_to_MySQL`. If no Exception was raised returns:
+    
+    .. code-block:: python
+
+        return HttpJsonResponse ({'return': 'OK'})
+         
+    if Exception was raised returns:
+
+    .. code-block:: python
+
+        return HttpJsonResponse ({'return': 'ERROR', 'error': ex.message}) 
+         
+    :param username: Username for the new user.
+    :param type: str
+    :param password: Password for the new user.
+    :param type: str
+    :returns: HttpJsonResponse
+    :raises: AgentException
+    """
     logger.debug("Entering configure_user")
     if 'username' not in params: return HttpErrorResponse(AgentException(E_ARGS_MISSING,'username missing' ,'configure_user').message)
     username = params.pop('username')
@@ -603,6 +746,26 @@ def configure_user(params):
     
 @expose('POST')
 def delete_user(params):
+    """
+    Deletes a user from MySQL server. Calls to :py:meth:`MySQLServerConfiguration.remove_user_to_MySQL`. If no Exception was raised returns:
+    
+    .. code-block:: python
+
+        return HttpJsonResponse ({'return': 'OK'})
+         
+    if Exception was raised returns:
+
+    .. code-block:: python
+
+        return HttpJsonResponse({'return': 'ERROR', 'error': ex.message}) 
+         
+    :param username: Username for the user that will be removed.
+    :param type: str
+    :returns: HttpJsonResponse
+    :raises: AgentException
+    
+    """    
+    
     logger.debug("Entering delete_user")
     if len(params) != 1:
         ex = AgentException(E_ARGS_UNEXPECTED, params)
@@ -619,6 +782,25 @@ def delete_user(params):
     
 @expose('GET')
 def get_all_users(params):
+    """
+    Gets all configured users. Calls to :py:meth:`MySQLServerConfiguration.get_users_in_MySQL`. If no Exception was raised returns:
+    
+    .. code-block:: python
+
+        return HttpJsonResponse ({'return': 'OK'})
+         
+    if AgentException was raised returns:
+
+    .. code-block:: python
+
+        return HttpJsonResponse( {'users': 'ERROR', 'error': ex.message}) 
+         
+    :param username: Username for the user that will be removed.
+    :param type: str
+    :returns: HttpJsonResponse ({'users': ret})
+    :raises: AgentException    
+    """    
+    
     logger.debug("Entering get_all_users")
     try:
         ret = agent.config.get_users_in_MySQL()
@@ -632,6 +814,15 @@ def get_all_users(params):
 
 @expose('UPLOAD')
 def create_with_MySQLdump(params):
+    """
+    Executes SQL clauses send as a file `params` . Calls to :py:meth:`MySQLServerConfiguration.create_MySQL_with_dump`.
+              
+    :param params: File containing SQL clauses.
+    :param type: str
+    :returns: HttpJsonResponse
+    :raises: AgentException    
+    """  
+    
     logger.debug("Entering create_with_MySQLdump")
     file=params['mysqldump']
     f=file.file
@@ -641,6 +832,15 @@ def create_with_MySQLdump(params):
 
 @expose('POST')
 def set_up_replica_master(params):
+    """
+    Sets up a replica master. 
+             
+    :param username: Username for the user that will be removed.
+    :param type: str
+    :returns: HttpJsonResponse({'opState': 'OK'}  )
+    :raises: AgentException    
+    """  
+    
     agent.stop()
     path=agent.config.mycnf_filepath
     file = open(path)
@@ -657,25 +857,32 @@ def set_up_replica_master(params):
     position= agent.config.replication_record_the_position()
     return {'opState': 'OK'}
 
-'''
+
+@expose('POST')
+def set_up_replica_slave(params):
+    """
+    Sets up a replica slave node.
+
     1)Change server id in the my.cnf. 
+
     2)You will need to configure the slave with settings 
     for connecting to the master, such as the host name, login credentials, and binary 
     log file name and position. See Section 15.1.1.10, Setting the Master Configuration 
     on the Slave. 
-
-Example:
-    mysql>CHANGE MASTER TO  MASTER_HOST='vm-10-1-0-10', MASTER_USER='root', 
-    MASTER_PASSWORD='topole48', MASTER_LOG_FILE='mysql-bin.000001', MASTER_LOG_POS=106;
-
-    @param master_host: hostname of the master node.
-    @param master_log_file: filename of the master log.
-    @param master_log_pos: position of the master log file.
-    @param slave_server_id: id which will be written into my.cnf.
     
-'''
-@expose('POST')
-def set_up_replica_slave(params):
+    Example:
+        mysql>CHANGE MASTER TO  MASTER_HOST='vm-10-1-0-10', MASTER_USER='root', 
+        MASTER_PASSWORD='topole48', MASTER_LOG_FILE='mysql-bin.000001', MASTER_LOG_POS=106;
+    
+    :param master_host: hostname of the master node.
+    :param master_log_file: filename of the master log.
+    :param master_log_pos: position of the master log file.
+    :param slave_server_id: id which will be written into my.cnf.
+           
+    :returns: HttpJsonResponse({'opState': 'OK'}  )
+    :raises: AgentException     
+    """
+
     logger.debug('Entering set_up_replica_slave')
     if len(params) != 4:
         ex = AgentException(E_ARGS_UNEXPECTED, params)
