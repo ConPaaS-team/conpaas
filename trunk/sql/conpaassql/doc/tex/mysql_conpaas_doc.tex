@@ -26,54 +26,133 @@
 \tableofcontents
 \newpage
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcommand{\Cmd}[1]{\noindent {\tt #1 }\newline\vspace{2pt}\\}
+\newcommand{\Des}[1]{\vspace{4pt}\noindent {\bf Description: }\\{#1}\vspace{2pt}\\ }
+\newcommand{\Par}[1]{\vspace{4pt}\noindent {\bf Parameters: } \\{#1}\vspace{2pt}\\}
+\newcommand{\Ret}[1]{\vspace{4pt}\noindent {\bf Returns: }\\{#1}\vspace{2pt}\\}
+\newcommand{\Rai}[1]{\vspace{4pt}\noindent {\bf Raises: }\\{#1}\vspace{2pt}\\}
+\newcommand{\conapi}[5]{\Cmd{#1} \Des{#2} \Par{#3} \Ret{#4} \Rai{#5}\\}
+
 \section{Introduction}
 
 \section{Architecture}
 
+\section{ConPaaS MySQL Server Manager}
+
+Module {\tt conpaas.mysql.server.manager.internals} contains internals of the ConPaaS MySQL Server. ConPaaS MySQL Server consists of several nodes with different roles.
+
+\begin{itemize}
+	\item Manager node
+	\item Agent node(s)
+	\begin{itemize}
+		\item Master
+		\item Slave(s)
+	\end{itemize}	
+\end{itemize}
+
+\noindent {\bf platform:}
+Linux, Debian
+
+\noindent {\bf synopsis:}
+Internals of ConPaaS MySQL Servers.
+
+\noindent {\bf moduleauthor:}
+Ales Cernivec <ales.cernivec@xlab.si>
+      
+\vspace{10pt}
+
+\noindent\conapi
+{conpaas.mysql.server.manager.internals.add\_nodes(kwargs)}
+{HTTP POST method. Creates new node and adds it to the list of existing nodes in the manager. A role of new node can be one of: agent, manager. Currently only agent is supported. It makes internal call to {\tt createServiceNodeThread()}.}
+{kwargs -- string describing a function (agent).}
+{HttpJsonResponse - JSON response with details about the node.}
+{ManagerException}
+
+\noindent\conapi
+{ conpaas.mysql.server.manager.internals.remove\_nodes(params)}
+{HTTP POST method. Deletes specific node from a pool of agent nodes. Node deleted is given by {\tt \{'serviceNodeId':id\}.}}
+{kwargs --string identifying a node.}
+{HttpJsonResponse - HttpJsonResponse - JSON response with details about the node. OK if everything went well. }
+{ManagerException if something went wrong. It contains a detailed description about the error.}
+
+\noindent\conapi
+{ conpaas.mysql.server.manager.internals.list\_nodes()}
+{ HTTP GET method. Uses {\tt IaaSClient.listVMs()} to get list of all service nodes. For each service node it checks if it is in servers list. If some of them are missing they are removed from the list. Returns list of all service nodes.}
+{}
+{HttpJsonResponse - JSON response with the list of services: {\tt \{ 'serviceNode': [<a list of ids>]\})}}
+{HttpErrorResponse}
+
+\noindent\conapi
+{ conpaas.mysql.server.manager.internals.get\_node\_info()}
+{HTTP GET method. Gets info of a specific node.}
+{param (str) -- serviceNodeId is a VMID of an existing service node.}
+{HttpJsonResponse - JSON response with details about the node: : {\tt \{'serviceNode':\{'id': serviceNode.vmid,'ip': serviceNode.ip,'isRunningMySQL': serviceNode.isRunningMySQL\}\}}.}
+{ManagerException}
+
+\noindent\conapi
+{ conpaas.mysql.server.manager.internals.get\_service\_info()}
+{HTTP GET method. Returns the current state of the manager.}
+{param (str) -- serviceNodeId is a VMID of an existing service node.}
+{HttpJsonResponse - JSON response with the description of the state.}
+{ManagerException}
+
+\noindent\conapi
+{ conpaas.mysql.server.manager.internals.set\_up\_replica\_master()}
+{HTTP POST method. Sets up a replica master node.}
+{ id -- new replica master id.}
+{HttpJsonResponse - JSON response with details about the new
+      node. ManagerException if something went wrong.}
+{ManagerException}
+     
+\noindent\conapi
+{ conpaas.mysql.server.manager.internals.set\_up\_replica\_slave()}
+{HTTP POST method. Sets up a replica master node.}
+{  id -- new replica slave id.}
+{ HttpJsonResponse - JSON response with details about the new
+      node. ManagerException if something went wrong.}
+{ManagerException}
+
+
+\noindent\conapi
+{ conpaas.mysql.server.manager.internals.shutdown()}
+{HTTP POST method. Shuts down the manager service.}
+{  id -- new replica slave id.}
+{ HttpJsonResponse - JSON response with details about the status
+      of a manager node: :py:attr`S\_EPILOGUE`. ManagerException if
+      something went wrong.}
+{ManagerException}
+
+\noindent\conapi
+{ conpaas.mysql.server.manager.internals.get\_service\_performance()}
+{ HTTP GET method. Placeholder for obtaining performance metrics.}
+{ kwargs (dict) -- Additional parameters.}
+{HttpJsonResponse -- returns metrics}
+{}
+
 \section{Conclusion}
-
-%% \begin{figure}[htb]
-%%	\begin{center}
-%%	\includegraphics[scale=0.6]{../slike/StrukturaOCSP.jpeg}
-%%	\end{center}
-%%	\caption[Shematski prikaz OCSP]{Shematski prikaz protokola OCSP.}
-%%	\label{fig:structure_OCSP}
-%%\end{figure}
-
-%%\begin{small}
-%%\begin{verbatim}
-%%             PKCS10CertificationRequest certRequest = new
-%%PKCS10CertificationRequest(
-%%              "SHA256withRSA",
-%%              new X500Principal(""),
-%%              keyPair.getPublic(),
-%%              null,
-%%              keyPair.getPrivate());
-%%\end{verbatim}
-%%\end{small}
 
 \newpage
 \vspace{4mm}
 
 \begin{thebibliography}{99}
-	\bibitem{seriesX}Series X: Data Networks, Open System Communications and
-Security, X.509, 08/2005
-	\bibitem{rfcCertAndCRL}	R. Housley et al, Internet X.509 Public Key
-Infrastructure Certificate and Certificate Revocation List (CRL) Profile, RSA
-Laboratories, April 2002
-	\bibitem{federal_office}The Office of the Federal Privacy Commissioner,
-Privacy and Public Key Infrastructure: Guidelines for Agencies using PKI to
-communicate or transact with individuals, 21 December 2001
-	\bibitem {ten_risks} Carl Ellison and Bruce Schneier, Ten Risks of PKI:
-What You are not Being Told about Public Key Infrastructure, Computer Security
-Journal, Volume XVI, Number 1, 2000
-	\bibitem {rfcOCSP} X.509 Internet Public Key Infrastructure Online
-Certificate Status Protocol - OCSP http://www.ietf.org/rfc/rfc2560.txt	
-	\bibitem {applied}Alfred J. Menezes, Paul C. Van Oorschot, Scott A.
-Vanstone, Handbook of Applied Cryptography, 5th ED
-	\bibitem{beginning}Hook D., Beginning Cryptography with Java, 2005
-	\bibitem{securityplus}Pastore M., Dulaney M., Security+, Second
-Edition, Exam SYO-101, 2004
+%	\bibitem{seriesX}Series X: Data Networks, Open System Communications and
+%Security, X.509, 08/2005
+%	\bibitem{rfcCertAndCRL}	R. Housley et al, Internet X.509 Public Key
+%Infrastructure Certificate and Certificate Revocation List (CRL) Profile, RSA
+%Laboratories, April 2002
+%	\bibitem{federal_office}The Office of the Federal Privacy Commissioner,
+%Privacy and Public Key Infrastructure: Guidelines for Agencies using PKI to
+%communicate or transact with individuals, 21 December 2001
+%	\bibitem {ten_risks} Carl Ellison and Bruce Schneier, Ten Risks of PKI:
+%What You are not Being Told about Public Key Infrastructure, Computer Security
+%Journal, Volume XVI, Number 1, 2000
+%	\bibitem {rfcOCSP} X.509 Internet Public Key Infrastructure Online
+%Certificate Status Protocol - OCSP http://www.ietf.org/rfc/rfc2560.txt	
+%	\bibitem {applied}Alfred J. Menezes, Paul C. Van Oorschot, Scott A.
+%Vanstone, Handbook of Applied Cryptography, 5th ED
+%	\bibitem{beginning}Hook D., Beginning Cryptography with Java, 2005
+%	\bibitem{securityplus}Pastore M., Dulaney M., Security+, Second
+%Edition, Exam SYO-101, 2004
 \end{thebibliography}
 
 \end{document}
