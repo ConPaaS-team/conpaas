@@ -28,6 +28,8 @@ import MySQLdb
 import pickle
 import io
 from conpaas.web.http import HttpJsonResponse, HttpErrorResponse
+from conpaas.mysql.utils.log import get_logger_plus
+from conpaas.mysql.adapters.supervisor import SupervisorSettings, Supervisor
 
 exposed_functions = {}
 
@@ -56,8 +58,12 @@ E_STRINGS = [
   'MySQL reported an error: %s'
 ]
 
+SUPERVISOR_MYSQL_NAME="mysqld"
+
 web_lock = Lock()
-logger = create_logger(__name__)
+# logger = create_logger(__name__)
+logger, flog, mlog = get_logger_plus(__name__)
+
 mysql_file = "/tmp/conpaassql" 
 
 S_PREFIX    = "/tmp/"
@@ -72,13 +78,19 @@ agent = None
 
 class MySQLServerConfiguration:
     """
-    Holds configuration of the MySQL server. 
+    Holds configuration of the MySQL server.
+    
+    supervisor_settings holds Settings for the supervisor.
+     
     """
     
     pid_file = None
     
     dummy_config = False
     
+    supervisor_settings = None
+    
+    @mlog
     def __init__(self, config, _dummy_config=False):
         """
         Creates a configuration from `config`. 
@@ -100,6 +112,11 @@ class MySQLServerConfiguration:
         try:
             '''This is always like that.
             '''
+            supervisor_port = config.get ("supervisor", "port")
+            supervisor_user = config.get ("supervisor", "user")
+            supervisor_password = config.get ("supervisor", "password")
+            self.supervisor_settings = SupervisorSettings(supervisor_user, supervisor_password, supervisor_port)
+            
             self.pid_file = "/var/lib/mysql/" + self.hostname + ".pid"
             logger.debug("Trying to get params from configuration file ")        
             self.conn_location = config.get("MySQL_root_connection", "location")
@@ -117,6 +134,7 @@ class MySQLServerConfiguration:
             self.port_mysqld = mysqlconfig.get ("mysqld", "port")      
             self.bind_address = mysqlconfig.get ("mysqld", "bind-address")
             self.data_dir = mysqlconfig.get ("mysqld", "datadir")
+            
             #mysqlconfig.set("mysqld", "newOption", value=None)
             #newfile=open("/tmp/contrial.tmp","w")  
             #mysqlconfig.write(newfile)
@@ -132,7 +150,8 @@ class MySQLServerConfiguration:
             ex = AgentException(E_CONFIG_NOT_EXIST, str(err))
             logger.critical(ex.message)                
         logger.debug("Leaving init MySQLServerConfiguration")
-        
+    
+    @mlog    
     def change_config(self, id_param, param):
         """
         Changes MySQL configuration with `id_param` to value of `param`.
@@ -159,6 +178,7 @@ class MySQLServerConfiguration:
     
     '''Read mysqld configuration. Creates a temporary file in the working directory. Needs to be erased. 
     '''
+    @mlog
     def MySQLConfigParser(self, text):
         """
         Parses MySQL server configuration into 
@@ -186,6 +206,7 @@ class MySQLServerConfiguration:
         file = open(os.getcwd()+"/temp.cnf","r")
         return file
     
+    @mlog
     def add_user_to_MySQL(self, new_username, new_password):
         db = MySQLdb.connect(self.conn_location, self.conn_username, self.conn_password)
         exc = db.cursor()
@@ -194,7 +215,8 @@ class MySQLServerConfiguration:
         exc.execute ("create user '" + new_username + "'@'%' identified by '" + new_password + "'")
         exc.execute ("grant all privileges on *.* TO '" + new_username + "'@'%' with grant option;")
         db.close()
-        
+     
+    @mlog    
     def remove_user_to_MySQL(self, username):
         db = MySQLdb.connect(self.conn_location, self.conn_username, self.conn_password)
         exc = db.cursor()
@@ -202,6 +224,7 @@ class MySQLServerConfiguration:
         exc.execute ("drop user '" + username +"'@'%'")
         db.close()
     
+    @mlog
     def get_users_in_MySQL(self):
         db = MySQLdb.connect(self.conn_location, self.conn_username, self.conn_password)
         exc = db.cursor()
@@ -239,6 +262,7 @@ on the master
 mysql>UNLOCK TABLES;
 
     '''
+    @mlog
     def replication_record_the_position(self):
         '''1st session
         '''
@@ -270,6 +294,7 @@ mysql>UNLOCK TABLES;
         @param slave_server_id: id which will be written into my.cnf.
     
     '''
+    @mlog
     def set_up_replication_slave(self, master_host, master_log_file, master_log_pos, slave_server_id):
         logger.debug('Entering set_up_replication_slave')        
         logger.debug("Creating sql query for replication slave-master connection")
@@ -300,6 +325,7 @@ mysql>UNLOCK TABLES;
         agent.restart()
         logger.debug('Exiting set_up_replication_slave')
     
+    @mlog
     def create_MySQL_with_dump(self, f):
         logger.debug("Entering create_MySQL_with_dump")
         try:
@@ -328,6 +354,9 @@ class MySQLServer:
     
     dummy_backend = False
     
+    supervisor = None
+    
+    @mlog
     def __init__(self, configInput, _dummy_backend=False):
         """
         Creates MySQL configuration. 
@@ -335,42 +364,47 @@ class MySQLServer:
         
         logger.debug("Entering MySQLServer initialization")
         self.config = MySQLServerConfiguration(configInput, _dummy_backend)
+        if not _dummy_backend: 
+            self.supervisor = Supervisor(self.config.supervisor_settings)
+        else:
+            logger.debug("Not creating supervisor, due to dummy_backend") 
         self.state = S_RUNNING
         self.dummy_backend = _dummy_backend 
         logger.debug("Leaving MySQLServer initialization")
-                    
-    
+
+    @mlog
     def post_restart(self): pass
     """ Things that are done after restart. Not implemented yet.
     """
-        
+    
+    @mlog  
     def start(self):
             """
             Starts MySQL server deamon. It also changes `self.state` to `S_RUNNING`.
             """                    
-            logger.debug("Entering MySQLServer.start")
             self.state = S_STARTING
             if self.dummy_backend == False:
-                devnull_fd = open(devnull, 'w')
-                logger.debug('Starting with arguments:' + self.config.path_mysql_ssr + " start")
-                proc = Popen([self.config.path_mysql_ssr, "start"], stdout=devnull_fd, stderr=devnull_fd, close_fds=True)
-                logger.debug("MySQL started")
-                proc.wait()
+                #devnull_fd = open(devnull, 'w')
+                #logger.debug('Starting with arguments:' + self.config.path_mysql_ssr + " start")
+                #proc = Popen([self.config.path_mysql_ssr, "start"], stdout=devnull_fd, stderr=devnull_fd, close_fds=True)
+                #logger.debug("MySQL started")
+                #proc.wait()
+                self.supervisor.start(SUPERVISOR_MYSQL_NAME)
                 logger.debug("Server started.")
                 if exists(self.config.pid_file) == False:
                     logger.critical('Failed to start mysql server.)')
                     self.state = S_STOPPED
                     raise OSError('Failed to start mysql server.')            
-                if proc.wait() != 0:
-                    logger.critical('Failed to start mysql server (code=%d)' % proc.returncode)
-                    self.state = S_STOPPED
-                    raise OSError('Failed to start mysql server (code=%d)' % proc.returncode)
+                #if proc.wait() != 0:
+                #    logger.critical('Failed to start mysql server (code=%d)' % proc.returncode)
+                #    self.state = S_STOPPED
+                #    raise OSError('Failed to start mysql server (code=%d)' % proc.returncode)
             else:
                 logger.debug("Running with dummy backend")
             self.state = S_RUNNING
             logger.info('MySql started')
-            logger.debug('Leaving MySQLServer.start')
     
+    @mlog    
     def stop(self):
         logger.debug('Entering MySQLServer.stop')
         if self.dummy_backend:
@@ -384,12 +418,13 @@ class MySQLServer:
                 self.state = S_STOPPING
                 if exists(self.config.pid_file):
                     try:
-                        int(open(self.config.pid_file, 'r').read().strip())                    
-                        devnull_fd = open(devnull, 'w')
-                        logger.debug('Stopping with arguments:' + self.config.path_mysql_ssr + " stop")
-                        proc = Popen([self.config.path_mysql_ssr, "stop"], stdout=devnull_fd, stderr=devnull_fd, close_fds=True)
+                        #int(open(self.config.pid_file, 'r').read().strip())                    
+                        #devnull_fd = open(devnull, 'w')
+                        #logger.debug('Stopping with arguments:' + self.config.path_mysql_ssr + " stop")
+                        #proc = Popen([self.config.path_mysql_ssr, "stop"], stdout=devnull_fd, stderr=devnull_fd, close_fds=True)
                         logger.debug("Stopping server")
-                        proc.wait()                                        
+                        self.supervisor.start(SUPERVISOR_MYSQL_NAME)
+                        #proc.wait()                                        
                         if exists(self.config.pid_file) == True:
                             logger.critical('Failed to stop mysql server.)')
                             self.state = S_RUNNING
@@ -411,7 +446,8 @@ class MySQLServer:
             else:
                 logger.warning('Request to kill WebServer while it is not running')
         logger.debug('Leaving MySQLServer.stop')
-        
+    
+    @mlog    
     def restart(self):
         logger.debug("Entering MySQLServer restart")
         self.config.restart_count += 1 
@@ -445,7 +481,8 @@ class MySQLServer:
                 self.state = S_RUNNING
                 logger.info('MySQL restarted')          
         logger.debug("Leaving MySQLServer restart")
-
+    
+    @mlog
     def status(self):
         logger.debug('Entering MySQLServer.status')
         logger.debug('Leaving MySQLServer.status')

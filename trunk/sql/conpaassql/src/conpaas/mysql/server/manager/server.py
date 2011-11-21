@@ -12,6 +12,9 @@ from conpaas.iaas import IaaSClient
 from conpaas.mysql.server.manager.internals import MySQLServerManager
 from SocketServer import ThreadingMixIn
 from conpaas.log import log_dir_path
+from conpaas.mysql.utils.log import get_logger_plus
+
+logger, flog, mlog = get_logger_plus(__name__)
 
 class SQLServerRequestHandler(AbstractRequestHandler):
 	
@@ -28,7 +31,7 @@ class SQLServerRequestHandler(AbstractRequestHandler):
 	#		self.send_custom_response(httplib.OK, json.dumps(self.server.callback_dict[method][callback_name](params)))
 	#===========================================================================
 
-	    
+	@mlog
 	def _render_arguments(self, method, params):
 		ret = '<p>Arguments:<table>'
 		ret += '<tr><th>Method</th><td>' + method + '</td></tr>'
@@ -51,7 +54,8 @@ class SQLServerRequestHandler(AbstractRequestHandler):
 	<p>This URL is used to access the service manager directly.
 	You may want to copy-paste the URL as a parameter to the 'managerc.py' command-line utility.</p>
 	''' + self._render_arguments(method, params) + '</body></html>')
-	  
+	
+	@mlog
 	def send_action_not_found(self, method, params):
 	    self.send_custom_response(httplib.NOT_FOUND, '''<html>
 	<head>
@@ -67,10 +71,11 @@ class SQLServerRequestHandler(AbstractRequestHandler):
 #	pass
 
 class ManagerServer(ThreadingMixIn, HTTPServer):
-	
+		
 	def register_method(self, http_method, func_name, callback):
 		self.callback_dict[http_method][func_name] = callback
 	
+	@mlog
 	def __init__(self, server_address, iaas_config, RequestHandlerClass=SQLServerRequestHandler):
 		HTTPServer.__init__(self, server_address, RequestHandlerClass)		
 		self.callback_dict = {'GET': {}, 'POST': {}}		

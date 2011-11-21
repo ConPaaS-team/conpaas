@@ -7,11 +7,12 @@ from BaseHTTPServer import HTTPServer
 from SocketServer import ThreadingMixIn
 
 from conpaas.web.http import AbstractRequestHandler
-from conpaas.log import create_logger
 from conpaas.mysql.server.agent.internals import MySQLServer
 from ConfigParser import ConfigParser
+from conpaas.mysql.utils.log import get_logger_plus
 
-logger = create_logger(__name__)
+logger, flog, mlog = get_logger_plus(__name__)
+
 agentServer = None
 '''
     Holds configuration for the Agent.
@@ -22,6 +23,7 @@ agentServer = None
 '''
 class AgentServer(HTTPServer, ThreadingMixIn):
     
+    @mlog
     def __init__(self, server_address, config, RequestHandlerClass=AbstractRequestHandler):
         HTTPServer.__init__(self, server_address, RequestHandlerClass)
         self.callback_dict = {'GET': {}, 'POST': {}, 'UPLOAD': {}}
@@ -36,10 +38,11 @@ class AgentServer(HTTPServer, ThreadingMixIn):
                 logger.debug( 'Going to register ' + " " + http_method + " " +func_name)
                 self.register_method(http_method, func_name, getattr(internals, func_name))
   
+    @mlog
     def register_method(self, http_method, func_name, callback):
         self.callback_dict[http_method][func_name] = callback
 
-if __name__ == '__main__':
+def main():
     from optparse import OptionParser
     parser = OptionParser()
     parser.add_option('-p', '--port', type='int', default=60000, dest='port')
@@ -50,4 +53,7 @@ if __name__ == '__main__':
     config_parser.read(options.config)    
     print 'Starting the MySQL server at ', options.address, options.port
     agentServer = AgentServer((options.address, options.port), config_parser)
-    agentServer.serve_forever()    
+    agentServer.serve_forever()
+    
+if __name__ == '__main__':
+    main()        

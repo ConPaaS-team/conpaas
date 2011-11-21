@@ -1,11 +1,10 @@
 '''
 Created on Feb 9, 2011
 
-@author: ielhelw
+@author: ielhelw, ales.cernivec@xlab.si
 '''
 
 import logging
-import os
 
 logging_level = logging.DEBUG
 
