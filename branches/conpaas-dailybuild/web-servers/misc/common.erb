@@ -1,8 +1,0 @@
-#----
-<% @vm_info.each('OS') do |os| %>
-        <% if os.attr('TYPE', 'arch') %>
-          OS = [ arch = "<%= os.attr('TYPE', 'arch').split('/').last %>" ]
-        <% end %>
-<% end %>
-GRAPHICS = [type="vnc",listen="0.0.0.0",port="-1"]
-#----    
