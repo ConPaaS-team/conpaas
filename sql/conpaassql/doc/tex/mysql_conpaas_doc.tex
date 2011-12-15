@@ -82,12 +82,26 @@ Ales Cernivec <ales.cernivec@xlab.si>
 {HttpJsonResponse - JSON response with the list of services: {\tt \{ 'serviceNode': [<a list of ids>]\})}}
 {HttpErrorResponse}
 
+Example
+\begin{verbatim}
+GET /?method=list_nodes&id=1 HTTP/1.1
+Accept: */*
+Content-Type: application/json
+\end{verbatim}
+
 \noindent\conapi
 { conpaas.mysql.server.manager.internals.get\_node\_info()}
 {HTTP GET method. Gets info of a specific node.}
 {param (str) -- serviceNodeId is a VMID of an existing service node.}
 {HttpJsonResponse - JSON response with details about the node: : {\tt \{'serviceNode':\{'id': serviceNode.vmid,'ip': serviceNode.ip,'isRunningMySQL': serviceNode.isRunningMySQL\}\}}.}
 {ManagerException}
+
+Example
+\begin{verbatim}
+GET /?params=%7B%22serviceNodeId%22%3A+%221%22%7D&method=get_node_info&id=1 HTTP/1.1
+Accept: */*
+Content-Type: application/json
+\end{verbatim}
 
 \noindent\conapi
 { conpaas.mysql.server.manager.internals.get\_service\_info()}
