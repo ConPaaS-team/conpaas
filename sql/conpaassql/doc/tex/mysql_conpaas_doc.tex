@@ -10,6 +10,7 @@
 \usepackage{amsmath}                        % za sklice na oznake
 \usepackage{graphicx}
 \usepackage{listings}
+\usepackage{fancyvrb}
 
 \bibliographystyle{plain}
 
@@ -39,7 +40,9 @@ Currently you can add and remove agent nodes, query for status of the agent node
 
 \section{Architecture}
 
-ConPaaS MySQL Manager node has to be run manually or by the usage of ConPaaS web front-end. This is only for development: when manager starts, it fetches the fresh package of conpaas sources from public location (e.g. \\{\tt http://contrail.xlab.si/conpaassql.tar}). Images will be pre-packaged with mysql manager and agent on the release. Template for creating manager, contains details on installation script (\\{\tt http://contrail.xlab.si/conpaassql/manager/conpaas-install.sh}, compare to section \ref{sec:install}). When installation is complete, manager can be used to orchestrate ConPaaS SQL agents.
+ConPaaS MySQL Manager node has to be run manually or by the usage of ConPaaS web front-end. ConPaaS Servers can also be managed through direct web front-end (see section \ref{sec:web-front-end}).
+
+This is only for development: when manager starts, it fetches the fresh package of conpaas sources from public location (e.g. \\{\tt http://contrail.xlab.si/conpaassql.tar}). Images will be pre-packaged with mysql manager and agent on the release. Template for creating manager, contains details on installation script (\\{\tt http://contrail.xlab.si/conpaassql/manager/conpaas-install.sh}, compare to section \ref{sec:install}). When installation is complete, manager can be used to orchestrate ConPaaS SQL agents.
 
 When obtaining access point of the manager, new agents can be provisioned by issuing HTTP POST {\tt add\_nodes} command on resource {\tt sql-manager-host:/}:
 
@@ -86,23 +89,23 @@ Download (3), untar it somewhere for editing (e.g. under \\ {\tt root@onehead:/h
 
 {\tt cd} to (6), change {\tt ./src/conpaas/mysql/server/agent/configuration.cnf}:
 
-\begin{verbatim}
+\begin{Verbatim}[frame=single]
 [MySQL_root_connection]
 password= [mysql user's password]
 username=[mysql username]
-\end{verbatim}
+\end{Verbatim}
 
 \subsection*{step4}
 
 {\tt cd} to (6), change {\tt ./src/conpaas/mysql/server/manager/configuration.cnf} in a following name (substitute IPs, Image ID, Network ID, paths to agent and manager install scripts):
 
-\begin{verbatim}
+\begin{Verbatim}[frame=single]
 OPENNEBULA_URL=http://10.30.1.1:2633/RPC2 # your ONE installation
-OPENNEBULA_IMAGE_ID=193					  # image of mysql manager on ONE
-OPENNEBULA_NETWORK_ID=205                 # working network on ONE
+OPENNEBULA_IMAGE_ID=193 # image of mysql manager on ONE
+OPENNEBULA_NETWORK_ID=205 # working network on ONE
 OPENNEBULA_CONTEXT_SCRIPT_MANAGER=[location of (5) on ONE]
 OPENNEBULA_CONTEXT_SCRIPT_AGENT=[location of (4) on ONE]
-\end{verbatim}
+\end{Verbatim}
 
 \subsection*{step5}
 
@@ -112,25 +115,25 @@ OPENNEBULA_CONTEXT_SCRIPT_AGENT=[location of (4) on ONE]
 
 change agent install script (1) in a following way:
 
-\begin{verbatim}
+\begin{Verbatim}[frame=single]
 SERVER=contrail.xlab.si			# public location, somewhere that VMs on ONE can wget from
 PACKAGE_NAME=conpaassql.tar		# package from step 5)
 DEST_DIR=/home/contrail/conpaassql	# location on agent VM
-\end{verbatim}
+\end{Verbatim}
 
 \subsection*{step7}
 
 change manager install script (2) in a following way:
 
-\begin{verbatim}
+\begin{Verbatim}[frame=single]
 SERVER=contrail.xlab.si # public location, somewhere that VMs on ONE can wget from
 PACKAGE_NAME=conpaassql.tar # package from step 5)
 DEST_DIR=/home/contrail/conpaassql # location on manager VM
-\end{verbatim}
+\end{Verbatim}
 
 For deploying ConPaaS SQL Server image, we are using this template description:
 
-\begin{verbatim}
+\begin{Verbatim}[frame=single]
 NAME   = conpaassql-manager
 CPU    = 0.2
 MEMORY = 512
@@ -139,20 +142,39 @@ MEMORY = 512
    boot = "hd",
    root     = "hda" ]
 DISK   = [
-   image_id = "193",					// The same as in step 4
+   image_id = "193", // The same as in step 4
    bus = "scsi",
    readonly = "no" ]
-NIC    = [ NETWORK_ID = 205 ]				// The same as in step 4
+NIC    = [ NETWORK_ID = 205 ] // The same as in step 4
 GRAPHICS = [
   type="vnc"
   ]
 CONTEXT = [
   target=sdc,
-  files = /home/ales/sql/manager/conpaassql-install.sh 	\
+  files = /home/ales/sql/manager/conpaassql-install.sh \
   // the same as in step 1, location (5)
   ]
 RANK = "- RUNNING_VMS"
-\end{verbatim}
+\end{Verbatim}
+
+\section{ConPaaS MySQL Server Web front-end}
+\label{sec:web-front-end}
+ConPaaS MySQL Server Web front-end can easily be installed after the server already runs: 
+
+\begin{Verbatim}[frame=single]
+# apt-get install python-setuptools python-dev python-pycurl -y
+# easy_install pip
+# pip install oca apache-libcloud
+# pip install --extra-index-url http://eggs.contrail.xlab.si \
+conpaassql-manager-gui
+# mkdir -p /etc/conpaassql
+# cat > /etc/conpaassql/manager-gui.conf << EOF
+# MANAGER_HOST = 'localhost'
+# EOF
+# screen -S conpaasssql-manager-gui -d -m conpaassql_manager_gui
+\end{Verbatim}
+
+It also is not mandatory that the web front-end is installed on the same server as the SQL Server already runs. 
 
 \section{ConPaaS MySQL Server Manager API}
 
