@@ -190,7 +190,7 @@ Module {\tt conpaas.mysql.server.manager.internals} contains internals of the Co
 \end{itemize}
 
 \noindent {\bf platform:}
-Linux, Debian
+Linux, Debian Squeeze, tested also within Ubuntu 10.10 (there should be no problem when using later distributions).
 
 \noindent {\bf synopsis:}
 Internals of ConPaaS MySQL Servers.
@@ -207,12 +207,32 @@ Ales Cernivec <ales.cernivec@xlab.si>
 {HttpJsonResponse - JSON response with details about the node.}
 {ManagerException}
 
+Example
+\begin{Verbatim}[frame=single]
+POST / HTTP/1.1
+Accept: */*
+Content-Type: application/json
+
+Body content: {"params": {"function": "agent"}, "method": /
+"add_nodes", "id": "1"}
+\end{Verbatim}
+
 \noindent\conapi
 { conpaas.mysql.server.manager.internals.remove\_nodes(params)}
 {HTTP POST method. Deletes specific node from a pool of agent nodes. Node deleted is given by {\tt \{'serviceNodeId':id\}.}}
 {kwargs --string identifying a node.}
 {HttpJsonResponse - HttpJsonResponse - JSON response with details about the node. OK if everything went well. }
 {ManagerException if something went wrong. It contains a detailed description about the error.}
+
+Example
+\begin{Verbatim}[frame=single]
+POST / HTTP/1.1
+Accept: */*
+Content-Type: application/json
+
+Body content: {"params": {"serviceNodeId": "12"}, "method": /
+"remove_nodes", "id": "1"}
+\end{Verbatim}
 
 \noindent\conapi
 { conpaas.mysql.server.manager.internals.list\_nodes()}
@@ -222,11 +242,11 @@ Ales Cernivec <ales.cernivec@xlab.si>
 {HttpErrorResponse}
 
 Example
-\begin{verbatim}
+\begin{Verbatim}[frame=single]
 GET /?method=list_nodes&id=1 HTTP/1.1
 Accept: */*
 Content-Type: application/json
-\end{verbatim}
+\end{Verbatim}
 
 \noindent\conapi
 { conpaas.mysql.server.manager.internals.get\_node\_info()}
@@ -236,11 +256,11 @@ Content-Type: application/json
 {ManagerException}
 
 Example
-\begin{verbatim}
+\begin{Verbatim}[frame=single]
 GET /?params=%7B%22serviceNodeId%22%3A+%221%22%7D&method=get_node_info&id=1 HTTP/1.1
 Accept: */*
 Content-Type: application/json
-\end{verbatim}
+\end{Verbatim}
 
 \noindent\conapi
 { conpaas.mysql.server.manager.internals.get\_service\_info()}
@@ -248,6 +268,13 @@ Content-Type: application/json
 {param (str) -- serviceNodeId is a VMID of an existing service node.}
 {HttpJsonResponse - JSON response with the description of the state.}
 {ManagerException}
+
+Example
+\begin{Verbatim}[frame=single]
+GET /?method=get_service_info&id=1 HTTP/1.1
+Accept: */*
+Content-Type: application/json
+\end{Verbatim}
 
 \noindent\conapi
 { conpaas.mysql.server.manager.internals.set\_up\_replica\_master()}
@@ -281,6 +308,13 @@ Content-Type: application/json
 { kwargs (dict) -- Additional parameters.}
 {HttpJsonResponse -- returns metrics}
 {}
+
+Example
+\begin{Verbatim}[frame=single]
+GET /?method=get_service_performance&id=1 HTTP/1.1
+Accept: */*
+Content-Type: application/json
+\end{Verbatim}
 
 \section{Conclusion}
 
