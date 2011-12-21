@@ -1,36 +1,40 @@
-<?php 
-  // Copyright (C) 2010-2011 Contrail consortium.
-  //
-  // This file is part of ConPaaS, an integrated runtime environment 
-  // for elastic cloud applications.
-  //
-  // ConPaaS is free software: you can redistribute it and/or modify
-  // it under the terms of the GNU General Public License as published by
-  // the Free Software Foundation, either version 3 of the License, or
-  // (at your option) any later version.
-  //
-  // ConPaaS is distributed in the hope that it will be useful,
-  // but WITHOUT ANY WARRANTY; without even the implied warranty of
-  // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  // GNU General Public License for more details.
-  //
-  // You should have received a copy of the GNU General Public License
-  // along with ConPaaS.  If not, see <http://www.gnu.org/licenses/>.
+<?php
+/*
+ * Copyright (C) 2010-2011 Contrail consortium.                                                                                                                       
+ *
+ * This file is part of ConPaaS, an integrated runtime environment                                                                                                    
+ * for elastic cloud applications.                                                                                                                                    
+ *                                                                                                                                                                    
+ * ConPaaS is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by                                                                                               
+ * the Free Software Foundation, either version 3 of the License, or                                                                                                  
+ * (at your option) any later version.
+ * ConPaaS is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of                                                                                                     
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                                                                                                      
+ * GNU General Public License for more details.                                                                                                                       
+ *
+ * You should have received a copy of the GNU General Public License                                                                                                  
+ * along with ConPaaS.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 require_once('__init__.php');
+require_module('ui/page');
 
 if (isset($_SESSION['uid'])) {
 	header('Location: index.php');
 	exit();
 }
 
+$page = new Page();
 ?>
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<title>ConPaaS - configure PHP Service</title>
+<title>ConPaaS login </title>
+<?php echo $page->renderIcon(); ?>
 <link type="text/css" rel="stylesheet" href="conpaas.css" />
 <script src="js/jquery-1.5.js"></script>
 <script src="js/jquery.form.js"></script>
@@ -38,65 +42,70 @@ if (isset($_SESSION['uid'])) {
 <body class="loginbody">
 	<div class="login">
 		<div class="descr">
-			<div class="logo" style="text-align: center;">
-				<a href="http://www.conpaas.eu/"><img src="images/contrail_paas_logo_large.png" border=0 /></a>
+			<div class="logo">
+				<img src="images/conpaas_large.png" />
 			</div>
+			<p><b>ConPaaS</b> is the Platform-as-a-Service component of the <a href="http://contrail-project.eu/">Contrail</a> project.</p>
+			<p><b>ConPaaS</b> aims at facilitating the deployment of applications in the cloud. It provides a number of services to address common developer needs. 
+			Each service is self-managed and elastic: 
+			<ul>
+				<li> it can deploy itself on the cloud </li>
+				<li> monitor its own performance
+				<li> increase or decrease its processing capacity by dynamically (de-)provisioning instances of itself in the cloud </li>
+			</ul> 
+			</p>
 		</div>
 		<div class="formwrap">
 		<div class="form">
 			<h2 class="title" id="login-title">Login</h2>
-			<h2 class="register_form" align="center" id="register-title" style="display: none;">Register a new user</h2>
-<p class="register_form" style="display: none"><blink>Attention:</blink> <font color="red"> new accounts have zero credit.</font><br>
-                                               This means you cannot use the system yet.<br> 
-                                               You will receive free credit after we review<br>
-                                               your registration.</p>
+			<h2 class="title" id="register-title" style="display: none;">Register</h2>
 			<table>
 				<tr>
-					<td class="name">Username</td>
+					<td class="name">username</td>
 					<td class="input">
-						<input type="text" id="username" style="width:170px" />
+						<input type="text" id="username" />
 					</td>
 				</tr>
 				<tr class="register_form" style="display: none">
-					<td class="name">Email</td>
+					<td class="name">email</td>
 					<td class="input">
-						<input type="text" id="email" style="width:170px" />
+						<input type="text" id="email" />
 					</td>
 				</tr>
 				<tr>
-					<td class="name">Password</td>
+					<td class="name">password</td>
 					<td class="input">
-						<input type="password" id="passwd" style="width:172px" onkeypress="return enterKey(event,this.form)" />
+						<input type="password" id="passwd" />
 					</td>
 				</tr>
 				<tr class="register_form" style="display: none">
 					<td class="name">Confirm password</td>
 					<td class="input">
-						<input type="password" id="passwd2" style="width:172px" />
+						<input type="password" id="passwd2" />
 					</td>
 				</tr>
 				<tr class="register_form" style="display: none">
-					<td class="name">First name</td>
+					<td class="name">first name</td>
 					<td class="input">
-						<input type="text" id="fname" style="width:170px" />
+						<input type="text" id="fname" />
 					</td>
 				</tr>
 				<tr class="register_form" style="display: none">
-					<td class="name">Last name</td>
+					<td class="name">last name</td>
 					<td class="input">
-						<input type="text" id="lname" style="width:170px" />
+						<input type="text" id="lname" />
 					</td>
 				</tr>
 				<tr class="register_form" style="display: none">
-					<td class="name">Affiliation</td>
+					<td class="name">affiliation</td>
 					<td class="input">
-						<input type="text" id="affiliation"  style="width:170px" />
+						<input type="text" id="affiliation" />
 					</td>
 				</tr>
 				<tr>
 					<td></td>
 					<td>
-						<div class="hint">Enter your name or email address</div>
+						<!-- <div class="hint">enter your name or email address</div>-->
 					</td>
 				</tr>
 				<tr>
@@ -107,9 +116,9 @@ if (isset($_SESSION['uid'])) {
 					<td>
 						<input class="active" type="button" value="login" 
 							id="login" />
-						<input type="button" value="Register" id="register" 
+						<input type="button" value="register" id="register" 
 							style="display: none;" />
-						<a id="toregister" href="javascript: void(0);">New user</a>
+						<a id="toregister" href="javascript: void(0);">register</a>
 					</td>
 				</tr>
 				<tr>
@@ -123,6 +132,7 @@ if (isset($_SESSION['uid'])) {
 			</table>
 		</div>
 		</div>
+		<div class="clear"></div>
 	</div>
 
 	<script type="text/javascript">
@@ -166,7 +176,7 @@ if (isset($_SESSION['uid'])) {
 		
 		$('.login .loading').show();
   		$.ajax({
-  			url: 'services/login.php',
+  			url: 'ajax/login.php',
   			data: $data,
   			dataType: 'json',
   			type: 'post',
@@ -204,14 +214,19 @@ if (isset($_SESSION['uid'])) {
 		$('#username').keyup(function(e) {
 			var code = (e.keyCode ? e.keyCode : e.which);
 			if (code == 13) {
-				if ($('#login').hasClass('active')) {
-					login();
-				} else {
-					register();
-				}
+			  if ($('#username').val() != "") {
+			    $('#passwd').focus();
+			  }
 			}
-		});
-		
+		  });
+		 $('#passwd').keyup(function(e) {
+		     var code = (e.keyCode ? e.keyCode : e.which);
+		     if (code == 13) {
+		       if ($('#username').val() != "" && $('#passwd').val() != "") {
+			 login();
+		       }
+		     }
+		   });
 		$('#login').click(function() {
 			login();
 		});
@@ -230,18 +245,7 @@ if (isset($_SESSION['uid'])) {
 			$('#register').show();
 			$('#username').focus();
 		});
-
 	});
-
-        function enterKey(event,ourform) {
-	  if (event && event.which == 13) {
-	    login();
-	  }
-	  else {
-	    return true;
-	  }
-	}
-
 	</script>
 </body>
 </html>

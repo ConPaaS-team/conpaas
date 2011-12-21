@@ -1,19 +1,43 @@
+/*
+ * Copyright (C) 2010-2011 Contrail consortium.                                                                                                                       
+ *
+ * This file is part of ConPaaS, an integrated runtime environment                                                                                                    
+ * for elastic cloud applications.                                                                                                                                    
+ *                                                                                                                                                                    
+ * ConPaaS is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by                                                                                               
+ * the Free Software Foundation, either version 3 of the License, or                                                                                                  
+ * (at your option) any later version.
+ * ConPaaS is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of                                                                                                     
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                                                                                                      
+ * GNU General Public License for more details.                                                                                                                       
+ *
+ * You should have received a copy of the GNU General Public License                                                                                                  
+ * along with ConPaaS.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 @CHARSET "UTF-8";
 
 body {
-	padding: 2px 5px;
 	margin: 0;
 	font-size: 12px;
-	font-weight: bold;
 	color: #0055A5;
 	font-family: Verdana, Tahoma, sans serif;
 	width: 800px;
 }
 
 h1 {
-	font-size: 24px;
-	padding: 3px 3px 3px 30px;
-	font-weight: normal;
+	font-size: 18px;
+	padding: 3px 3px 3px 3px;
+	margin: 3px;
+	color: #666;
+	font-family: Tahoma;
+}
+
+.pagecontent {
+	 padding: 10px;
+	 border: 1px solid #eee;
 }
 
 a, a:visited {
@@ -33,32 +57,63 @@ a:hover {
 	color: #0055A5;
 }
 
+.footer {
+	color: #999;
+	padding: 10px;
+	background-color: #eee;
+	text-align: right;
+}
+
 #logo {
 	width: 140px;
-	height: 50px;
+	height: 32px;
+	margin-left: 5px;
 	background: url('images/conpaas.png') top left no-repeat;
+	display: block;
 	float: left;
 }
 
 .user {
 	float: right;
-	padding: 23px 3px 3px 0;
+	padding: 3px 3px 3px 0;
+	font-weight: bold;
+	color: #666;
+	font-size: 12px;
+}
+
+.user .usercredit, .user .username, .user .logout {
+    padding: 1px 3px 3px 18px;
+    margin: 3px;
+    float: right;
+}
+
+.user .usercredit {
+	background: url('images/credits.png') top left no-repeat;
+	margin-left: 5px;
+	padding-left: 20px;
+}
+
+.user .logout {
+    background: url('images/logout.png') top left no-repeat;	
+}
+
+.user .username {
+	background: url('images/user.png') top left no-repeat;
 }
 
 .header {
-	border-bottom: 1px solid #0055A5;
-	padding: 0 5px 5px 5px;
-	background-color: #eee;
+	padding: 3px;
+	border-right: 1px solid #eee;
+	border-bottom: 5px solid #eee;
 }
 
 .pageheader .info {
 	float: left;
-	margin: 10px;
+	margin: 5px;
 }
 
 .pageheader h1 {
 	float: left;
-	font-size: 22px;
 }
 
 .pageheader .info .nameWrapper, .pageheader .info img.stype {
@@ -76,6 +131,7 @@ a:hover {
     color: #333;
     border: 1px solid white;
     font-style: normal;
+    font-weight: bold;
 }
 
 .pageheader .info .subname {
@@ -104,7 +160,7 @@ a:hover {
 }
 
 .pageheader .menu {
-	padding-top: 25px;
+	padding-top: 10px;
 	float: right;
 }
 
@@ -246,6 +302,7 @@ tr.service {
 	text-shadow: white 1px 1px 0px;
 	font-family: Helvetica, Tahoma, sans-serif;
 	font-style: normal;
+	font-weight: bold;
 	margin: 5px;
 }	
 
@@ -270,6 +327,8 @@ tr.service {
 	font-size: 14px;
 	padding: 5px 3px 2px 3px;
 	text-shadow: white 1px 1px 0px;
+	font-weight: bold;
+	color: #666;
 }
 
 .service .title a {
@@ -358,8 +417,9 @@ tr.service {
 	font-size: 12px;
 }
 
-.form {
-	margin: 5px;
+.createpage .form {
+	margin: 10px 5px 5px 5px;
+	padding: 10px;
 }
 
 .form td {
@@ -375,17 +435,83 @@ tr.service {
 }
 
 .form .description {
-	color: #666;
+	color: #999;
 	font-size: 12px;
-	font-weight: normal;
+	font-weight: bold;
 	padding: 5px;
 	text-align: right;
-	line-height: 24px;
-	width: 150px;
+	line-height: 20px;
+}
+
+.createpage .form .service {
+	cursor: pointer;
+}
+
+.createpage .form .selectedservice {
+	background-color: #DFE5EB;
+}
+
+.createpage .form .service .info {
+    border-right: 5px solid white;
+}
+
+.createpage .form .selectedservice .info {
+	border-right: 5px solid #236CA8;
+}
+
+.createpage .form .service .description, 
+.createpage .form .service .radio, 
+.createpage .form .service .info {
+	border-bottom: 1px solid #eee;
+}
+
+.createpage .form .service .description img {
+	opacity:0.4;
+    filter:alpha(opacity=40); /* For IE8 and earlier */
+}
+
+.createpage .form .service:hover .radio {
+	color: black;
+}
+
+.createpage .form .service:hover .info, .createpage .form .selectedservice  .info {
+	color: #333;
+}
+
+.createpage .form .service:hover .info {
+	border-right: 5px solid #666;
+}
+
+.createpage .form .service:hover .description img {
+    opacity:1.0;
+    filter:alpha(opacity=100); /* For IE8 and earlier */
+}
+
+
+.createpage .form .service .description,
+.createpage .form .selectedservice .description {
+	line-height: 16px;
+	text-align: center;
+}
+
+.createpage .form .selectedservice .radio {
+    color: black;
+    font-size: 14px;
+    font-weight: bold;
+    vertical-align: middle;
+    padding-left: 10px;
+}
+
+.createpage .form .service .radio {
+	color: #666;
+	font-size: 14px;
+	font-weight: bold;
+	vertical-align: middle;
+	padding-left: 10px;
 }
 
 .form .info {
-	color: #999;
+	color: #666;
 	font-weight: normal;
 	font-size: 12px;
 	padding: 10px;
@@ -495,6 +621,11 @@ input.button {
 .orange {
 	color: #ff6600;
 	border-color: #ff6600;
+}
+
+.black {
+	color: black;
+	border-color: black;
 }
 
 ul.versions {
@@ -739,7 +870,7 @@ ul.versions li .timestamp {
 	padding: 5px 3px 5px 5px;
 }
 
-#instances .cluster-web {
+#instances .cluster-web, #instances .cluster-masters, #instances .cluster-peers {
 	border-color: blue;
 }
 
@@ -747,7 +878,7 @@ ul.versions li .timestamp {
 	border-color: purple;
 }
 
-#instances .cluster-proxy {
+#instances .cluster-proxy, #instances .cluster-workers {
 	border-color: orange;
 }
 
@@ -838,21 +969,24 @@ ul.versions li .timestamp {
 /* login */
 
 body.loginbody {
-    background: url('images/onclouds.jpg') top left no-repeat;	
+    background: url('images/onclouds.jpg') top left no-repeat;
+    margin: auto;
 }
 
 .login {
 	width: 800px;
-	margin: auto;
-	padding-top: 270px;
-	padding-left: 100px;
+	margin-top: 100px;
+	padding: 50px;
+	background-color: #eee;
+	opacity:0.8;
+    filter:alpha(opacity=80); /* For IE8 and earlier */
 }
 
 .login .form .input {
 	padding: 3px 3px 0 5px;
 }
 
-.login a, .login #error {
+.login .form a, .login #error {
 	font-weight: normal;
 	font-size: 10px;
 	margin: 3px;
@@ -871,8 +1005,16 @@ body.loginbody {
 	color: #333;
 }
 
-.login .descr, .login .formwrap {
+.login .descr {
 	float: left;
+}
+
+.login .formwrap {
+	float: right;
+}
+
+.login .descr .logo {
+	margin-bottom: 20px;
 }
 
 .login .form {
@@ -880,6 +1022,8 @@ body.loginbody {
 	background-color: white;
 	border: 1px solid #214478;
 	margin: 0;
+    opacity: 1.0;
+    filter:alpha(opacity=100);
 }
 
 .login .formwrap {
@@ -889,7 +1033,9 @@ body.loginbody {
 
 .login .descr {
 	width: 400px;
-	height: 200px;
+	font-size: 12px;
+	color: #333;
+	font-weight: normal;
 }
 
 .login .descr img {
@@ -917,4 +1063,8 @@ body.loginbody {
 .infobox {
 	border-color: #ccc;
 	background-color: #eee;
+}
+
+.deleteService {
+	cursor: pointer;
 }
