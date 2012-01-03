@@ -42,7 +42,7 @@ Currently you can add and remove agent nodes, query for status of the agent node
 
 ConPaaS MySQL Manager node has to be run manually or by the usage of ConPaaS web front-end. ConPaaS Servers can also be managed through direct web front-end (see section \ref{sec:web-front-end}).
 
-This is only for development: when manager starts, it fetches the fresh package of conpaas sources from public location (e.g. \\{\tt http://contrail.xlab.si/conpaassql.tar}). Images will be pre-packaged with mysql manager and agent on the release. Template for creating manager, contains details on installation script (\\{\tt http://contrail.xlab.si/conpaassql/manager/conpaas-install.sh}, compare to section \ref{sec:install}). When installation is complete, manager can be used to orchestrate ConPaaS SQL agents.
+This is only for development: when manager starts, it fetches the fresh package of conpaas sources from public location (e.g. \\{\tt http://contrail.xlab.si/conpaassql.tar}). Images will be pre-packaged with mysql manager and agent on the release. Template for creating manager, contains details on installation script (\\{\tt http://contrail.xlab.si/conpaassql/manager/conpaassql-install.sh}, compare to section \ref{sec:install}). When installation is complete, manager can be used to orchestrate ConPaaS SQL agents.
 
 When obtaining access point of the manager, new agents can be provisioned by issuing HTTP POST {\tt add\_nodes} command on resource {\tt sql-manager-host:/}:
 
@@ -63,20 +63,23 @@ These steps are necessary in order to clean install ConPaaSSQL server on images 
 
 First, you will need
 \begin{enumerate}
-\item {\tt http://contrail.xlab.si/conpaassql/agent/conpaas-install.sh}
-\item {\tt http://contrail.xlab.si/conpaassql/manager/conpaas-install.sh}
+\item {\tt http://contrail.xlab.si/conpaassql/agent/conpaassql-install.sh}
+\item {\tt http://contrail.xlab.si/conpaassql/manager/conpaassql-install.sh}
 \item {\tt http://contrail.xlab.si/conpaassql.tar} This is a package from SVN.
 \end{enumerate}
 
-%% (1) http://contrail.xlab.si/conpaassql/agent/conpaas-install.sh
-%% (2) http://contrail.xlab.si/conpaassql/manager/conpaas-install.sh
+%% (1) http://contrail.xlab.si/conpaassql/agent/conpaassql-install.sh
+%% (2) http://contrail.xlab.si/conpaassql/manager/conpaassql-install.sh
 %% (3) http://contrail.xlab.si/conpaassql.tar
+
+The content of {\tt conpaassql-install.sh} is given in appendix \ref{app:install}.
+
 \subsection*{step1}
 
 Copy
 \begin{itemize}
-\item (1) anywhere on ONE manager node, e.g. \\ {\tt root@onehead:/home/contrail/agent/conpaas-install.sh} (4)
-\item (2) anywhere on ONE manager node (different than (4), e.g. \\ {\tt root@onehead:/home/contrail/manager/conpaas-install.sh} (5))
+\item (1) anywhere on ONE manager node, e.g. \\ {\tt root@onehead:/home/contrail/agent/conpaassql-install.sh} (4)
+\item (2) anywhere on ONE manager node (different than (4), e.g. \\ {\tt root@onehead:/home/contrail/manager/conpaassql-install.sh} (5))
 \end{itemize}
 
 You will need this for the contextualization process.
@@ -116,9 +119,9 @@ OPENNEBULA_CONTEXT_SCRIPT_AGENT=[location of (4) on ONE]
 change agent install script (1) in a following way:
 
 \begin{Verbatim}[frame=single]
-SERVER=contrail.xlab.si			# public location, somewhere that VMs on ONE can wget from
-PACKAGE_NAME=conpaassql.tar		# package from step 5)
-DEST_DIR=/home/contrail/conpaassql	# location on agent VM
+SERVER=contrail.xlab.si # public location, somewhere that VMs on ONE can wget from
+PACKAGE_NAME=conpaassql.tar # package from step 5)
+DEST_DIR=/home/contrail/conpaassql # location on agent VM
 \end{Verbatim}
 
 \subsection*{step7}
@@ -155,6 +158,37 @@ CONTEXT = [
   // the same as in step 1, location (5)
   ]
 RANK = "- RUNNING_VMS"
+\end{Verbatim}
+
+\section{Installation from already prepared images}
+\label{sec:install-images}
+
+In this section installation of the ConPaaS SQL Servers from already prepared images is presented. The installation consists of next steps:
+
+\begin{itemize}
+	\item Download {\tt contrail.xlab.si/images/conpaas-sql-1.qcow2} under the ONE directory {\tt /home/contrail/sql/conpaas-sql-1.qcow2}.
+	\item Download {\tt contrail.xlab.si/images/conpaas-sql-1.template} under the ONE directory {\tt /home/contrail/sql/conpaas-sql-1.template}.
+	\item Download {\tt contrail.xlab.si/images/init-manager.sh} under the ONE directory {\tt /home/contrail/sql/manager/init.sh}. The script is in the appendix B, section \ref{app:init}. Edit manager's init script to reflect ONE's networking (parameters {\tt OPENNEBULA\_NETWORK\_ID} and {\tt OPENNEBULA\_URL}).
+	\item Download {\tt contrail.xlab.si/images/init-agent.sh} under the ONE directory {\tt /home/contrail/sql/agent/init.sh}. The script is in the appendix B, section \ref{app:init}.
+\end{itemize}
+
+When executing
+\begin{Verbatim}[frame=single]
+# onevm create /home/contrail/sql/conpaas-sql-1.template
+\end{Verbatim}
+
+ConPaaS SQL Manager is created. If {\tt run-manager-client.sh} tool (located under {\tt contrail/trunk/conpaas/sql/conpaassql/scripts } on the SVN) is used, the manager can be manipulated:
+
+\begin{Verbatim}[frame=single]
+# ./run-manager-client.sh 10.30.1.1 50000 list_nodes
+{u'serviceNode': [1792]}
+# ./run-manager-client.sh 10.30.1.1 50000 add_node agent
+{u'serviceNode': {u'ip': u'10.1.0.20', u'state': u'PENDING', \
+  u'id': 1815, u'name': u'conpaassql-agent'}}
+#./run-manager-client.sh 10.30.1.1 50000 list_nodes
+{u'serviceNode': [1792, 1815]}
+# ./run-manager-client.sh 10.30.1.1 50000 delete_nodes 1815
+# {u'result': u'OK'}
 \end{Verbatim}
 
 \section{ConPaaS MySQL Server Web front-end}
@@ -316,12 +350,139 @@ Accept: */*
 Content-Type: application/json
 \end{Verbatim}
 
+\newpage
+
 \section{Conclusion}
+
+\newpage
+
+\section{Appendix A}
+\label{app:install}
+
+In this appendix the content of {\tt conpaas-manager-install.sh} is given.
+
+\begin{Verbatim}[frame=single]
+#!/bin/bash
+SERVER=contrail.xlab.si
+PACKAGE_NAME=conpaassql.tar
+DEST_DIR=/home/contrail/sql
+
+apt-get -y update
+
+apt-get install -y unzip
+apt-get install -y python
+apt-get install -y python-mysqldb
+apt-get install -y python-pycurl
+
+mkdir -p ${DEST_DIR}
+cd ${DEST_DIR}
+
+wget ${SERVER}/${PACKAGE_NAME}
+
+wget http://contrail.xlab.si/conpaassql/0.2.3
+wget http://contrail.xlab.si/conpaassql/setuptools-0.6c11.tar.gz
+
+tar xvfz setuptools-0.6c11.tar.gz
+cd setuptools-0.6c11
+python setup.py build
+python setup.py install
+cd ..
+rm -rf setuptools
+rm setuptools-0.6c11.tar.gz
+
+unzip 0.2.3
+cd lukaszo-python-oca-61992c1
+python setup.py build
+python setup.py install
+cd ..
+rm -rf lukaszo-python-oca-61992c1
+rm 0.2.3
+
+tar xvf ${PACKAGE_NAME}
+
+rm ${PACKAGE_NAME}
+
+cd src
+PYTHONPATH=${DEST_DIR}/src:${DEST_DIR}/contrib python \
+ conpaas/mysql/server/manager/server.py -c \
+ ${DEST_DIR}/src/conpaas/mysql/server/manager/configuration.cnf
+
+\end{Verbatim}
+
+\newpage
+
+\section{Appendix B}
+\label{app:init}
+
+In this appendix the content of contextualization of the manager and agent nodes' {\tt init.sh} script is given. First, the manager's {\tt init.sh} script:
+
+\begin{Verbatim}[frame=single]
+#!/bin/bash
+ 
+if [ -f /mnt/context.sh ]; then
+  . /mnt/context.sh
+fi
+ 
+cat > /home/contrail/sql/src/conpaas/mysql/server/manager/configuration.cnf << EOF
+[iaas]
+DRIVER=OPENNEBULA_XMLRPC
+OPENNEBULA_URL=http://10.30.1.1:2633/RPC2
+OPENNEBULA_USER=oneadmin
+OPENNEBULA_PASSWORD=oneadmin
+OPENNEBULA_IMAGE_ID=/home/contrail/sql/conpaas-sql-1.qcow2
+OPENNEBULA_NETWORK_ID=205
+OPENNEBULA_SIZE_ID=1
+OPENNEBULA_CONTEXT_SCRIPT_MANAGER=/home/contrail/manager/conpaassql-install.sh
+OPENNEBULA_CONTEXT_SCRIPT_AGENT=/home/contrail/sql/agent/init.sh
+EOF
+
+# Run the manager command in the background
+DEST_DIR=/home/contrail/sql
+cd ${DEST_DIR}/src
+PYTHONPATH=${DEST_DIR}/src:${DEST_DIR}/contrib nohup \
+ python conpaas/mysql/server/manager/server.py -c\
+ ${DEST_DIR}/src/conpaas/mysql/server/manager/configuration.cnf &
+
+\end{Verbatim}
+
+\newpage
+\vspace{4mm}
+
+The agent's {\tt init.sh} script:
+
+\begin{Verbatim}[frame=single]
+#!/bin/bash
+ 
+if [ -f /mnt/context.sh ]; then
+  . /mnt/context.sh
+fi
+ 
+cat >  /home/contrail/sql/src/conpaas/mysql/server/agent/configuration.cnf << EOF
+[MySQL_root_connection]
+location=
+password=contrail
+username=root
+
+[MySQL_configuration]
+my_cnf_file=/etc/mysql/my.cnf
+path_mysql_ssr=/etc/init.d/mysql
+EOF
+
+# Run the agent command in the background
+
+DEST_DIR=/home/contrail/sql
+cd ${DEST_DIR}/src
+PYTHONPATH=${DEST_DIR}/src:${DEST_DIR}/contrib nohup \
+ python conpaas/mysql/server/agent/server.py -c\
+ ${DEST_DIR}/src/conpaas/mysql/server/agent/configuration.cnf &
+
+\end{Verbatim}
 
 \newpage
 \vspace{4mm}
 
 \begin{thebibliography}{99}
+
 %	\bibitem{seriesX}Series X: Data Networks, Open System Communications and
 %Security, X.509, 08/2005
 %	\bibitem{rfcCertAndCRL}	R. Housley et al, Internet X.509 Public Key
