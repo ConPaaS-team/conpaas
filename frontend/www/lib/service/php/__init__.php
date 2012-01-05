@@ -19,7 +19,7 @@
  */
 
 require_module('service');
-require_module('ui/service/php');
+require_module('ui/instance/php');
 
 class PHPService extends Service {
 

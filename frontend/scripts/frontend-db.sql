@@ -13,7 +13,7 @@ CREATE TABLE `services` (
   `sid` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(256) DEFAULT NULL,
   `type` varchar(32) DEFAULT NULL,
-  `state` int(11) DEFAULT NULL,
+  `state` varchar(32) DEFAULT NULL,
   `creation_date` datetime DEFAULT NULL,
   `manager` varchar(512) DEFAULT NULL,
   `uid` int(11) DEFAULT NULL,

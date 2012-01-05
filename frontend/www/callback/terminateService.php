@@ -21,9 +21,9 @@
 ignore_user_abort(true);
 
 require_once('../__init__.php');
-require_once('../UserData.php');
-require_once('../ServiceData.php');
-require_once('../ServiceFactory.php');
+require_module('service');
+require_module('service/factory');
+require_module('user');
 
 /* accept POST requests only */
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {

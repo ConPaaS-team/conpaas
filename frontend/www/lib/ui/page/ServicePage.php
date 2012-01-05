@@ -49,7 +49,7 @@ class ServicePage extends Page {
 	}
 	
 	public function getUploadURL() {
-		return 'services/uploadCodeVersion.php?sid='.$this->service->getSID();
+		return 'ajax/uploadCodeVersion.php?sid='.$this->service->getSID();
 	}
 	
 	public function getState() {
