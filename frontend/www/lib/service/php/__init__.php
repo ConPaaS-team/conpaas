@@ -42,7 +42,7 @@ class PHPService extends Service {
 	}
 
 	public function getInstanceRoles() {
-		return array('proxy', 'web', 'php');
+		return array('proxy', 'web', 'backend');
 	}
 	
 }
