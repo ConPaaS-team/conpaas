@@ -55,7 +55,13 @@ class IaaSClient:
     if not iaas_config.has_option('iaas', 'OPENNEBULA_NETWORK_GATEWAY'): raise Exception('Configuration error: [iaas] OPENNEBULA_NETWORK_GATEWAY not set')
     if not iaas_config.has_option('iaas', 'OPENNEBULA_NETWORK_NAMESERVER'): raise Exception('Configuration error: [iaas] OPENNEBULA_NETWORK_NAMESERVER not set')
     if not iaas_config.has_option('iaas', 'OPENNEBULA_AGENT_USERDATA'): raise Exception('Configuration error: [iaas] OPENNEBULA_AGENT_USERDATA not set')
-    
+    if not iaas_config.has_option('iaas', 'OPENNEBULA_VIRT_SOLUTION'): raise Exception('Configuration error: [iaas] OPENNEBULA_VIRT_SOLUTION not set')
+    if not iaas_config.has_option('iaas', 'OPENNEBULA_OS_ARCH'): raise Exception('Configuration error: [iaas] OPENNEBULA_OS_ARCH not set')
+    if not iaas_config.has_option('iaas', 'OPENNEBULA_OS_BOOTLOADER'): raise Exception('Configuration error: [iaas] OPENNEBULA_OS_BOOTLOADER not set')
+    if not iaas_config.has_option('iaas', 'OPENNEBULA_OS_ROOT'): raise Exception('Configuration error: [iaas] OPENNEBULA_OS_ROOT not set')
+    if not iaas_config.has_option('iaas', 'OPENNEBULA_DISK_TARGET'): raise Exception('Configuration error: [iaas] OPENNEBULA_DISK_TARGET not set')
+    if not iaas_config.has_option('iaas', 'OPENNEBULA_CONTEXT_TARGET'): raise Exception('Configuration error: [iaas] OPENNEBULA_CONTEXT_TARGET not set')
+
     parsed = urlparse.urlparse(iaas_config.get('iaas', 'OPENNEBULA_URL'))
     self.scheme = parsed.scheme
     self.host = parsed.hostname
@@ -70,6 +76,13 @@ class IaaSClient:
     self.on_ex_network_id = iaas_config.get('iaas', 'OPENNEBULA_NETWORK_ID')
     self.on_ex_network_gateawy = iaas_config.get('iaas', 'OPENNEBULA_NETWORK_GATEWAY')
     self.on_ex_network_nameserver = iaas_config.get('iaas', 'OPENNEBULA_NETWORK_NAMESERVER')
+
+    self.on_ex_virt_solution = iaas_config.get('iaas', 'OPENNEBULA_VIRT_SOLUTION')
+    self.on_ex_os_arch = iaas_config.get('iaas', 'OPENNEBULA_OS_ARCH')
+    self.on_ex_os_bootloader = iaas_config.get('iaas', 'OPENNEBULA_OS_BOOTLOADER')
+    self.on_ex_os_root = iaas_config.get('iaas', 'OPENNEBULA_OS_ROOT')
+    self.on_ex_disk_target = iaas_config.get('iaas', 'OPENNEBULA_DISK_TARGET')
+    self.on_ex_context_target = iaas_config.get('iaas', 'OPENNEBULA_CONTEXT_TARGET')
     
     fd = open(iaas_config.get('iaas', 'OPENNEBULA_AGENT_USERDATA'), 'r')
     self.on_ex_agent_userdata_template = ''
@@ -155,6 +168,12 @@ class IaaSClient:
       kwargs['ex_network_id'] = self.on_ex_network_id
       kwargs['ex_network_gateawy'] = self.on_ex_network_gateawy
       kwargs['ex_network_nameserver'] = self.on_ex_network_nameserver
+      kwargs['ex_virt_solution'] = self.on_ex_virt_solution
+      kwargs['ex_os_arch'] = self.on_ex_os_arch
+      kwargs['ex_os_bootloader'] = self.on_ex_os_bootloader
+      kwargs['ex_os_root'] = self.on_ex_os_root
+      kwargs['ex_disk_target'] = self.on_ex_disk_target
+      kwargs['ex_context_target'] = self.on_ex_context_target	
       kwargs['ex_userdata'] = self.on_ex_agent_userdata_template.encode('hex')
       for _ in range(count):
         node = self.driver.create_node(name='conpaas', **kwargs)

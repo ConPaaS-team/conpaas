@@ -27,6 +27,9 @@ cp /root/ConPaaSWeb/etc/tomcat-catalina.policy /etc/cpsagent.web/tomcat-catalina
 
 export PYTHONPATH=/root/ConPaaSWeb/src/:/root/ConPaaSWeb/contrib
 
+# CS - added this line to start Ganglia
+/etc/init.d/ganglia-monitor start
+
 /root/ConPaaSWeb/sbin/cpsagent.web -c /root/config.cfg 1>/root/agent.out 2>/root/agent.err &
 agent_pid=$!
 echo $agent_pid > /root/agent.pid

@@ -11,7 +11,7 @@
 
 # The hostname of the VM and the directory in which the image files will be generated.
 HOSTNAME=conpaastest-xen
-OUTPUT_DIR=/home/cstratan/xen2
+OUTPUT_DIR=/home/oneadmin/xen
 
 # The size of the image file.
 FILESIZE=2048 #MB
@@ -87,10 +87,13 @@ DEBIAN_FRONTEND=noninteractive apt-get -y --force-yes --no-install-recommends --
         install openssh-server \
         python python-pycurl python-cheetah nginx \
         tomcat6-user memcached \
-        make gcc g++ sun-java6-jdk erlang ant libxslt1-dev yaws subversion
+        make gcc g++ sun-java6-jdk erlang ant libxslt1-dev yaws subversion \
+	ganglia-monitor gmetad rrdtool
 update-rc.d -f memcached remove
 update-rc.d -f nginx remove
 update-rc.d -f yaws remove
+update-rc.d -f ganglia-monitor remove
+update-rc.d -f gmetad remove
 
 # add dotdeb repo for php fpm
 echo "deb http://packages.dotdeb.org stable all" >> /etc/apt/sources.list

@@ -19,7 +19,14 @@ http {
   gzip_disable       "MSIE [1-6]\.(?!.*SV1)";
   port_in_redirect   off;
   index              index.html index.htm;
-  
+
+  # CS - added extended log format for monitoring response time:
+  log_format timed_requests '\$remote_addr - \$remote_user [\$time_local] '
+                '"\$request" \$status \$body_bytes_sent '
+                '"\$http_referer" "\$http_user_agent" \$msec \$request_time';
+
+  access_log  $timed_log  timed_requests;	
+
   #for $code_version in $code_versions
   server {
     listen       $port;

@@ -29,9 +29,10 @@ from inspect import isfunction
 
 try:
   from conpaas.web.manager import client
-except ImportError as e:
+#except ImportError as e:
+except ImportError:
   print >>sys.stderr, 'Failed to locate conpaas modules'
-  print >>sys.stderr, e
+  #print >>sys.stderr, e
   sys.exit(1)
 
 def get_service_info(args):
@@ -277,11 +278,12 @@ if __name__ == '__main__':
       sys.exit(1)
     try:
       func(sys.argv[3:])
-    except client.ClientError as e:
-      if len(e.args) == 1: print >>sys.stderr, e.args[0]
-      else: print >>sys.stderr, e.args[1]
-    except Exception as e:
-      print >>sys.stderr, e
+    #except client.ClientError as e:
+      #if len(e.args) == 1: print >>sys.stderr, e.args[0]
+      #else: print >>sys.stderr, e.args[1]
+    #except Exception as e:
+    except Exception:
+      print >>sys.stderr, 'Exception'
   else:
     help()
     sys.exit(1)

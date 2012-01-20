@@ -25,12 +25,12 @@ fi
 /sbin/ip route add default via $IP_GATEWAY
 echo "nameserver $NAMESERVER" > /etc/resolv.conf
 
-SOURCE=
+SOURCE='http://node060.das3.cs.vu.nl/code/'
 
 wget -P /root/ $SOURCE/ConPaaSWeb.tar.gz
 wget -P /root/ $SOURCE/manager-start
 wget -P /root/ $SOURCE/opennebula-agent-user-data
-
+wget -P /root/ $SOURCE/ganglia_web.tar.gz
 
 cat <<EOF > /root/config.cfg
 [iaas]
@@ -39,13 +39,19 @@ DRIVER = OPENNEBULA
 ## OPENNEBULA
 OPENNEBULA_URL = 
 OPENNEBULA_USER = 
-OPENNEBULA_PASSWORD = 
+OPENNEBULA_PASSWORD =  
 OPENNEBULA_IMAGE_ID = 
 OPENNEBULA_SIZE_ID = 
 OPENNEBULA_NETWORK_ID = 
-OPENNEBULA_NETWORK_GATEWAY = 
+OPENNEBULA_NETWORK_GATEWAY =  
 OPENNEBULA_NETWORK_NAMESERVER = 
 OPENNEBULA_AGENT_USERDATA = /root/opennebula-agent-user-data
+OPENNEBULA_VIRT_SOLUTION = 
+OPENNEBULA_OS_ARCH = 
+OPENNEBULA_OS_BOOTLOADER = 
+OPENNEBULA_OS_ROOT = 
+OPENNEBULA_DISK_TARGET = 
+OPENNEBULA_CONTEXT_TARGET = 
 
 [manager]
 TYPE = %CONPAAS_SERVICE_TYPE%
@@ -60,12 +66,61 @@ VAR_CACHE = %(ROOT)s/var/cache/cpsmanager.web/
 VAR_RUN = %(ROOT)s/var/run/cpsmanager.web/
 CODE_REPO = %(VAR_CACHE)s/code_repo
 FE_SERVICE_ID = %CONPAAS_SERVICE_ID%
-FE_CREDIT_URL = PATH_TO/callback/decrementUserCredit.php
-FE_TERMINATE_URL = PATH_TO/callback/terminateService.php
+FE_CREDIT_URL = http://node060.das3.cs.vu.nl/callback/decrementUserCredit.php
+FE_TERMINATE_URL = http://node060.das3.cs.vu.nl/callback/terminateService.php
 EOF
 
 
 export PUBLIC_IP=$IP_PUBLIC
+
+##### Configure Ganglia sensor: #####
+sed -i -e 's/mcast_join/#mcast_join/' -e 's/bind/#bind/' /etc/ganglia/gmond.conf
+sed -i -e 's/host_dmax = 0/host_dmax = 300/' -e 's/send_metadata_interval = 0/send_metadata_interval = 120/' /etc/ganglia/gmond.conf
+sed -i -e 's/name = "unspecified"/name = "conpaas"/' /etc/ganglia/gmond.conf
+sed -i -e 's/setuid = yes/setuid = no/' /etc/ganglia/gmond.conf
+
+MANAGER_IP="localhost"
+HOST_LINE="host = $MANAGER_IP"
+
+echo $HOST_LINE
+sed  -i "/udp_send_channel {/ a\ $HOST_LINE" /etc/ganglia/gmond.conf
+
+# configure nginx log
+tar zxf /root/ganglia_web.tar.gz -C root
+#cp /root/ganglia_web/nginx_static_log.conf /var/cache/cpsagent.web
+cp /root/ganglia_web/nginx-manager.conf /var/cache/cpsagent.web
+cp /etc/nginx/fastcgi_params /var/cache/cpsagent.web
+
+# configure php-fpm log
+cp /root/ganglia_web/www.conf /etc/php5/fpm/pool.d/
+
+# create a group such that Ganglia and nginx can access common files 
+groupadd conpaas
+usermod -a -G conpaas ganglia
+usermod -a -G conpaas www-data
+chown -R :conpaas /var/cache/cpsagent.web
+chmod g+w /var/cache/cpsagent.web/
+#mkdir -p /var/cache/cpsagent.web/conf.d
+
+#configure the Ganglia module for nginx monitoring
+mkdir -p /etc/ganglia/conf.d
+cp /root/ganglia_web/modpython.conf /root/ganglia_web/*.pyconf /etc/ganglia/conf.d
+mkdir -p /usr/lib/ganglia/python_modules
+cp /root/ganglia_web/nginx_mon.py /usr/lib/ganglia/python_modules
+cp /root/ganglia_web/php_fpm_mon.py /usr/lib/ganglia/python_modules
+####################################
+
+
+# configure Ganglia gmetad 
+sed -i -e 's/my cluster/conpaas/' /etc/ganglia/gmetad.conf
+
+# configure Ganglia web front-end
+sed -i -e "s/%SERVER_NAME%/$IP_PUBLIC/" /root/ganglia_web/ganglia_nginx.conf
+sed -i -e "s+include /etc/nginx/sites-enabled+#include /etc/nginx/sites-enabled+" /etc/nginx/nginx.conf
+#cp /root/ganglia_web/nginx_ganglia.conf /var/cache/cpsagent.web/conf.d/
+mkdir -p /var/www
+cp -r /root/ganglia_web/ganglia /var/www/ganglia
+
 
 chmod 755 /root/manager-start
 /root/manager-start

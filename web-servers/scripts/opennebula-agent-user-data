@@ -28,6 +28,7 @@ echo "nameserver $NAMESERVER" > /etc/resolv.conf
 wget -P /root/ $SOURCE/ConPaaSWeb.tar.gz
 wget -P /root/ $SOURCE/agent-start
 wget -P /root/ $SOURCE/agent-stop
+wget -P /root/ $SOURCE/ganglia_web.tar.gz
 
 chmod 755 /root/agent-start
 chmod 755 /root/agent-stop
@@ -52,6 +53,36 @@ VAR_CACHE = %(ROOT)s/var/cache/cpsagent.web/
 VAR_RUN = %(ROOT)s/var/run/cpsagent.web/
 IP_WHITE_LIST = $MANAGER_IP
 EOF
+
+##### Configure Ganglia: #####
+sed -i -e 's/mcast_join/#mcast_join/' -e 's/bind/#bind/' /etc/ganglia/gmond.conf
+sed -i -e 's/host_dmax = 0/host_dmax = 300/' -e 's/send_metadata_interval = 0/send_metadata_interval = 120/' /etc/ganglia/gmond.conf
+sed -i -e 's/name = "unspecified"/name = "conpaas"/' /etc/ganglia/gmond.conf
+sed -i -e 's/setuid = yes/setuid = no/' /etc/ganglia/gmond.conf
+
+# on the worker machine, the IP of the manager can be found as IP_WHITE_LIST in the config file
+MANAGER_IP=`cat /root/config.cfg | grep 'IP_WHITE_LIST' | cut -d "="  -f 2 | tr -d [:blank:]`
+
+HOST_LINE="host = $MANAGER_IP"
+echo $HOST_LINE
+sed  -i "/udp_send_channel {/ a\ $HOST_LINE" /etc/ganglia/gmond.conf
+
+# create a group such that Ganglia and nginx can access common files 
+groupadd conpaas
+usermod -a -G conpaas ganglia
+usermod -a -G conpaas www-data
+chown -R :conpaas /var/cache/cpsagent.web/
+chmod g+w /var/cache/cpsagent.web/
+mkdir -p /var/cache/cpsagent.web/conf.d
+
+#configure the Ganglia module for nginx monitoring
+tar zxf /root/ganglia_web.tar.gz -C root
+mkdir -p /etc/ganglia/conf.d
+cp /root/ganglia_web/modpython.conf /root/ganglia_web/*.pyconf /etc/ganglia/conf.d
+mkdir -p /usr/lib/ganglia/python_modules
+cp /root/ganglia_web/nginx_mon.py /usr/lib/ganglia/python_modules
+cp /root/ganglia_web/php_fpm_mon.py /usr/lib/ganglia/python_modules
+###############################
 
 
 /root/agent-start
