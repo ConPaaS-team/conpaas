@@ -1,0 +1,28 @@
+modules {
+  module {
+    name = "php_fpm_mon"
+    language = "python"
+    param php_fpm_log {
+      value = "/var/cache/cpsagent.web/fpm-access.log"
+    }
+    param monitor_interval {
+      value = 15
+    }
+  }
+}
+
+collection_group {
+  collect_every = 15
+  time_threshold = 90
+  metric {
+    name = "php_request_rate"
+    title = "PHP Request Rate"
+    value_threshold = 5.0
+  }
+
+  metric {
+    name = "php_response_time"
+    title = "PHP Response Time"
+    value_threshold = 5.0
+  }
+}
