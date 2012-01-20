@@ -158,6 +158,9 @@ class OpenNebulaNodeDriver(NodeDriver):
         #
         disk = ET.SubElement(compute, 'DISK')
         storage = ET.SubElement(disk, 'STORAGE', {'href': 'http://%s/storage/%s' %(self.connection.host, str(kwargs['image'].id))})
+	disk_target = ET.SubElement(disk, 'TARGET')
+	disk_target.text = kwargs['ex_disk_target']
+
         
         nic = ET.SubElement(compute, 'NIC')
         network = ET.SubElement(nic, 'NETWORK', {'href': 'http://%s/network/%s' %(self.connection.host, str(kwargs['ex_network_id']))})
@@ -174,10 +177,20 @@ class OpenNebulaNodeDriver(NodeDriver):
         userdata = ET.SubElement(context, 'USERDATA')
         userdata.text = kwargs['ex_userdata']
         target = ET.SubElement(context, 'TARGET')
-        target.text = 'sdb'
+        target.text = kwargs['ex_context_target']
         
         os_tag = ET.SubElement(compute, 'OS')
-        os_type = ET.SubElement(os_tag, 'TYPE', {'arch': 'x86_64'})
+        #os_type = ET.SubElement(os_tag, 'TYPE', {'arch': 'x86_64'})
+	os_type = ET.SubElement(os_tag, 'TYPE', {'arch': kwargs['ex_os_arch']})
+		
+	# for Xen we need to provide the path to the bootloader
+	virt_solution = kwargs['ex_virt_solution']
+	if (virt_solution == 'xen'):
+        	os_bootloader = ET.SubElement(os_tag, 'BOOTLOADER')
+        	os_bootloader.text = kwargs['ex_os_bootloader']
+
+        os_root = ET.SubElement(os_tag, 'ROOT')
+        os_root.text = kwargs['ex_os_root']
         
         xml = ET.tostring(compute)
         node = self.connection.request('/compute',method='POST',data=xml).object
