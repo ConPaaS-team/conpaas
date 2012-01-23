@@ -17,10 +17,10 @@ In short:
 - You must edit the file __init__.php in the www directory such that
   it points to the location of the configuration files.
 
-- You must download the AWS JDK for PHP from 
-  http://aws.amazon.com/sdkforphp/ and expand it in the "www/lib" 
-  directory (thereby creating a directory "www/lib/aws-jdk" containing 
-  a number of PHP files and subdirectories).
+- You must download the AWS SDK for PHP from 
+  http://aws.amazon.com/sdkforphp/ and expand it in the "www/lib/aws-sdk" 
+  directory (the "www/lib/aws-sdk" directory is already in place,
+  and "sdk.class.php" must be in the same directory as __init__.php file).
 
 Guillaume Pierre
 gpierre@cs.vu.nl
