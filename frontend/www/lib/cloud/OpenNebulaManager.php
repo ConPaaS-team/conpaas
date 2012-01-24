@@ -52,6 +52,13 @@ class OpenNebulaManager {
 		$this->network = $conf['network'];
 		$this->gateway = $conf['gateway'];
 		$this->nameserver = $conf['nameserver'];
+		$this->virtualization_type = $conf['virtualization_type'];
+		$this->os_arch = $conf['os_arch'];
+		$this->os_bootloader = $conf['os_bootloader'];
+		$this->os_root = $conf['os_root'];
+		$this->disk_target = $conf['disk_target'];
+		$this->context_target = $conf['context_target'];
+		
 	}
 	
 	public function http_request($method, $resource, $xml=null) {
@@ -96,12 +103,20 @@ class OpenNebulaManager {
 						array(strtoupper($this->service_type), $this->sid),
 						$user_data);
 		$hex_user_data = bin2hex($user_data);
+		
+		/* This parameter is only needed for Xen */
+		$bootloader_spec = '<BOOTLOADER>'.$this->os_bootloader.'</BOOTLOADER>';
+		if (strcmp($this->virtualization_type, 'xen') != 0) {
+			$bootloader_spec = '';
+		}
+		
 		$response = $this->http_request('POST', '/compute',
 		'<COMPUTE>'.
 			'<NAME>conpaas</NAME>'.
 			'<INSTANCE_TYPE>'. $this->instance_type .'</INSTANCE_TYPE>'.
 			'<DISK>'.
 				'<STORAGE href="'.$this->opennebula_url.'/storage/'.$this->image.'" />'.
+				'<TARGET>'.$this->disk_target.'</TARGET>'.
 			'</DISK>'.
 			'<NIC>'.
 				'<NETWORK href="'.$this->opennebula_url.'/network/'.$this->network.'" />'.
@@ -112,9 +127,13 @@ class OpenNebulaManager {
 				'<IP_GATEWAY>'.$this->gateway.'</IP_GATEWAY>'.
 				'<NAMESERVER>'.$this->nameserver.'</NAMESERVER>'.
 				'<USERDATA>'.$hex_user_data.'</USERDATA>'.
-				'<TARGET>sdb</TARGET>'.
+				'<TARGET>'.$this->context_target.'</TARGET>'.
 			'</CONTEXT>'.
-		    '<OS><TYPE arch="x86_64" /></OS>'.
+		    '<OS>'.
+				'<TYPE arch="'.$this->os_arch.'" />'.
+				$bootloader_spec.
+				'<ROOT>'.$this->os_root.'</ROOT>'.
+			'</OS>'.
 		'</COMPUTE>');
 		if ($response === false) {
 			throw new Exception('the OpenNebula instance was not created');
