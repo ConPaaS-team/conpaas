@@ -13,7 +13,7 @@
 ##### TO CUSTOMIZE: #####
 
 # The name and size of the image file that will be generated.
-FILENAME=conpaastest.img
+FILENAME=conpaas.img
 FILESIZE=2048 #MB
 
 # The Debian distribution that you would like to have installed (we recommend squeeze).
@@ -21,8 +21,8 @@ DEBIAN_DIST=squeeze
 
 # The architecture and kernel version for the OS that will be installed (please make
 # sure to modify the kernel version name accordingly if you modify the architecture).
-ARCH=amd64
-KERNEL_VERSION=2.6.32-5-amd64
+ARCH=i386
+KERNEL_VERSION=2.6.32-5-686
 
 #########################
 
@@ -70,7 +70,11 @@ ROOT_DIR=`mktemp -d`
 cecho "Using $ROOT_DIR as mount point"
 
 cecho "Mounting disk image"
-mount $PART_DEV $ROOT_DIR
+
+LOOP_DEV_P=`losetup -f`
+losetup $LOOP_DEV_P $PART_DEV
+mount $LOOP_DEV_P $ROOT_DIR
+#mount $PART_DEV $ROOT_DIR
 
 cecho "Starting debootstrap"
 debootstrap --arch $ARCH $DEBIAN_DIST $ROOT_DIR
@@ -87,6 +91,13 @@ EOF
 cecho "Removing udev persistent rules"
 rm $ROOT_DIR/etc/udev/rules.d/70-persistent*
 
+cecho "Changing hostname"
+cat <<EOF > $ROOT_DIR/etc/hostname
+conpaas
+EOF
+
+sed -i '1i 127.0.0.1  conpaas' $ROOT_DIR/etc/hosts
+
 cecho "Mounting /dev and /proc in chroot"
 mount -obind /dev $ROOT_DIR/dev
 mount -t proc proc $ROOT_DIR/proc
@@ -98,6 +109,13 @@ chroot $ROOT_DIR /bin/bash -c "apt-get -y install linux-image-$KERNEL_VERSION"
 cecho "Installing grub package"
 chroot $ROOT_DIR /bin/bash -c 'DEBIAN_FRONTEND=noninteractive apt-get -y --force-yes install grub'
 
+mkdir -p $ROOT_DIR/boot/grub
+cat <<EOF > $ROOT_DIR/boot/grub/device.map 
+(hd0)   $LOOP_DEV
+(hd0,1) $LOOP_DEV_P
+EOF
+
+#chroot $ROOT_DIR grub-mkconfig -o /boot/grub/grub.cfg
 cecho "Writing /boot/grub/grub.cfg"
 cat <<EOF > $ROOT_DIR/boot/grub/grub.cfg
 set default=0
@@ -109,8 +127,9 @@ menuentry 'linux-image-$KERNEL_VERSION' {
   initrd /boot/initrd.img-$KERNEL_VERSION
 }
 EOF
+
 cecho "Running grub-install"
-grub-install --root-directory=$ROOT_DIR --no-floppy --recheck $LOOP_DEV
+grub-install --no-floppy --grub-mkdevicemap=$ROOT_DIR/boot/grub/device.map --root-directory=$ROOT_DIR $LOOP_DEV
 
 # disable auto start after package install
 cat <<EOF > $ROOT_DIR/usr/sbin/policy-rc.d
@@ -136,10 +155,13 @@ DEBIAN_FRONTEND=noninteractive apt-get -y --force-yes --no-install-recommends --
         install openssh-server \
         python python-pycurl python-cheetah nginx \
         tomcat6-user memcached \
-        make gcc g++ sun-java6-jdk erlang ant libxslt1-dev yaws subversion
+        make gcc g++ sun-java6-jdk erlang ant libxslt1-dev yaws subversion \
+	ganglia-monitor gmetad rrdtool logtail
 update-rc.d -f memcached remove
 update-rc.d -f nginx remove
 update-rc.d -f yaws remove
+update-rc.d -f ganglia-monitor remove
+update-rc.d -f gmetad remove
 
 # add dotdeb repo for php fpm
 echo "deb http://packages.dotdeb.org stable all" >> /etc/apt/sources.list
@@ -219,10 +241,14 @@ sleep 1s
 cecho "Umounting $ROOT_DIR"
 umount $ROOT_DIR
 sleep 1s
+losetup -d $LOOP_DEV_P
 kpartx -d $LOOP_DEV
 sleep 1s
 losetup -d $LOOP_DEV
 sleep 1s
 rm -r $ROOT_DIR
 cecho "Done"
+
+
+
 
