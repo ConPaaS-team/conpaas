@@ -36,14 +36,19 @@ function install_deb() {
   # install packages
   apt-get -f -y install openssh-server \
         python python-pycurl python-cheetah nginx tomcat6-user memcached \
-        make gcc g++ sun-java6-jdk erlang ant libxslt1-dev yaws subversion
+        make gcc g++ sun-java6-jdk erlang ant libxslt1-dev yaws subversion \
+		ganglia-monitor gmetad rrdtool logtail
   update-rc.d -f memcached remove
   update-rc.d -f nginx remove
   /etc/init.d/memcached stop
   /etc/init.d/nginx stop
   update-rc.d -f yaws remove
   /etc/init.d/yaws stop
-  
+  update-rc.d -f ganglia-monitor remove
+  /etc/init.d/ganglia-monitor stop
+  update-rc.d -f gmetad remove
+  /etc/init.d/gmetad stop
+
   # add dotdeb repo for fpm
   echo "deb http://packages.dotdeb.org stable all" >> /etc/apt/sources.list
   wget -O - http://www.dotdeb.org/dotdeb.gpg 2>/dev/null | apt-key add -
