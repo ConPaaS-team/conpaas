@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with ConPaaS.  If not, see <http://www.gnu.org/licenses/>.
 
-tar -zxf /root/ConPaaSWeb.tar.gz -C /root/
+#tar -zxf /root/ConPaaSWeb.tar.gz -C /root/
 export PYTHONPATH=/root/ConPaaSWeb/src/:/root/ConPaaSWeb/contrib/
 
 

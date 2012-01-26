@@ -18,7 +18,7 @@
 # along with ConPaaS.  If not, see <http://www.gnu.org/licenses/>.
 
 # setup and run local agent
-tar -zxf /root/ConPaaSWeb.tar.gz -C /root/
+#tar -zxf /root/ConPaaSWeb.tar.gz -C /root/
 cp /root/ConPaaSWeb/etc/nginx-proxy.tmpl /etc/cpsagent.web/nginx-proxy.tmpl
 cp /root/ConPaaSWeb/etc/nginx-static.tmpl /etc/cpsagent.web/nginx-static.tmpl
 cp /root/ConPaaSWeb/etc/fpm.tmpl /etc/cpsagent.web/fpm.tmpl

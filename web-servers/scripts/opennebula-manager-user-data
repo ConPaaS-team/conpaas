@@ -30,7 +30,6 @@ SOURCE='http://node060.das3.cs.vu.nl/code/'
 wget -P /root/ $SOURCE/ConPaaSWeb.tar.gz
 wget -P /root/ $SOURCE/manager-start
 wget -P /root/ $SOURCE/opennebula-agent-user-data
-wget -P /root/ $SOURCE/ganglia_web.tar.gz
 
 cat <<EOF > /root/config.cfg
 [iaas]
@@ -86,13 +85,14 @@ echo $HOST_LINE
 sed  -i "/udp_send_channel {/ a\ $HOST_LINE" /etc/ganglia/gmond.conf
 
 # configure nginx log
-tar zxf /root/ganglia_web.tar.gz -C root
+tar -zxf /root/ConPaaSWeb.tar.gz -C /root/
+#tar zxf /root/ganglia_web.tar.gz -C root
 #cp /root/ganglia_web/nginx_static_log.conf /var/cache/cpsagent.web
-cp /root/ganglia_web/nginx-manager.conf /var/cache/cpsagent.web
+cp /root/ConPaaSWeb/misc/ganglia_modules/nginx-manager.conf /var/cache/cpsagent.web
 cp /etc/nginx/fastcgi_params /var/cache/cpsagent.web
 
 # configure php-fpm log
-cp /root/ganglia_web/www.conf /etc/php5/fpm/pool.d/
+cp /root/ConPaaSWeb/misc/ganglia_modules/www.conf /etc/php5/fpm/pool.d/
 
 # create a group such that Ganglia and nginx can access common files 
 groupadd conpaas
@@ -104,10 +104,10 @@ chmod g+w /var/cache/cpsagent.web/
 
 #configure the Ganglia module for nginx monitoring
 mkdir -p /etc/ganglia/conf.d
-cp /root/ganglia_web/modpython.conf /root/ganglia_web/*.pyconf /etc/ganglia/conf.d
+cp /root/ConPaaSWeb/misc/ganglia_modules/modpython.conf /root/ConPaaSWeb/misc/ganglia_modules/*.pyconf /etc/ganglia/conf.d
 mkdir -p /usr/lib/ganglia/python_modules
-cp /root/ganglia_web/nginx_mon.py /usr/lib/ganglia/python_modules
-cp /root/ganglia_web/php_fpm_mon.py /usr/lib/ganglia/python_modules
+cp /root/ConPaaSWeb/misc/ganglia_modules/nginx_mon.py /usr/lib/ganglia/python_modules
+cp /root/ConPaaSWeb/misc/ganglia_modules/php_fpm_mon.py /usr/lib/ganglia/python_modules
 ####################################
 
 
@@ -119,7 +119,7 @@ sed -i -e "s/%SERVER_NAME%/$IP_PUBLIC/" /root/ganglia_web/ganglia_nginx.conf
 sed -i -e "s+include /etc/nginx/sites-enabled+#include /etc/nginx/sites-enabled+" /etc/nginx/nginx.conf
 #cp /root/ganglia_web/nginx_ganglia.conf /var/cache/cpsagent.web/conf.d/
 mkdir -p /var/www
-cp -r /root/ganglia_web/ganglia /var/www/ganglia
+cp -r /root/ConPaaSWeb/contrib/ganglia_frontend/ganglia /var/www/ganglia
 
 
 chmod 755 /root/manager-start

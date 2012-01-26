@@ -28,7 +28,7 @@ echo "nameserver $NAMESERVER" > /etc/resolv.conf
 wget -P /root/ $SOURCE/ConPaaSWeb.tar.gz
 wget -P /root/ $SOURCE/agent-start
 wget -P /root/ $SOURCE/agent-stop
-wget -P /root/ $SOURCE/ganglia_web.tar.gz
+#wget -P /root/ $SOURCE/ganglia_web.tar.gz
 
 chmod 755 /root/agent-start
 chmod 755 /root/agent-stop
@@ -76,12 +76,13 @@ chmod g+w /var/cache/cpsagent.web/
 mkdir -p /var/cache/cpsagent.web/conf.d
 
 #configure the Ganglia module for nginx monitoring
-tar zxf /root/ganglia_web.tar.gz -C root
+#tar zxf /root/ganglia_web.tar.gz -C root
+tar -zxf /root/ConPaaSWeb.tar.gz -C /root/
 mkdir -p /etc/ganglia/conf.d
-cp /root/ganglia_web/modpython.conf /root/ganglia_web/*.pyconf /etc/ganglia/conf.d
+cp /root/ConPaaSWeb/misc/ganglia_modules/modpython.conf /root/ConPaaSWeb/misc/ganglia_modules/*.pyconf /etc/ganglia/conf.d
 mkdir -p /usr/lib/ganglia/python_modules
-cp /root/ganglia_web/nginx_mon.py /usr/lib/ganglia/python_modules
-cp /root/ganglia_web/php_fpm_mon.py /usr/lib/ganglia/python_modules
+cp /root/ConPaaSWeb/misc/ganglia_modules/nginx_mon.py /usr/lib/ganglia/python_modules
+cp /root/ConPaaSWeb/misc/ganglia_modules/php_fpm_mon.py /usr/lib/ganglia/python_modules
 ###############################
 
 
