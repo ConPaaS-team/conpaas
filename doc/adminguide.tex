@@ -37,7 +37,32 @@
 \vfil
 \newpage
 
+\section{Installation Overview}
+
+For installing and using the ConPaaS web hosting platform, you will need:
+
+\begin{itemize} 
+\item access to Amazon EC2 or to an OpenNebula cloud
+\item a machine (not necessarily part of the cloud) to host the ConPaaS
+web front-end
+\end{itemize}
+
+ConPaaS uses customized VM images for hosting web applications. The first
+step of the installation is to create a ConPaaS customized image. Section
+~\ref{sec:ec2image} describes the creation of VM images for Amazon EC2,
+while section~\ref{sec:oneimage} describes the creation of VM images for
+OpenNebula.
+
+Alternatively, you can download one of the ConPaaS images that we created
+for OpenNebula, from the ``Downloads'' section of our web site:
+
+ \url{http://www.conpaas.eu}
+
+The second (and last) step of the ConPaaS installation is to setup the 
+ConPaaS web front-end. This is discussed in section~\ref{sec:frontend}. 
+
 \section{Creating a ConPaaS image for Amazon EC2}
+\label{sec:ec2image}
 
 The Web Hosting Service is capable of running over the Elastic Compute
 Cloud (EC2) of Amazon Web Services (AWS). This section describes the
@@ -106,6 +131,7 @@ documentation is available at
 \url{http://docs.amazonwebservices.com/AWSEC2/latest/UserGuide/index.html?using-network-security.html}.
 
 \section{Creating a ConPaaS image for OpenNebula}
+\label{sec:oneimage}
 
 The Web Hosting Service is capable of running over an OpenNebula
 installation. This section describes the process of configuring
@@ -202,6 +228,7 @@ There are two main topics that you should pay attention to:
 \end{enumerate}
 
 \section{Setup ConPaaS's Frontend}
+\label{sec:frontend}
 
 The ConPaaS frontend is a web application that allows users to manager
 their ConPaaS services. Users can create, configure and terminate
@@ -333,5 +360,14 @@ measures to a more usable level, you need to edit two files:
   ``frontend/conf/manager-user-data''.
 \end{itemize}
 
+
+\subsection{Monitoring}
+The ConPaaS virtual machines are monitored through Ganglia 
+(\url{http://ganglia.sourceforge.net/}). The manager VM holds
+the Ganglia monitoring database, and also a web front-end
+where you can view the gathered performance information. The
+web front-end is accessible at:
+
+\url{http://<manager_ip_address>:8080} 
 
 \end{document}
