@@ -14,6 +14,7 @@ public class Knapsack {
 	public int noATUPlan;
 	public long costPlan;
 	public boolean debug = false;
+	public boolean printConfig = true;
 	public boolean success;
 	
 	public Knapsack(Item[] items, long budget, long size, int minCATU, int allCostATU, int atu) {
@@ -81,7 +82,8 @@ public class Knapsack {
         			nminATUs=i;
         			wminATUs=w;
         			minATUs=(int)Math.ceil((double)size/(atu*opt[i][w]));
-        			System.out.println("Found sol at " + i + ", " + w + ", noATUs=" + minATUs);        				
+        			if(printConfig)
+        				System.out.println("Found sol at " + i + ", " + w + ", noATUs=" + minATUs);        				
         			costPlan = w * minATUs;        			
         			stop = true; break;
         		}
@@ -101,7 +103,8 @@ public class Knapsack {
         success = false;
         for(String cluster : finalSol.keySet()) {
         	success = true;
-        	System.out.println("cluster " + cluster + " : " + finalSol.get(cluster) + " machines");
+        	if(printConfig)
+        		System.out.println("cluster " + cluster + " : " + finalSol.get(cluster) + " machines");
         }
 
         //print results

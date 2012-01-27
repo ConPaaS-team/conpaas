@@ -81,7 +81,7 @@ public class MinMinMaster extends Master {
 				String bestHostJ = "";
 				long et = Long.parseLong(j.args[0]);
 				for(Host host : hosts.values()) {				
-					if(host.node.contains(bot.CLUSTER2)) {
+					if(host.node.contains("slow")) {
 						if(mctj > host.EAT + 2* et /3) {
 							mctj = host.EAT + 2* et /3;
 							bestHostJ = host.node;
@@ -123,7 +123,7 @@ public class MinMinMaster extends Master {
 			
 			if((! (nextJob instanceof NoJob)) && (nextJob.submitted != true)) {
 				long sleep = Long.parseLong(nextJob.args[0]);				
-				if(host.from.location().getParent().toString().compareTo(bot.CLUSTER2) == 0) {
+				if(host.from.location().getParent().toString().compareTo("slow") == 0) {
 					nextJob.args[0] = new Long(2* sleep / 3).toString();
 				}
 				nextJob.submitted = true;
@@ -141,11 +141,6 @@ public class MinMinMaster extends Master {
 				wm.writeObject(nextJob);
 				wm.finish();
 				workReplyPort.close();
-                                
-                                if(nextJob instanceof NoJob){
-                                    Cluster cluster = bot.Clusters.get(host.from.location().getParent().toString());
-                                    cluster.terminateWorker(host.from, myIbis);
-                                }
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -168,7 +163,7 @@ public class MinMinMaster extends Master {
 				if (received instanceof JobResult) {
 					nextJob = handleJobResult((JobResult) received, from);
 				} else {
-					throw new RuntimeException("Not an instance of JobResult");
+					System.exit(1);
 				}
 
 				nextJob.setNode(from.location().getLevel(0));
@@ -176,7 +171,7 @@ public class MinMinMaster extends Master {
 				/*begin for hpdc tests*/
 				if(! (nextJob instanceof NoJob)) {
 					long sleep = Long.parseLong(nextJob.args[0]);				
-					if(from.location().getParent().toString().compareTo(bot.CLUSTER2) == 0) {
+					if(from.location().getParent().toString().compareTo("slow") == 0) {
 						nextJob.args[0] = new Long(2* sleep / 3).toString();
 					}				
 				}
@@ -190,11 +185,6 @@ public class MinMinMaster extends Master {
 				wm.writeObject(nextJob);
 				wm.finish();
 				workReplyPort.close();
-                                
-                                if(nextJob instanceof NoJob){
-                                    Cluster cluster = bot.Clusters.get(from.location().getParent().toString());
-                                    cluster.terminateWorker(from, myIbis);
-                                }
 				
 				undone = ! areWeDone();					
 				
@@ -209,7 +199,7 @@ public class MinMinMaster extends Master {
 					if (j.getNode().compareTo(node)==0) {
 						schedJobs.remove(j.getJobID());						
 						/*begin hpdc tests*/
-						if (j.getNode().contains(bot.CLUSTER2)) {
+						if (j.getNode().contains("slow")) {
 							j.args[0] = new Long(3* Long.parseLong(j.args[0]) / 2).toString();
 						}
 						/*end hpdc tests*/
@@ -361,7 +351,7 @@ public class MinMinMaster extends Master {
 				if (j.getNode().compareTo(node)==0) {
 					schedJobs.remove(j.getJobID());	
 					/*begin hpdc tests*/
-					if (j.getNode().contains(bot.CLUSTER2)) {
+					if (j.getNode().contains("slow")) {
 						j.args[0] = new Long(3* Long.parseLong(j.args[0]) / 2).toString();
 					}
 					/*end hpdc tests*/
@@ -385,10 +375,16 @@ public class MinMinMaster extends Master {
 		Collection<Cluster> clusters = bot.Clusters.values();
 		for (Cluster c : clusters) {
 			System.err.println("on cluster " + c.alias + " maximmum number workers is " + c.maxNodes);
-			Process p = c.startWorkers(/*deadline2ResTime()*/"4:45:00", c.maxNodes, bot.electionName,
+			Process p = c.startNodes(/*deadline2ResTime()*/"4:45:00", c.maxNodes, bot.electionName,
                                                     bot.poolName, bot.serverAddress);
 			//sshRunners.put(c.alias, p);
 		}
+		
+	}
+
+	@Override
+	public void terminateWorker(Cluster cluster, WorkerStats ws, String reason) {
+		// TODO Auto-generated method stub
 		
 	}
 	

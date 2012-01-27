@@ -19,6 +19,8 @@ public class Job implements Serializable {
 	/*for replication on tail phase*/
 	public boolean replicated = false;
 	public double tau;
+	private double elapsedET;
+	
 	/*end for hpdc tests*/
 	
 	/*expressed in seconds*/
@@ -29,6 +31,7 @@ public class Job implements Serializable {
 	public HashMap<String,Long> starttimes;
 	public HashMap<String,String> replicaNodes;
 	public boolean notYetFinished = true;
+	
 	
 	/*empty constructor for NoJob*/
 	public Job() {}
@@ -83,7 +86,16 @@ public class Job implements Serializable {
 		return tau;
 	}
 
-	/*assumes one degree of replication*/
+	public void setElapsedET(double l) {
+		this.elapsedET = l;		
+	}
+
+	public double getElapsedET() {
+		// TODO Auto-generated method stub
+		return this.elapsedET;
+	}
+
+		/*assumes one degree of replication*/
 	public void originalDied() {
 		replicated = false;
 		this.node = replicaNodes.values().iterator().next();

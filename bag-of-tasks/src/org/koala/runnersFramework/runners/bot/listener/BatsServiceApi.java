@@ -16,7 +16,7 @@ public interface BatsServiceApi {
     public MethodReport start_sampling(String filesLocation,
             String inputFile, String clusterConfigurationFile);
 
-    public MethodReport start_execution(int scheduleNo);
+    public MethodReport start_execution(long schedulesFileTimeStamp, int scheduleNo);
 
     /**
      * In case the API was successful, it will return a 
@@ -25,7 +25,7 @@ public interface BatsServiceApi {
      * MethodReport object describing the exceptions which took place.
      * @return 
      */
-    public Object get_sampling_result();
+    public Object get_sampling_results();
 
     public State get_service_info();
 

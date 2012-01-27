@@ -2,6 +2,7 @@ package org.koala.runnersFramework.runners.bot;
 
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.Iterator;
 
 public class Schedule implements Serializable {
 
@@ -36,6 +37,11 @@ public class Schedule implements Serializable {
 
     @Override
     public String toString() {
-        return "\t" + budget + "\t" + cost + "\t" + atus;
+    	String machines = "";
+    	Iterator sols = machinesPerCluster.entrySet().iterator();
+    	while(sols.hasNext()) {
+    		machines += sols.next() + "\t";
+    	}
+        return "\t" + budget + "\t" + cost + "\t" + atus + "\t" + machines;
     }
 }

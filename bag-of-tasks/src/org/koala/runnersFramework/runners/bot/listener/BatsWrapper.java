@@ -12,8 +12,8 @@ public class BatsWrapper {
         }
         System.out.println("BATS_HOME=" + BoTRunner.path);
 
-//        BoTRunner.path = "/home/maricel/NetBeansProjects/BoT";
-//        System.out.println("MANUAL BATS_HOME set to:\t" + BoTRunner.path);
+       // BoTRunner.path = "/home/maricel/NetBeansProjects/BoT";
+       // System.out.println("MANUAL BATS_HOME set to:\t" + BoTRunner.path);
 
         Thread serviceListener = new BatsServiceListener();
         serviceListener.start();

@@ -1,5 +1,7 @@
 package org.koala.runnersFramework.runners.bot.listener;
 
+import ibis.ipl.IbisProperties;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -7,6 +9,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
 import java.util.logging.FileHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -18,7 +22,8 @@ import org.koala.runnersFramework.runners.bot.Schedule;
 
 class BatsServiceApiImpl implements BatsServiceApi {
 
-    private final String schedulesFile = "schedules.ser";
+    private final String schedulesFolderString;
+    private final File schedulesFolder;
     private final Object lock;
     private volatile State serviceState;
     private final String logFile = "exceptions.log";
@@ -26,10 +31,10 @@ class BatsServiceApiImpl implements BatsServiceApi {
             Logger.getAnonymousLogger();
 
     public BatsServiceApiImpl() {
-        serviceState = new State(State.INIT);
+        serviceState = new State(State.RUNNING);
         lock = new Object();
         try {
-            Handler handler = new FileHandler(BoTRunner.path + "/" + logFile);
+            Handler handler = new FileHandler(BoTRunner.path + File.separator + logFile);
             handler.setFormatter(new SimpleFormatter());
             exceptionsLogger.addHandler(handler);
             exceptionsLogger.log(Level.INFO, "Service started\n");
@@ -37,26 +42,31 @@ class BatsServiceApiImpl implements BatsServiceApi {
             Logger.getLogger(BatsServiceApiImpl.class.getName()).log(
                     Level.SEVERE, null, ex);
         }
+        schedulesFolderString = BoTRunner.path + File.separator + "schedules";
+        schedulesFolder = new File(schedulesFolderString);
+        /* Create, if non-existing, the schedules dump folder */
+        schedulesFolder.mkdirs();
     }
 
     @Override
     public MethodReport start_sampling(String filesLocationUrl,
             String inputFile, String clusterConfigurationFile) {
-        MethodReport retVal = new MethodReport("Sampling: ");
-
         try {
             synchronized (lock) {
-                if (State.RUNNING.equals(serviceState.state)) {
-                    retVal.append("Failed! Service already running.");
-                    return retVal;
+                if (State.ADAPTING.equals(serviceState.state)) {
+                    return new MethodReportError("Sampling failed! Service already running.");
                 }
-                serviceState.state = State.RUNNING;
+                serviceState.state = State.ADAPTING;
             }
 
             final BoTRunner bot = new BoTRunner(5, 0, 60, 24, 400,
                     inputFile, clusterConfigurationFile);
 
-            BoTRunner.schedulesFile = schedulesFile;
+            BoTRunner.schedulesFile = schedulesFolderString + File.separator
+                     + System.currentTimeMillis();
+//            old code:
+//            BoTRunner.schedulesFile = schedulesFile;
+            
             BoTRunner.filesLocationUrl = filesLocationUrl;
 
             Thread thread = new Thread() {
@@ -70,8 +80,8 @@ class BatsServiceApiImpl implements BatsServiceApi {
                                 "Sampling failed because of:\n{0}\n",
                                 ex.getLocalizedMessage());
                     }
-                    synchronized (lock) {
-                        serviceState.state = org.koala.runnersFramework.runners.bot.listener.State.STOPPED;
+                    synchronized (lock) {                        
+                        serviceState.state = org.koala.runnersFramework.runners.bot.listener.State.RUNNING;
                     }
 
                 }
@@ -81,74 +91,79 @@ class BatsServiceApiImpl implements BatsServiceApi {
             thread.start();
         } catch (Exception ex) {
             synchronized (lock) {
-                serviceState.state = State.STOPPED;
+                serviceState.state = State.RUNNING;
             }
-            retVal.append(ex.getLocalizedMessage());
-            return retVal;
+            return new MethodReportError(ex.getLocalizedMessage());
         }
-        retVal.append("Ok.");
-        return retVal;
+        return new MethodReportSuccess("Sampling started.");
     }
 
     @Override
-    public Object get_sampling_result() {
-        MethodReport retVal = new MethodReport("Sampling result: ");
-        File file = hasSamplingResult(schedulesFile);
+    public Object get_sampling_results() {
+        /**
+         * FAKE
+         *
+        List<SamplingResult> list = new ArrayList<SamplingResult>();
+        List<String> sched = new ArrayList<String>();
+        sched.add("\t" + 323 + "\t" + 100 + "\t" + 1000);
+        sched.add("\t" + 421233 + "\t" + 100 + "\t" + 1000);
+        sched.add("\t" + 323 + "\t" + 20 + "\t" + 30);
+        sched.add("\t" + 32123 + "\t" + 100 + "\t" + 1000);
+        sched.add("\t" + 3123 + "\t" + 1400 + "\t" + 10);
+        SamplingResult sr = new SamplingResult("1873477324884", sched);
+        list.add(sr);
+        return list;
+        **
+         * END FAKE
+         */
+        List<SamplingResult> list = new ArrayList<SamplingResult>();
+        
+        for (File file : schedulesFolder.listFiles()) {
+            if (file.length() <= 0) {
+                continue;
+            }
+            
+            List<Schedule> schedules = null;
+            try {
+                FileInputStream fis = new FileInputStream(file);
+                ObjectInputStream ois = new ObjectInputStream(fis);
 
-        if (file == null) {
-            retVal.append("No sampling result available.");
-            return retVal;
+                // read the BoT, but no need to store it
+                ois.readObject();
+                schedules = (List<Schedule>) ois.readObject();
+
+                ois.close();
+            } catch (Exception ex) {
+                Logger.getLogger(BatsServiceApiImpl_Later.class.getName()).log(Level.SEVERE, null, ex);
+            }
+
+            if (schedules == null) {
+                continue;
+            }
+            
+            /**
+             * Return an array of schedules files names with their corresponding schedules.
+             * Element of the array format:
+             * [schedule time stamp] [sched0] [sched1] ...
+             * 
+             * Schedule format:
+             * budget   cost    atus
+             */ 
+            
+            List<String> schedulesString = new ArrayList<String>(schedules.size());
+            for (int i = 0; i < schedules.size(); i++) {
+                schedulesString.add(schedules.get(i).toString());
+            }
+            
+            list.add(new SamplingResult(file.getName(), schedulesString));
         }
 
-        String[] retValue = null;
-        FileInputStream fis;
-        ArrayList<Schedule> schedules = null;
-        try {
-            fis = new FileInputStream(file);
-            ObjectInputStream ois = new ObjectInputStream(fis);
-
-            // read the BoT, but no need to store it
-            ois.readObject();
-            schedules = (ArrayList<Schedule>) ois.readObject();
-
-            ois.close();
-        } catch (Exception ex) {
-            Logger.getLogger(BatsServiceApiImpl_Later.class.getName()).log(Level.SEVERE, null, ex);
+        if(list.isEmpty()) {
+            return new MethodReportError("No schedules files available.");
         }
-
-        if (schedules == null) {
-            retVal.append("File available, but failed to read from it.");
-            return retVal;
-        }
-
-        retValue = new String[schedules.size() + 1];
-        retValue[0] = "\tbudget\tcost\tatus";
-        for (int i = 1; i <= schedules.size(); i++) {
-            retValue[i] = schedules.get(i).toString();
-        }
-
-        return retValue;
-    }
-
-    private File hasSamplingResult(String schedulesFile) {
-        if (schedulesFile == null) {
-            return null;
-        }
-        String fileName = schedulesFile;
-
-        File file = new File(fileName);
-        if (file.exists()) {
-            return file;
-        }
-
-        fileName = BoTRunner.path + "/" + schedulesFile;
-        file = new File(fileName);
-        if (file.exists()) {
-            return file;
-        }
-
-        return null;
-    }
+        
+        return list;
+    }    
 
     @Override
     public State get_service_info() {
@@ -156,26 +171,33 @@ class BatsServiceApiImpl implements BatsServiceApi {
     }
 
     @Override
-    public MethodReport start_execution(int scheduleNo) {
-        MethodReport retVal = new MethodReport("Execution: ");
-
+    public MethodReport start_execution(long schedulesFileTimeStamp, int scheduleNo) {    
+        File schedFile = null;
         try {
             synchronized (lock) {
-                if (schedulesFile == null) {
-                    retVal.append("Failed! No schedules file present.");
-                    return retVal;
+                schedFile = getSchedulesFile(schedulesFileTimeStamp);
+                if (schedFile == null) {
+                    return new MethodReportError("Execution failed! No schedules file present.");
                 }
-                if ("RUNNING".equals(serviceState.state)) {
-                    retVal.append("Failed! Service already running.");
-                    return retVal;
+                if (State.ADAPTING.equals(serviceState.state)) {
+                    return new MethodReportError("Execution failed! Service already running.");
                 }
-                serviceState.state = State.RUNNING;
+                serviceState.state = State.ADAPTING;
             }
 
-            String[] args = {"" + scheduleNo, schedulesFile};
+            String[] args = {"" + scheduleNo, schedFile.getPath()};
 
             final Executor execute = new Executor(args);
 
+            /*work-around such that the "Sampling&Execution-in-the-same-VM" works well*/
+            
+            Properties initialIbisProps = execute.bot.myIbisProps;            
+            execute.bot.myIbisProps.setProperty(IbisProperties.POOL_NAME, 
+            		initialIbisProps.get(IbisProperties.POOL_NAME)+"-executionPhase");
+            execute.bot.myIbisProps.setProperty("ibis.election.name", 
+            		initialIbisProps.get("ibis.election.name")+"-executionPhase");
+
+                        
             Thread thread = new Thread() {
 
                 @Override
@@ -187,7 +209,7 @@ class BatsServiceApiImpl implements BatsServiceApi {
                                 "Execution failed because of:\n{0}\n", ex.getLocalizedMessage());
                     }
                     synchronized (lock) {
-                        serviceState.state = org.koala.runnersFramework.runners.bot.listener.State.STOPPED;
+                        serviceState.state = org.koala.runnersFramework.runners.bot.listener.State.RUNNING;
                     }
                 }
             };
@@ -198,16 +220,31 @@ class BatsServiceApiImpl implements BatsServiceApi {
             synchronized (lock) {
                 serviceState.state = State.STOPPED;
             }
-            retVal.append(ex.getLocalizedMessage());
-            return retVal;
+            return new MethodReportError(ex.getLocalizedMessage());
         }
-        retVal.append("Ok.");
-        return retVal;
+        return new MethodReportSuccess("Ok.");
+    }
+    
+    private File getSchedulesFile(long schedulesFileTimeStamp) {
+        String schedulesFile = "" + schedulesFileTimeStamp;
+
+        File file = new File(schedulesFile);
+        if (file.exists()) {
+            return file;
+        }
+
+        schedulesFile = schedulesFolder + File.separator + schedulesFile;
+        file = new File(schedulesFile);
+        if (file.exists()) {
+            return file;
+        }
+
+        return null;
     }
 
     @Override
     public MethodReport get_log() {
-        MethodReport retVal = new MethodReport("Log:\n");
+        MethodReport retVal = new MethodReportSuccess();
         try {
             BufferedReader br = new BufferedReader(new InputStreamReader(
                     new FileInputStream(BoTRunner.path + "/" + logFile)));
@@ -217,7 +254,7 @@ class BatsServiceApiImpl implements BatsServiceApi {
             }
             br.close();
         } catch (IOException ex) {
-            retVal.append(ex.getLocalizedMessage());
+            return new MethodReportError(ex.getLocalizedMessage());
         }
         return retVal;
     }

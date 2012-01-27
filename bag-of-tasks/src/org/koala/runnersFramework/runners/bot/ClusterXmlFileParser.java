@@ -1,5 +1,6 @@
 package org.koala.runnersFramework.runners.bot;
 
+
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
@@ -13,9 +14,10 @@ import javax.xml.stream.events.EndElement;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
 
+
 public class ClusterXmlFileParser {
 
-    /** author Maricel
+    /**
      * Field names from the XML file.
      */
     static final String CLUSTER = "cluster";

@@ -1,5 +1,6 @@
 package org.koala.runnersFramework.runners.bot;
 
+import org.koala.runnersFramework.runners.bot.BoTRunner;
 import ibis.ipl.ConnectionFailedException;
 import ibis.ipl.Ibis;
 import ibis.ipl.IbisCapabilities;
@@ -20,6 +21,13 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Random;
 import java.util.Set;
+import org.koala.runnersFramework.runners.bot.Item;
+import org.koala.runnersFramework.runners.bot.Job;
+import org.koala.runnersFramework.runners.bot.JobRequest;
+import org.koala.runnersFramework.runners.bot.JobResult;
+import org.koala.runnersFramework.runners.bot.Knapsack;
+import org.koala.runnersFramework.runners.bot.NoJob;
+import org.koala.runnersFramework.runners.bot.WorkerStats;
 
 public class MyMaster extends Master {
 	
@@ -56,7 +64,8 @@ public class MyMaster extends Master {
 		
 /*		if(bot.noSampleJobs*bot.Clusters.size() > 0.5 * totalNumberTasks)
 		{
-			throw new RuntimeException("Size of the BoT too small for the number of clusters");
+			System.out.println("Size of the BoT too small for the number of clusters");
+			System.exit(0);
 		}
 	*/			
 		for (Cluster cluster : clusters) {
@@ -196,7 +205,7 @@ public class MyMaster extends Master {
 				} else if (received instanceof JobResult) {
 					nextJob = handleJobResult((JobResult) received, from);
 				} else {
-					throw new RuntimeException("Did not receive job request/result instance.");
+					System.exit(1);
 				}
 
 				nextJob.setNode(from.location().getLevel(0));
@@ -219,11 +228,6 @@ public class MyMaster extends Master {
 				wm.writeObject(nextJob);
 				wm.finish();
 				workReplyPort.close();
-                                
-                                if(nextJob instanceof NoJob){
-                                    Cluster cluster = bot.Clusters.get(from.location().getParent().toString());
-                                    cluster.terminateWorker(from, myIbis);
-                                }
 				
 				undone = ! areWeDone();					
 				
@@ -464,7 +468,7 @@ public class MyMaster extends Master {
 						if(Mi.intValue() > cluster.necNodes) {
 							if(Mi.intValue() > cluster.crtNodes) {
 								moreWorkers = Math.min(cluster.maxNodes, Mi.intValue()) - cluster.crtNodes;
-								cluster.startWorkers("4:45:00", moreWorkers, bot.electionName, myIbis.properties().getProperty(
+								cluster.startNodes("4:45:00", moreWorkers, bot.electionName, myIbis.properties().getProperty(
 										IbisProperties.POOL_NAME), myIbis.properties().getProperty(
 												IbisProperties.SERVER_ADDRESS));
 								/*DEBUG*/
@@ -577,17 +581,22 @@ public class MyMaster extends Master {
 	}
 	
 	private Job sayGB (IbisIdentifier to) {
-		
-		System.err.println("We say goodbye to " + to.location().toString());
-		
 		String cluster = to.location().getParent().toString();
 		String node = to.location().getLevel(0);
-		workers.get(cluster).get(node).workerFinished(System.currentTimeMillis());
-		workers.get(cluster).get(node).setLatestJobStartTime(0);
-		bot.Clusters.get(cluster).setCrtNodes(bot.Clusters.get(cluster).getCrtNodes()-1);
+		WorkerStats ws = workers.get(cluster).get(node);
+		Cluster actualCluster = bot.Clusters.get(cluster);
+		System.err.println("We say goodbye to " + to.location().toString());
+		terminateWorker(actualCluster,ws, " scheduler decision");
 		return new NoJob();
 	}
 
+	public void terminateWorker(Cluster cluster, WorkerStats ws, String reason) {
+					
+		ws.workerFinished(System.currentTimeMillis());
+		ws.setLatestJobStartTime(0);
+		cluster.setCrtNodes(bot.Clusters.get(cluster).getCrtNodes()-1);
+	}
+	
 	@Override
 	public void startInitWorkers() {
 		
@@ -596,7 +605,7 @@ public class MyMaster extends Master {
 		
 		Collection<Cluster> clusters = bot.Clusters.values();
 		for (Cluster c : clusters) {
-			Process p = c.startWorkers(/*deadline2ResTime()*/"4:45:00", bot.noInitialWorkers, bot.electionName, 
+			Process p = c.startNodes(/*deadline2ResTime()*/"4:45:00", bot.noInitialWorkers, bot.electionName, 
                                                     bot.poolName, bot.serverAddress);
 			//sshRunners.put(c.alias, p);
 		}		

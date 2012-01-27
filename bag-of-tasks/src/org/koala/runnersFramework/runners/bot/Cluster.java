@@ -2,6 +2,7 @@ package org.koala.runnersFramework.runners.bot;
 
 import ibis.ipl.Ibis;
 import ibis.ipl.IbisIdentifier;
+
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -11,7 +12,7 @@ import java.util.HashMap;
 
 public abstract class Cluster implements Serializable {
 	String hostname;
-	public String alias;
+	String alias;
 	double costUnit;
 	long timeUnit;
 	int maxNodes;	
@@ -48,21 +49,17 @@ public abstract class Cluster implements Serializable {
 	double initialTi;
 	int noATUPlan;
 	protected int ni;
-        
-        /* variable for testing purposes */
-        String speedFactor;
  	
 	public Cluster(String hostname, String alias, long timeUnit, double costUnit,
-			int maxNodes, String speedFactor) {
+			int maxNodes) {
 		
 		this.hostname = hostname;
 		this.alias = alias;
 		this.costUnit = costUnit;
 		this.timeUnit = timeUnit;
 		this.maxNodes = maxNodes;
-                this.speedFactor = speedFactor;
 		this.Ti = 0.0;
-		this.prevTi = 0.0;  
+		this.prevTi = 0.0;
 		timestamp=0;
 		firstStats = false;
 		regressionPoints = new HashMap<String,Job>();
@@ -110,9 +107,12 @@ public abstract class Cluster implements Serializable {
 	}
 
 
-	public abstract Process startWorkers(String time, int noWorkers, 
+	public abstract Process startNodes(String time, int noNodes, 
 			String electionName, String poolName, String serverAddress);
 
+	abstract public void terminateNode(IbisIdentifier from, Ibis myIbis)
+            throws IOException;
+	
 	public void linearRegression(Cluster reference) {
 		
 		double sumX = 0.0;
@@ -236,16 +236,113 @@ public abstract class Cluster implements Serializable {
     	return 1.0*interm;
     }
 
+    // return phi(x) = standard Gaussian pdf
+    private double phi(double x) {
+        return Math.exp(-x*x / 2) / Math.sqrt(2 * Math.PI);
+    }
+    
+    // return Phi(z) = standard Gaussian cdf using Taylor approximation
+    private double Phi(double z) {
+        if (z < -8.0) return 0.0;
+        if (z >  8.0) return 1.0;
+        double sum = 0.0, term = z;
+        for (int i = 3; sum + term != sum; i += 2) {
+            sum  = sum + term;
+            term = term * z * z / i;
+        }
+        return 0.5 + sum * phi(z);
+    }
+    
+    private double erfc(double x) {
+    	return 2*Phi(-Math.sqrt(2)*x);
+    }
+    
+    private double logGamma(double x) {
+        double tmp = (x - 0.5) * Math.log(x + 4.5) - (x + 4.5);
+        double ser = 1.0 + 76.18009173    / (x + 0)   - 86.50532033    / (x + 1)
+                         + 24.01409822    / (x + 2)   -  1.231739516   / (x + 3)
+                         +  0.00120858003 / (x + 4)   -  0.00000536382 / (x + 5);
+        return tmp + Math.log(ser * Math.sqrt(2 * Math.PI));
+     }
+    
+    private double gamma(double x) { return Math.exp(logGamma(x)); }
+    
     public double estimateExecutionTime(long sofar) {
+    	
+    	int whichD = 2;  
+    	if(whichD==0)
+    		return estimateExecutionTimeND(sofar);
+    	else if(whichD == 1)
+    		return estimateExecutionTimeSD(sofar);
+    	else if(whichD == 2)
+    		return estimateExecutionTimeSDLT(sofar);
+    	else if(whichD == 3)
+    		return estimateExecutionTimeLN(sofar);
+    	else return 0;
+    }
+    
+    private double estimateExecutionTimeND(long sofar) {    	
+    	double theta = (double)sofar/1000000000L;
     	double estimate = 0;
     	/*bebe's formula*/
-    	if(sofar < meanX*1000000000L) estimate=meanX*1000000000L;
-    	else {
-    		estimate = meanX*1000000000L + Math.sqrt(2*varXsq/Math.PI);
-    	}
+    	System.out.println("Predict ND: Elapsed time: " + theta);
+    	/*should always use the theta formula*/
+    	/*if(theta < meanX) estimate=meanX;
+    	else {*/
+    		estimate = meanX + 
+    		Math.sqrt(varXsq/(2*Math.PI))*
+    		Math.exp(-(theta-meanX)*(theta-meanX)/(2*varXsq))/
+    		(1-Phi((theta-meanX)/Math.sqrt(varXsq)));
+    	//}
     	return estimate;
     }
 
+    private double estimateExecutionTimeSD(long sofar) {    	
+    	double alpha = 1.5; /*should be computed through MLE, just like varXsq*/
+    	double estimate = 0;
+    	double theta = (double)sofar/1000000000L;
+    	/*bebe's formula*/
+    	System.out.println("Predict SD: Elapsed time: " + theta);
+    	/*should use a different formula for theta<meanX*/
+    	if(theta < meanX) estimate=meanX;
+    	else {
+    		estimate = meanX + 2*Math.sqrt(varXsq) / (alpha*gamma(1+1/alpha)*Math.sin(Math.PI/alpha));
+    	}
+    	return estimate;
+    }
+    
+    private double estimateExecutionTimeSDLT(long sofar) {    	
+    	//double alpha = 0.5; /*should be computed through MLE, just like varXsq*/
+    	double estimate = 0;
+    	double theta = (double)sofar/1000000000L;
+    	/*bebe's formula*/
+    	System.out.println("Predict SD-LT: Elapsed time: " + theta);
+    	/*should use a different formula for theta<meanX*/
+    	double xmax = 2700; //should be updated by observations during high-throughput
+    						//or read from user in conpaas
+    	
+    	double A = meanX/2/xmax; 
+    	
+    	double t0 = 0.366;
+    	double sigma = 2*t0*t0*xmax;
+    	estimate = (Math.sqrt(2*xmax*sigma)*Math.exp(-sigma/(2*xmax))-Math.sqrt(2*theta*sigma)*Math.exp(-sigma/(2*theta)))/
+    				(Math.sqrt(Math.PI)*(erfc(Math.sqrt(sigma/(2*xmax)))-erfc(Math.sqrt(sigma/(2*theta))))) 
+    				- sigma;
+    	
+    	return estimate;
+    }
+    
+    private double estimateExecutionTimeLN(long sofar) {
+    	double estimate = 0;
+    	double theta = (double)sofar/1000000000L;
+    	double mu = Math.log(meanX)-0.5*Math.log(1+varXsq/(meanX*meanX));
+    	double sigmaSq = Math.log(1+varXsq/(meanX*meanX)); 
+    	System.out.println("Predict LN: Elapsed time: " + theta);
+    	estimate = Math.pow(1-Phi((Math.log(theta)-mu)/Math.sqrt(sigmaSq)), -1)*
+    		Phi((mu+sigmaSq-Math.log(theta))/Math.sqrt(sigmaSq))*Math.exp(mu+0.5*sigmaSq);
+    	return estimate;
+    }
+    
 	public double convertExecutionTime(Cluster targetC,
 			double estimatedTETSource) {
 		/*transform using beta-s*/
@@ -258,9 +355,6 @@ public abstract class Cluster implements Serializable {
 		Job result = subsetJobs.get(received.getJobID());
 		return result;
 	}
-        
-        abstract public void terminateWorker(IbisIdentifier from, Ibis myIbis)
-                throws IOException;
 }
 
 

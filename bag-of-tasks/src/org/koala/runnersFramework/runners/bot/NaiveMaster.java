@@ -56,7 +56,7 @@ public class NaiveMaster extends Master {
 				} else if (received instanceof JobResult) {
 					nextJob = handleJobResult((JobResult) received, from);
 				} else {
-					throw new RuntimeException("did not receive job request/result instance");
+					System.exit(1);
 				}
 
 				nextJob.setNode(from.location().getLevel(0));
@@ -79,11 +79,6 @@ public class NaiveMaster extends Master {
 				wm.writeObject(nextJob);
 				wm.finish();
 				workReplyPort.close();
-                                
-                                if(nextJob instanceof NoJob){
-                                    Cluster cluster = bot.Clusters.get(from.location().getParent().toString());
-                                    cluster.terminateWorker(from, myIbis);
-                                }
 				
 				undone = ! areWeDone();					
 				
@@ -98,7 +93,7 @@ public class NaiveMaster extends Master {
 					if (j.getNode().compareTo(node)==0) {
 						pendingJobs.remove(j.getJobID());						
 						/*begin hpdc tests*/
-						if (j.getNode().contains(bot.CLUSTER2)) {
+						if (j.getNode().contains("slow")) {
 							j.args[0] = new Long(3* Long.parseLong(j.args[0]) / 2).toString();
 						}
 						/*end hpdc tests*/
@@ -256,7 +251,7 @@ public class NaiveMaster extends Master {
 				if (j.getNode().compareTo(node)==0) {
 					pendingJobs.remove(j.getJobID());	
 					/*begin hpdc tests*/
-					if (j.getNode().contains(bot.CLUSTER2)) {
+					if (j.getNode().contains("slow")) {
 						j.args[0] = new Long(3* Long.parseLong(j.args[0]) / 2).toString();
 					}
 					/*end hpdc tests*/
@@ -280,10 +275,16 @@ public class NaiveMaster extends Master {
 		Collection<Cluster> clusters = bot.Clusters.values();
 		for (Cluster c : clusters) {
 			System.err.println("on cluster " + c.alias + " maximmum number workers is " + c.maxNodes);
-			Process p = c.startWorkers(/*deadline2ResTime()*/"12:45:00", c.maxNodes, bot.electionName,
+			Process p = c.startNodes(/*deadline2ResTime()*/"12:45:00", c.maxNodes, bot.electionName,
                                                     bot.poolName, bot.serverAddress);
 			//sshRunners.put(c.alias, p);
 		}
+		
+	}
+
+	@Override
+	public void terminateWorker(Cluster cluster, WorkerStats ws, String reason) {
+		// TODO Auto-generated method stub
 		
 	}
 }

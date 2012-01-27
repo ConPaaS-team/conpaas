@@ -5,28 +5,32 @@ import ibis.ipl.IbisIdentifier;
 
 import java.io.IOException;
 import java.util.TimerTask;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class MyTimerTask extends TimerTask {
 
-    private Ibis myIbis;
-    private IbisIdentifier from;
-    private Cluster cluster;
 
-    public MyTimerTask(Cluster cluster, Ibis myIbis, IbisIdentifier from) {
-        super();
-        this.cluster = cluster;
-        this.myIbis = myIbis;
-        this.from = from;
-    }
+	private Ibis myIbis;
+	private IbisIdentifier who;
+	private Cluster cluster;
 
-    @Override
-    public void run() {
-        try {
-            cluster.terminateWorker(from, myIbis);
-        } catch (IOException ex) {
-            Logger.getLogger(MyTimerTask.class.getName()).log(Level.SEVERE, null, ex);
-        }
-    }
+	public MyTimerTask(Cluster cluster, IbisIdentifier who, Ibis myIbis) {
+		super();
+		this.cluster = cluster;		
+		this.who = who;		
+		this.myIbis = myIbis;
+	}
+
+	public void run() {
+		
+		try {
+			cluster.terminateNode(who, myIbis);
+			//myIbis.registry().signal("die", from);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+
+	
 }

@@ -58,7 +58,7 @@ class BatsServiceApiImpl_Later implements BatsServiceApi_Later {
     @Override
     public MethodReport start_sampling(String filesLocationUrl,
             String inputFile, String clusterConfigurationFile) {
-        MethodReport retVal = new MethodReport("Sampling: ");
+        MethodReport retVal = new MethodReportSuccess("Sampling: ");
         
         try {
             synchronized (lock) {
@@ -113,7 +113,7 @@ class BatsServiceApiImpl_Later implements BatsServiceApi_Later {
     @Override
     public Object get_sampling_result(String filesLocationUrl,
             String inputFile, String clusterConfigurationFile) {
-        MethodReport retVal = new MethodReport("Sampling result: ");
+        MethodReport retVal = new MethodReportSuccess("Sampling result: ");
         
         String schedulesFile = schedulesFilesMap.get(
                 filesLocationUrl + inputFile + clusterConfigurationFile);
@@ -183,7 +183,7 @@ class BatsServiceApiImpl_Later implements BatsServiceApi_Later {
     public MethodReport start_execution(String filesLocationUrl,
             String inputFile, String clusterConfigurationFile,
             int scheduleNo) {
-        MethodReport retVal = new MethodReport("Execution: ");
+        MethodReport retVal = new MethodReportSuccess("Execution: ");
         
         try {
             String schedulesFile = schedulesFilesMap.get(
@@ -237,7 +237,7 @@ class BatsServiceApiImpl_Later implements BatsServiceApi_Later {
 
 @Override
     public MethodReport get_log() {
-        MethodReport retVal = new MethodReport("Log:\n");
+        MethodReport retVal = new MethodReportSuccess("Log:\n");
         try {
             BufferedReader br = new BufferedReader(new InputStreamReader(
                     new FileInputStream(logFile)));

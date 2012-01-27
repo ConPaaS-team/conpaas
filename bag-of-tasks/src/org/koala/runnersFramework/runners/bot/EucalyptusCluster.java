@@ -39,14 +39,18 @@ public class EucalyptusCluster extends Cluster {
     /* Map used for shutting down the machines from the managerial level. 
     Maps location to VM id. */
     public HashMap<String, String> map = new HashMap<String, String>();
-
+    /*no CPUs in the VM*/
+    public String speedFactor;
+    
     public EucalyptusCluster(String hostname, int port, String alias, long timeUnit,
             double costUnit, int maxNodes, String speedFactor,
             String EMI,
             String keyPairName, String keyPairPath,
             String accessKey, String secretKey) {
-        super(hostname, alias, timeUnit, costUnit, maxNodes, speedFactor);
+        super(hostname, alias, timeUnit, costUnit, maxNodes);
 
+        this.speedFactor = speedFactor;
+        
         this.EMI = EMI;
         this.keyPairName = keyPairName;
         this.keyPairPath = keyPairPath;
@@ -61,7 +65,7 @@ public class EucalyptusCluster extends Cluster {
     }
 
     @Override
-    public Process startWorkers(String time, int noWorkers,
+    public Process startNodes(String time, int noWorkers,
             String electionName, String poolName, String serverAddress) {
 
         LaunchConfiguration launchConfig;
@@ -117,13 +121,13 @@ public class EucalyptusCluster extends Cluster {
                 + "-Dibis.location=`/root/getIP`@" + alias + " "
                 + "org.koala.runnersFramework.runners.bot.VMWorker "
                 + electionName + " " + poolName + " "
-                + serverAddress + " " + speedFactor;
+                + serverAddress ;
         // + " &> /root/w.log";
         return script;
     }
 
     @Override
-    public void terminateWorker(IbisIdentifier node, Ibis myIbis) throws IOException {
+    public void terminateNode(IbisIdentifier node, Ibis myIbis) throws IOException {
         myIbis.registry().signal("die", node);
 
         String vmId = map.get(node.location().toString());

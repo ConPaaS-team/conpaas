@@ -1,5 +1,6 @@
 package org.koala.runnersFramework.runners.bot;
 
+
 /**
  * This class contains metadata for a cluster, with some default values.
  */

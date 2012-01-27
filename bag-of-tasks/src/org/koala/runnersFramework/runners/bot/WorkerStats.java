@@ -20,7 +20,7 @@ public class WorkerStats {
 	private long latestJobStartTime;
 	private IbisIdentifier ii;
 	private boolean willTerminate;
-	public int timestamp, oldtimestamp;
+	int timestamp, oldtimestamp;
 	/*expressed in minutes*/
 	private double futurePoint=0.0;
 	/*expressed in jobs per minute*/

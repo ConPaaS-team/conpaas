@@ -21,7 +21,7 @@ import ibis.ipl.SendPortIdentifier;
 import ibis.ipl.WriteMessage;
 
 
-public class ExecutionPhaseMaster extends Master {
+public class ExecutionTailPhaseMaster extends Master {
 
 		Schedule schedule;
 	
@@ -30,11 +30,12 @@ public class ExecutionPhaseMaster extends Master {
 		private long lastReconfigTime;
 		private double va;
 		private double ca;
+		private boolean timeToReplicate = true;
 		Timer timer;
 			
 		String electionName;
 		
-		protected ExecutionPhaseMaster(BoTRunner aBot, Schedule selectedSchedule) throws Exception {
+		protected ExecutionTailPhaseMaster(BoTRunner aBot, Schedule selectedSchedule) throws Exception {
 			super(aBot);
 			electionName=aBot.electionName;
 			
@@ -86,21 +87,42 @@ public class ExecutionPhaseMaster extends Master {
 			for(SendPortIdentifier lost : masterRP.lostConnections()) {
 				cluster = lost.ibisIdentifier().location().getParent().toString();		
 				node = lost.ibisIdentifier().location().getLevel(0);
-				if(( workers.get(cluster).get(node) != null) && (! workers.get(cluster).get(node).isFinished())) {
+				if(! workers.get(cluster).get(node).isFinished()) {
 				for(Job j : bot.Clusters.get(cluster).subsetJobs.values())
 					if (j.getNode().compareTo(node)==0) {
 						bot.Clusters.get(cluster).subsetJobs.remove(j.getJobID());
-						bot.tasks.add(j);
-						
-						workers.get(cluster).get(j.getNode()).workerFinished(System.currentTimeMillis());
+						if(!j.replicated) 
+							bot.tasks.add(j);
+						else { 
+							if(j.notYetFinished) {
+								j.originalDied();
+							}
+						}
+						workers.get(cluster).get(node).workerFinished(System.currentTimeMillis());
 						
 						bot.Clusters.get(cluster).setCrtNodes(bot.Clusters.get(cluster).getCrtNodes()-1);
 						System.err.println("Node " + node + " in cluster " + cluster + 
 								" failed during execution of job " + j.jobID + 
 								" ; cost: " 
-	 + (Math.ceil((double)workers.get(cluster).get(j.getNode()).getUptime() / 60000 / bot.Clusters.get(cluster).timeUnit)  
+	 + (Math.ceil((double)workers.get(cluster).get(node).getUptime() / 60000 / bot.Clusters.get(cluster).timeUnit)  
 										* bot.Clusters.get(cluster).costUnit));
 						break;
+					} else {
+						if((j.replicated) && (j.replicaNodes.get(cluster) != null) && (j.replicaNodes.get(cluster).compareTo(node)==0)) {
+							if(j.notYetFinished) {
+								j.replicaDied(cluster);
+							}
+							
+							workers.get(cluster).get(node).workerFinished(System.currentTimeMillis());
+							
+							bot.Clusters.get(cluster).setCrtNodes(bot.Clusters.get(cluster).getCrtNodes()-1);
+							System.err.println("Node " + node + " in cluster " + cluster + 
+									" failed during execution of replica of job " + j.jobID + 
+									" ; cost: " 
+		 + (Math.ceil((double)workers.get(cluster).get(node).getUptime() / 60000 / bot.Clusters.get(cluster).timeUnit)  
+											* bot.Clusters.get(cluster).costUnit));
+							break;
+						}
 					}
 				}
 			}
@@ -118,6 +140,7 @@ public class ExecutionPhaseMaster extends Master {
 			Collection<Cluster> clusters = bot.Clusters.values();
 			
 			if (jobsDone == totalNumberTasks) {
+				boolean allWorkersDone = true;
 				/*disable connections*/
 				masterRP.disableConnections();
 				/*first check whether more workers are connected*/
@@ -126,12 +149,23 @@ public class ExecutionPhaseMaster extends Master {
 					String cl = spi.ibisIdentifier().location().getParent().toString();
 					/*node connected but didn't manage to send a job request, either because it died or because it 
 					 * was slower than the other nodes*/
-					if ((workers.get(cl).get(node) == null) ||
+					if (workers.get(cl).get(node) != null) {
 							/*node did not report job result back yet*/
-						(workers.get(cl).get(node).isFinished() == false)) {						
-							timeout = 1;
-							return false;
+						if(workers.get(cl).get(node).isFinished() == false) {
+							allWorkersDone = false;
+							try {
+								/*could be "nice" and cancel previous scheduled signal for same ibis*/
+								myIbis.registry().signal("die", workers.get(cl).get(node).getIbisIdentifier());
+							} catch (IOException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+						}
 					}
+				} 
+				if(allWorkersDone == false) {
+					timeout = 1;
+					return false;
 				}
 				try {
 					/*for(Process p : sshRunners.values())
@@ -197,7 +231,7 @@ public class ExecutionPhaseMaster extends Master {
 					/*DEBUG*/
 					if(debug) System.err.println("Added machines from cluster " + cluster.alias + "; Items has now " + items.size());
 					System.err.println("cluster " + cluster.alias + ": Ti= " + cluster.Ti);
-				}			
+				}				
 				if(tmp && cluster.firstStats)
 					tmp = true;
 				else tmp = false;
@@ -211,7 +245,6 @@ public class ExecutionPhaseMaster extends Master {
 			    else if(bot.firstTimeAllStatsReady) {
 			    	bot.allStatsReady=true;
 			    	bot.firstTimeAllStatsReady=false;
-					System.err.println("No longer first time stats"); 
 			    }
 			}
 			return items;
@@ -221,11 +254,8 @@ public class ExecutionPhaseMaster extends Master {
 		private void decideWithMovingAverage(boolean socketTimeout) {
 			// TODO Auto-generated method stub
 			/*compute averages*/		
-			boolean dueTimeout = false;
-			long timeRightNow = System.currentTimeMillis();
-			if ( (timeRightNow - timeOfLastSchedule) >= timeout ) 
-				dueTimeout = true;
-					
+			boolean dueTimeout = System.currentTimeMillis() - timeOfLastSchedule >= timeout;
+			
 			if(socketTimeout && (!dueTimeout)) return;
 
 			Collection<Cluster> clusters = bot.Clusters.values();		
@@ -238,8 +268,7 @@ public class ExecutionPhaseMaster extends Master {
 			ArrayList<Item> items = updateClusterStats(dueTimeout);
 			/*is it time to verify the configuration?*/
 			if((dueTimeout && bot.allStatsReady) || bot.firstTimeAllStatsReady) {
-				if(dueTimeout) 
-					{System.out.println("Due timeout");}	
+				if(dueTimeout) {System.out.println("Due timeout");}	
 				System.out.println("Last reconfiguration time=" + (double)lastReconfigTime/60000);
 				for(Cluster cluster : clusters) {			
 					/*compute the actual speed of this cluster using the worker stats*/
@@ -577,45 +606,12 @@ public class ExecutionPhaseMaster extends Master {
 									moreWorkers = Math.min(cluster.maxNodes, Mi.intValue()) 
 											- cluster.crtNodes - cluster.pendingNodes;
 								
-									if(cluster.crtNodes > cluster.prevNecNodes) {
-									int marked = cluster.crtNodes - cluster.prevNecNodes;
-										moreWorkers += marked;
-									}
-									
-									ArrayList<WorkerStats> orderedByTimeLeftATU = new ArrayList<WorkerStats>(workers.get(cluster.alias).values());
-									Collections.sort(orderedByTimeLeftATU, new Comparator<WorkerStats>(){
-										public int compare(WorkerStats a, WorkerStats b) {
-											if(a.isMarked() && b.isMarked()) {
-												return a.timeLeftATU - b.timeLeftATU > 0 ? 1 : -1;
-											} else 
-												if (a.isMarked()) return -1; 												
-											else 
-												if (b.isMarked()) return 1;
-												else return a.timeLeftATU - b.timeLeftATU > 0 ? 1 : -1;
-										}
-									});
-									
-									for(int i=0; i < orderedByTimeLeftATU.size(); i++) {
-										WorkerStats ws = orderedByTimeLeftATU.get(i);									
-										if(ws.isMarked() && (!ws.isFinished()) && (ws.killingMe!=null)) {
-											if(ws.killingMe.cancel()) {
-												ws.unmarkTerminated();
-												moreWorkers --;
-												System.out.println("Will not terminate node: " 
-														+ ws.getIbisIdentifier().location().toString());
-												if(moreWorkers == 0) break;
-											}
-										}
-									}
-									if(moreWorkers != 0) {
-										System.out.println("Could not resurect enough workers; will acquire more!");
-										cluster.startNodes("12:45:00", moreWorkers, electionName, myIbis.properties().getProperty(
-												IbisProperties.POOL_NAME), myIbis.properties().getProperty(
-														IbisProperties.SERVER_ADDRESS));
-										cluster.setPendingNodes(cluster.pendingNodes + moreWorkers);
-										/*DEBUG*/
-										System.out.println("Cluster " + cluster.alias + ": started " + moreWorkers + " more workers.");
-									}
+									cluster.startNodes("12:45:00", moreWorkers, electionName, myIbis.properties().getProperty(
+											IbisProperties.POOL_NAME), myIbis.properties().getProperty(
+													IbisProperties.SERVER_ADDRESS));
+									cluster.setPendingNodes(cluster.pendingNodes + moreWorkers);
+									/*DEBUG*/
+									System.out.println("Cluster " + cluster.alias + ": started " + moreWorkers + " more workers.");
 								}
 								/*!in testing!*/
 								else {
@@ -717,17 +713,17 @@ public class ExecutionPhaseMaster extends Master {
 			long timeLeftATU = cluster.timeUnit*60000 - ws.getUptime()%(cluster.timeUnit*60000) - 60000;
 			TimerTask tt = null;
 			if(timeLeftATU <= 0) {
-				try {
-					timeLeftATU = 0;
+				try {	
 					crtTime= System.currentTimeMillis();
-					cluster.terminateNode(ws.getIbisIdentifier(), myIbis);
+					myIbis.registry().signal("die", ws.getIbisIdentifier());
+					timeLeftATU = 0;
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			} else {
 				crtTime= System.currentTimeMillis();
-				tt = new MyTimerTask(cluster, ws.getIbisIdentifier(), myIbis);
+				tt = new MyTimerTask(cluster,ws.getIbisIdentifier(),myIbis);
 				timer.schedule(tt,timeLeftATU);
 			}
 			ws.markTerminated(tt);
@@ -798,51 +794,227 @@ public class ExecutionPhaseMaster extends Master {
 	    }
 
 		@Override
-		protected Job handleJobResult(JobResult received, IbisIdentifier from) {
-			// TODO Auto-generated method stub
+		protected Job handleJobResult(JobResult received, IbisIdentifier from) {		
+			
 			String cluster = from.location().getParent().toString();			
 			
 			System.err.println(from.location().toString() + " returned result of job " + received.getJobID() + " executed for (sec)" + received.getStats().getRuntime()/1000000000);
 			
-			/* assumes jobs don't need to be replicated on the same cluster, except on failure */
+			Job finished = bot.Clusters.get(cluster).getJob(received);  
 			
-			jobsDone ++;
-				
-			workers.get(cluster).get(from.location().getLevel(0)).addJobStats(received.getStats().getRuntime());
-			
-			bot.Clusters.get(cluster).doneJob(received);	
+			if(finished.replicated) {
+
+				if(finished.notYetFinished) {
+
+					System.err.println(from.location().toString() + " returned first result of replicated job ");
+					
+					jobsDone ++;
+
+					workers.get(cluster).get(from.location().getLevel(0)).addJobStats(received.getStats().getRuntime());
+
+					bot.Clusters.get(cluster).doneJob(received);	
+
+					finished.notYetFinished = false;
+
+				} else {
+
+					System.err.println(from.location().toString() + " returned second result of replicated job ");
+					
+					workers.get(cluster).get(from.location().getLevel(0)).addJobStats(received.getStats().getRuntime());
+
+					bot.Clusters.get(cluster).doneJob(received);
+				}
+
+			} else {
+
+				jobsDone ++;
+
+				workers.get(cluster).get(from.location().getLevel(0)).addJobStats(received.getStats().getRuntime());
+
+				bot.Clusters.get(cluster).doneJob(received);	
+
+			}
 			
 			decide(false);
 			
 			/*release unnecessary workers*/
 			if(releaseNow(cluster,from)) {
 				return new NoJob();
-			} /*else if(bot.tasks.size() == 0) {
-				return new AskAgainJob();
-			}*/
+			} else if(bot.tasks.size()==0){
+				/*here goes implementation for replication of tail jobs*/
+				if(timeToReplicate) {
+					long replicationTime = (System.currentTimeMillis()-actualStartTime)/1000;
+					System.out.println("Time elapsed before replication " + replicationTime + " (sec), which is about " + replicationTime/60 + "m" + replicationTime%60 +"s");
+					timeToReplicate = false;
+				}
+				return findNextJobToReplicate(cluster, from);
+			}
 			 		
 			return findNextJob(cluster,from);		
-		}
-
+		}	
+		
 		private boolean releaseNow(String cluster, IbisIdentifier to) {
-			/*could check whether "black-listed" machine and, if too little of ATU is left
+			/*could check whether "marked" machine and, if too little of ATU is left
 			 * get rid of it now and maybe even cancel the respective timer*/
 			
 			/*if enough of ATU is left could replicate jobs sent to other "dying" workers*/ 
 			/*this.jobsDone == this.totalNumberTasks*/
-			if(bot.tasks.size()==0) {
+			if((bot.tasks.size()==0) && (this.jobsDone == this.totalNumberTasks)) {
+							
 				System.err.println("We say goodbye to " + to.location().toString());
 				
-				String node = to.location().getLevel(0);
-				workers.get(cluster).get(node).workerFinished(System.currentTimeMillis());
-				workers.get(cluster).get(node).setLatestJobStartTime(0);
-				bot.Clusters.get(cluster).setCrtNodes(bot.Clusters.get(cluster).getCrtNodes()-1);
+				releaseNode(cluster, to);
 				//bot.Clusters.get(cluster).setPendingNodes(bot.Clusters.get(cluster).getPendingNodes()-1);
 				return true;
-			} 
+			}			
 			return false;
 		}
 
+		private void releaseNode(String cluster, IbisIdentifier to) {
+			String node = to.location().getLevel(0);
+			workers.get(cluster).get(node).workerFinished(System.currentTimeMillis());
+			workers.get(cluster).get(node).setLatestJobStartTime(0);
+			bot.Clusters.get(cluster).setCrtNodes(bot.Clusters.get(cluster).getCrtNodes()-1);
+		}
+		
+		private Job findNextJobToReplicate(String clusterName, IbisIdentifier from) {
+			
+			/*check if we need to keep this machine*/
+			ArrayList<Job> candidates = new ArrayList<Job>();
+			String node = from.location().getLevel(0);
+			Cluster freeNodeCluster = bot.Clusters.get(clusterName);
+			WorkerStats freeNode = workers.get(clusterName).get(node);
+			
+			for(Cluster cluster : bot.Clusters.values()) {
+				if(cluster.alias.compareTo(freeNodeCluster.alias) == 0)	{
+					System.out.println("Same cluster as target!");										
+				} else {									
+					for(Job j : bot.Clusters.get(cluster.alias).subsetJobs.values()) {
+						if(!j.replicated){
+							if(isCandidate(j,freeNode,workers.get(cluster.alias).get(j.getNode()))) {
+								System.out.println("Found a candidate: " + j.jobID + 
+												   "; currently on node " + j.getNode() +
+												   "; estimated execution time on fast machine (sec)" + j.getTau());
+								candidates.add(j);
+							}
+						}
+					}
+				}
+			}
+			
+			if(candidates.size()==0) {
+				System.err.println("No candidates for replication! We say goodbye to " + from.location().toString());
+				releaseNode(clusterName, from);
+				return new NoJob();
+			}
+			
+			Job nextJobToReplicate = selectJobToReplicate(candidates);			
+			
+			System.out.println("Trying to replicate job " + nextJobToReplicate.jobID 
+					+  " currently executed by node " + nextJobToReplicate.getNode() 
+					+  " on node " + from.location().getLevel(0));
+			
+			nextJobToReplicate.replicated = true;			
+			nextJobToReplicate.starttimes.put(clusterName,System.nanoTime());			
+			workers.get(clusterName).get(from.location().getLevel(0)).setLatestJobStartTime(nextJobToReplicate.starttimes.get(clusterName));
+			bot.Clusters.get(clusterName).subsetJobs.put(nextJobToReplicate.jobID, nextJobToReplicate);
+			 
+			System.out.println("Replicated job " + nextJobToReplicate.jobID + " on node " + from.location().getLevel(0));
+			return nextJobToReplicate;
+			 
+		}
+		
+		private boolean isCandidate(Job j, WorkerStats target, WorkerStats source) {
+			long elapsedET;
+			double estimatedTETSource;
+			double estimatedTETTarget;
+			Cluster targetC, sourceC;			
+			targetC = bot.Clusters.get(target.getIbisIdentifier().location().getParent().toString());
+			sourceC = bot.Clusters.get(source.getIbisIdentifier().location().getParent().toString());
+			/*do not allow replication on machines of the same type*/
+			
+			elapsedET = System.nanoTime() - source.getLatestJobStartTime();
+			estimatedTETSource = sourceC.estimateExecutionTime(elapsedET);
+			
+			System.out.println("job " + j.jobID + " estimated total execution time on current machine (sec)" + estimatedTETSource);
+			System.out.println("elapsed time: " + (double)(elapsedET/1000000000L));
+			estimatedTETTarget = sourceC.convertExecutionTime(targetC,estimatedTETSource);
+			if(estimatedTETTarget < (estimatedTETSource-((double)elapsedET)/1000000000L)) {				
+				j.setTau(estimatedTETTarget);			
+				j.setElapsedET(((double)elapsedET)/1000000000L);
+				return true;
+			}			
+			return false;
+		}
+		
+		private Job selectJobToReplicate(ArrayList<Job> candidates) {
+			
+			boolean largestFirst = true;
+			
+			if (largestFirst) return selectJobLargestTauSmallestElapsedETFirst(candidates);
+			else return selectJobSmallestTauFirst(candidates);
+		}
+		
+		private Job selectJobSmallestTauFirst(ArrayList<Job> candidates) {
+
+			/*smallest tau first*/
+			Collections.sort(candidates, new Comparator<Job>(){
+				public int compare(Job a, Job b) {
+					double tmp = a.getTau() - b.getTau();
+					if(tmp < 0) return -1;
+					if(tmp==0) return 0;
+					return 1;
+				}
+			});
+			
+			Job nextJobToReplicate = candidates.get(0);
+			
+			return nextJobToReplicate;
+
+		}
+		
+		private Job selectJobLargestTauSmallestElapsedETFirst(ArrayList<Job> candidates) {
+
+			/*largest tau first*/
+			Collections.sort(candidates, new Comparator<Job>(){
+				public int compare(Job a, Job b) {
+					double tmp = a.getTau() - b.getTau();
+					if(tmp < 0) return 1;
+					if(tmp > 0) return -1;
+					double tmpElapsed = a.getElapsedET() - b.getElapsedET();
+					if(tmpElapsed < 0) return -1;
+					if(tmpElapsed > 0) return 1;
+					return 0;					
+				}
+			});
+			
+			Job nextJobToReplicate = candidates.get(0);
+			
+			return nextJobToReplicate;
+
+		}
+
+		private Job selectJobLargestTauLargestElapsedETFirst(ArrayList<Job> candidates) {
+
+			/*largest tau first*/
+			Collections.sort(candidates, new Comparator<Job>(){
+				public int compare(Job a, Job b) {
+					double tmp = a.getTau() - b.getTau();
+					if(tmp < 0) return 1;
+					if(tmp > 0) return -1;
+					double tmpElapsed = a.getElapsedET() - b.getElapsedET();
+					if(tmpElapsed < 0) return 1;
+					if(tmpElapsed > 0) return -1;
+					return 0;					
+				}
+			});
+			
+			Job nextJobToReplicate = candidates.get(0);
+			
+			return nextJobToReplicate;
+
+		}
+		
 		
 		private Job findNextJob(String cluster, IbisIdentifier from) {
 			Job nextJob = bot.tasks.remove(random.nextInt(bot.tasks.size()));
@@ -867,7 +1039,8 @@ public class ExecutionPhaseMaster extends Master {
 			// TODO Auto-generated method stub
 			timeOfLastSchedule = System.currentTimeMillis();
 			
-			timeout = 5* 60000; /*(long) (BoTRunner.INITIAL_TIMEOUT_PERCENT * bot.deadline * 60000);*/
+			timeout = 5 * 60000; /*(long) (BoTRunner.INITIAL_TIMEOUT_PERCENT * bot.deadline * 60000); */
+			
 			System.err.println("Timeout is now " + timeout);		
 			
 			actualStartTime = System.currentTimeMillis();			
@@ -893,7 +1066,7 @@ public class ExecutionPhaseMaster extends Master {
 						System.exit(1);
 					}
 
-					nextJob.setNode(from.location().getLevel(0));
+					nextJob.setNode(from.location().getParent().toString(), from.location().getLevel(0));
 					
 					/*begin for hpdc tests
 					if(! (nextJob instanceof NoJob)) {
@@ -963,7 +1136,7 @@ public class ExecutionPhaseMaster extends Master {
 		Collection<Cluster> clusters = bot.Clusters.values();
 		for (Cluster c : clusters) {
 			Process p = c.startNodes(/* deadline2ResTime() */"12:45:00",
-					c.necNodes, electionName, bot.poolName, bot.serverAddress);
+					c.necNodes, electionName,bot.poolName, bot.serverAddress);
 			// sshRunners.put(c.alias, p);
 			System.err.println("Started " + c.necNodes + " workers in cluster " + c.alias);
 			c.setPendingNodes(c.necNodes);

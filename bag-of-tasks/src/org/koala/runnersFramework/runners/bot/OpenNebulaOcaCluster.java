@@ -14,8 +14,13 @@ import org.opennebula.client.vm.VirtualMachine;
 
 public class OpenNebulaOcaCluster extends Cluster {
 
-    transient int currentNoNodes = 0;
+	private static final long serialVersionUID = -3283811123364250109L;
+    public transient int currentNoNodes = 0;
     public String image;
+    public String mem;
+    public String dns, gateway;
+    /*number of CPUs for the VM*/
+    public String speedFactor;
     /**
      * Map used for shutting down the machines from the managerial level. 
      * Maps location to VM id. 
@@ -25,14 +30,32 @@ public class OpenNebulaOcaCluster extends Cluster {
      * Object used to execute ONE commands.
      */
     public transient Client oneClient = null;
-    public static final String dns = "130.73.121.1";
-    public static final String gateway = "10.0.0.1";
-
+    public static final String DNS = "130.73.121.1";
+    public static final String Gateway = "10.0.0.1";
+    public static final String DEF_MEM = "400";
+    
     public OpenNebulaOcaCluster(String hostname, int port, String alias, long timeUnit,
             double costUnit, int maxNodes, String speedFactor,
-            String image, String b, String c, String d, String e) {
-        super(hostname, alias, timeUnit, costUnit, maxNodes, speedFactor);
-        this.image = image;
+            String image, String mem, String dns, String gateway, String e) {
+        super(hostname, alias, timeUnit, costUnit, maxNodes);
+        this.image = image;        
+        this.speedFactor = speedFactor;
+        if((mem != null) && (!mem.equals(""))) {
+        	this.mem = mem;
+        } else {
+        	this.mem = DEF_MEM;
+        }
+        if((dns != null) && (!dns.equals(""))) {
+        	this.dns = dns;
+        } else {
+        	this.dns = DNS;
+        } 
+        if((gateway != null) && (!gateway.equals(""))) {
+        	this.gateway = dns;
+        } else {
+        	this.gateway = Gateway;
+        }
+       
     }
 
     private void setOneClient() {
@@ -60,7 +83,7 @@ public class OpenNebulaOcaCluster extends Cluster {
     }
 
     @Override
-    public Process startWorkers(String time, int noWorkers,
+    public Process startNodes(String time, int noWorkers,
             String electionName, String poolName, String serverAddress) {
 
         System.out.println("Starting " + noWorkers + " workers with ONE...");
@@ -107,6 +130,8 @@ public class OpenNebulaOcaCluster extends Cluster {
 
             // Gather information about the virtual machines and place it in the hash map
             map.put(location, vmId);
+            System.out.println("Ibis node with location " + location);
+            
         }
         currentNoNodes += noWorkers - noWorkersNotStarted;
 
@@ -116,7 +141,7 @@ public class OpenNebulaOcaCluster extends Cluster {
     private String createVMTemplate(String electionName, String poolName,
             String serverAddress, String speedFactor, String location) {
         /**
-         * TO DO:
+         * SOLVED BY USERDATA:
          * HORRIBLE ISSUE:
          * The paths to init.sh and id_rsa.pub need to be accessible 
          * by the ONE admin (bzcmaier) - for a successful onevm create command.
@@ -129,15 +154,15 @@ public class OpenNebulaOcaCluster extends Cluster {
          */
 //        String pathToInitSh = BoTRunner.path + "/OpenNebulaCluster/init.sh";
 //        String pathToIdRsaPub = BoTRunner.path + "/OpenNebulaCluster/id_rsa.pub";
-        String path = "/home/vumaricel/batsManager";
+       /* String path = "/home/vumaricel/batsManager";
 
         String pathToInitSh = path + "/OpenNebulaCluster/init.sh";
         String pathToIdRsaPub = path + "/OpenNebulaCluster/id_rsa.pub";
-
+*/
         String vmTemplate =
                 "NAME = BoTSVM\n"
-                + "CPU = 1\n"
-                + "MEMORY = 400\n\n"
+                + "CPU = " + speedFactor  + "\n"
+                + "MEMORY = " + mem + "\n\n"
                 + "OS     = [\n"
                 + "arch = x86_64\n"
                 + "]\n\n"
@@ -180,7 +205,9 @@ public class OpenNebulaOcaCluster extends Cluster {
                     getOneAuthContent(System.getenv().get("ONE_AUTH")) + "\",\n"
                 + "VM_ID = \"$VMID\",\n"
                 /* end - ONE service vars */
-                + "files = \"" + pathToInitSh + " " + pathToIdRsaPub + "\",\n"
+               /*ISSUE: + "files = \"" + pathToInitSh + " " + pathToIdRsaPub + "\",\n"*/
+				/* PAY ATTENTION: this will work only if the worker's image is set to run $USERDATA*/
+                + "USERDATA = \"" + getHexContent(System.getenv("HEX_FILE")) + "\",\n"
                 + "target = \"sdb\",\n"
                 + "root_pubkey = \"id_rsa.pub\",\n"
                 + "username = \"opennebula\",\n"
@@ -201,8 +228,23 @@ public class OpenNebulaOcaCluster extends Cluster {
         }
     }
 
+    private String getHexContent(String hexFile) {
+        try {
+            BufferedReader br = new BufferedReader(new FileReader(hexFile));
+            StringBuilder retVal = new StringBuilder();
+            String line;
+            while( (line = br.readLine()) != null) {
+                retVal.append(line).append("\n");
+            }
+            br.close();            
+            return retVal.toString();
+        } catch (Exception ex) {
+            return "";
+        }
+    }
+
     @Override
-    public void terminateWorker(IbisIdentifier node, Ibis myIbis)
+    public void terminateNode(IbisIdentifier node, Ibis myIbis)
             throws IOException {
         myIbis.registry().signal("die", node);
     }

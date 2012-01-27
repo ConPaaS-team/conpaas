@@ -39,13 +39,18 @@ public class EC2Cluster extends Cluster {
     Maps location to VM id. */
     public HashMap<String, String> map = new HashMap<String, String>();
 
+    /*no CPUs in the VM*/
+    public String speedFactor;
+    
     public EC2Cluster(String hostname, int port, String alias, long timeUnit,
             double costUnit, int maxNodes, String speedFactor,
             String AMI,
             String keyPairName, String keyPairPath,
             String accessKey, String secretKey) {
-        super(hostname, alias, timeUnit, costUnit, maxNodes, speedFactor);
+        super(hostname, alias, timeUnit, costUnit, maxNodes);
 
+        this.speedFactor = speedFactor;
+        
         this.AMI = AMI;
         this.keyPairName = keyPairName;
         this.keyPairPath = keyPairPath;
@@ -62,7 +67,7 @@ public class EC2Cluster extends Cluster {
     }
 
     @Override
-    public Process startWorkers(String time, int noWorkers,
+    public Process startNodes(String time, int noWorkers,
             String electionName, String poolName, String serverAddress) {
 
         setJec2();
@@ -130,7 +135,7 @@ public class EC2Cluster extends Cluster {
     }
 
     @Override
-    public void terminateWorker(IbisIdentifier node, Ibis myIbis) throws IOException {
+    public void terminateNode(IbisIdentifier node, Ibis myIbis) throws IOException {
         myIbis.registry().signal("die", node);
 
         String VM_ID = map.get(node.location().toString());
