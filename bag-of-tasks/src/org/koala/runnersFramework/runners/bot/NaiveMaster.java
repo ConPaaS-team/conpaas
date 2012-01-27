@@ -181,7 +181,7 @@ public class NaiveMaster extends Master {
 		/*DEBUG*/
 		System.err.println("job request from node " + from.location().toString() + " in cluster " + cluster);
 		
-		workers.get(cluster).put(node, new WorkerStats(node,System.currentTimeMillis()));
+		workers.get(cluster).put(node, new WorkerStats(node,System.currentTimeMillis(), from));
 		
 		/*release unnecessary workers*/
 		

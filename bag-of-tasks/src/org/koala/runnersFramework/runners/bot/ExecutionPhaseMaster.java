@@ -240,6 +240,8 @@ public class ExecutionPhaseMaster extends Master {
 			if((dueTimeout && bot.allStatsReady) || bot.firstTimeAllStatsReady) {
 				if(dueTimeout) 
 					{System.out.println("Due timeout");}	
+				if(bot.firstTimeAllStatsReady) 
+					{System.out.println("First time ready!");}
 				System.out.println("Last reconfiguration time=" + (double)lastReconfigTime/60000);
 				for(Cluster cluster : clusters) {			
 					/*compute the actual speed of this cluster using the worker stats*/
@@ -609,9 +611,7 @@ public class ExecutionPhaseMaster extends Master {
 									}
 									if(moreWorkers != 0) {
 										System.out.println("Could not resurect enough workers; will acquire more!");
-										cluster.startNodes("12:45:00", moreWorkers, electionName, myIbis.properties().getProperty(
-												IbisProperties.POOL_NAME), myIbis.properties().getProperty(
-														IbisProperties.SERVER_ADDRESS));
+										cluster.startNodes("12:45:00", moreWorkers, bot.electionName, bot.poolName, bot.serverAddress);
 										cluster.setPendingNodes(cluster.pendingNodes + moreWorkers);
 										/*DEBUG*/
 										System.out.println("Cluster " + cluster.alias + ": started " + moreWorkers + " more workers.");
@@ -766,7 +766,7 @@ public class ExecutionPhaseMaster extends Master {
 			WorkerStats reacquiredMachine = workers.get(cluster).get(node);
 			long startTime = System.currentTimeMillis();
 			if(reacquiredMachine == null) {
-				workers.get(cluster).put(node, new WorkerStats(node,startTime));
+				workers.get(cluster).put(node, new WorkerStats(node,startTime, from));
 				workers.get(cluster).get(node).setIbisIdentifier(from);
 				bot.Clusters.get(cluster).timestamp++;
 				
@@ -963,7 +963,7 @@ public class ExecutionPhaseMaster extends Master {
 		Collection<Cluster> clusters = bot.Clusters.values();
 		for (Cluster c : clusters) {
 			Process p = c.startNodes(/* deadline2ResTime() */"12:45:00",
-					c.necNodes, electionName, bot.poolName, bot.serverAddress);
+					c.necNodes, bot.electionName, bot.poolName, bot.serverAddress);
 			// sshRunners.put(c.alias, p);
 			System.err.println("Started " + c.necNodes + " workers in cluster " + c.alias);
 			c.setPendingNodes(c.necNodes);

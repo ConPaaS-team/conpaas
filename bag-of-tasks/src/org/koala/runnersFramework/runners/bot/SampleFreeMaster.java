@@ -485,9 +485,7 @@ public class SampleFreeMaster extends Master {
 							if(Mi.intValue() > cluster.crtNodes + cluster.pendingNodes) {
 								moreWorkers = Math.min(cluster.maxNodes, Mi.intValue()) 
 										- cluster.crtNodes - cluster.pendingNodes;
-								cluster.startNodes("12:45:00", moreWorkers, bot.electionName, myIbis.properties().getProperty(
-										IbisProperties.POOL_NAME), myIbis.properties().getProperty(
-												IbisProperties.SERVER_ADDRESS));
+								cluster.startNodes("12:45:00", moreWorkers, bot.electionName, bot.poolName, bot.serverAddress);
 								cluster.setPendingNodes(cluster.pendingNodes + moreWorkers);
 								/*DEBUG*/
 								System.out.println("Cluster " + cluster.alias + ": started " + moreWorkers + " more workers.");
@@ -634,7 +632,7 @@ public class SampleFreeMaster extends Master {
 		WorkerStats reacquiredMachine = workers.get(cluster).get(node);
 		long startTime = System.currentTimeMillis();
 		if(reacquiredMachine == null) {
-			workers.get(cluster).put(node, new WorkerStats(node,startTime));
+			workers.get(cluster).put(node, new WorkerStats(node,startTime, from));
 			workers.get(cluster).get(node).setIbisIdentifier(from);
 			bot.Clusters.get(cluster).timestamp++;
 			

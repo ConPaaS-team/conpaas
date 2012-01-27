@@ -606,9 +606,7 @@ public class ExecutionTailPhaseMaster extends Master {
 									moreWorkers = Math.min(cluster.maxNodes, Mi.intValue()) 
 											- cluster.crtNodes - cluster.pendingNodes;
 								
-									cluster.startNodes("12:45:00", moreWorkers, electionName, myIbis.properties().getProperty(
-											IbisProperties.POOL_NAME), myIbis.properties().getProperty(
-													IbisProperties.SERVER_ADDRESS));
+									cluster.startNodes("12:45:00", moreWorkers, bot.electionName, bot.poolName, bot.serverAddress);
 									cluster.setPendingNodes(cluster.pendingNodes + moreWorkers);
 									/*DEBUG*/
 									System.out.println("Cluster " + cluster.alias + ": started " + moreWorkers + " more workers.");
@@ -762,7 +760,7 @@ public class ExecutionTailPhaseMaster extends Master {
 			WorkerStats reacquiredMachine = workers.get(cluster).get(node);
 			long startTime = System.currentTimeMillis();
 			if(reacquiredMachine == null) {
-				workers.get(cluster).put(node, new WorkerStats(node,startTime));
+				workers.get(cluster).put(node, new WorkerStats(node,startTime, from));
 				workers.get(cluster).get(node).setIbisIdentifier(from);
 				bot.Clusters.get(cluster).timestamp++;
 				
@@ -1136,7 +1134,7 @@ public class ExecutionTailPhaseMaster extends Master {
 		Collection<Cluster> clusters = bot.Clusters.values();
 		for (Cluster c : clusters) {
 			Process p = c.startNodes(/* deadline2ResTime() */"12:45:00",
-					c.necNodes, electionName,bot.poolName, bot.serverAddress);
+					c.necNodes, bot.electionName, bot.poolName, bot.serverAddress);
 			// sshRunners.put(c.alias, p);
 			System.err.println("Started " + c.necNodes + " workers in cluster " + c.alias);
 			c.setPendingNodes(c.necNodes);

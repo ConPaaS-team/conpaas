@@ -46,7 +46,7 @@ public class WorkerStats {
 		this.speed = speed;
 	}
 
-	public WorkerStats(String node, long startTime) {
+	public WorkerStats(String node, long startTime, IbisIdentifier ii) {
 		this.node = node;
 		this.startTime = startTime;
 		noJobs = 0;

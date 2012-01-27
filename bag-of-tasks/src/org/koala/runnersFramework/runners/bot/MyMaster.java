@@ -468,9 +468,7 @@ public class MyMaster extends Master {
 						if(Mi.intValue() > cluster.necNodes) {
 							if(Mi.intValue() > cluster.crtNodes) {
 								moreWorkers = Math.min(cluster.maxNodes, Mi.intValue()) - cluster.crtNodes;
-								cluster.startNodes("4:45:00", moreWorkers, bot.electionName, myIbis.properties().getProperty(
-										IbisProperties.POOL_NAME), myIbis.properties().getProperty(
-												IbisProperties.SERVER_ADDRESS));
+								cluster.startNodes("4:45:00", moreWorkers, bot.electionName, bot.poolName, bot.serverAddress);
 								/*DEBUG*/
 								System.out.println("Cluster " + cluster.alias + ": started " + moreWorkers + " more workers.");
 							}
@@ -544,7 +542,7 @@ public class MyMaster extends Master {
 		
 		WorkerStats reacquiredMachine = workers.get(cluster).get(node);
 		if(reacquiredMachine == null) {
-			workers.get(cluster).put(node, new WorkerStats(node,System.currentTimeMillis()));
+			workers.get(cluster).put(node, new WorkerStats(node,System.currentTimeMillis(), from));
 		} else {
 			reacquiredMachine.reacquire(bot.Clusters.get(cluster).timeUnit, System.currentTimeMillis());
 		}		

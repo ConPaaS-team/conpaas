@@ -71,10 +71,9 @@ public class Worker implements RegistryEventHandler {
 			if (replyObj instanceof NoJob) {
 				reply.finish();
 				/* could print some worker stats? */				
-				workRequestPort.close();
-				workReplyPort.close();
+				closePorts();
 				myIbis.end();
-				System.exit(0);
+				return;
 			}
 
 			Job job = (Job) replyObj;

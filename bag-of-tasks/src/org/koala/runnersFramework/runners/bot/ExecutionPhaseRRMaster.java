@@ -188,7 +188,7 @@ public class ExecutionPhaseRRMaster extends Master {
 			/*DEBUG*/
 			System.err.println("job request from node " + from.location().toString() + " in cluster " + cluster);
 			
-			workers.get(cluster).put(node, new WorkerStats(node,System.currentTimeMillis()));
+			workers.get(cluster).put(node, new WorkerStats(node,System.currentTimeMillis(), from));
 			
 			/*release unnecessary workers*/
 			
@@ -288,10 +288,8 @@ public class ExecutionPhaseRRMaster extends Master {
 					+ " maximum number workers is " + c.maxNodes);
 			if (schedule.machinesPerCluster.containsKey(c.alias)) {
 				Process p = c.startNodes(/* deadline2ResTime() */"12:45:00",
-						schedule.machinesPerCluster.get(c.alias), electionName,
-						myIbis.properties().getProperty(
-								IbisProperties.POOL_NAME), myIbis.properties()
-								.getProperty(IbisProperties.SERVER_ADDRESS));
+						schedule.machinesPerCluster.get(c.alias), bot.electionName,
+						bot.poolName, bot.serverAddress);
 				// sshRunners.put(c.alias, p);
 				System.err.println("; will start " + schedule.machinesPerCluster.get(c.alias));
 			}

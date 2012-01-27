@@ -76,8 +76,7 @@ public class SamplingPhaseMaster extends Master {
 
 		if(bot.noSampleJobs*bot.Clusters.size() > 0.5 * totalNumberTasks)
 		{
-			System.out.println("Size of the BoT too small for the number of clusters");
-			System.exit(0);
+			throw new RuntimeException("Size of the BoT too small for the number of clusters");
 		}
 
 		bot.noInitialWorkers = 7;
@@ -178,7 +177,7 @@ public class SamplingPhaseMaster extends Master {
 
 		WorkerStats reacquiredMachine = workers.get(clusterName).get(node);
 		if(reacquiredMachine == null) {
-			workers.get(clusterName).put(node, new WorkerStats(node,System.currentTimeMillis()));
+			workers.get(clusterName).put(node, new WorkerStats(node,System.currentTimeMillis(), from));
 		} else {
 			reacquiredMachine.reacquire(cluster.timeUnit, System.currentTimeMillis());
 		}	
