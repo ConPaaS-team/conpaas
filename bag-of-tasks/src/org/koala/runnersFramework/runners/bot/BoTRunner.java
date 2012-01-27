@@ -52,7 +52,7 @@ public class BoTRunner implements Serializable {
     private static final int SAMPLEFREE = 6;
     
 
-    String poolName, electionName, serverAddress;
+    public String poolName, electionName, serverAddress;
 
     public ArrayList<Job> tasks;
     public ArrayList<Job> finishedTasks;

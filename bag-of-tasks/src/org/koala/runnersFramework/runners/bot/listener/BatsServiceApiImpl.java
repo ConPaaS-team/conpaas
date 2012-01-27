@@ -191,11 +191,13 @@ class BatsServiceApiImpl implements BatsServiceApi {
 
             /*work-around such that the "Sampling&Execution-in-the-same-VM" works well*/
             
-            Properties initialIbisProps = execute.bot.myIbisProps;            
+            Properties initialIbisProps = execute.bot.myIbisProps;      
+            execute.bot.poolName = initialIbisProps.get(IbisProperties.POOL_NAME)+"-executionPhase";
             execute.bot.myIbisProps.setProperty(IbisProperties.POOL_NAME, 
-            		initialIbisProps.get(IbisProperties.POOL_NAME)+"-executionPhase");
+            		execute.bot.poolName);
+            execute.bot.electionName = initialIbisProps.get("ibis.election.name")+"-executionPhase";
             execute.bot.myIbisProps.setProperty("ibis.election.name", 
-            		initialIbisProps.get("ibis.election.name")+"-executionPhase");
+            		execute.bot.electionName);
 
                         
             Thread thread = new Thread() {
