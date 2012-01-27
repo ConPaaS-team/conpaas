@@ -8,6 +8,12 @@ PACKAGE_NAME	=	conpaassql.tar
 DEST_DIR_PCKG	=	$(DESTDIR)/$(PACKAGE_NAME)
 PYTHON_VER	= 	`scripts/print_python_version.py`
 
+bdist_egg: check	
+	python setup.py bdist_egg
+
+install_egg:	bdist_egg
+	easy_install dist/conpaassql_server*.egg
+
 all:	binary
 
 check: 	
@@ -20,10 +26,8 @@ install: check
 	mkdir -p $(DESTDIR)/lib/python$(PYTHON_VER)/site-packages/
 	PYTHONPATH=$(DESTDIR)/lib/python$(PYTHON_VER)/site-packages python setup.py install --prefix=$(DESTDIR)
 
-binary: check
-	mkdir -p $(BINDIR)/lib/python$(PYTHON_VER)/site-packages/
-	PYTHONPATH=$(BINDIR)/lib/python$(PYTHON_VER)/site-packages python setup.py install --prefix=$(BINDIR)
-
+binary: bdist_egg
+	
 clean:
 	rm -rf $(PWD)/build $(BINDIR) dist
 	find src -iname "*.pyc" -exec rm {} \;

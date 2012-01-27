@@ -8,41 +8,9 @@
 
 Installation and Dependencies
 
- Dependencies: 
- * unzip
- * >=python2.6
- * python-mysqldb
- * python-pycurl
- * OCA bindings
- * setuptools
-
 ----
-apt-get install -y unzip
-apt-get install -y python
-apt-get install -y python-mysqldb
-apt-get install -y python-pycurl
-apt-get install -y python-pip
-
-wget https://github.com/lukaszo/python-oca/zipball/0.2.3
-wget http://pypi.python.org/packages/source/s/setuptools/setuptools-0.6c11.tar.gz#md5=7df2a529a074f613b509fb44feefe74e
-----
-
-Setuptool installation
-
-----
-tar xvfz setuptools-0.6c11.tar.gz
-cd setuptools-0.6c11
-python setup.py build
-python setup.py install
-----
-
-OCA installation
-
-----
-unzip 0.2.3
-cd lukaszo-python-oca-61992c1
-python setup.py build
-python setup.py install
+apt-get update
+apt-get install -y unzip python python-mysqldb python-pycurl python-dev python-setuptools python-pip
 ----
 
 Installing
