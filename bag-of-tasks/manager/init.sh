@@ -142,7 +142,7 @@ mkdir $BATS_HOME_LIB
 
 #============================================================================
 # The worker's init.sh. Export the filename so that the JVM knows where it is.
-# this is the content of /home/vumaricel/batsManager/OpenNebulaCluster/init.sh
+# this is the content of a workers init.sh
 # with escaped variables
 
 export WORKER_INIT_SH=$BATS_HOME/init.sh
