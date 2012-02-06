@@ -5,7 +5,6 @@ import org.koala.runnersFramework.runners.bot.BagOfTasks;
 import ibis.ipl.IbisProperties;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -13,7 +12,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
-import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -149,6 +147,8 @@ public class BoTRunner implements Serializable {
 		
         readClustersFromFile();
 
+        aggregateBoTTimeUnit();
+        
         this.masterImpl = masterImpl;
     }
 
@@ -239,6 +239,17 @@ public class BoTRunner implements Serializable {
             throw new RuntimeException("Read 0 clusters. "
                     + "Need at least 1 cluster to run BoT");
         }
+    }
+    
+    private void aggregateBoTTimeUnit() {
+    	this.timeUnit = Long.MAX_VALUE;
+    	for(Cluster c : Clusters.values()) {
+    		if(c.timeUnit < this.timeUnit) {
+    			this.timeUnit = c.timeUnit;
+    		}
+    	}
+    	
+    	System.out.println("BoT time unit set to: " + this.timeUnit);
     }
    
  /*   private void readClustersFromPlainFile() {
