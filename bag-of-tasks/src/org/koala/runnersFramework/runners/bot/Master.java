@@ -93,7 +93,22 @@ public abstract class Master {
 
 	public abstract void startInitWorkers();
 	
-	public abstract void terminateWorker(Cluster cluster, WorkerStats ws, String reason); 	
+	public abstract void terminateWorker(Cluster cluster, WorkerStats ws, String reason);
+
+	public int terminateAllWorkers() throws IOException {
+		
+		int noWorkerTerminatedNow = 0;
+		
+		for(Cluster c : bot.Clusters.values()) {
+			for(WorkerStats ws : workers.get(c.alias).values()) {
+				if(!ws.isFinished()) {
+					c.terminateNode(ws.getIbisIdentifier(), myIbis);
+					noWorkerTerminatedNow ++;
+				}
+			}
+		}
+		return noWorkerTerminatedNow;
+	} 	
 	
 	
 }

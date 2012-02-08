@@ -30,4 +30,6 @@ public interface BatsServiceApi {
     public State get_service_info();
 
     public MethodReport get_log();
+    
+	public MethodReport terminate_workers();
 }

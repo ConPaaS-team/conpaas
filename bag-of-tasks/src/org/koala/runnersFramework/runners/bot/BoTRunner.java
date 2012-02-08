@@ -82,6 +82,9 @@ public class BoTRunner implements Serializable {
     //the bag of tasks
     public BagOfTasks bag;
 
+    //the master
+    transient public Master master;
+    
     public BoTRunner() {
     }
 
@@ -164,7 +167,7 @@ public class BoTRunner implements Serializable {
     public void run() {
 
         // prepare ibis master
-        Master master = null;
+        master = null;
 
         System.out.println("Trying to instantiate master as: " + masterImpl);
         try {
@@ -404,4 +407,10 @@ public class BoTRunner implements Serializable {
 
         runner.run();
     }
+
+	public int terminate() throws IOException {
+		
+		return master.terminateAllWorkers();
+				
+	}
 }

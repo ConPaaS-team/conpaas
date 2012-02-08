@@ -29,7 +29,8 @@ class BatsServiceApiImpl implements BatsServiceApi {
     private final String logFile = "exceptions.log";
     private static final Logger exceptionsLogger =
             Logger.getAnonymousLogger();
-
+    private BoTRunner serviceBoT;
+    
     public BatsServiceApiImpl() {
         serviceState = new State(State.RUNNING);
         lock = new Object();
@@ -59,7 +60,7 @@ class BatsServiceApiImpl implements BatsServiceApi {
                 serviceState.state = State.ADAPTING;
             }
 
-            final BoTRunner bot = new BoTRunner(5, 0, 60, 24, 400,
+            serviceBoT = new BoTRunner(5, 0, 60, 24, 400,
                     inputFile, clusterConfigurationFile);
 
             BoTRunner.schedulesFile = schedulesFolderString + File.separator
@@ -74,7 +75,7 @@ class BatsServiceApiImpl implements BatsServiceApi {
                 @Override
                 public void run() {
                     try {
-                        bot.run();
+                        serviceBoT.run();
                     } catch (Exception ex) {
                         exceptionsLogger.log(Level.SEVERE,
                                 "Sampling failed because of:\n{0}\n",
@@ -188,7 +189,8 @@ class BatsServiceApiImpl implements BatsServiceApi {
             String[] args = {"" + scheduleNo, schedFile.getPath()};
 
             final Executor execute = new Executor(args);
-
+            serviceBoT = execute.bot;
+            
             /*work-around such that the "Sampling&Execution-in-the-same-VM" works well*/
             
             Properties initialIbisProps = execute.bot.myIbisProps;      
@@ -227,6 +229,34 @@ class BatsServiceApiImpl implements BatsServiceApi {
         return new MethodReportSuccess("Ok.");
     }
     
+    @Override
+	public MethodReport terminate_workers() {
+    	MethodReport retVal = new MethodReportSuccess();
+    	int totalNoWorkersTerminated = 0;
+    	try{
+    		synchronized (lock) {
+    			if (serviceBoT == null) {
+    				serviceState.state = State.STOPPED;
+    				retVal.append(totalNoWorkersTerminated + "\n");
+    				retVal.append("Ok.");
+    				return retVal;           
+    			}    		 
+    		}    	
+
+    		totalNoWorkersTerminated = serviceBoT.terminate();
+    		retVal.append(totalNoWorkersTerminated + "\n");
+    		
+    		serviceState.state = State.STOPPED;
+
+    	} catch(IOException ioe) {
+    		
+    		return new MethodReportError(ioe.getLocalizedMessage());
+    	}    	
+    	
+    	retVal.append("Ok.");
+    	return retVal;
+	}
+    
     private File getSchedulesFile(long schedulesFileTimeStamp) {
         String schedulesFile = "" + schedulesFileTimeStamp;
 
@@ -260,4 +290,5 @@ class BatsServiceApiImpl implements BatsServiceApi {
         }
         return retVal;
     }
+
 }

@@ -49,6 +49,7 @@ public class WorkerStats {
 	public WorkerStats(String node, long startTime, IbisIdentifier ii) {
 		this.node = node;
 		this.startTime = startTime;
+		this.ii = ii;
 		noJobs = 0;
 		uptime = 0;		
 		runtime = 0;

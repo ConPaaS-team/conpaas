@@ -103,6 +103,8 @@ public class Executor {
 
         System.out.println("Executor type: " + whichMaster);      
         
+        bot.master = master;
+        
         try {
             master.initMasterComm();
             // start workers, assuming format for reservation time interval "dd:hh:mm:00"

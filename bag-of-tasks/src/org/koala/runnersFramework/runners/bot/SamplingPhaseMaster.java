@@ -177,7 +177,7 @@ public class SamplingPhaseMaster extends Master {
 
 		WorkerStats reacquiredMachine = workers.get(clusterName).get(node);
 		if(reacquiredMachine == null) {
-			workers.get(clusterName).put(node, new WorkerStats(node,System.currentTimeMillis(), from));
+			workers.get(clusterName).put(node, new WorkerStats(node, System.currentTimeMillis(), from));
 		} else {
 			reacquiredMachine.reacquire(cluster.timeUnit, System.currentTimeMillis());
 		}	

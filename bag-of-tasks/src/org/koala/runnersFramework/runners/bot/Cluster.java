@@ -110,7 +110,7 @@ public abstract class Cluster implements Serializable {
 	public abstract Process startNodes(String time, int noNodes, 
 			String electionName, String poolName, String serverAddress);
 
-	abstract public void terminateNode(IbisIdentifier from, Ibis myIbis)
+	public abstract void terminateNode(IbisIdentifier from, Ibis myIbis)
             throws IOException;
 	
 	public void linearRegression(Cluster reference) {
