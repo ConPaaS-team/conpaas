@@ -124,7 +124,7 @@ public class BoTRunner implements Serializable {
             this.clusterConfigurationFile = clusterConfigurationFile;
         }
         
-        bag = new BagOfTasks(inputFile);
+        bag = new BagOfTasks(this.inputFile);
          
         //bag = new BagOfTasks("./bags/bot-LT-t0-0.366-xmax2700");
         tasks = bag.getBoT();
