@@ -1,22 +1,21 @@
 /*
- * Copyright (C) 2010-2011 Contrail consortium.                                                                                                                       
+ * Copyright (C) 2010-2011 Contrail consortium.
  *
- * This file is part of ConPaaS, an integrated runtime environment                                                                                                    
- * for elastic cloud applications.                                                                                                                                    
- *                                                                                                                                                                    
+ * This file is part of ConPaaS, an integrated runtime environment
+ * for elastic cloud applications.
+ *
  * ConPaaS is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by                                                                                               
- * the Free Software Foundation, either version 3 of the License, or                                                                                                  
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  * ConPaaS is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of                                                                                                     
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                                                                                                      
- * GNU General Public License for more details.                                                                                                                       
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License                                                                                                  
+ * You should have received a copy of the GNU General Public License
  * along with ConPaaS.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 @CHARSET "UTF-8";
 
 body {
@@ -36,11 +35,11 @@ h1 {
 }
 
 .pagecontent {
-	 padding: 10px;
-	 border: 1px solid #eee;
+	padding: 10px;
+	border: 1px solid #eee;
 }
 
-a, a:visited {
+a,a:visited {
 	color: #008cf7;
 	text-decoration: none;
 }
@@ -81,10 +80,10 @@ a:hover {
 	font-size: 12px;
 }
 
-.user .usercredit, .user .username, .user .logout {
-    padding: 1px 3px 3px 18px;
-    margin: 3px;
-    float: right;
+.user .usercredit,.user .username,.user .logout {
+	padding: 1px 3px 3px 18px;
+	margin: 3px;
+	float: right;
 }
 
 .user .usercredit {
@@ -94,7 +93,7 @@ a:hover {
 }
 
 .user .logout {
-    background: url('images/logout.png') top left no-repeat;	
+	background: url('images/logout.png') top left no-repeat;
 }
 
 .user .username {
@@ -116,7 +115,7 @@ a:hover {
 	float: left;
 }
 
-.pageheader .info .nameWrapper, .pageheader .info img.stype {
+.pageheader .info .nameWrapper,.pageheader .info img.stype {
 	float: left;
 }
 
@@ -128,10 +127,10 @@ a:hover {
 	padding: 0 3px 0 3px;
 	margin: 1px 0 1px 0;
 	font-size: 16px;
-    color: #333;
-    border: 1px solid white;
-    font-style: normal;
-    font-weight: bold;
+	color: #333;
+	border: 1px solid white;
+	font-style: normal;
+	font-weight: bold;
 }
 
 .pageheader .info .subname {
@@ -204,12 +203,14 @@ a.button {
 }
 
 body.webkit a.button {
-	background: -webkit-gradient(linear,0% 0,0% 100%,from(#008cf7),to(#003380));
+	background: -webkit-gradient(linear, 0% 0, 0% 100%, from(#008cf7),
+		to(#003380) );
 	border-radius: 5px;
 }
 
 body.firefox a.button {
-	background: -moz-linear-gradient(270deg, #008cf7, #003380) repeat scroll 0 0 transparent;
+	background: -moz-linear-gradient(270deg, #008cf7, #003380) repeat scroll
+		0 0 transparent;
 	-moz-border-radius: 5px;
 }
 
@@ -235,7 +236,7 @@ a.button:hover {
 }
 
 .services ul.slist li.service {
-	padding:0;
+	padding: 0;
 }
 
 .services ul.slist li.service:hover {
@@ -253,7 +254,6 @@ tr.service {
 	
 }
 
-
 .service .instances {
 	padding: 5px 0 0px 24px;
 	margin-top: 7px;
@@ -270,7 +270,7 @@ tr.service {
 	visibility: visible;
 }
 
-.service .content, .service .icon {
+.service .content,.service .icon {
 	float: left;
 }
 
@@ -304,7 +304,7 @@ tr.service {
 	font-style: normal;
 	font-weight: bold;
 	margin: 5px;
-}	
+}
 
 .service .statistic .note {
 	color: #999;
@@ -332,8 +332,8 @@ tr.service {
 }
 
 .service .title a {
-    font-size: 16px;
-    font-weight: bold;
+	font-size: 16px;
+	font-weight: bold;
 }
 
 .service .colortag {
@@ -347,7 +347,7 @@ tr.service {
 }
 
 .service .colortag-active {
-	background-color: #00b100;	
+	background-color: #00b100;
 }
 
 .service:hover .colortag-stopped {
@@ -411,7 +411,7 @@ tr.service {
 	font-weight: normal;
 }
 
-.services a, .services a:visited {
+.services a,.services a:visited {
 	color: #008cf7;
 	font-weight: normal;
 	font-size: 12px;
@@ -452,29 +452,29 @@ tr.service {
 }
 
 .createpage .form .service .info {
-    border-right: 5px solid white;
+	border-right: 5px solid white;
 }
 
 .createpage .form .selectedservice .info {
 	border-right: 5px solid #236CA8;
 }
 
-.createpage .form .service .description, 
-.createpage .form .service .radio, 
-.createpage .form .service .info {
+.createpage .form .service .description,.createpage .form .service .radio,.createpage .form .service .info
+	{
 	border-bottom: 1px solid #eee;
 }
 
 .createpage .form .service .description img {
-	opacity:0.4;
-    filter:alpha(opacity=40); /* For IE8 and earlier */
+	opacity: 0.4;
+	filter: alpha(opacity = 40); /* For IE8 and earlier */
 }
 
 .createpage .form .service:hover .radio {
 	color: black;
 }
 
-.createpage .form .service:hover .info, .createpage .form .selectedservice  .info {
+.createpage .form .service:hover .info,.createpage .form .selectedservice  .info
+	{
 	color: #333;
 }
 
@@ -483,23 +483,22 @@ tr.service {
 }
 
 .createpage .form .service:hover .description img {
-    opacity:1.0;
-    filter:alpha(opacity=100); /* For IE8 and earlier */
+	opacity: 1.0;
+	filter: alpha(opacity = 100); /* For IE8 and earlier */
 }
 
-
-.createpage .form .service .description,
-.createpage .form .selectedservice .description {
+.createpage .form .service .description,.createpage .form .selectedservice .description
+	{
 	line-height: 16px;
 	text-align: center;
 }
 
 .createpage .form .selectedservice .radio {
-    color: black;
-    font-size: 14px;
-    font-weight: bold;
-    vertical-align: middle;
-    padding-left: 10px;
+	color: black;
+	font-size: 14px;
+	font-weight: bold;
+	vertical-align: middle;
+	padding-left: 10px;
 }
 
 .createpage .form .service .radio {
@@ -526,7 +525,7 @@ tr.service {
 	color: #333;
 }
 
-.form .input select, .form .input option {
+.form .input select,.form .input option {
 	font-size: 13px;
 }
 
@@ -589,7 +588,7 @@ input.button {
 .access .access-info {
 	padding: 2px 0 2px 5px;
 	font-weight: bold;
-	text-align:left;
+	text-align: left;
 	display: inline;
 	color: #0055A5;
 }
@@ -669,14 +668,14 @@ ul.versions li.inactive:hover .version-actions {
 	visibility: visible;
 }
 
-ul.versions li.active{
+ul.versions li.active {
 	background-color: #ddd;
 }
 
 ul.versions li.active .version-actions {
 	display: inline;
 	visibility: visible;
-} 
+}
 
 ul.versions li a.link {
 	font-size: 11px;
@@ -701,7 +700,8 @@ ul.versions li a.link {
 	margin-left: 5px;
 }
 
-ul.versions li a.activate, ul.versions li .status {
+ul.versions li a.activate,ul.versions li .status {
+	
 }
 
 ul.versions li .timestamp {
@@ -723,7 +723,7 @@ ul.versions li .timestamp {
 	width: 40%;
 }
 
-.deployoptions, .deployactions {
+.deployoptions,.deployactions {
 	float: left;
 }
 
@@ -744,7 +744,7 @@ ul.versions li .timestamp {
 .visibleblock {
 	display: block;
 }
-	
+
 .invisible {
 	display: none;
 }
@@ -774,8 +774,8 @@ ul.versions li .timestamp {
 }
 
 .transient h3 {
+	
 }
-
 
 /* two sided layout box */
 .dualbox {
@@ -796,7 +796,7 @@ ul.versions li .timestamp {
 	color: green;
 }
 
-#fileForm, .deployactions .additional {
+#fileForm,.deployactions .additional {
 	float: left;
 }
 
@@ -806,13 +806,14 @@ ul.versions li .timestamp {
 }
 
 .deployactions .positive {
+	
 }
 
 .settings-form {
 	margin-left: 5px;
 }
 
-.front-section img.stype, .front-section .form {
+.front-section img.stype,.front-section .form {
 	float: left;
 }
 
@@ -824,14 +825,12 @@ ul.versions li .timestamp {
 	margin-left: 0px;
 }
 
-
 .form a.link {
 	font-weight: bold;
 	font-size: 12px;
 }
 
 /* instances */
-
 #instances {
 	border: 1px solid #ccc;
 }
@@ -874,7 +873,8 @@ ul.versions li .timestamp {
 	padding: 5px 3px 5px 5px;
 }
 
-#instances .cluster-web, #instances .cluster-masters, #instances .cluster-peers {
+#instances .cluster-web,#instances .cluster-masters,#instances .cluster-peers
+	{
 	border-color: blue;
 }
 
@@ -882,7 +882,7 @@ ul.versions li .timestamp {
 	border-color: purple;
 }
 
-#instances .cluster-proxy, #instances .cluster-workers {
+#instances .cluster-proxy,#instances .cluster-workers {
 	border-color: orange;
 }
 
@@ -895,12 +895,12 @@ ul.versions li .timestamp {
 }
 
 /* MapReduce */
-
 #jarform {
 	margin-top: 20px;
 }
 
 #mrapp {
+	
 }
 
 .mrform i {
@@ -908,7 +908,7 @@ ul.versions li .timestamp {
 	color: #999;
 }
 
-.mrform i, .mrform select, .mrform input {
+.mrform i,.mrform select,.mrform input {
 	margin: 3px;
 }
 
@@ -971,10 +971,9 @@ ul.versions li .timestamp {
 }
 
 /* login */
-
 body.loginbody {
-    background: url('images/onclouds.jpg') top left no-repeat;
-    margin: auto;
+	background: url('images/onclouds.jpg') top left no-repeat;
+	margin: auto;
 }
 
 .login {
@@ -982,23 +981,23 @@ body.loginbody {
 	margin-top: 100px;
 	padding: 50px;
 	background-color: #eee;
-	opacity:0.8;
-    filter:alpha(opacity=80); /* For IE8 and earlier */
+	opacity: 0.8;
+	filter: alpha(opacity = 80); /* For IE8 and earlier */
 }
 
 .login .form .input {
 	padding: 3px 3px 0 5px;
 }
 
-.login .form a, .login #error {
+.login .form a,.login #error {
 	font-weight: normal;
 	font-size: 10px;
 	margin: 3px;
 }
 
 .login #error {
-    color: red;
-    margin-left: 1px;
+	color: red;
+	margin-left: 1px;
 }
 
 .login .title {
@@ -1026,13 +1025,13 @@ body.loginbody {
 	background-color: white;
 	border: 1px solid #214478;
 	margin: 0;
-    opacity: 1.0;
-    filter:alpha(opacity=100);
+	opacity: 1.0;
+	filter: alpha(opacity = 100);
 }
 
 .login .formwrap {
-    border-top: 1px solid white;
-    border-right: 1px solid white;
+	border-top: 1px solid white;
+	border-right: 1px solid white;
 }
 
 .login .descr {

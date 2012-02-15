@@ -1,33 +1,33 @@
 <?php
 /*
- * Copyright (C) 2010-2011 Contrail consortium.                                                                                                                       
+ * Copyright (C) 2010-2011 Contrail consortium.
  *
- * This file is part of ConPaaS, an integrated runtime environment                                                                                                    
- * for elastic cloud applications.                                                                                                                                    
- *                                                                                                                                                                    
+ * This file is part of ConPaaS, an integrated runtime environment
+ * for elastic cloud applications.
+ *
  * ConPaaS is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by                                                                                               
- * the Free Software Foundation, either version 3 of the License, or                                                                                                  
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  * ConPaaS is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of                                                                                                     
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                                                                                                      
- * GNU General Public License for more details.                                                                                                                       
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License                                                                                                  
+ * You should have received a copy of the GNU General Public License
  * along with ConPaaS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 require_module('logging');
 
 class HTTP {
-	
+
 	private static $CURL_OPTS = array(
     	CURLOPT_CONNECTTIMEOUT => 5,
     	CURLOPT_RETURNTRANSFER => true,
     	CURLOPT_TIMEOUT        => 60,
 	);
-	
+
 	public static function req($url, $http_method, array $data, $ping=false,
 			$rpc=true) {
 		$opts = self::$CURL_OPTS;
@@ -40,7 +40,7 @@ class HTTP {
 		if ($ping) {
 			$opts[CURLOPT_CONNECTTIMEOUT] = 1;
 		}
-		
+
 		$http_method = strtolower($http_method);
 		if ($http_method == 'post') {
 			$opts[CURLOPT_POST] = 1;
@@ -51,7 +51,7 @@ class HTTP {
 			}
 		}
 		$opts[CURLOPT_URL] = $url;
-		
+
 		$conn = curl_init();
 		curl_setopt_array($conn, $opts);
 		$result = curl_exec($conn);
@@ -66,20 +66,20 @@ class HTTP {
 		curl_close($conn);
 		return $result;
 	}
-	
+
 	public static function get($url, $ping=false) {
 		return HTTP::req($url, 'get', array(), $ping, false);
 	}
-	
+
 	public static function post($url, $data, $ping=false) {
 		return HTTP::req($url, 'post', $data, $ping, false);
 	}
-	
+
 	public static function jsonrpc($url, $http_method, $rpc_method, $params,
 			$ping=false) {
 		$data = array();
 		if ($http_method == 'get') {
-			// TODO(claudiugh): not sure if this is still part of the protocol 
+			// TODO(claudiugh): not sure if this is still part of the protocol
 			$url .= '?'.http_build_query(array(
 						'method' => $rpc_method,
 						'params' => json_encode($params),
@@ -94,5 +94,5 @@ class HTTP {
 		}
 		return HTTP::req($url, $http_method, $data, $ping, true);
 	}
-	
+
 }

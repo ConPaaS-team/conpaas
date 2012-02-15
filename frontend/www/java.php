@@ -1,20 +1,20 @@
 <?php
 /*
- * Copyright (C) 2010-2011 Contrail consortium.                                                                                                                       
+ * Copyright (C) 2010-2011 Contrail consortium.
  *
- * This file is part of ConPaaS, an integrated runtime environment                                                                                                    
- * for elastic cloud applications.                                                                                                                                    
- *                                                                                                                                                                    
+ * This file is part of ConPaaS, an integrated runtime environment
+ * for elastic cloud applications.
+ *
  * ConPaaS is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by                                                                                               
- * the Free Software Foundation, either version 3 of the License, or                                                                                                  
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  * ConPaaS is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of                                                                                                     
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                                                                                                      
- * GNU General Public License for more details.                                                                                                                       
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License                                                                                                  
+ * You should have received a copy of the GNU General Public License
  * along with ConPaaS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
@@ -57,14 +57,14 @@ $backendType = $service->getType();
 	  	var sid = <?php echo $sid; ?>;
   		/* core functionality */
 		function isStableState(state) {
-			return state == 'INIT' || state == 'RUNNING' || 
+			return state == 'INIT' || state == 'RUNNING' ||
 				state == 'STOPPED' || state == 'ERROR';
 		}
 
   		var poll_success_cb = null;
   		var poll_success_cb_param = null;
   		var poll_error_cb = null;
-  		
+
   		function pollState(delay) {
   	  		delay = (typeof delay == 'undefined') ? 1000 : delay + 1000;
   	  		count = delay / 1000;
@@ -78,7 +78,7 @@ $backendType = $service->getType();
 				  		showLoading(false);
 				  		if (poll_error_cb != null) {
 					  		poll_error_cb(response.error);
-				  		} else { 
+				  		} else {
 				  			alert('pollState() error: ' + response.error);
 				  		}
 				  		return;
@@ -108,7 +108,7 @@ $backendType = $service->getType();
 		function showLoading(show, msg) {
 			show = (typeof show == 'undefined') ? true : show;
 			msg = (typeof msg == 'undefined') ? 'loading...' : msg;
-			
+
 			if (show) {
 				$('#loading b').html(msg);
 				$('#loading').show();
@@ -119,7 +119,7 @@ $backendType = $service->getType();
 
   		function freezeInput(freeze) {
   	  		buttonsSelector = '#start, #stop, #terminate, #submitnodes, #file';
-	  	  	linksSelector = '.versions .activate'; 
+	  	  	linksSelector = '.versions .activate';
   	  		if (freeze) {
   	  			$(buttonsSelector).attr('disabled', 'disabled');
   	  			$(linksSelector).hide();
@@ -135,17 +135,17 @@ $backendType = $service->getType();
   		 * fields: params: {url, method, success, error, status, poll}
   		 */
   		function transientRequest(params) {
-  	  		params.method = 
+  	  		params.method =
   	  	  		(typeof params.method == 'undefined') ? 'get' : params.method;
-	  	  	params.success = 
+	  	  	params.success =
   	  	  		(typeof params.success == 'undefined') ? null : params.success;
 	  	  	params.error =
 		  	  	(typeof params.error == 'undefined') ? null : params.error;
-	  	  	params.poll = 
+	  	  	params.poll =
 		  	  	(typeof params.poll == 'undefined') ? true : params.poll;
 			params.data =
 		  	  	(typeof params.data == 'undefined') ? {} : params.data;
-	  	  	
+
   	  		freezeInput(true);
   	  		showLoading(true, params.status);
   	  		$.ajax({
@@ -162,7 +162,7 @@ $backendType = $service->getType();
   	  	  	  	  		}
   	  	  	  	  		return;
   	  	  	  		}
-  	  	  	  		if (typeof params.poll != 'undefined' && 
+  	  	  	  		if (typeof params.poll != 'undefined' &&
   	    	  	  	  		params.poll == true) {
   	  	  	  	  		poll_success_cb = params.success;
   	  	  	  	  		poll_error_cb = params.error;
@@ -184,14 +184,14 @@ $backendType = $service->getType();
   	  		});
   		}
 </script>
-	
-<?php echo $page->renderHeader(); ?>  	
+
+<?php echo $page->renderHeader(); ?>
 <?php echo PageStatus()->setId('loading'); ?>
-  	
-	<div class="pagecontent">	
-	<?php echo $page->renderTopMenu(); ?> 
-  		
-<script>  			  		
+
+	<div class="pagecontent">
+	<?php echo $page->renderTopMenu(); ?>
+
+<script>
 $(document).ready(function() {
 	$('#name').click(function() {
 		newname = prompt("Enter a new name", $('#name').html());
@@ -236,9 +236,9 @@ $(document).ready(function() {
 			},
 			status: 'starting service...',
 			poll: true
-		}); 
+		});
 	});
-		  		
+
 
 	$('#terminate').click(function() {
 		if (!confirm('After termination, the service will be completely'
@@ -258,14 +258,14 @@ $(document).ready(function() {
 });
 </script>
 
-<?php if ($service->isConfigurable()): ?>	
+<?php if ($service->isConfigurable()): ?>
 	<?php if ($service->getNodesCount() > 0): ?>
 	<script text="text/javascript">
-			
+
 	function reloadInstances() {
-		$.ajax({ 
+		$.ajax({
 			url: 'ajax/render.php',
-			data: { sid: sid, target: 'instances' }, 
+			data: { sid: sid, target: 'instances' },
 			type: 'get',
 			dataType: 'html',
 			success: function(data) {
@@ -283,15 +283,15 @@ $(document).ready(function() {
 			};
 		}
 		return [
-			parseInt($('#proxy').html()), 
+			parseInt($('#proxy').html()),
 			parseInt($('#web').html()),
 			parseInt($('#backend').html())
 		];
 	}
-	
+
 	function changeInstances(action, params) {
 		$('.actionsbar .loading').show();
-		
+
 		transientRequest({
 			url: 'ajax/' + action + '.php?sid=' + sid,
 			method: 'post',
@@ -299,7 +299,7 @@ $(document).ready(function() {
 			poll: true,
 			status: 'adding/removing nodes...',
 			success: function(response) {
-				$('.actionsbar .loading').hide();			
+				$('.actionsbar .loading').hide();
 				reloadInstances();
 				$('#proxy, #web, #backend').each(function() {
 					$(this).html('0');
@@ -312,7 +312,7 @@ $(document).ready(function() {
 			}
 		});
 	}
-	
+
 	function enableChangeInstances() {
 		params = getInstancesParams(false);
 	  	for (i in params) {
@@ -324,7 +324,7 @@ $(document).ready(function() {
 	  	}
 	  	$('#submitnodes').attr('disabled', 'disabled');
 	}
-	
+
 	$(document).ready(function() {
 		$('#submitnodes').click(function() {
 			add = '';
@@ -340,7 +340,7 @@ $(document).ready(function() {
 						add += ' & ';
 					}
 					add += params[type] + ' ' + type;
-					addParams[type] = params[type]; 
+					addParams[type] = params[type];
 				} else if (params[type] < 0) {
 					if (remove != '') {
 						remove += ' & ';
@@ -367,7 +367,7 @@ $(document).ready(function() {
 				if (remove != '') {
 					changeInstances('removeServiceNodes', removeParams);
 				}
-				
+
 			}
 		});
 
@@ -384,7 +384,7 @@ $(document).ready(function() {
 		});
 	});
 	</script>
-			
+
 	<div class="form-section">
 		<div id="instancesWrapper">
 			<?php echo $page->renderInstances(); ?>
@@ -403,14 +403,14 @@ $(document).ready(function() {
 		No instances are running
 	</div>
 	<?php endif; ?>
-		
+
 	<div class="form-section">
 		<div class="form-header">
 			<div class="title">Code management</div>
 			<div class="access-box">
 				<?php
 				if ($service->isRunning()) {
-					echo LinkUI('access running version', 
+					echo LinkUI('access running version',
 								$service->getAccessLocation())
 								->setExternal(true);
 				}
@@ -430,7 +430,7 @@ $(document).ready(function() {
 			</div>
 			</div>
 			<div class="deployactions">
-					
+
 			<form id="fileForm" action="<?php echo $page->getUploadURL() ?>" enctype="multipart/form-data">
 				<input id="file" type="file" name="code" />
 				<input type="hidden" name="method" value="upload_code_version" />
@@ -442,11 +442,11 @@ $(document).ready(function() {
 				</div>
 				<div class="clear"></div>
 				<div class="hint">
-					example: <b>.zip</b>, <b>.tar</b> of your source tree 
+					example: <b>.zip</b>, <b>.tar</b> of your source tree
 				</div>
 
 			<script type="text/javascript">
-			
+
 			$(document).ready(function() {
 				$('#fileForm').ajaxForm({
 					dataType: 'json',
@@ -476,7 +476,7 @@ $(document).ready(function() {
 				$('.versions .activate').click(function() {
 					versionOnActivate(this);
 				});
-					
+
 			});
 
 			function versionOnActivate(button) {
@@ -496,7 +496,7 @@ $(document).ready(function() {
 				});
 			}
 			function reloadVersions() {
-				$.ajax({ 
+				$.ajax({
 					url: 'ajax/render.php',
 					data: { sid: sid, target: 'versions' },
 					type: 'get',
@@ -509,11 +509,11 @@ $(document).ready(function() {
 					}
 				});
 			}
-							
+
 			</script>
 			</div>
 			<div class="deployactions invisible">
-				<input type="text" size="40" /> 
+				<input type="text" size="40" />
 				<input type="button" value="checkout" />
 				<div class="hint">
 					example: <b>git checkout git@10.3.45.1:repos/</b>
@@ -521,18 +521,18 @@ $(document).ready(function() {
 			</div>
 			<div class="clear"></div>
 		</div>
-			
+
 		<script type="text/javascript">
 			$('.deployoption input[type=radio]').change(function() {
 				$('.deployactions').toggleClass('invisible');
-			});				
+			});
 		</script>
-			
+
 		<div class="brief">available code versions</div>
 		<div id="versionsWrapper">
 			<?php echo $page->renderVersions(); ?>
 		</div>
-			
+
 	</div>
 
 	<?php if (!$service->isStable()): ?>
@@ -552,4 +552,3 @@ $(document).ready(function() {
 <?php echo $page->renderFooter(); ?>
 </body>
 </html>
- 

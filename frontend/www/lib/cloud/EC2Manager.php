@@ -1,20 +1,20 @@
 <?php
 /*
- * Copyright (C) 2010-2011 Contrail consortium.                                                                                                                       
+ * Copyright (C) 2010-2011 Contrail consortium.
  *
- * This file is part of ConPaaS, an integrated runtime environment                                                                                                    
- * for elastic cloud applications.                                                                                                                                    
- *                                                                                                                                                                    
+ * This file is part of ConPaaS, an integrated runtime environment
+ * for elastic cloud applications.
+ *
  * ConPaaS is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by                                                                                               
- * the Free Software Foundation, either version 3 of the License, or                                                                                                  
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  * ConPaaS is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of                                                                                                     
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                                                                                                      
- * GNU General Public License for more details.                                                                                                                       
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License                                                                                                  
+ * You should have received a copy of the GNU General Public License
  * along with ConPaaS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
@@ -23,9 +23,9 @@ require_module('db');
 require_module('aws-sdk');
 
 class EC2Manager {
-	
+
 	private $ec2;
-	
+
 	private $vmid;
 	private $manager_ami;
 	private $security_group;
@@ -33,7 +33,7 @@ class EC2Manager {
 	private $user_data_file;
 	private $instance_type;
 	private $service_type;
-	
+
 	public function __construct($data) {
 		$this->service_type = $data['type'];
 		$this->sid = $data['sid'];
@@ -41,7 +41,7 @@ class EC2Manager {
 		$this->ec2 = new AmazonEC2();
 		$this->loadConfiguration();
 	}
-	
+
 	private function loadConfiguration() {
 		$conf = parse_ini_file(Conf::CONF_DIR.'/aws.ini', true);
 		if ($conf === false) {
@@ -53,10 +53,10 @@ class EC2Manager {
 		$this->user_data_file = $conf['user_data_file'];
 		$this->instance_type = $conf['instance_type'];
 	}
-	
+
 	/**
 	 * Instantiate a virtual image of the Manager.
-	 * 
+	 *
 	 * @return string id of the virtual instance
 	 * @throws Exception
 	 */
@@ -84,7 +84,7 @@ class EC2Manager {
 		$instance = $response->body->instancesSet->item;
 		return $instance->instanceId;
 	}
-	
+
 	public function resolveAddress($vmid) {
 		$response = $this->ec2->describe_instances(array(
 			'InstanceId' => $vmid,
@@ -102,7 +102,7 @@ class EC2Manager {
 		}
 		return $instance->dnsName;
 	}
-	
+
 	/**
 	 * @param $vmid id of the virtual instance we are fetching address for
 	 * @return the address (DNS) of the instance
@@ -112,7 +112,7 @@ class EC2Manager {
 	public function getAddress() {
 		return $thos->resolveAddress($this->vmid);
 	}
-	
+
 	public function terminate() {
 		$response = $this->ec2->terminate_instances();
 		if (!$response->isOK()) {
@@ -121,7 +121,6 @@ class EC2Manager {
 				'failed for service '.$this->name.'['.$this->sid.']');
 		}
 	}
-	
+
 }
 ?>
- 

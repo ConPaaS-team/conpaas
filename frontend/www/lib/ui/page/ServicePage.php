@@ -1,20 +1,20 @@
 <?php
 /*
- * Copyright (C) 2010-2011 Contrail consortium.                                                                                                                       
+ * Copyright (C) 2010-2011 Contrail consortium.
  *
- * This file is part of ConPaaS, an integrated runtime environment                                                                                                    
- * for elastic cloud applications.                                                                                                                                    
- *                                                                                                                                                                    
+ * This file is part of ConPaaS, an integrated runtime environment
+ * for elastic cloud applications.
+ *
  * ConPaaS is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by                                                                                               
- * the Free Software Foundation, either version 3 of the License, or                                                                                                  
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  * ConPaaS is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of                                                                                                     
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                                                                                                      
- * GNU General Public License for more details.                                                                                                                       
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License                                                                                                  
+ * You should have received a copy of the GNU General Public License
  * along with ConPaaS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
@@ -24,7 +24,7 @@ require_module('ui');
 require_module('ui/instance');
 
 class ServicePage extends Page {
-	
+
 	static $states = array(
 		'INIT' => false,
 		'RUNNING' => false,
@@ -37,22 +37,22 @@ class ServicePage extends Page {
 	protected $service;
 	private $conf = null;
 	private $nodes = null;
-	
+
 	public function __construct(Service $service) {
 		parent::__construct();
 		$this->service = $service;
 	}
-	
+
 	public function is_transient($state) {
-		return 
+		return
 			!array_key_exists($state, self::$states) ||
 			(self::$states[$state] == true);
 	}
-	
+
 	public function getUploadURL() {
 		return 'ajax/uploadCodeVersion.php?sid='.$this->service->getSID();
 	}
-	
+
 	public function getState() {
 		$state = $this->service->fetchState();
 		if ($state === false) {
@@ -64,7 +64,7 @@ class ServicePage extends Page {
 		}
 		return $state['result']['state'];
 	}
-	
+
 	public function renderActions() {
 		$startButton = InputButton('start')
 			->setId('start');
@@ -72,7 +72,7 @@ class ServicePage extends Page {
 			->setId('stop');
 		$terminateButton = InputButton('terminate')
 			->setId('terminate');
-		
+
 		switch ($this->service->getState()) {
 			case Service::STATE_INIT:
 				$stopButton->setVisible(false);
@@ -90,7 +90,7 @@ class ServicePage extends Page {
 			$startButton->setVisible(false);
 			$stopButton->setVisible(false);
 		}
-		
+
 		return $startButton.' '.$stopButton.' '.$terminateButton;
 	}
 
@@ -105,12 +105,12 @@ class ServicePage extends Page {
 				return '';
 		}
 	}
-	
+
 	private function getVersionDownloadURL($versionID) {
 		return $this->service->getManager()
 			.'?action=downloadCodeVersion&codeVersionId='.$versionID;
 	}
-	
+
 	public function renderVersions() {
 		$versions = $this->service->fetchCodeVersions();
 		if ($versions === false) {
@@ -127,7 +127,7 @@ class ServicePage extends Page {
 		}
 		$html = '<ul class="versions">';
 		for ($i = 0; $i < count($versions); $i++) {
-			$versions[$i]['downloadURL'] = 
+			$versions[$i]['downloadURL'] =
 				$this->getVersionDownloadURL($versions[$i]['codeVersionId']);
 			$versionUI = Version($versions[$i])
 				->setLinkable($this->service->isRunning());
@@ -147,7 +147,7 @@ class ServicePage extends Page {
 		$html .= '</ul>';
 		return $html;
 	}
-	
+
 	private function getCurrentExecLimit() {
 		if ($this->conf == null) {
 			$this->conf = $this->service->getConfiguration();
@@ -158,13 +158,13 @@ class ServicePage extends Page {
 		}
 		return intval($this->conf->max_execution_time);
 	}
-	
+
 	public function renderExecTimeOptions() {
 		static $options = array(30, 60, 90);
 		$selected = $this->getCurrentExecLimit();
 		$html = '<select id="conf-maxexec">';
 		foreach ($options as $option) {
-			$selectedField = $selected == $option ? 
+			$selectedField = $selected == $option ?
 				'selected="selected"' : '';
 			$html .= '<option value="'.$option.'" '.$selectedField.'>'
 				.$option.' seconds</option>';
@@ -172,7 +172,7 @@ class ServicePage extends Page {
 		$html .= '</select>';
 		return $html;
 	}
-	
+
 	private function getCurrentMemLimit() {
 		if ($this->conf == null) {
 			$this->service->getConfiguration();
@@ -182,14 +182,14 @@ class ServicePage extends Page {
 			return '128M';
 		}
 		return $this->conf->memory_limit;
-	}	
-	
+	}
+
 	public function renderMemLimitOptions() {
 		static $options = array('64M', '128M', '256M');
 		$selected = $this->getCurrentMemLimit();
 		$html = '<select id="conf-memlim">';
 		foreach ($options as $option) {
-			$selectedField = $selected == $option ? 
+			$selectedField = $selected == $option ?
 				'selected="selected"' : '';
 			$html .= '<option value="'.$option.'" '.$selectedField.'>'
 				.$option.'</option>';
@@ -197,11 +197,11 @@ class ServicePage extends Page {
 		$html .= '</select>';
 		return $html;
 	}
-	
+
 	public function getNodes() {
 		if ($this->nodes !== null) {
 			return $this->nodes;
-		} 
+		}
 		$nodes = array();
 		$nodes_info = array();
 		$selected = array();
@@ -254,36 +254,36 @@ class ServicePage extends Page {
 		);
 		return $cloud_providers[$this->service->getCloud()];
 	}
-	
+
 	public function renderInstances() {
 		$nodes = $this->getNodes();
 		if ($nodes === false) {
 			return 'could not retrieve nodes';
 		}
 		$instances_txt = count($nodes) > 1 ? 'instances' : 'instance';
-		$html = 
+		$html =
 			'<div class="brief">'.
 				$this->service->getNodesCount().' '.$instances_txt.' running '.
 				'on '.$this->renderCloud().
 			'</div>'.
 			'<div id="instances">';
-		
+
 		foreach ($nodes as $node) {
-			$html .= $node->render();			
+			$html .= $node->render();
 		}
 		$html .= '</div>';
 		return $html;
 	}
-	
+
 	private function getTypeImage() {
 		return $this->service->getType().'.png';
 	}
-	
+
 	private function renderEditableName() {
 		if (!$this->service->isConfigurable()) {
 			return '<i class="name">'.$this->service->getName().'</i>';
 		}
-		return  
+		return
 			'<i id="name" class="name editable" title="click to edit">'
 				.$this->service->getName()
 			.'</i>';
@@ -291,13 +291,13 @@ class ServicePage extends Page {
 
 	protected function renderStateChange() {
 		$stateLog = $this->service->fetchStateLog();
-		// consider state changes in reverse order 
+		// consider state changes in reverse order
 		foreach (array_reverse($stateLog) as $stateChange) {
 			if (Service::stateIsStable($stateChange['state'])) {
 				$ts = TimeHelper::timeRelativeDescr($stateChange['time']);
-				$state = ($stateChange['state'] == 'RUNNING') ? 
-					'started' : strtolower($stateChange['state']);  
-				return $state.' '.$ts.' ago'; 
+				$state = ($stateChange['state'] == 'RUNNING') ?
+					'started' : strtolower($stateChange['state']);
+				return $state.' '.$ts.' ago';
 			}
 		}
 		// default
@@ -305,7 +305,7 @@ class ServicePage extends Page {
 			strtotime($this->service->getDate()));
 		return 'created '.$ts.' ago';
 	}
-	
+
 	protected function renderApplicationAccess() {
 		if (!$this->service->isRunning()) {
 			return '';
@@ -314,9 +314,9 @@ class ServicePage extends Page {
 			LinkUI('access application', $this->service->getAccessLocation())
 				->setExternal(true);
 	}
-	
+
 	protected function renderSubname() {
-		return 
+		return
 			'<div class="subname">'.
 				$this->renderStateChange().
 				$this->renderApplicationAccess().
@@ -326,15 +326,15 @@ class ServicePage extends Page {
 					->setExternal(true).
 			'</div>';
 	}
-	
+
 	private function renderName() {
-		return 
+		return
 			'<div class="nameWrapper">'
 				.$this->renderEditableName()
 				.$this->renderSubname()
 			.'</div>';
 	}
-	
+
 	public function renderTopMenu() {
 		return
     	'<div class="pageheader">'
@@ -350,6 +350,5 @@ class ServicePage extends Page {
 	  		.'<div class="clear"></div>'
 	  	.'</div>';
 	}
-	
+
 }
- 

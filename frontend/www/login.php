@@ -1,20 +1,20 @@
 <?php
 /*
- * Copyright (C) 2010-2011 Contrail consortium.                                                                                                                       
+ * Copyright (C) 2010-2011 Contrail consortium.
  *
- * This file is part of ConPaaS, an integrated runtime environment                                                                                                    
- * for elastic cloud applications.                                                                                                                                    
- *                                                                                                                                                                    
+ * This file is part of ConPaaS, an integrated runtime environment
+ * for elastic cloud applications.
+ *
  * ConPaaS is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by                                                                                               
- * the Free Software Foundation, either version 3 of the License, or                                                                                                  
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  * ConPaaS is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of                                                                                                     
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                                                                                                      
- * GNU General Public License for more details.                                                                                                                       
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License                                                                                                  
+ * You should have received a copy of the GNU General Public License
  * along with ConPaaS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
@@ -46,13 +46,13 @@ $page = new Page();
 				<img src="images/conpaas_large.png" />
 			</div>
 			<p><b>ConPaaS</b> is the Platform-as-a-Service component of the <a href="http://contrail-project.eu/">Contrail</a> project.</p>
-			<p><b>ConPaaS</b> aims at facilitating the deployment of applications in the cloud. It provides a number of services to address common developer needs. 
-			Each service is self-managed and elastic: 
+			<p><b>ConPaaS</b> aims at facilitating the deployment of applications in the cloud. It provides a number of services to address common developer needs.
+			Each service is self-managed and elastic:
 			<ul>
 				<li> it can deploy itself on the cloud </li>
 				<li> monitor its own performance
 				<li> increase or decrease its processing capacity by dynamically (de-)provisioning instances of itself in the cloud </li>
-			</ul> 
+			</ul>
 			</p>
 		</div>
 		<div class="formwrap">
@@ -114,9 +114,9 @@ $page = new Page();
 							style="display: none;" />
 					</td>
 					<td>
-						<input class="active" type="button" value="login" 
+						<input class="active" type="button" value="login"
 							id="login" />
-						<input type="button" value="register" id="register" 
+						<input type="button" value="register" id="register"
 							style="display: none;" />
 						<a id="toregister" href="javascript: void(0);">register</a>
 					</td>
@@ -125,8 +125,8 @@ $page = new Page();
 					<td> </td>
 					<td>
 						<div id="error" style="display: none;">
-							
-						</div> 
+
+						</div>
 					</td>
 				</tr>
 			</table>
@@ -139,7 +139,7 @@ $page = new Page();
 
 	/*
 	 * type can be 'auth' or 'register'
-	 * success is the callback function, in case of normal response 
+	 * success is the callback function, in case of normal response
 	 */
 	function userRequest(type, success) {
 		if (type == 'register') {
@@ -173,7 +173,7 @@ $page = new Page();
     			return;
     		}
 		}
-		
+
 		$('.login .loading').show();
   		$.ajax({
   			url: 'ajax/login.php',
@@ -187,7 +187,7 @@ $page = new Page();
 					setTimeout("$('#error').fadeOut();", 2000);
 					$('#username').select().focus();
 				} else {
-					success(response); 
+					success(response);
 				}
 			}
 		});
@@ -200,7 +200,7 @@ $page = new Page();
 			}
 		});
 	}
-	
+
 	function register() {
 		userRequest('register', function (response) {
 			if (response.register == 1) {
@@ -208,7 +208,7 @@ $page = new Page();
 			}
 		});
 	}
-	
+
 	$(document).ready(function() {
 		$('#username').focus();
 		$('#username').keyup(function(e) {

@@ -40,7 +40,7 @@ abstract class Service {
 
 	private $reachable = false;
 	private $stable = true;
-	
+
 	private $errorMessage = null;
 
 	const STATE_RUNNING = 'RUNNING';
@@ -139,11 +139,11 @@ abstract class Service {
 			$this->nodesCount++;
 		}
 	}
-	
+
 	public function getErrorMessage() {
 		return $this->errorMessage;
 	}
-	
+
 	public function isReachable() {
 		return $this->reachable;
 	}
@@ -158,8 +158,8 @@ abstract class Service {
 
 	public function isConfigurable() {
 		return
-			$this->reachable && 
-			$this->state != self::STATE_TERMINATED && 
+			$this->reachable &&
+			$this->state != self::STATE_TERMINATED &&
 			$this->state != self::STATE_PREINIT &&
 			$this->state != self::STATE_ERROR;
 	}
@@ -344,7 +344,7 @@ abstract class Service {
 	public function getTypeName() {
 		return ucfirst($this->type);
 	}
-	
+
 	public function getManager() {
 		return $this->manager;
 	}

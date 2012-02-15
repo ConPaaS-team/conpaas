@@ -1,20 +1,20 @@
 <?php
 /*
- * Copyright (C) 2010-2011 Contrail consortium.                                                                                                                       
+ * Copyright (C) 2010-2011 Contrail consortium.
  *
- * This file is part of ConPaaS, an integrated runtime environment                                                                                                    
- * for elastic cloud applications.                                                                                                                                    
- *                                                                                                                                                                    
+ * This file is part of ConPaaS, an integrated runtime environment
+ * for elastic cloud applications.
+ *
  * ConPaaS is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by                                                                                               
- * the Free Software Foundation, either version 3 of the License, or                                                                                                  
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  * ConPaaS is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of                                                                                                     
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                                                                                                      
- * GNU General Public License for more details.                                                                                                                       
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License                                                                                                  
+ * You should have received a copy of the GNU General Public License
  * along with ConPaaS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
@@ -22,13 +22,13 @@ require_module('logging');
 require_module('db');
 
 class OpenNebulaManager {
-	
+
 	protected $sid;
 	protected $vmid;
 	protected $user_data_file;
 	private $instance_type;
 	private $service_type;
-	
+
 	const CONF_FILENAME = 'opennebula.ini';
 
 	public function __construct($data) {
@@ -37,7 +37,7 @@ class OpenNebulaManager {
 		$this->vmid = $data['vmid'];
 		$this->loadConfiguration();
 	}
-	
+
 	protected function loadConfiguration($conf_filename=self::CONF_FILENAME) {
 		$conf = parse_ini_file(Conf::CONF_DIR.'/'.$conf_filename, true);
 		if ($conf === false) {
@@ -61,12 +61,12 @@ class OpenNebulaManager {
 		$this->context_target = $conf['context_target'];
 		
 	}
-	
+
 	public function http_request($method, $resource, $xml=null) {
 	  $ch = curl_init();
 	  curl_setopt($ch, CURLOPT_URL, $this->opennebula_url.$resource);
 	  curl_setopt($ch, CURLOPT_HEADER, 'Accept: */*');
-	  curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC); 
+	  curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
       curl_setopt($ch, CURLOPT_USERPWD, $this->user.':'.sha1($this->passwd));
       switch($method) {
         case 'POST':
@@ -86,10 +86,10 @@ class OpenNebulaManager {
 	  }
 	  return $body;
 	}
-	
+
 	/**
 	 * Instantiate a virtual image of the Manager.
-	 * 
+	 *
 	 * @return string id of the virtual instance
 	 * @throws Exception
 	 */
@@ -139,7 +139,7 @@ class OpenNebulaManager {
 		if ($response === false) {
 			throw new Exception('the OpenNebula instance was not created');
 		}
-		
+
 		$obj = simplexml_load_string($response);
 		if ($obj === false) {
 			dlog('run(): Error response from OpenNebula: '.$response);
@@ -148,14 +148,14 @@ class OpenNebulaManager {
 		/* get the instance id */
 		return (string)$obj->ID;
 	}
-	
+
 	public function resolveAddress($vmid) {
 		$response = $this->http_request('GET', '/compute/'.$vmid);
 		if ($response === false) {
 			dlog('Failed to fetch state of node from OpenNebula: '.$response);
 			return false;
 		}
-		
+
 		$obj = simplexml_load_string($response);
 		if ($obj === false) {
 			dlog('getAddress(): Invalid response from opennebula: '.$response);
@@ -167,7 +167,7 @@ class OpenNebulaManager {
 		}
 		return false;
 	}
-	
+
 	/**
 	 * @return false if the state is not 'running'
 	 * 		   the address (DNS) of the instance
@@ -176,9 +176,9 @@ class OpenNebulaManager {
 	public function getAddress() {
 		return $this->resolveAddress($this->vmid);
 	}
-	
+
 	public function terminate() {
     	$response = $this->http_request('DELETE', '/compute/'.$this->vmid);
 	}
 }
-?> 
+?>

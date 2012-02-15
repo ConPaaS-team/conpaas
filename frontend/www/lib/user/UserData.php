@@ -1,20 +1,20 @@
 <?php
 /*
- * Copyright (C) 2010-2011 Contrail consortium.                                                                                                                       
+ * Copyright (C) 2010-2011 Contrail consortium.
  *
- * This file is part of ConPaaS, an integrated runtime environment                                                                                                    
- * for elastic cloud applications.                                                                                                                                    
- *                                                                                                                                                                    
+ * This file is part of ConPaaS, an integrated runtime environment
+ * for elastic cloud applications.
+ *
  * ConPaaS is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by                                                                                               
- * the Free Software Foundation, either version 3 of the License, or                                                                                                  
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  * ConPaaS is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of                                                                                                     
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                                                                                                      
- * GNU General Public License for more details.                                                                                                                       
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License                                                                                                  
+ * You should have received a copy of the GNU General Public License
  * along with ConPaaS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
@@ -22,7 +22,7 @@ require_module('db');
 require_module('logging');
 
 class UserData {
-    public static function createUser($username, $email, $fname, $lname, 
+    public static function createUser($username, $email, $fname, $lname,
     		$affiliation, $passwd, $credit) {
         $query = sprintf("INSERT INTO users (username, email, fname, lname, affiliation, passwd, credit, created) ".
     		"VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', now())",
@@ -40,20 +40,20 @@ class UserData {
     	$uid = mysql_insert_id(DB::getConn());
     	return $uid;
     }
-    
+
 	public static function getUserByName($username) {
 		$query = sprintf("SELECT * FROM users WHERE username='%s'", mysql_escape_string($username));
 		$res = mysql_query($query, DB::getConn());
 		if ($res === false) {
 			throw new DBException(DB::getConn());
 		}
-		$entries = DB::fetchAssocAll($res); 
+		$entries = DB::fetchAssocAll($res);
 		if (count($entries) != 1) {
 			return false;
 		}
 		return $entries[0];
 	}
-	
+
 	public static function getUserById($uid) {
 		$query = sprintf("SELECT * FROM users WHERE uid='%s'", mysql_escape_string($uid));
 		$res = mysql_query($query, DB::getConn());
@@ -66,7 +66,7 @@ class UserData {
 		}
 		return $entries[0];
 	}
-	
+
 	public static function updateUserCredit($uid, $increment) {
 	    try{
 	      $conn = DB::getConn();
