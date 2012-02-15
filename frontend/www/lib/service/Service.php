@@ -339,7 +339,7 @@ abstract class Service {
 	public function getTypeName() {
 		return ucfirst($this->type);
 	}
-
+	
 	public function getManager() {
 		return $this->manager;
 	}

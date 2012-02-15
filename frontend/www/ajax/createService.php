@@ -39,7 +39,8 @@ try {
 	}
 	
 	$type = $_POST['type'];
-	$default_name = 'New '.ucfirst($type).' Service';
+	
+	$default_name = 'New Service';
 	$cloud = $_POST['cloud'];
 	$uid = $_SESSION['uid'];
 
@@ -53,6 +54,7 @@ try {
 	$service = ServiceFactory::create($service_data);
 	$vmid = $service->getManagerInstance()->run();
 	ServiceData::updateVmid($sid, $vmid);
+	ServiceData::updateName($sid, 'New '.$service->getTypeName().' Service');
 	
 	echo json_encode(array(
 		'sid' => $sid,
