@@ -45,6 +45,10 @@ class HadoopService extends Service {
 		return array();
 	}
 
+	public function needsPolling() {
+		return parent::needsPolling() || $this->state == self::STATE_INIT;
+	}
+
 	protected function fetchNodesLists() {
 		if (!isset($this->manager)) {
 			return false;
@@ -91,7 +95,6 @@ class HadoopService extends Service {
 
 	public function createInstanceUI($node) {
 		$info = $this->getNodeInfo($node);
-		dlog($info);
 		if ($this->nodesLists !== false) {
 			foreach ($this->nodesLists as $role => $nodesList) {
 				if (in_array($info['id'], $nodesList)) {
