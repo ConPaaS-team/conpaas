@@ -30,6 +30,7 @@ import io
 from conpaas.web.http import HttpJsonResponse, HttpErrorResponse
 from conpaas.mysql.utils.log import get_logger_plus
 from conpaas.mysql.adapters.supervisor import SupervisorSettings, Supervisor
+from conpaas.mysql.adapters.mysql.config import MySQLConfig
 
 exposed_functions = {}
 
@@ -882,14 +883,19 @@ def set_up_replica_master(params):
     path=agent.config.mycnf_filepath
     file = open(path)
     content = file.read()
-    mysqlconfig = ConfigParser.RawConfigParser(allow_no_value=True)               
-    mysqlconfig.readfp(io.BytesIO(content))
+    #mysqlconfig = ConfigParser.RawConfigParser(allow_no_value=True)               
+    #mysqlconfig.readfp(io.BytesIO(content))
+    #mysqlconfig.set("mysqld", "server-id", "1")
+    #mysqlconfig.set("mysqld", "log_bin", "/var/log/mysql/mysql-bin.log")
+    mysqlconfig = MySQLConfig(); 
+    mysqlconfig.config_file = agent.config.mycnf_filepath
     mysqlconfig.set("mysqld", "server-id", "1")
     mysqlconfig.set("mysqld", "log_bin", "/var/log/mysql/mysql-bin.log")
+    mysqlconfig.save()
     file.close()
     os.remove(path)
     newfile=open(path,"w")
-    mysqlconfig.write(newfile)
+    #mysqlconfig.write(newfile)
     newfile.close()
     position= agent.config.replication_record_the_position()
     return {'opState': 'OK'}

@@ -1,4 +1,4 @@
-from conpaas.mysql.utils.log import get_logger_plus
+from conpaas.mysql.utils.log import get_logger_plus, get_logger
 from conpaas.mysql.adapters.mysql import MySQLSettings
 
 logger, flog, mlog = get_logger_plus(__name__)
@@ -9,12 +9,52 @@ class MySQLConfig(object):
     @mlog
     def __init__(self):
         self.config_file = self.mysql_settings.config
-        
+        self.sections = []
         self.options = {}
     
     @mlog
     def set(self, section, key, value):
         self.options[(section, key)] = value
+    
+    @mlog 
+    def load(self):
+        with open(self.config_file) as f:
+            lines = f.readlines()
+        cur_sec = None      
+        for line in lines:
+            strip = line.strip()
+            if not strip.startswith('#'):                
+                if strip.startswith('['):
+                    cur_sec = strip.strip('[]')
+                    self.sections.append(cur_sec)                
+                else:
+                    pair = [x.strip() for x in strip.split('=', 1)] + [None]
+                    cur_key, cur_val = pair[:2]
+                    #print("pair: %s, %s, %s" % (cur_sec, cur_key, cur_val))
+                    if cur_val:
+                        try:
+                            self.set(cur_sec, cur_key, cur_val)
+                        except:
+                            pass
+                    else:
+                        if cur_sec:
+                            self.set(cur_sec, cur_key, "")   
+    
+    @mlog
+    def save_asnew_config(self, filename = None):        
+        if filename == None:
+            filename = self.config_file
+        with open(filename, 'w') as f:
+            for section in self.sections:
+                line = "[%s]\n" % section
+                f.write(line)
+                for (sec,key) in self.options:   
+                    if sec == section:                 
+                        if key and self.options[(section,key)]:
+                            line = ("%s = %s\n")%(key, self.options[(section,key)])                        
+                        elif key:
+                            line = ("%s\n")%(key)
+                        f.write(line)
     
     @mlog
     def save(self):
