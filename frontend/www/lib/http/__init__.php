@@ -46,7 +46,6 @@ class HTTP {
 			$opts[CURLOPT_POST] = 1;
 			if ($rpc) {
   			  $opts[CURLOPT_POSTFIELDS] = json_encode($data);
-  			  dlog($opts[CURLOPT_POSTFIELDS]);
 			} else {
 			  $opts[CURLOPT_POSTFIELDS] = $data;
 			}

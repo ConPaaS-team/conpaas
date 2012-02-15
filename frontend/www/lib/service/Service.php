@@ -40,8 +40,8 @@ abstract class Service {
 
 	private $reachable = false;
 	private $stable = true;
+	
 	private $errorMessage = null;
-
 
 	const STATE_RUNNING = 'RUNNING';
 	const STATE_STOPPED = 'STOPPED';
@@ -87,6 +87,11 @@ abstract class Service {
 					}
 				}
 			}
+		} catch (ManagerException $e) {
+			dlog($this->manager.': '.$e->getMessage());
+			$this->errorMessage = $e->getMessage();
+			$this->reachable = true;
+			$this->state = self::STATE_ERROR;
 		} catch (Exception $e) {
 			dlog('error trying to connect to manager: '.$this->manager);
 			dlog($e->getMessage());
@@ -134,11 +139,11 @@ abstract class Service {
 			$this->nodesCount++;
 		}
 	}
-
+	
 	public function getErrorMessage() {
 		return $this->errorMessage;
 	}
-
+	
 	public function isReachable() {
 		return $this->reachable;
 	}
@@ -153,8 +158,8 @@ abstract class Service {
 
 	public function isConfigurable() {
 		return
-			$this->reachable &&
-			$this->state != self::STATE_TERMINATED &&
+			$this->reachable && 
+			$this->state != self::STATE_TERMINATED && 
 			$this->state != self::STATE_PREINIT &&
 			$this->state != self::STATE_ERROR;
 	}
@@ -183,7 +188,7 @@ abstract class Service {
 
 	protected function managerRequest($http_method, $method, array $params,
 			$ping=false) {
-		return HTTP::jsonrpc($this->manager, $http_method, $method, $params,
+		$json = HTTP::jsonrpc($this->manager, $http_method, $method, $params,
 			$ping);
 		$this->decodeResponse($json);
 		return $json;

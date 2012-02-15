@@ -102,6 +102,15 @@ class DashboardServiceUI {
 			}
 		}
 		/* is reachable */
+		if ($this->service->getState() == Service::STATE_ERROR) {
+			return
+				$this->renderStatistic('<img class="deleteService" '
+					.'title="delete service" src="images/remove.png" '
+					.'name="'.$this->service->getSID()
+						.'" onclick="onDeleteService(this);"/>', '')
+				.$this->renderStatistic('<img src="images/warning.png" />',
+					$this->service->getErrorMessage());
+		}
 		if ($this->service->getState() == Service::STATE_INIT) {
 			return $this->renderInstances();
 		}

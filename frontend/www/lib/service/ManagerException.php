@@ -18,8 +18,6 @@
  * along with ConPaaS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-$dir = dirname(__FILE__).'/';
-
-require_once($dir.'ManagerException.php');
-require_once($dir.'ServiceData.php');
-require_once($dir.'Service.php');
+class ManagerException extends Exception {
+	
+}
