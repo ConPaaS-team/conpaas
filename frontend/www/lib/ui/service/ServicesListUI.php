@@ -38,11 +38,18 @@ class ServicesListUI {
 	private function renderItems() {
 		$html = '';
 		for ($i = 0; $i < count($this->services); $i++) {
-			$serviceUI = new DashboardServiceUI($this->services[$i]);
-			if ($i == count($this->services) - 1) {
-				$serviceUI->setLast();
+			try {
+				$serviceUI = new DashboardServiceUI($this->services[$i]);
+				if ($i == count($this->services) - 1) {
+					$serviceUI->setLast();
+				}
+				$html .= $serviceUI->__toString();
+			} catch (Exception $e) {
+				// just skip the bad behaving service and report the exception
+				dlog('Exception trying to render the dashboard service UI:'
+					.' sid: '.$this->services[$i]->getSID()
+					.' error: '.$e->getMessage());
 			}
-			$html .= $serviceUI->__toString();
 		}
 		return $html;
 	}

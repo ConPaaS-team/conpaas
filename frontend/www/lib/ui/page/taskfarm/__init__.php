@@ -1,4 +1,4 @@
-<?php
+<?php 
 /*
  * Copyright (C) 2010-2011 Contrail consortium.                                                                                                                       
  *
@@ -18,45 +18,26 @@
  * along with ConPaaS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-require_module('cloud');
+require_module('ui/page');
 
-class ServiceFactory {
+class TaskFarmPage extends ServicePage {
 	
-	public static function createManager($service_data) {
-		switch ($service_data['cloud']) {
-			case 'ec2':
-				return new EC2Manager($service_data);
-			case 'opennebula':
-				return new OpenNebulaManager($service_data);
-			default:
-				throw new Exception('Unknown cloud provider');
-		}
+	public function __construct(Service $service) {
+		parent::__construct($service);
 	}
 	
-	public static function create($service_data) {
-		$cloud = $service_data['cloud'];
-		$type = $service_data['type'];
-		$manager = self::createManager($service_data);
-		
-		switch ($type) {
-			case 'php':
-				require_module('service/php');
-				return new PHPService($service_data, $manager);
-			case 'java':
-				require_module('service/java');
-				return new JavaService($service_data, $manager);
-			case 'taskfarm':
-				require_module('service/taskfarm');
-				return new TaskFarmService($service_data);
-			case 'scalarix':
-				require_module('service/scalarix');
-				return new ScalarixService($service_data);
-			case 'hadoop':
-				require_module('service/hadoop');
-				return new HadoopService($service_data);
-			default:
-				throw new Exception('Unknown service type');
-		}
+	public function renderActions() {
+		$terminateButton = InputButton('terminate')
+			->setId('terminate');
+		return $terminateButton;
+	}
+
+	protected function renderSubname() {
+		$manager = $this->service->getManagerIP();
+		return
+			'<div class="subname">'.
+				$this->renderStateChange().
+			'</div>';
 	}
 }
 

@@ -30,7 +30,8 @@ class ServicePage extends Page {
 		'RUNNING' => false,
 		'PROLOGUE' => true,
 		'EPILOGUE' => true,
-		'STOPPED' => false 
+		'STOPPED' => false,
+		'ADAPTING' => true,
 	);
 
 	protected $service;

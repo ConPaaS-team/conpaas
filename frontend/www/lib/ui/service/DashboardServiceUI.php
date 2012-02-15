@@ -143,8 +143,14 @@ class DashboardServiceUI {
 	}
 	
 	private function renderColorTag() {
-		$color_class = $this->service->getState() == Service::STATE_RUNNING ? 
-			'colortag-active' : 'colortag-stopped';
+		$color_class = 'colortag-stopped';
+		static $active_states = array(
+			Service::STATE_RUNNING => true,
+			Service::STATE_ADAPTING => true,
+		);
+		if (array_key_exists($this->service->getState(), $active_states)) { 
+			$color_class = 'colortag-active';
+		}
 		return 
 			'<td class="colortag '.$color_class.'"></td>';
 	}

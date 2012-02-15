@@ -18,6 +18,8 @@
  * along with ConPaaS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+require_module('logging');
+
 class HTTP {
 	
 	private static $CURL_OPTS = array(
@@ -44,6 +46,7 @@ class HTTP {
 			$opts[CURLOPT_POST] = 1;
 			if ($rpc) {
   			  $opts[CURLOPT_POSTFIELDS] = json_encode($data);
+  			  dlog($opts[CURLOPT_POSTFIELDS]);
 			} else {
 			  $opts[CURLOPT_POSTFIELDS] = $data;
 			}
@@ -54,9 +57,9 @@ class HTTP {
 		curl_setopt_array($conn, $opts);
 		$result = curl_exec($conn);
 		if ($result === false) {
-			$e = new Exception('Error sending cURL request to '.$url.' '.
-				'Error code: '.curl_errno($conn).' '.
-				'Error msg: '.curl_error($conn)
+			$e = new Exception('Error sending cURL '.$http_method.' request to '
+				.$url.' '.'Error code: '.curl_errno($conn).' '
+				.'Error msg: '.curl_error($conn)
 			);
 			curl_close($conn);
 			throw $e;
@@ -87,8 +90,10 @@ class HTTP {
 			$data = array(
   				'method' => $rpc_method,
   				'params' => $params,
+				'jsonrpc' => "2.0",
   				'id' => 1);
 		}
 		return HTTP::req($url, $http_method, $data, $ping, true);
 	}
+	
 }

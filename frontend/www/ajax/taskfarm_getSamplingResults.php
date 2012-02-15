@@ -11,7 +11,7 @@
  * (at your option) any later version.
  * ConPaaS is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
@@ -22,7 +22,7 @@ require_once('../__init__.php');
 require_module('logging');
 require_module('service');
 require_module('service/factory');
-require_module('http');
+require_module('ui');
 
 if (!isset($_SESSION['uid'])) {
 	throw new Exception('User not logged in');
@@ -36,23 +36,16 @@ if($service->getUID() !== $_SESSION['uid']) {
     throw new Exception('Not allowed');
 }
 
-$path = '/tmp/'.$_FILES['code']['name'];
-if (move_uploaded_file($_FILES['code']['tmp_name'], $path) === false) {
-	echo json_encode(array(
-		'error' => 'could not move uploaded file'
-	));
-	exit();
-}
-$params = array_merge($_POST, array(
-	'code' => '@'.$path,
-	'method' => 'upload_code_version'
-));
 try {
-	$response = HTTP::post($service->getManager(), $params);
+	$sampling_results = $service->fetchSamplingResults();
+	for ($i = 0; $i < count($sampling_results); $i++) {
+		$sampling = &$sampling_results[$i];
+		$utc_ts = intval(intval($sampling['timestamp']) / 1000);
+		$sampling['name'] = 'sampled '.
+			TimeHelper::timeRelativeDescr($utc_ts).' ago';
+	}
+	echo json_encode($sampling_results);
 } catch (Exception $e) {
 	echo json_encode(array('error' => $e->getMessage()));
+	exit();
 }
-unlink($path);
-echo $response;
-
-?>

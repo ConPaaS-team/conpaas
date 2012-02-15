@@ -25,10 +25,11 @@ class OpenNebulaManager {
 	
 	protected $sid;
 	protected $vmid;
-	
-	private $user_data_file;
+	protected $user_data_file;
 	private $instance_type;
 	private $service_type;
+	
+	const CONF_FILENAME = 'opennebula.ini';
 
 	public function __construct($data) {
 		$this->service_type = $data['type'];
@@ -37,8 +38,8 @@ class OpenNebulaManager {
 		$this->loadConfiguration();
 	}
 	
-	private function loadConfiguration() {
-		$conf = parse_ini_file(Conf::CONF_DIR.'/opennebula.ini', true);
+	protected function loadConfiguration($conf_filename=self::CONF_FILENAME) {
+		$conf = parse_ini_file(Conf::CONF_DIR.'/'.$conf_filename, true);
 		if ($conf === false) {
 			throw new Exception('Could not read OpenNebula configuration file '
 				.'opennebula.ini');

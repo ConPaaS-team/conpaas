@@ -36,7 +36,7 @@ class ScalarixService extends Service {
 		// we ignore this for now
 		return '{}';
 	}
-	
+
 	protected function fetchNodesLists() {
 		if (!isset($this->manager)) {
 			return false;
@@ -48,7 +48,7 @@ class ScalarixService extends Service {
 		}
 		return array('peers' => $response['result']['peers']);
 	}
-	
+
 	public function getNodeInfo($node) {
 		$json_info = $this->managerRequest('post', 'get_node_info',
 			array($node));

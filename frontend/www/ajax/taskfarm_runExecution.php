@@ -11,7 +11,7 @@
  * (at your option) any later version.
  * ConPaaS is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
@@ -22,13 +22,12 @@ require_once('../__init__.php');
 require_module('logging');
 require_module('service');
 require_module('service/factory');
-require_module('http');
 
 if (!isset($_SESSION['uid'])) {
 	throw new Exception('User not logged in');
 }
 
-$sid = $_GET['sid'];
+$sid = $_POST['sid'];
 $service_data = ServiceData::getServiceById($sid);
 $service = ServiceFactory::create($service_data);
 
@@ -36,23 +35,13 @@ if($service->getUID() !== $_SESSION['uid']) {
     throw new Exception('Not allowed');
 }
 
-$path = '/tmp/'.$_FILES['code']['name'];
-if (move_uploaded_file($_FILES['code']['tmp_name'], $path) === false) {
-	echo json_encode(array(
-		'error' => 'could not move uploaded file'
-	));
-	exit();
-}
-$params = array_merge($_POST, array(
-	'code' => '@'.$path,
-	'method' => 'upload_code_version'
-));
+$schedulesFile = $_POST['schedulesFile'];
+$scheduleNo = $_POST['scheduleNo'];
+
 try {
-	$response = HTTP::post($service->getManager(), $params);
+	$result = $service->startExecution($schedulesFile, $scheduleNo);
+	echo json_encode($result);
 } catch (Exception $e) {
 	echo json_encode(array('error' => $e->getMessage()));
+	exit();
 }
-unlink($path);
-echo $response;
-
-?>

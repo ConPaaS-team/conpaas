@@ -1,4 +1,4 @@
-<?php 
+<?php
 /*
  * Copyright (C) 2010-2011 Contrail consortium.                                                                                                                       
  *
@@ -80,6 +80,11 @@ $page = new Page();
   				<td class="description"> <img src="images/hadoop.png" height="32" /></td>
   				<td class="radio"><input type="radio" name="type" value="hadoop" /> map-reduce</td>
   				<td class="info"> Hadoop MapReduce cluster </td>
+  			</tr>
+  			<tr class="service">
+  				<td class="description"> <img src="images/taskfarm.png" height="32" /></td>
+  				<td class="radio"><input type="radio" name="type" value="taskfarm" /> task farm</td>
+  				<td class="info"> Service for running sets of tasks </td>
   			</tr>
   			<tr>
   				<td>&nbsp;</td>

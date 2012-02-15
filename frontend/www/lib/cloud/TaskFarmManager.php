@@ -18,46 +18,19 @@
  * along with ConPaaS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-require_module('cloud');
+require_module('logging');
+require_module('db');
 
-class ServiceFactory {
+class TaskFarmManager extends OpenNebulaManager {
 	
-	public static function createManager($service_data) {
-		switch ($service_data['cloud']) {
-			case 'ec2':
-				return new EC2Manager($service_data);
-			case 'opennebula':
-				return new OpenNebulaManager($service_data);
-			default:
-				throw new Exception('Unknown cloud provider');
-		}
+	const CONF_FILENAME = 'bagoftasks-opennebula.ini';
+	
+	public function __construct($data) {
+		parent::__construct($data);
 	}
-	
-	public static function create($service_data) {
-		$cloud = $service_data['cloud'];
-		$type = $service_data['type'];
-		$manager = self::createManager($service_data);
-		
-		switch ($type) {
-			case 'php':
-				require_module('service/php');
-				return new PHPService($service_data, $manager);
-			case 'java':
-				require_module('service/java');
-				return new JavaService($service_data, $manager);
-			case 'taskfarm':
-				require_module('service/taskfarm');
-				return new TaskFarmService($service_data);
-			case 'scalarix':
-				require_module('service/scalarix');
-				return new ScalarixService($service_data);
-			case 'hadoop':
-				require_module('service/hadoop');
-				return new HadoopService($service_data);
-			default:
-				throw new Exception('Unknown service type');
-		}
+
+	protected function loadConfiguration() {
+		parent::loadConfiguration(self::CONF_FILENAME);
 	}
 }
-
 ?>

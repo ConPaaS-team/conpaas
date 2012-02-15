@@ -1,4 +1,4 @@
-<?php 
+<?php
 /*
  * Copyright (C) 2010-2011 Contrail consortium.                                                                                                                       
  *
@@ -24,3 +24,4 @@ require_once($dir.'EC2Manager.php');
 require_once($dir.'OpenNebulaManager.php');
 require_once($dir.'HadoopManager.php');
 require_once($dir.'ScalarixManager.php');
+require_once($dir.'TaskFarmManager.php');

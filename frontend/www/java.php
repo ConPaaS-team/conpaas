@@ -433,7 +433,7 @@ $(document).ready(function() {
 					
 			<form id="fileForm" action="<?php echo $page->getUploadURL() ?>" enctype="multipart/form-data">
 				<input id="file" type="file" name="code" />
-				<input type="hidden" name="method" value="uploadCodeVersion" />
+				<input type="hidden" name="method" value="upload_code_version" />
 				<input type="hidden" name="description" value="no description" />
 			</form>
 			<div class="additional">

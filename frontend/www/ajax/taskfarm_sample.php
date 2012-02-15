@@ -36,23 +36,35 @@ if($service->getUID() !== $_SESSION['uid']) {
     throw new Exception('Not allowed');
 }
 
-$path = '/tmp/'.$_FILES['code']['name'];
-if (move_uploaded_file($_FILES['code']['tmp_name'], $path) === false) {
-	echo json_encode(array(
-		'error' => 'could not move uploaded file'
-	));
-	exit();
+function unlink_paths($paths) {
+	foreach ($paths as $file => $path) {
+		unlink($path);
+	}
 }
-$params = array_merge($_POST, array(
-	'code' => '@'.$path,
-	'method' => 'upload_code_version'
-));
+
+$paths = array();
+foreach (array('botFile', 'clusterFile') as $file) {
+	$path = '/tmp/'.$_FILES[$file]['name'];
+	if (move_uploaded_file($_FILES[$file]['tmp_name'], $path) === false) {
+		echo json_encode(array(
+			'error' => 'could not move uploaded file '.$file
+		));
+		unlink_paths($paths);
+		exit();
+	}
+	// build the cURL parameter
+	$paths[$file] = '@'.$path;
+}
+$params = array_merge($_POST, $paths);
 try {
-	$response = HTTP::post($service->getManager(), $params);
+	$params['method'] = 'start_sampling';
+	$json_response = HTTP::post($service->getManager(), $params);
+	$response = json_decode($json_response, true);
+	if (array_key_exists('result', $response)) {
+		$response = $response['result'];
+	}
+	echo json_encode($response);
 } catch (Exception $e) {
 	echo json_encode(array('error' => $e->getMessage()));
 }
-unlink($path);
-echo $response;
-
-?>
+unlink_paths($paths);

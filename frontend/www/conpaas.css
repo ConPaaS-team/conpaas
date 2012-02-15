@@ -510,15 +510,19 @@ tr.service {
 	padding-left: 10px;
 }
 
+.form {
+	padding: 3px;
+}
+
 .form .info {
-	color: #666;
+	color: #999;
 	font-weight: normal;
 	font-size: 12px;
 	padding: 10px;
 }
 
 .form .input {
-	padding: 8px 5px;
+	padding: 5px;
 	color: #333;
 }
 
@@ -1067,4 +1071,19 @@ body.loginbody {
 
 .deleteService {
 	cursor: pointer;
+}
+
+.botconf {
+	padding-top: 10px;
+	padding-bottom: 20px;
+}
+
+#botexec {
+	padding: 10px;
+}
+
+#scheduleDetails {
+	color: #666;
+	font-weight: bold;
+	padding: 10px 10px 5px 50px;
 }

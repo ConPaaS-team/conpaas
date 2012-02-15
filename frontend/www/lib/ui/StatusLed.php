@@ -46,10 +46,13 @@ class StatusLed {
 			case Service::STATE_INIT:
 				return 'images/ledlightblue.png';
 			case Service::STATE_RUNNING:
+			case Service::STATE_ADAPTING:
 				return 'images/ledgreen.png';
 			case Service::STATE_STOPPED:
 				return 'images/ledgray.png';
 			case Service::STATE_ERROR:
+				return 'images/ledred.png';
+			default:
 				return 'images/ledred.png';
 		}
 	}
