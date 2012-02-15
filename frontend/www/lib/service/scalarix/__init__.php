@@ -1,20 +1,20 @@
-<?php 
+<?php
 /*
- * Copyright (C) 2010-2011 Contrail consortium.                                                                                                                       
+ * Copyright (C) 2010-2011 Contrail consortium.
  *
- * This file is part of ConPaaS, an integrated runtime environment                                                                                                    
- * for elastic cloud applications.                                                                                                                                    
- *                                                                                                                                                                    
+ * This file is part of ConPaaS, an integrated runtime environment
+ * for elastic cloud applications.
+ *
  * ConPaaS is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by                                                                                               
- * the Free Software Foundation, either version 3 of the License, or                                                                                                  
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  * ConPaaS is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of                                                                                                     
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                                                                                                      
- * GNU General Public License for more details.                                                                                                                       
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License                                                                                                  
+ * You should have received a copy of the GNU General Public License
  * along with ConPaaS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
@@ -23,18 +23,26 @@ require_module('service');
 require_module('ui/instance/scalarix');
 
 class ScalarixService extends Service {
-	
+
 	public function __construct($data) {
 		parent::__construct($data, new ScalarixManager($data));
 	}
-	
+
 	public function hasDedicatedManager() {
 		return false;
 	}
-	
+
 	public function sendConfiguration($params) {
 		// we ignore this for now
 		return '{}';
+	}
+
+	public function fetchHighLevelMonitoringInfo() {
+		return false;
+	}
+
+	public function fetchStateLog() {
+		return array();
 	}
 
 	protected function fetchNodesLists() {
@@ -64,28 +72,28 @@ class ScalarixService extends Service {
 		$info['id'] = $node;
 		return $info;
 	}
-	
+
 	public function addServiceNodes($params) {
 		if (!isset($params['scalarix'])) {
 			throw new Exception('Number of nodes not specified');
 		}
-		return $this->managerRequest('post', 'add_nodes', 
+		return $this->managerRequest('post', 'add_nodes',
 			array($params['scalarix']));
 	}
-	
+
 	public function removeServiceNodes($params) {
 		if (!isset($params['scalarix'])) {
 			throw new Exception('Number of nodes not specified');
 		}
-		return $this->managerRequest('post', 'remove_nodes', 
+		return $this->managerRequest('post', 'remove_nodes',
 			array($params['scalarix']));
 	}
-	
+
 	public function createInstanceUI($node) {
 		$info = $this->getNodeInfo($node);
 		return new ScalarixInstance($info);
 	}
-	
+
 	public function fetchState() {
 		$json = $this->managerRequest('post', 'get_service_info', array(),
 			true);
@@ -95,9 +103,9 @@ class ScalarixService extends Service {
 		}
 		return $state;
 	}
-	
+
 	/**
-	 * @return true if updated 
+	 * @return true if updated
 	 */
 	public function checkManagerInstance() {
 		try {
@@ -115,15 +123,15 @@ class ScalarixService extends Service {
 		}
 		return false;
 	}
-	
+
 	public function requestShutdown() {
 		// ignore
 	}
-	
+
 	public function requestStartup() {
 		// ignore
 	}
-	
+
 	public function getKeysCount() {
 		$state = $this->fetchState();
 		if ($state === false || !isset($state['result'])) {
@@ -131,7 +139,7 @@ class ScalarixService extends Service {
 		}
 		return $state['result']['total_load'];
 	}
-	
+
 }
 
-?> 
+?>
