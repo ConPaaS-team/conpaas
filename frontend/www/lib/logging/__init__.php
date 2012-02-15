@@ -18,6 +18,8 @@
  * along with ConPaaS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+require_module('user');
+
 class Logging {
 
 	public static $logfile = null;
@@ -30,6 +32,20 @@ class Logging {
 	  return $conf['main'];
 	}
 	
+	public static function getLogFilename() {
+		$conf = self::loadConf();
+		$logFilename = $conf['logfile'];
+		if (strpos($logFilename, '%u') !== false && isset($_SESSION['uid'])) {
+			$uid = $_SESSION['uid'];
+			$user = UserData::getUserById($uid);
+			if ($user !== false) {
+				$username = $user['username'];
+				$logFilename = str_replace('%u', $username, $logFilename);
+			}
+		}
+		return $logFilename;
+	}
+
 	public static function log($var) {
 		if (!Logging::$logfile) {
 			return;
@@ -41,8 +57,7 @@ class Logging {
 
 if (Logging::$logfile === null) {
 	// initialize
-	$conf = Logging::loadConf();
-	Logging::$logfile = fopen($conf['logfile'], 'a');
+	Logging::$logfile = fopen(Logging::getLogFilename(), 'a');
 }
 
 function dlog($var) {
