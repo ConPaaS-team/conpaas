@@ -65,8 +65,9 @@ class MySQLServerManager():
         self.state = S_INIT
         self.dummy_backend = _dummy_backend
         conpaas.mysql.server.manager.internals.dummy_backend = _dummy_backend
-        # TODO:
-        self.__findAlreadyRunningInstances()
+        if conpaas.mysql.server.manager.internals.config.find_existing_agents == "true":
+            logger.debug("Find existing Agents is true")
+            self.__findAlreadyRunningInstances()
         logger.debug("Leaving MySQLServer initialization")
    
     def __findAlreadyRunningInstances(self):

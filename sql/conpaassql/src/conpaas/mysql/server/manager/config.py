@@ -108,6 +108,7 @@ class Configuration(object):
                 self.xmlrpc_conn_location = config.get("iaas", "OPENNEBULA_URL")
                 self.conn_password = config.get("iaas", "OPENNEBULA_USER")
                 self.conn_username = config.get("iaas", "OPENNEBULA_PASSWORD")
+                self.find_existing_agents = config.get("manager", "find_existing_agents")
             logger.debug("Got configuration parameters")
         except ConfigParser.Error, err:
             ex = ManagerException(E_CONFIG_READ_FAILED, str(err))

@@ -56,6 +56,68 @@ Content-Length: 67
 
 Parameter {\tt function} will soon support more than just creating new agent nodes (e.g. cluster manager, cluster agent, cluster). Parameter {\tt method} designates command {\tt add\_nodes} and {\tt id } equals 1. 
 
+\section{Configuration}
+
+Configuration of the service consists of two parts:
+\begin{itemize}
+	\item configuration file of the service describing {\bf iaas }, {\bf manager} and {\bf onevm\_agent\_template}
+	\item agent's template file which defines the template used by the manager. The template file is filled in with variables from the configuration file.
+\end{itemize}
+
+An example of the configuration file:
+\begin{Verbatim}[frame=single]
+[iaas]
+DRIVER=OPENNEBULA_XMLRPC
+OPENNEBULA_URL=http://10.30.1.14:2633/RPC2
+#OPENNEBULA_URL=http://localhost:2633
+OPENNEBULA_USER=oneadmin
+OPENNEBULA_PASSWORD=oneadmin
+OPENNEBULA_IMAGE_ID = 1
+OPENNEBULA_SIZE_ID = 1
+OPENNEBULA_NETWORK_ID = 1
+OPENNEBULA_NETWORK_GATEWAY = 1
+OPENNEBULA_NETWORK_NAMESERVER = 1
+
+[manager]
+find_existing_agents = true
+
+[onevm_agent_template]
+FILENAME=/home/ales/workspace/contrail/conpaassql-trunk/bin/agent.template
+NAME=conpaassql_server
+CPU=0.2
+MEM_SIZE=256
+DISK=bus=scsi,readonly=no
+OS=arch=i686,boot = hd, root = hda
+IMAGE_ID=193
+NETWORK_ID=205
+CONTEXT=target=sdc,files=/home/ales/sql/agent/conpaassql-install.sh
+\end{Verbatim}
+
+An example of the agent's template file:
+
+\begin{Verbatim}[frame=single]
+NAME   = $NAME
+CPU    = $CPU
+MEMORY = $MEM_SIZE
+   OS     = [
+   $OS 
+   ]
+DISK   = [
+   IMAGE_ID = $IMAGE_ID,
+   $DISK 
+   ]
+NIC    = [ NETWORK_ID = $NETWORK_ID ]
+GRAPHICS = [
+  type="vnc"
+  ]
+CONTEXT = [
+  $CONTEXT   
+  ]
+RANK = "- RUNNING_VMS"
+\end{Verbatim}
+
+Agent's template file is referenced within the configuration file. This way the contextualisation of the agent is very generic. 
+
 \section{Installation on VM images}
 \label{sec:install}
 

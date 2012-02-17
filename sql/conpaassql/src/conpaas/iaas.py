@@ -209,8 +209,7 @@ class OneXmlrpc(NodeDriver):
         self.client = oca.Client(uname+":"+password, scheme+"://"+host+":"+str(port)+"/RPC2")
     
     @mlog
-    def read_template(self, **kwargs):
-        file = kwargs['templatefilename']
+    def read_template(self, file):
         logger.debug("Reading the ONE image template from %s" % file )
         fin = open(file, "r")
         templatestr = fin.read()
@@ -235,81 +234,16 @@ class OneXmlrpc(NodeDriver):
         logger.debug("Entering create_node")
         if kwargs['function'] == 'agent':            
             logger.debug("creating agent")
-            template = self.read_template(kwargs['templatefilename'])
-            templatesub = template.substitute(NAME= str(kwargs['name'].id) , IMAGE_ID=str(kwargs['image'].id), NETWORK_ID=str(kwargs['ex_network_id']), CONTEXT = str(kwargs['ex_context']))
-            logger.debug(" VM template used for provisioning: %s " % templatesub )
-#===============================================================================
-#            template='''NAME   = conpaassql-server
-# CPU    = 0.2
-# MEMORY = 512
-#   OS     = [
-#   arch = "i686",
-#   boot = "hd",
-#   root     = "hda" ]
-# DISK   = [
-#   image_id = "''' + str(kwargs['image'].id) + '''",
-#   bus = "scsi",
-#   readonly = "no" ]
-# NIC    = [ NETWORK_ID = '''+str(kwargs['ex_network_id'])+''' ]
-# GRAPHICS = [
-#  type="vnc"
-#  ]
-# CONTEXT = [
-#  target=sdc,
-#  files = '''+str(kwargs['ex_userdata_agent'])+'''
-#  ]
-# RANK = "- RUNNING_VMS"
-# '''
-#===============================================================================
+            template = self.read_template(kwargs['template']['filename'])
+            template = template.substitute(NAME= str(kwargs['template']['vm_name']),CPU= str(kwargs['template']['cpu']),MEM_SIZE= str(kwargs['template']['mem_size']), OS= str(kwargs['template']['os']),IMAGE_ID= str(kwargs['template']['image_id']), NETWORK_ID= str(kwargs['template']['network_id']), CONTEXT= str(kwargs['template']['context']), DISK= str(kwargs['template']['disk'])) 
         elif kwargs['function'] == 'manager':
             logger.debug("creating manager")
-            templatesub = template.substitute(NAME= str(kwargs['name'].id) , IMAGE_ID=str(kwargs['image'].id), NETWORK_ID=str(kwargs['ex_network_id']), CONTEXT = str(kwargs['ex_context']))
-#===============================================================================
-#            template='''NAME   = conpaassql-server
-# CPU    = 0.2
-# MEMORY = 512
-#   OS     = [
-#   arch = "i686",
-#   boot = "hd",
-#   root     = "hda" ]
-# DISK   = [
-#   image_id = "''' + str(kwargs['image'].id) + '''",
-#   bus = "scsi",
-#   readonly = "no" ]
-# NIC    = [ NETWORK_ID = '''+str(kwargs['ex_network_id'])+''' ]
-# GRAPHICS = [
-#  type="vnc"
-#  ]
-# CONTEXT = [
-#  target=sdc,
-#  files = '''+str(kwargs['ex_userdata_manager'])+''']
-# RANK = "- RUNNING_VMS"
-# '''
-#===============================================================================
+            template = template.substitute(NAME= str(kwargs['template']['vm_name']),CPU= str(kwargs['template']['cpu']),MEM_SIZE= str(kwargs['template']['mem_size']), OS= str(kwargs['template']['os']),IMAGE_ID= str(kwargs['template']['image_id']), NETWORK_ID= str(kwargs['template']['network_id']), CONTEXT= str(kwargs['template']['context']), DISK= str(kwargs['template']['disk']))
         else:
             logger.debug("creating")
-            templatesub = template.substitute(NAME= str(kwargs['name'].id) , IMAGE_ID=str(kwargs['image'].id), NETWORK_ID=str(kwargs['ex_network_id']), CONTEXT = str(kwargs['ex_context']))
-#===============================================================================
-#            template='''NAME   = conpaassql_server
-# CPU    = 0.2
-# MEMORY = 512
-#   OS     = [
-#   arch = "i686",
-#   boot = "hd",
-#   root     = "hda" ]
-# DISK   = [
-#   image_id = "''' + str(kwargs['image'].id) + '''",
-#   bus = "scsi",
-#   readonly = "no" ]
-# NIC    = [ NETWORK_ID = '''+str(kwargs['ex_network_id'])+''' ]
-# GRAPHICS = [
-#  type="vnc"
-#  ]
-# RANK = "- RUNNING_VMS"
-# '''
-#===============================================================================
-        logger.debug('Provisioning VM:' + templatesub)
-        rez=oca.VirtualMachine.allocate(self.client, templatesub)        
+            template = template.substitute(NAME= str(kwargs['template']['vm_name']),CPU= str(kwargs['template']['cpu']),MEM_SIZE= str(kwargs['template']['mem_size']), OS= str(kwargs['template']['os']),IMAGE_ID= str(kwargs['template']['image_id']), NETWORK_ID= str(kwargs['template']['network_id']), CONTEXT= str(kwargs['template']['context']), DISK= str(kwargs['template']['disk']))
+        logger.debug('Provisioning VM:' + template)
+        rez=oca.VirtualMachine.allocate(self.client, template)        
         logger.debug('Result:' + str(rez))
         logger.debug("Exiting create_node")
         return rez
@@ -392,8 +326,6 @@ class IaaSClient:
         if not iaas_config.has_option('iaas', 'OPENNEBULA_NETWORK_ID'): raise Exception('Configuration error: [iaas] OPENNEBULA_NETWORK_ID not set')
         if not iaas_config.has_option('iaas', 'OPENNEBULA_SIZE_ID'): raise Exception('Configuration error: [iaas] OPENNEBULA_SIZE_ID not set')
         if not iaas_config.has_option('iaas', 'OPENNEBULA_IMAGE_ID'): raise Exception('Configuration error: [iaas] OPENNEBULA_IMAGE_ID not set')
-        if not iaas_config.has_option('iaas', 'OPENNEBULA_CONTEXT_SCRIPT_MANAGER'): raise Exception('Configuration error: [iaas] OPENNEBULA_CONTEXT_SCRIPT_MANAGER not set')
-        if not iaas_config.has_option('iaas', 'OPENNEBULA_CONTEXT_SCRIPT_AGENT'): raise Exception('Configuration error: [iaas] OPENNEBULA_CONTEXT_SCRIPT_AGENT not set')
         
         parsed = urlparse.urlparse(iaas_config.get('iaas', 'OPENNEBULA_URL'))
         self.scheme = parsed.scheme
@@ -404,16 +336,18 @@ class IaaSClient:
         self.password = iaas_config.get('iaas', 'OPENNEBULA_PASSWORD')                            
         self.img_id = iaas_config.get('iaas', 'OPENNEBULA_IMAGE_ID')
         self.size_id = iaas_config.get('iaas', 'OPENNEBULA_SIZE_ID')    
-        self.on_ex_network_id = iaas_config.get('iaas', 'OPENNEBULA_NETWORK_ID')
-        self.one_context_manager_script = iaas_config.get('iaas', 'OPENNEBULA_CONTEXT_SCRIPT_MANAGER')        
-        self.one_context_agent_script = iaas_config.get('iaas', 'OPENNEBULA_CONTEXT_SCRIPT_AGENT')        
+        self.on_ex_network_id = iaas_config.get('iaas', 'OPENNEBULA_NETWORK_ID')             
         
         self.template = dict()
-        self.template['filename']=iaas_config.get('onevm_template', 'FILENAME')
-        self.template['vm_name']=iaas_config.get('onevm_template', 'NAME')
-        self.template['cpu']=iaas_config.get('onevm_template', 'CPU')
-        self.template['mem_size']=iaas_config.get('onevm_template', 'MEM_SIZE')
-        
+        self.template['filename']=iaas_config.get('onevm_agent_template', 'FILENAME')
+        self.template['vm_name']=iaas_config.get('onevm_agent_template', 'NAME')
+        self.template['cpu']=iaas_config.get('onevm_agent_template', 'CPU')
+        self.template['mem_size']=iaas_config.get('onevm_agent_template', 'MEM_SIZE')
+        self.template['disk']=iaas_config.get('onevm_agent_template', 'DISK')
+        self.template['os']=iaas_config.get('onevm_agent_template', 'OS')
+        self.template['image_id']=iaas_config.get('onevm_agent_template', 'IMAGE_ID')
+        self.template['network_id']=iaas_config.get('onevm_agent_template', 'NETWORK_ID')
+        self.template['context']=iaas_config.get('onevm_agent_template', 'CONTEXT')
         self.driver = OneXmlrpc(self.username, self.password, self.scheme, self.host, self.port)
   
     def __config_opennebula(self, iaas_config):
@@ -438,8 +372,6 @@ class IaaSClient:
         
         self.on_ex_network_id = iaas_config.get('iaas', 'OPENNEBULA_NETWORK_ID')
         self.on_ex_network_gateawy = iaas_config.get('iaas', 'OPENNEBULA_NETWORK_GATEWAY')
-        self.on_context = iaas_config.get('iaas', 'OPENNEBULA_CONTEXT')
-        self.on_name = iaas_config.get('iaas', 'OPENNEBULA_NAME')
         
         self.template = dict()
         self.template['filename']=iaas_config.get('iaas', 'OPENNEBULA_NAME')
@@ -508,11 +440,7 @@ class IaaSClient:
                   'function' : function
                   }
         if isinstance(self.driver, OneXmlrpc):
-            kwargs['ex_network_id'] = self.on_ex_network_id
-            kwargs['ex_userdata_manager'] = self.one_context_manager_script        
-            kwargs['ex_userdata_agent'] = self.one_context_agent_script
-            kwargs['ex_context'] = self.on_context
-            kwargs['ex_name'] = self.on_name
+            kwargs['template'] = self.template
         if isinstance(self.driver, DummyONEDriver):
             kwargs['ex_network_id'] = self.on_ex_network_id
             kwargs['ex_userdata_manager'] = self.one_context_manager_script        

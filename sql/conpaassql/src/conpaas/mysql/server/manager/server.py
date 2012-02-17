@@ -80,10 +80,8 @@ class ManagerServer(ThreadingMixIn, HTTPServer):
 		HTTPServer.__init__(self, server_address, RequestHandlerClass)		
 		self.callback_dict = {'GET': {}, 'POST': {}}		
 		from conpaas.mysql.server.manager import internals
-		internals.iaas = IaaSClient(iaas_config)		
-		#internals.config = iaas_config
+		internals.iaas = IaaSClient(iaas_config)				
 		self.whitelist_addresses = []
-		#self.callback_dict = {'GET': {}, 'POST': {}, 'UPLOAD': {}}
 		
 		internals.managerServer=MySQLServerManager(iaas_config)
 		for http_method in internals.exposed_functions:

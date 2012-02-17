@@ -897,7 +897,7 @@ def set_up_replica_master(params):
     newfile=open(path,"w")
     #mysqlconfig.write(newfile)
     newfile.close()
-    position= agent.config.replication_record_the_position()
+    position = agent.config.replication_record_the_position()
     return {'opState': 'OK'}
 
 
