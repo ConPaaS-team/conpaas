@@ -368,8 +368,9 @@ class MySQLServer:
         if not _dummy_backend: 
             self.supervisor = Supervisor(self.config.supervisor_settings)
         else:
-            logger.debug("Not creating supervisor, due to dummy_backend") 
-        self.state = S_RUNNING
+            logger.debug("Not creating supervisor, due to dummy_backend")
+        logger.debug("Starting the server")
+        self.start()
         self.dummy_backend = _dummy_backend 
         logger.debug("Leaving MySQLServer initialization")
 
@@ -384,22 +385,14 @@ class MySQLServer:
             Starts MySQL server deamon. It also changes `self.state` to `S_RUNNING`.
             """                    
             self.state = S_STARTING
-            if self.dummy_backend == False:
-                #devnull_fd = open(devnull, 'w')
-                #logger.debug('Starting with arguments:' + self.config.path_mysql_ssr + " start")
-                #proc = Popen([self.config.path_mysql_ssr, "start"], stdout=devnull_fd, stderr=devnull_fd, close_fds=True)
-                #logger.debug("MySQL started")
-                #proc.wait()
+            if self.dummy_backend == False:                
                 self.supervisor.start(SUPERVISOR_MYSQL_NAME)
-                logger.debug("Server started.")
-                if exists(self.config.pid_file) == False:
+                status = self.supervisor.info(SUPERVISOR_MYSQL_NAME)
+                logger.debug("Server started: %s" % status)
+                if not status['statename'] == "RUNNING":
                     logger.critical('Failed to start mysql server.)')
                     self.state = S_STOPPED
-                    raise OSError('Failed to start mysql server.')            
-                #if proc.wait() != 0:
-                #    logger.critical('Failed to start mysql server (code=%d)' % proc.returncode)
-                #    self.state = S_STOPPED
-                #    raise OSError('Failed to start mysql server (code=%d)' % proc.returncode)
+                    raise OSError('Failed to start mysql server.')                          
             else:
                 logger.debug("Running with dummy backend")
             self.state = S_RUNNING
@@ -417,27 +410,26 @@ class MySQLServer:
         else:
             if self.state == S_RUNNING:
                 self.state = S_STOPPING
-                if exists(self.config.pid_file):
+                status = self.supervisor.info(SUPERVISOR_MYSQL_NAME)
+                if status['statename'] == "RUNNING":
                     try:
-                        #int(open(self.config.pid_file, 'r').read().strip())                    
-                        #devnull_fd = open(devnull, 'w')
-                        #logger.debug('Stopping with arguments:' + self.config.path_mysql_ssr + " stop")
-                        #proc = Popen([self.config.path_mysql_ssr, "stop"], stdout=devnull_fd, stderr=devnull_fd, close_fds=True)
                         logger.debug("Stopping server")
-                        self.supervisor.start(SUPERVISOR_MYSQL_NAME)
-                        #proc.wait()                                        
-                        if exists(self.config.pid_file) == True:
+                        self.supervisor.stop(SUPERVISOR_MYSQL_NAME)             
+                        logger.debug("PID file is %s" % self.config.pid_file)
+                        status = self.supervisor.info(SUPERVISOR_MYSQL_NAME)
+                        logger.debug("New status is: %s" % status)
+                        if not status['statename'] == "RUNNING":
                             logger.critical('Failed to stop mysql server.)')
                             self.state = S_RUNNING
                             raise OSError('Failed to stop mysql server.')                        
                         self.state = S_STOPPED
                     except IOError as e:
                         self.state = S_STOPPED
-                        logger.exception('Failed to open PID file "%s"' % (self.pid_file))
+                        logger.exception(e)
                         raise e
                     except (ValueError, TypeError) as e:
                         self.state = S_STOPPED
-                        logger.exception('PID in "%s" is invalid' % (self.pid_file))
+                        logger.exception(e)
                         raise e
                 else:
                     logger.critical('Could not find PID file %s to kill WebServer' % (self.pid_file))
@@ -460,21 +452,19 @@ class MySQLServer:
             logger.info('MySQL restarted') 
         else:            
             try:
-                #int(open(self.config.pid_file, 'r').read().strip())
-                devnull_fd = open(devnull, 'w')
-                logger.debug('Restarting with arguments:' + self.config.path_mysql_ssr + " restart")
-                proc = Popen([self.config.path_mysql_ssr, "restart"] , stdout=devnull_fd, stderr=devnull_fd, close_fds=True)
-                logger.debug("Restarting mysql server")
-                proc.wait()                            
+                logger.debug("Stopping the server")
+                self.stop()
+                logger.debug("Starting the server")
+                self.start()
                 if exists(self.config.pid_file) == False:
                     logger.critical('Failed to restart mysql server.)')
                     raise OSError('Failed to restart mysql server.')            
             except IOError as e:
-                logger.exception('Failed to open PID file "%s"' % (self._current_pid_file(increment=-1)))
+                logger.exception(e)
                 self.state = S_STOPPED
                 raise e
             except (ValueError, TypeError) as e:
-                logger.exception('PID in "%s" is invalid' % (self._current_pid_file(increment=-1)))
+                logger.exception(e)
                 self.state = S_STOPPED
                 raise e    
             else:
@@ -488,7 +478,8 @@ class MySQLServer:
         logger.debug('Entering MySQLServer.status')
         logger.debug('Leaving MySQLServer.status')
         return {'state': self.state,                
-                'port': self.config.port_mysqld}     
+                'port': self.config.port_mysqld, 
+                'other': self.supervisor.info(SUPERVISOR_MYSQL_NAME)}     
         
 def expose(http_method):
     def decorator(func):

@@ -27,6 +27,13 @@ autostart=true
 autorestart=true
 EOF
 
+cat >>  /etc/supervisor/supervisord.conf << EOF
+[inet_http_server]
+port = 0.0.0.0:9001
+username = root
+password = root
+EOF
+
 cat >  /root/conpaassql/src/conpaas/mysql/server/agent/configuration.cnf << EOF
 [MySQL_root_connection]
 location=
