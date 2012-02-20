@@ -370,6 +370,7 @@ class MySQLServer:
         else:
             logger.debug("Not creating supervisor, due to dummy_backend")
         logger.debug("Starting the server")
+       
         self.start()
         self.dummy_backend = _dummy_backend 
         logger.debug("Leaving MySQLServer initialization")
@@ -385,6 +386,11 @@ class MySQLServer:
             Starts MySQL server deamon. It also changes `self.state` to `S_RUNNING`.
             """                    
             self.state = S_STARTING
+            status = self.supervisor.info(SUPERVISOR_MYSQL_NAME)
+            if status['statename'] == "RUNNING":
+                logger.debug("Mysqld is already running.")
+                pass
+            
             if self.dummy_backend == False:                
                 self.supervisor.start(SUPERVISOR_MYSQL_NAME)
                 status = self.supervisor.info(SUPERVISOR_MYSQL_NAME)
@@ -401,6 +407,11 @@ class MySQLServer:
     @mlog    
     def stop(self):
         logger.debug('Entering MySQLServer.stop')
+        status = self.supervisor.info(SUPERVISOR_MYSQL_NAME)
+        if status['statename'] == "NOT_RUNNING":
+            logger.debug("Mysqld is already stopped.")
+            pass
+            
         if self.dummy_backend:
             if self.state == S_RUNNING:
                 logger.debug("Stopping server")
