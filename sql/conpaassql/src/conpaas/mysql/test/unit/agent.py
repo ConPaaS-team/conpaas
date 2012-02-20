@@ -6,7 +6,7 @@ Created on Aug 26, 2011
 import unittest
 from conpaas.mysql.server.agent.server import AgentServer
 from conpaas.mysql.client.agent_client import get_server_state
-from conpaas.mysql.client.agent_client import create_server
+from conpaas.mysql.client.agent_client import start_server
 import threading
 from ConfigParser import ConfigParser
 from conpaas.mysql.server.agent.internals import MySQLServer
@@ -68,7 +68,7 @@ class TestServerAgent(unittest.TestCase):
         #ret = stopMySQLServer(self.host,self.port)
         #self.assertTrue(ret)
         #self.__check_reply(ret)
-        ret = internals.create_server(False)
+        ret = internals.start_server(False)
         self.assertTrue(ret)    
         self.__check_reply(ret)
         ret = internals.stop_server(False)

@@ -39,8 +39,8 @@ def get_server_state(host, port):
     else:
         return False
 
-def create_server(host, port):
-    method = "create_server"
+def start_server(host, port):
+    method = "start_server"
     result = _jsonrpc_post(host, port, '/', method)
     if _check(result):
         return result
@@ -102,7 +102,7 @@ def setMySQLServerConfiguration(host,port, param_id, val):
               }
     code, body = _http_post(host, port, '/', params= params)
     if code != httplib.OK: raise Exception('Received HTTP response code %d' % (code))
-    return __check_reply(body)
+    return _check(body)
 
 def send_mysqldump(host,port,location):
     params = {'method': 'create_with_MySQLdump'}
@@ -123,7 +123,7 @@ def set_up_replica_master(host,port):
               'action': 'set_up_replica_master'}
     code, body = _http_post(host, port, '/', params= params)
     if code != httplib.OK: raise Exception('Received HTTP response code %d' % (code))
-    return __check_reply(body)
+    return _check(body)
 
 '''
     @param master_host: hostname of the master node.
@@ -142,7 +142,7 @@ def set_up_replica_slave(host,port, master_host, master_log_file, master_log_pos
               }
     code, body = _http_post(host, port, '/', params= params)
     if code != httplib.OK: raise Exception('Received HTTP response code %d' % (code))
-    return __check_reply(body)
+    return _check(body)
 
 if __name__ == '__main__':
     if sys.argv.__len__() > 3:
@@ -151,8 +151,8 @@ if __name__ == '__main__':
         if sys.argv[3] == 'get_server_state':
             ret = get_server_state(host, port)
             print ret
-        if sys.argv[3] == 'create_server':
-            ret = create_server(host, port)
+        if sys.argv[3] == 'start_server':
+            ret = start_server(host, port)
             print ret
         if sys.argv[3] == 'restartMySQLServer':
             ret = restartMySQLServer(host, port)

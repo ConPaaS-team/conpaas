@@ -429,7 +429,7 @@ class MySQLServer:
                     logger.debug("PID file is %s" % self.config.pid_file)
                     status = self.supervisor.info(SUPERVISOR_MYSQL_NAME)
                     logger.debug("New status is: %s" % status)
-                    if not status['statename'] == "NOT_RUNNING":
+                    if not status['statename'] == "STOPPED":
                         logger.critical('Failed to stop mysql server.)')
                     self.state = S_STOPPED
                 else:
@@ -535,7 +535,7 @@ def getMySQLServerState_old(kwargs):
         
         
 @expose('POST')
-def create_server(post_params):
+def start_server(post_params):
     """
     Creates an agent server. Calls to :py:meth:`MySQLServer.start`. If no Exception was raised returns:
     
@@ -553,50 +553,15 @@ def create_server(post_params):
        
          
     """
-    logger.debug("Entering create_server")
+    logger.debug("Entering start_server")
     try:
         agent.start()
-        logger.debug("Leaving create_server")
+        logger.debug("Leaving start_server")
         return HttpJsonResponse({'return': 'OK'})
     except Exception as e:
         logger.exception("Error: " + str(e))
         return HttpJsonResponse({'return': 'ERROR', 'error': str(e)})        
-    
-def createMySQLServer_old(post_params):
-    """Create the MySQLServer"""
-    logger.debug('Entering createMySQLServer')
-    try: post_params = _mysqlserver_get_params(post_params)
-    except AgentException as e:
-        return {'opState': 'ERROR', 'error': e.message}
-    else:
-        with web_lock:
-            if exists(mysql_file):
-                logger.debug('Leaving createMySQLServer')
-                return {'opState': 'ERROR', 'error': AgentException(E_CONFIG_EXISTS).message}
-            try:
-                if type(post_params) != dict: raise TypeError()
-                p = MySQLServer(**post_params)                
-            except (ValueError, TypeError) as e:
-                ex = AgentException(E_ARGS_INVALID, detail=str(e))
-                logger.debug('Leaving createMySQLServer')
-                return {'opState': 'ERROR', 'error': ex.message}
-            except Exception as e:
-                ex = AgentException(E_UNKNOWN, detail=e)
-                logger.exception(e)
-                logger.debug('Leaving createMySQLServer')
-                return {'opState': 'ERROR', 'error': ex.message}
-            else:
-                try:
-                    fd = open(mysql_file, 'w')
-                    pickle.dump(p, fd)
-                    fd.close()
-                except Exception as e:
-                    ex = AgentException(E_CONFIG_COMMIT_FAILED, detail=e)
-                    logger.exception(ex.message)
-                    return {'opState': 'ERROR', 'error': ex.message}
-                else:
-                    return {'opState': 'OK'}            
-                
+                  
 def shutdownMySQLServerAgent(kwargs):
     """
     Shuts down the whole Agent together with MySQL server.
