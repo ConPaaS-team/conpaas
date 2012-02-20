@@ -389,7 +389,8 @@ class MySQLServer:
             status = self.supervisor.info(SUPERVISOR_MYSQL_NAME)
             if status['statename'] == "RUNNING":
                 logger.debug("Mysqld is already running.")
-                pass
+                self.state = S_RUNNING
+                return
             
             if self.dummy_backend == False:                
                 self.supervisor.start(SUPERVISOR_MYSQL_NAME)
@@ -410,7 +411,7 @@ class MySQLServer:
         status = self.supervisor.info(SUPERVISOR_MYSQL_NAME)
         if status['statename'] == "NOT_RUNNING":
             logger.debug("Mysqld is already stopped.")
-            pass
+            return
             
         if self.dummy_backend:
             if self.state == S_RUNNING:
@@ -422,6 +423,7 @@ class MySQLServer:
             if self.state == S_RUNNING:
                 self.state = S_STOPPING
                 status = self.supervisor.info(SUPERVISOR_MYSQL_NAME)
+                logger.debug("Status: %s " % status)
                 if status['statename'] == "RUNNING":
                     try:
                         logger.debug("Stopping server")
@@ -443,10 +445,10 @@ class MySQLServer:
                         logger.exception(e)
                         raise e
                 else:
-                    logger.critical('Could not find PID file %s to kill WebServer' % (self.pid_file))
+                    logger.debug("Setting state to S_STOPPED. I did nothing.")
+                    logger.debug("Status: %s " % status)
                     self.state = S_STOPPED
-                    logger.debug('Leaving MySQLServer.stop')
-                    raise IOError('Could not find PID file %s to kill WebServer' % (self.pid_file))                
+                    logger.debug('Leaving MySQLServer.stop')                                    
             else:
                 logger.warning('Request to kill WebServer while it is not running')
         logger.debug('Leaving MySQLServer.stop')
@@ -607,37 +609,10 @@ def createMySQLServer_old(post_params):
                 else:
                     return {'opState': 'OK'}            
                 
-def stopMySQLServer_old(kwargs):
-    """
-    Stops the WebServer
-    """
-    
-    if len(kwargs) != 0:
-        return {'opState': 'ERROR', 'error': AgentException(E_ARGS_UNEXPECTED, kwargs.keys()).message}
-    with web_lock:
-        try:
-            try:
-                fd = open(mysql_file, 'r')
-                p = pickle.load(fd)
-                fd.close()
-            except Exception as e:
-                ex = AgentException(E_CONFIG_READ_FAILED, 'stopMySQLServer',str(mysql_file), detail=e)
-                logger.exception(ex.message)
-                return {'opState': 'ERROR', 'error': ex.message}
-            p.stop()
-            remove(mysql_file)
-            return {'opState': 'OK'}
-        except Exception as e:
-            ex = AgentException(E_UNKNOWN, detail=e)
-            logger.exception(e)
-            return {'opState': 'ERROR', 'error': ex.message}        
-
-
 def shutdownMySQLServerAgent(kwargs):
     """
     Shuts down the whole Agent together with MySQL server.
     """
-    
     agent.stop()    
     from conpaas.mysql.server.agent.server import agentServer
     agentServer.shutdown()
