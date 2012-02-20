@@ -9,14 +9,23 @@ route add default gw $IP_GATEWAY eth0
 echo nameserver $NAMESERVER > /etc/resolv.conf
 
 # installation
+export DEBIAN_FRONTEND=noninteractive
+
 apt-get update
-apt-get install -y unzip python python-mysqldb python-pycurl python-dev python-setuptools python-pip subversion mysql-server
+apt-get install -y unzip python python-mysqldb python-pycurl python-dev python-setuptools python-pip subversion mysql-server supervisor
 
 cd /root
 svn co svn://svn.forge.objectweb.org/svnroot/contrail/trunk/conpaas/sql/conpaassql
 cd conpaassql
 python setup.py bdist_egg
 easy_install dist/conpaas*
+
+cat >  /etc/supervisor/conf.d/mysql.conf << EOF
+[program:mysqld]
+command=/usr/sbin/mysqld
+autostart=true
+autorestart=true
+EOF
 
 cat >  /root/conpaassql/src/conpaas/mysql/server/agent/configuration.cnf << EOF
 [MySQL_root_connection]
@@ -27,8 +36,16 @@ username=root
 [MySQL_configuration]
 my_cnf_file=/etc/mysql/my.cnf
 path_mysql_ssr=/etc/init.d/mysql
+
+[supervisor]
+user = root
+password = root
+port = 9001
 EOF
 
 # Run the agent command in the background
+
+service supervisor stop
+service supervisor start
 
 nohup python /root/conpaassql/src/conpaas/mysql/server/agent/server.py -c /root/conpaassql/src/conpaas/mysql/server/agent/configuration.cnf 1> /var/log/conpaassql-stdout.log 2> /var/log/conpaassql-err.log &
