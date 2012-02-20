@@ -1,0 +1,17 @@
+NAME   = $NAME
+CPU    = $CPU
+MEMORY = $MEM_SIZE
+   OS     = [
+   $OS 
+   ]
+DISK   = [
+   IMAGE_ID = $IMAGE_ID,
+   $DISK 
+   ]
+NIC    = [ NETWORK_ID = $NETWORK_ID ]
+GRAPHICS = [
+  type="vnc"
+  ]
+CONTEXT = [
+  $CONTEXT   
+  ]

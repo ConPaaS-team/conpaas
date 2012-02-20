@@ -1,0 +1,30 @@
+NAME = conpaas-sql-manager CPU = 0.5 MEMORY = 128
+   OS     = [ boot="hd", arch="x86_64" ]
+
+DISK   = [
+   source   = "/home/ales/sql/conpaas-sql-1.qcow2",
+   target   = "vda",
+   readonly = "no",
+   DEV_PREFIX = vd,
+   DRIVER = qcow2,
+   BUS = virtio   # ide (not IDE), SCSI, virtio
+]
+
+NIC    = [ 
+   NETWORK = "private-lan"
+   ]
+
+GRAPHICS = [
+  type="vnc", 
+  listen="localhost"
+  ]
+
+CONTEXT = [
+ip_private   = "$NIC[IP, NETWORK=\"private-lan\"]",
+    ip_gateway  = "10.1.0.254",
+    netmask = "255.255.255.0",
+    nameserver = "192.168.122.1",
+  files = "/home/ales/sql/manager/init-manager.sh",
+  target = "hdb"
+]
+RANK = "- RUNNING_VMS"
