@@ -412,7 +412,6 @@ class MySQLServer:
         if status['statename'] == "NOT_RUNNING":
             logger.debug("Mysqld is already stopped.")
             return
-            
         if self.dummy_backend:
             if self.state == S_RUNNING:
                 logger.debug("Stopping server")
@@ -424,26 +423,15 @@ class MySQLServer:
                 self.state = S_STOPPING
                 status = self.supervisor.info(SUPERVISOR_MYSQL_NAME)
                 logger.debug("Status: %s " % status)
-                if status['statename'] == "RUNNING":
-                    try:
-                        logger.debug("Stopping server")
-                        self.supervisor.stop(SUPERVISOR_MYSQL_NAME)             
-                        logger.debug("PID file is %s" % self.config.pid_file)
-                        status = self.supervisor.info(SUPERVISOR_MYSQL_NAME)
-                        logger.debug("New status is: %s" % status)
-                        if not status['statename'] == "RUNNING":
-                            logger.critical('Failed to stop mysql server.)')
-                            self.state = S_RUNNING
-                            raise OSError('Failed to stop mysql server.')                        
-                        self.state = S_STOPPED
-                    except IOError as e:
-                        self.state = S_STOPPED
-                        logger.exception(e)
-                        raise e
-                    except (ValueError, TypeError) as e:
-                        self.state = S_STOPPED
-                        logger.exception(e)
-                        raise e
+                if status['statename'] == "RUNNING":                
+                    logger.debug("Stopping server")
+                    self.supervisor.stop(SUPERVISOR_MYSQL_NAME)             
+                    logger.debug("PID file is %s" % self.config.pid_file)
+                    status = self.supervisor.info(SUPERVISOR_MYSQL_NAME)
+                    logger.debug("New status is: %s" % status)
+                    if not status['statename'] == "NOT_RUNNING":
+                        logger.critical('Failed to stop mysql server.)')
+                    self.state = S_STOPPED
                 else:
                     logger.debug("Setting state to S_STOPPED. I did nothing.")
                     logger.debug("Status: %s " % status)
