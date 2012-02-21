@@ -125,7 +125,7 @@ mount $LOOP_DEV_P $ROOT_DIR
 trap "cleanup" EXIT
 
 cecho "Starting debootstrap"
-debootstrap --arch $ARCH $DEBIAN_DIST $ROOT_DIR $DEBIAN_MIRROR
+debootstrap --arch $ARCH --include locales $DEBIAN_DIST $ROOT_DIR $DEBIAN_MIRROR
 
 cecho "Writing fstab"
 echo "/dev/sda1 / ext3 defaults 0 1" > $ROOT_DIR/etc/fstab
@@ -149,6 +149,11 @@ sed -i '1i 127.0.0.1  conpaas' $ROOT_DIR/etc/hosts
 cecho "Mounting /dev and /proc in chroot"
 mount -obind /dev $ROOT_DIR/dev
 mount -t proc proc $ROOT_DIR/proc
+
+cecho "Generating and setting locale"
+chroot $ROOT_DIR /bin/bash -c "sed --in-place 's/^# en_US.UTF-8/en_US.UTF-8/' /etc/locale.gen"
+chroot $ROOT_DIR /bin/bash -c 'locale-gen'
+chroot $ROOT_DIR /bin/bash -c 'update-locale LANG=en_US.UTF-8'
 
 cecho "Running apt-get update"
 chroot $ROOT_DIR /bin/bash -c 'apt-get -y update'
