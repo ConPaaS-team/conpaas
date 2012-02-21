@@ -24,7 +24,7 @@ agentServer = None
 class AgentServer(HTTPServer, ThreadingMixIn):
     
     @mlog
-    def __init__(self, server_address, config, RequestHandlerClass=AbstractRequestHandler):
+    def __init__(self, server_address, mysql_agent, RequestHandlerClass=AbstractRequestHandler):
         HTTPServer.__init__(self, server_address, RequestHandlerClass)
         self.callback_dict = {'GET': {}, 'POST': {}, 'UPLOAD': {}}
              
@@ -32,7 +32,7 @@ class AgentServer(HTTPServer, ThreadingMixIn):
         
         self.whitelist_addresses = []
         
-        internals.agent = MySQLServer(config)
+        internals.agent = mysql_agent
         for http_method in internals.exposed_functions:
             for func_name in internals.exposed_functions[http_method]:
                 logger.debug( 'Going to register ' + " " + http_method + " " +func_name)
@@ -50,9 +50,10 @@ def main():
     parser.add_option('-c', '--config', type='string', default='./configuration.cnf', dest='config')    
     options, args = parser.parse_args()
     config_parser = ConfigParser()
-    config_parser.read(options.config)    
-    print 'Starting the MySQL server at ', options.address, options.port
-    agentServer = AgentServer((options.address, options.port), config_parser)
+    config_parser.read(options.config)
+    mysql_agent = MySQLServer(config_parser)
+    logger.debug( 'Starting the MySQL server at ', options.address, options.port)
+    agentServer = AgentServer((options.address, options.port), mysql_agent)
     agentServer.serve_forever()
     
 if __name__ == '__main__':

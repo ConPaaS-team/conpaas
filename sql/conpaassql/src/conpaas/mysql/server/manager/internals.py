@@ -24,6 +24,7 @@ import time
 import conpaas
 import conpaas.mysql.server.manager
 from conpaas.web.http import HttpErrorResponse, HttpJsonResponse
+import json
 
 """
 Members describing state of the Manager node.
@@ -173,35 +174,6 @@ def createServiceNodeThread (function, new_vm):
     wait_for_nodes(node_instances)
     config.addMySQLServiceNode(new_vm)
 
-#===============================================================================
-# @expose('GET')
-#'''
-#    For each of the node from the list of the manager check that it is alive (in the list
-#    returned by the ONE).
-#'''
-# def listServiceNodes(kwargs):
-#    logger.debug("Entering listServiceNode")
-#    if len(kwargs) != 0:
-#        return {'opState': 'ERROR', 'error': ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message}
-#    #dstate = memcache.get(DEPLOYMENT_STATE)    
-#    vms = iaas.listVMs()
-#    vms_mysql = config.getMySQLServiceNodes()
-#    for vm in vms_mysql:
-#        if not(vm.vmid in vms.keys()):
-#            logger.debug('Removing instance ' + str(vm.vmid) + ' since it is not in the list returned by the listVMs().')
-#            config.removeMySQLServiceNode(vm.vmid)         
-#    #if dstate != S_RUNNING and dstate != S_ADAPTING:
-#    #    return {'opState': 'ERROR', 'error': ManagerException(E_STATE_ERROR).message}    
-#    #config = memcache.get(CONFIG)
-#    logger.debug("Exiting listServiceNode")
-#    return {
-#          'opState': 'OK',
-#          #'sql': [ serviceNode.vmid for serviceNode in managerServer.config.getMySQLServiceNodes() ]
-#          #'sql': [ vms.keys() ]
-#          'sql': [ [serviceNode.vmid, serviceNode.ip, serviceNode.port, serviceNode.state ] for serviceNode in config.getMySQLServiceNodes() ]
-#    }
-#===============================================================================
-
 @expose('GET')
 def list_nodes(kwargs):
     """
@@ -263,24 +235,6 @@ def get_node_info(kwargs):
 new manager is awaken and if the function equals "agent", new instance of the agent is 
 provisioned.     
 '''
-#===============================================================================
-# @expose('POST')
-# def createServiceNode(kwargs):
-#    if not(len(kwargs) in (0,1, 3)):
-#        return {'opState': 'ERROR', 'error': ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message}    
-#    if len(kwargs) == 0:
-#        new_vm=iaas.newInstance(None)
-#        Thread(target=createServiceNodeThread(None, new_vm)).start()
-#    elif len(kwargs) == 1:
-#        new_vm=iaas.newInstance(kwargs['function'])
-#        Thread(target=createServiceNodeThread(kwargs['function'], new_vm)).start()
-#    else:
-#        pass
-#    return {
-#          'opState': 'OK',
-#          'sql': [ new_vm['id'] ]
-#    }
-#===============================================================================
 
 @expose('POST')
 def add_nodes(kwargs):
@@ -334,21 +288,6 @@ def create_replica(kwargs):
           'sql': [ new_vm['id'] ]
     }
 
-#===============================================================================
-# @expose('POST')
-# def deleteServiceNode(kwargs):
-#    if len(kwargs) != 1:
-#        return {'opState': 'ERROR', 'error': ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message}
-#    logger.debug('deleteServiceNode ' + str(kwargs['id']))
-#    if iaas.killInstance(kwargs['id']):
-#        config.removeMySQLServiceNode(kwargs['id'])
-#    '''TODO: If false, return false response.
-#    '''
-#    return {
-#          'opState': 'OK'    
-#    }
-#===============================================================================
-
 @expose('POST')
 def remove_nodes(kwargs):
     """
@@ -375,6 +314,54 @@ def remove_nodes(kwargs):
     '''
     return HttpJsonResponse({'result': 'OK'})
 
+
+@expose('POST')
+def register_new_node(kwargs):
+    """
+    HTTP POST method. Registers new agent node with the others.
+
+    :param kwargs: string identifying a node.
+    :type param: str
+    :returns: HttpJsonResponse - JSON response with details about the node. OK if evrything went well. ManagerException if something went wrong.
+    :raises: ManagerException
+        
+    """ 
+    
+    """
+    Adds running instances of mysql agents to the list.            
+    """
+    if 'node_ip' not in kwargs:
+        logger.error("Missing an argument node_ip") 
+        return HttpErrorResponse(ManagerException(E_ARGS_MISSING, 'node_ip').message)
+    logger.debug("Starting to register a new_node with IP %s" % kwargs['node_ip'])
+    logger.debug('Probing ' + kwargs['node_ip'] + ' for state.')
+    try:
+        logger.debug("Querying the agent node")
+        ret = agent_client.get_server_state(kwargs['node_ip'], kwargs['node_port'])
+    except agent_client.AgentException as e: logger.error('Exception: ' + str(e))
+    except Exception as e:
+        logger.error('Exception: ' + str(e))
+    logger.debug('Returned query:' + str(ret))
+    jsonRet = json.loads(ret[1])
+    logger.debug("Obtained JSON Object: %s" % jsonRet);
+    jsonRealStatus= None
+    try:
+        jsonRealStatus= jsonRet.get("result").get("return");
+    except Exception as e:
+        logger.error('Exception: ' + str(e))
+    logger.debug("Got this status: %s" % jsonRealStatus)
+    vm={}
+    vm['id']=jsonRealStatus.get("id")
+    vm['name']=jsonRealStatus.get("name")
+    vm['state']=jsonRealStatus.get("state")
+    vm['ip']=jsonRealStatus.get("ip")
+    vm['mysqld_port']=jsonRealStatus.get("mysqld_port")
+    vm['supervisor_data']=jsonRealStatus.get("supervisor_data")
+    logger.debug('Adding service node %s' % vm)
+    conpaas.mysql.server.manager.internals.config.addMySQLServiceNode(vm)
+    logger.debug("Exiting register_new_node")     
+    return HttpJsonResponse({'result': 'OK'})
+
 @expose('GET')
 def get_service_info(kwargs):
     """    
@@ -399,30 +386,6 @@ def get_service_info(kwargs):
         logger.debug('Leaving get_service_info')
         return HttpJsonResponse({'result': 'OK'})
  
-#===============================================================================
-# @expose('GET')
-# def get_node_info( kwargs):
-#    logger.debug("Entering get_node_info")
-#    if 'serviceNodeId' not in kwargs: return HttpErrorResponse(ManagerException(E_ARGS_MISSING, 'serviceNodeId').message)
-#    serviceNodeId = kwargs.pop('serviceNodeId')
-#    if len(kwargs) != 0:
-#        return HttpErrorResponse(ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
-#    
-#    config = self._configuration_get()
-#    if serviceNodeId not in config.serviceNodes: return HttpErrorResponse(ManagerException(E_ARGS_INVALID, detail='Invalid "serviceNodeId"').message)
-#    serviceNode = config.serviceNodes[serviceNodeId]
-#    return HttpJsonResponse({
-#            'serviceNode': {
-#                            'id': serviceNode.vmid,
-#                            'ip': serviceNode.ip,
-#                            'isRunningProxy': serviceNode.isRunningProxy,
-#                            'isRunningWeb': serviceNode.isRunningWeb,
-#                            'isRunningBackend': serviceNode.isRunningBackend,
-#                            'isRunningMySQL': serviceNode.isRunningBackend,
-#                            }
-#            })
-#===============================================================================
-
 @expose('POST')
 def set_up_replica_master(params):
     """

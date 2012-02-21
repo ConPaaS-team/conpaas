@@ -84,13 +84,11 @@ class MySQLServerConfiguration:
     supervisor_settings holds Settings for the supervisor.
      
     """
-    
-    pid_file = None
-    
+       
     dummy_config = False
-    
+    mysqld_configuration = None
     supervisor_settings = None
-    
+            
     @mlog
     def __init__(self, config, _dummy_config=False):
         """
@@ -108,42 +106,36 @@ class MySQLServerConfiguration:
         logger.debug("Entering init MySQLServerConfiguration")
         self.hostname = socket.gethostname()
         self.restart_count = 0
-        '''Default mysql pid file.
-        '''
+        self.agent = {}
+        self.manager = {}
+    
         try:
-            '''This is always like that.
-            '''
             supervisor_port = config.get ("supervisor", "port")
             supervisor_user = config.get ("supervisor", "user")
             supervisor_password = config.get ("supervisor", "password")
-            self.supervisor_settings = SupervisorSettings(supervisor_user, supervisor_password, supervisor_port)
-            
-            self.pid_file = "/var/lib/mysql/" + self.hostname + ".pid"
+            self.supervisor_settings = SupervisorSettings(supervisor_user, supervisor_password, supervisor_port)            
             logger.debug("Trying to get params from configuration file ")        
             self.conn_location = config.get("MySQL_root_connection", "location")
             self.conn_username = config.get("MySQL_root_connection", "username")
             self.conn_password = config.get("MySQL_root_connection", "password")      
             logger.debug("Got parameters for root connection to MySQL")
-            self.mycnf_filepath = config.get("MySQL_configuration","my_cnf_file")
-            self.path_mysql_ssr = config.get("MySQL_configuration","path_mysql_ssr")
-            file = open(self.mycnf_filepath)
-            my_cnf_text = file.read()
-            mysqlconfig = ConfigParser.ConfigParser()
-            #mysqlconfig = ConfigParser.RawConfigParser(allow_no_value=True)       
-            mysqlconfig.readfp( self.MySQLConfigParser(my_cnf_text))    
-            #mysqlconfig.readfp(io.BytesIO(my_cnf_text))
-            self.port_mysqld = mysqlconfig.get ("mysqld", "port")      
-            self.bind_address = mysqlconfig.get ("mysqld", "bind-address")
-            self.data_dir = mysqlconfig.get ("mysqld", "datadir")
+            self.mycnf_filepath = config.get("MySQL_configuration","my_cnf_file")            
+
+            self.agent["port"] = config.get("ConPaaSSQL","agent_port")
+            self.agent["ip"] = config.get("ConPaaSSQL","agent_interface")
+            self.agent["vm_id"] = config.get("ConPaaSSQL","vm_id")
+            self.agent["vm_name"] = config.get("ConPaaSSQL","vm_name")
+            self.manager["port"] = config.get("ConPaaSSQL","manager_port")
+            self.manager["ip"] = config.get("ConPaaSSQL","manager_ip")
             
-            #mysqlconfig.set("mysqld", "newOption", value=None)
-            #newfile=open("/tmp/contrial.tmp","w")  
-            #mysqlconfig.write(newfile)
-            #newfile.close()
+            logger.debug("My Manager is here: %s" % self.manager)
+            logger.debug("My interface should be here: %s" % self.agent)
+            
+            self.mysqld_configuration = MySQLConfig(self.mycnf_filepath)
+            self.port_mysqld = self.mysqld_configuration.get("mysqld", "port") 
+            self.bind_address = self.mysqld_configuration.get("mysqld", "bind-address") 
+            self.data_dir = self.mysqld_configuration.get("mysqld", "datadir") 
             logger.debug("Got configuration parameters")
-            '''Removing temporary file created in MySQLConfigParser
-            '''
-            os.system("rm temp.cnf")            
         except ConfigParser.Error, err:
             ex = AgentException(E_CONFIG_READ_FAILED, str(err))
             logger.critical(ex.message)
@@ -153,60 +145,20 @@ class MySQLServerConfiguration:
         logger.debug("Leaving init MySQLServerConfiguration")
     
     @mlog    
-    def change_config(self, id_param, param):
+    def change_config(self, section, id_param, param):
         """
         Changes MySQL configuration with `id_param` to value of `param`.
-        
+        :param section: What section to change.
+        :type id_param: str
         :param id_param: What to change.
         :type id_param: str
         :param param: value of to change the `id_param` to.
         :type param: str  
         
         """
-        
-        if id_param == 'datadir':
-            os.system("sed -i 's\datadir\t\t= " + self.data_dir +"|datadir\t\t= " + param + "|g' " + self.mycnf_filepath)
-            self.data_dir = param 
-        elif id_param == 'port':
-            os.system("sed -i 's/port\t\t= " + self.port_mysqld +"/port\t\t= " + param + "/g' " + self.mycnf_filepath)            
-            self.port_mysqld = param
-        elif id_param == 'bind-address':
-            os.system("sed -i 's/bind-address\t\t= " + self.bind_address +"/bind-address\t\t= " + param + "/g' " + self.mycnf_filepath)            
-            self.bind_address = param
-        else:
-            ex = AgentException(E_CONFIG_READ_FAILED, "cant find id: " + id_param)
-            raise Exception(ex.message)
-    
-    '''Read mysqld configuration. Creates a temporary file in the working directory. Needs to be erased. 
-    '''
-    @mlog
-    def MySQLConfigParser(self, text):
-        """
-        Parses MySQL server configuration into 
-        """
-        
-        #comments inside
-        while text.count("#")>0:
-            text = text[0:text.index("#")] + text[text.index("\n",text.index("#")):]
-        zac = 0
-        while text.count("\n",zac)>1:
-            if ( text[text.index("\n",zac)+1:text.index("\n",text.index("\n",zac+1))].find("[") == -1 
-               & text[text.index("\n",zac)+1:text.index("\n",text.index("\n",zac+1))].find("=") == -1):
-                text = text[0:text.index("\n",zac)+1] + text[text.index("\n",text.index("\n",zac+1)):]
-            zac = text.index("\n", zac+1)         
-        # \n inside
-        while text.count("\t")>0:
-            text = text[0:text.index("\t")] + text[text.index("\t")+1:]
-        while text.count(" ")>0:
-            text = text[0:text.index(" ")] + text[text.index(" ")+1:]
-        while text.count("\n\n")>0:
-            text = text[0:text.index("\n\n")] + text[text.index("\n\n")+1:]
-        file = open(os.getcwd()+"/temp.cnf", "w")
-        file.write(text)
-        file.close()
-        file = open(os.getcwd()+"/temp.cnf","r")
-        return file
-    
+        self.mysqld_configuration.set(section, id_param, param)
+        self.mysqld_configuration.save_asnew_config()
+                        
     @mlog
     def add_user_to_MySQL(self, new_username, new_password):
         db = MySQLdb.connect(self.conn_location, self.conn_username, self.conn_password)
@@ -426,7 +378,6 @@ class MySQLServer:
                 if status['statename'] == "RUNNING":                
                     logger.debug("Stopping server")
                     self.supervisor.stop(SUPERVISOR_MYSQL_NAME)             
-                    logger.debug("PID file is %s" % self.config.pid_file)
                     status = self.supervisor.info(SUPERVISOR_MYSQL_NAME)
                     logger.debug("New status is: %s" % status)
                     if not status['statename'] == "STOPPED":
@@ -447,40 +398,28 @@ class MySQLServer:
         self.config.restart_count += 1 
         logger.debug("Restart count just increased to: " + str(self.config.restart_count))
         if self.dummy_backend:
-            logger.debug('Restarting with arguments:' + self.config.path_mysql_ssr + " restart")
             logger.debug("Restarting mysql server")
             self.state = S_RUNNING
             logger.info('MySQL restarted') 
         else:            
-            try:
-                logger.debug("Stopping the server")
-                self.stop()
-                logger.debug("Starting the server")
-                self.start()
-                if exists(self.config.pid_file) == False:
-                    logger.critical('Failed to restart mysql server.)')
-                    raise OSError('Failed to restart mysql server.')            
-            except IOError as e:
-                logger.exception(e)
-                self.state = S_STOPPED
-                raise e
-            except (ValueError, TypeError) as e:
-                logger.exception(e)
-                self.state = S_STOPPED
-                raise e    
-            else:
-                self.post_restart()
-                self.state = S_RUNNING
-                logger.info('MySQL restarted')          
+            logger.debug("Stopping the server")
+            self.stop()
+            logger.debug("Starting the server")
+            self.start()
+            logger.info('MySQL restarted')          
         logger.debug("Leaving MySQLServer restart")
     
     @mlog
     def status(self):
         logger.debug('Entering MySQLServer.status')
         logger.debug('Leaving MySQLServer.status')
-        return {'state': self.state,                
-                'port': self.config.port_mysqld, 
-                'other': self.supervisor.info(SUPERVISOR_MYSQL_NAME)}     
+        return {'id': self.config.agent['vm_id'],
+                'state': self.state,
+                'name': self.config.agent['vm_name'],
+                'ip': self.agent['ip'],                
+                'port': self.agent['port'],
+                'mysqld_port': self.config.port_mysqld, 
+                'supervisor_data': self.supervisor.info(SUPERVISOR_MYSQL_NAME)}     
         
 def expose(http_method):
     def decorator(func):
@@ -514,25 +453,6 @@ def _mysqlserver_get_params(post_params):
         raise AgentException(E_ARGS_UNEXPECTED, post_params.keys())
     return ret
 
-def getMySQLServerState_old(kwargs):
-    """GET state of WebServer"""
-    if len(kwargs) != 0:
-        return {'opState': 'ERROR', 'error': AgentException(E_ARGS_UNEXPECTED, kwargs.keys()).message}
-    with web_lock:
-        try:
-            if os.path.exists(mysql_file):
-                fd = open(mysql_file, 'r')
-                p = pickle.load(fd)
-                fd.close()
-            else:
-                return {'opState':'OK','return': 'shutdown'}
-        except Exception as e:
-            ex = AgentException(E_CONFIG_READ_FAILED, MySQLServer.__name__, mysql_file, detail=e)
-            logger.exception(ex.message)
-            return {'opState': 'ERROR', 'error': ex.message}
-        else:
-            return {'opState': 'OK', 'return': p.status()}
-        
         
 @expose('POST')
 def start_server(post_params):
@@ -550,7 +470,6 @@ def start_server(post_params):
          return HttpJsonResponse({'return': 'ERROR', 'error': str(e)})
          
     :returns: HttpJsonResponse
-       
          
     """
     logger.debug("Entering start_server")
@@ -663,7 +582,7 @@ def get_server_state(params):
 def set_server_configuration(params):
     logger.debug("Entering set_server_configuration")
     try:
-        agent.config.change_config(params['id_param'], params["value"])
+        agent.config.change_config(params['section'], params['id_param'], params["value"])
         restart_server(None)
         logger.debug("Leaving set_server_configuration")
         return HttpJsonResponse ({'return':'OK'})

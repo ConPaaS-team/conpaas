@@ -49,14 +49,6 @@ Functions:  list_nodes - no params\n \
             get_service_performance - no params\n'
     pass
 
-#===============================================================================
-# def getListServiceNodes(host, port):
-#    params = {'action': 'listServiceNodes'}
-#    code, body = _http_get(host, port, '/', params=params)
-#    if code != httplib.OK: raise Exception('Received HTTP response code %d' % (code))
-#    return __check_reply(body)
-#===============================================================================
-
 def list_nodes(host, port):
     method = 'list_nodes'
     return _check(_jsonrpc_get(host, port, '/', method))

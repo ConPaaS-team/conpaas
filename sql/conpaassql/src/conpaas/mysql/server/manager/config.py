@@ -57,6 +57,12 @@ class ManagerException(Exception):
             self.message = '%s DETAIL:%s' % ( (E_STRINGS[code] % args), str(kwargs['detail']) )
         else:
             self.message = E_STRINGS[code] % args
+            
+class ServiceNodeType:
+    NORMAL_AGENT = 1
+    MASTER = 2
+    SLAVE = 3
+    
 '''
 Holds information on service nodes.
 '''
@@ -70,16 +76,21 @@ class ServiceNode(object):
     
     '''
     
+    nodeType = None
+    
     def __init__(self, vm, runMySQL=False):
         self.vmid = vm['id']
+        self.port = vm['port']
+        self.mysqld_port = vm['mysqld_port']
         self.ip = vm['ip']
         self.name = vm['name']
-        self.state = vm['state']
+        self.state = vm['state']        
+        self.supervisor_data = vm['supervisor_data']
         self.isRunningMySQL = runMySQL
         self.isRunningProxy = False
-        self.isRunningBackend= False        
+        self.isRunningBackend= False
         self.isRunningWeb= False
-        self.port = 60000
+        self.nodeType = ServiceNodeType.NORMAL_AGENT
   
     '''String representation of the ServiceNode.
     @return: returns service nodes information. Id ip and if mysql is running on this service node.'''
@@ -141,9 +152,9 @@ class Configuration(object):
       Add new Service Node to the server (configuration).
       @param accesspoint: new VM
     '''
-    def addMySQLServiceNode(self, accesspoint):
+    def addMySQLServiceNode(self, accesspoint, mysqld_config=None):
         logger.debug('Entering addMySQLServiceNode') 
-        self.serviceNodes[accesspoint['id']]=ServiceNode(accesspoint, True)
+        self.serviceNodes[accesspoint['id']]=ServiceNode(accesspoint, True, mysqld_config)
         self.mysql_count+=1
         logger.debug('Exiting addMySQLServiceNode')
         

@@ -7,10 +7,12 @@ class MySQLConfig(object):
     mysql_settings = MySQLSettings
     
     @mlog
-    def __init__(self):
-        self.config_file = self.mysql_settings.config
+    def __init__(self, filename="/etc/mysqld/my.cnf"):
+        self.config_file = filename
+        logger.debug("Using filename %s" % self.config_file)
         self.sections = []
         self.options = {}
+        self.load()        
     
     @mlog
     def set(self, section, key, value):
@@ -18,6 +20,7 @@ class MySQLConfig(object):
     
     @mlog 
     def load(self):
+        logger.debug("Loading configuration from %s" % self.config_file)
         with open(self.config_file) as f:
             lines = f.readlines()
         cur_sec = None      
@@ -41,7 +44,8 @@ class MySQLConfig(object):
                             self.set(cur_sec, cur_key, "")   
     
     @mlog
-    def save_asnew_config(self, filename = None):        
+    def save_asnew_config(self, filename="/etc/mysqld/my.cnf"):
+        logger.debug("Saving new configuration to %s " % filename)        
         if filename == None:
             filename = self.config_file
         with open(filename, 'w') as f:

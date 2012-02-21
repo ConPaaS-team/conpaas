@@ -1,3 +1,4 @@
 class MySQLSettings(object):
     password = None
-    config = None
+    user = None
+    config = None    
