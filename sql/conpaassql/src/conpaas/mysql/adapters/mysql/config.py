@@ -37,7 +37,7 @@ class MySQLConfig(object):
                         except:
                             pass
                     else:
-                        if cur_sec:
+                        if cur_sec and cur_key:
                             self.set(cur_sec, cur_key, "")   
     
     @mlog
