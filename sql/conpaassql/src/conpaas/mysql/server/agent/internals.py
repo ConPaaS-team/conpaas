@@ -32,6 +32,7 @@ from conpaas.web.http import HttpJsonResponse, HttpErrorResponse, _jsonrpc_post
 from conpaas.mysql.utils.log import get_logger_plus
 from conpaas.mysql.adapters.supervisor import SupervisorSettings, Supervisor
 from conpaas.mysql.adapters.mysql.config import MySQLConfig
+from conpaas.mysql.server.agent.maintain_connection import MaintainAgentConnection
 
 exposed_functions = {}
 
@@ -327,28 +328,11 @@ class MySQLServer:
         self.start()
         self.dummy_backend = _dummy_backend
         logger.debug("Start with registering to the manager.")
-        Thread(target=self.maintain_connection()).start()
+        
+        MaintainAgentConnection(self).start()
+        #Thread(target=maintain_connection(self)).start()
         logger.debug("Leaving MySQLServer initialization")
-
-    @mlog
-    def maintain_connection(self, poll_interval = 60):
-        while True:
-            logger.debug("Maintaining connection to %s " % self.config.manager);
-            params = {}
-            if agent:
-                params['state'] = agent.status()
-            else:
-                logger.debug("Continuing the while since agent is not ready yet.")
-                time.sleep(poll_interval)
-                continue
-            method = 'register_node'
-            try:
-                ret = _jsonrpc_post(self.config.manager['ip'], self.config.manager['port'], '/', method, params=params)
-                logger.debug("Got answer from manager: %s" % ret)
-            except Exception as e:
-                logger.error('Exception: ' + str(e))
-            time.sleep(poll_interval)
-
+    
     @mlog
     def post_restart(self): pass
     """ Things that are done after restart. Not implemented yet.
@@ -438,8 +422,8 @@ class MySQLServer:
         return {'id': self.config.agent['vm_id'],
                 'state': self.state,
                 'name': self.config.agent['vm_name'],
-                'ip': self.agent['ip'],                
-                'port': self.agent['port'],
+                'ip': self.config.agent['ip'],                
+                'port': self.config.agent['port'],
                 'mysqld_port': self.config.port_mysqld, 
                 'supervisor_data': self.supervisor.info(SUPERVISOR_MYSQL_NAME)}     
         
