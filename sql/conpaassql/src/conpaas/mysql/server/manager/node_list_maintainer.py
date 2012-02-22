@@ -6,7 +6,7 @@ Created on Feb 22, 2012
 import threading
 import time
 from conpaas.mysql.utils.log import get_logger_plus
-from conpaas.web.http import _jsonrpc_post
+from conpaas.web.http import _jsonrpc_post, _jsonrpc_get
 from conpaas.mysql.client import agent_client
 import conpaas.mysql.server.manager.internals
 
@@ -47,10 +47,12 @@ class MaintainAgentConnections( threading.Thread ):
                 for node in nodes:
                     logger.debug("Trying node %s " % node)
                     try:
-                        ret = agent_client.get_server_state(node['ip'], node['port'])
-                        logger.debug("node %s is up with returned value %s" % (node, ret))
+                        method = "get_server_state"
+                        result = _jsonrpc_get(node.ip, node.port, '/', method)
+                        #ret = agent_client.get_server_state(node.ip, node.port)
+                        logger.debug("node %s is up with returned value %s" % (node, str(result)))
                     except Exception as e:
                         logger.error('Exception: ' + str(e)) 
                         logger.debug("Node %s is down. Removing from the list. " % node)
-                        self.config.removeMySQLServiceNode(node['id'])
+                        self.config.removeMySQLServiceNode(node.id)
                 time.sleep(self.poll_interval)

@@ -189,14 +189,14 @@ def list_nodes(kwargs):
     logger.debug("Entering list_nodes")
     if len(kwargs) != 0:
         return HttpErrorResponse(ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
-    vms = iaas.listVMs()
-    vms_mysql = config.getMySQLServiceNodes()
-    for vm in vms_mysql:
-        if not(vm.vmid in vms.keys()):
-            logger.debug('Removing instance ' + str(vm.vmid) + ' since it is not in the list returned by the listVMs().')
-            config.removeMySQLServiceNode(vm.vmid)  
-    logger.debug("Exiting list_nodes")  
-    _nodes = [ serviceNode.vmid for serviceNode in config.getMySQLServiceNodes() ]             
+    #vms = iaas.listVMs()
+    #vms_mysql = config.getMySQLServiceNodes()
+    #for vm in vms_mysql:
+    #    if not(vm.vmid in vms.keys()):
+    #        logger.debug('Removing instance ' + str(vm.vmid) + ' since it is not in the list returned by the listVMs().')
+    #        config.removeMySQLServiceNode(vm.vmid)        
+    _nodes = [ serviceNode.vmid for serviceNode in config.getMySQLServiceNodes() ]
+    logger.debug("Exiting list_nodes")             
     return HttpJsonResponse({
         'serviceNode': _nodes,
         })
@@ -331,13 +331,14 @@ def register_node(kwargs):
         vm['name']=kwargs["state"]["name"]
         vm['state']=kwargs["state"]["state"]
         vm['ip']=kwargs["state"]["ip"]
+        vm['port']=kwargs["state"]["port"]
         vm['mysqld_port']=kwargs["state"]["mysqld_port"]
         vm['supervisor_data']=kwargs["state"]["supervisor_data"]
         logger.debug('Adding/updating service node %s' % vm)
         conpaas.mysql.server.manager.internals.config.addMySQLServiceNode(vm)
         logger.debug("Exiting register_new_node")
     except Exception as e:
-        logger.debug(e)
+        logger.debug(e.getMessage())
     return HttpJsonResponse({'result': 'OK'})
 
 @expose('GET')

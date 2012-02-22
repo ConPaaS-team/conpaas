@@ -80,11 +80,11 @@ class ServiceNode(object):
     
     def __init__(self, vm, runMySQL=False):
         self.vmid = vm['id']
-        self.port = vm['port']
-        self.mysqld_port = vm['mysqld_port']
-        self.ip = vm['ip']
-        self.name = vm['name']
-        self.state = vm['state']        
+        self.port = str(vm['port'])
+        self.mysqld_port = str(vm['mysqld_port'])
+        self.ip = str(vm['ip'])
+        self.name = str(vm['name'])
+        self.state = str(vm['state'])        
         self.supervisor_data = vm['supervisor_data']
         self.isRunningMySQL = runMySQL
         self.isRunningProxy = False
@@ -96,7 +96,7 @@ class ServiceNode(object):
     @return: returns service nodes information. Id ip and if mysql is running on this service node.'''
     
     def __repr__(self):
-        return 'ServiceNode(vmid=%s, ip=%s, mysql=%s)' % (str(self.vmid), self.ip, str(self.isRunningMySQL))
+        return 'ServiceNode(vmid=%s, ip=%s, port=%s, mysql=%s)' % (str(self.vmid), self.ip, self.port, str(self.isRunningMySQL))
   
     ''' Compares this VM and the one passed as a parameter.
     @param other: other VM which are compared to this one. 
