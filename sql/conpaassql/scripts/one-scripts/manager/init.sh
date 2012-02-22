@@ -27,8 +27,8 @@ OPENNEBULA_PASSWORD=oneadmin
 OPENNEBULA_IMAGE_ID = 205
 OPENNEBULA_SIZE_ID = 1
 OPENNEBULA_NETWORK_ID = 205
-OPENNEBULA_NETWORK_GATEWAY = 10.1.0.254
-OPENNEBULA_NETWORK_NAMESERVER = 10.1.0.254
+OPENNEBULA_NETWORK_GATEWAY=$IP_GATEWAY
+OPENNEBULA_NETWORK_NAMESERVER=$NAMESERVER
 
 [manager]
 find_existing_agents = true
@@ -42,7 +42,7 @@ DISK=bus=scsi,readonly=no
 OS=arch=i686,boot = hd, root = hda
 IMAGE_ID=205
 NETWORK_ID=205
-CONTEXT=target=sdc,files=/home/contrail/sql/agent/install.sh
+CONTEXT=vmid=$VMID,vmname=$NAME,ip_private="$NIC[IP, NETWORK=$NETWORK"]",ip_gateway="$IP_GATEWAY",netmask="$NETMASK",nameserver="$NAMESERVER",target=sdc,files=/home/contrail/sql/agent/install.sh
 EOF
 
 nohup python /root/conpaassql/src/conpaas/mysql/server/manager/server.py -c /root/conpaassql/src/conpaas/mysql/server/manager/configuration.cnf 1> /var/log/conpaassql-stdout.log 2> /var/log/conpaassql-err.log &
