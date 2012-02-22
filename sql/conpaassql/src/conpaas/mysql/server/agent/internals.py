@@ -16,7 +16,7 @@ from string import Template
 from os import kill, makedirs, remove
 from os.path import join, devnull, exists
 from subprocess import Popen
-
+from threading import Thread
 from conpaas.log import create_logger
 from subprocess import Popen
 from os.path import devnull, exists
@@ -27,7 +27,8 @@ import ConfigParser
 import MySQLdb
 import pickle
 import io
-from conpaas.web.http import HttpJsonResponse, HttpErrorResponse
+import time
+from conpaas.web.http import HttpJsonResponse, HttpErrorResponse, _jsonrpc_post
 from conpaas.mysql.utils.log import get_logger_plus
 from conpaas.mysql.adapters.supervisor import SupervisorSettings, Supervisor
 from conpaas.mysql.adapters.mysql.config import MySQLConfig
@@ -324,8 +325,24 @@ class MySQLServer:
         logger.debug("Starting the server")
        
         self.start()
-        self.dummy_backend = _dummy_backend 
+        self.dummy_backend = _dummy_backend
+        logger.debug("Start with registering to the manager.")
+        Thread(target=self.maintain_connection()).start()
         logger.debug("Leaving MySQLServer initialization")
+
+    @mlog
+    def maintain_connection(self, poll_interval = 60):
+        while True:
+            logger.debug("Maintaining connection to %s " % self.config.manager);
+            params = {}
+            params['state'] = agent.status()
+            method = 'register_node'
+            try:
+                ret = _jsonrpc_post(self.config.manager['ip'], self.config.manager['port'], '/', method, params=params)
+                logger.debug("Got answer from manager: %s" % ret)
+            except Exception as e:
+                logger.error('Exception: ' + str(e))
+            time.sleep(poll_interval)
 
     @mlog
     def post_restart(self): pass

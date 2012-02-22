@@ -155,12 +155,10 @@ class Configuration(object):
     def addMySQLServiceNode(self, accesspoint, mysqld_config=None):
         logger.debug('Entering addMySQLServiceNode') 
         self.serviceNodes[accesspoint['id']]=ServiceNode(accesspoint, True, mysqld_config)
-        self.mysql_count+=1
         logger.debug('Exiting addMySQLServiceNode')
         
     '''
       Remove Service Node to the server (configuration).
     '''
     def removeMySQLServiceNode(self, vmid):
-        del self.serviceNodes[vmid]
-        self.mysql_count-=1            
+        del self.serviceNodes[vmid]           

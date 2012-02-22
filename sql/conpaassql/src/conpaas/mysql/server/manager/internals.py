@@ -66,9 +66,10 @@ class MySQLServerManager():
         self.state = S_INIT
         self.dummy_backend = _dummy_backend
         conpaas.mysql.server.manager.internals.dummy_backend = _dummy_backend
-        if conpaas.mysql.server.manager.internals.config.find_existing_agents == "true":
-            logger.debug("Find existing Agents is true")
-            self.__findAlreadyRunningInstances()
+        #if conpaas.mysql.server.manager.internals.config.find_existing_agents == "true":
+        #    logger.debug("Find existing Agents is true")
+        #    self.__findAlreadyRunningInstances()
+        Thread(target=maintain_nodes_list()).start()
         logger.debug("Leaving MySQLServer initialization")
    
     def __findAlreadyRunningInstances(self):
@@ -119,6 +120,33 @@ def expose(http_method):
         return wrapped
     return decorator
 
+def maintain_nodes_list(poll_interval=30):
+    """
+    It tries to call a function of the agent from the list of agents. If exception
+    is thrown, it removes the agent from the list.
+    
+    :param poll_intervall: how many seconds to wait. 10 secods is default value.
+    :type poll_interfvall: int
+    """
+    logger.debug('maintain nodes list: going to start polling')
+    if conpaas.mysql.server.manager.internals.dummy_backend:
+        pass
+    else:
+        while True:
+            logger.debug("Starting the poll.")       
+            nodes = config.getMySQLServiceNodes()
+            logger.debug("The list : %s " % nodes)
+            for node in nodes:
+                logger.debug("Trying node %s " % node)
+                try:
+                    ret = agent_client.get_server_state(node['ip'], node['port'])
+                    logger.debug("node %s is up with returned value %s" % (node, ret))
+                except Exception as e:
+                    logger.error('Exception: ' + str(e)) 
+                    logger.debug("Node %s is down. Removing from the list. " % node)
+                    config.removeMySQLServiceNode(node['id'])
+            time.sleep(poll_interval)
+            
 def wait_for_nodes(nodes, poll_interval=10):
     """
     Waits for nodes to get ready. It tries to call a function of the agent. If exception
@@ -159,7 +187,7 @@ def wait_for_nodes(nodes, poll_interval=10):
                         i['ip'] = refreshed_list[i['id']]['ip']
         logger.debug('wait_for_nodes: All nodes are ready %s' % str(done))
 
-def createServiceNodeThread (function, new_vm):
+def createServiceNodeTread(function, new_vm):
     """
     Waits for new VMs to awake.
      
@@ -250,14 +278,9 @@ def add_nodes(kwargs):
     
     function = None
     if 'function' in kwargs:
-        #if not isinstance(kwargs['function'], str):
-        #    logger.error("Expected a string value for function")
-        #    return HttpErrorResponse(ManagerException(E_ARGS_INVALID, detail='Expected a string value for "function"').message)
         function = str(kwargs.pop('function'))        
-    #if not(len(kwargs) in (0,1, 3)):
-    #    return {'opState': 'ERROR', 'error': ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message}    
     new_vm=iaas.newInstance(function)
-    Thread(target=createServiceNodeThread(function, new_vm)).start()
+#    Thread(target=createServiceNodeThread(function, new_vm)).start()
     return HttpJsonResponse({
         'serviceNode': {
                         'id': new_vm['id'],
@@ -316,7 +339,7 @@ def remove_nodes(kwargs):
 
 
 @expose('POST')
-def register_new_node(kwargs):
+def register_node(kwargs):
     """
     HTTP POST method. Registers new agent node with the others.
 
@@ -330,19 +353,22 @@ def register_new_node(kwargs):
     """
     Adds running instances of mysql agents to the list.            
     """
-    if 'node_ip' not in kwargs:
-        logger.error("Missing an argument node_ip") 
-        return HttpErrorResponse(ManagerException(E_ARGS_MISSING, 'node_ip').message)
+    logger.debug("Got kwargs %s " % kwargs)
+    if 'state' not in kwargs:
+        logger.error("Missing an argument state") 
+        return HttpErrorResponse(ManagerException(E_ARGS_MISSING, 'state').message)
+    
     logger.debug("Starting to register a new_node with IP %s" % kwargs['node_ip'])
-    logger.debug('Probing ' + kwargs['node_ip'] + ' for state.')
-    try:
-        logger.debug("Querying the agent node")
-        ret = agent_client.get_server_state(kwargs['node_ip'], kwargs['node_port'])
-    except agent_client.AgentException as e: logger.error('Exception: ' + str(e))
-    except Exception as e:
-        logger.error('Exception: ' + str(e))
-    logger.debug('Returned query:' + str(ret))
-    jsonRet = json.loads(ret[1])
+#    logger.debug('Probing ' + kwargs['node_ip'] + ' for state.')
+#    try:
+#        logger.debug("Querying the agent node")
+#        ret = agent_client.get_server_state(kwargs['node_ip'], kwargs['node_port'])
+#    except agent_client.AgentException as e: logger.error('Exception: ' + str(e))
+#    except Exception as e:
+#        logger.error('Exception: ' + str(e))
+#    logger.debug('Returned query:' + str(ret))
+#    jsonRet = json.loads(ret[1])
+    jsonRet = json.loads(kwargs['state'])
     logger.debug("Obtained JSON Object: %s" % jsonRet);
     jsonRealStatus= None
     try:
@@ -357,7 +383,7 @@ def register_new_node(kwargs):
     vm['ip']=jsonRealStatus.get("ip")
     vm['mysqld_port']=jsonRealStatus.get("mysqld_port")
     vm['supervisor_data']=jsonRealStatus.get("supervisor_data")
-    logger.debug('Adding service node %s' % vm)
+    logger.debug('Adding/updating service node %s' % vm)
     conpaas.mysql.server.manager.internals.config.addMySQLServiceNode(vm)
     logger.debug("Exiting register_new_node")     
     return HttpJsonResponse({'result': 'OK'})
