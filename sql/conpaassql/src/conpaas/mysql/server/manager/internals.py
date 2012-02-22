@@ -324,29 +324,20 @@ def register_node(kwargs):
     """
     Adds running instances of mysql agents to the list.            
     """
-    logger.debug("Got kwargs %s " % kwargs)
-    if 'state' not in kwargs:
-        logger.error("Missing an argument state") 
-        return HttpErrorResponse(ManagerException(E_ARGS_MISSING, 'state').message)    
-    logger.debug("Starting to register a new_node with IP %s" % kwargs['ip'])
-    jsonRealStatus = json.loads(kwargs['state'])
-    logger.debug("Obtained JSON Object: %s" % jsonRealStatus);
-#    jsonRealStatus= None
-#    try:
-#        jsonRealStatus= jsonRet.get("result").get("return");
-#    except Exception as e:
-#        logger.error('Exception: ' + str(e))
-    logger.debug("Got this status: %s" % jsonRealStatus)
-    vm={}
-    vm['id']=jsonRealStatus.get("id")
-    vm['name']=jsonRealStatus.get("name")
-    vm['state']=jsonRealStatus.get("state")
-    vm['ip']=jsonRealStatus.get("ip")
-    vm['mysqld_port']=jsonRealStatus.get("mysqld_port")
-    vm['supervisor_data']=jsonRealStatus.get("supervisor_data")
-    logger.debug('Adding/updating service node %s' % vm)
-    conpaas.mysql.server.manager.internals.config.addMySQLServiceNode(vm)
-    logger.debug("Exiting register_new_node")     
+    try:    
+        logger.debug("Got this status: %s" % kwargs)
+        vm={}
+        vm['id']=kwargs["state"]["id"]
+        vm['name']=kwargs["state"]["name"]
+        vm['state']=kwargs["state"]["state"]
+        vm['ip']=kwargs["state"]["ip"]
+        vm['mysqld_port']=kwargs["state"]["mysqld_port"]
+        vm['supervisor_data']=kwargs["state"]["supervisor_data"]
+        logger.debug('Adding/updating service node %s' % vm)
+        conpaas.mysql.server.manager.internals.config.addMySQLServiceNode(vm)
+        logger.debug("Exiting register_new_node")
+    except Exception as e:
+        logger.debug(e)
     return HttpJsonResponse({'result': 'OK'})
 
 @expose('GET')

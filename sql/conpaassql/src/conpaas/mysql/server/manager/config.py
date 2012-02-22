@@ -154,7 +154,7 @@ class Configuration(object):
     '''
     def addMySQLServiceNode(self, accesspoint, mysqld_config=None):
         logger.debug('Entering addMySQLServiceNode') 
-        self.serviceNodes[accesspoint['id']]=ServiceNode(accesspoint, True, mysqld_config)
+        self.serviceNodes[accesspoint['id']]=ServiceNode(accesspoint, True)
         logger.debug('Exiting addMySQLServiceNode')
         
     '''
