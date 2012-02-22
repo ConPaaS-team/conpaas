@@ -52,7 +52,7 @@ def main():
     config_parser = ConfigParser()
     config_parser.read(options.config)    
     logger.debug( 'Starting the ConPaaS Mysql agent server at ', options.address, options.port)
-    agentServer = AgentServer((config_parser.get("ConPaaSSQL","agent_ip"), int(config_parser.get("ConPaaSSQL","agent_port"))), config_parser)
+    agentServer = AgentServer((config_parser.get("ConPaaSSQL","agent_interface"), int(config_parser.get("ConPaaSSQL","agent_port"))), config_parser)
     agentServer.serve_forever()
     
 if __name__ == '__main__':

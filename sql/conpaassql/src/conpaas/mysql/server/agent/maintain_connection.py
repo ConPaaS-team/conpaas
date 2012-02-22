@@ -23,6 +23,7 @@ class MaintainAgentConnection( threading.Thread ):
         '''
         Constructor
         '''
+        threading.Thread.__init__(self)
         self.poll_interval = poll_interval
         self.agent = agent
 
