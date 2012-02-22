@@ -67,7 +67,7 @@ class MySQLServerManager():
         self.state = S_INIT
         self.dummy_backend = _dummy_backend
         conpaas.mysql.server.manager.internals.dummy_backend = _dummy_backend        
-        MaintainAgentConnections(conpaas.mysql.server.manager.internals.config)
+        MaintainAgentConnections(conpaas.mysql.server.manager.internals.config).start()
         logger.debug("Leaving MySQLServer initialization")
    
     def __findAlreadyRunningInstances(self):
@@ -117,33 +117,6 @@ def expose(http_method):
             return func(*args, **kwargs)
         return wrapped
     return decorator
-
-def maintain_nodes_list(poll_interval=30):
-    """
-    It tries to call a function of the agent from the list of agents. If exception
-    is thrown, it removes the agent from the list.
-    
-    :param poll_intervall: how many seconds to wait. 10 secods is default value.
-    :type poll_interfvall: int
-    """
-    logger.debug('maintain nodes list: going to start polling')
-    if conpaas.mysql.server.manager.internals.dummy_backend:
-        pass
-    else:
-        while True:
-            logger.debug("Starting the poll.")       
-            nodes = config.getMySQLServiceNodes()
-            logger.debug("The list : %s " % nodes)
-            for node in nodes:
-                logger.debug("Trying node %s " % node)
-                try:
-                    ret = agent_client.get_server_state(node['ip'], node['port'])
-                    logger.debug("node %s is up with returned value %s" % (node, ret))
-                except Exception as e:
-                    logger.error('Exception: ' + str(e)) 
-                    logger.debug("Node %s is down. Removing from the list. " % node)
-                    config.removeMySQLServiceNode(node['id'])
-            time.sleep(poll_interval)
             
 def wait_for_nodes(nodes, poll_interval=10):
     """
@@ -354,25 +327,15 @@ def register_node(kwargs):
     logger.debug("Got kwargs %s " % kwargs)
     if 'state' not in kwargs:
         logger.error("Missing an argument state") 
-        return HttpErrorResponse(ManagerException(E_ARGS_MISSING, 'state').message)
-    
-    logger.debug("Starting to register a new_node with IP %s" % kwargs['node_ip'])
-#    logger.debug('Probing ' + kwargs['node_ip'] + ' for state.')
+        return HttpErrorResponse(ManagerException(E_ARGS_MISSING, 'state').message)    
+    logger.debug("Starting to register a new_node with IP %s" % kwargs['ip'])
+    jsonRealStatus = json.loads(kwargs['state'])
+    logger.debug("Obtained JSON Object: %s" % jsonRealStatus);
+#    jsonRealStatus= None
 #    try:
-#        logger.debug("Querying the agent node")
-#        ret = agent_client.get_server_state(kwargs['node_ip'], kwargs['node_port'])
-#    except agent_client.AgentException as e: logger.error('Exception: ' + str(e))
+#        jsonRealStatus= jsonRet.get("result").get("return");
 #    except Exception as e:
 #        logger.error('Exception: ' + str(e))
-#    logger.debug('Returned query:' + str(ret))
-#    jsonRet = json.loads(ret[1])
-    jsonRet = json.loads(kwargs['state'])
-    logger.debug("Obtained JSON Object: %s" % jsonRet);
-    jsonRealStatus= None
-    try:
-        jsonRealStatus= jsonRet.get("result").get("return");
-    except Exception as e:
-        logger.error('Exception: ' + str(e))
     logger.debug("Got this status: %s" % jsonRealStatus)
     vm={}
     vm['id']=jsonRealStatus.get("id")
