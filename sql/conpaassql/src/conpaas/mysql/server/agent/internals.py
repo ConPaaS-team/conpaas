@@ -338,8 +338,9 @@ class MySQLServer:
             if agent:
                 params['state'] = agent.status()
             else:
-                logger.debug("Breaking the while since agent is not ready yet.")
-                break
+                logger.debug("Continuing the while since agent is not ready yet.")
+                time.sleep(poll_interval)
+                continue
             method = 'register_node'
             try:
                 ret = _jsonrpc_post(self.config.manager['ip'], self.config.manager['port'], '/', method, params=params)

@@ -21,18 +21,18 @@ agentServer = None
 '''
     Class AgentServer
 '''
-class AgentServer(HTTPServer, ThreadingMixIn):
+class AgentServer(ThreadingMixIn, HTTPServer):
     
     @mlog
-    def __init__(self, server_address, mysql_agent, RequestHandlerClass=AbstractRequestHandler):
+    def __init__(self, server_address, config_parser, RequestHandlerClass=AbstractRequestHandler):
         HTTPServer.__init__(self, server_address, RequestHandlerClass)
         self.callback_dict = {'GET': {}, 'POST': {}, 'UPLOAD': {}}
              
         from conpaas.mysql.server.agent import internals
         
         self.whitelist_addresses = []
-        
-        internals.agent = mysql_agent
+        logger.debug("Creagting the agent server.")
+        internals.agent = MySQLServer(config_parser)
         for http_method in internals.exposed_functions:
             for func_name in internals.exposed_functions[http_method]:
                 logger.debug( 'Going to register ' + " " + http_method + " " +func_name)
@@ -50,10 +50,9 @@ def main():
     parser.add_option('-c', '--config', type='string', default='./configuration.cnf', dest='config')    
     options, args = parser.parse_args()
     config_parser = ConfigParser()
-    config_parser.read(options.config)
-    mysql_agent = MySQLServer(config_parser)
-    logger.debug( 'Starting the MySQL server at ', options.address, options.port)
-    agentServer = AgentServer((options.address, options.port), mysql_agent)
+    config_parser.read(options.config)    
+    logger.debug( 'Starting the ConPaaS Mysql agent server at ', options.address, options.port)
+    agentServer = AgentServer((config_parser.get("ConPaaSSQL","agent_ip"), config_parser.get("ConPaaSSQL","agent_port")), config_parser)
     agentServer.serve_forever()
     
 if __name__ == '__main__':
