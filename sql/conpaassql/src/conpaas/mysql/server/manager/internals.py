@@ -25,6 +25,7 @@ import conpaas
 import conpaas.mysql.server.manager
 from conpaas.web.http import HttpErrorResponse, HttpJsonResponse
 import json
+from conpaas.mysql.server.manager.node_list_maintainer import MaintainAgentConnections
 
 """
 Members describing state of the Manager node.
@@ -65,11 +66,8 @@ class MySQLServerManager():
         conpaas.mysql.server.manager.internals.config = Configuration(conf, _dummy_backend)         
         self.state = S_INIT
         self.dummy_backend = _dummy_backend
-        conpaas.mysql.server.manager.internals.dummy_backend = _dummy_backend
-        #if conpaas.mysql.server.manager.internals.config.find_existing_agents == "true":
-        #    logger.debug("Find existing Agents is true")
-        #    self.__findAlreadyRunningInstances()
-        Thread(target=maintain_nodes_list()).start()
+        conpaas.mysql.server.manager.internals.dummy_backend = _dummy_backend        
+        MaintainAgentConnections(conpaas.mysql.server.manager.internals.config)
         logger.debug("Leaving MySQLServer initialization")
    
     def __findAlreadyRunningInstances(self):
