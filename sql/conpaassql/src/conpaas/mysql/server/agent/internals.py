@@ -351,7 +351,10 @@ class MySQLServer:
                 return
             
             if self.dummy_backend == False:                
-                self.supervisor.start(SUPERVISOR_MYSQL_NAME)
+                try:
+                    self.supervisor.start(SUPERVISOR_MYSQL_NAME)
+                except Exception as err:
+                    logger.error("Error: %s " % err.getMessage())
                 status = self.supervisor.info(SUPERVISOR_MYSQL_NAME)
                 logger.debug("Server started: %s" % status)
                 if not status['statename'] == "RUNNING":
