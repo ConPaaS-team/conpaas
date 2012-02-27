@@ -21,12 +21,12 @@ easy_install dist/conpaas*
 cat > /root/conpaassql/src/conpaas/mysql/server/manager/configuration.cnf << EOF
 [iaas]
 DRIVER=OPENNEBULA_XMLRPC
-OPENNEBULA_URL=http://10.30.1.14:2633/RPC2
-OPENNEBULA_USER=oneadmin
-OPENNEBULA_PASSWORD=oneadmin
-OPENNEBULA_IMAGE_ID = 205
+OPENNEBULA_URL=$ONE_URL
+OPENNEBULA_USER=$ONE_USERNAME
+OPENNEBULA_PASSWORD=$ONE_PASSWORD
+OPENNEBULA_IMAGE_ID = $AGENT_IMAGE_ID
 OPENNEBULA_SIZE_ID = 1
-OPENNEBULA_NETWORK_ID = 205
+OPENNEBULA_NETWORK_ID = $AGENT_NETWORK_ID
 OPENNEBULA_NETWORK_GATEWAY=$IP_GATEWAY
 OPENNEBULA_NETWORK_NAMESERVER=$NAMESERVER
 
@@ -40,9 +40,9 @@ CPU=0.2
 MEM_SIZE=256
 DISK=bus=scsi,readonly=no
 OS=arch=i686,boot = hd, root = hda
-IMAGE_ID=205
-NETWORK_ID=205
-CONTEXT=vmid=$VMID,vmname=$NAME,ip_private="$NIC[IP, NETWORK=$NETWORK"]",ip_gateway="$IP_GATEWAY",netmask="$NETMASK",nameserver="$NAMESERVER",target=sdc,files=/home/contrail/sql/agent/install.sh
+IMAGE_ID=$AGENT_IMAGE_ID
+NETWORK_ID=$AGENT_NETWORK_ID
+CONTEXT=vmid=$VMID,vmname=$NAME,ip_private="$NIC[IP, NETWORK=$NETWORK"]",ip_gateway="$IP_GATEWAY",netmask="$NETMASK",nameserver="$NAMESERVER",target=sdc,files=$AGENT_FILES
 EOF
 
 nohup python /root/conpaassql/src/conpaas/mysql/server/manager/server.py -c /root/conpaassql/src/conpaas/mysql/server/manager/configuration.cnf 1> /var/log/conpaassql-stdout.log 2> /var/log/conpaassql-err.log &

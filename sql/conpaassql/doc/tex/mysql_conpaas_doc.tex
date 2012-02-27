@@ -60,37 +60,40 @@ Parameter {\tt function} will soon support more than just creating new agent nod
 
 Configuration of the service consists of two parts:
 \begin{itemize}
-	\item configuration file of the service describing {\bf iaas }, {\bf manager} and {\bf onevm\_agent\_template}
+	\item configuration file of the service describing {\bf iaas section}, {\bf manager section} and {\bf onevm\_agent\_template section}
 	\item agent's template file which defines the template used by the manager. The template file is filled in with variables from the configuration file.
 \end{itemize}
 
 An example of the configuration file:
+
 \begin{Verbatim}[frame=single]
 [iaas]
 DRIVER=OPENNEBULA_XMLRPC
-OPENNEBULA_URL=http://10.30.1.14:2633/RPC2
-#OPENNEBULA_URL=http://localhost:2633
-OPENNEBULA_USER=oneadmin
-OPENNEBULA_PASSWORD=oneadmin
-OPENNEBULA_IMAGE_ID = 1
+OPENNEBULA_URL=$ONE_URL
+OPENNEBULA_USER=$ONE_USERNAME
+OPENNEBULA_PASSWORD=$ONE_PASSWORD
+OPENNEBULA_IMAGE_ID = $AGENT_IMAGE_ID
 OPENNEBULA_SIZE_ID = 1
-OPENNEBULA_NETWORK_ID = 1
-OPENNEBULA_NETWORK_GATEWAY = 1
-OPENNEBULA_NETWORK_NAMESERVER = 1
+OPENNEBULA_NETWORK_ID = $AGENT_NETWORK_ID
+OPENNEBULA_NETWORK_GATEWAY=$IP_GATEWAY
+OPENNEBULA_NETWORK_NAMESERVER=$NAMESERVER
 
 [manager]
 find_existing_agents = true
 
 [onevm_agent_template]
-FILENAME=/home/ales/workspace/contrail/conpaassql-trunk/bin/agent.template
+FILENAME=/root/conpaassql/bin/agent.template
 NAME=conpaassql_server
 CPU=0.2
 MEM_SIZE=256
 DISK=bus=scsi,readonly=no
 OS=arch=i686,boot = hd, root = hda
-IMAGE_ID=193
-NETWORK_ID=205
-CONTEXT=target=sdc,files=/home/ales/sql/agent/conpaassql-install.sh
+IMAGE_ID=$AGENT_IMAGE_ID
+NETWORK_ID=$AGENT_NETWORK_ID
+CONTEXT=vmid=$VMID,vmname=$NAME,ip_private="$NIC[IP, \
+  NETWORK=$NETWORK"]",ip_gateway="$IP_GATEWAY",netmask=\
+  "$NETMASK",nameserver="$NAMESERVER",target=sdc,files=\
+  $AGENT_FILES
 \end{Verbatim}
 
 An example of the agent's template file:
