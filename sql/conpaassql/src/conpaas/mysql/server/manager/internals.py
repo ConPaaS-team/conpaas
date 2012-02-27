@@ -212,13 +212,15 @@ def get_node_info(kwargs):
     :raises: ManagerException
         
     """    
-    
+    logger.debug("Entering get_node_info")
     if 'serviceNodeId' not in kwargs: return HttpErrorResponse(ManagerException(E_ARGS_MISSING, 'serviceNodeId').message)
     serviceNodeId = kwargs.pop('serviceNodeId')
+    logger.debug("Got the service node id: %s" % serviceNodeId)
     if len(kwargs) != 0:
         return HttpErrorResponse(ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
     #for keys in config.serviceNodes.keys():
     #    if  keys
+    logger.debug("Looking at the list of known services: %s" % config.serviceNodes.keys())
     if int(serviceNodeId) not in config.serviceNodes.keys(): return HttpErrorResponse(ManagerException(E_ARGS_INVALID , "serviceNodeId" , detail='Invalid "serviceNodeId"').message)
     serviceNode = config.serviceNodes[int(serviceNodeId)]
     return HttpJsonResponse({
