@@ -68,37 +68,8 @@ class MySQLServerManager():
         self.dummy_backend = _dummy_backend
         conpaas.mysql.server.manager.internals.dummy_backend = _dummy_backend        
         MaintainAgentConnections(conpaas.mysql.server.manager.internals.config).start()
+        self.state = S_RUNNING
         logger.debug("Leaving MySQLServer initialization")
-   
-    def __findAlreadyRunningInstances(self):
-        """
-        Adds running instances of mysql agents to the list.
-                
-        """
-        logger.debug("Entering __findAlreadyRunningInstances")
-        list = iaas.listVMs()
-        logger.debug('List obtained: ' + str(list))
-        if self.dummy_backend:
-            for i in list.values():
-                conpaas.mysql.server.manager.internals.config.addMySQLServiceNode(i)
-        else:
-            for i in list.values():
-                up = True
-                try:
-                    if i['ip'] != '':
-                        logger.debug('Probing ' + i['ip'] + ' for state.')
-                        ret = agent_client.get_server_state(i['ip'], 60000)                    
-                        logger.debug('Returned query:' + str(ret))
-                    else:
-                        up = False
-                except agent_client.AgentException as e: logger.error('Exception: ' + str(e))
-                except Exception as e:
-                    logger.error('Exception: ' + str(e))                
-                    up = False
-                if up:
-                    logger.debug('Adding service node ' + i['ip'])
-                    conpaas.mysql.server.manager.internals.config.addMySQLServiceNode(i)
-        logger.debug("Exiting __findAlreadyRunningInstances")        
 
 def expose(http_method):
     """
@@ -218,18 +189,11 @@ def get_node_info(kwargs):
     logger.debug("Got the service node id: %s" % serviceNodeId)
     if len(kwargs) != 0:
         return HttpErrorResponse(ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
-    #for keys in config.serviceNodes.keys():
-    #    if  keys
     logger.debug("Looking at the list of known services: %s" % config.serviceNodes.keys())
-    if int(serviceNodeId) not in config.serviceNodes.keys(): return HttpErrorResponse(ManagerException(E_ARGS_INVALID , "serviceNodeId" , detail='Invalid "serviceNodeId"').message)
-    serviceNode = config.serviceNodes[int(serviceNodeId)]
-    return HttpJsonResponse({
-            'serviceNode': {
-                            'id': serviceNode.vmid,
-                            'ip': serviceNode.ip,
-                            'isRunningMySQL': serviceNode.isRunningMySQL
-                            }
-            })
+    if serviceNodeId not in config.serviceNodes.keys(): return HttpErrorResponse(ManagerException(E_ARGS_INVALID , "serviceNodeId" , detail='Invalid "serviceNodeId"').message)
+    serviceNode = config.serviceNodes[serviceNodeId]    
+    return HttpJsonResponse(serviceNode.__repr__())
+   
     
 '''Creates a new service node. 
 @param function: None, "manager" or "agent". If None, empty image is provisioned. If "manager"
@@ -298,7 +262,7 @@ def remove_nodes(kwargs):
     
     logger.debug("Entering delete_nodes")
     if 'serviceNodeId' not in kwargs: return HttpErrorResponse(ManagerException(E_ARGS_MISSING, 'serviceNodeId').message)
-    serviceNodeId = int(kwargs.pop('serviceNodeId'))
+    serviceNodeId = kwargs.pop('serviceNodeId')
     if len(kwargs) != 0:
         return HttpErrorResponse(ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
     if serviceNodeId not in config.serviceNodes: return HttpErrorResponse(ManagerException(E_ARGS_INVALID, "serviceNodeId", detail='Invalid "serviceNodeId"').message)

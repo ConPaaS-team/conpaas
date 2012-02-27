@@ -10,6 +10,7 @@ from conpaas.log import create_logger
 import ConfigParser
 import os
 from conpaas.iaas import DummyONEDriver
+import json
 
 MYSQL_PORT = 3306
 CONFIGURATION_FILE=os.getcwd() + "/sql_manager_configuration.cnf"
@@ -96,7 +97,17 @@ class ServiceNode(object):
     @return: returns service nodes information. Id ip and if mysql is running on this service node.'''
     
     def __repr__(self):
-        return 'ServiceNode(vmid=%s, ip=%s, port=%s, mysql=%s)' % (str(self.vmid), self.ip, self.port, str(self.isRunningMySQL))
+        vm=dict()        
+        vm['id']=self.vmid 
+        vm['port']=self.port
+        vm['mysqld_port']= self.mysqld_port
+        vm['ip']=self.ip
+        vm['name']=self.name
+        vm['state']=self.state        
+        vm['supervisor_data']=self.supervisor_data 
+        vm['nodeType']=ServiceNodeType.NORMAL_AGENT        
+        #return 'ServiceNode(vmid=%s, ip=%s, port=%s, mysql=%s)' % (str(self.vmid), self.ip, self.port, str(self.isRunningMySQL))
+        return json.dumps(vm)
   
     ''' Compares this VM and the one passed as a parameter.
     @param other: other VM which are compared to this one. 
