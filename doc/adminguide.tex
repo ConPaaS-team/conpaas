@@ -160,10 +160,17 @@ To create an image for OpenNebula you can execute the script\\
   sections are marked by comment lines containing the text "TO CUSTOMIZE:".
   There are comments explaining each customizable parameter. 
 \item Execute the image generation script as root.
-\item The script generates an image file called \verb+conpaasweb.img+
+\item The script generates an image file called \verb+conpaas.img+
   by default. You can now register it in OpenNebula:
 \begin{code}
-  oneimage register conpaasweb.img
+  cat <<EOF > /tmp/conpaas.image
+  NAME          = "Conpaas"
+  PATH          = ${PWD}/conpaas.img
+  PUBLIC        = YES
+  DESCRIPTION   = "Conpaas vm image"
+  EOF
+
+  oneimage register /tmp/conpaas.image
 \end{code}
 \end{enumerate}
 
