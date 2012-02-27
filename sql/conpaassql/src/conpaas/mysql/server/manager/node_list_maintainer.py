@@ -54,5 +54,5 @@ class MaintainAgentConnections( threading.Thread ):
                     except Exception as e:
                         logger.error('Exception: ' + str(e)) 
                         logger.debug("Node %s is down. Removing from the list. " % node)
-                        self.config.removeMySQLServiceNode(node.id)
+                        self.config.removeMySQLServiceNode(node.vmid)
                 time.sleep(self.poll_interval)
