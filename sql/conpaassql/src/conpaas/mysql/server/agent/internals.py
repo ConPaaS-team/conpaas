@@ -354,7 +354,7 @@ class MySQLServer:
                 try:
                     self.supervisor.start(SUPERVISOR_MYSQL_NAME)
                 except Exception as err:
-                    logger.error("Error: %s " % err.getMessage())
+                    logger.error("Error: %s " % str(err))
                 status = self.supervisor.info(SUPERVISOR_MYSQL_NAME)
                 logger.debug("Server started: %s" % status)
                 if not status['statename'] == "RUNNING":
