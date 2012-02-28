@@ -110,7 +110,7 @@ class OpenNebulaNodeDriver(NodeDriver):
         ]
 
     def list_nodes(self):
-        return self._to_nodes(self.connection.request('/compute').object)
+        return self._to_nodes(self.connection.request('/compute/').object)
 
     def list_images(self, location=None):
         return self._to_images(self.connection.request('/storage').object)

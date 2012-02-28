@@ -13,6 +13,6 @@ GRAPHICS = [
   type="vnc"
   ]
 CONTEXT = [
-  $CONTEXT   
+  $CONTEXT
   ]
 RANK = "- RUNNING_VMS"

@@ -38,8 +38,8 @@ FILENAME=/root/conpaassql/bin/agent.template
 NAME=conpaassql_server
 CPU=0.2
 MEM_SIZE=256
-DISK=bus=scsi,readonly=no
-OS=arch=i686,boot = hd, root = hda
+DISK=bus=virtio,readonly=no,driver=qcow2,dev_prefix=vd,target=vda
+OS=arch=x86_64,boot=hd
 IMAGE_ID=$AGENT_IMAGE_ID
 NETWORK_ID=$AGENT_NETWORK_ID
 CONTEXT=vmid=$VMID,vmname=$NAME,ip_private="$NIC[IP, NETWORK=$NETWORK"]",ip_gateway="$IP_GATEWAY",netmask="$NETMASK",nameserver="$NAMESERVER",target=sdc,files=$AGENT_FILES
