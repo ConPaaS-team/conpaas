@@ -1,34 +1,35 @@
-PWD 		= 	`pwd`
-PYTHONPATH 	= 	`pwd`/src
-DESTDIR 	?= 	/usr/local
-BASENAME	=	conpaassql
-BINNAME		=	$(PWD)/$(BASENAME)-bin.tar.gz
-BINDIR		=	$(PWD)/bindist
-PACKAGE_NAME	=	conpaassql.tar
-DEST_DIR_PCKG	=	$(DESTDIR)/$(PACKAGE_NAME)
-PYTHON_VER	= 	`scripts/print_python_version.py`
+#
+# Makefile: build and install conpaas-mysql
+#
 
-bdist_egg: check	
-	python setup.py bdist_egg
+NAME     = conpaas-mysql
+SHELL    = /bin/bash
+PYTHON   = python2.6
+PACKAGE  = $(NAME).tar.gz
 
-install_egg:	bdist_egg
-	easy_install dist/conpaassql_server*.egg
+DESTDIR  =
+PREFIX   = /usr/local
 
-all:	binary
+export PYTHONPATH=$(DESTDIR)$(PREFIX)/lib/python2.6/site-packages/
 
-check: 	
-	#echo "Python version is $(PYTHON_VER)"
-	#PYTHONPATH=./src python src/conpaas/mysql/test/unit/agent.py
-	#PYTHONPATH=./src python src/conpaas/mysql/test/unit/manager.py
 
-install: check
-	echo $(DESTDIR)
-	mkdir -p $(DESTDIR)/lib/python$(PYTHON_VER)/site-packages/
-	PYTHONPATH=$(DESTDIR)/lib/python$(PYTHON_VER)/site-packages python setup.py install --prefix=$(DESTDIR)
+build:
+	$(PYTHON) setup.py bdist_egg
 
-binary: bdist_egg
-	
+dist: 
+	mkdir target
+	tar czf $(CURDIR)/target/$(PACKAGE) --transform 's|^\.|$(NAME)|' --exclude-vcs --exclude=target --exclude=build --exclude=dist --exclude='**.egg-info' --exclude=pom.xml .
+
+install: build
+	mkdir -p $(PYTHONPATH)
+	$(PYTHON) setup.py install --prefix=$(DESTDIR)$(PREFIX)
+
+install_egg: build
+	easy_install $(wildcard dist/conpaassql_server*.egg)
+
 clean:
-	rm -rf $(PWD)/build $(BINDIR) dist
-	find src -iname "*.pyc" -exec rm {} \;
-	find contrib -iname "*.pyc" -exec rm {} \;
+	rm -rf $(CURDIR)/build $(CURDIR)/dist $(CURDIR)/target $(CURDIR)/src/conpaassql_server.egg-info
+
+
+.PHONY: clean dist
+.POSIX:

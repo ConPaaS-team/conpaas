@@ -20,12 +20,25 @@
         <version>1.2.1</version>
         <executions>
           <execution>
-            <id>build</id>
+            <id>generate-python-bytecode</id>
             <phase>compile</phase>
             <configuration>
               <executable>make</executable>
               <arguments>
-                <argument>bdist_egg</argument>
+                <argument>build</argument>
+              </arguments>
+            </configuration>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>create-tar-archive</id>
+            <phase>compile</phase>
+            <configuration>
+              <executable>make</executable>
+              <arguments>
+                <argument>dist</argument>
               </arguments>
             </configuration>
             <goals>
