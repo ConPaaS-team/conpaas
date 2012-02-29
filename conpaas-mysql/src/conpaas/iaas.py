@@ -216,7 +216,7 @@ class OneXmlrpc(NodeDriver):
         fin.close()        
         return string.Template(templatestr)
         
-    
+    @mlog
     def list_nodes(self):
         vm_pool=oca.VirtualMachinePool(self.client)
         vm_pool.info(-2)
@@ -227,21 +227,36 @@ class OneXmlrpc(NodeDriver):
             nodes[i.id]=OneXmlrpcNode(i)
         return nodes
     
+    @mlog
+    def read_userdata(self, file):
+        logger.debug("Reading agent user data from file %s " % file)
+        fin = open(file, "r")
+        templatestr = fin.read()
+        fin.close()        
+        return templatestr
+    
     '''
         Create new node.
     '''
+    @mlog
     def create_node(self, **kwargs):
         logger.debug("Entering create_node")
+        hex_user_data= self.read_userdata(kwargs['template']['userdata']).encode('hex')
+        context = str(kwargs['template']['context'])
+        logger.debug("This is context: %s" % context)
+        context_template = string.Template(context)
+        context_template.substitute(VMID='$VMID', NAME='$NAME',NIC='$NIC', NETWORK='$NETWORK', AGENT_USER_DATA=hex_user_data)
+        logger.debug("Modified context is: %s" % context_template)
         if kwargs['function'] == 'agent':            
             logger.debug("creating agent")
-            template = self.read_template(kwargs['template']['filename'])
-            template = template.substitute(NAME= str(kwargs['template']['vm_name']),CPU= str(kwargs['template']['cpu']),MEM_SIZE= str(kwargs['template']['mem_size']), OS= str(kwargs['template']['os']),IMAGE_ID= str(kwargs['template']['image_id']), NETWORK_ID= str(kwargs['template']['network_id']), CONTEXT= str(kwargs['template']['context']), DISK= str(kwargs['template']['disk'])) 
+            template = self.read_template(kwargs['template']['filename'])            
+            template = template.substitute(NAME= str(kwargs['template']['vm_name']),CPU= str(kwargs['template']['cpu']),MEM_SIZE= str(kwargs['template']['mem_size']), OS= str(kwargs['template']['os']),IMAGE_ID= str(kwargs['template']['image_id']), NETWORK_ID= str(kwargs['template']['network_id']), CONTEXT= context_template, DISK= str(kwargs['template']['disk'])) 
         elif kwargs['function'] == 'manager':
             logger.debug("creating manager")
-            template = template.substitute(NAME= str(kwargs['template']['vm_name']),CPU= str(kwargs['template']['cpu']),MEM_SIZE= str(kwargs['template']['mem_size']), OS= str(kwargs['template']['os']),IMAGE_ID= str(kwargs['template']['image_id']), NETWORK_ID= str(kwargs['template']['network_id']), CONTEXT= str(kwargs['template']['context']), DISK= str(kwargs['template']['disk']))
+            template = template.substitute(NAME= str(kwargs['template']['vm_name']),CPU= str(kwargs['template']['cpu']),MEM_SIZE= str(kwargs['template']['mem_size']), OS= str(kwargs['template']['os']),IMAGE_ID= str(kwargs['template']['image_id']), NETWORK_ID= str(kwargs['template']['network_id']), CONTEXT= context_template, DISK= str(kwargs['template']['disk']))
         else:
             logger.debug("creating")
-            template = template.substitute(NAME= str(kwargs['template']['vm_name']),CPU= str(kwargs['template']['cpu']),MEM_SIZE= str(kwargs['template']['mem_size']), OS= str(kwargs['template']['os']),IMAGE_ID= str(kwargs['template']['image_id']), NETWORK_ID= str(kwargs['template']['network_id']), CONTEXT= str(kwargs['template']['context']), DISK= str(kwargs['template']['disk']))
+            template = template.substitute(NAME= str(kwargs['template']['vm_name']),CPU= str(kwargs['template']['cpu']),MEM_SIZE= str(kwargs['template']['mem_size']), OS= str(kwargs['template']['os']),IMAGE_ID= str(kwargs['template']['image_id']), NETWORK_ID= str(kwargs['template']['network_id']), CONTEXT= context_template, DISK= str(kwargs['template']['disk']))
         logger.debug('Provisioning VM:' + template)
         rez=oca.VirtualMachine.allocate(self.client, template)        
         logger.debug('Result:' + str(rez))
@@ -348,6 +363,7 @@ class IaaSClient:
         self.template['image_id']=iaas_config.get('onevm_agent_template', 'IMAGE_ID')
         self.template['network_id']=iaas_config.get('onevm_agent_template', 'NETWORK_ID')
         self.template['context']=iaas_config.get('onevm_agent_template', 'CONTEXT')
+        self.template['userdata']=iaas_config.get('onevm_agent_template', 'USERDATA')
         self.driver = OneXmlrpc(self.username, self.password, self.scheme, self.host, self.port)
   
     def __config_opennebula(self, iaas_config):

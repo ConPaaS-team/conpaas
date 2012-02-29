@@ -11,12 +11,11 @@ NIC    = [
    ]
 
 GRAPHICS = [
-  type="vnc", 
-  listen="localhost"
+  type="vnc"  
   ]
 
 CONTEXT = [
- hostname="ConPaaSSQL-01"
+ hostname="ConPaaSSQL-01",
  ip_public  = "$NIC[IP, NETWORK=\"private-lan\"]",
  ip_gateway  = "10.1.0.254",
  netmask = "255.255.255.0",

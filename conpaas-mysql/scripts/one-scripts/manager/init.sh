@@ -22,23 +22,24 @@ cat > /root/conpaassql/src/conpaas/mysql/server/manager/configuration.cnf << EOF
 [iaas]
 DRIVER=OPENNEBULA_XMLRPC
 OPENNEBULA_URL=http://10.30.1.14:2633/RPC2
-OPENNEBULA_USER=oneadmion
+OPENNEBULA_USER=oneadmin
 OPENNEBULA_PASSWORD=oneadmin
 OPENNEBULA_IMAGE_ID = 221
 OPENNEBULA_SIZE_ID = 1
 OPENNEBULA_NETWORK_ID = 205
-OPENNEBULA_NETWORK_GATEWAY=10.1.0.254
-OPENNEBULA_NETWORK_NAMESERVER=192.168.122.1
+OPENNEBULA_NETWORK_GATEWAY=$IP_GATEWAY
+OPENNEBULA_NETWORK_NAMESERVER=$NAMESERVER
 
 [manager]
 find_existing_agents = true
 
 [onevm_agent_template]
-FILENAME=/root/conpaassql/bin/agent.template
+FILENAME=/root/conpaassql/scripts/one-scripts/agent/agent.template
+USERDATA=/root/conpaassql/scripts/one-scripts/agent/init.sh
 NAME=conpaassql_server
 CPU=0.2
 MEM_SIZE=256
-DISK=bus=virtio,readonly=no,driver=qcow2,dev_prefix=vd,target=vda
+DISK=readonly=no
 OS=arch=x86_64,boot=hd
 IMAGE_ID=221
 NETWORK_ID=205
