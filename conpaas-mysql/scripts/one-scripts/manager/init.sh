@@ -43,7 +43,7 @@ DISK=readonly=no
 OS=arch=x86_64,boot=hd
 IMAGE_ID=221
 NETWORK_ID=205
-CONTEXT=vmid=$VMID,vmname=$NAME,ip_public="$NIC[IP, NETWORK=$NETWORK"]",ip_gateway="$IP_GATEWAY",netmask="$NETMASK",nameserver="$NAMESERVER",userdata=$AGENT_USER_DATA
+CONTEXT=vmid=$VMID,vmname=$NAME,ip_public="$NIC[IP, NETWORK=\"private-lan\"]",ip_gateway="$IP_GATEWAY",netmask="$NETMASK",nameserver="$NAMESERVER",userdata=$AGENT_USER_DATA
 EOF
 
 nohup python /root/conpaassql/src/conpaas/mysql/server/manager/server.py -c /root/conpaassql/src/conpaas/mysql/server/manager/configuration.cnf 1> /var/log/conpaassql-stdout.log 2> /var/log/conpaassql-err.log &

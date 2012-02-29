@@ -243,10 +243,10 @@ class OneXmlrpc(NodeDriver):
         logger.debug("Entering create_node")
         hex_user_data= self.read_userdata(kwargs['template']['userdata']).encode('hex')
         context = str(kwargs['template']['context'])
-        logger.debug("This is context: %s" % context)
+        logger.debug("This is context: %s" % str(context))
         context_template = string.Template(context)
-        context_template.substitute(VMID='$VMID', NAME='$NAME',NIC='$NIC', NETWORK='$NETWORK', AGENT_USER_DATA=hex_user_data)
-        logger.debug("Modified context is: %s" % context_template)
+        context_template = context_template.substitute(VMID='$VMID', NAME='$NAME',NIC='$NIC', NETWORK='$NETWORK', AGENT_USER_DATA=hex_user_data)
+        logger.debug("Modified context is: %s" % str(context_template))
         if kwargs['function'] == 'agent':            
             logger.debug("creating agent")
             template = self.read_template(kwargs['template']['filename'])            
@@ -258,7 +258,11 @@ class OneXmlrpc(NodeDriver):
             logger.debug("creating")
             template = template.substitute(NAME= str(kwargs['template']['vm_name']),CPU= str(kwargs['template']['cpu']),MEM_SIZE= str(kwargs['template']['mem_size']), OS= str(kwargs['template']['os']),IMAGE_ID= str(kwargs['template']['image_id']), NETWORK_ID= str(kwargs['template']['network_id']), CONTEXT= context_template, DISK= str(kwargs['template']['disk']))
         logger.debug('Provisioning VM:' + template)
-        rez=oca.VirtualMachine.allocate(self.client, template)        
+        rez = None
+        try:
+            rez=oca.VirtualMachine.allocate(self.client, template)
+        except Exception as err:
+            logger.error(str(err))        
         logger.debug('Result:' + str(rez))
         logger.debug("Exiting create_node")
         return rez
