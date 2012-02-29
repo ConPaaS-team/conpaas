@@ -4,7 +4,7 @@ if [ -f /mnt/context.sh ]; then
   . /mnt/context.sh
 fi
 
-ifconfig eth0 $IP_PRIVATE netmask $NETMASK
+ifconfig eth0 $IP_PUBLIC netmask $NETMASK
 route add default gw $IP_GATEWAY eth0
 echo nameserver $NAMESERVER > /etc/resolv.conf
 
@@ -53,8 +53,8 @@ agent_interface=0.0.0.0
 agent_port=60000
 manager_ip=0.0.0.0
 manager_port=50000
-vm_id=10
-vm_name=agent10
+vm_id=$VMID
+vm_name=$NAME
 EOF
 
 # Run the agent command in the background

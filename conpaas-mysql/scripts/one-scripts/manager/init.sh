@@ -4,7 +4,7 @@ if [ -f /mnt/context.sh ]; then
   . /mnt/context.sh
 fi
 
-ifconfig eth0 $IP_PRIVATE netmask $NETMASK
+ifconfig eth0 $IP_PUBLIC netmask $NETMASK
 route add default gw $IP_GATEWAY eth0
 echo nameserver $NAMESERVER > /etc/resolv.conf
 
@@ -21,14 +21,14 @@ easy_install dist/conpaas*
 cat > /root/conpaassql/src/conpaas/mysql/server/manager/configuration.cnf << EOF
 [iaas]
 DRIVER=OPENNEBULA_XMLRPC
-OPENNEBULA_URL=$ONE_URL
-OPENNEBULA_USER=$ONE_USERNAME
-OPENNEBULA_PASSWORD=$ONE_PASSWORD
-OPENNEBULA_IMAGE_ID = $AGENT_IMAGE_ID
+OPENNEBULA_URL=http://10.30.1.14:2633/RPC2
+OPENNEBULA_USER=oneadmion
+OPENNEBULA_PASSWORD=oneadmin
+OPENNEBULA_IMAGE_ID = 221
 OPENNEBULA_SIZE_ID = 1
-OPENNEBULA_NETWORK_ID = $AGENT_NETWORK_ID
-OPENNEBULA_NETWORK_GATEWAY=$IP_GATEWAY
-OPENNEBULA_NETWORK_NAMESERVER=$NAMESERVER
+OPENNEBULA_NETWORK_ID = 205
+OPENNEBULA_NETWORK_GATEWAY=10.1.0.254
+OPENNEBULA_NETWORK_NAMESERVER=192.168.122.1
 
 [manager]
 find_existing_agents = true
@@ -40,9 +40,9 @@ CPU=0.2
 MEM_SIZE=256
 DISK=bus=virtio,readonly=no,driver=qcow2,dev_prefix=vd,target=vda
 OS=arch=x86_64,boot=hd
-IMAGE_ID=$AGENT_IMAGE_ID
-NETWORK_ID=$AGENT_NETWORK_ID
-CONTEXT=vmid=$VMID,vmname=$NAME,ip_private="$NIC[IP, NETWORK=$NETWORK"]",ip_gateway="$IP_GATEWAY",netmask="$NETMASK",nameserver="$NAMESERVER",target=sdc,files=$AGENT_FILES
+IMAGE_ID=221
+NETWORK_ID=205
+CONTEXT=vmid=$VMID,vmname=$NAME,ip_public="$NIC[IP, NETWORK=$NETWORK"]",ip_gateway="$IP_GATEWAY",netmask="$NETMASK",nameserver="$NAMESERVER",userdata=$AGENT_USER_DATA
 EOF
 
 nohup python /root/conpaassql/src/conpaas/mysql/server/manager/server.py -c /root/conpaassql/src/conpaas/mysql/server/manager/configuration.cnf 1> /var/log/conpaassql-stdout.log 2> /var/log/conpaassql-err.log &

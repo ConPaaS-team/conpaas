@@ -2,12 +2,8 @@ NAME = conpaas-sql-manager CPU = 0.5 MEMORY = 128
    OS     = [ boot="hd", arch="x86_64" ]
 
 DISK   = [
-   source   = "/home/ales/sql/conpaas-sql-1.qcow2",
-   target   = "vda",
-   readonly = "no",
-   DEV_PREFIX = vd,
-   DRIVER = qcow2,
-   BUS = virtio   # ide (not IDE), SCSI, virtio
+   image_id = 221,
+   readonly = "no"
 ]
 
 NIC    = [ 
@@ -20,11 +16,11 @@ GRAPHICS = [
   ]
 
 CONTEXT = [
-	ip_private  = "$NIC[IP, NETWORK=\"private-lan\"]",
-    ip_gateway  = "10.1.0.254",
-    netmask = "255.255.255.0",
-    nameserver = "192.168.122.1",
-  	userdata = $USERDATA,
-  	target = "hdb"
+ hostname="ConPaaSSQL-01"
+ ip_public  = "$NIC[IP, NETWORK=\"private-lan\"]",
+ ip_gateway  = "10.1.0.254",
+ netmask = "255.255.255.0",
+ nameserver = "192.168.122.1",
+ userdata = $USERDATA
 ]
 RANK = "- RUNNING_VMS"
