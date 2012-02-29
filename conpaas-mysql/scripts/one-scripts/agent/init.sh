@@ -15,7 +15,7 @@ apt-get update
 apt-get install -y unzip python python-mysqldb python-pycurl python-dev python-setuptools python-pip subversion mysql-server supervisor
 
 cd /root
-svn co svn://svn.forge.objectweb.org/svnroot/contrail/trunk/conpaas/sql/conpaassql
+svn co svn://svn.forge.objectweb.org/svnroot/contrail/trunk/conpaas/conpaas-mysql conpaassql
 cd conpaassql
 python setup.py bdist_egg
 easy_install dist/conpaas*
