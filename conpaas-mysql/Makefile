@@ -17,7 +17,8 @@ build:
 	$(PYTHON) setup.py bdist_egg
 
 dist: 
-	mkdir target
+	rm -fr $(CURDIR)/target
+	mkdir $(CURDIR)/target
 	tar czf $(CURDIR)/target/$(PACKAGE) --transform 's|^\.|$(NAME)|' --exclude-vcs --exclude=target --exclude=build --exclude=dist --exclude='**.egg-info' --exclude=pom.xml .
 
 install: build
