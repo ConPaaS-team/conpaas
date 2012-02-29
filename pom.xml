@@ -11,7 +11,8 @@
     <version>0.2.1-SNAPSHOT</version>
     <relativePath>..</relativePath>
   </parent>
-  <name>Contrail conpaas builder</name>
+  <name>Contrail ConPaaS builder</name>
   <modules>
+    <module>conpaas-mysql</module>
   </modules>
 </project>
