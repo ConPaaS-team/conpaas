@@ -35,7 +35,7 @@ class MaintainAgentConnection( threading.Thread ):
             method = 'register_node'
             try:
                 ret = _jsonrpc_post(self.agent.config.manager['ip'], self.agent.config.manager['port'], '/', method, params=params)
-                logger.debug("Got answer from manager: %s" % ret)
+                logger.debug("Got answer from manager: %s" % str(ret))
             except Exception as e:
                 logger.error('Exception: ' + str(e))
             time.sleep(self.poll_interval)
