@@ -31,7 +31,7 @@ class AgentServer(ThreadingMixIn, HTTPServer):
         from conpaas.mysql.server.agent import internals
         
         self.whitelist_addresses = []
-        logger.debug("Creagting the agent server.")
+        logger.debug("Creating the agent server.")
         internals.agent = MySQLServer(config_parser)
         for http_method in internals.exposed_functions:
             for func_name in internals.exposed_functions[http_method]:
@@ -51,7 +51,7 @@ def main():
     options, args = parser.parse_args()
     config_parser = ConfigParser()
     config_parser.read(options.config)    
-    logger.debug( 'Starting the ConPaaS Mysql agent server at ', options.address, options.port)
+    logger.debug( 'Starting the ConPaaS Mysql agent server at %s:%s' % (options.address, str(options.port)))
     agentServer = AgentServer((config_parser.get("ConPaaSSQL","agent_interface"), int(config_parser.get("ConPaaSSQL","agent_port"))), config_parser)
     agentServer.serve_forever()
     

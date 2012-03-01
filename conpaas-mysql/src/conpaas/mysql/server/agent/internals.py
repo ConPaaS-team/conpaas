@@ -345,6 +345,7 @@ class MySQLServer:
             """                    
             self.state = S_STARTING
             status = self.supervisor.info(SUPERVISOR_MYSQL_NAME)
+            logger.debug('Current status is %s' % status)
             if status['statename'] == "RUNNING":
                 logger.debug("Mysqld is already running.")
                 self.state = S_RUNNING
@@ -357,7 +358,7 @@ class MySQLServer:
                     logger.error("Error: %s " % str(err))
                 status = self.supervisor.info(SUPERVISOR_MYSQL_NAME)
                 logger.debug("Server started: %s" % status)
-                if not status['statename'] == "RUNNING":
+                if status['statename'] == "STOPPED":
                     logger.critical('Failed to start mysql server.)')
                     self.state = S_STOPPED
                     raise OSError('Failed to start mysql server.')                          
