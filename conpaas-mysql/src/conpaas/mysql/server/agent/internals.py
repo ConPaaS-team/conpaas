@@ -119,7 +119,7 @@ class MySQLServerConfiguration:
             logger.debug("Trying to get params from configuration file ")        
             self.conn_location = config.get("MySQL_root_connection", "location")
             logger.debug('conn_location before %s' % self.conn_location )
-            self.conn_location = config.get("_agent", "_ip")
+            self.conn_location = config.get("_agent", "ip")
             logger.debug('conn_location after %s' % self.conn_location )
             self.change_config('mysqld', 'bind-address', self.conn_location)
             self.conn_username = config.get("MySQL_root_connection", "username")
