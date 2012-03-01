@@ -36,8 +36,8 @@ EOF
 
 cat >  /root/conpaassql/src/conpaas/mysql/server/agent/configuration.cnf << EOF
 [MySQL_root_connection]
-location=
-password=contrail
+location=0.0.0.0
+password=
 username=root
 
 [MySQL_configuration]
@@ -58,8 +58,11 @@ vm_name=$NAME
 EOF
 
 # Run the agent command in the background
-
+/etc/init.d/mysql stop
+sleep 5
 service supervisor stop
+sleep 5
 service supervisor start
+sleep 5
 
-nohup python /root/conpaassql/src/conpaas/mysql/server/agent/server.py -c /root/conpaassql/src/conpaas/mysql/server/agent/configuration.cnf 1> /var/log/conpaassql-stdout.log 2> /var/log/conpaassql-err.log &
+nohup python /root/conpaassql/src/conpaas/mysql/server/agent/server.py -p 60000 -b $IP_PUBLIC -c /root/conpaassql/src/conpaas/mysql/server/agent/configuration.cnf 1> /var/log/conpaassql-stdout.log 2> /var/log/conpaassql-err.log &
