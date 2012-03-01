@@ -121,7 +121,7 @@ class MySQLServerConfiguration:
             logger.debug('conn_location before %s' % self.conn_location )
             self.conn_location = config.get("_agent", "ip")
             logger.debug('conn_location after %s' % self.conn_location )
-            self.change_config('mysqld', 'bind-address', self.conn_location)
+            
             self.conn_username = config.get("MySQL_root_connection", "username")
             self.conn_password = config.get("MySQL_root_connection", "password")      
             logger.debug("Got parameters for root connection to MySQL")
@@ -140,7 +140,10 @@ class MySQLServerConfiguration:
             self.mysqld_configuration = MySQLConfig(self.mycnf_filepath)
             self.port_mysqld = self.mysqld_configuration.get("mysqld", "port") 
             self.bind_address = self.mysqld_configuration.get("mysqld", "bind-address") 
-            self.data_dir = self.mysqld_configuration.get("mysqld", "datadir") 
+            self.data_dir = self.mysqld_configuration.get("mysqld", "datadir")
+            
+            logger.debug('Changeing bind-address to mysqld: %s' % self.conn_location )
+            self.change_config('mysqld', 'bind-address', self.conn_location) 
             logger.debug("Got configuration parameters")
         except ConfigParser.Error, err:
             ex = AgentException(E_CONFIG_READ_FAILED, str(err))
