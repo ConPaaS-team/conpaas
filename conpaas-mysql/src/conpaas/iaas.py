@@ -240,8 +240,12 @@ class OneXmlrpc(NodeDriver):
     '''
     @mlog
     def create_node(self, **kwargs):
-        logger.debug("Entering create_node")
-        hex_user_data= self.read_userdata(kwargs['template']['userdata']).encode('hex')
+        logger.debug("Entering create_node")        
+        agent_data = self.read_userdata(kwargs['template']['userdata'])
+        agent_data_template = string.Template(agent_data)
+        agent_data_template = agent_data_template.substitute(IP_PUBLIC='$IP_PUBLIC', NETMASK='$NETMASK', IP_GATEWAY='$IP_GATEWAY',NAMESERVER='$NAMESERVER',VMID='$VMID', NAME='$NAME',MANAGER_IP=str(kwargs['template']['_manager_ip']),MANAGER_PORT=str(kwargs['template']['_manager_port']))
+        logger.debug('Trying the agent user data %s ' % str(agent_data_template))        
+        hex_user_data= str(agent_data_template).encode('hex')
         context = str(kwargs['template']['context'])
         logger.debug("This is context: %s" % str(context))
         context_template = string.Template(context)
@@ -335,7 +339,7 @@ class IaaSClient:
         self.size_id = iaas_config.get('iaas', 'OPENNEBULA_SIZE_ID')    
         self.on_ex_network_id = iaas_config.get('iaas', 'OPENNEBULA_NETWORK_ID')
         self.one_context_manager_script = iaas_config.get('iaas', 'OPENNEBULA_CONTEXT_SCRIPT_MANAGER')        
-        self.one_context_agent_script = iaas_config.get('iaas', 'OPENNEBULA_CONTEXT_SCRIPT_AGENT')        
+        self.one_context_agent_script = iaas_config.get('iaas', 'OPENNEBULA_CONTEXT_SCRIPT_AGENT')
         self.driver = DummyONEDriver(self.username, self.password, self.scheme, self.host, self.port);
   
     def __config_opennebula_xmlrpc(self, iaas_config):
@@ -368,6 +372,9 @@ class IaaSClient:
         self.template['network_id']=iaas_config.get('onevm_agent_template', 'NETWORK_ID')
         self.template['context']=iaas_config.get('onevm_agent_template', 'CONTEXT')
         self.template['userdata']=iaas_config.get('onevm_agent_template', 'USERDATA')
+        self.template['_manager_ip']=iaas_config.get('_manager', 'ip')
+        self.template['_manager_port']=iaas_config.get('_manager', 'port')
+        logger.debug('template: %s' % self.template);
         self.driver = OneXmlrpc(self.username, self.password, self.scheme, self.host, self.port)
   
     def __config_opennebula(self, iaas_config):

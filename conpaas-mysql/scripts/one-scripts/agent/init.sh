@@ -51,8 +51,8 @@ port = 9001
 [ConPaaSSQL]
 agent_interface=0.0.0.0
 agent_port=60000
-manager_ip=0.0.0.0
-manager_port=50000
+manager_ip=$MANAGER_IP
+manager_port=$MANAGER_PORT
 vm_id=$VMID
 vm_name=$NAME
 EOF

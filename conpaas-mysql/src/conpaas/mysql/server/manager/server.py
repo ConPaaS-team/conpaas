@@ -99,6 +99,9 @@ if __name__ == '__main__':
 	options, args = parser.parse_args()
 	config_parser = ConfigParser()
 	config_parser.read(options.config)	
-	print options.address, options.port
+	logger.debug("Bind ip %s, port %s" % (options.address, str(options.port)))
+	config_parser.add_section('_manager')
+	config_parser.set('_manager', 'ip', options.address)
+	config_parser.set('_manager', 'port', str(options.port))
 	d = ManagerServer((options.address, options.port), config_parser)
 	d.serve_forever()
