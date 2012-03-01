@@ -7,7 +7,7 @@ class MySQLConfig(object):
     mysql_settings = MySQLSettings
     
     @mlog
-    def __init__(self, filename="/etc/mysqld/my.cnf"):
+    def __init__(self, filename="/etc/mysql/my.cnf"):
         self.config_file = filename
         logger.debug("Using filename %s" % self.config_file)
         self.sections = []
@@ -44,7 +44,7 @@ class MySQLConfig(object):
                             self.set(cur_sec, cur_key, "")   
     
     @mlog
-    def save_asnew_config(self, filename="/etc/mysqld/my.cnf"):
+    def save_asnew_config(self, filename="/etc/mysql/my.cnf"):
         logger.debug("Saving new configuration to %s " % filename)        
         if filename == None:
             filename = self.config_file

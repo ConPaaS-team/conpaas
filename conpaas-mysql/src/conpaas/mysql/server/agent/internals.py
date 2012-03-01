@@ -13,10 +13,7 @@ Created on November, 2011
 
 from threading import Lock
 from string import Template
-from os import kill, makedirs, remove
-from os.path import join, devnull, exists
 from subprocess import Popen
-from threading import Thread
 from conpaas.log import create_logger
 from subprocess import Popen
 from os.path import devnull, exists
@@ -25,7 +22,6 @@ import socket
 import os
 import ConfigParser
 import MySQLdb
-import pickle
 import io
 import time
 from conpaas.web.http import HttpJsonResponse, HttpErrorResponse, _jsonrpc_post
@@ -33,6 +29,7 @@ from conpaas.mysql.utils.log import get_logger_plus
 from conpaas.mysql.adapters.supervisor import SupervisorSettings, Supervisor
 from conpaas.mysql.adapters.mysql.config import MySQLConfig
 from conpaas.mysql.server.agent.maintain_connection import MaintainAgentConnection
+import thread
 
 exposed_functions = {}
 
@@ -142,7 +139,7 @@ class MySQLServerConfiguration:
             self.bind_address = self.mysqld_configuration.get("mysqld", "bind-address") 
             self.data_dir = self.mysqld_configuration.get("mysqld", "datadir")
             
-            logger.debug('Changeing bind-address to mysqld: %s' % self.conn_location )
+            logger.debug('Changing bind-address to mysqld: %s' % self.conn_location )
             self.change_config('mysqld', 'bind-address', self.conn_location) 
             logger.debug("Got configuration parameters")
         except ConfigParser.Error, err:
@@ -330,9 +327,12 @@ class MySQLServer:
             self.supervisor = Supervisor(self.config.supervisor_settings)
         else:
             logger.debug("Not creating supervisor, due to dummy_backend")
-        logger.debug("Starting the server")
-       
+        logger.debug("Stopping the server in order to take into account latest settings, wait for 5s")
+        self.stop()
+        time.sleep(5)
+        logger.debug("Starting the server, wait for 5s")
         self.start()
+        time.sleep(5)
         self.dummy_backend = _dummy_backend
         logger.debug("Start with registering to the manager.")
         
