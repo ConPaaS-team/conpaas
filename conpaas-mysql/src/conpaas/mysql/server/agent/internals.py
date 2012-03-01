@@ -314,6 +314,7 @@ class MySQLServer:
     dummy_backend = False
     
     supervisor = None
+    state = S_RUNNING
     
     @mlog
     def __init__(self, configInput, _dummy_backend=False):
