@@ -41,12 +41,14 @@ def __check_reply(body):
 
 def printUsage():
     print 'Usage: service_ip service_port function function_params\n\
-Functions:  list_nodes - no params\n \
-            get_node_info - no params\n \
-            get_service_info - no params\n \
-            add_nodes - no params\n \
-            remove_nodes - username, port \n \
-            get_service_performance - no params\n'
+Functions:  getLog\n \
+            list_nodes\n \
+            get_node_info [serviceid] \n \
+            get_service_info\n \
+            add_nodes [number] \n \
+            remove_nodes id [serviceid] \n \
+            remove_nodes count [number] \n \
+            get_service_performance \n'
     pass
 
 def list_nodes(host, port):
@@ -62,72 +64,55 @@ def get_service_info(host, port):
     method = 'get_service_info'
     return _check(_jsonrpc_get(host, port, '/', method))
 
-def add_nodes(host, port, function):
+def add_nodes(host, port, count):
     params = {}
-    params['function'] = function
+    params['count'] = count
     method = 'add_nodes'
     return _check(_jsonrpc_post(host, port, '/', method, params=params))
-    
-#===============================================================================
-# def getMySQLServerState(host, port):
-#    params = {'action': 'getMySQLServerManagerState'}
-#    code, body = _http_get(host, port, '/', params=params)
-#    if code != httplib.OK: raise Exception('Received HTTP response code %d' % (code))
-#    return __check_reply(body)
-# 
-# def addServiceNode(host, port, function):
-#    params = {'action': 'createServiceNode', 'function':function}
-#    #Thread(target=wait_for_reply(params)).start()
-#    code, body = _http_post(host, port, '/', params=params)
-#    if code != httplib.OK: raise Exception('Received HTTP response code %d' % (code))
-#    return __check_reply(body)
-#===============================================================================
 
+def getLog(host, port):
+    method = 'getLog'
+    return _check(_jsonrpc_get(host, port, '/', method))
 
+def remove_nodes_count(host, port, count):
+    method = 'remove_nodes'
+    params={}
+    params['count'] = count
+    return _check(_jsonrpc_post(host, port, '/', method, params=params))
 
-#def wait_for_reply(prms):
-#    code, body = _http_post(host, port, '/', params=prms)
-#    if code != httplib.OK: raise Exception('Received HTTP response code %d' % (code))
-#    return __check_reply(body)
-
-#===============================================================================
-# def deleteServiceNode(host, port, id):
-#    params = {'action': 'deleteServiceNode','id':str(id)}
-#    code, body = _http_post(host, port, '/', params=params)
-#    if code != httplib.OK: raise Exception('Received HTTP response code %d' % (code))
-#    return __check_reply(body)
-#===============================================================================
-
-def remove_nodes(host, port, serviceNodeId):
+def remove_nodes_id(host, port, serviceNodeId):
     method = 'remove_nodes'
     params={}
     params['serviceNodeId'] = serviceNodeId
     return _check(_jsonrpc_post(host, port, '/', method, params=params))
+
 
 def get_service_performance(host, port):
     method = 'get_service_performance'
     return _check(_jsonrpc_get(host, port, '/', method))
 
 if __name__ == '__main__':
-    if sys.argv.__len__() in (4, 5):
+    if sys.argv.__len__() in (4, 5,6):
         host = sys.argv[1]
         port = sys.argv[2]
+        if sys.argv[3] in ("getLog"):
+            ret = getLog(host, port)
+            print ret
         if sys.argv[3] in ("list_nodes"):
             ret = list_nodes(host, port)
             print ret            
-        if sys.argv[3] in ("add_nodes"):
+        if sys.argv[3] in ("add_nodes"):            
             ret = add_nodes(host, port, sys.argv[4])
             print ret            
         if sys.argv[3] in ("get_service_info"):
             ret = get_service_info(host, port)
             print ret            
         if sys.argv[3] in ("remove_nodes"):            
-            id = sys.argv[4]
-            ret = remove_nodes(host, port, id)
+            if sys.argv[4] == 'count':
+                ret = remove_nodes_count(host, port, sys.argv[5])
+            if sys.argv[4] == 'id':
+                ret = remove_nodes_id(host, port, sys.argv[5])                
             print ret            
-        if sys.argv[3] in ("list_nodes"):            
-            ret = list_nodes(host, port)
-            print ret
         if sys.argv[3] in ("get_node_info"):   
             serviceNodeId = sys.argv[4]         
             ret = get_node_info(host, port, serviceNodeId)

@@ -32,6 +32,7 @@ OPENNEBULA_NETWORK_NAMESERVER=$NAMESERVER
 
 [manager]
 find_existing_agents = true
+logfile=/var/log/conpaassql-stdout.log
 
 [onevm_agent_template]
 FILENAME=/root/conpaassql/scripts/one-scripts/agent/agent.template

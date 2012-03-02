@@ -160,16 +160,11 @@ def list_nodes(kwargs):
     logger.debug("Entering list_nodes")
     if len(kwargs) != 0:
         return HttpErrorResponse(ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
-    #vms = iaas.listVMs()
-    #vms_mysql = config.getMySQLServiceNodes()
-    #for vm in vms_mysql:
-    #    if not(vm.vmid in vms.keys()):
-    #        logger.debug('Removing instance ' + str(vm.vmid) + ' since it is not in the list returned by the listVMs().')
-    #        config.removeMySQLServiceNode(vm.vmid)        
     _nodes = [ serviceNode.vmid for serviceNode in config.getMySQLServiceNodes() ]
-    logger.debug("Exiting list_nodes")             
+    logger.debug("Listing nodes: %s " % str(_nodes))
+    logger.debug("Exiting list_nodes")         
     return HttpJsonResponse({
-        'serviceNode': _nodes,
+        'conpaas-mysql': _nodes,
         })
 
 @expose('GET')
@@ -204,7 +199,7 @@ provisioned.
 @expose('POST')
 def add_nodes(kwargs):
     """
-    HTTP POST method. Creates new node and adds it to the list of existing nodes in the manager. Makes internal call to :py:meth:`createServiceNodeThread`.
+    HTTP POST method. Creates new node and adds it to the list of existing nodes in the manager.
 
     :param kwargs: string describing a function (agent).
     :type param: str
@@ -213,19 +208,24 @@ def add_nodes(kwargs):
         
     """ 
     
-    function = None
-    if 'function' in kwargs:
-        function = str(kwargs.pop('function'))        
-    new_vm=iaas.newInstance(function)
-#    Thread(target=createServiceNodeThread(function, new_vm)).start()
-    return HttpJsonResponse({
-        'serviceNode': {
-                        'id': new_vm['id'],
-                        'ip': new_vm['ip'],
-                        'state': new_vm['state'],
-                        'name': new_vm['name']
-                        }
-         })
+    logger.debug("Entering add_nodes")        
+    if 'count' in kwargs:
+        if not isinstance(kwargs['count'], int):
+            return HttpErrorResponse('ERROR: Expected an integer value for "count"')
+        logger.debug('"count = %s" is given:' % str(kwargs['count']))        
+        count = int(kwargs.pop('count'))
+        if len(kwargs) != 0:
+            return HttpErrorResponse(ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
+        managerServer.state = S_ADAPTING
+        for k in range(0,count):            
+            new_vm=iaas.newInstance('agent')
+            logger.debug('Adding a service count %s: %s' % (str(k),str(new_vm)))
+        managerServer.state = S_RUNNING
+    else:
+        logger.error('None argument given in the request!')
+        return HttpErrorResponse(ManagerException(E_ARGS_MISSING, '"serviceNodeId" or "count"').message)
+    logger.error('Exiting add_nodes')
+    return HttpJsonResponse()
 
 @expose('POST')
 def create_replica(kwargs):
@@ -260,20 +260,66 @@ def remove_nodes(kwargs):
         
     """ 
     
-    logger.debug("Entering delete_nodes")
-    if 'serviceNodeId' not in kwargs: return HttpErrorResponse(ManagerException(E_ARGS_MISSING, 'serviceNodeId').message)
-    serviceNodeId = kwargs.pop('serviceNodeId')
+    logger.debug("Entering delete_nodes")        
+    if 'serviceNodeId' in kwargs: 
+        logger.debug('serviceNodeId given')
+        serviceNodeId = kwargs.pop('serviceNodeId')
+        if len(kwargs) != 0:
+            return HttpErrorResponse(ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
+        if serviceNodeId not in config.serviceNodes: return HttpErrorResponse(ManagerException(E_ARGS_INVALID, "serviceNodeId", detail='Invalid "serviceNodeId"').message)     
+        logger.debug('remove_nodes ' + str(serviceNodeId))
+        if iaas.killInstance(serviceNodeId):
+            config.removeMySQLServiceNode(serviceNodeId)
+    elif 'count' in kwargs:
+        if not isinstance(kwargs['count'], int):
+            return HttpErrorResponse('ERROR: Expected an integer value for "count"')
+        logger.debug('"count = %s" is given:' % str(kwargs['count']))        
+        count = int(kwargs.pop('count'))
+        if len(kwargs) != 0:
+            return HttpErrorResponse(ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
+        managerServer.state = S_ADAPTING
+        i=0
+        for k in config.serviceNodes:
+            logger.debug('Killing service %s' % str(k))
+            i=i+1
+            if iaas.killInstance(k):
+                config.removeMySQLServiceNode(k)
+            if i==count:
+                logger.debug('Finished killing services.')
+                break
+        managerServer.state = S_RUNNING
+    else:
+        logger.error('None argument given in the request!')
+        return HttpErrorResponse(ManagerException(E_ARGS_MISSING, '"serviceNodeId" or "count"').message)
+    logger.error('Exiting remove_nodes')
+    return HttpJsonResponse()
+
+@expose('GET')
+def getLog(kwargs):
+    """
+    HTTP GET method. Returns log of the service. 
+
+    :returns: HttpJsonResponse - JSON response with details about the log of the manager node. 
+    :raises: ManagerException
+        
+    """     
+    logger.debug("Entering getLog")
     if len(kwargs) != 0:
         return HttpErrorResponse(ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
-    if serviceNodeId not in config.serviceNodes: return HttpErrorResponse(ManagerException(E_ARGS_INVALID, "serviceNodeId", detail='Invalid "serviceNodeId"').message)
-    serviceNode = config.serviceNodes[serviceNodeId]      
-    logger.debug('deleteServiceNode ' + str(serviceNodeId))
-    if iaas.killInstance(serviceNodeId):
-        config.removeMySQLServiceNode(serviceNodeId)
-    '''TODO: If false, return false response.
-    '''
-    return HttpJsonResponse({'result': 'OK'})
-
+    try:
+        logger.debug('Oppening the log file: %s' % str(config.logfile()))
+        fd = open(config.logfile)
+        ret=''
+        s = fd.read()
+        while s!='':
+            ret+=s
+            s=fd.read()
+            if s!='':
+                ret+=s
+        return HttpJsonResponse({'log': ret})
+    except Exception as e:
+        logger.error(str(e))
+        return HttpErrorResponse('Failed to read the log')
 
 @expose('POST')
 def register_node(kwargs):
@@ -315,16 +361,11 @@ def get_service_info(kwargs):
     :returns: HttpJsonResponse - JSON response with the description of the state.
     :raises: ManagerException
         
-    """ 
-    
+    """     
     logger.debug("Entering get_service_info")
     try: 
         logger.debug("Leaving get_service_info")
-        return HttpJsonResponse({
-            'service': {
-                            'state':managerServer.state                        
-                        }
-            })
+        return HttpJsonResponse({'state':managerServer.state, 'type': 'conpaas-mysql' })
     except Exception as e:
         ex = ManagerException(E_UNKNOWN, detail=e)
         logger.exception(e)
