@@ -11,6 +11,7 @@ OPENNEBULA_NETWORK_GATEWAY = 1
 OPENNEBULA_NETWORK_NAMESERVER = 1
 
 [manager]
+logfile=/var/log/conpaassql-err.log
 find_existing_agents = true
 
 [onevm_agent_template]

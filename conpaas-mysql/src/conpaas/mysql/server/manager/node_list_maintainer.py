@@ -49,10 +49,9 @@ class MaintainAgentConnections( threading.Thread ):
                     try:
                         method = "get_server_state"
                         result = _jsonrpc_get(node.ip, node.port, '/', method)
-                        #ret = agent_client.get_server_state(node.ip, node.port)
-                        logger.debug("node %s is up with returned value %s" % (node, str(result)))
+                        logger.debug("node %s:%s is up with returned value %s" % (node.ip, node.port, str(result)))
                     except Exception as e:
                         logger.error('Exception: ' + str(e)) 
-                        logger.debug("Node %s is down. Removing from the list. " % node)
+                        logger.debug("Node %s:%s is down. Removing from the list. " % (node.ip, node.port))
                         self.config.removeMySQLServiceNode(node.vmid)
                 time.sleep(self.poll_interval)

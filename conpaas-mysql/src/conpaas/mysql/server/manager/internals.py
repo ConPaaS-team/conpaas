@@ -307,7 +307,7 @@ def getLog(kwargs):
     if len(kwargs) != 0:
         return HttpErrorResponse(ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
     try:
-        logger.debug('Oppening the log file: %s' % str(config.logfile()))
+        logger.debug('Oppening the log file: %s' % str(config.logfile))
         fd = open(config.logfile)
         ret=''
         s = fd.read()
