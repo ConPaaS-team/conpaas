@@ -499,10 +499,12 @@ def configure_user(kwargs):
         if serviceNodeId not in config.serviceNodes.keys(): return HttpErrorResponse(ManagerException(E_ARGS_INVALID , "serviceNodeId" , detail='Invalid "serviceNodeId"').message)
         serviceNode = config.serviceNodes[serviceNodeId]
         logger.debug('Calling configure_user with the agent_client')
-        agent_client.configure_user(serviceNode.ip, serviceNode.port, username, password)
+        ret=agent_client.configure_user(serviceNode.ip, serviceNode.port, username, password)
+        logger.debug('A reply: %s ' % str(ret))
     else:
         for k in config.serviceNodes:
             logger.debug('Setting a user on %s' % str(k))
             serviceNode=config.serviceNodes[k]
-            agent_client.configure_user(serviceNode.ip, serviceNode.port, username, password)
-    return HttpJsonResponse(serviceNode.__repr__())
+            ret=agent_client.configure_user(serviceNode.ip, serviceNode.port, username, password)
+            logger.debug('A reply: %s ' % str(ret))
+    return HttpJsonResponse()

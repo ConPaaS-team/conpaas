@@ -115,12 +115,12 @@ class MySQLServerConfiguration:
             self.supervisor_settings = SupervisorSettings(supervisor_user, supervisor_password, supervisor_port)            
             logger.debug("Trying to get params from configuration file ")        
             self.conn_location = config.get("MySQL_root_connection", "location")
+            self.conn_username = config.get("MySQL_root_connection", "username")
+            self.conn_password = config.get("MySQL_root_connection", "password")     
+            self.initiate_mysql(self.conn_username, self.conn_password, config.get("ConPaaSSQL","agent_interface"))
             logger.debug('conn_location before %s' % self.conn_location )
             self.conn_location = config.get("ConPaaSSQL","agent_interface")
             logger.debug('conn_location after %s' % self.conn_location )
-            
-            self.conn_username = config.get("MySQL_root_connection", "username")
-            self.conn_password = config.get("MySQL_root_connection", "password")      
             logger.debug("Got parameters for root connection to MySQL")
             self.mycnf_filepath = config.get("MySQL_configuration","my_cnf_file")            
 
@@ -164,7 +164,20 @@ class MySQLServerConfiguration:
         """
         self.mysqld_configuration.set(section, id_param, param)
         self.mysqld_configuration.save_asnew_config()
-                        
+          
+    @mlog
+    def initiate_mysql(self, new_username, new_password, hostname):
+        """
+        Initiates a MySQL user with the given account.
+        
+        """
+        # By default user root has no password 
+        db = MySQLdb.connect(self.conn_location, 'root')
+        exc = db.cursor()
+        exc.execute ("create user '" + new_username + "'@'"+hostname+"' identified by '" + new_password + "';")
+        exc.execute ("grant all privileges on *.* TO '" + new_username + "'@'"+hostname+"' with grant option;")
+        db.close()
+              
     @mlog
     def add_user_to_MySQL(self, new_username, new_password):
         db = MySQLdb.connect(self.conn_location, self.conn_username, self.conn_password)

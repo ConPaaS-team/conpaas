@@ -48,7 +48,8 @@ Functions:  getLog\n \
             add_nodes [number] \n \
             remove_nodes id [serviceid] \n \
             remove_nodes count [number] \n \
-            get_service_performance \n'
+            configure_user [ <serviceid> | all] [username] [password]\n \
+            get_service_performance \n'            
     pass
 
 def list_nodes(host, port):
