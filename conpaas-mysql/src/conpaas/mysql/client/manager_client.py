@@ -66,7 +66,7 @@ def get_service_info(host, port):
 
 def add_nodes(host, port, count):
     params = {}
-    params['count'] = count
+    params['count'] = int(count)
     method = 'add_nodes'
     return _check(_jsonrpc_post(host, port, '/', method, params=params))
 
@@ -77,7 +77,7 @@ def getLog(host, port):
 def remove_nodes_count(host, port, count):
     method = 'remove_nodes'
     params={}
-    params['count'] = count
+    params['count'] = int(count)
     return _check(_jsonrpc_post(host, port, '/', method, params=params))
 
 def remove_nodes_id(host, port, serviceNodeId):
@@ -86,13 +86,19 @@ def remove_nodes_id(host, port, serviceNodeId):
     params['serviceNodeId'] = serviceNodeId
     return _check(_jsonrpc_post(host, port, '/', method, params=params))
 
+def configure_user(host, port, vmid, username, password):
+    method = 'configure_user'
+    params = {'serviceNodeId': vmid,
+              'username': username,
+              'password': password}
+    return _check(_jsonrpc_post(host, port, '/', method, params=params))
 
 def get_service_performance(host, port):
     method = 'get_service_performance'
     return _check(_jsonrpc_get(host, port, '/', method))
 
 if __name__ == '__main__':
-    if sys.argv.__len__() in (4, 5,6):
+    if sys.argv.__len__() in (4, 5,6,7):
         host = sys.argv[1]
         port = sys.argv[2]
         if sys.argv[3] in ("getLog"):
@@ -119,6 +125,12 @@ if __name__ == '__main__':
             print ret    
         if sys.argv[3] in ("get_service_performance"):          
             ret = get_service_performance(host, port)
-            print ret 
+            print ret
+        if sys.argv[3] in ("configure_user"):
+            serviceNodeId = sys.argv[4]
+            username = sys.argv[5]
+            password = sys.argv[6]
+            ret = configure_user(host, port, serviceNodeId, username, password)
+            print ret    
     else:
         printUsage()

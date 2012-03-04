@@ -269,7 +269,7 @@ def remove_nodes(kwargs):
         if serviceNodeId not in config.serviceNodes: return HttpErrorResponse(ManagerException(E_ARGS_INVALID, "serviceNodeId", detail='Invalid "serviceNodeId"').message)     
         logger.debug('remove_nodes ' + str(serviceNodeId))
         if iaas.killInstance(serviceNodeId):
-            config.removeMySQLServiceNode(serviceNodeId)
+            config.removeMySQLServiceNode(serviceNodeId)            
     elif 'count' in kwargs:
         if not isinstance(kwargs['count'], int):
             return HttpErrorResponse('ERROR: Expected an integer value for "count"')
@@ -467,3 +467,42 @@ def get_service_performance(self, kwargs):
             'throughput': 0,
             'response_time': 0,
             })
+
+@expose('POST')
+def configure_user(kwargs):
+    """
+    HTTP POST method. Configures a new user on a specific node. If vmid==all, all nodes are
+    configured with the given user.
+
+    :param param: serviceNodeId is a VMID of an existing service node.
+    :type param: str
+    :param param: username is a user's username.
+    :type param: str
+    :param param: password is a password
+    :type param: str
+    :returns: HttpJsonResponse - JSON response with details about the node.
+    :raises: ManagerException
+        
+    """    
+    logger.debug("Entering configure_user")
+    if 'serviceNodeId' not in kwargs: return HttpErrorResponse(ManagerException(E_ARGS_MISSING, 'serviceNodeId').message)
+    if 'username' not in kwargs: return HttpErrorResponse(ManagerException(E_ARGS_MISSING, 'username').message)
+    if 'password' not in kwargs: return HttpErrorResponse(ManagerException(E_ARGS_MISSING, 'password').message)
+    serviceNodeId = kwargs.pop('serviceNodeId')
+    username = kwargs.pop('username')
+    password = kwargs.pop('password')
+    if len(kwargs) != 0:
+        return HttpErrorResponse(ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
+    logger.debug("Got the service node id: %s" % serviceNodeId)
+    logger.debug("Configuring user: %s" % serviceNodeId)    
+    if serviceNodeId != 'all':        
+        if serviceNodeId not in config.serviceNodes.keys(): return HttpErrorResponse(ManagerException(E_ARGS_INVALID , "serviceNodeId" , detail='Invalid "serviceNodeId"').message)
+        serviceNode = config.serviceNodes[serviceNodeId]
+        logger.debug('Calling configure_user with the agent_client')
+        agent_client.configure_user(serviceNode.ip, serviceNode.port, username, password)
+    else:
+        for k in config.serviceNodes:
+            logger.debug('Setting a user on %s' % str(k))
+            serviceNode=config.serviceNodes[k]
+            agent_client.configure_user(serviceNode.ip, serviceNode.port, username, password)
+    return HttpJsonResponse(serviceNode.__repr__())

@@ -45,7 +45,7 @@ class MaintainAgentConnections( threading.Thread ):
                 nodes = self.config.getMySQLServiceNodes()
                 logger.debug("The list : %s " % nodes)
                 for node in nodes:
-                    logger.debug("Trying node %s " % node)
+                    logger.debug("Trying node %s:%s " % (node.ip, node.port))
                     try:
                         method = "get_server_state"
                         result = _jsonrpc_get(node.ip, node.port, '/', method)
