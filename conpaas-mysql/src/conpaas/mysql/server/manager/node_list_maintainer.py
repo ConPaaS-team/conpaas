@@ -42,13 +42,14 @@ class MaintainAgentConnections( threading.Thread ):
             while True:
                 logger.debug("Starting the poll.")       
                 nodes = self.managerServer.configuration.getMySQLServiceNodes()
-                logger.debug("The list : %s " % nodes)
+                _nodes_list = [ serviceNode.vmid for serviceNode in nodes ]
+                logger.debug("Polling the list of nodes: %s " % str(_nodes_list))
                 for node in nodes:
                     logger.debug("Trying node %s:%s " % (node.ip, node.port))
                     try:
                         method = "get_server_state"
                         result = _jsonrpc_get(node.ip, node.port, '/', method)
-                        logger.debug("node %s:%s is up with returned value %s" % (node.ip, node.port, str(result)))
+                        logger.debug("node %s:%s is up" % (node.ip, node.port))
                     except Exception as e:
                         logger.error('Exception: ' + str(e)) 
                         logger.debug("Node %s:%s is down. Removing from the list. " % (node.ip, node.port))

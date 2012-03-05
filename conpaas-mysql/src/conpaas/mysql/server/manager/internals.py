@@ -342,8 +342,8 @@ def register_node(kwargs):
     """
     Adds running instances of mysql agents to the list.            
     """
-    try:    
-        logger.debug("Got this status: %s" % kwargs)
+    try:            
+        logger.debug('Got new status')
         vm={}
         vm['id']=kwargs["state"]["id"]
         vm['name']=kwargs["state"]["name"]
@@ -352,7 +352,7 @@ def register_node(kwargs):
         vm['port']=kwargs["state"]["port"]
         vm['mysqld_port']=kwargs["state"]["mysqld_port"]
         vm['supervisor_data']=kwargs["state"]["supervisor_data"]
-        logger.debug('Adding/updating service node %s' % vm)
+        logger.debug('Adding/updating service node %s; %s:%s' % (vm['id'], vm['ip'], vm['port']))
         managerServer.configuration.addMySQLServiceNode(vm)
         logger.debug("Exiting register_new_node")
     except Exception as e:

@@ -18,19 +18,6 @@ def _check(response):
     if data['error']: raise AgentException(data['error'])
     else: return True
 
-#===============================================================================
-# def __check_reply(body):
-#    try:
-#        ret = json.loads(body)
-#    except Exception as e: raise AgentException(*e.args)
-#    if not isinstance(ret, dict): raise AgentException('Response not a JSON object')
-#    if 'opState' not in ret: raise AgentException('Response does not contain "opState"')
-#    if ret['opState'] != 'OK':
-#        if 'ERROR' in ret['opState']: raise AgentException(ret['opState'], ret['error'])
-#        else: raise AgentException(ret['opState'])
-#    return ret
-#===============================================================================
-
 def get_server_state(host, port):
     method = "get_server_state"
     result = _jsonrpc_get(host, port, '/', method)
@@ -93,7 +80,7 @@ def get_all_users(host, port):
 def delete_user(host,port,name):
     method = 'delete_user'
     params = {'username': name}
-    return _check(_jsonrpc_get(host, port, '/', method, params=params))
+    return _check(_jsonrpc_post(host, port, '/', method, params=params))
 
 def setMySQLServerConfiguration(host,port, param_id, val):
     params = {'action': 'setMySQLServerConfiguration',
