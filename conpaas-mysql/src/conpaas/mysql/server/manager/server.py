@@ -13,23 +13,11 @@ from conpaas.mysql.server.manager.internals import MySQLServerManager
 from SocketServer import ThreadingMixIn
 from conpaas.log import log_dir_path
 from conpaas.mysql.utils.log import get_logger_plus
+from conpaas.mysql.server.manager.node_list_maintainer import MaintainAgentConnections
 
 logger, flog, mlog = get_logger_plus(__name__)
 
 class SQLServerRequestHandler(AbstractRequestHandler):
-	
-	
-	#===========================================================================
-	# def _dispatch(self, method, params):
-	#	if 'action' not in params:
-	#		self.send_custom_response(httplib.BAD_REQUEST, 'Did not specify "action"')
-	#	elif params['action'] not in self.server.callback_dict[method]:
-	#		self.send_custom_response(httplib.NOT_FOUND, 'action not found')
-	#	else:
-	#		callback_name = params['action']
-	#		del params['action']
-	#		self.send_custom_response(httplib.OK, json.dumps(self.server.callback_dict[method][callback_name](params)))
-	#===========================================================================
 
 	@mlog
 	def _render_arguments(self, method, params):
@@ -81,9 +69,9 @@ class ManagerServer(ThreadingMixIn, HTTPServer):
 		self.callback_dict = {'GET': {}, 'POST': {}, 'UPLOAD':{}}		
 		from conpaas.mysql.server.manager import internals
 		internals.iaas = IaaSClient(iaas_config)				
-		self.whitelist_addresses = []
-		
+		self.whitelist_addresses = []		
 		internals.managerServer=MySQLServerManager(iaas_config)
+		MaintainAgentConnections(internals.managerServer).start()		
 		for http_method in internals.exposed_functions:
 			for func_name in internals.exposed_functions[http_method]:
 				print 'Going to register ', http_method, func_name

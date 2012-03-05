@@ -26,7 +26,7 @@ import conpaas.mysql.server.manager
 from conpaas.web.http import HttpErrorResponse, HttpJsonResponse
 import json
 import os
-from conpaas.mysql.server.manager.node_list_maintainer import MaintainAgentConnections
+from conpaas.web.http import _jsonrpc_get
 
 """
 Members describing state of the Manager node.
@@ -69,8 +69,7 @@ class MySQLServerManager():
         self.state = S_INIT
         self.dummy_backend = _dummy_backend
         conpaas.mysql.server.manager.internals.dummy_backend = _dummy_backend
-        time = self.configuration.poll_agents_timer
-        MaintainAgentConnections(self).start()
+        time = self.configuration.poll_agents_timer                
         self.state = S_RUNNING
         logger.debug("Leaving MySQLServer initialization")
 

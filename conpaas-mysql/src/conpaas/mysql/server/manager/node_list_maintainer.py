@@ -14,19 +14,17 @@ class MaintainAgentConnections( threading.Thread ):
     '''
     Maintains connection to the manager.
     '''
-
-    poll_interval = 30
-    manager = None
-    dummy = None
     
-    def __init__(self, manager = None, dummy = None):
+    poll_interval = 30
+    managerServer = None
+    
+    def __init__(self, managerServer ):
         '''
         Constructor
         '''
-        self.manager = manager
+        self.managerServer = managerServer
         threading.Thread.__init__(self)
-        self.poll_interval = float(self.manager.configuration.poll_agents_timer)
-        self.dummy = dummy
+        self.poll_interval = float(self.managerServer.configuration.poll_agents_timer)
         logger.debug('setting poll interval to %s' % str(self.poll_interval))
 
     def run ( self ):
@@ -38,12 +36,12 @@ class MaintainAgentConnections( threading.Thread ):
         :type poll_interfvall: int
         """
         logger.debug('maintain nodes list: going to start polling')
-        if self.dummy:
+        if self.managerServer.dummy_backend:
             pass
         else:
             while True:
                 logger.debug("Starting the poll.")       
-                nodes = self.manager.configuration.getMySQLServiceNodes()
+                nodes = self.managerServer.configuration.getMySQLServiceNodes()
                 logger.debug("The list : %s " % nodes)
                 for node in nodes:
                     logger.debug("Trying node %s:%s " % (node.ip, node.port))
@@ -54,5 +52,5 @@ class MaintainAgentConnections( threading.Thread ):
                     except Exception as e:
                         logger.error('Exception: ' + str(e)) 
                         logger.debug("Node %s:%s is down. Removing from the list. " % (node.ip, node.port))
-                        self.manager.configuration.removeMySQLServiceNode(node.vmid)
+                        self.managerServer.configuration.removeMySQLServiceNode(node.vmid)
                 time.sleep(self.poll_interval)
