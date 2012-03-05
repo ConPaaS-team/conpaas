@@ -25,6 +25,7 @@ import conpaas
 import conpaas.mysql.server.manager
 from conpaas.web.http import HttpErrorResponse, HttpJsonResponse
 import json
+import os
 from conpaas.mysql.server.manager.node_list_maintainer import MaintainAgentConnections
 
 """
@@ -60,14 +61,16 @@ class MySQLServerManager():
     """
     
     dummy_backend = False
+    configuration = None
     
     def __init__(self, conf, _dummy_backend=False):        
         logger.debug("Entering MySQLServerManager initialization")
-        conpaas.mysql.server.manager.internals.config = Configuration(conf, _dummy_backend)         
+        configuration = Configuration(conf, _dummy_backend)         
         self.state = S_INIT
         self.dummy_backend = _dummy_backend
-        conpaas.mysql.server.manager.internals.dummy_backend = _dummy_backend        
-        MaintainAgentConnections(conpaas.mysql.server.manager.internals.config).start()
+        conpaas.mysql.server.manager.internals.dummy_backend = _dummy_backend
+        time = configuration.poll_agents_timer
+        MaintainAgentConnections(configuration).start()
         self.state = S_RUNNING
         logger.debug("Leaving MySQLServer initialization")
 
@@ -142,7 +145,7 @@ def createServiceNodeTread(function, new_vm):
     vm=iaas.listVMs()[new_vm['id']]
     node_instances.append(vm)
     wait_for_nodes(node_instances)
-    config.addMySQLServiceNode(new_vm)
+    managerServer.config.addMySQLServiceNode(new_vm)
 
 @expose('GET')
 def list_nodes(kwargs):
@@ -160,7 +163,7 @@ def list_nodes(kwargs):
     logger.debug("Entering list_nodes")
     if len(kwargs) != 0:
         return HttpErrorResponse(ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
-    _nodes = [ serviceNode.vmid for serviceNode in config.getMySQLServiceNodes() ]
+    _nodes = [ serviceNode.vmid for serviceNode in managerServer.config.getMySQLServiceNodes() ]
     logger.debug("Listing nodes: %s " % str(_nodes))
     logger.debug("Exiting list_nodes")         
     return HttpJsonResponse({
@@ -184,9 +187,9 @@ def get_node_info(kwargs):
     logger.debug("Got the service node id: %s" % serviceNodeId)
     if len(kwargs) != 0:
         return HttpErrorResponse(ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
-    logger.debug("Looking at the list of known services: %s" % config.serviceNodes.keys())
-    if serviceNodeId not in config.serviceNodes.keys(): return HttpErrorResponse(ManagerException(E_ARGS_INVALID , "serviceNodeId" , detail='Invalid "serviceNodeId"').message)
-    serviceNode = config.serviceNodes[serviceNodeId]    
+    logger.debug("Looking at the list of known services: %s" % managerServer.config.serviceNodes.keys())
+    if serviceNodeId not in managerServer.config.serviceNodes.keys(): return HttpErrorResponse(ManagerException(E_ARGS_INVALID , "serviceNodeId" , detail='Invalid "serviceNodeId"').message)
+    serviceNode = managerServer.config.serviceNodes[serviceNodeId]    
     return HttpJsonResponse(serviceNode.__repr__())
    
     
@@ -266,10 +269,10 @@ def remove_nodes(kwargs):
         serviceNodeId = kwargs.pop('serviceNodeId')
         if len(kwargs) != 0:
             return HttpErrorResponse(ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
-        if serviceNodeId not in config.serviceNodes: return HttpErrorResponse(ManagerException(E_ARGS_INVALID, "serviceNodeId", detail='Invalid "serviceNodeId"').message)     
+        if serviceNodeId not in managerServer.config.serviceNodes: return HttpErrorResponse(ManagerException(E_ARGS_INVALID, "serviceNodeId", detail='Invalid "serviceNodeId"').message)     
         logger.debug('remove_nodes ' + str(serviceNodeId))
         if iaas.killInstance(serviceNodeId):
-            config.removeMySQLServiceNode(serviceNodeId)            
+            managerServer.config.removeMySQLServiceNode(serviceNodeId)            
     elif 'count' in kwargs:
         if not isinstance(kwargs['count'], int):
             return HttpErrorResponse('ERROR: Expected an integer value for "count"')
@@ -279,11 +282,11 @@ def remove_nodes(kwargs):
             return HttpErrorResponse(ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
         managerServer.state = S_ADAPTING
         i=0
-        for k in config.serviceNodes:
+        for k in managerServer.config.serviceNodes:
             logger.debug('Killing service %s' % str(k))
             i=i+1
             if iaas.killInstance(k):
-                config.removeMySQLServiceNode(k)
+                managerServer.config.removeMySQLServiceNode(k)
             if i==count:
                 logger.debug('Finished killing services.')
                 break
@@ -307,8 +310,8 @@ def getLog(kwargs):
     if len(kwargs) != 0:
         return HttpErrorResponse(ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
     try:
-        logger.debug('Oppening the log file: %s' % str(config.logfile))
-        fd = open(config.logfile)
+        logger.debug('Oppening the log file: %s' % str(managerServer.config.logfile))
+        fd = open(managerServer.config.logfile)
         ret=''
         s = fd.read()
         while s!='':
@@ -347,7 +350,7 @@ def register_node(kwargs):
         vm['mysqld_port']=kwargs["state"]["mysqld_port"]
         vm['supervisor_data']=kwargs["state"]["supervisor_data"]
         logger.debug('Adding/updating service node %s' % vm)
-        conpaas.mysql.server.manager.internals.config.addMySQLServiceNode(vm)
+        managerServer.config.addMySQLServiceNode(vm)
         logger.debug("Exiting register_new_node")
     except Exception as e:
         logger.debug(e.getMessage())
@@ -390,7 +393,7 @@ def set_up_replica_master(params):
     new_master_id = params['id']
     new_master_ip = ''
     new_master_port = ''
-    for node in config.getMySQLServiceNodes():
+    for node in managerServer.config.getMySQLServiceNodes():
         if new_master_id == node.id:
             new_master_ip=node.ip
             new_master_port=node.port
@@ -416,7 +419,7 @@ def set_up_replica_slave(params):
     _id = params['id']
     _host = ''
     _port = ''
-    for node in config.getMySQLServiceNodes():
+    for node in managerServer.config.getMySQLServiceNodes():
         if _id == node.id:
             _host=node.ip
             _port=node.port
@@ -496,15 +499,116 @@ def configure_user(kwargs):
     logger.debug("Got the service node id: %s" % serviceNodeId)
     logger.debug("Configuring user: %s" % serviceNodeId)    
     if serviceNodeId != 'all':        
-        if serviceNodeId not in config.serviceNodes.keys(): return HttpErrorResponse(ManagerException(E_ARGS_INVALID , "serviceNodeId" , detail='Invalid "serviceNodeId"').message)
-        serviceNode = config.serviceNodes[serviceNodeId]
+        if serviceNodeId not in managerServer.config.serviceNodes.keys(): return HttpErrorResponse(ManagerException(E_ARGS_INVALID , "serviceNodeId" , detail='Invalid "serviceNodeId"').message)
+        serviceNode = managerServer.config.serviceNodes[serviceNodeId]
         logger.debug('Calling configure_user with the agent_client')
         ret=agent_client.configure_user(serviceNode.ip, serviceNode.port, username, password)
         logger.debug('A reply: %s ' % str(ret))
     else:
-        for k in config.serviceNodes:
+        for k in managerServer.config.serviceNodes:
             logger.debug('Setting a user on %s' % str(k))
-            serviceNode=config.serviceNodes[k]
+            serviceNode=managerServer.config.serviceNodes[k]
             ret=agent_client.configure_user(serviceNode.ip, serviceNode.port, username, password)
             logger.debug('A reply: %s ' % str(ret))
+    return HttpJsonResponse()
+
+@expose('POST')
+def delete_user(kwargs):
+    """
+    HTTP POST method. Deletes an existing user on a specific node. If vmid==all, the user is
+    deleted from all nodes.
+
+    :param param: serviceNodeId is a VMID of an existing service node.
+    :type param: str
+    :param param: username is a user's username.
+    :type param: str
+    :returns: HttpJsonResponse - JSON response with details about the node.
+    :raises: ManagerException
+        
+    """    
+    logger.debug("Entering delete_user")
+    if 'serviceNodeId' not in kwargs: return HttpErrorResponse(ManagerException(E_ARGS_MISSING, 'serviceNodeId').message)
+    if 'username' not in kwargs: return HttpErrorResponse(ManagerException(E_ARGS_MISSING, 'username').message)
+    serviceNodeId = kwargs.pop('serviceNodeId')
+    username = kwargs.pop('username')
+    if len(kwargs) != 0:
+        return HttpErrorResponse(ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
+    logger.debug("Got the service node id: %s" % serviceNodeId)
+    logger.debug("Configuring user: %s" % serviceNodeId)    
+    if serviceNodeId != 'all':        
+        if serviceNodeId not in managerServer.config.serviceNodes.keys(): return HttpErrorResponse(ManagerException(E_ARGS_INVALID , "serviceNodeId" , detail='Invalid "serviceNodeId"').message)
+        serviceNode = managerServer.config.serviceNodes[serviceNodeId]
+        logger.debug('Calling delete_user with the agent_client')
+        ret=agent_client.delete_user(serviceNode.ip, serviceNode.port, username)
+        logger.debug('A reply: %s ' % str(ret))
+    else:
+        for k in managerServer.config.serviceNodes:
+            logger.debug('Deleting a user on %s' % str(k))
+            serviceNode=managerServer.config.serviceNodes[k]
+            ret=agent_client.delete_user(serviceNode.ip, serviceNode.port, username)
+            logger.debug('A reply: %s ' % str(ret))
+    return HttpJsonResponse()
+
+@expose('GET')
+def get_users(kwargs):
+    """
+    HTTP GET method. Gets users from all nodes in the computation.
+
+    :returns: HttpJsonResponse - JSON response with details about the node.
+    :raises: ManagerException
+        
+    """    
+    logger.debug("Entering get_users")
+    if len(kwargs) != 0:
+        return HttpErrorResponse(ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
+    nodesRet = {}
+    for k in managerServer.config.serviceNodes:
+        logger.debug('Getting users from %s' % str(k))
+        serviceNode=managerServer.config.serviceNodes[k]
+        ret=agent_client.get_all_users(serviceNode.ip, serviceNode.port)
+        nodesRet[k]=ret
+        logger.debug('A reply: %s ' % str(ret))
+    return HttpJsonResponse(nodesRet)
+
+@expose('UPLOAD')
+def send_mysqldump(kwargs):
+    """
+    HTTP UPLOAD method. Uploads a dump and send it to agents.
+
+    :param param: serviceNodeId is a VMID of an existing service node.
+    :type param: str
+    :param param: mysqldump is a content of a dump.
+    :type param: file
+    :returns: HttpJsonResponse - JSON response with details about the node.
+    :raises: ManagerException
+        
+    """    
+    logger.debug("Entering send_mysqldump")
+    if 'mysqldump' not in kwargs: return HttpErrorResponse(ManagerException(E_ARGS_MISSING, 'mysqldump').message)
+    if 'serviceNodeId' not in kwargs: return HttpErrorResponse(ManagerException(E_ARGS_MISSING, 'serviceNodeId').message)
+    serviceNodeId = kwargs.pop('serviceNodeId')
+    file=kwargs['mysqldump']
+    f=file.file    
+    if len(kwargs) != 1:
+        return HttpErrorResponse(ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
+    logger.debug("Got the service node id: %s" % serviceNodeId)   
+    mysqldump = f.read()
+    logger.debug("temporary writing file to: : " + os.getcwd() +  '/mysqldump')
+    dumpfile = file(os.getcwd() + '/mysqldump' , "wb")
+    dumpfile.write(mysqldump)
+    dumpfile.close()
+    if serviceNodeId != 'all':        
+        if serviceNodeId not in managerServer.config.serviceNodes.keys(): return HttpErrorResponse(ManagerException(E_ARGS_INVALID , "serviceNodeId" , detail='Invalid "serviceNodeId"').message)
+        serviceNode = managerServer.config.serviceNodes[serviceNodeId]
+        logger.debug('Calling send_mysqldump with the agent_client')
+        ret=agent_client.send_mysqldump(serviceNode.ip, serviceNode.port, dumpfile.name)
+        logger.debug('A reply: %s ' % str(ret))
+    else:
+        for k in managerServer.config.serviceNodes:
+            logger.debug('send_mysqldump on %s' % str(k))
+            serviceNode=managerServer.config.serviceNodes[k]
+            ret=agent_client.send_mysqldump(serviceNode.ip, serviceNode.port, dumpfile.name)
+            logger.debug('A reply: %s ' % str(ret))
+    logger.debug('Removing a file %s' % str(dumpfile.name))
+    os.remove(dumpfile.name)
     return HttpJsonResponse()

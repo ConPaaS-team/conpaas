@@ -49,6 +49,9 @@ Functions:  getLog\n \
             remove_nodes id [serviceid] \n \
             remove_nodes count [number] \n \
             configure_user [ <serviceid> | all] [username] [password]\n \
+            get_users \n \
+            delete_user [ <serviceid> | all] [username]\n \
+            send_mysqldump [ <serviceid> | all] [path to dump file]\n \
             get_service_performance \n'            
     pass
 
@@ -94,44 +97,74 @@ def configure_user(host, port, vmid, username, password):
               'password': password}
     return _check(_jsonrpc_post(host, port, '/', method, params=params))
 
+def delete_user(host, port, vmid, username, password):
+    method = 'delete_user'
+    params = {'serviceNodeId': vmid,
+              'username': username }
+    return _check(_jsonrpc_post(host, port, '/', method, params=params))
+
+def get_users(host, port):
+    method = 'get_users'
+    return _check(_jsonrpc_get(host, port, '/', method))
+
 def get_service_performance(host, port):
     method = 'get_service_performance'
     return _check(_jsonrpc_get(host, port, '/', method))
+
+def send_mysqldump(host,port,location):
+    params = {'method': 'send_mysqldump'}
+    files = {'mysqldump': location}
+    return _check(_http_post(host, port, '/', params, files=files))
 
 if __name__ == '__main__':
     if sys.argv.__len__() in (4, 5,6,7):
         host = sys.argv[1]
         port = sys.argv[2]
-        if sys.argv[3] in ("getLog"):
+        command = sys.argv[3] 
+        if command =="getLog":
             ret = getLog(host, port)
             print ret
-        if sys.argv[3] in ("list_nodes"):
+        if command =="list_nodes":
             ret = list_nodes(host, port)
             print ret            
-        if sys.argv[3] in ("add_nodes"):            
+        if command =="add_nodes":            
             ret = add_nodes(host, port, sys.argv[4])
             print ret            
-        if sys.argv[3] in ("get_service_info"):
+        if command =="get_service_info":
             ret = get_service_info(host, port)
             print ret            
-        if sys.argv[3] in ("remove_nodes"):            
+        if command == "remove_nodes":            
             if sys.argv[4] == 'count':
                 ret = remove_nodes_count(host, port, sys.argv[5])
             if sys.argv[4] == 'id':
                 ret = remove_nodes_id(host, port, sys.argv[5])                
             print ret            
-        if sys.argv[3] in ("get_node_info"):   
+        if command == "get_node_info":   
             serviceNodeId = sys.argv[4]         
             ret = get_node_info(host, port, serviceNodeId)
             print ret    
-        if sys.argv[3] in ("get_service_performance"):          
+        if command == "get_service_performance":          
             ret = get_service_performance(host, port)
             print ret
-        if sys.argv[3] in ("configure_user"):
+        if command == "configure_user":
             serviceNodeId = sys.argv[4]
             username = sys.argv[5]
             password = sys.argv[6]
             ret = configure_user(host, port, serviceNodeId, username, password)
-            print ret    
+            print ret   
+        if command == "get_users":
+            ret = get_users(host, port)
+            print ret   
+        if command == "delete_user":
+            serviceNodeId = sys.argv[4]
+            username = sys.argv[5]
+            ret = delete_user(host, port, serviceNodeId, username)
+            print ret   
+        if command == 'send_mysqldump':
+            if not sys.argv[4]:
+                printUsage()
+                exit()
+            ret = send_mysqldump(host,port,sys.argv[4])
+            print ret     
     else:
         printUsage()

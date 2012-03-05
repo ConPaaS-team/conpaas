@@ -120,7 +120,8 @@ class ServiceNode(object):
 class Configuration(object):
     
     dummy_backend = False
-    logfile = None
+    logfile = None    
+    poll_agents_timer=30
     
     def __read_config(self,config, _dummy_backend = False):
         logger.debug("Entering read_config")
@@ -133,6 +134,7 @@ class Configuration(object):
                 self.conn_username = config.get("iaas", "OPENNEBULA_PASSWORD")
                 self.find_existing_agents = config.get("manager", "find_existing_agents")
                 self.logfile = config.get("manager", "logfile")
+                self.poll_agents_timer = config.get("manager", "poll_agents_timer")
             logger.debug("Got configuration parameters")
         except ConfigParser.Error, err:
             ex = ManagerException(E_CONFIG_READ_FAILED, str(err))

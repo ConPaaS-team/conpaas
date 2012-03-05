@@ -20,12 +20,13 @@ class MaintainAgentConnections( threading.Thread ):
     config = None
     poll_interval = 30
     
-    def __init__(self, config=None, poll_interval = 30):
+    def __init__(self, config=None):
         '''
         Constructor
         '''
         threading.Thread.__init__(self)
-        self.poll_interval = poll_interval
+        self.poll_interval = config.poll_agents_timer
+        logger.debug('setting poll interval to %s' % str(self.poll_interval))
         self.config = config
 
     def run ( self ):

@@ -13,6 +13,7 @@ OPENNEBULA_NETWORK_NAMESERVER = 1
 [manager]
 logfile=/var/log/conpaassql-err.log
 find_existing_agents = true
+poll_agents_timer=10
 
 [onevm_agent_template]
 FILENAME=/home/ales/workspace/contrail/conpaassql-trunk/bin/agent.template

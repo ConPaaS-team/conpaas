@@ -203,11 +203,11 @@ class MySQLServerConfiguration:
         exc.execute("SELECT user, host FROM mysql.user")
         rows = exc.fetchall()
         db.close()
-        ret = {'opState': 'OK'}
+        ret = { }
         i = 0
         for row in rows:
             i = i+1
-            ret['info' + str(i)] = {'location': row[1], 'username': row[0]}
+            ret['user' + str(i)] = {'location': row[1], 'username': row[0]}
         return ret
     
     '''Before creating a data snapshot or starting 
@@ -303,15 +303,18 @@ mysql>UNLOCK TABLES;
         try:
             mysqldump = f.read()
             logger.debug("temporary writing file to: : " + os.getcwd() +  '/mysqldump')
-            file(os.getcwd() + '/mysqldump' , "wb").write(mysqldump)
-            os.system("mysql -u " + self.conn_username + " -p"  + self.conn_password + " < " + os.getcwd() + '/mysqldump')
-            os.system("rm mysqldump")
+            dumpfile = file(os.getcwd() + '/mysqldump' , "wb")
+            dumpfile.write(mysqldump)
+            dumpfile.close()
+            os.system("mysql -u " + self.conn_username + " -p"  + self.conn_password + " < " + os.getcwd() + '/mysqldump')            
+            logger.debug('Removing a file %s' % str(dumpfile.name))
+            os.remove(dumpfile.name)            
             logger.debug("Leaving create_MySQL_with_dump")
-            return HttpJsonResponse({'return':'OK'})
+            return HttpJsonResponse()
         except Exception as e:
             ex = AgentException(E_UNKNOWN,e.message)
             logger.exception(ex.message)
-            return HttpJsonResponse({'return': 'ERROR', 'error': e.message})   
+            return HttpJsonResponse({'error': e.message})   
     
 class MySQLServer:
     """
@@ -688,15 +691,15 @@ def delete_user(params):
     if len(params) != 1:
         ex = AgentException(E_ARGS_UNEXPECTED, params)
         logger.exception(ex.message) 
-        return HttpJsonResponse({'return': 'ERROR', 'error': ex.message})  
+        return HttpJsonResponse({'error': ex.message})  
     try:
         agent.config.remove_user_to_MySQL(params['username'])
         logger.debug("Leaving delete_user")
-        HttpJsonResponse({'return': 'OK'})
+        HttpJsonResponse()
     except MySQLdb.Error, e:
         ex = AgentException(E_MYSQL, 'error "%d, %s' %(e.args[0], e.args[1]))
         logger.exception(ex.message) 
-        return HttpJsonResponse({'return': 'ERROR', 'error': ex.message})  
+        return HttpJsonResponse({'error': ex.message})  
     
 @expose('GET')
 def get_all_users(params):
@@ -724,14 +727,14 @@ def get_all_users(params):
         ret = agent.config.get_users_in_MySQL()
         logger.debug("Got response: " + str(ret))
         logger.debug("Leaving get_all_users")
-        return HttpJsonResponse({'users': ret})        
+        return HttpJsonResponse(ret)        
     except MySQLdb.Error, e:
         ex = AgentException(E_MYSQL, 'error "%d, %s' %(e.args[0], e.args[1]))
         logger.exception(ex.message) 
-        return HttpJsonResponse( {'users': 'ERROR', 'error': ex.message}) 
+        return HttpJsonResponse( {'error': ex.message}) 
 
 @expose('UPLOAD')
-def create_with_MySQLdump(params):
+def send_mysqldump(params):
     """
     Executes SQL clauses send as a file `params` . Calls to :py:meth:`MySQLServerConfiguration.create_MySQL_with_dump`.
               
@@ -741,10 +744,9 @@ def create_with_MySQLdump(params):
     :raises: AgentException    
     """  
     
-    logger.debug("Entering create_with_MySQLdump")
+    logger.debug("Entering send_mysqldump")
     file=params['mysqldump']
     f=file.file
-    #f = params['mysqldump']['file']
     ret = agent.config.create_MySQL_with_dump(f)
     return ret
 

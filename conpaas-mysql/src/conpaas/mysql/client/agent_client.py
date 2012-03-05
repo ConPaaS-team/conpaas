@@ -90,8 +90,8 @@ def get_all_users(host, port):
     else:
         return False
 
-def remove_user(host,port,name):
-    method = 'remove_user'
+def delete_user(host,port,name):
+    method = 'delete_user'
     params = {'username': name}
     return _check(_jsonrpc_get(host, port, '/', method, params=params))
 
@@ -105,7 +105,7 @@ def setMySQLServerConfiguration(host,port, param_id, val):
     return _check(body)
 
 def send_mysqldump(host,port,location):
-    params = {'method': 'create_with_MySQLdump'}
+    params = {'method': 'send_mysqldump'}
     files = {'mysqldump': location}
     return _check(_http_post(host, port, '/', params, files=files))
     
