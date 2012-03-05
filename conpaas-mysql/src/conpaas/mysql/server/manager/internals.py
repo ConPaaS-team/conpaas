@@ -144,7 +144,7 @@ def createServiceNodeTread(function, new_vm):
     vm=iaas.listVMs()[new_vm['id']]
     node_instances.append(vm)
     wait_for_nodes(node_instances)
-    managerServer.config.addMySQLServiceNode(new_vm)
+    managerServer.configuration.addMySQLServiceNode(new_vm)
 
 @expose('GET')
 def list_nodes(kwargs):
@@ -162,7 +162,7 @@ def list_nodes(kwargs):
     logger.debug("Entering list_nodes")
     if len(kwargs) != 0:
         return HttpErrorResponse(ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
-    _nodes = [ serviceNode.vmid for serviceNode in managerServer.config.getMySQLServiceNodes() ]
+    _nodes = [ serviceNode.vmid for serviceNode in managerServer.configuration.getMySQLServiceNodes() ]
     logger.debug("Listing nodes: %s " % str(_nodes))
     logger.debug("Exiting list_nodes")         
     return HttpJsonResponse({
@@ -186,9 +186,9 @@ def get_node_info(kwargs):
     logger.debug("Got the service node id: %s" % serviceNodeId)
     if len(kwargs) != 0:
         return HttpErrorResponse(ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
-    logger.debug("Looking at the list of known services: %s" % managerServer.config.serviceNodes.keys())
-    if serviceNodeId not in managerServer.config.serviceNodes.keys(): return HttpErrorResponse(ManagerException(E_ARGS_INVALID , "serviceNodeId" , detail='Invalid "serviceNodeId"').message)
-    serviceNode = managerServer.config.serviceNodes[serviceNodeId]    
+    logger.debug("Looking at the list of known services: %s" % managerServer.configuration.serviceNodes.keys())
+    if serviceNodeId not in managerServer.configuration.serviceNodes.keys(): return HttpErrorResponse(ManagerException(E_ARGS_INVALID , "serviceNodeId" , detail='Invalid "serviceNodeId"').message)
+    serviceNode = managerServer.configuration.serviceNodes[serviceNodeId]    
     return HttpJsonResponse(serviceNode.__repr__())
    
     
@@ -268,10 +268,10 @@ def remove_nodes(kwargs):
         serviceNodeId = kwargs.pop('serviceNodeId')
         if len(kwargs) != 0:
             return HttpErrorResponse(ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
-        if serviceNodeId not in managerServer.config.serviceNodes: return HttpErrorResponse(ManagerException(E_ARGS_INVALID, "serviceNodeId", detail='Invalid "serviceNodeId"').message)     
+        if serviceNodeId not in managerServer.configuration.serviceNodes: return HttpErrorResponse(ManagerException(E_ARGS_INVALID, "serviceNodeId", detail='Invalid "serviceNodeId"').message)     
         logger.debug('remove_nodes ' + str(serviceNodeId))
         if iaas.killInstance(serviceNodeId):
-            managerServer.config.removeMySQLServiceNode(serviceNodeId)            
+            managerServer.configuration.removeMySQLServiceNode(serviceNodeId)            
     elif 'count' in kwargs:
         if not isinstance(kwargs['count'], int):
             return HttpErrorResponse('ERROR: Expected an integer value for "count"')
@@ -281,11 +281,11 @@ def remove_nodes(kwargs):
             return HttpErrorResponse(ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
         managerServer.state = S_ADAPTING
         i=0
-        for k in managerServer.config.serviceNodes:
+        for k in managerServer.configuration.serviceNodes:
             logger.debug('Killing service %s' % str(k))
             i=i+1
             if iaas.killInstance(k):
-                managerServer.config.removeMySQLServiceNode(k)
+                managerServer.configuration.removeMySQLServiceNode(k)
             if i==count:
                 logger.debug('Finished killing services.')
                 break
@@ -309,8 +309,8 @@ def getLog(kwargs):
     if len(kwargs) != 0:
         return HttpErrorResponse(ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
     try:
-        logger.debug('Oppening the log file: %s' % str(managerServer.config.logfile))
-        fd = open(managerServer.config.logfile)
+        logger.debug('Oppening the log file: %s' % str(managerServer.configuration.logfile))
+        fd = open(managerServer.configuration.logfile)
         ret=''
         s = fd.read()
         while s!='':
@@ -349,7 +349,7 @@ def register_node(kwargs):
         vm['mysqld_port']=kwargs["state"]["mysqld_port"]
         vm['supervisor_data']=kwargs["state"]["supervisor_data"]
         logger.debug('Adding/updating service node %s' % vm)
-        managerServer.config.addMySQLServiceNode(vm)
+        managerServer.configuration.addMySQLServiceNode(vm)
         logger.debug("Exiting register_new_node")
     except Exception as e:
         logger.debug(e.getMessage())
@@ -392,7 +392,7 @@ def set_up_replica_master(params):
     new_master_id = params['id']
     new_master_ip = ''
     new_master_port = ''
-    for node in managerServer.config.getMySQLServiceNodes():
+    for node in managerServer.configuration.getMySQLServiceNodes():
         if new_master_id == node.id:
             new_master_ip=node.ip
             new_master_port=node.port
@@ -418,7 +418,7 @@ def set_up_replica_slave(params):
     _id = params['id']
     _host = ''
     _port = ''
-    for node in managerServer.config.getMySQLServiceNodes():
+    for node in managerServer.configuration.getMySQLServiceNodes():
         if _id == node.id:
             _host=node.ip
             _port=node.port
@@ -498,15 +498,15 @@ def configure_user(kwargs):
     logger.debug("Got the service node id: %s" % serviceNodeId)
     logger.debug("Configuring user: %s" % serviceNodeId)    
     if serviceNodeId != 'all':        
-        if serviceNodeId not in managerServer.config.serviceNodes.keys(): return HttpErrorResponse(ManagerException(E_ARGS_INVALID , "serviceNodeId" , detail='Invalid "serviceNodeId"').message)
-        serviceNode = managerServer.config.serviceNodes[serviceNodeId]
+        if serviceNodeId not in managerServer.configuration.serviceNodes.keys(): return HttpErrorResponse(ManagerException(E_ARGS_INVALID , "serviceNodeId" , detail='Invalid "serviceNodeId"').message)
+        serviceNode = managerServer.configuration.serviceNodes[serviceNodeId]
         logger.debug('Calling configure_user with the agent_client')
         ret=agent_client.configure_user(serviceNode.ip, serviceNode.port, username, password)
         logger.debug('A reply: %s ' % str(ret))
     else:
-        for k in managerServer.config.serviceNodes:
+        for k in managerServer.configuration.serviceNodes:
             logger.debug('Setting a user on %s' % str(k))
-            serviceNode=managerServer.config.serviceNodes[k]
+            serviceNode=managerServer.configuration.serviceNodes[k]
             ret=agent_client.configure_user(serviceNode.ip, serviceNode.port, username, password)
             logger.debug('A reply: %s ' % str(ret))
     return HttpJsonResponse()
@@ -535,15 +535,15 @@ def delete_user(kwargs):
     logger.debug("Got the service node id: %s" % serviceNodeId)
     logger.debug("Configuring user: %s" % serviceNodeId)    
     if serviceNodeId != 'all':        
-        if serviceNodeId not in managerServer.config.serviceNodes.keys(): return HttpErrorResponse(ManagerException(E_ARGS_INVALID , "serviceNodeId" , detail='Invalid "serviceNodeId"').message)
-        serviceNode = managerServer.config.serviceNodes[serviceNodeId]
+        if serviceNodeId not in managerServer.configuration.serviceNodes.keys(): return HttpErrorResponse(ManagerException(E_ARGS_INVALID , "serviceNodeId" , detail='Invalid "serviceNodeId"').message)
+        serviceNode = managerServer.configuration.serviceNodes[serviceNodeId]
         logger.debug('Calling delete_user with the agent_client')
         ret=agent_client.delete_user(serviceNode.ip, serviceNode.port, username)
         logger.debug('A reply: %s ' % str(ret))
     else:
-        for k in managerServer.config.serviceNodes:
+        for k in managerServer.configuration.serviceNodes:
             logger.debug('Deleting a user on %s' % str(k))
-            serviceNode=managerServer.config.serviceNodes[k]
+            serviceNode=managerServer.configuration.serviceNodes[k]
             ret=agent_client.delete_user(serviceNode.ip, serviceNode.port, username)
             logger.debug('A reply: %s ' % str(ret))
     return HttpJsonResponse()
@@ -561,9 +561,9 @@ def get_users(kwargs):
     if len(kwargs) != 0:
         return HttpErrorResponse(ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
     nodesRet = {}
-    for k in managerServer.config.serviceNodes:
+    for k in managerServer.configuration.serviceNodes:
         logger.debug('Getting users from %s' % str(k))
-        serviceNode=managerServer.config.serviceNodes[k]
+        serviceNode=managerServer.configuration.serviceNodes[k]
         ret=agent_client.get_all_users(serviceNode.ip, serviceNode.port)
         nodesRet[k]=ret
         logger.debug('A reply: %s ' % str(ret))
@@ -597,15 +597,15 @@ def send_mysqldump(kwargs):
     dumpfile.write(mysqldump)
     dumpfile.close()
     if serviceNodeId != 'all':        
-        if serviceNodeId not in managerServer.config.serviceNodes.keys(): return HttpErrorResponse(ManagerException(E_ARGS_INVALID , "serviceNodeId" , detail='Invalid "serviceNodeId"').message)
-        serviceNode = managerServer.config.serviceNodes[serviceNodeId]
+        if serviceNodeId not in managerServer.configuration.serviceNodes.keys(): return HttpErrorResponse(ManagerException(E_ARGS_INVALID , "serviceNodeId" , detail='Invalid "serviceNodeId"').message)
+        serviceNode = managerServer.configuration.serviceNodes[serviceNodeId]
         logger.debug('Calling send_mysqldump with the agent_client')
         ret=agent_client.send_mysqldump(serviceNode.ip, serviceNode.port, dumpfile.name)
         logger.debug('A reply: %s ' % str(ret))
     else:
-        for k in managerServer.config.serviceNodes:
+        for k in managerServer.configuration.serviceNodes:
             logger.debug('send_mysqldump on %s' % str(k))
-            serviceNode=managerServer.config.serviceNodes[k]
+            serviceNode=managerServer.configuration.serviceNodes[k]
             ret=agent_client.send_mysqldump(serviceNode.ip, serviceNode.port, dumpfile.name)
             logger.debug('A reply: %s ' % str(ret))
     logger.debug('Removing a file %s' % str(dumpfile.name))
