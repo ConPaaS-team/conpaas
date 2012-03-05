@@ -688,13 +688,14 @@ def delete_user(params):
     """        
     logger.debug("Entering delete_user")
     if len(params) != 1:
+        logger.error('Missing an argument.')
         ex = AgentException(E_ARGS_UNEXPECTED, params)
         logger.exception(ex.message) 
         return HttpJsonResponse({'error': ex.message})  
     try:
         agent.config.remove_user_to_MySQL(params['username'])
         logger.debug("Leaving delete_user")
-        HttpJsonResponse()
+        return HttpJsonResponse()
     except MySQLdb.Error, e:
         ex = AgentException(E_MYSQL, 'error "%d, %s' %(e.args[0], e.args[1]))
         logger.exception(ex.message) 

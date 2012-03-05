@@ -111,8 +111,9 @@ def get_service_performance(host, port):
     method = 'get_service_performance'
     return _check(_jsonrpc_get(host, port, '/', method))
 
-def send_mysqldump(host,port,location):
-    params = {'method': 'send_mysqldump'}
+def send_mysqldump(host,port,vmid,location):
+    params = {'method': 'send_mysqldump',
+              'serviceNodeId': vmid}
     files = {'mysqldump': location}
     return _check(_http_post(host, port, '/', params, files=files))
 
@@ -161,10 +162,10 @@ if __name__ == '__main__':
             ret = delete_user(host, port, serviceNodeId, username)
             print ret   
         if command == 'send_mysqldump':
-            if not sys.argv[4]:
+            if (not sys.argv[4]) or (not sys.argv[5]):
                 printUsage()
                 exit()
-            ret = send_mysqldump(host,port,sys.argv[4])
+            ret = send_mysqldump(host,port,sys.argv[4],sys.argv[5])
             print ret     
     else:
         printUsage()
