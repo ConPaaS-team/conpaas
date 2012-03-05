@@ -219,8 +219,12 @@ def add_nodes(kwargs):
         if len(kwargs) != 0:
             return HttpErrorResponse(ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
         managerServer.state = S_ADAPTING
-        for k in range(0,count):            
-            new_vm=iaas.newInstance('agent')
+        for k in range(0,count):
+            new_vm=None            
+            try:
+                new_vm=iaas.newInstance('agent')
+            except Exception as e:
+                logger.error(str(e))
             logger.debug('Adding a service count %s: %s' % (str(k),str(new_vm)))
         managerServer.state = S_RUNNING
     else:
@@ -538,14 +542,20 @@ def delete_user(kwargs):
         if serviceNodeId not in managerServer.configuration.serviceNodes.keys(): return HttpErrorResponse(ManagerException(E_ARGS_INVALID , "serviceNodeId" , detail='Invalid "serviceNodeId"').message)
         serviceNode = managerServer.configuration.serviceNodes[serviceNodeId]
         logger.debug('Calling delete_user with the agent_client')
-        ret=agent_client.delete_user(serviceNode.ip, serviceNode.port, username)
-        logger.debug('A reply: %s ' % str(ret))
+        try:
+            ret=agent_client.delete_user(serviceNode.ip, serviceNode.port, username)
+            logger.debug('A reply: %s ' % str(ret))
+        except Exception as e:
+            logger.error(str(e))            
     else:
         for k in managerServer.configuration.serviceNodes:
             logger.debug('Deleting a user on %s' % str(k))
             serviceNode=managerServer.configuration.serviceNodes[k]
-            ret=agent_client.delete_user(serviceNode.ip, serviceNode.port, username)
-            logger.debug('A reply: %s ' % str(ret))
+            try:
+                ret=agent_client.delete_user(serviceNode.ip, serviceNode.port, username)
+                logger.debug('A reply: %s ' % str(ret))
+            except Exception as e:
+                logger.error(str(e))
     return HttpJsonResponse()
 
 @expose('GET')

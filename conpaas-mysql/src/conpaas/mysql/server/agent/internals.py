@@ -685,8 +685,7 @@ def delete_user(params):
     :returns: HttpJsonResponse
     :raises: AgentException
     
-    """    
-    
+    """        
     logger.debug("Entering delete_user")
     if len(params) != 1:
         ex = AgentException(E_ARGS_UNEXPECTED, params)

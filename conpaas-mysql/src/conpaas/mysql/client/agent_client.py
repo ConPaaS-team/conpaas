@@ -166,8 +166,8 @@ if __name__ == '__main__':
         if sys.argv[3] == 'get_all_users':
             ret =get_all_users(host, port)
             print ret
-        if sys.argv[3] == 'remove_user':
-            ret = remove_user(host,port,sys.argv[4])
+        if sys.argv[3] == 'delete_user':
+            ret = delete_user(host,port,sys.argv[4])
             print ret            
         if sys.argv[3] == 'setMySQLServerConfiguration':
             ret = setMySQLServerConfiguration(host,port, sys.argv[4], sys.argv[5])

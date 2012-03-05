@@ -97,7 +97,7 @@ def configure_user(host, port, vmid, username, password):
               'password': password}
     return _check(_jsonrpc_post(host, port, '/', method, params=params))
 
-def delete_user(host, port, vmid, username, password):
+def delete_user(host, port, vmid, username):
     method = 'delete_user'
     params = {'serviceNodeId': vmid,
               'username': username }
