@@ -596,20 +596,24 @@ def send_mysqldump(kwargs):
     if 'mysqldump' not in kwargs: return HttpErrorResponse(ManagerException(E_ARGS_MISSING, 'mysqldump').message)
     if 'serviceNodeId' not in kwargs: return HttpErrorResponse(ManagerException(E_ARGS_MISSING, 'serviceNodeId').message)
     serviceNodeId = kwargs.pop('serviceNodeId')
-    file=kwargs['mysqldump']
-    f=file.file    
+    dfile=kwargs['mysqldump']
+    f=dfile.file    
     if len(kwargs) != 1:
         return HttpErrorResponse(ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
     logger.debug("Got the service node id: %s" % serviceNodeId)   
     mysqldump = f.read()
-    logger.debug("temporary writing file to: : " + os.getcwd() +  '/mysqldump')
-    dumpfile = file(os.getcwd() + '/mysqldump' , "wb")
-    dumpfile.write(mysqldump)
-    dumpfile.close()
+    logger.debug("temporary writing file to : " + os.getcwd() +  '/mysqldump')
+    dumpfile = None
+    try:
+        dumpfile = file(os.getcwd() + '/mysqldump' , "wb")
+        dumpfile.write(mysqldump)
+        dumpfile.close()
+    except Exception as err:
+        logger.error(str(err))
     if serviceNodeId != 'all':        
-        if serviceNodeId not in managerServer.configuration.serviceNodes.keys(): return HttpErrorResponse(ManagerException(E_ARGS_INVALID , "serviceNodeId" , detail='Invalid "serviceNodeId"').message)
-        serviceNode = managerServer.configuration.serviceNodes[serviceNodeId]
         logger.debug('Calling send_mysqldump with the agent_client')
+        if serviceNodeId not in managerServer.configuration.serviceNodes.keys(): return HttpErrorResponse(ManagerException(E_ARGS_INVALID , "serviceNodeId" , detail='Invalid "serviceNodeId"').message)
+        serviceNode = managerServer.configuration.serviceNodes[serviceNodeId]        
         ret=agent_client.send_mysqldump(serviceNode.ip, serviceNode.port, dumpfile.name)
         logger.debug('A reply: %s ' % str(ret))
     else:
