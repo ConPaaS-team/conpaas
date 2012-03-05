@@ -6,9 +6,7 @@ Created on Feb 22, 2012
 import threading
 import time
 from conpaas.mysql.utils.log import get_logger_plus
-from conpaas.web.http import _jsonrpc_post, _jsonrpc_get
-from conpaas.mysql.client import agent_client
-import conpaas.mysql.server.manager.internals
+from conpaas.web.http import _jsonrpc_get
 
 logger, flog, mlog = get_logger_plus(__name__)
 
@@ -17,17 +15,19 @@ class MaintainAgentConnections( threading.Thread ):
     Maintains connection to the manager.
     '''
 
-    config = None
     poll_interval = 30
+    manager = None
+    dummy = None
     
-    def __init__(self, config=None):
+    def __init__(self, manager = None, dummy = None):
         '''
         Constructor
         '''
+        self.manager = manager
         threading.Thread.__init__(self)
-        self.poll_interval = config.poll_agents_timer
+        self.poll_interval = float(self.manager.configuration.poll_agents_timer)
+        self.dummy = dummy
         logger.debug('setting poll interval to %s' % str(self.poll_interval))
-        self.config = config
 
     def run ( self ):
         """
@@ -38,12 +38,12 @@ class MaintainAgentConnections( threading.Thread ):
         :type poll_interfvall: int
         """
         logger.debug('maintain nodes list: going to start polling')
-        if conpaas.mysql.server.manager.internals.dummy_backend:
+        if self.dummy:
             pass
         else:
             while True:
                 logger.debug("Starting the poll.")       
-                nodes = self.config.getMySQLServiceNodes()
+                nodes = self.manager.configuration.getMySQLServiceNodes()
                 logger.debug("The list : %s " % nodes)
                 for node in nodes:
                     logger.debug("Trying node %s:%s " % (node.ip, node.port))
@@ -54,5 +54,5 @@ class MaintainAgentConnections( threading.Thread ):
                     except Exception as e:
                         logger.error('Exception: ' + str(e)) 
                         logger.debug("Node %s:%s is down. Removing from the list. " % (node.ip, node.port))
-                        self.config.removeMySQLServiceNode(node.vmid)
+                        self.manager.configuration.removeMySQLServiceNode(node.vmid)
                 time.sleep(self.poll_interval)

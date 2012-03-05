@@ -78,7 +78,7 @@ class ManagerServer(ThreadingMixIn, HTTPServer):
 	@mlog
 	def __init__(self, server_address, iaas_config, RequestHandlerClass=SQLServerRequestHandler):
 		HTTPServer.__init__(self, server_address, RequestHandlerClass)		
-		self.callback_dict = {'GET': {}, 'POST': {}}		
+		self.callback_dict = {'GET': {}, 'POST': {}, 'UPLOAD':{}}		
 		from conpaas.mysql.server.manager import internals
 		internals.iaas = IaaSClient(iaas_config)				
 		self.whitelist_addresses = []

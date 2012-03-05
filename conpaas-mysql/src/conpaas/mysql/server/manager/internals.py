@@ -65,12 +65,12 @@ class MySQLServerManager():
     
     def __init__(self, conf, _dummy_backend=False):        
         logger.debug("Entering MySQLServerManager initialization")
-        configuration = Configuration(conf, _dummy_backend)         
+        self.configuration = Configuration(conf, _dummy_backend)         
         self.state = S_INIT
         self.dummy_backend = _dummy_backend
         conpaas.mysql.server.manager.internals.dummy_backend = _dummy_backend
-        time = configuration.poll_agents_timer
-        MaintainAgentConnections(configuration).start()
+        time = self.configuration.poll_agents_timer
+        MaintainAgentConnections(self).start()
         self.state = S_RUNNING
         logger.debug("Leaving MySQLServer initialization")
 
