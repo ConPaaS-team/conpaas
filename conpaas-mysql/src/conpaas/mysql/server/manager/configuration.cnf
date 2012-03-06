@@ -16,12 +16,13 @@ find_existing_agents = true
 poll_agents_timer=10
 
 [onevm_agent_template]
-FILENAME=/home/ales/workspace/contrail/conpaassql-trunk/bin/agent.template
+FILENAME=/root/conpaassql/scripts/one-scripts/agent/agent.template
+USERDATA=/root/conpaassql/scripts/one-scripts/agent/init.sh
 NAME=conpaassql_server
 CPU=0.2
 MEM_SIZE=256
-DISK=bus=scsi,readonly=no
-OS=arch=i686,boot = hd, root = hda
-IMAGE_ID=193
+DISK=readonly=no
+OS=arch=x86_64,boot=hd
+IMAGE_ID=221
 NETWORK_ID=205
-CONTEXT=target=sdc,files=/home/ales/sql/agent/conpaassql-install.sh
+CONTEXT=ip_gateway="10.1.0.254",netmask="255.255.255.0",nameserver="192.168.122.1"

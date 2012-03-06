@@ -249,18 +249,18 @@ class OneXmlrpc(NodeDriver):
         context = str(kwargs['template']['context'])
         logger.debug("This is context: %s" % str(context))
         context_template = string.Template(context)
-        context_template = context_template.substitute(VMID='$VMID', NAME='$NAME',NIC='$NIC', NETWORK='$NETWORK', AGENT_USER_DATA=hex_user_data)
+        context_template = context_template.substitute()
         logger.debug("Modified context is: %s" % str(context_template))
         if kwargs['function'] == 'agent':            
             logger.debug("creating agent")
             template = self.read_template(kwargs['template']['filename'])            
-            template = template.substitute(NAME= str(kwargs['template']['vm_name']),CPU= str(kwargs['template']['cpu']),MEM_SIZE= str(kwargs['template']['mem_size']), OS= str(kwargs['template']['os']),IMAGE_ID= str(kwargs['template']['image_id']), NETWORK_ID= str(kwargs['template']['network_id']), CONTEXT= context_template, DISK= str(kwargs['template']['disk'])) 
+            template = template.substitute(NAME= str(kwargs['template']['vm_name']),CPU= str(kwargs['template']['cpu']),MEM_SIZE= str(kwargs['template']['mem_size']), OS= str(kwargs['template']['os']),IMAGE_ID= str(kwargs['template']['image_id']), NETWORK_ID= str(kwargs['template']['network_id']), CONTEXT= context_template, AGENT_USER_DATE=hex_user_data,DISK= str(kwargs['template']['disk'])) 
         elif kwargs['function'] == 'manager':
             logger.debug("creating manager")
-            template = template.substitute(NAME= str(kwargs['template']['vm_name']),CPU= str(kwargs['template']['cpu']),MEM_SIZE= str(kwargs['template']['mem_size']), OS= str(kwargs['template']['os']),IMAGE_ID= str(kwargs['template']['image_id']), NETWORK_ID= str(kwargs['template']['network_id']), CONTEXT= context_template, DISK= str(kwargs['template']['disk']))
+            template = template.substitute(NAME= str(kwargs['template']['vm_name']),CPU= str(kwargs['template']['cpu']),MEM_SIZE= str(kwargs['template']['mem_size']), OS= str(kwargs['template']['os']),IMAGE_ID= str(kwargs['template']['image_id']), NETWORK_ID= str(kwargs['template']['network_id']), CONTEXT= context_template, AGENT_USER_DATE=hex_user_data,DISK= str(kwargs['template']['disk']))
         else:
             logger.debug("creating")
-            template = template.substitute(NAME= str(kwargs['template']['vm_name']),CPU= str(kwargs['template']['cpu']),MEM_SIZE= str(kwargs['template']['mem_size']), OS= str(kwargs['template']['os']),IMAGE_ID= str(kwargs['template']['image_id']), NETWORK_ID= str(kwargs['template']['network_id']), CONTEXT= context_template, DISK= str(kwargs['template']['disk']))
+            template = template.substitute(NAME= str(kwargs['template']['vm_name']),CPU= str(kwargs['template']['cpu']),MEM_SIZE= str(kwargs['template']['mem_size']), OS= str(kwargs['template']['os']),IMAGE_ID= str(kwargs['template']['image_id']), NETWORK_ID= str(kwargs['template']['network_id']), CONTEXT= context_template, AGENT_USER_DATE=hex_user_data,DISK= str(kwargs['template']['disk']))
         logger.debug('Provisioning VM:' + template)
         rez = None
         try:
