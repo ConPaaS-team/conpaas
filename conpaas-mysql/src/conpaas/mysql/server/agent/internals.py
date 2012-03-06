@@ -304,7 +304,7 @@ mysql>UNLOCK TABLES;
             dumpfile = file(os.getcwd() + '/mysqldump' , "wb")
             dumpfile.write(mysqldump)
             dumpfile.close()
-            os.system("mysql -u " + self.conn_username + " -p"  + self.conn_password + "--host "+ self.conn_location +" < " + os.getcwd() + '/mysqldump')            
+            os.system("mysql -u " + self.conn_username + " -p"  + self.conn_password + " --host "+ self.conn_location +" < " + os.getcwd() + '/mysqldump')            
             logger.debug('Removing a file %s' % str(dumpfile.name))
             os.remove(dumpfile.name)            
             logger.debug("Leaving create_MySQL_with_dump")

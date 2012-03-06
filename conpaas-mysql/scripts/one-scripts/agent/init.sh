@@ -36,9 +36,9 @@ EOF
 
 cat >  /root/conpaassql/src/conpaas/mysql/server/agent/configuration.cnf << EOF
 [MySQL_root_connection]
-location=0.0.0.0
-password=
-username=root
+location=localhost
+password=contrail
+username=contrail
 
 [MySQL_configuration]
 my_cnf_file=/etc/mysql/my.cnf
