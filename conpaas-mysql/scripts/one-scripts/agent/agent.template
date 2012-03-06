@@ -17,6 +17,6 @@ CONTEXT = [
 	vmname=$NAME,
 	userdata=$AGENT_USER_DATA,
 	ip_public="$NIC[IP]",
-  $CONTEXT   
+  $CONTEXT
   ]
 RANK = "- RUNNING_VMS"

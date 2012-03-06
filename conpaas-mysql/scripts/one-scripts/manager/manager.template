@@ -15,8 +15,8 @@ GRAPHICS = [
   ]
 
 CONTEXT = [
- hostname="ConPaaSSQL-01",
- ip_public  = "$NIC[IP, NETWORK=\"private-lan\"]",
+ hostname="conpaas-mysql",
+ ip_public  = "$NIC[IP]",
  ip_gateway  = "10.1.0.254",
  netmask = "255.255.255.0",
  nameserver = "192.168.122.1",

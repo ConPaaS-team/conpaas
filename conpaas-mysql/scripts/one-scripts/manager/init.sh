@@ -21,10 +21,10 @@ easy_install dist/conpaas*
 cat > /root/conpaassql/src/conpaas/mysql/server/manager/configuration.cnf << EOF
 [iaas]
 DRIVER=OPENNEBULA_XMLRPC
-OPENNEBULA_URL=http://10.30.1.14:2633/RPC2
-OPENNEBULA_USER=oneadmin
+OPENNEBULA_URL= http://10.30.1.14:2633/RPC2
+OPENNEBULA_USER = oneadmin
 OPENNEBULA_PASSWORD=oneadmin
-OPENNEBULA_IMAGE_ID = 221
+OPENNEBULA_IMAGE_ID =  221
 OPENNEBULA_SIZE_ID = 1
 OPENNEBULA_NETWORK_ID = 205
 OPENNEBULA_NETWORK_GATEWAY=$IP_GATEWAY
@@ -33,6 +33,7 @@ OPENNEBULA_NETWORK_NAMESERVER=$NAMESERVER
 [manager]
 find_existing_agents = true
 logfile=/var/log/conpaassql-stdout.log
+poll_agents_timer=10
 
 [onevm_agent_template]
 FILENAME=/root/conpaassql/scripts/one-scripts/agent/agent.template
@@ -44,7 +45,7 @@ DISK=readonly=no
 OS=arch=x86_64,boot=hd
 IMAGE_ID=221
 NETWORK_ID=205
-CONTEXT=vmid=$VMID,vmname=$NAME,ip_public="$NIC[IP, NETWORK=\"private-lan\"]",ip_gateway="$IP_GATEWAY",netmask="$NETMASK",nameserver="$NAMESERVER",userdata=$AGENT_USER_DATA
+CONTEXT=ip_gateway="$IP_GATEWAY",netmask="$NETMASK",nameserver="$NAMESERVER"
 EOF
 
 nohup python /root/conpaassql/src/conpaas/mysql/server/manager/server.py -p 50000 -b $IP_PUBLIC -c /root/conpaassql/src/conpaas/mysql/server/manager/configuration.cnf 1> /var/log/conpaassql-stdout.log 2> /var/log/conpaassql-err.log &

@@ -264,6 +264,7 @@ class OneXmlrpc(NodeDriver):
         logger.debug('Provisioning VM:' + template)
         rez = None
         try:
+            logger.debug('Template: %s ' % str(template))
             rez=oca.VirtualMachine.allocate(self.client, template)
         except Exception as err:
             logger.error(str(err))        
