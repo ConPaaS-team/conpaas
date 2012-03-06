@@ -18,7 +18,7 @@ cd conpaassql
 python setup.py bdist_egg
 easy_install dist/conpaas*
 
-cat > /root/conpaassql/src/conpaas/mysql/server/manager/configuration.cnf << EOF
+cat > /root/conpaassql/config/manager/configuration.cnf << EOF
 [iaas]
 DRIVER=OPENNEBULA_XMLRPC
 OPENNEBULA_URL= http://10.30.1.14:2633/RPC2
@@ -48,4 +48,4 @@ NETWORK_ID=205
 CONTEXT=ip_gateway="$IP_GATEWAY",netmask="$NETMASK",nameserver="$NAMESERVER"
 EOF
 
-nohup python /root/conpaassql/src/conpaas/mysql/server/manager/server.py -p 50000 -b $IP_PUBLIC -c /root/conpaassql/src/conpaas/mysql/server/manager/configuration.cnf 1> /var/log/conpaassql-stdout.log 2> /var/log/conpaassql-err.log &
+nohup python /root/conpaassql/src/conpaas/mysql/server/manager/server.py -p 50000 -b $IP_PUBLIC -c /root/conpaassql/config/manager/configuration.cnf 1> /var/log/conpaassql-stdout.log 2> /var/log/conpaassql-err.log &

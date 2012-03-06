@@ -257,13 +257,13 @@ class OneXmlrpc(NodeDriver):
                 logger.debug("creating agent")
                 template = self.read_template(kwargs['template']['filename'])    
                 logger.debug('Reading template:' + str(kwargs['template']['filename']))
-                template = template.substitute(VMID='$VMID',NIC='$NIC',NAME= str(kwargs['template']['vm_name']),CPU= str(kwargs['template']['cpu']),MEM_SIZE= str(kwargs['template']['mem_size']), OS= str(kwargs['template']['os']),IMAGE_ID= str(kwargs['template']['image_id']), NETWORK_ID= str(kwargs['template']['network_id']), CONTEXT= context_template, AGENT_USER_DATE=hex_user_data,DISK= str(kwargs['template']['disk'])) 
+                template = template.substitute(VMID='$VMID',NIC='$NIC',NAME= str(kwargs['template']['vm_name']),CPU= str(kwargs['template']['cpu']),MEM_SIZE= str(kwargs['template']['mem_size']), OS= str(kwargs['template']['os']),IMAGE_ID= str(kwargs['template']['image_id']), NETWORK_ID= str(kwargs['template']['network_id']), CONTEXT= context_template, AGENT_USER_DATA=hex_user_data,DISK= str(kwargs['template']['disk'])) 
             elif kwargs['function'] == 'manager':
                 logger.debug("creating manager")
-                template = template.substitute(VMID='$VMID',NIC='$NIC',NAME= str(kwargs['template']['vm_name']),CPU= str(kwargs['template']['cpu']),MEM_SIZE= str(kwargs['template']['mem_size']), OS= str(kwargs['template']['os']),IMAGE_ID= str(kwargs['template']['image_id']), NETWORK_ID= str(kwargs['template']['network_id']), CONTEXT= context_template, AGENT_USER_DATE=hex_user_data,DISK= str(kwargs['template']['disk']))
+                template = template.substitute(VMID='$VMID',NIC='$NIC',NAME= str(kwargs['template']['vm_name']),CPU= str(kwargs['template']['cpu']),MEM_SIZE= str(kwargs['template']['mem_size']), OS= str(kwargs['template']['os']),IMAGE_ID= str(kwargs['template']['image_id']), NETWORK_ID= str(kwargs['template']['network_id']), CONTEXT= context_template, AGENT_USER_DATA=hex_user_data,DISK= str(kwargs['template']['disk']))
             else:
                 logger.debug("creating")
-                template = template.substitute(VMID='$VMID',NIC='$NIC',NAME= str(kwargs['template']['vm_name']),CPU= str(kwargs['template']['cpu']),MEM_SIZE= str(kwargs['template']['mem_size']), OS= str(kwargs['template']['os']),IMAGE_ID= str(kwargs['template']['image_id']), NETWORK_ID= str(kwargs['template']['network_id']), CONTEXT= context_template, AGENT_USER_DATE=hex_user_data,DISK= str(kwargs['template']['disk']))
+                template = template.substitute(VMID='$VMID',NIC='$NIC',NAME= str(kwargs['template']['vm_name']),CPU= str(kwargs['template']['cpu']),MEM_SIZE= str(kwargs['template']['mem_size']), OS= str(kwargs['template']['os']),IMAGE_ID= str(kwargs['template']['image_id']), NETWORK_ID= str(kwargs['template']['network_id']), CONTEXT= context_template, AGENT_USER_DATA=hex_user_data,DISK= str(kwargs['template']['disk']))
         except Exception as e:
             logger.error(str(e))
             raise e
