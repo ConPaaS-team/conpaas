@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/ xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.ow2.contrail.conpaas</groupId>
+  <artifactId>conpaas-frontend</artifactId>
+  <version>0.1-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  <name>ConPaaS Frontend</name>
+  <parent>
+    <groupId>org.ow2.contrail</groupId>
+    <artifactId>contrail</artifactId>
+    <version>0.3-SNAPSHOT</version>
+    <relativePath>../../common/contrail-parent</relativePath>
+  </parent>
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>create-archive</id>
+            <phase>package</phase>
+            <configuration>
+              <target>
+                <tar destfile="${basedir}/target/conpaas-frontend.tar.gz" compression="gzip" basedir="${basedir}" includes="conf/**, README.txt, scripts/**, www/**"/>
+              </target>
+            </configuration>
+            <goals>
+              <goal>run</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>

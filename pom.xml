@@ -14,5 +14,6 @@
   <name>Contrail ConPaaS builder</name>
   <modules>
     <module>conpaas-mysql</module>
+    <module>conpaas-frontend</module>
   </modules>
 </project>
