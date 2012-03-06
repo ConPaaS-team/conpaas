@@ -13,6 +13,10 @@ GRAPHICS = [
   type="vnc"
   ]
 CONTEXT = [
+	vmid=$VMID,
+	vmname=$NAME,
+	userdata=$AGENT_USER_DATA,
+	ip_public="$NIC[IP]",
   $CONTEXT   
   ]
 RANK = "- RUNNING_VMS"
