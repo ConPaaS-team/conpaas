@@ -4,9 +4,9 @@ if [ -f /mnt/context.sh ]; then
   . /mnt/context.sh
 fi
 
-ifconfig eth0 $IP_PUBLIC netmask $NETMASK
-route add default gw $IP_GATEWAY eth0
-echo nameserver $NAMESERVER > /etc/resolv.conf
+/sbin/ifconfig eth0 $IP_PUBLIC
+/sbin/ip route add default via $IP_GATEWAY
+echo "nameserver $NAMESERVER" > /etc/resolv.conf
 
 # installation
 export DEBIAN_FRONTEND=noninteractive
