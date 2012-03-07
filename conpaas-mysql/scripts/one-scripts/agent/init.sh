@@ -8,6 +8,9 @@ fi
 /sbin/ip route add default via $IP_GATEWAY
 echo "nameserver $NAMESERVER" > /etc/resolv.conf
 
+# fix dns record
+grep -q 130.73.121.1 /etc/resolv.conf && echo "nameserver 130.73.79.13" > /etc/resolv.conf
+
 # installation
 export DEBIAN_FRONTEND=noninteractive
 
