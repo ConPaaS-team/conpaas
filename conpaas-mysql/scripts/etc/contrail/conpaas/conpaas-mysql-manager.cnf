@@ -22,6 +22,6 @@ CPU=0.2
 MEM_SIZE=256
 DISK=readonly=no
 OS=arch=x86_64,boot=hd
-IMAGE_ID=221
-NETWORK_ID=205
-CONTEXT=ip_gateway="10.1.0.254",netmask="255.255.255.0",nameserver="192.168.122.1"
+IMAGE_ID=$ONE_IMAGE_ID
+NETWORK_ID=$ONE_NET_ID
+CONTEXT=ip_gateway="$GATEWAY",netmask="255.255.255.0",nameserver="$NAMESERVER"
