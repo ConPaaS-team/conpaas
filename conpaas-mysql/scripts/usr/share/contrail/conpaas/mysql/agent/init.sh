@@ -37,7 +37,7 @@ username = root
 password = root
 EOF
 
-cat >  /root/conpaassql/config/agent/configuration.cnf << EOF
+cat >  /etc/contrail/conpaas/conpaas-mysql-agent.cnf << EOF
 [MySQL_root_connection]
 location=localhost
 password=contrail
@@ -68,4 +68,6 @@ sleep 5
 service supervisor start
 sleep 5
 
-nohup python /root/conpaassql/src/conpaas/mysql/server/agent/server.py -p 60000 -b $IP_PUBLIC -c /root/conpaassql/config/agent/configuration.cnf 1> /var/log/conpaassql-stdout.log 2> /var/log/conpaassql-err.log &
+#nohup python /root/conpaassql/src/conpaas/mysql/server/agent/server.py -p 60000 -b $IP_PUBLIC -c /root/conpaassql/config/agent/configuration.cnf 1> /var/log/conpaassql-stdout.log 2> /var/log/conpaassql-err.log &
+
+nohup /usr/share/contrail/conpaas/mysql/conpaas-mysql-agent-server ${IP_PUBLIC} 50000 &

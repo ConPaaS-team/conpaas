@@ -20,8 +20,9 @@ svn co svn://svn.forge.objectweb.org/svnroot/contrail/trunk/conpaas/conpaas-mysq
 cd conpaassql
 python setup.py bdist_egg
 easy_install dist/conpaas*
+make install
 
-cat > /root/conpaassql/config/manager/configuration.cnf << EOF
+cat > /etc/contrail/conpaas/conpaas-mysql-manager.cnf << EOF
 [iaas]
 DRIVER=OPENNEBULA_XMLRPC
 OPENNEBULA_URL= http://10.30.1.14:2633/RPC2
@@ -39,8 +40,8 @@ logfile=/var/log/conpaassql-stdout.log
 poll_agents_timer=10
 
 [onevm_agent_template]
-FILENAME=/root/conpaassql/scripts/one-scripts/agent/agent.template
-USERDATA=/root/conpaassql/scripts/one-scripts/agent/init.sh
+FILENAME=/usr/share/contrail/conpaas/mysql/agent/agent.template
+USERDATA=/usr/share/contrail/conpaas/mysql/agent/init.sh
 NAME=conpaassql_server
 CPU=0.2
 MEM_SIZE=256
@@ -51,4 +52,6 @@ NETWORK_ID=205
 CONTEXT=ip_gateway="$IP_GATEWAY",netmask="$NETMASK",nameserver="$NAMESERVER"
 EOF
 
-nohup python /root/conpaassql/src/conpaas/mysql/server/manager/server.py -p 50000 -b $IP_PUBLIC -c /root/conpaassql/config/manager/configuration.cnf 1> /var/log/conpaassql-stdout.log 2> /var/log/conpaassql-err.log &
+#nohup python /root/conpaassql/src/conpaas/mysql/server/manager/server.py -p 50000 -b $IP_PUBLIC -c /root/conpaassql/config/manager/configuration.cnf 1> /var/log/conpaassql-stdout.log 2> /var/log/conpaassql-err.log &
+
+nohup /usr/share/contrail/conpaas/mysql/conpaas-mysql-manager-server ${IP_PUBLIC} 50000 &

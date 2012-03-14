@@ -23,14 +23,13 @@ dist:
 
 install: build
 	mkdir -p $(PYTHONPATH)
-	$(PYTHON) setup.py install --prefix=$(DESTDIR)$(PREFIX)
+	$(PYTHON) setup.py install --prefix=$(DESTDIR)$(PREFIX) 
 
 install_egg: build
 	easy_install $(wildcard dist/conpaassql_server*.egg)
 
 clean:
 	rm -rf $(CURDIR)/build $(CURDIR)/dist $(CURDIR)/target $(CURDIR)/src/conpaassql_server.egg-info
-
 
 .PHONY: clean dist
 .POSIX:

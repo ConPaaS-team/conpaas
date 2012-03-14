@@ -28,7 +28,7 @@ Removing
 
 Configuration
 -------------
-./src/conpaas/mysql/server/agent/configuration.cnf
+./config/agent/configuration.cnf
 
 Running agent-server
 
