@@ -20,8 +20,8 @@ apt-get install -y unzip python python-mysqldb python-pycurl python-dev python-s
 cd /root
 svn co svn://svn.forge.objectweb.org/svnroot/contrail/trunk/conpaas/conpaas-mysql conpaassql
 cd conpaassql
-python setup.py bdist_egg
-easy_install dist/conpaas*
+make build
+make install
 
 cat >  /etc/supervisor/conf.d/mysql.conf << EOF
 [program:mysqld]
@@ -68,6 +68,5 @@ sleep 5
 service supervisor start
 sleep 5
 
-#nohup python /root/conpaassql/src/conpaas/mysql/server/agent/server.py -p 60000 -b $IP_PUBLIC -c /root/conpaassql/config/agent/configuration.cnf 1> /var/log/conpaassql-stdout.log 2> /var/log/conpaassql-err.log &
-
+chmod +x /usr/share/contrail/conpaas/mysql/conpaas-mysql-agent-server
 nohup /usr/share/contrail/conpaas/mysql/conpaas-mysql-agent-server ${IP_PUBLIC} 50000 &
