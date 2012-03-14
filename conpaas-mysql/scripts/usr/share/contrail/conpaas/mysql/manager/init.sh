@@ -52,6 +52,5 @@ NETWORK_ID=205
 CONTEXT=ip_gateway="$IP_GATEWAY",netmask="$NETMASK",nameserver="$NAMESERVER"
 EOF
 
-#nohup python /root/conpaassql/src/conpaas/mysql/server/manager/server.py -p 50000 -b $IP_PUBLIC -c /root/conpaassql/config/manager/configuration.cnf 1> /var/log/conpaassql-stdout.log 2> /var/log/conpaassql-err.log &
-
+chmod +x /usr/share/contrail/conpaas/mysql/conpaas-mysql-manager-server
 nohup /usr/share/contrail/conpaas/mysql/conpaas-mysql-manager-server ${IP_PUBLIC} 50000 &

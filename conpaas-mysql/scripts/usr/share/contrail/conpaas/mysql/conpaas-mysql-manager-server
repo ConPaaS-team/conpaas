@@ -19,4 +19,4 @@ fi
 IP=${1}
 PORT=${2}
 
-PYTHONPATH=${PACKAGE} python ${PACKAGE}/${EXEC} ${IP} ${PORT} -c ${CONF} 1> ${OUT_STD} 2> ${OUT_ERR}
+PYTHONPATH=${PACKAGE} python ${PACKAGE}/${EXEC} -b ${IP} -p ${PORT} -c ${CONF} 1> ${OUT_STD} 2> ${OUT_ERR}
