@@ -69,4 +69,4 @@ service supervisor start
 sleep 5
 
 chmod +x /usr/share/contrail/conpaas/mysql/conpaas-mysql-agent-server
-nohup /usr/share/contrail/conpaas/mysql/conpaas-mysql-agent-server ${IP_PUBLIC} 50000 &
+nohup /usr/share/contrail/conpaas/mysql/conpaas-mysql-agent-server ${IP_PUBLIC} 60000 &
