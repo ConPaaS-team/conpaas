@@ -14,16 +14,16 @@ setup(name = 'conpaassql-server',
       include_package_data=True,
       classifiers=['Operating System :: POSIX :: Linux',
                    'Programming Language :: Python'],
-      zip_safe=False,
-    data_files=[
-    ('/etc/contrail/conpaas', ['scripts/etc/contrail/conpaas/conpaas-mysql-agent.cnf']),
-    ('/etc/contrail/conpaas', ['scripts/etc/contrail/conpaas/conpaas-mysql-manager.cnf']),
-    ('/usr/share/contrail/conpaas/mysql/agent', ['scripts/usr/share/contrail/conpaas/mysql/agent/agent.template']),
-    ('/usr/share/contrail/conpaas/mysql/agent', ['scripts/usr/share/contrail/conpaas/mysql/agent/init.sh']),
-    ('/usr/share/contrail/conpaas/mysql/manager', ['scripts/usr/share/contrail/conpaas/mysql/manager/init.sh']),
-    ('/usr/share/contrail/conpaas/mysql/manager', ['scripts/usr/share/contrail/conpaas/mysql/manager/manager.template']),
-    ('/usr/share/contrail/conpaas/mysql', ['scripts/usr/share/contrail/conpaas/mysql/conpaas-mysql-agent-server']),
-    ('/usr/share/contrail/conpaas/mysql', ['scripts/usr/share/contrail/conpaas/mysql/conpaas-mysql-manager-client']),
-    ('/usr/share/contrail/conpaas/mysql', ['scripts/usr/share/contrail/conpaas/mysql/conpaas-mysql-manager-server'])
-    ]
+      zip_safe=False#,
+#    data_files=[
+#    ('/etc/contrail/conpaas', ['scripts/etc/contrail/conpaas/conpaas-mysql-agent.cnf']),
+#    ('/etc/contrail/conpaas', ['scripts/etc/contrail/conpaas/conpaas-mysql-manager.cnf']),
+#    ('/usr/share/contrail/conpaas/mysql/agent', ['scripts/usr/share/contrail/conpaas/mysql/agent/agent.template']),
+#    ('/usr/share/contrail/conpaas/mysql/agent', ['scripts/usr/share/contrail/conpaas/mysql/agent/init.sh']),
+#    ('/usr/share/contrail/conpaas/mysql/manager', ['scripts/usr/share/contrail/conpaas/mysql/manager/init.sh']),
+#    ('/usr/share/contrail/conpaas/mysql/manager', ['scripts/usr/share/contrail/conpaas/mysql/manager/manager.template']),
+#    ('/usr/share/contrail/conpaas/mysql', ['scripts/usr/share/contrail/conpaas/mysql/conpaas-mysql-agent-server']),
+#    ('/usr/share/contrail/conpaas/mysql', ['scripts/usr/share/contrail/conpaas/mysql/conpaas-mysql-manager-client']),
+#    ('/usr/share/contrail/conpaas/mysql', ['scripts/usr/share/contrail/conpaas/mysql/conpaas-mysql-manager-server'])
+#    ]
       )
