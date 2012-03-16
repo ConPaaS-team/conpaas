@@ -22,7 +22,16 @@ python setup.py bdist_egg
 easy_install dist/conpaas*
 make install
 
-cat > /etc/contrail/conpaas/conpaas-mysql-manager.cnf << EOF
+# This is where it is installed
+VERSION="0.1"
+PACKAGE="/usr/local/lib/python2.6/dist-packages/conpaassql_server-${VERSION}-py2.6.egg"
+EXEC="conpaas/mysql/server/manager/server.py"
+CONF="/etc/contrail/conpaas/conpaas-mysql-manager.cnf"
+RUN_SCRIPT="${PACKAGE}/usr/share/contrail/conpaas/mysql/conpaas-mysql-manager-server"
+CONF_WHOLE_PATH="${PACKAGE}${CONF}"
+PORT=50000
+
+cat > ${CONF_WHOLE_PATH} << EOF
 [iaas]
 DRIVER=OPENNEBULA_XMLRPC
 OPENNEBULA_URL= http://10.30.1.14:2633/RPC2
@@ -40,8 +49,8 @@ logfile=/var/log/conpaassql-stdout.log
 poll_agents_timer=10
 
 [onevm_agent_template]
-FILENAME=/usr/share/contrail/conpaas/mysql/agent/agent.template
-USERDATA=/usr/share/contrail/conpaas/mysql/agent/init.sh
+FILENAME=${PACKAGE}/usr/share/contrail/conpaas/mysql/agent/agent.template
+USERDATA=${PACKAGE}/usr/share/contrail/conpaas/mysql/agent/init.sh
 NAME=conpaassql_server
 CPU=0.2
 MEM_SIZE=256
@@ -52,5 +61,6 @@ NETWORK_ID=205
 CONTEXT=ip_gateway="$IP_GATEWAY",netmask="$NETMASK",nameserver="$NAMESERVER"
 EOF
 
-chmod +x /usr/share/contrail/conpaas/mysql/conpaas-mysql-manager-server
-nohup /usr/share/contrail/conpaas/mysql/conpaas-mysql-manager-server ${IP_PUBLIC} 50000 &
+
+chmod +x ${RUN_SCRIPT} 
+nohup ${RUN_SCRIPT} ${IP_PUBLIC} ${PORT} ${CONF_WHOLE_PATH} &

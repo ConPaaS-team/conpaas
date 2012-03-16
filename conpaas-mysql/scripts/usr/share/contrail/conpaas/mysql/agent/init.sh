@@ -23,6 +23,15 @@ cd conpaassql
 make build
 make install
 
+# This is where it is installed
+VERSION="0.1"
+PACKAGE="/usr/local/lib/python2.6/dist-packages/conpaassql_server-${VERSION}-py2.6.egg"
+EXEC="conpaas/mysql/server/manager/server.py"
+CONF="/etc/contrail/conpaas/conpaas-mysql-agent.cnf"
+RUN_SCRIPT="${PACKAGE}/usr/share/contrail/conpaas/mysql/conpaas-mysql-agent-server"
+CONF_WHOLE_PATH="${PACKAGE}${CONF}"
+PORT=60000
+
 cat >  /etc/supervisor/conf.d/mysql.conf << EOF
 [program:mysqld]
 command=/usr/sbin/mysqld
@@ -37,7 +46,7 @@ username = root
 password = root
 EOF
 
-cat >  /etc/contrail/conpaas/conpaas-mysql-agent.cnf << EOF
+cat >  ${CONF_WHOLE_PATH} << EOF
 [MySQL_root_connection]
 location=localhost
 password=contrail
@@ -53,7 +62,7 @@ port = 9001
 
 [ConPaaSSQL]
 agent_interface=0.0.0.0
-agent_port=60000
+agent_port= ${PORT}
 manager_ip=$MANAGER_IP
 manager_port=$MANAGER_PORT
 vm_id=$VMID
@@ -68,5 +77,5 @@ sleep 5
 service supervisor start
 sleep 5
 
-chmod +x /usr/share/contrail/conpaas/mysql/conpaas-mysql-agent-server
-nohup /usr/share/contrail/conpaas/mysql/conpaas-mysql-agent-server ${IP_PUBLIC} 60000 &
+chmod +x ${RUN_SCRIPT}
+nohup ${RUN_SCRIPT} ${IP_PUBLIC} ${PORT} ${CONF_WHOLE_PATH} &

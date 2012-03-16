@@ -3,12 +3,11 @@
 VERSION="0.1"
 PACKAGE="/usr/local/lib/python2.6/dist-packages/conpaassql_server-${VERSION}-py2.6.egg"
 EXEC="conpaas/mysql/server/agent/server.py"
-CONF="/etc/contrail/conpaas/conpaas-mysql-agent.cnf"
 OUT_BASE="/var/log/"
 OUT_ERR="${OUT_BASE}/conpaas-mysql.err"
 OUT_STD="${OUT_BASE}/conpaas-mysql.out"
 
-EXPECTED_ARGS=2
+EXPECTED_ARGS=3
 E_BADARGS=65
 if [ $# -ne $EXPECTED_ARGS ]
 then
@@ -18,5 +17,6 @@ fi
 
 IP=${1}
 PORT=${2}
+CONF= ${3}
 
 PYTHONPATH=${PACKAGE} python ${PACKAGE}/${EXEC} -b ${IP} -p ${PORT} -c ${CONF} 1> ${OUT_STD} 2> ${OUT_ERR}

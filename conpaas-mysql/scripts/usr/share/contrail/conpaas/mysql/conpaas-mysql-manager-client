@@ -3,7 +3,6 @@
 VERSION="0.1"
 PACKAGE="/usr/local/lib/python2.6/dist-packages/conpaassql_server-${VERSION}-py2.6.egg"
 EXEC="conpaas/mysql/client/manager_client.py"
-CONF="/etc/contrail/conpaas/conpaas-mysql-manager.cnf"
 OUT_BASE="/var/log/"
 OUT_ERR="${OUT_BASE}/conpaas-mysql-client.err"
 OUT_STD="${OUT_BASE}/conpaas-mysql-client.out"
