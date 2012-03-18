@@ -15,6 +15,7 @@
   <modules>
     <module>conpaas-mysql</module>
     <module>conpaas-frontend</module>
+    <module>conpaas-taskfarm</module>
     <module>conpaas-web</module>
   </modules>
 </project>
