@@ -17,6 +17,7 @@ PACKAGE  = $(TARGET)/$(NAME).tar.gz
 DESTDIR  =
 PREFIX   = /usr/local
 LIBDIR   = /lib/conpaas/$(NAME)
+ETCDIR   = /etc/conpaas/$(NAME)
 
 
 build: $(JARFILE)
@@ -31,8 +32,9 @@ dist:
 	tar czf $(PACKAGE) --exclude-vcs --exclude=target --exclude=pom.xml .
 
 install: build
-	mkdir -p $(DESTDIR)$(PREFIX)$(LIBDIR)
+	mkdir -p $(DESTDIR)$(PREFIX)$(LIBDIR) $(DESTDIR)$(ETCDIR)
 	install -m 0644 $(CURDIR)/ipl-2.2/lib/*.jar $(JARFILE) $(DESTDIR)$(PREFIX)$(LIBDIR)
+	install -m 0644 $(CURDIR)/ipl-2.2/*.properties $(DESTDIR)$(ETCDIR)
 
 clean:
 	rm -fr $(WORK) $(TARGET)
