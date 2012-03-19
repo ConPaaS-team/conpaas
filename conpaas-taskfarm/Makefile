@@ -26,8 +26,7 @@ $(JARFILE): $(SRCFILES)
 	$(JAVAC) -d $(WORK) $(SRCFILES)
 	$(JAR) cf $@ -C $(WORK) .
 
-dist: 
-	rm -fr $(TARGET)
+dist: clean
 	mkdir $(TARGET)
 	tar czf $(PACKAGE) --exclude-vcs --exclude=target --exclude=pom.xml .
 
