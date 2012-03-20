@@ -243,7 +243,7 @@ class OneXmlrpc(NodeDriver):
         logger.debug("Entering create_node")        
         agent_data = self.read_userdata(kwargs['template']['userdata'])
         agent_data_template = string.Template(agent_data)
-        agent_data_template = agent_data_template.substitute(IP_PUBLIC='$IP_PUBLIC', NETMASK='$NETMASK', IP_GATEWAY='$IP_GATEWAY',NAMESERVER='$NAMESERVER',VMID='$VMID', NAME='$NAME',MANAGER_IP=str(kwargs['template']['_manager_ip']),MANAGER_PORT=str(kwargs['template']['_manager_port']))
+        agent_data_template = agent_data_template.substitute(RUN_SCRIPT='$RUN_SCRIPT',PORT='$PORT',VERSION='$VERSION', PACKAGE='$PACKAGE',CONF='$CONF',CONF_WHOLE_PATH='$CONF_WHOLE_PATH', IP_PUBLIC='$IP_PUBLIC', NETMASK='$NETMASK', IP_GATEWAY='$IP_GATEWAY',NAMESERVER='$NAMESERVER',VMID='$VMID', NAME='$NAME',MANAGER_IP=str(kwargs['template']['_manager_ip']),MANAGER_PORT=str(kwargs['template']['_manager_port']))
         logger.debug('Trying the agent user data %s ' % str(agent_data_template))        
         hex_user_data= str(agent_data_template).encode('hex')
         context = str(kwargs['template']['context'])

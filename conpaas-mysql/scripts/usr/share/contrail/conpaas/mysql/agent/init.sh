@@ -56,11 +56,11 @@ apt-get install conpaas-mysql
 
 # This is where it is installed
 VERSION="0.1"
-PACKAGE="/usr/lib/python2.6/site-packages/conpaassql_server-${VERSION}-py2.6.egg"
+PACKAGE="/usr/lib/python2.6/site-packages/conpaassql_server-$VERSION-py2.6.egg"
 EXEC="conpaas/mysql/server/manager/server.py"
 CONF="/etc/contrail/conpaas/conpaas-mysql-agent.cnf"
 RUN_SCRIPT="/usr/share/contrail/conpaas/mysql/conpaas-mysql-agent-server"
-CONF_WHOLE_PATH="${CONF}"
+CONF_WHOLE_PATH="$CONF"
 PORT=60000
 
 cat >  /etc/supervisor/conf.d/mysql.conf << EOF
@@ -77,7 +77,7 @@ username = root
 password = root
 EOF
 
-cat >  ${CONF_WHOLE_PATH} << EOF
+cat >  $CONF_WHOLE_PATH << EOF
 [MySQL_root_connection]
 location=localhost
 password=contrail
@@ -93,7 +93,7 @@ port = 9001
 
 [ConPaaSSQL]
 agent_interface=0.0.0.0
-agent_port= ${PORT}
+agent_port=$PORT
 manager_ip=$MANAGER_IP
 manager_port=$MANAGER_PORT
 vm_id=$VMID
@@ -108,4 +108,4 @@ sleep 5
 service supervisor start
 sleep 5
 
-nohup ${RUN_SCRIPT} ${IP_PUBLIC} ${PORT} ${CONF_WHOLE_PATH} &
+nohup $RUN_SCRIPT $IP_PUBLIC $PORT $CONF_WHOLE_PATH &
