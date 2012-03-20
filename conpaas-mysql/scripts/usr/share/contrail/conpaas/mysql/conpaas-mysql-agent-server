@@ -1,7 +1,7 @@
 #!/bin/bash
 
 VERSION="0.1"
-PACKAGE="/usr/local/lib/python2.6/dist-packages/conpaassql_server-${VERSION}-py2.6.egg"
+PACKAGE="/usr/lib/python2.6/site-packages/conpaassql_server-${VERSION}-py2.6.egg"
 EXEC="conpaas/mysql/server/agent/server.py"
 OUT_BASE="/var/log/"
 OUT_ERR="${OUT_BASE}/conpaas-mysql.err"
@@ -17,6 +17,6 @@ fi
 
 IP=${1}
 PORT=${2}
-CONF= ${3}
+CONF=${3}
 
 PYTHONPATH=${PACKAGE} python ${PACKAGE}/${EXEC} -b ${IP} -p ${PORT} -c ${CONF} 1> ${OUT_STD} 2> ${OUT_ERR}

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 VERSION="0.1"
-PACKAGE="/usr/local/lib/python2.6/dist-packages/conpaassql_server-${VERSION}-py2.6.egg"
+PACKAGE="/usr/lib/python2.6/site-packages/conpaassql_server-${VERSION}-py2.6.egg"
 EXEC="conpaas/mysql/client/manager_client.py"
 OUT_BASE="/var/log/"
 OUT_ERR="${OUT_BASE}/conpaas-mysql-client.err"
