@@ -33,3 +33,5 @@ sed 's|CONTEXT\ =\ \[|CONTEXT\ =\ \[\
 \ \ USERDATA\ =\ \"'"$HEX"'\",|' < $BASE_TEMPLATE > $FINAL_TEMPLATE
 
 rm $FINAL_INIT
+
+echo "Final taskfarm OpenNebula template file is created in $FINAL_TEMPLATE"
