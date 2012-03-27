@@ -27,7 +27,7 @@ if (!isset($_SESSION['uid'])) {
 }
 
 try {
-	$sid = $_GET['sid'];
+	$sid = $_POST['sid'];
 	$service_data = ServiceData::getServiceById($sid);
 	$service = ServiceFactory::create($service_data);
 

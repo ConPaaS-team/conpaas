@@ -51,7 +51,6 @@ $backendType = $service->getType();
 <script type="text/javascript" src="https://www.google.com/jsapi"></script>
 <script src="js/jquery-1.5.js"></script>
 <script src="js/jquery.form.js"></script>
-<script src="js/user.js"></script>
 </head>
 <body>
 <script type="text/javascript">

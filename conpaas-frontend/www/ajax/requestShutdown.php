@@ -22,20 +22,21 @@ require_once('../__init__.php');
 require_module('service');
 require_module('service/factory');
 
-if (!isset($_SESSION['uid'])) {
-	throw new Exception('User not logged in');
+try {
+	if (!isset($_SESSION['uid'])) {
+		throw new Exception('User not logged in');
+	}
+	$sid = $_POST['sid'];
+	$service_data = ServiceData::getServiceById($sid);
+	$service = ServiceFactory::create($service_data);
+	if($service->getUID() !== $_SESSION['uid']) {
+	    throw new Exception('Not allowed');
+	}
+	$response = $service->requestShutdown();
+	$obj = json_decode($response, true);
+	echo json_encode($response['result']);
+} catch (Exception $e) {
+	echo json_encode(array(
+		'error' => $e->getMessage(),
+	));
 }
-
-$sid = $_GET['sid'];
-$service_data = ServiceData::getServiceById($sid);
-$service = ServiceFactory::create($service_data);
-
-if($service->getUID() !== $_SESSION['uid']) {
-    throw new Exception('Not allowed');
-}
-
-$response = $service->requestShutdown();
-ServiceData::updateState($sid, Service::STATE_STOPPED);
-$obj = json_decode($response, true);
-dlog($response);
-echo json_encode($response['result']);

@@ -35,8 +35,9 @@ h1 {
 }
 
 .pagecontent {
-	padding: 10px;
+	padding: 3px 10px 10px 3px;
 	border: 1px solid #eee;
+	border-top: none;
 }
 
 a,a:visited {
@@ -64,12 +65,69 @@ a:hover {
 }
 
 #logo {
-	width: 140px;
+	width: 100px;
 	height: 32px;
 	margin-left: 5px;
 	background: url('images/conpaas.png') top left no-repeat;
 	display: block;
 	float: left;
+}
+
+#pgstat {
+	color: #666;
+	padding: 0px 3px 3px 3px;
+	font-size: 13px;
+	font-weight: normal;
+	margin: 0;
+	border-top: 1px solid #ccc;
+	border-right: 1px solid #eee;
+	border-left: 1px solid #eee;
+	height: 22px;
+}
+
+#pgstatTimer {
+	color: #999;
+}
+
+#pgstatTimerSeconds {
+	font-weight: bold;
+	color: #333;
+	font-style: normal;
+}
+
+#pgstatError {
+    color: #B50E51;
+	background-color: #FFE3EE;
+	padding: 5px 10px 3px 10px;
+	font-weight: bold;
+}
+
+#pgstatError a {
+    color: #6A5D7A;
+	margin-left: 10px;
+	font-size: 12px;
+	font-weight: normal;
+}
+
+#pgstatInfo {
+	padding: 5px 10px 3px 10px;
+	background-color: #dedede;
+}
+
+#pgstatInfo, #pgstatError {
+	float: left;
+	margin-left: 300px;
+}
+
+#pgstatLoading, #pgstatTimer {
+    float: right;
+    margin-right: 10px;
+	text-align: right;
+	margin-top: 5px;
+}
+
+#pgstatLoadingText {
+	margin-right: 3px;
 }
 
 .user {
@@ -109,6 +167,15 @@ a:hover {
 .pageheader .info {
 	float: left;
 	margin: 5px;
+	line-height: 20px;
+}
+
+.pageheader .info .actions {
+	margin: 3px 5px 5px 0px;
+	color: #999;
+    font-size: 12px;
+    font-weight: normal;
+    padding-left: 3px;
 }
 
 .pageheader h1 {
@@ -125,7 +192,7 @@ a:hover {
 
 .pageheader .info .name {
 	padding: 0 3px 0 3px;
-	margin: 1px 0 1px 0;
+	margin: 3px 5px 1px 0;
 	font-size: 16px;
 	color: #333;
 	border: 1px solid white;
@@ -133,14 +200,7 @@ a:hover {
 	font-weight: bold;
 }
 
-.pageheader .info .subname {
-	color: #999;
-	font-size: 12px;
-	font-weight: normal;
-	padding-left: 3px;
-}
-
-.subname .link {
+.rightmenu .link {
 	display: inline;
 }
 
@@ -159,7 +219,13 @@ a:hover {
 }
 
 .pageheader .menu {
-	padding-top: 10px;
+	margin-top: 5px;
+	padding: 5px;
+}
+
+.pageheader .rightmenu {
+    margin-top: 5px;
+    padding: 5px;
 	float: right;
 }
 
@@ -193,7 +259,7 @@ a:hover {
 	padding: 3px;
 }
 
-a.button {
+a.button, a.button-disabled {
 	padding: 6px;
 	margin: 1px;
 	color: white;
@@ -202,19 +268,31 @@ a.button {
 	border: 1px solid #003380;
 }
 
-body.webkit a.button {
+a.button-disabled {
+	color: #ccc;
+	text-shadow: none;
+	border-color: black;
+	cursor: none;
+}
+
+a.button img, a.button-disabled img {
+	margin-left: 3px;
+	margin-right: 3px;
+}
+
+body.webkit a.button, body.webkit a.button-disabled {
 	background: -webkit-gradient(linear, 0% 0, 0% 100%, from(#008cf7),
 		to(#003380) );
 	border-radius: 5px;
 }
 
-body.firefox a.button {
+body.firefox a.button, body.firefox a.button-disabled {
 	background: -moz-linear-gradient(270deg, #008cf7, #003380) repeat scroll
 		0 0 transparent;
 	-moz-border-radius: 5px;
 }
 
-a.button:hover {
+a.button:hover, a.button-disabled:hover {
 	text-decoration: none;
 }
 
@@ -225,7 +303,8 @@ a.button:hover {
 .brief {
 	padding: 3px;
 	font-weight: normal;
-	color: #999;
+	color: #666;
+	font-size: 12px;
 }
 
 .services ul.slist {
@@ -276,6 +355,10 @@ tr.service {
 
 .service .statistic {
 	float: right;
+}
+
+.service .statistic img {
+	vertical-align: top;
 }
 
 .service .content {
@@ -364,7 +447,12 @@ tr.service {
 }
 
 .service .led {
-	padding: 0px 10px 0 0px;
+	padding: 0px 0px 0px 10px;
+	vertical-align: bottom;
+}
+
+.info .led {
+	margin: 1px 3px 3px 5px;
 }
 
 .service .content .link {
@@ -418,8 +506,8 @@ tr.service {
 }
 
 .createpage .form {
-	margin: 10px 5px 5px 5px;
-	padding: 10px;
+	margin: 0px 0px 5px 5px;
+	padding: 10px 0px 10px 5px;
 }
 
 .form td {
@@ -435,7 +523,7 @@ tr.service {
 }
 
 .form .description {
-	color: #999;
+	color: #666;
 	font-size: 12px;
 	font-weight: bold;
 	padding: 5px;
@@ -1085,4 +1173,27 @@ body.loginbody {
 	color: #666;
 	font-weight: bold;
 	padding: 10px 10px 5px 50px;
+}
+
+.createWrap {
+	margin: 5px;
+}
+
+#create {
+	margin: 5px 5px 15px 5px;
+	float: right;
+}
+
+#selectHint {
+	margin: 10px 5px 0 15px;
+	font-size: 11px;
+	color: #69A3D6;
+}
+
+#selectHint img {
+	vertical-align: bottom;
+}
+
+img {
+	vertical-align: middle;
 }

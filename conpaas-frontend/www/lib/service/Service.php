@@ -55,7 +55,7 @@ abstract class Service {
 		Service::STATE_RUNNING => 'running',
 		Service::STATE_STOPPED => 'stopped',
 		Service::STATE_TERMINATED => 'terminated',
-		Service::STATE_INIT => 'initializing',
+		Service::STATE_INIT => 'initialized',
 		Service::STATE_PREINIT => 'preparing',
 		Service::STATE_ERROR => 'error',
 		Service::STATE_ADAPTING => 'adapting',
@@ -274,30 +274,22 @@ abstract class Service {
  		return $log['result']['log'];
  	}
 
+ 	private function changeNodes($command, $params) {
+ 		$nodes = array();
+ 		foreach ($this->getInstanceRoles() as $role) {
+ 			if (isset($params[$role])) {
+ 				$nodes[$role] = intval($params[$role]);
+ 			}
+ 		}
+ 		return $this->managerRequest('post', $command, $nodes);
+ 	}
+
  	public function addServiceNodes($params) {
-		if (isset($params['backend']))  {
-			$params['backend'] = intval($params['backend']);
-		}
-		if (isset($params['web'])) {
-			$params['web'] = intval($params['web']);
-		}
-		if (isset($params['proxy'])) {
-			$params['proxy'] = intval($params['proxy']);
-		}
- 		return $this->managerRequest('post', 'add_nodes', $params);
+ 		return $this->changeNodes('add_nodes', $params);
  	}
 
  	public function removeServiceNodes($params) {
-		if (isset($params['backend'])) {
-			$params['backend'] = intval($params['backend']);
-		}
-		if (isset($params['web'])) {
-			$params['web'] = intval($params['web']);
-		}
-		if (isset($params['proxy'])) {
-			$params['proxy'] = intval($params['proxy']);
-		}
- 		return $this->managerRequest('post', 'remove_nodes', $params);
+ 		return $this->changeNodes('remove_nodes', $params);
  	}
 
  	public function requestShutdown() {
@@ -416,5 +408,16 @@ abstract class Service {
 
 	public function getInstanceRoles() {
 		return false;
+	}
+
+	public function toArray() {
+		return array(
+			'sid' => $this->sid,
+			'state' => $this->state,
+			'cloud' => $this->cloud,
+			'type' => $this->type,
+			'reachable' => $this->reachable,
+			'instanceRoles' => $this->getInstanceRoles(),
+		);
 	}
 }

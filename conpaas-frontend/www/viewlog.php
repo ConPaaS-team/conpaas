@@ -22,12 +22,15 @@ require_once('__init__.php');
 require_module('service');
 require_module('service/factory');
 
-$sid = $_GET['sid'];
-$service_data = ServiceData::getServiceById($sid);
-$service = ServiceFactory::create($service_data);
+try {
+	$sid = $_GET['sid'];
+	$service_data = ServiceData::getServiceById($sid);
+	$service = ServiceFactory::create($service_data);
 
-$log = $service->fetchLog();
-
+	$log = $service->fetchLog();
+} catch (Exception $e) {
+	$log = 'Log information not available';
+}
 ?>
 
 <pre><?php echo $log; ?></pre>

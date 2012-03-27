@@ -95,8 +95,8 @@ class DashboardServiceUI {
 			} else {
 				return
 				$this->renderStatistic('<img class="deleteService" '.
-					'title="delete service" src="images/remove.png" '.
-					'name="'.$this->service->getSID().'" onclick="onDeleteService(this);"/>', '').
+					'title="delete service" src="images/remove.png" />',
+					'').
 				$this->renderStatistic(
 					'<img src="images/warning.png" />', 'unreachable');
 			}
@@ -180,8 +180,8 @@ class DashboardServiceUI {
 		}
 		return
 			'<div class="title">'
-				.StatusLed($this->service)
 				.$title
+				.StatusLed($this->service)
 			.'</div>';
 	}
 

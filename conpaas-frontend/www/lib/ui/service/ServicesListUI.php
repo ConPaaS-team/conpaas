@@ -63,26 +63,20 @@ class ServicesListUI {
 		return false;
 	}
 
-	private function generateRefreshScript() {
-		if (!$this->needsRefresh()) {
-			return '';
-		}
-		return
-			'<script type="text/javascript">'.
-				'$(document).ready(function() {'.
-					'setTimeout("refreshServices();", 3000);'.
-				'});'.
-			'</script>';
-	}
-
 	public function render() {
 		return
   		'<div class="services">'.
-  			'<div class="brief">all services</div>'.
   			'<table class="slist" cellpadding="0" cellspacing="1">'.
 				$this->renderItems().
   			'</table>'.
-  		'</div>'.
-		$this->generateRefreshScript();
+  		'</div>';
+	}
+
+	public function toArray() {
+		$descr = array();
+		foreach ($this->services as $service) {
+			$descr []= $service->toArray();
+		}
+		return $descr;
 	}
 }

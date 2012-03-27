@@ -24,11 +24,9 @@ require_module('service/factory');
 require_module('ui/service');
 
 try {
-
 	if (!isset($_SESSION['uid'])) {
 		throw new Exception('User not logged in');
 	}
-
 	$uid = $_SESSION['uid'];
 
 	$services_data = ServiceData::getServicesByUser($uid);
@@ -40,8 +38,12 @@ try {
 			$service->checkManagerInstance();
 		}
 	}
-	echo $servicesList->render();
+	$services_data = $servicesList->toArray();
+	echo json_encode(array(
+		'data' => $services_data,
+		'html' => $servicesList->render()
+	));
 } catch (Exception $e) {
 	error_log($e->getTraceAsString());
-	echo '<div class="error">'.$e->getMessage().'</div>';
+	echo json_encode(array('error' => $e->getMessage()));
 }

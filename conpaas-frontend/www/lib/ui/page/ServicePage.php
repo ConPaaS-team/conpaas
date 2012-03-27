@@ -310,17 +310,14 @@ class ServicePage extends Page {
 		if (!$this->service->isRunning()) {
 			return '';
 		}
-		return ' &middot; '.
-			LinkUI('access application', $this->service->getAccessLocation())
-				->setExternal(true);
+		return LinkUI('access application', $this->service->getAccessLocation())
+				->setExternal(true).' &middot; ';
 	}
 
-	protected function renderSubname() {
+	protected function renderRightMenu() {
 		return
-			'<div class="subname">'.
-				$this->renderStateChange().
+			'<div class="rightmenu">'.
 				$this->renderApplicationAccess().
-				' &middot; '.
 				LinkUI('manager log',
 						'viewlog.php?sid='.$this->service->getSID())
 					->setExternal(true).
@@ -331,7 +328,12 @@ class ServicePage extends Page {
 		return
 			'<div class="nameWrapper">'
 				.$this->renderEditableName()
-				.$this->renderSubname()
+				.$this->renderActions()
+				.'<div class="actions">'
+					.StatusLed($this->service).' '
+					.$this->service->getStatusText()
+					.' &middot; '.$this->renderStateChange()
+				.'</div>'
 			.'</div>';
 	}
 
@@ -343,12 +345,8 @@ class ServicePage extends Page {
     				.' src="images/'.$this->getTypeImage().'" />'
     			.$this->renderName()
     		.'</div>'
-	  		.'<div class="menu">'
-	  			.StatusLed($this->service)
-	  			.$this->renderActions()
-	  		.'</div>'
+			.$this->renderRightMenu()
 	  		.'<div class="clear"></div>'
 	  	.'</div>';
 	}
-
 }

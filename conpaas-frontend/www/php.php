@@ -49,342 +49,16 @@ $backendType = $service->getType();
 <?php echo $page->renderIcon(); ?>
 <script src="js/jquery-1.5.js"></script>
 <script src="js/jquery.form.js"></script>
-<script src="js/user.js"></script>
+<script src="js/conpaas.js"></script>
 </head>
 <body>
-<script type="text/javascript">
 
-	  	var sid = <?php echo $sid; ?>;
-  		/* core functionality */
-		function isStableState(state) {
-			return state == 'INIT' || state == 'RUNNING' ||
-				state == 'STOPPED' || state == 'ERROR';
-		}
-
-  		var poll_success_cb = null;
-  		var poll_success_cb_param = null;
-  		var poll_error_cb = null;
-
-  		function pollState(delay) {
-  	  		delay = (typeof delay == 'undefined') ? 1000 : delay + 1000;
-  	  		count = delay / 1000;
-  	  		showLoading(true, 'performing changes - wait (' + count + ')...');
-		  	$.ajax({
-			  	url: 'ajax/getState.php?sid=<?php echo $sid;?>',
-			  	dataType: 'json',
-			  	type: 'get',
-		  		success: function (response) {
-			  		if (typeof response.error != 'undefined') {
-				  		showLoading(false);
-				  		if (poll_error_cb != null) {
-					  		poll_error_cb(response.error);
-				  		} else {
-				  			alert('pollState() error: ' + response.error);
-				  		}
-				  		return;
-			  		}
-					if (typeof response.state != 'undefined') {
-						if (isStableState(response.state)) {
-							showLoading(false);
-							freezeInput(false);
-							if (poll_success_cb != null) {
-								poll_success_cb(poll_success_cb_param);
-								poll_success_cb = null;
-								poll_error_cb = null;
-								poll_success_cb_param = null;
-							}
-						} else {
-							setTimeout('pollState(' + delay + ');', delay);
-						}
-					}
-		  		},
-		  		error: function() {
-			  		showLoading(false);
-			  		alert('pollState(): Error loading the state');
-		  		}
-		  	});
-  		}
-
-		function showLoading(show, msg) {
-			show = (typeof show == 'undefined') ? true : show;
-			msg = (typeof msg == 'undefined') ? 'loading...' : msg;
-
-			if (show) {
-				$('#loading b').html(msg);
-				$('#loading').show();
-			} else {
-				$('#loading').hide();
-			}
-		}
-
-  		function freezeInput(freeze) {
-  	  		buttonsSelector = '#start, #stop, #terminate, #submitnodes, #file';
-	  	  	linksSelector = '.versions .activate';
-  	  		if (freeze) {
-  	  			$(buttonsSelector).attr('disabled', 'disabled');
-  	  			$(linksSelector).hide();
-  	  		} else {
-  	  	  		$(buttonsSelector).removeAttr('disabled');
-  	  	  		$(linksSelector).show();
-  	  		}
-  		}
-
-  		/*
-  		 * make request that places the service into transient states, so it
-  		 * may need polling
-  		 * fields: params: {url, method, success, error, status, poll}
-  		 */
-  		function transientRequest(params) {
-  	  		params.method =
-  	  	  		(typeof params.method == 'undefined') ? 'get' : params.method;
-	  	  	params.success =
-  	  	  		(typeof params.success == 'undefined') ? null : params.success;
-	  	  	params.error =
-		  	  	(typeof params.error == 'undefined') ? null : params.error;
-	  	  	params.poll =
-		  	  	(typeof params.poll == 'undefined') ? true : params.poll;
-			params.data =
-		  	  	(typeof params.data == 'undefined') ? {} : params.data;
-
-  	  		freezeInput(true);
-  	  		showLoading(true, params.status);
-  	  		$.ajax({
-  	  	  		url: params.url, type: params.method, dataType: 'json',
-  	  	  		data: params.data,
-  	  	  		success: function(response) {
-  	  	  	  		if (typeof response.error != 'undefined' && response.error != null ) {
-  	  	  	  	  		freezeInput(false);
-  	  	  	  	  		showLoading(false);
-  	  	  	  	  		if (params.error != null) {
-  	  	  	  	  	  		params.error(response.error);
-  	  	  	  	  		} else {
-  	  	  	  	  			alert('transientRequest() error: ' + response.error);
-  	  	  	  	  		}
-  	  	  	  	  		return;
-  	  	  	  		}
-  	  	  	  		if (typeof params.poll != 'undefined' &&
-  	    	  	  	  		params.poll == true) {
-  	  	  	  	  		poll_success_cb = params.success;
-  	  	  	  	  		poll_error_cb = params.error;
-  	  	  	  	  		poll_success_cb_param = response;
-  	  	  	  	  		pollState();
-  	  	  	  	  		return;
-  	  	  	  		}
-  	  	  	  		freezeInput(false);
-  	  	  	  		showLoading(false);
-  	  	  	  		if (params.success != null) {
-  	  	  	  			params.success(response);
-  	  	  	  		}
-  	  	  		},
-  	  	  		error: function(response) {
-  	  	  	  		freezeInput(false);
-  	  	  	  		showLoading(false);
-  	  	  	  		alert('transientRequest(): Error sending the request');
-  	  	  		}
-  	  		});
-  		}
-</script>
-
-<?php echo $page->renderHeader(); ?>
-<?php echo PageStatus()->setId('loading'); ?>
-
+	<?php echo $page->renderHeader(); ?>
 	<div class="pagecontent">
 	<?php echo $page->renderTopMenu(); ?>
 
-<script>
-$(document).ready(function() {
-	$('#name').click(function() {
-		newname = prompt("Enter a new name", $('#name').html());
-		if (newname != null && newname != "") {
-			$.ajax({
-				url: 'ajax/saveName.php?sid='+sid,
-				type: 'post',
-				dataType: 'json',
-				data: {
-					name: newname,
-				},
-				success: function(response) {
-					if (response.save == 1) {
-						$('#name').html(newname);
-					}
-				}
-			 });
-		 }
-	  });
-
-	$('#stop').click(function() {
-  		ack = confirm('Are you sure you want to stop the service?');
-  		if (ack) {
-  	  		transientRequest({
-  	  	  		url: 'ajax/requestShutdown.php?sid='+sid,
-  	    	  	method: 'post',
-  	    	  	success: function(response) {
-  	    	  		window.location.reload();
-  	    		},
-  	    		status: 'stopping service...',
-  	    		poll: true
-  	  		});
-  		}
-	});
-
-	$('#start').click(function() {
-		transientRequest({
-			url: 'ajax/requestStartup.php?sid='+sid,
-			method: 'post',
-			success: function(response) {
-				window.location.reload();
-			},
-			status: 'starting service...',
-			poll: true
-		});
-	});
-
-
-	$('#terminate').click(function() {
-		if (!confirm('After termination, the service will be completely'
-				+ ' destroyed. Are you sure you want to continue?')) {
-			return;
-		}
-		transientRequest({
-			url: 'ajax/terminateService.php?sid='+sid,
-			method: 'post',
-			success: function(response) {
-				window.location = 'index.php';
-			},
-			status: 'terminating service...',
-			poll: false
-		});
-	});
-});
-</script>
-
 <?php if ($service->isConfigurable()): ?>
 	<?php if ($service->getNodesCount() > 0): ?>
-	<script text="text/javascript">
-
-	function reloadInstances() {
-		$.ajax({
-			url: 'ajax/render.php',
-			data: { sid: sid, target: 'instances' },
-			type: 'get',
-			dataType: 'html',
-			success: function(data) {
-				$('#instancesWrapper').html(data);
-			}
-		});
-	}
-
-	function getInstancesParams(assoc) {
-		if (assoc) {
-			return {
-				'proxy': parseInt($('#proxy').html()),
-				'web': parseInt($('#web').html()),
-				'backend': parseInt($('#backend').html())
-			};
-		}
-		return [
-			parseInt($('#proxy').html()),
-			parseInt($('#web').html()),
-			parseInt($('#backend').html())
-		];
-	}
-
-	function changeInstances(action, params) {
-		$('.actionsbar .loading').show();
-
-		transientRequest({
-			url: 'ajax/' + action + '.php?sid=' + sid,
-			method: 'post',
-			data: params,
-			poll: true,
-			status: 'adding/removing nodes...',
-			success: function(response) {
-				$('.actionsbar .loading').hide();
-				reloadInstances();
-				$('#proxy, #web, #backend').each(function() {
-					$(this).html('0');
-				});
-				$('#submitnodes').attr('disabled', 'disabled');
-			},
-			error: function(error) {
-				$('.actionsbar .loading').hide();
-				alert('changeInstances() error: ' + error);
-			}
-		});
-	}
-
-	function enableChangeInstances() {
-		params = getInstancesParams(false);
-	  	for (i in params) {
-		  	value = params[i];
-		  	if (value != 0) {
-			  	$('#submitnodes').removeAttr('disabled');
-			  	return;
-		  	}
-	  	}
-	  	$('#submitnodes').attr('disabled', 'disabled');
-	}
-
-	$(document).ready(function() {
-		$('#submitnodes').click(function() {
-			add = '';
-			addParams = {};
-			remove = '';
-			removeParams = {};
-			params = getInstancesParams(true);
-			for (type in params) {
-				addParams[type] = 0;
-				removeParams[type] = 0;
-				if (params[type] > 0) {
-					if (add != '') {
-						add += ' & ';
-					}
-					add += params[type] + ' ' + type;
-					addParams[type] = params[type];
-				} else if (params[type] < 0) {
-					if (remove != '') {
-						remove += ' & ';
-					}
-					remove += '' + (-params[type]) + ' ' + type;
-					removeParams[type] = -params[type];
-				}
-			}
-			msg = '';
-			if (add != '') {
-				msg = 'add ' + add + ' nodes';
-			}
-			if (remove != '') {
-				if (msg != '') {
-					msg += ' and to ';
-				}
-				msg += 'remove ' + remove + ' nodes';
-			}
-			ack = confirm('Are you sure you want to ' + msg + '?');
-			if (ack) {
-				if (add != '') {
-					changeInstances('addServiceNodes', addParams);
-				}
-				if (remove != '') {
-					changeInstances('removeServiceNodes', removeParams);
-				}
-
-			}
-		});
-
-		$('#proxy, #web, #backend').click(function() {
-			value = prompt('no. of instances (e.g. +1, -2)', $(this).html());
-			if (value != null && value != "") {
-				intValue = parseInt(value);
-				if (!isNaN(intValue)) {
-					sign = (intValue > 0) ? '+' : '';
-					$(this).html(sign + intValue);
-					enableChangeInstances();
-				}
-			}
-		});
-	});
-	</script>
-
 	<div class="form-section">
 		<div id="instancesWrapper">
 			<?php echo $page->renderInstances(); ?>
@@ -444,72 +118,6 @@ $(document).ready(function() {
 					example: <b>.zip</b>, <b>.tar</b> of your source tree
 				</div>
 
-			<script type="text/javascript">
-
-			$(document).ready(function() {
-				$('#fileForm').ajaxForm({
-					dataType: 'json',
-					success: function(response) {
-						$('.additional .loading').toggleClass('invisible');
-						if (typeof response.error != 'undefined' && response.error != null) {
-							alert('Error: ' + response.error);
-							$('#file').val('');
-							return;
-						}
-						// request ended ok
-						$('#file').val('');
-						$('.additional .positive').show();
-						setTimeout('$(".additional .positive").fadeOut();', 1000);
-						reloadVersions();
-					},
-					error: function(error) {
-						alert('#fileForm.ajaxForm() error: ' + response.error);
-					}
-				});
-
-				$('#fileForm input:file').change(function() {
-					$('.additional .loading').toggleClass('invisible');
-					$('#fileForm').submit();
-				});
-
-				$('.versions .activate').click(function() {
-					versionOnActivate(this);
-				});
-
-			});
-
-			function versionOnActivate(button) {
-				$('.versions .activate').hide();
-				$(button).parent().find('.loading').show();
-				transientRequest({
-					url: 'ajax/sendConfiguration.php?sid=' + sid,
-					method: 'post',
-					data: {codeVersionId: $(button).attr('name')},
-					status: 'changing version...',
-					success: function(response) {
-						reloadVersions();
-					},
-					error: function(error) {
-						alert('versionOnActivate() error: ' + error);
-					}
-				});
-			}
-			function reloadVersions() {
-				$.ajax({
-					url: 'ajax/render.php',
-					data: { sid: sid, target: 'versions' },
-					type: 'get',
-					dataType: 'html',
-					success: function(data) {
-						$('#versionsWrapper').html(data);
-						$('.versions .activate').click(function() {
-							versionOnActivate(this);
-						});
-					}
-				});
-			}
-
-			</script>
 			</div>
 			<div class="deployactions invisible">
 				<input type="text" size="40" />
@@ -520,18 +128,10 @@ $(document).ready(function() {
 			</div>
 			<div class="clear"></div>
 		</div>
-
-		<script type="text/javascript">
-			$('.deployoption input[type=radio]').change(function() {
-				$('.deployactions').toggleClass('invisible');
-			});
-		</script>
-
 		<div class="brief">available code versions</div>
 		<div id="versionsWrapper">
 			<?php echo $page->renderVersions(); ?>
 		</div>
-
 	</div>
 
 	<div class="form-section">
@@ -568,49 +168,9 @@ $(document).ready(function() {
 				</td>
 			</tr>
 		</table>
-
-		<script type="text/javascript">
-		$(document).ready(function() {
-			$('#conf-maxexec, #conf-memlim').change(function() {
-				$('#saveconf').removeAttr('disabled');
-			});
-
-			$('#saveconf').click(function() {
-				var phpconf = {};
-				phpconf['max_execution_time'] = $('#conf-maxexec').val();
-				phpconf['memory_limit'] = $('#conf-memlim').val();
-				var params = {};
-				params['phpconf'] = phpconf;
-
-				$(this).attr('disabled', 'disabled');
-				transientRequest({
-					url: 'ajax/sendConfiguration.php?sid=' + sid,
-					method: 'post',
-					data: params,
-					poll: false,
-					status: 'Changing PHP configuration...',
-					success: function(response) {
-					  	$('.settings-form .actions .positive').show();
-					  	setTimeout(
-							"$('.settings-form .actions .positive').fadeOut();",
-							2000
-						);
-					},
-					error: function(error) {
-						$(this).removeAttr('disabled');
-						alert('#saveconf.click() error: ' + error);
-					}
-				});
-			});
-		});
-		</script>
 	</div>
 
 	<?php if (!$service->isStable()): ?>
-		<script type="text/javascript">
-			freezeInput(true);
-			pollState();
-		</script>
 	<?php endif; ?>
 <?php else: ?>
 	<div class="box infobox">
@@ -621,5 +181,8 @@ $(document).ready(function() {
 
 </div>
 <?php echo $page->renderFooter(); ?>
+<?php echo $page->generateJSGetParams(); ?>
+<script src="js/servicepage.js"></script>
+<script src="js/hosting.js"></script>
 </body>
 </html>

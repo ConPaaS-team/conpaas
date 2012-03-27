@@ -49,6 +49,10 @@ class HadoopService extends Service {
 		return parent::needsPolling() || $this->state == self::STATE_INIT;
 	}
 
+	public function getInstanceRoles() {
+		return array('masters', 'workers');
+	}
+
 	protected function fetchNodesLists() {
 		if (!isset($this->manager)) {
 			return false;
@@ -61,6 +65,11 @@ class HadoopService extends Service {
 		return $response['result'];
 	}
 
+	public function getAccessLocation() {
+		$rootnode = $this->getNodeInfo($this->nodesLists['masters'][0]);
+		return 'http://'.$rootnode['ip'];
+	}
+
 	public function getNodeInfo($node) {
 		$json_info = $this->managerRequest('post', 'get_node_info',
 			array($node));
@@ -68,29 +77,8 @@ class HadoopService extends Service {
 		if ($info == null || !isset($info['result'])) {
 			return false;
 		}
-		// HACK: TODO(claudiugh) report bug
-		if (isset($info['result']['result'])) {
-			$info['result']['result']['id'] = $node;
-			return $info['result']['result'];
-		}
 		$info['result']['id'] = $node;
 		return $info['result'];
-	}
-
-	public function addServiceNodes($params) {
-		if (!isset($params['hadoop'])) {
-			throw new Exception('Number of nodes not specified');
-		}
-		return $this->managerRequest('post', 'add_nodes',
-			array($params['hadoop']));
-	}
-
-	public function removeServiceNodes($params) {
-		if (!isset($params['hadoop'])) {
-			throw new Exception('Number of nodes not specified');
-		}
-		return $this->managerRequest('post', 'remove_nodes',
-			array($params['hadoop']));
 	}
 
 	public function createInstanceUI($node) {

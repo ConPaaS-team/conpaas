@@ -59,6 +59,6 @@ class StatusLed {
 
 	public function __toString() {
 		return '<img class="led" title="'.$this->service->getStatusText().'" '
-			.' src="'.$this->getImage().'" style="vertical-align: middle;" />';
+			.' src="'.$this->getImage().'" />';
 	}
 }

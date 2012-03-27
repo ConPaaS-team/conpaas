@@ -38,57 +38,24 @@ $services = ServiceData::getServicesByUser($page->getUID());
     <?php echo $page->renderIcon(); ?>
     <link type="text/css" rel="stylesheet" href="conpaas.css" />
 	<script src="js/jquery-1.5.js"></script>
-	<script src="js/user.js"></script>
+	<script src="js/conpaas.js"></script>
   </head>
   <body class="<?php echo $page->getBrowserClass(); ?>">
 
 	<?php echo $page->renderHeader(); ?>
   	<div class="pagecontent">
   		<div class="pageheader">
-  			<h1> <img src="images/dashboard.png" /> Dashboard</h1>
   			<div class="menu">
-  				<a class="button" href="create.php"> create service</a>
+  				<a class="button" href="create.php">
+  					<img src="images/service-plus.png" /> create new service
+  				</a>
   			</div>
   			<div class="clear"></div>
   		</div>
 
   		<?php if (count($services) > 0): ?>
   			<div id="servicesWrapper">
-  			<?php
-  				$serviceObjs = array();
-				foreach ($services as $service_data) {
-					$serviceObjs[] = ServiceFactory::create($service_data);
-				}
-  				$servicesList = new ServicesListUI($serviceObjs);
-  				echo $servicesList->render();
-  			?>
   			</div>
-  			<script type="text/javascript">
-  				function refreshServices() {
-  	  				$.ajax({
-  	  	  				url: 'ajax/checkServices.php',
-  	  	  				dataType: 'html',
-  	  	  				success: function(response) {
-  	  	  	  				$('#servicesWrapper').html(response);
-  	  	  				}
-  	  				});
-  				}
-
-  				function onDeleteService(button) {
-  					sid = $(button).attr('name');
-  	  				$.ajax({
-  	  	  				url: 'ajax/terminateService.php?sid=' + sid,
-  	  	  				type: 'post',
-  	  	  				dataType: 'json',
-  	  	  				success: function(response) {
-  	    	  	  	  		if (typeof response.error != 'undefined' && response.error != null ) {
-  	  	    	  	  	  		alert('Error trying to remove service: ' + response.error);
-  	    	  	  	  		}
-  	    	  	  	  		$('#' + 'service-' + sid).hide();
-  	  	  				}
-	  	  			});
-  				}
-  			</script>
   		<?php else: ?>
 		<div class="box infobox">
 			You have no services in the dashboard. Go ahead and <a href="create.php">create a service</a>.
@@ -96,5 +63,7 @@ $services = ServiceData::getServicesByUser($page->getUID());
   		<?php endif; ?>
   	</div>
   	<?php echo $page->renderFooter(); ?>
+  	<script src="js/servicepage.js"></script>
+  	<script src="js/index.js"></script>
   </body>
 </html>

@@ -26,7 +26,7 @@ if (!isset($_SESSION['uid'])) {
 	throw new Exception('User not logged in');
 }
 
-$sid = $_GET['sid'];
+$sid = $_POST['sid'];
 $service_data = ServiceData::getServiceById($sid);
 $service = ServiceFactory::create($service_data);
 

@@ -91,6 +91,30 @@ class Page {
 		return '<link rel="shortcut icon" href="images/conpaas.ico">';
 	}
 
+	public function renderPageStatus() {
+		return
+			'<div id="pgstat">'
+			.'<div id="pgstatInfo" style="display: none;">'
+				.'<img src="images/info.png" style="margin-right: 5px;"/>'
+				.'<span id="pgstatInfoText">service is starting</span>'
+				.'</div>'
+			.'<div id="pgstatError" style="display: none;">'
+				.'<img src="images/error.png" style="vertical-align: middle; margin-right: 5px;"/>'
+				.'<span id="pgstatErrorName">service error</span>'
+				.'<a id="pgstatErrorDetails" href="javascript: void(0);">'
+					.'<img src="images/link_s.png" />details'
+				.'</a>'
+			.'</div>'
+			.'<div id="pgstatLoading" style="display: none;">'
+				.'<span id="pgstatLoadingText">creating service...</span>'
+				.'<img class="loading" src="images/icon_loading.gif" style="vertical-align: middle;" /> '
+			.'</div>'
+			.'<div id="pgstatTimer" style="display: none;">'
+				.'<img src="images/refresh.png" /> recheck in <i id="pgstatTimerSeconds">6</i> seconds </div>'
+			.'<div class="clear"></div>'
+			.'</div>';
+	}
+
 	public function renderHeader() {
 		return
 			'<div class="header">'.
@@ -109,7 +133,8 @@ class Page {
 					.'</div> '.
   				'</div>'.
   				'<div class="clear"></div>'.
-  			'</div>';
+  			'</div>'.
+			$this->renderPageStatus();
 	}
 
 	public function renderFooter() {
@@ -119,6 +144,11 @@ class Page {
 			'</div>';
 	}
 
+	public function generateJSGetParams() {
+		return
+			'<script>var GET_PARAMS = '.json_encode($_GET, JSON_HEX_TAG).';'
+			.'</script>';
+	}
 }
 
 ?>

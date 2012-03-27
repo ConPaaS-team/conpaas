@@ -45,6 +45,10 @@ class ScalarixService extends Service {
 		return array();
 	}
 
+	public function getInstanceRoles() {
+		return array('peers');
+	}
+
 	protected function fetchNodesLists() {
 		if (!isset($this->manager)) {
 			return false;
@@ -57,6 +61,11 @@ class ScalarixService extends Service {
 		return array('peers' => $response['result']['peers']);
 	}
 
+	public function getAccessLocation() {
+		$rootnode = $this->getNodeInfo($this->nodesLists['peers'][0]);
+		return 'http://'.$rootnode['ip'];
+	}
+
 	public function getNodeInfo($node) {
 		$json_info = $this->managerRequest('post', 'get_node_info',
 			array($node));
@@ -65,28 +74,8 @@ class ScalarixService extends Service {
 			return false;
 		}
 		$info = $info['result'];
-		// HACK
-		if (isset($info['result'])) {
-			$info = $info['result'];
-		}
 		$info['id'] = $node;
 		return $info;
-	}
-
-	public function addServiceNodes($params) {
-		if (!isset($params['scalarix'])) {
-			throw new Exception('Number of nodes not specified');
-		}
-		return $this->managerRequest('post', 'add_nodes',
-			array($params['scalarix']));
-	}
-
-	public function removeServiceNodes($params) {
-		if (!isset($params['scalarix'])) {
-			throw new Exception('Number of nodes not specified');
-		}
-		return $this->managerRequest('post', 'remove_nodes',
-			array($params['scalarix']));
 	}
 
 	public function createInstanceUI($node) {
