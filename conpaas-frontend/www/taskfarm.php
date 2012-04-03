@@ -51,183 +51,15 @@ $backendType = $service->getType();
 <script type="text/javascript" src="https://www.google.com/jsapi"></script>
 <script src="js/jquery-1.5.js"></script>
 <script src="js/jquery.form.js"></script>
+<script src="js/conpaas.js"></script>
 </head>
 <body>
-<script type="text/javascript">
-
-	  	var sid = <?php echo $sid; ?>;
-  		/* core functionality */
-		function isStableState(state) {
-			return state == 'INIT' || state == 'RUNNING' ||
-				state == 'STOPPED' || state == 'ERROR';
-		}
-
-  		var poll_success_cb = null;
-  		var poll_success_cb_param = null;
-  		var poll_error_cb = null;
-
-  		function pollState(delay) {
-  	  		delay = (typeof delay == 'undefined') ? 1000 : delay + 1000;
-  	  		count = delay / 1000;
-  	  		showLoading(true, 'executing, please wait...');
-		  	$.ajax({
-			  	url: 'ajax/getState.php?sid=<?php echo $sid;?>',
-			  	dataType: 'json',
-			  	type: 'get',
-		  		success: function (response) {
-			  		if (typeof response.error != 'undefined') {
-				  		showLoading(false);
-				  		if (poll_error_cb != null) {
-					  		poll_error_cb(response.error);
-				  		} else {
-				  			alert('pollState() error: ' + response.error);
-				  		}
-				  		return;
-			  		}
-					if (typeof response.state != 'undefined') {
-						if (isStableState(response.state)) {
-							showLoading(false);
-							freezeInput(false);
-							if (poll_success_cb != null) {
-								poll_success_cb(poll_success_cb_param);
-								poll_success_cb = null;
-								poll_error_cb = null;
-								poll_success_cb_param = null;
-							}
-						} else {
-							setTimeout('pollState(' + delay + ');', delay);
-						}
-					}
-		  		},
-		  		error: function() {
-			  		showLoading(false);
-			  		alert('pollState(): Error loading the state');
-		  		}
-		  	});
-  		}
-
-		function showLoading(show, msg) {
-			show = (typeof show == 'undefined') ? true : show;
-			msg = (typeof msg == 'undefined') ? 'loading...' : msg;
-
-			if (show) {
-				$('#loading b').html(msg);
-				$('#loading').show();
-			} else {
-				$('#loading').hide();
-			}
-		}
-
-  		function freezeInput(freeze) {
-  	  		buttonsSelector = '#startSample, #startExec';
-  	  		if (freeze) {
-  	  			$(buttonsSelector).attr('disabled', 'disabled');
-  	  		} else {
-  	  	  		$(buttonsSelector).removeAttr('disabled');
-  	  		}
-  		}
-
-  		/*
-  		 * make request that places the service into transient states, so it
-  		 * may need polling
-  		 * fields: params: {url, method, success, error, status, poll}
-  		 */
-  		function transientRequest(params) {
-  	  		params.method =
-  	  	  		(typeof params.method == 'undefined') ? 'get' : params.method;
-	  	  	params.success =
-  	  	  		(typeof params.success == 'undefined') ? null : params.success;
-	  	  	params.error =
-		  	  	(typeof params.error == 'undefined') ? null : params.error;
-	  	  	params.poll =
-		  	  	(typeof params.poll == 'undefined') ? true : params.poll;
-			params.data =
-		  	  	(typeof params.data == 'undefined') ? {} : params.data;
-
-  	  		freezeInput(true);
-  	  		showLoading(true, params.status);
-  	  		$.ajax({
-  	  	  		url: params.url, type: params.method, dataType: 'json',
-  	  	  		data: params.data,
-  	  	  		success: function(response) {
-  	  	  	  		if (typeof response.error != 'undefined' && response.error != null ) {
-  	  	  	  	  		freezeInput(false);
-  	  	  	  	  		showLoading(false);
-  	  	  	  	  		if (params.error != null) {
-  	  	  	  	  	  		params.error(response.error);
-  	  	  	  	  		} else {
-  	  	  	  	  			alert('transientRequest() error: ' + response.error);
-  	  	  	  	  		}
-  	  	  	  	  		return;
-  	  	  	  		}
-  	  	  	  		if (typeof params.poll != 'undefined' &&
-  	    	  	  	  		params.poll == true) {
-  	  	  	  	  		poll_success_cb = params.success;
-  	  	  	  	  		poll_error_cb = params.error;
-  	  	  	  	  		poll_success_cb_param = response;
-  	  	  	  	  		pollState();
-  	  	  	  	  		return;
-  	  	  	  		}
-  	  	  	  		freezeInput(false);
-  	  	  	  		showLoading(false);
-  	  	  	  		if (params.success != null) {
-  	  	  	  			params.success(response);
-  	  	  	  		}
-  	  	  		},
-  	  	  		error: function(response) {
-  	  	  	  		freezeInput(false);
-  	  	  	  		showLoading(false);
-  	  	  	  		alert('transientRequest(): Error sending the request');
-  	  	  		}
-  	  		});
-  		}
-</script>
 
 <?php echo $page->renderHeader(); ?>
 <?php echo PageStatus()->setId('loading'); ?>
 
 	<div class="pagecontent">
 	<?php echo $page->renderTopMenu(); ?>
-
-<script>
-$(document).ready(function() {
-	$('#name').click(function() {
-		newname = prompt("Enter a new name", $('#name').html());
-		if (newname != null && newname != "") {
-			$.ajax({
-				url: 'ajax/saveName.php?sid='+sid,
-				type: 'post',
-				dataType: 'json',
-				data: {
-					name: newname,
-				},
-				success: function(response) {
-					if (response.save == 1) {
-						$('#name').html(newname);
-					}
-				}
-			 });
-		 }
-	  });
-
-	$('#terminate').click(function() {
-		if (!confirm('After termination, the service will be completely'
-				+ ' destroyed. Are you sure you want to continue?')) {
-			return;
-		}
-		transientRequest({
-			url: 'ajax/terminateService.php?sid='+sid,
-			method: 'post',
-			success: function(response) {
-				window.location = 'index.php';
-			},
-			status: 'terminating service...',
-			poll: false
-		});
-	});
-
-});
-</script>
 
 <?php if ($service->isConfigurable()): ?>
 
@@ -274,51 +106,6 @@ $(document).ready(function() {
   		</table>
 		</form>
 		<div class="clear"></div>
-		<script type="text/javascript">
-
-			$(document).ready(function() {
-				$('#fileForm').ajaxForm({
-					dataType: 'json',
-					success: function(response) {
-						$('.additional .loading').toggleClass('invisible');
-						if (typeof response.error != 'undefined' && response.error != null) {
-							alert('Error: ' + response.error);
-							$('#botFile').val('');
-							$('#xmlFile').val('');
-							return;
-						}
-						$('.additional .positive').show();
-						setTimeout('$(".additional .positive").fadeOut();', 1000);
-						// request ended ok
-						$('#botFile').val('');
-						$('#xmlFile').val('');
-						// poll sample phase
-						poll_success_cb = function (param) {
-							window.location.reload();
-						}
-						freezeInput(true);
-						pollState();
-					},
-					error: function(error) {
-						alert('#fileForm.ajaxForm() error: ' + response.error);
-					}
-				});
-
-				$('#startSample').click(function() {
-					if ($('#botFile').val() == '') {
-						alert('Please choose a .bot file');
-						return;
-					}
-					if ($('#xmlFile').val() == '') {
-						alert('Please choose a .xml file');
-						return;
-					}
-					$('.additional .loading').toggleClass('invisible');
-					$('#fileForm').submit();
-				});
-			});
-
-		</script>
 	</div>
 
 	<?php if ($service->hasSamplingResults()): ?>
@@ -354,113 +141,6 @@ $(document).ready(function() {
 		</table>
 	</div>
 
-	<script type="text/javascript">
-    	google.load('visualization', '1.0', {'packages':['corechart']});
-		var samplingResults = null;
-		var chart = null;
-
-		function executionScheduleSelected(e) {
-			selectedSampling = samplingResults[$('#samplings').attr('selectedIndex')];
-			scheduleIndex = chart.getSelection()[0].row;
-			$('#scheduleDetails').html(selectedSampling.schedules[scheduleIndex]);
-			console.log(scheduleIndex);
-		}
-
-		function drawChart(schedules) {
-			var data = new google.visualization.DataTable();
-			data.addColumn('number', 'Execution Time');
-			data.addColumn('number', 'Cost');
-			$.each(schedules, function (index, schedule) {
-				budget = parseInt(schedule.split('\t')[1]);
-				console.log(schedule.split('\t'));
-				data.addRow([(index + 1) * 15, budget]);
-			});
-	        var options = {
-	        	width: 400, height: 240,
-	        	title: 'Execution Options',
-	        	pointSize: 3,
-	        	hAxis: {
-		        	title: 'Time Needed (minutes)',
-		        	minValue: 0
-		        },
-		        vAxis: {
-			        title: 'Budget/Cost'
-		        }
-	        };
-	        chart = new google.visualization.LineChart(document.getElementById('executionChart'));
-	        google.visualization.events.addListener(chart, 'select', executionScheduleSelected);
-	        chart.draw(data, options);
-		}
-
-		function loadSamplingResults() {
-			$.ajax({
-				url: 'ajax/taskfarm_getSamplingResults.php?sid=' + sid,
-				type: 'get',
-				dataType: 'json',
-				success: function(response) {
-					if (typeof response.error != 'undefined' && response.error != null) {
-						alert('Error loading sampling results: ' + response.error);
-						return;
-					}
-					samplingResults = response;
-					$('#samplings').empty();
-					$.each(samplingResults, function (index, sampling) {
-						$('#samplings').append($("<option></option>")
-							.attr("value", sampling.timestamp)
-							.text(sampling.name));
-					});
-					updateExecutionOptions();
-				}
-			});
-		}
-
-		function updateExecutionOptions() {
-			selectedSampling = $('#samplings').attr('selectedIndex');
-			options = samplingResults[selectedSampling].schedules;
-			drawChart(options);
-		}
-
-		$(document).ready(function() {
-
-			$('#samplings').change(function() {
-				updateExecutionOptions();
-			});
-
-			$('#startExec').click(function() {
-				if (chart.getSelection().length == 0) {
-					alert('Please select an execution option');
-					return;
-				}
-				executionOption = chart.getSelection()[0];
-				$.ajax({
-					url: 'ajax/taskfarm_runExecution.php',
-					type: 'post',
-					data: {
-						sid: sid,
-						schedulesFile: samplingResults[$('#samplings').attr('selectedIndex')].timestamp,
-						scheduleNo: executionOption.row
-					},
-					dataType: 'json',
-					success: function(response) {
-						if (typeof response.error != 'undefined' && response.error != null) {
-							alert('Error running execution: ' + response.error);
-							return;
-						}
-						console.log("execution started");
-						pollState();
-					}
-				});
-			});
-
-			loadSamplingResults();
-		});
-	</script>
-	<?php endif; ?>
-	<?php if (!$service->isStable()): ?>
-		<script type="text/javascript">
-			freezeInput(true);
-			pollState();
-		</script>
 	<?php endif; ?>
 
 <?php else: ?>
@@ -472,5 +152,8 @@ $(document).ready(function() {
 
 </div>
 <?php echo $page->renderFooter(); ?>
+<?php echo $page->generateJSGetParams(); ?>
+<script type="text/javascript" src="js/servicepage.js"></script>
+<script type="text/javascript" src="js/taskfarm.js"></script>
 </body>
 </html>

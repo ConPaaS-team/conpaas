@@ -38,20 +38,14 @@ if($service->getUID() !== $_SESSION['uid']) {
 
 function unlink_paths($paths) {
 	foreach ($paths as $file => $path) {
+		$path = str_replace('@', '', $path);
 		unlink($path);
 	}
 }
 
 $paths = array();
 foreach (array('botFile', 'clusterFile') as $file) {
-	$path = '/tmp/'.$_FILES[$file]['name'];
-	if (move_uploaded_file($_FILES[$file]['tmp_name'], $path) === false) {
-		echo json_encode(array(
-			'error' => 'could not move uploaded file '.$file
-		));
-		unlink_paths($paths);
-		exit();
-	}
+	$path = $_FILES[$file]['tmp_name'];
 	// build the cURL parameter
 	$paths[$file] = '@'.$path;
 }

@@ -42,6 +42,14 @@ class TaskFarmService extends Service {
 		return $state;
 	}
 
+	public function getNodeInfo($node) {
+		return false;
+	}
+
+	public function getAccessLocation() {
+		return false;
+	}
+
 	/**
 	 * TODO: request implementation of this call in the TaskFarm backend
 	 */
