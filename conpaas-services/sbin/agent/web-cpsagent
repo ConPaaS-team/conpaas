@@ -1,0 +1,85 @@
+#!/usr/bin/python
+'''
+Copyright (c) 2010-2012, Contrail consortium.
+All rights reserved.
+
+Redistribution and use in source and binary forms, 
+with or without modification, are permitted provided
+that the following conditions are met:
+
+ 1. Redistributions of source code must retain the
+    above copyright notice, this list of conditions
+    and the following disclaimer.
+ 2. Redistributions in binary form must reproduce
+    the above copyright notice, this list of 
+    conditions and the following disclaimer in the
+    documentation and/or other materials provided
+    with the distribution.
+ 3. Neither the name of the <ORGANIZATION> nor the
+    names of its contributors may be used to endorse
+    or promote products derived from this software 
+    without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
+BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
+
+
+Created on Jul 4, 2011
+
+@author: ielhelw
+'''
+from os.path import exists
+
+from conpaas.core.aserver import AgentServer
+
+if __name__ == '__main__':
+  from optparse import OptionParser
+  from ConfigParser import ConfigParser
+  import sys
+  parser = OptionParser()
+  parser.add_option('-p', '--port', type='int', default=5555, dest='port')
+  parser.add_option('-b', '--bind', type='string', default='0.0.0.0', dest='address')
+  parser.add_option('-c', '--config', type='string', default=None, dest='config')
+  options, args = parser.parse_args()
+  if not options.config or not exists(options.config):
+    print >>sys.stderr, 'Failed to find configuration file'
+    sys.exit(1)
+  
+  config_parser = ConfigParser()
+  config_parser.read(options.config)
+  config_vars = {
+    'agent': ['LOG_FILE', 'ETC', 'VAR_TMP', 'VAR_CACHE', 'VAR_RUN'],
+    'nginx': ['NGINX'],
+    'php': ['PHP_FPM'],
+    'tomcat': ['TOMCAT_INSTANCE_CREATE', 'TOMCAT_STARTUP'],
+  }
+  config_ok = True
+  for section in config_vars:
+    if not config_parser.has_section(section):
+      print >>sys.stderr, 'Missing configuration section "%s"' % (section)
+      print >>sys.stderr, 'Section "%s" should contain variables %s' % (section, str(config_vars[section]))
+      config_ok = False
+      continue
+    for field in config_vars[section]:
+      if not config_parser.has_option(section, field)\
+      or config_parser.get(section, field) == '':
+        print >>sys.stderr, 'Missing configuration variable "%s" in section "%s"' % (field, section)
+        config_ok = False
+  if not config_ok:
+    sys.exit(1)
+  
+  print options.address, options.port
+  agent = AgentServer((options.address, options.port), config_parser)
+  agent.serve_forever()

@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# This script is part of the agent contextualization file. It 
+# starts a python script that parses the given arguments
+# and starts the agent server, which in turn will start
+# the agent service. 
+
+# This file is the default agent-start file. It can be
+# customized as needed by the sevice.  
+
+# setup and run local agent
+$CPS_HOME/sbin/agent/default-cpsagent -c $ROOT_DIR/config.cfg 1>$ROOT_DIR/agent.out 2>$ROOT_DIR/agent.err &
+agent_pid=$!
+echo $agent_pid > $ROOT_DIR/agent.pid

@@ -1,0 +1,45 @@
+[iaas]
+
+DRIVER = EC2
+
+# EC2_USER should be set to your EC2 user name. Beware: this is not the
+# email address you normally use to login at the AWS management console. 
+# An EC2 user name is a long opaque string. It can be found at
+# https://aws-portal.amazon.com/gp/aws/developer/account/index.html?action=access-key#account_identifiers
+# under the name "Access key ID"
+USER = AKI65EE6MMGSDJYIGJJJ
+
+# EC2_PASSWORD should be set to the corresponding password.
+# Again, this is a long opaque string. You can find it next to your
+# Access Key ID by clicking "Show Secret Access Key".
+PASSWORD = UTWhOHoqoYYnZ9pbUT2aZMp75RTJmkLimPxz8uTy
+
+# EC2_IMAGE_ID should be set to the identifier of the Amazon Machine 
+# Image created from the Web hosting service. Your AMIs can be found at  
+# https://console.aws.amazon.com/ec2/home?region=us-east-1#s=Images 
+# Unless you have a specific reason to do otherwise, you should use 
+# the same value as field "ami" from configuration file aws.ini.
+IMAGE_ID = ami-4dac7f24
+
+# This variable should contain the type of EC2 instances to use. A
+# good value to use inexpensive, low-performance instances is
+# "t1.micro". Unless you have a specific reason to do otherwise, you
+# should use the same value as field "instance_type" from
+# configuration file aws.ini.
+SIZE_ID = t1.micro
+
+# This variable should contain the created security group from the Web
+# hosting service. Your security groups can be found at
+# https://console.aws.amazon.com/ec2/home?region=us-east-1#s=SecurityGroups
+# Unless you have a specific reason to do otherwise, you should use
+# the same value as field "security_group" from configuration file
+# aws.ini. 
+SECURITY_GROUP_NAME = contrail
+
+# This variable should contain the Key Pair name to be used.  Your
+# keypairs can be found at
+# https://console.aws.amazon.com/ec2/home?region=us-east-1#s=KeyPairs
+# Unless you have a specific reason to do otherwise, you should use
+# the same value as field "keypair" from configuration file aws.ini.
+KEY_NAME = conpaas
+

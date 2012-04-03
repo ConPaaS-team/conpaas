@@ -1,0 +1,8 @@
+#!/bin/bash
+
+/etc/init.d/memcached start
+/usr/bin/scalarisctl -d -f -s start
+
+$CPS_HOME/sbin/manager/default-cpsmanager -p 80 -c $ROOT_DIR/config.cfg 1>$ROOT_DIR/manager.out 2>$ROOT_DIR/manager.err &
+manager_pid=$!
+echo $manager_pid > $ROOT_DIR/manager.pid

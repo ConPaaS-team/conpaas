@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# setup and run local agent
+cp $CPS_HOME/src/conpaas/services/scalaris/etc/scalaris.local.config.tmpl /etc/scalaris/scalaris.local.cfg.tmpl
+
+apt-get install screen
+
+$CPS_HOME/sbin/agent/default-cpsagent -c $ROOT_DIR/config.cfg 1>$ROOT_DIR/agent.out 2>$ROOT_DIR/agent.err &
+agent_pid=$!
+echo $agent_pid > $ROOT_DIR/agent.pid

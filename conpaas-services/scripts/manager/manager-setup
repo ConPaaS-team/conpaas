@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# Ths script is part of the contextualization file. It 
+# copies the source code on the VM, unpacks it, and sets
+# the PYTHONPATH environment variable. 
+
+# Is filled in by the frontend
+FRONTEND=%FRONTEND_URL%
+SOURCE=$FRONTEND/code
+ROOT_DIR=/root
+CPS_HOME=$ROOT_DIR/ConPaaS
+
+wget -P $ROOT_DIR/ $SOURCE/ConPaaS.tar.gz
+tar -zxf $ROOT_DIR/ConPaaS.tar.gz -C $ROOT_DIR/
+export PYTHONPATH=$CPS_HOME/src/:$CPS_HOME/contrib/
+
+
