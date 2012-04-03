@@ -141,7 +141,7 @@ class DashboardServiceUI {
 					$namenode_data['capacity'].'</i>', 'Total Capacity').
 				$this->renderStatistic('<i class="text">'.
 					$namenode_data['used'].'</i>', 'Stored Data');
-		} else if ($this->service->getType() == 'scalarix') {
+		} else if ($this->service->getType() == 'scalaris') {
 			$keysCount = $this->service->getKeysCount();
 			return
 				$this->renderInstances().

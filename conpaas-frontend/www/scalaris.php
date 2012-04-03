@@ -23,14 +23,14 @@ require_module('logging');
 require_module('service');
 require_module('service/factory');
 require_module('ui');
-require_module('ui/page/scalarix');
+require_module('ui/page/scalaris');
 require_module('ui/service');
 
 $sid = $_GET['sid'];
 $service_data = ServiceData::getServiceById($sid);
 $service = ServiceFactory::create($service_data);
 
-$page = new ScalarixPage($service);
+$page = new ScalarisPage($service);
 
 if ($service->getUID() !== $page->getUID()) {
     $page->redirect('index.php');
@@ -59,14 +59,14 @@ $backendType = $service->getType();
 	<?php echo $page->renderTopMenu(); ?>
 
 <?php if ($service->isConfigurable()): ?>
-	<?php if ($service->isRunning()): ?>
+	<?php if ($service->getNodesCount() > 0): ?>
 	<div class="form-section">
 		<div id="instancesWrapper">
 			<?php echo $page->renderInstances(); ?>
 		</div>
 		<div class="actionstitle">add or remove instances to your deployment</div>
 		<div class="actionsbar">
-			<div class="tag blue"> <b id="peers" class="editable" title="click to edit">0</b> DB nodes</div>
+			<div class="tag blue"> <b id="scalaris" class="editable" title="click to edit">0</b> DB nodes</div>
 			<input type="button" id="submitnodes" value="submit" disabled="disabled" />
 			<img class="loading" src="images/icon_loading.gif" style="display: none;" />
 		</div>
@@ -88,6 +88,6 @@ $backendType = $service->getType();
 <?php echo $page->renderFooter(); ?>
 <?php echo $page->generateJSGetParams(); ?>
 <script type="text/javascript" src="js/servicepage.js"></script>
-<script type="text/javascript" src="js/scalarix.js"></script>
+<script type="text/javascript" src="js/scalaris.js"></script>
 </body>
 </html>

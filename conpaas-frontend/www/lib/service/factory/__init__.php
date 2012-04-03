@@ -48,12 +48,12 @@ class ServiceFactory {
 			case 'taskfarm':
 				require_module('service/taskfarm');
 				return new TaskFarmService($service_data);
-			case 'scalarix':
-				require_module('service/scalarix');
-				return new ScalarixService($service_data);
+			case 'scalaris':
+				require_module('service/scalaris');
+				return new ScalarisService($service_data, $manager);
 			case 'hadoop':
 				require_module('service/hadoop');
-				return new HadoopService($service_data);
+				return new HadoopService($service_data, $manager);
 			default:
 				throw new Exception('Unknown service type');
 		}

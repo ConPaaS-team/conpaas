@@ -221,7 +221,10 @@ class ServicePage extends Page {
 				continue;
 			}
 			$nodesList = $nodesLists[$role];
-			if (count($nodesList) > 1) {
+			// HACK: empty list for a role
+			if (count($nodesList) == 0) {
+				continue;
+			} elseif (count($nodesList) > 1) {
 				$cluster = new Cluster($role);
 				foreach ($nodesList as $node) {
 					$info = $this->service->getNodeInfo($node);
@@ -306,6 +309,7 @@ class ServicePage extends Page {
 		return 'created '.$ts.' ago';
 	}
 
+	// TODO(claudiugh): move this out from the generic service page
 	protected function renderApplicationAccess() {
 		if (!$this->service->isRunning()) {
 			return '';

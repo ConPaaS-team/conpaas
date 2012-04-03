@@ -20,16 +20,10 @@
 
 require_module('ui/page');
 
-class ScalarixPage extends ServicePage {
+class ScalarisPage extends ServicePage {
 
 	public function __construct(Service $service) {
 		parent::__construct($service);
-	}
-
-	public function renderActions() {
-		$terminateButton = InputButton('terminate')
-			->setId('terminate');
-		return $terminateButton;
 	}
 
 	protected function renderSubname() {
@@ -44,6 +38,10 @@ class ScalarixPage extends ServicePage {
 					->setExternal(true).
 
 			'</div>';
+	}
+
+	protected function renderApplicationAccess() {
+		return '';
 	}
 }
 

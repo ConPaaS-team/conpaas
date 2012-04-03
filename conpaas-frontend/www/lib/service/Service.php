@@ -171,10 +171,11 @@ abstract class Service {
 				 $this->state == self::STATE_PREINIT));
 	}
 
-	private function decodeResponse($json) {
+	private function decodeResponse($json, $method) {
 		$response = json_decode($json, true);
 		if ($response == null) {
-			throw new Exception('null response');
+			throw new Exception('Error parsing response for '.$method
+				.': "'.$json.'"');
 		}
 		if (isset($response['error']) && $response['error'] !== null) {
 			$message = $response['error'];
@@ -190,7 +191,7 @@ abstract class Service {
 			$ping=false) {
 		$json = HTTP::jsonrpc($this->manager, $http_method, $method, $params,
 			$ping);
-		$this->decodeResponse($json);
+		$this->decodeResponse($json, $method);
 		return $json;
 	}
 

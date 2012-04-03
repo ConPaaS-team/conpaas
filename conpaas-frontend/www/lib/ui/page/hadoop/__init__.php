@@ -26,23 +26,29 @@ class HadoopPage extends ServicePage {
 		parent::__construct($service);
 	}
 
-	public function renderActions() {
-		$terminateButton = InputButton('terminate')
-			->setId('terminate');
-		return $terminateButton;
+	protected function renderRightMenu() {
+		$master_addr = $this->service->getAccessLocation();
+		return
+			'<div class="rightmenu">'
+				.LinkUI('manager log',
+						'viewlog.php?sid='.$this->service->getSID())
+					->setExternal(true)
+				.' &middot; '
+				.LinkUI('namenode', $master_addr.':50070')
+					->setExternal(true)
+				.' &middot; '
+				.LinkUI('job tracker', $master_addr.':50030')
+					->setExternal(true)
+			.'</div>';
 	}
 
-	protected function renderSubname() {
+
+	protected function _renderRightMenu() {
+		// TODO: add specific info from Hadoop UI
 		$manager = $this->service->getManagerIP();
 		return
 			'<div class="subname">'.
 				$this->renderStateChange().
-				' &middot; '.
-				LinkUI('namenode', 'http://'.$manager.':50070')
-					->setExternal(true).
-				' &middot; '.
-				LinkUI('job tracker', 'http://'.$manager.':50030')
-					->setExternal(true).
 			'</div>';
 	}
 }

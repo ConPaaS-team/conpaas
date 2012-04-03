@@ -58,7 +58,7 @@ $backendType = $service->getType();
 	<div class="pagecontent">
 	<?php echo $page->renderTopMenu(); ?>
 <?php if ($service->isConfigurable()): ?>
-	<?php if ($service->isRunning()): ?>
+	<?php if ($service->getNodesCount() > 0): ?>
 	<div class="form-section">
 		<div id="instancesWrapper">
 			<?php echo $page->renderInstances(); ?>
@@ -87,6 +87,6 @@ $backendType = $service->getType();
 <?php echo $page->renderFooter(); ?>
 <?php echo $page->generateJSGetParams(); ?>
 <script type="text/javascript" src="js/servicepage.js"></script>
-<script type="text/javascript" src="js/scalarix.js"></script>
+<script type="text/javascript" src="js/scalaris.js"></script>
 </body>
 </html>

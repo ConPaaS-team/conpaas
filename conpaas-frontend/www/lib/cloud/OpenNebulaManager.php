@@ -23,7 +23,12 @@ require_module('db');
 
 class OpenNebulaManager extends Manager {
 
-	protected $user_data_file;
+	protected $virtualization_type;
+	protected $os_arch;
+	protected $os_bootloader;
+	protected $os_root;
+	protected $disk_target;
+	protected $context_target;
 
 	const CONF_FILENAME = 'opennebula.ini';
 
@@ -52,7 +57,6 @@ class OpenNebulaManager extends Manager {
 		$this->os_root = $conf['os_root'];
 		$this->disk_target = $conf['disk_target'];
 		$this->context_target = $conf['context_target'];
-
 	}
 
 	public function http_request($method, $resource, $xml=null) {
@@ -140,7 +144,6 @@ class OpenNebulaManager extends Manager {
 			dlog('Failed to fetch state of node from OpenNebula: '.$response);
 			return false;
 		}
-
 		$obj = simplexml_load_string($response);
 		if ($obj === false) {
 			dlog('getAddress(): Invalid response from opennebula: '.$response);

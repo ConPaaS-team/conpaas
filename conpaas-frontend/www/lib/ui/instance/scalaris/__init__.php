@@ -20,7 +20,7 @@
 
 require_module('ui/instance');
 
-class ScalarixInstance extends Instance {
+class ScalarisInstance extends Instance {
 
 	public function __construct($info) {
 		parent::__construct($info);

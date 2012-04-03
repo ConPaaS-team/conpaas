@@ -72,8 +72,8 @@ $page = new Page();
   				<td class="info"> Java Servlet container using Apache Tomcat 7.2</td>
   			</tr>
   			<tr class="service">
-  				<td class="description"> <img src="images/scalarix.png" height="32" /></td>
-  				<td class="radio"><input type="radio" name="type" value="scalarix" /> scalarix</td>
+  				<td class="description"> <img src="images/scalaris.png" height="32" /></td>
+  				<td class="radio"><input type="radio" name="type" value="scalaris" /> scalaris</td>
   				<td class="info"> in-memory key-value storage </td>
   			</tr>
   			<tr class="service">

@@ -24,8 +24,6 @@ class HadoopInstance extends Instance {
 
 	public function __construct($info) {
 		parent::__construct($info);
-		$this->info['ip'] = str_replace('-', '.',
-			$info['mapred.tasktracker.hostName']);
 	}
 
 	protected function renderCapabs() {

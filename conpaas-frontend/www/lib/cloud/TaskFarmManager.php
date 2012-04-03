@@ -25,12 +25,29 @@ class TaskFarmManager extends OpenNebulaManager {
 
 	const CONF_FILENAME = 'bagoftasks-opennebula.ini';
 
+	protected $user_data_file;
+
 	public function __construct($data) {
 		parent::__construct($data);
 	}
 
 	protected function loadConfiguration() {
-		parent::loadConfiguration(self::CONF_FILENAME);
+		parent::loadConfiguration();
+		// override the service-specific parameters
+		$conf = parse_ini_file(Conf::CONF_DIR.'/'.self::CONF_FILENAME, true);
+		if ($conf === false) {
+			throw new Exception('Could not read OpenNebula configuration file '
+				.'opennebula.ini');
+		}
+		$this->instance_type = $conf['instance_type'];
+		$this->user = $conf['user'];
+		$this->passwd = $conf['passwd'];
+		$this->image = $conf['image'];
+		$this->user_data_file = $conf['user_data_file'];
+	}
+
+	public function createContextFile($cloud) {
+		return file_get_contents($this->user_data_file);
 	}
 }
 ?>
