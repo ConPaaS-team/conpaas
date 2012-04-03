@@ -353,4 +353,36 @@ class ServicePage extends Page {
 	  		.'<div class="clear"></div>'
 	  	.'</div>';
 	}
+
+	protected function renderInstanceActions() {
+		return '';
+	}
+
+	private function renderInstanceActionsSection() {
+		if (!$this->service->isRunning()) {
+			return '';
+		}
+		return
+		'<div class="actionstitle">'
+			.'add or remove instances to your deployment'
+		.'</div>'
+		.'<div class="actionsbar">'
+			.$this->renderInstanceActions()
+			.'<input type="button" id="submitnodes" value="submit" '
+				.' disabled="disabled" />'
+			.'<img class="loading invisible" '
+				.'src="images/icon_loading.gif" />'
+		.'</div>';
+	}
+
+	public function renderInstancesSection() {
+		if ($this->service->getNodesCount() == 0) {
+			return '<div class="box infobox">No instances are running</div>';
+		}
+		return
+			'<div class="form-section">'
+				.$this->renderInstances()
+				.$this->renderInstanceActionsSection()
+			.'</div>';
+	}
 }

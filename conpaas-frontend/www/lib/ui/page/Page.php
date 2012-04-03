@@ -23,32 +23,11 @@ require_module('ui');
 
 class Page {
 
-	const UFILE = 'services/users.ini';
-
 	protected $uid;
+	protected $user_credit;
 	protected $username;
-
 	protected $browser;
-
-	public static function redirect($toURL) {
-		header('Location: '.$toURL);
-		exit();
-	}
-
-	private function fetchBrowser() {
-		$user_agent = $_SERVER['HTTP_USER_AGENT'];
-		if (strpos($user_agent, 'Firefox') !== false) {
-			$this->browser = 'firefox';
-		} else if (strpos($user_agent, 'WebKit') != false) {
-			$this->browser = 'webkit';
-		} else {
-			$this->browser = 'other';
-		}
-	}
-
-	public function isLoginPage() {
-		return strpos($_SERVER['SCRIPT_NAME'], 'login.php') !== false;
-	}
+	protected $jsFiles = array('js/jquery-1.5.js', 'js/conpaas.js');
 
 	public function __construct() {
 		$this->fetchBrowser();
@@ -69,6 +48,64 @@ class Page {
 		}
 		$this->username = $uinfo['username'];
 		$this->user_credit = $uinfo['credit'];
+	}
+
+	protected function addJS($url) {
+		$this->jsFiles []= $url;
+	}
+
+	public static function redirect($toURL) {
+		header('Location: '.$toURL);
+		exit();
+	}
+
+	public function fetchBrowser() {
+		$user_agent = $_SERVER['HTTP_USER_AGENT'];
+		if (strpos($user_agent, 'Firefox') !== false) {
+			$this->browser = 'firefox';
+		} else if (strpos($user_agent, 'WebKit') != false) {
+			$this->browser = 'webkit';
+		} else {
+			$this->browser = 'other';
+		}
+	}
+
+	public function isLoginPage() {
+		return strpos($_SERVER['SCRIPT_NAME'], 'login.php') !== false;
+	}
+
+	public function renderDoctype() {
+		return '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"'
+			.' "http://www.w3.org/TR/html4/loose.dtd">';
+	}
+
+	public function renderContentType() {
+		return '<meta http-equiv="Content-Type" content="text/html;'
+			.' charset=utf-8" />';
+	}
+
+	public static function renderCSSLink($url) {
+		return '<link type="text/css" rel="stylesheet" href="'.$url.'" />';
+	}
+
+	public static function renderScriptLink($url) {
+		return '<script src="'.$url.'"></script>';
+	}
+
+	public function renderHeaderCSS() {
+		return self::renderCSSLink('conpaas.css');
+	}
+
+	public function renderJSLoad() {
+		$scripts = '';
+		foreach ($this->jsFiles as $jsFile) {
+			$scripts .= self::renderScriptLink($jsFile);
+		}
+		return $scripts;
+	}
+
+	public function renderTitle() {
+		return '<title>ConPaaS - management interface</title>';
 	}
 
 	public function getUserCredit() {

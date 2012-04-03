@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright (C) 2010-2011 Contrail consortium.
+ * Copyright (C) 2010-2012 Contrail consortium.
  *
  * This file is part of ConPaaS, an integrated runtime environment
  * for elastic cloud applications.
@@ -18,30 +18,27 @@
  * along with ConPaaS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-require_module('ui/page');
+require_once('../__init__.php');
+require_module('logging');
+require_module('service');
+require_module('service/factory');
 
-class HadoopPage extends ServicePage {
-
-	public function __construct(Service $service) {
-		parent::__construct($service);
+try {
+	if (!isset($_SESSION['uid'])) {
+		throw new Exception('User not logged in');
+	}
+	$sid = $_POST['sid'];
+	$service_data = ServiceData::getServiceById($sid);
+	$service = ServiceFactory::create($service_data);
+	if($service->getUID() !== $_SESSION['uid']) {
+	    throw new Exception('Not allowed');
 	}
 
-	protected function renderRightMenu() {
-		$master_addr = $this->service->getAccessLocation();
-		return
-			'<div class="rightmenu">'
-				.LinkUI('manager log',
-						'viewlog.php?sid='.$this->service->getSID())
-					->setExternal(true)
-				.' &middot; '
-				.LinkUI('namenode', $master_addr.':50070')
-					->setExternal(true)
-				.' &middot; '
-				.LinkUI('job tracker', $master_addr.':50030')
-					->setExternal(true)
-			.'</div>';
-	}
-
+	$response = $service->loadFile($_FILES['dbfile']['tmp_name']);
+	echo json_encode($response);
+} catch (Exception $e) {
+	error_log($e->getTraceAsString());
+	echo json_encode(array(
+		'error' => $e->getMessage(),
+	));
 }
-
-?>

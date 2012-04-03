@@ -58,7 +58,7 @@ conpaas.ui = (function (this_module) {
                 $('#file').val('');
                 $('.additional .positive').show();
                 setTimeout(function () {
-                    $(".additional .positive").fadeOut();
+                    $('.additional .positive').fadeOut();
                 }, 1000);
                 that.reloadVersions();
             },

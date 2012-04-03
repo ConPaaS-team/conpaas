@@ -20,28 +20,25 @@
 
 require_module('ui/page');
 
-class HadoopPage extends ServicePage {
+class Dashboard extends Page {
 
-	public function __construct(Service $service) {
-		parent::__construct($service);
+	public function __construct() {
+		parent::__construct();
+		$this->addJS('js/servicepage.js');
+		$this->addJS('js/index.js');
 	}
 
-	protected function renderRightMenu() {
-		$master_addr = $this->service->getAccessLocation();
+	public function renderPageHeader() {
 		return
-			'<div class="rightmenu">'
-				.LinkUI('manager log',
-						'viewlog.php?sid='.$this->service->getSID())
-					->setExternal(true)
-				.' &middot; '
-				.LinkUI('namenode', $master_addr.':50070')
-					->setExternal(true)
-				.' &middot; '
-				.LinkUI('job tracker', $master_addr.':50030')
-					->setExternal(true)
-			.'</div>';
+			'<div class="menu">'
+  				.'<a class="button" href="create.php">'
+  					.'<img src="images/service-plus.png" /> create new service'
+  				.'</a>'
+  			.'</div>'
+  			.'<div class="clear"></div>';
 	}
 
-}
+	public function renderContent() {
 
-?>
+	}
+}

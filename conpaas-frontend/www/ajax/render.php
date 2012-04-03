@@ -23,6 +23,7 @@ require_module('service');
 require_module('service/factory');
 require_module('ui/service');
 require_module('ui/page');
+require_module('ui/page/hosting');
 
 if (!isset($_SESSION['uid'])) {
 	throw new Exception('User not logged in');
@@ -39,8 +40,8 @@ if($service->getUID() !== $_SESSION['uid']) {
 
 switch ($target) {
 	case 'versions':
-		$page = new ServicePage($service);
-		echo $page->renderVersions();
+		$page = new HostingPage($service);
+		echo $page->renderCodeVersions();
 		break;
 	case 'instances':
 		$page = new ServicePage($service);

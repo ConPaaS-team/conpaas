@@ -648,6 +648,41 @@ input.button {
 	padding: 5px 5px 5px 10px;
 }
 
+.form-section .left-stack {
+	float: left;
+	padding: 5px;
+	margin: 5px 5px 0 5px;
+}
+
+.command {
+	padding: 5px;
+	border: 1px solid #ccc;
+	color: #666;
+	font-family: Courier;
+	font-size: 12px;
+	font-weight: bold;
+	width: 250px;
+}
+
+.form-section .name {
+	font-size: 12px;
+	color: #999;
+	text-align: right;
+}
+
+.mysql-access .name {
+	width: 100px;
+}
+
+.form-section .form-header {
+	margin-bottom: 10px;
+}
+
+.form-section .details {
+	color: #333;
+	font-weight: bold;
+}
+
 .form-header .title {
 	font-size: 14px;
 	color: #0055A5;
@@ -666,6 +701,11 @@ input.button {
 
 .form-header .access {
 	padding: 3px;
+}
+
+.form-header img {
+	vertical-align: top;
+	margin-right: 5px;
 }
 
 .access .access-type {
@@ -878,10 +918,19 @@ ul.versions li .timestamp {
 	float: right;
 }
 
+.positive, .error {
+    font-size: 10px;
+    font-style: normal;
+    font-weight: normal;
+    margin: 5px;	
+}
+
 .positive {
-	font-size: 10px;
-	font-style: normal;
 	color: green;
+}
+
+.error {
+	color: red;
 }
 
 #fileForm,.deployactions .additional {
@@ -970,7 +1019,7 @@ ul.versions li .timestamp {
 	border-color: purple;
 }
 
-#instances .cluster-proxy,#instances .cluster-workers {
+#instances .cluster-proxy,#instances .cluster-workers, #instances .cluster-slaves {
 	border-color: orange;
 }
 
@@ -1154,6 +1203,7 @@ body.loginbody {
 .infobox {
 	border-color: #ccc;
 	background-color: #eee;
+	margin-top: 10px;
 }
 
 .deleteService {
@@ -1196,4 +1246,8 @@ body.loginbody {
 
 img {
 	vertical-align: middle;
+}
+
+.mysql-load form img, .mysql-load form input {
+	margin-right: 10px;
 }

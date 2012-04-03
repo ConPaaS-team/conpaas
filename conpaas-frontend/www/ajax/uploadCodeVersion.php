@@ -49,10 +49,10 @@ $params = array_merge($_POST, array(
 ));
 try {
 	$response = HTTP::post($service->getManager(), $params);
+	echo json_encode($response);
 } catch (Exception $e) {
 	echo json_encode(array('error' => $e->getMessage()));
 }
 unlink($path);
-echo $response;
 
 ?>

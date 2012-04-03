@@ -18,30 +18,24 @@
  * along with ConPaaS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-require_module('ui/page');
+require_module('ui/instance');
 
-class HadoopPage extends ServicePage {
+class MysqlInstance extends Instance {
 
-	public function __construct(Service $service) {
-		parent::__construct($service);
+	public function __construct($info) {
+		parent::__construct($info);
 	}
 
-	protected function renderRightMenu() {
-		$master_addr = $this->service->getAccessLocation();
-		return
-			'<div class="rightmenu">'
-				.LinkUI('manager log',
-						'viewlog.php?sid='.$this->service->getSID())
-					->setExternal(true)
-				.' &middot; '
-				.LinkUI('namenode', $master_addr.':50070')
-					->setExternal(true)
-				.' &middot; '
-				.LinkUI('job tracker', $master_addr.':50030')
-					->setExternal(true)
-			.'</div>';
+	protected function renderCapabs() {
+		$html = '';
+		if ($this->info['isSlave']) {
+			$html .= '<div class="tag orange">slave</div>';
+		}
+		if ($this->info['isMaster']) {
+			$html .= '<div class="tag blue">master</div>';
+		}
+		return $html;
 	}
-
 }
 
 ?>

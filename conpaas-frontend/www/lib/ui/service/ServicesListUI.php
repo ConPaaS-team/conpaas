@@ -64,6 +64,13 @@ class ServicesListUI {
 	}
 
 	public function render() {
+		if (count($this->services) == 0) {
+			return
+			'<div class="box infobox">'
+				.'You have no services in the dashboard. '
+				.'Go ahead and <a href="create.php">create a service</a>.'
+			.'</div>';
+		}
 		return
   		'<div class="services">'.
   			'<table class="slist" cellpadding="0" cellspacing="1">'.

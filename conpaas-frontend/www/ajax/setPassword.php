@@ -18,34 +18,29 @@
  * along with ConPaaS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-require_once('__init__.php');
-require_module('logging');
+require_once('../__init__.php');
 require_module('service');
 require_module('service/factory');
-require_module('ui/page/dashboard');
-require_module('ui/service');
 
-$page = new Dashboard();
-$services = ServiceData::getServicesByUser($page->getUID());
+try {
+	if (!isset($_SESSION['uid'])) {
+		throw new Exception('User not logged in');
+	}
+
+	$sid = $_POST['sid'];
+	$service_data = ServiceData::getServiceById($sid);
+	$service = ServiceFactory::create($service_data);
+
+	if($service->getUID() !== $_SESSION['uid']) {
+	    throw new Exception('Not allowed');
+	}
+
+	$user = $_POST['user'];
+	$password = $_POST['password'];
+	$response = $service->setPassword($user, $password);
+	echo $response;
+} catch (Exception $e) {
+	echo json_encode(array('error' => $e->getMessage()));
+}
+
 ?>
-<?php echo $page->renderDoctype(); ?>
-<html xmlns="http://www.w3.org/1999/xhtml">
-  <head>
-  	<?php echo $page->renderContentType(); ?>
-    <?php echo $page->renderTitle(); ?>
-    <?php echo $page->renderIcon(); ?>
-    <?php echo $page->renderHeaderCSS(); ?>
-  </head>
-  <body class="<?php echo $page->getBrowserClass(); ?>">
-	<?php echo $page->renderHeader(); ?>
-  	<div class="pagecontent">
-  		<div class="pageheader">
-  			<?php echo $page->renderPageHeader(); ?>
-  		</div>
-  		<div id="servicesWrapper">
-  		</div>
-  	</div>
-  	<?php echo $page->renderFooter(); ?>
-  	<?php echo $page->renderJSLoad(); ?>
-  </body>
-</html>
