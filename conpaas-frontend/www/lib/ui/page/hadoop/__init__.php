@@ -24,6 +24,8 @@ class HadoopPage extends ServicePage {
 
 	public function __construct(Service $service) {
 		parent::__construct($service);
+		// it's kind of a hack, but there are identical for now
+		$this->addJS('js/scalaris.js');
 	}
 
 	protected function renderRightMenu() {
@@ -42,6 +44,9 @@ class HadoopPage extends ServicePage {
 			.'</div>';
 	}
 
+	public function renderContent() {
+		return $this->renderInstancesSection();
+	}
 }
 
 ?>

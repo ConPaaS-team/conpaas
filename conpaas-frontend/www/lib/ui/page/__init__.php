@@ -22,4 +22,5 @@ $dir = dirname(__FILE__).'/';
 
 require_once($dir.'PageStatus.php');
 require_once($dir.'Page.php');
+require_once($dir.'PageFactory.php');
 require_once($dir.'ServicePage.php');

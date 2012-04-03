@@ -37,6 +37,7 @@ class Page {
 				self::redirect('index.php');
 			}
 		} else {
+			// not logged in
 			if (!$this->isLoginPage()) {
 				self::redirect('login.php');
 			}
@@ -177,7 +178,7 @@ class Page {
 	public function renderFooter() {
 		return
 			'<div class="footer">'.
-				'&copy;2011 <a href="http://contrail-project.eu/">Contrail</a> - ConPaaS is the PaaS component of <a href="http://contrail-project.eu/">Contrail</a>'.
+				'&copy;2010-2012 <a href="http://contrail-project.eu/">Contrail</a> - ConPaaS is the PaaS component of <a href="http://contrail-project.eu/">Contrail</a>'.
 			'</div>';
 	}
 

@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright (C) 2010-2011 Contrail consortium.
+ * Copyright (C) 2010-2012 Contrail consortium.
  *
  * This file is part of ConPaaS, an integrated runtime environment
  * for elastic cloud applications.
@@ -18,28 +18,38 @@
  * along with ConPaaS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-require_module('ui/page');
+function Tag () {
+	return new Tag();
+}
 
-class TaskFarmPage extends ServicePage {
+class Tag {
 
-	public function __construct(Service $service) {
-		parent::__construct($service);
+	protected $color = 'blue';
+	private $html = '';
+
+	/**
+	 * posible colors are "blue", "purple" & "orange"
+	 * If you want to add more colors, edit main CSS file
+	 * @param string $color
+	 */
+	public function setColor($color) {
+		$this->color = $color;
+		return $this;
 	}
 
-	public function renderActions() {
-		$terminateButton = InputButton('terminate')
-			->setId('terminate');
-		return $terminateButton;
+	public function setHTML($html) {
+		$this->html = $html;
+		return $this;
 	}
 
-	protected function renderRightMenu() {
+	protected function renderContent() {
+		return $this->html;
+	}
+
+	public function __toString() {
 		return
-			'<div class="rightmenu">'
-				.LinkUI('manager log',
-						'viewlog.php?sid='.$this->service->getSID())
-					->setExternal(true)
+			'<div class="tag '.$this->color.'">'
+				.$this->renderContent()
 			.'</div>';
 	}
 }
-
-?>

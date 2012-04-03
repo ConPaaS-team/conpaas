@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright (C) 2010-2011 Contrail consortium.
+ * Copyright (C) 2010-2012 Contrail consortium.
  *
  * This file is part of ConPaaS, an integrated runtime environment
  * for elastic cloud applications.
@@ -18,28 +18,8 @@
  * along with ConPaaS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-require_module('ui/page');
+$dir = dirname(__FILE__).'/';
 
-class TaskFarmPage extends ServicePage {
-
-	public function __construct(Service $service) {
-		parent::__construct($service);
-	}
-
-	public function renderActions() {
-		$terminateButton = InputButton('terminate')
-			->setId('terminate');
-		return $terminateButton;
-	}
-
-	protected function renderRightMenu() {
-		return
-			'<div class="rightmenu">'
-				.LinkUI('manager log',
-						'viewlog.php?sid='.$this->service->getSID())
-					->setExternal(true)
-			.'</div>';
-	}
-}
-
-?>
+require_once($dir.'HostingPage.php');
+require_once($dir.'PhpPage.php');
+require_once($dir.'JavaPage.php');

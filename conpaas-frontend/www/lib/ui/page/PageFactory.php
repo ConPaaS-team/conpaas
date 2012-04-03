@@ -18,11 +18,32 @@
  * along with ConPaaS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-$dir = dirname(__FILE__).'/';
+class PageFactory {
 
-require_once($dir.'TimeHelper.php');
-require_once($dir.'StatusLed.php');
-require_once($dir.'LinkUI.php');
-require_once($dir.'InputButton.php');
-require_once($dir.'Tag.php');
-require_once($dir.'EditableTag.php');
+	public static function create($service) {
+		$type = $service->getType();
+
+		switch ($type) {
+			case 'php':
+				require_module('ui/page/hosting');
+				return new PhpPage($service);
+			case 'java':
+				require_module('ui/page/hosting');
+				return new JavaPage($service);
+			case 'mysql':
+				require_module('ui/page/mysql');
+				return new MysqlPage($service);
+			case 'taskfarm':
+				require_module('ui/page/taskfarm');
+				return new TaskFarmPage($service);
+			case 'scalaris':
+				require_module('ui/page/scalaris');
+				return new ScalarisPage($service);
+			case 'hadoop':
+				require_module('ui/page/hadoop');
+				return new HadoopPage($service);
+			default:
+				throw new Exception('Unknown service type');
+		}
+	}
+}

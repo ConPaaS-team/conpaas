@@ -150,5 +150,4 @@ class MysqlPage extends ServicePage {
 		return $html;
 	}
 }
-
 ?>

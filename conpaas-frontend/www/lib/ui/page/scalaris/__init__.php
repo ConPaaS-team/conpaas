@@ -24,24 +24,24 @@ class ScalarisPage extends ServicePage {
 
 	public function __construct(Service $service) {
 		parent::__construct($service);
+		$this->addJS('js/scalaris.js');
 	}
 
-	protected function renderSubname() {
-		$manager = $this->service->getManagerIP();
+	protected function renderRightMenu() {
 		return
-			'<div class="subname">'.
-				$this->renderStateChange().
-				' &middot; '.
-				' Manager IP: '.$manager.
-				' &middot; '.
-				LinkUI('management console', 'http://'.$manager.':8000')
-					->setExternal(true).
-
-			'</div>';
+			'<div class="rightmenu">'
+				.LinkUI('manager log',
+						'viewlog.php?sid='.$this->service->getSID())
+					->setExternal(true)
+			.'</div>';
 	}
 
 	protected function renderApplicationAccess() {
 		return '';
+	}
+
+	public function renderContent() {
+		return $this->renderInstancesSection();
 	}
 }
 

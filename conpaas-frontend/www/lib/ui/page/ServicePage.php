@@ -35,22 +35,18 @@ class ServicePage extends Page {
 	);
 
 	protected $service;
-	private $conf = null;
 	private $nodes = null;
 
 	public function __construct(Service $service) {
 		parent::__construct();
 		$this->service = $service;
+		$this->addJS('js/servicepage.js');
 	}
 
 	public function is_transient($state) {
 		return
 			!array_key_exists($state, self::$states) ||
 			(self::$states[$state] == true);
-	}
-
-	public function getUploadURL() {
-		return 'ajax/uploadCodeVersion.php?sid='.$this->service->getSID();
 	}
 
 	public function getState() {
@@ -104,98 +100,6 @@ class ServicePage extends Page {
 			default:
 				return '';
 		}
-	}
-
-	private function getVersionDownloadURL($versionID) {
-		return $this->service->getManager()
-			.'?action=downloadCodeVersion&codeVersionId='.$versionID;
-	}
-
-	public function renderVersions() {
-		$versions = $this->service->fetchCodeVersions();
-		if ($versions === false) {
-			return '<h3> No versions available </h3>';
-		}
-		$active = null;
-		for ($i = 0; $i < count($versions); $i++) {
-			if (isset($versions[$i]['current'])) {
-				$active = $i;
-			}
-		}
-		if (count($versions) == 0) {
-			return '<h3> No versions available </h3>';
-		}
-		$html = '<ul class="versions">';
-		for ($i = 0; $i < count($versions); $i++) {
-			$versions[$i]['downloadURL'] =
-				$this->getVersionDownloadURL($versions[$i]['codeVersionId']);
-			$versionUI = Version($versions[$i])
-				->setLinkable($this->service->isRunning());
-		if ($active == $i) {
-		  if ($this->service->isRunning()) {
-			$versionUI->setActive(true, $this->service->getAccessLocation());
-		  }
-		  else {
-		    $versionUI->setActive(true);
-		  }
-		}
-			if ($i == count($versions) - 1) {
-				$versionUI->setLast();
-			}
-			$html .= $versionUI;
-		}
-		$html .= '</ul>';
-		return $html;
-	}
-
-	private function getCurrentExecLimit() {
-		if ($this->conf == null) {
-			$this->conf = $this->service->getConfiguration();
-		}
-		if ($this->conf == null || !isset($this->conf->max_execution_time)) {
-			// default value
-			return 30;
-		}
-		return intval($this->conf->max_execution_time);
-	}
-
-	public function renderExecTimeOptions() {
-		static $options = array(30, 60, 90);
-		$selected = $this->getCurrentExecLimit();
-		$html = '<select id="conf-maxexec">';
-		foreach ($options as $option) {
-			$selectedField = $selected == $option ?
-				'selected="selected"' : '';
-			$html .= '<option value="'.$option.'" '.$selectedField.'>'
-				.$option.' seconds</option>';
-		}
-		$html .= '</select>';
-		return $html;
-	}
-
-	private function getCurrentMemLimit() {
-		if ($this->conf == null) {
-			$this->service->getConfiguration();
-		}
-		if ($this->conf == null || !isset($this->conf->memory_limit)) {
-			// default value
-			return '128M';
-		}
-		return $this->conf->memory_limit;
-	}
-
-	public function renderMemLimitOptions() {
-		static $options = array('64M', '128M', '256M');
-		$selected = $this->getCurrentMemLimit();
-		$html = '<select id="conf-memlim">';
-		foreach ($options as $option) {
-			$selectedField = $selected == $option ?
-				'selected="selected"' : '';
-			$html .= '<option value="'.$option.'" '.$selectedField.'>'
-				.$option.'</option>';
-		}
-		$html .= '</select>';
-		return $html;
 	}
 
 	public function getNodes() {
@@ -275,7 +179,7 @@ class ServicePage extends Page {
 			$html .= $node->render();
 		}
 		$html .= '</div>';
-		return $html;
+		return '<div class="instancesWrapper">'.$html.'</div>';
 	}
 
 	private function getTypeImage() {
@@ -309,13 +213,8 @@ class ServicePage extends Page {
 		return 'created '.$ts.' ago';
 	}
 
-	// TODO(claudiugh): move this out from the generic service page
 	protected function renderApplicationAccess() {
-		if (!$this->service->isRunning()) {
-			return '';
-		}
-		return LinkUI('access application', $this->service->getAccessLocation())
-				->setExternal(true).' &middot; ';
+		return '';
 	}
 
 	protected function renderRightMenu() {

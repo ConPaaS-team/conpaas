@@ -165,7 +165,11 @@ class DashboardServiceUI {
 	}
 
 	private function getConfigureEndpoint() {
-		return $this->service->getType().'.php';
+		if ($this->service->getType() == 'taskfarm') {
+			return 'taskfarm.php';
+		}
+		// default
+		return 'service.php';
 	}
 
 	private function renderTitle() {
