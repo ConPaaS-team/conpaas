@@ -21,20 +21,14 @@
 require_module('logging');
 require_module('db');
 
-class OpenNebulaManager {
+class OpenNebulaManager extends Manager {
 
-	protected $sid;
-	protected $vmid;
 	protected $user_data_file;
-	private $instance_type;
-	private $service_type;
 
 	const CONF_FILENAME = 'opennebula.ini';
 
 	public function __construct($data) {
-		$this->service_type = $data['type'];
-		$this->sid = $data['sid'];
-		$this->vmid = $data['vmid'];
+		parent::__construct($data);
 		$this->loadConfiguration();
 	}
 
@@ -44,7 +38,6 @@ class OpenNebulaManager {
 			throw new Exception('Could not read OpenNebula configuration file '
 				.'opennebula.ini');
 		}
-		$this->user_data_file = $conf['user_data_file'];
 		$this->instance_type = $conf['instance_type'];
 		$this->opennebula_url = $conf['url'];
 		$this->user = $conf['user'];
@@ -59,7 +52,7 @@ class OpenNebulaManager {
 		$this->os_root = $conf['os_root'];
 		$this->disk_target = $conf['disk_target'];
 		$this->context_target = $conf['context_target'];
-		
+
 	}
 
 	public function http_request($method, $resource, $xml=null) {
@@ -94,23 +87,15 @@ class OpenNebulaManager {
 	 * @throws Exception
 	 */
 	public function run() {
-		$user_data = file_get_contents($this->user_data_file);
-		if ($user_data === false) {
-			throw new Exception('could not read manager user data: '.
-				$this->user_data_file);
-		}
-		$user_data = str_replace(
-						array('%CONPAAS_SERVICE_TYPE%', '%CONPAAS_SERVICE_ID%'),
-						array(strtoupper($this->service_type), $this->sid),
-						$user_data);
+		$user_data = $this->createContextFile('opennebula');
 		$hex_user_data = bin2hex($user_data);
-		
+
 		/* This parameter is only needed for Xen */
 		$bootloader_spec = '<BOOTLOADER>'.$this->os_bootloader.'</BOOTLOADER>';
 		if (strcmp($this->virtualization_type, 'xen') != 0) {
 			$bootloader_spec = '';
 		}
-		
+
 		$response = $this->http_request('POST', '/compute',
 		'<COMPUTE>'.
 			'<NAME>conpaas</NAME>'.

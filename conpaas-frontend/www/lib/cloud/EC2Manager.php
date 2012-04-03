@@ -22,22 +22,17 @@ require_module('logging');
 require_module('db');
 require_module('aws-sdk');
 
-class EC2Manager {
+class EC2Manager extends Manager {
 
 	private $ec2;
 
-	private $vmid;
 	private $manager_ami;
 	private $security_group;
 	private $keypair;
 	private $user_data_file;
-	private $instance_type;
-	private $service_type;
 
 	public function __construct($data) {
-		$this->service_type = $data['type'];
-		$this->sid = $data['sid'];
-		$this->vmid = $data['vmid'];
+		parent::__construct($data);
 		$this->ec2 = new AmazonEC2();
 		$this->loadConfiguration();
 	}
@@ -61,15 +56,7 @@ class EC2Manager {
 	 * @throws Exception
 	 */
 	public function run() {
-		$user_data = file_get_contents($this->user_data_file);
-		if ($user_data === false) {
-			throw new Exception('could not read manager user data: '.
-				$this->user_data_file);
-		}
-		$user_data = str_replace(
-						array('%CONPAAS_SERVICE_TYPE%', '%CONPAAS_SERVICE_ID%'),
-						array(strtoupper($this->service_type), $this->sid),
-						$user_data);
+		$user_data = $this->createContextFile('ec2');
 		$response = $this->ec2->run_instances($this->manager_ami, 1, 1, array(
 			'InstanceType' => $this->instance_type,
 			'KeyName' => $this->keypair,
@@ -110,7 +97,7 @@ class EC2Manager {
 	 * @throws Exception
 	 */
 	public function getAddress() {
-		return $thos->resolveAddress($this->vmid);
+		return $this->resolveAddress($this->vmid);
 	}
 
 	public function terminate() {

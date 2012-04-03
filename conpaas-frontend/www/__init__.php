@@ -24,8 +24,32 @@ date_default_timezone_set('Europe/Amsterdam');
 
 class Conf {
 
-	const CONF_DIR = '/home/vuclaudiu/conf';
+	const CONF_DIR = '/home/vuadriana/conpaas_v2/conf';
+	const HOST = 'cumulus.zib.de';
 	public static $ROOT_DIR = '';
+
+	public static function getFrontendURL() {
+		$page_url = 'http';
+		if (isset($_SERVER['HTTPS']) && ($_SERVER['HTTPS'] == "on" )) {
+			$page_url .= "s";
+		}
+		$page_url .= "://".self::HOST;
+		if ($_SERVER["SERVER_PORT"] != "80") {
+			$page_url .= ":".$_SERVER["SERVER_PORT"];
+		}
+		$r_uri = $_SERVER["REQUEST_URI"];
+
+		// Note: the page url looks like:
+		//       http://domainname.org/path/to/frontend/ajax/create.php
+		//       so we also have to strip /ajax/create.php to
+		//       obtain the path to frontend.
+		// Attention!! If the directory structure of the frontend changes,
+		// this code must also be changed
+		$pos = strrpos($r_uri, "/ajax/");
+		$page_url = $page_url.substr($r_uri, 0, $pos);
+
+		return $page_url;
+	}
 }
 
 Conf::$ROOT_DIR = dirname(__FILE__);
