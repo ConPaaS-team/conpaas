@@ -38,6 +38,7 @@ class Cluster {
 			'proxy' => 'orange',
 			'peers' => 'blue',
 			'masters' => 'blue',
+			'scalaris' => 'blue',
 			'slaves' => 'orange',
 			'workers' => 'orange'
 		);

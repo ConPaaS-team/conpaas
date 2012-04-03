@@ -55,6 +55,7 @@ class ScalarisService extends Service {
 	}
 
 	public function getKeysCount() {
+		return '';
 		$state = $this->fetchState();
 		if ($state === false || !isset($state['result'])) {
 			return 0;

@@ -29,19 +29,27 @@ class HadoopPage extends ServicePage {
 	}
 
 	protected function renderRightMenu() {
-		$master_addr = $this->service->getAccessLocation();
-		return
-			'<div class="rightmenu">'
-				.LinkUI('manager log',
-						'viewlog.php?sid='.$this->service->getSID())
-					->setExternal(true)
-				.' &middot; '
+		$links = LinkUI('manager log',
+			'viewlog.php?sid='.$this->service->getSID())
+			->setExternal(true);
+		if ($this->service->isRunning()) {
+			$master_addr = $this->service->getAccessLocation();
+			$links .= ' &middot; '
 				.LinkUI('namenode', $master_addr.':50070')
 					->setExternal(true)
 				.' &middot; '
 				.LinkUI('job tracker', $master_addr.':50030')
-					->setExternal(true)
-			.'</div>';
+					->setExternal(true);
+		}
+		return '<div class="rightmenu">'.$links.'</div>';
+	}
+
+	protected function renderInstanceActions() {
+		return EditableTag()
+			->setColor('purple')
+			->setID('workers')
+			->setValue('0')
+			->setText('Hadoop DataNode & TaskTracker');
 	}
 
 	public function renderContent() {

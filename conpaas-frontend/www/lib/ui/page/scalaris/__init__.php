@@ -36,8 +36,12 @@ class ScalarisPage extends ServicePage {
 			.'</div>';
 	}
 
-	protected function renderApplicationAccess() {
-		return '';
+	protected function renderInstanceActions() {
+		return EditableTag()
+			->setColor('blue')
+			->setID('scalaris')
+			->setValue('0')
+			->setText('Scalaris DataNode');
 	}
 
 	public function renderContent() {

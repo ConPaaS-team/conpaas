@@ -47,6 +47,8 @@ class StatusLed {
 				return 'images/ledlightblue.png';
 			case Service::STATE_RUNNING:
 			case Service::STATE_ADAPTING:
+			case Service::STATE_PROLOGUE:
+			case Service::STATE_EPILOGUE:
 				return 'images/ledgreen.png';
 			case Service::STATE_STOPPED:
 				return 'images/ledgray.png';

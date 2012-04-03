@@ -50,6 +50,8 @@ abstract class Service {
 	const STATE_INIT = 'INIT';
 	const STATE_ERROR = 'ERROR';
 	const STATE_ADAPTING = 'ADAPTING';
+	const STATE_PROLOGUE = 'PROLOGUE';
+	const STATE_EPILOGUE = 'EPILOGUE';
 
 	static $state_txt = array(
 		Service::STATE_RUNNING => 'running',
@@ -59,7 +61,9 @@ abstract class Service {
 		Service::STATE_PREINIT => 'preparing',
 		Service::STATE_ERROR => 'error',
 		Service::STATE_ADAPTING => 'adapting',
-	);
+		Service::STATE_PROLOGUE => 'prologue',
+		Service::STATE_EPILOGUE => 'epilogue',
+		);
 
 	public static function stateIsStable($remoteState) {
 		return

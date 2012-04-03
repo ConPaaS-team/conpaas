@@ -101,6 +101,10 @@ class DashboardServiceUI {
 					'<img src="images/warning.png" />', 'unreachable');
 			}
 		}
+		if (!$this->service->isStable()) {
+			return $this->renderStatistic(
+				'<img src="images/throbber-on-white.gif" />','loading...');
+		}
 		/* is reachable */
 		if ($this->service->getState() == Service::STATE_ERROR) {
 			return
@@ -142,11 +146,7 @@ class DashboardServiceUI {
 				$this->renderStatistic('<i class="text">'.
 					$namenode_data['used'].'</i>', 'Stored Data');
 		} else if ($this->service->getType() == 'scalaris') {
-			$keysCount = $this->service->getKeysCount();
-			return
-				$this->renderInstances().
-				$this->renderStatistic('<i class="text">'.
-					$keysCount.'</i>', 'KeyValue Pairs');
+			return $this->renderInstances();
 		}
 		return $this->renderInstances();
 	}
@@ -156,6 +156,8 @@ class DashboardServiceUI {
 		static $active_states = array(
 			Service::STATE_RUNNING => true,
 			Service::STATE_ADAPTING => true,
+			Service::STATE_PROLOGUE => true,
+			Service::STATE_EPILOGUE => true,
 		);
 		if (array_key_exists($this->service->getState(), $active_states)) {
 			$color_class = 'colortag-active';
