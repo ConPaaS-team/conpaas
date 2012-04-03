@@ -1110,16 +1110,13 @@ ul.versions li .timestamp {
 /* login */
 body.loginbody {
 	background: url('images/onclouds.jpg') top left no-repeat;
-	margin: auto;
 }
 
 .login {
 	width: 800px;
-	margin-top: 100px;
-	padding: 50px;
-	background-color: #eee;
-	opacity: 0.8;
-	filter: alpha(opacity = 80); /* For IE8 and earlier */
+	margin: 10px 10px 10px 10px;
+	border: 3px solid #999;
+	background-color: white;
 }
 
 .login .form .input {
@@ -1130,6 +1127,10 @@ body.loginbody {
 	font-weight: normal;
 	font-size: 10px;
 	margin: 3px;
+}
+
+.loginbody .logo {
+	margin: 30px 30px 30px 100px;
 }
 
 .login #error {
@@ -1146,36 +1147,36 @@ body.loginbody {
 }
 
 .login .descr {
-	float: left;
+	padding: 50px 30px 50px 30px;
+	border-right: 1px dotted #333;
+	background-color: #eee;
 }
 
 .login .formwrap {
-	float: right;
+	vertical-align: top;
 }
 
-.login .descr .logo {
-	margin-bottom: 20px;
+.login input[type="text"], .login input[type="password"] {
+	width: 150px;
 }
 
 .login .form {
 	padding: 20px;
-	background-color: white;
-	border: 1px solid #214478;
 	margin: 0;
-	opacity: 1.0;
-	filter: alpha(opacity = 100);
 }
 
 .login .formwrap {
-	border-top: 1px solid white;
-	border-right: 1px solid white;
+}
+
+.login .actions {
+	padding: 10px 5px 10px 5px;
 }
 
 .login .descr {
-	width: 400px;
 	font-size: 12px;
 	color: #333;
 	font-weight: normal;
+	vertical-align: top;
 }
 
 .login .descr img {

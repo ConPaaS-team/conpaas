@@ -40,11 +40,12 @@ $page = new Page();
 <script src="js/jquery.form.js"></script>
 </head>
 <body class="loginbody">
+	<div class="logo">
+		<img src="images/conpaas_large.png" />
+	</div>
 	<div class="login">
-		<div class="descr">
-			<div class="logo">
-				<img src="images/conpaas_large.png" />
-			</div>
+		<table><tr>
+		<td class="descr" width="65%">
 			<p><b>ConPaaS</b> is the Platform-as-a-Service component of the <a href="http://contrail-project.eu/">Contrail</a> project.</p>
 			<p><b>ConPaaS</b> aims at facilitating the deployment of applications in the cloud. It provides a number of services to address common developer needs.
 			Each service is self-managed and elastic:
@@ -54,11 +55,11 @@ $page = new Page();
 				<li> increase or decrease its processing capacity by dynamically (de-)provisioning instances of itself in the cloud </li>
 			</ul>
 			</p>
-		</div>
-		<div class="formwrap">
+		</td>
+		<td class="formwrap">
 		<div class="form">
 			<h2 class="title" id="login-title">Login</h2>
-			<h2 class="title" id="register-title" style="display: none;">Register</h2>
+			<h2 class="title invisible" id="register-title">Register</h2>
 			<table>
 				<tr>
 					<td class="name">username</td>
@@ -79,7 +80,7 @@ $page = new Page();
 					</td>
 				</tr>
 				<tr class="register_form" style="display: none">
-					<td class="name">Confirm password</td>
+					<td class="name">retype password</td>
 					<td class="input">
 						<input type="password" id="passwd2" />
 					</td>
@@ -103,36 +104,23 @@ $page = new Page();
 					</td>
 				</tr>
 				<tr>
-					<td></td>
-					<td>
-						<!-- <div class="hint">enter your name or email address</div>-->
-					</td>
-				</tr>
-				<tr>
 					<td class="name">
-						<img class="loading" src="images/icon_loading.gif"
-							style="display: none;" />
+						<img class="loading invisible" src="images/icon_loading.gif" />
 					</td>
-					<td>
-						<input class="active" type="button" value="login"
-							id="login" />
-						<input type="button" value="register" id="register"
-							style="display: none;" />
+					<td class="actions">
+						<input class="active" type="button" value="login" id="login" />
+						<input type="button" class="invisible" value="register" id="register" />
 						<a id="toregister" href="javascript: void(0);">register</a>
 					</td>
 				</tr>
 				<tr>
-					<td> </td>
-					<td>
-						<div id="error" style="display: none;">
-
-						</div>
-					</td>
+					<td></td>
+					<td><div id="error invisible"></div></td>
 				</tr>
 			</table>
 		</div>
-		</div>
-		<div class="clear"></div>
+		</td>
+		</tr></table>
 	</div>
 
 	<script type="text/javascript">
@@ -237,6 +225,7 @@ $page = new Page();
 
 		$('#toregister').click(function() {
 			$('#login-title').hide("slow");
+			$('#register-title').show();
 			$(this).hide();
 			$('.register_form').show("slow");
 			$('#login').toggleClass('active');
