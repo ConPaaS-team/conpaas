@@ -1,0 +1,12 @@
+\contentsline {section}{\numberline {1}Creating a ConPaaS image for Amazon EC2}{2}{section.1}
+\contentsline {subsection}{\numberline {1.1}Create an EBS backed AMI on Amazon EC2}{2}{subsection.1.1}
+\contentsline {subsection}{\numberline {1.2}Create a Security Group}{3}{subsection.1.2}
+\contentsline {section}{\numberline {2}Creating a ConPaaS image for OpenNebula}{3}{section.2}
+\contentsline {paragraph}{If things go wrong}{3}{section*.2}
+\contentsline {subsection}{\numberline {2.1}Make sure OpenNebula is properly configured}{4}{subsection.2.1}
+\contentsline {section}{\numberline {3}Setup ConPaaS}{5}{section.3}
+\contentsline {subsection}{\numberline {3.1}Create a MySQL Database}{5}{subsection.3.1}
+\contentsline {subsection}{\numberline {3.2}Configure the Front-end}{5}{subsection.3.2}
+\contentsline {section}{\numberline {4}Miscellaneous}{7}{section.4}
+\contentsline {subsection}{\numberline {4.1}The credit system}{7}{subsection.4.1}
+\contentsline {subsection}{\numberline {4.2}Application sandboxing}{7}{subsection.4.2}

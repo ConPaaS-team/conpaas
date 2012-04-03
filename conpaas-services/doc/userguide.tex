@@ -1,0 +1,331 @@
+\documentclass[10pt]{article}
+\usepackage{listings}
+\usepackage{framed}
+
+
+\newenvironment{what}
+{\begin{description} \item [What is happening now?] \hfill \\}
+{\end{description}}
+
+\newenvironment{framedbox}[1]%
+{\begin{framed}
+ \begingroup
+ \fontsize{#1}{#1}\selectfont
+}
+{
+ \endgroup
+ \end{framed}
+}
+
+\pagestyle{myheadings}
+\markright{User Manual:ConPaaS Web Hosting Service}
+
+\begin{document}
+\title{User Manual: ConPaaS Web Hosting Service}
+\date{August 15, 2011}
+\thispagestyle{empty}
+
+\begin{center}
+\begingroup
+\fontsize{20pt}{20pt}\selectfont
+\textbf{User Manual: ConPaaS Web Hosting Service} \linebreak
+\endgroup
+
+\begingroup
+\fontsize{16pt}{16pt}\selectfont
+August 15, 2011
+\endgroup
+\end{center}
+
+\section{Cloud Front-end}
+The cloud front-end provides an intuitive web-based user interface that
+allows users to register new accounts in order to start using the Web
+Hosting Service. Registered users can create as well as terminate
+services. Additionally, the front-end provides a simplified interface
+through which a user can configure his services.
+
+\subsection{Register a user}
+Note: User registration can only be done through the cloud front-end.
+\begin{enumerate}
+\item Click on the "register" link.
+\item Enter your user name and click on the "register" button.
+\item You will be automatically logged in. Notice your user name and the "logout"
+      link at the top right corner of the web page. You are now ready to
+      experiment with the Web Hosting Service.
+\end{enumerate}
+
+\subsection{Create a Web Hosting Service}
+Node: Creating a new service can only be done through the cloud front-end. 
+\begin{enumerate}
+\item Starting from the user home page, click on the "create service" button.
+\item Select a type of web hosting service. For example "PHP Service".
+\item Select a target cloud platform. For example "Amazon EC2".
+\item Click on the "create service" button to start.
+ \begin{what}
+  The Web interface requested a new virtual machine from Amazon EC2 and
+  is waiting for it to boot. This virtual machine will be the managing
+  node of the new service. The web page will be automatically redirected
+  and a list of all of the created services will be displayed.
+  Note that, the service status is "Initializing". When the service is
+  ready, its status will change to "created" and you can click on it to
+  configure it further.
+ \end{what}
+\end{enumerate}
+
+\subsection{Rename the Service}
+Renaming a service can only be done through the cloud front-end. 
+\begin{enumerate}
+\item Starting from the user home page, click on the service you intend to
+      rename.
+\item Click on the service name at the top left of the web
+      page. A dialog box will appear where you can enter the new service
+      name.
+\end{enumerate}
+
+\subsection{Terminate the service}
+Note: terminating the service can only be done through the cloud front-end.
+\begin{enumerate}
+\item Starting from the user home page, click on the service you intend to
+      terminate.
+\item Press on the "terminate" button at the top right of the page.
+      Terminating the service will release the virtual machine hosting
+      the manager and will delete all of the service's configuration and
+      uploaded code.
+\end{enumerate}
+
+\section{Starting and Stopping the Service}
+
+\subsection{Start the Service}
+\subsubsection{Through the Front-end}
+\begin{enumerate}
+\item Starting from the user home page, click on the service you intend to start.
+\item Notice the message "No instances are running". This means that there is no
+      web server running yet.
+\item Click on the "start" button at the top right
+      of the page to start a web server. Notice the progress message that
+      appeared at the top of the page.
+      \begin{what}
+        The service requested a new virtual machine from the cloud provider.
+        When the machine is ready, the manager will configure it to run
+        a web server. When the web server is ready, the web page will
+        display the running instances' information.
+      \end{what}
+\item Notice the displayed instance information. It is tagged with "proxy",
+      "web" and "php" which means that this virtual machine is running a proxy
+      (load balancer) server, a web server and it supports executing PHP
+      scripts.On the right end you will find the domain name of the virtual
+      machine. You can use this to access the virtual machine directly.
+\item Notice the link labeled "access active version". Click on it to access
+      the newly created web server. The web servers start with a default
+      welcome page.
+\end{enumerate}
+
+\subsubsection{Using the Command-line Client}
+\begin{framedbox}{8pt}\begin{verbatim}
+$ ./cpsclient.web http://x-x-x-x/ startup
+\end{verbatim}\end{framedbox}
+
+
+\subsection{Stop the Service}
+\subsubsection{Through the Front-end}
+\begin{enumerate}
+\item Starting from the user home page, click on the service you intend to stop.
+\item Press on the "stop" button at the top right of the web page.
+\item Stopping the service would release the web servers but the service
+      manager will remain active. If you want to permanently destroy the
+      service, press on the terminate button after you stop the service.
+\end{enumerate}
+\subsubsection{Using the Command-line Client}
+\begin{framedbox}{8pt}\begin{verbatim}
+$ ./cpsclient.web http://x-x-x-x/ shutdown
+\end{verbatim}\end{framedbox}
+
+\section{Code Management}
+The Web Hosting Service can manage and store multiple code archives. You can
+upload code archives to it and select which one should be active online.
+This section explains how to manage code archives.
+
+\subsection{Upload Code Version}
+\subsubsection{Through the Front-end}
+\begin{enumerate}
+\item Use the "choose file" button to upload a code archive. When creating an
+      archive, you need to make sure it expands directly in the same directory.
+      The upload file must be an archive of type '.zip', '.tar', '.tar.bz2' or
+      '.tar.gz'. PHP applications should have a file named "index.php"
+      which will be the default page. Java applications should have a file
+      named index.jsp.
+\item Notice that the "available code versions" list grew. A new code version
+      appeared in the list but it is not active yet. Hover over the new code
+      version with the mouse and two more links will appear; "set active" and
+      "download".
+\end{enumerate}
+
+
+\subsubsection{Using the Command-line Client}
+\begin{framedbox}{8pt}\begin{verbatim}
+$ ./cpsclient.web http://x-x-x-x/ upload_code_version -h
+Usage: upload_code_version <filename>
+
+Options:
+  -h, --help  show this help message and exit
+
+$ ./cpsclient.web http://x-x-x-x/ upload_code_version path/to/archive.zip
+codeVersionId: code-XXXXX
+\end{verbatim}\end{framedbox}
+
+\subsection{Activate Code Version}
+\subsubsection{Through the Front-end}
+\begin{enumerate}
+\item Hover over a code version with the mouse and two links will appear;
+      "set active" and "download".
+\item Click on "set active" to activate this version online.
+\item Notice that the selected code version is labeled with "active".
+\item If the service is already running, click on "access active version" to
+      validate that the new code version is running. Your web browser would
+      normally cache web pages so you may need to refresh the page to view
+      the latest updates.
+\end{enumerate}
+
+\subsubsection{Using the Command-line Client}
+\begin{framedbox}{8pt}\begin{verbatim}
+$ ./cpsclient.web http://x-x-x-x/ update_java_configuration -h
+Usage: update_java_configuration
+
+Options:
+  -h, --help            show this help message and exit
+  -c CODEVERSIONID, --code=CODEVERSIONID
+
+$ ./cpsclient.web http://x-x-x-x/ update_java_configuration -c code-XXXX
+\end{verbatim}\end{framedbox}
+
+\subsection{Download Code Version}
+\subsubsection{Through the Front-end}
+\begin{enumerate}
+\item Hover over a code version with the mouse and two links will appear;
+      "set active" and "download".
+\item Click the "download" link will download the file to your local computer.
+\end{enumerate}
+
+\section{Resource Management}
+One of the advantages of ConPaaS is elasticity. The Web Hosting Service can
+configure multiple servers and assign them different roles to scale. The
+deployment can grow and shrink transparently to the users without any
+service disruption.
+
+\subsection{Scaling Out/In}
+\subsubsection{Through the Front-end}
+\begin{enumerate}
+\item Notice the section labeled "add or remove instances to your deployment" in
+      the web page were there are 3 boxes labeled "proxy", "web" and "php" with
+      a 0 to the left of each one.
+\item Click on the 0 of any box and a dialog will appear where you can specify
+the number of nodes you want to add/remove.
+\item Let's add 1 web server, 1 proxy and 1 php. Then press on the "submit"
+      button to their right.
+\item A progress message will show up at the top of the page.
+ \begin{what}
+  Requesting new virtual machines will take some time. As soon as the new
+  virtual machines become available, the manager will configure them and
+  reconfigure the old nodes as well. If you want to monitor the progress of the
+  new virtual machines more closely, click on the "raw log" link at the top of
+  the page to view the log produced by the manager. You will need to refresh
+  this page to view recent updates. Once the nodes are ready, they will be
+  displayed on the web page.
+ \end{what}
+\item Notice that the web page is now displaying the newly created nodes as
+      well. Each node is tagged with its roles (proxy, web or php).
+\end{enumerate}
+
+\subsubsection{Using the Command-line Client}
+\begin{framedbox}{8pt}\begin{verbatim}
+$ ./cpsclient.web http://x-x-x-x/ add_nodes -h
+Usage: add_nodes
+
+Options:
+  -h, --help            show this help message and exit
+  -p PROXY, --proxy=PROXY
+  -w WEB, --web=WEB     
+  -b BACKEND, --backend=BACKEND
+
+$ ./cpsclient.web http://x-x-x-x/ add_nodes -w 1 -b 1
+
+$ ./cpsclient.web http://x-x-x-x/ remove_nodes -h
+Usage: remove_nodes
+
+Options:
+  -h, --help            show this help message and exit
+  -p PROXY, --proxy=PROXY
+  -w WEB, --web=WEB     
+  -b BACKEND, --backend=BACKEND
+
+$ ./cpsclient.web http://x-x-x-x/ remove_nodes -w 1 -b 1
+\end{verbatim}\end{framedbox}
+
+\section{Command-line Administration}
+You can perform all of the operations provided by the web interface
+by using a command-line tool. \textbf{\emph{Prerequisites: python $>=$ 2.6,
+python-pycurl and python-simplejson packages.}}
+Create a service, go to its web page and copy the URL provided by the 
+"access manager" link at the top of the page. This URL points to the manager
+directly and you can use it with the command-line program "cpsclient.web" to
+issue commands.
+
+\subsection{Prepare Command-line Environment}
+\begin{itemize}
+\item Download the source code file ConPaaSWeb.tar.gz.
+\item Unpack it and prepare your environment as follows:
+\end{itemize}
+\begin{framedbox}{12pt}\begin{verbatim}
+$ tar -zxf ConPaaSWeb.tar.gz             # unpack the archive
+$ export PYTHONPATH=`pwd`/ConPaaSWeb/src # Set PYTHONPATH
+\end{verbatim}\end{framedbox}
+\begin{itemize}
+\item The PYTHONPATH environment variable needs to be pointing to the
+      location of the 'src' directory on your file system.
+\item Run ConPaaSWeb/bin/cpsclient.web to view a list of supported
+      operations.
+\end{itemize}
+\begin{framedbox}{8pt}\begin{verbatim}
+$ ./cpsclient.web
+Usage: ./cpsclient.web URL ACTION options
+
+Action could be one of:
+ ACTION                    DESCRIPTION
+ add_nodes                   Add more service nodes to a deployment
+ getLog                      Get raw logging
+ get_configuration           Get the configuration of a deployment
+ get_node_info               Get information about a single service node
+ get_service_history         Get the state change history of a deployment
+ get_service_info            Get the state of a deployment
+ get_service_performance     Get the average request rate and throughput
+ help                        Print the help menu
+ list_code_versions          List identifiers of all code versions stored by a deployment
+ list_nodes                  Get a list of service nodes
+ remove_nodes                Remove some service nodes from a deployment
+ shutdown                    Shutdown a deployment
+ startup                     Startup a deployment
+ update_java_configuration   Update the configuration of a Java deployment
+ update_php_configuration    Update the configuration of a PHP deployment
+ upload_code_version         Upload a new code version
+\end{verbatim}\end{framedbox}
+
+\begin{itemize}
+\item Use the "access manager" URL as a first argument to cpsclient.web followed
+      by one of the operation names to perform it. Use the '-h' option to check
+      if an operation requires additional arguments.
+\end{itemize}
+\begin{framedbox}{8pt}\begin{verbatim}
+$ ./cpsclient.web http://x-x-x-x/ get_node_info -h
+Usage: get_node_info <nodeId>
+
+Options:
+  -h, --help  show this help message and exit
+
+$ ./cpsclient.web http://x-x-x-x/ get_node_info i-23dffe4
+Service Node         Address              Role(s)
+i-23dffe4d           ec2-xxx-xx-xx-xxx.compute-x.amazonaws.com WEB
+\end{verbatim}\end{framedbox}
+
+
+\end{document}
+
