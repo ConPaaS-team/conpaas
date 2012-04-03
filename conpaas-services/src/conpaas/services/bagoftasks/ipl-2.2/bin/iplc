@@ -1,0 +1,20 @@
+#!/bin/sh
+
+# Utility script to run the Ibis frontend on the specified arguments.
+
+if [ -z "$IPL_HOME" ];  then
+    echo "please set IPL_HOME to the location of your Ibis installation" 1>&2
+    exit 1
+fi
+
+case X"$1" in
+X-cp)
+    shift
+    CLASSPATH="$1"
+    shift
+    ;;
+esac
+
+JAVACLASSPATH="$CLASSPATH:${IPL_HOME}/lib/"'*'
+
+java -classpath "$CLASSPATH:$IPL_HOME/lib/"'*' ibis.compile.Ibisc "$@"

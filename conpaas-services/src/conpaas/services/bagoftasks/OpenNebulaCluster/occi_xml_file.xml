@@ -1,0 +1,27 @@
+<COMPUTE>
+	<NAME>BoTSVM</NAME>
+	
+	<DISK>
+		<STORAGE href='http://fs0.das4.cs.vu.nl:4568/storage/6'/>
+		<TARGET>hda</TARGET>
+	</DISK>
+	<NIC>
+		<NETWORK href='http://fs0.das4.cs.vu.nl:4568/network/0'/>
+	</NIC>
+	
+	<INSTANCE_TYPE>small</INSTANCE_TYPE>	
+	<CONTEXT>
+		<HOSTNAME>$NAME</HOSTNAME>
+		<DNS>$NETWORK[DNS, NAME=\"Small network\"]</DNS>
+		<GATEWAY>$NETWORK[GATEWAY, NAME=\"Small network\"]</GATEWAY>
+		<TARGET>hdc</TARGET>
+		<FILES>/home/mma900/myBoT/OpenNebulaCluster/init.sh /home/mma900/myBoT/OpenNebulaCluster/id_dsa.pub</FILES>
+		<ROOT_PUBKEY>id_dsa.pub</ROOT_PUBKEY>
+	
+		<LOCATION>location</LOCATION>
+		<ELECTIONNAME>electionName</ELECTIONNAME>
+		<POOLNAME>poolName</POOLNAME>
+		<SERVERADDRES>serverAddress</SERVERADDRESS>
+		<SPEEDFACTOR>speedFactor</SPEEDFACTOR>
+	</CONTEXT>
+</COMPUTE>

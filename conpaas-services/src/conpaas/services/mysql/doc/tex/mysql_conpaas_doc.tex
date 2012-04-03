@@ -1,0 +1,345 @@
+\documentclass[a4paper,10pt]{article}
+\usepackage[cp1250]{inputenc}           % �umnike lahko vna�amo s tipkovnico
+\usepackage{epsfig}
+\usepackage[T1]{fontenc}                % kodiranje pisave
+\usepackage{eurosym}
+\usepackage {algorithmicx}
+\usepackage{algpseudocode}
+\usepackage{algorithm}
+\usepackage{amsfonts}                   % dodatni matemati�ni simboli
+\usepackage{amsmath}                        % za sklice na oznake
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{fancyvrb}
+
+\bibliographystyle{plain}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+\title{Technical document on ConPaaS services: ConPaaS MySQL Server}
+\vspace{15pt}
+\author{Ale{\v s} {\v C}ernivec}
+\vspace{50pt}
+\maketitle
+\vspace{15pt}
+\setlength{\parindent}{15pt}
+\newpage
+\tableofcontents
+\newpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcommand{\Cmd}[1]{\noindent {\tt #1 }\newline\vspace{2pt}\\}
+\newcommand{\Des}[1]{\vspace{4pt}\noindent {\bf Description: }\\{#1}\vspace{2pt}\\ }
+\newcommand{\Par}[1]{\vspace{4pt}\noindent {\bf Parameters: } \\{#1}\vspace{2pt}\\}
+\newcommand{\Ret}[1]{\vspace{4pt}\noindent {\bf Returns: }\\{#1}\vspace{2pt}\\}
+\newcommand{\Rai}[1]{\vspace{4pt}\noindent {\bf Raises: }\\{#1}\vspace{2pt}\\}
+\newcommand{\conapi}[5]{\Cmd{#1} \Des{#2} \Par{#3} \Ret{#4} \Rai{#5}\\}
+
+\section{Introduction}
+
+Currently you can add and remove agent nodes, query for status of the agent nodes, configure users, upload mysql database. 
+
+\section{Architecture}
+
+ConPaaS MySQL Manager node has to be run manually or by the usage of ConPaaS web front-end. ConPaaS Servers can also be managed through direct web front-end (see section \ref{sec:web-front-end}).
+
+This is only for development: when manager starts, it fetches the fresh package of conpaas sources from public location (e.g. \\{\tt http://contrail.xlab.si/conpaassql.tar}). Images will be pre-packaged with mysql manager and agent on the release. Template for creating manager, contains details on installation script (\\{\tt http://contrail.xlab.si/conpaassql/manager/conpaas-install.sh}, compare to section \ref{sec:install}). When installation is complete, manager can be used to orchestrate ConPaaS SQL agents.
+
+When obtaining access point of the manager, new agents can be provisioned by issuing HTTP POST {\tt add\_nodes} command on resource {\tt sql-manager-host:/}:
+
+\begin{verbatim}
+POST / HTTP/1.1
+Accept: */*
+Content-Type: application/json
+Content-Length: 67
+{"params": {"function": "agent"}, "method": "add_nodes", "id": "1"}
+\end{verbatim}
+
+Parameter {\tt function} will soon support more than just creating new agent nodes (e.g. cluster manager, cluster agent, cluster). Parameter {\tt method} designates command {\tt add\_nodes} and {\tt id } equals 1. 
+
+\section{Installation on VM images}
+\label{sec:install}
+
+These steps are necessary in order to clean install ConPaaSSQL server on images used on OpenNebula.
+
+First, you will need
+\begin{enumerate}
+\item {\tt http://contrail.xlab.si/conpaassql/agent/conpaas-install.sh}
+\item {\tt http://contrail.xlab.si/conpaassql/manager/conpaas-install.sh}
+\item {\tt http://contrail.xlab.si/conpaassql.tar} This is a package from SVN.
+\end{enumerate}
+
+%% (1) http://contrail.xlab.si/conpaassql/agent/conpaas-install.sh
+%% (2) http://contrail.xlab.si/conpaassql/manager/conpaas-install.sh
+%% (3) http://contrail.xlab.si/conpaassql.tar
+\subsection*{step1}
+
+Copy
+\begin{itemize}
+\item (1) anywhere on ONE manager node, e.g. \\ {\tt root@onehead:/home/contrail/agent/conpaas-install.sh} (4)
+\item (2) anywhere on ONE manager node (different than (4), e.g. \\ {\tt root@onehead:/home/contrail/manager/conpaas-install.sh} (5))
+\end{itemize}
+
+You will need this for the contextualization process.
+
+\subsection*{step2} 
+
+Download (3), untar it somewhere for editing (e.g. under \\ {\tt root@onehead:/home/contrail/temp/conpaassql-temp }(6)).
+
+\subsection*{step3}
+
+{\tt cd} to (6), change {\tt ./src/conpaas/mysql/server/agent/configuration.cnf}:
+
+\begin{Verbatim}[frame=single]
+[MySQL_root_connection]
+password= [mysql user's password]
+username=[mysql username]
+\end{Verbatim}
+
+\subsection*{step4}
+
+{\tt cd} to (6), change {\tt ./src/conpaas/mysql/server/manager/configuration.cnf} in a following name (substitute IPs, Image ID, Network ID, paths to agent and manager install scripts):
+
+\begin{Verbatim}[frame=single]
+OPENNEBULA_URL=http://10.30.1.1:2633/RPC2 # your ONE installation
+OPENNEBULA_IMAGE_ID=193 # image of mysql manager on ONE
+OPENNEBULA_NETWORK_ID=205 # working network on ONE
+OPENNEBULA_CONTEXT_SCRIPT_MANAGER=[location of (5) on ONE]
+OPENNEBULA_CONTEXT_SCRIPT_AGENT=[location of (4) on ONE]
+\end{Verbatim}
+
+\subsection*{step5}
+
+{\tt tar} the content under (6) again to {\tt conpaassql.tar} somewhere where VMs running on ONE can {\tt wget} from. (see also step 6). 
+
+\subsection*{step6}
+
+change agent install script (1) in a following way:
+
+\begin{Verbatim}[frame=single]
+SERVER=contrail.xlab.si			# public location, somewhere that VMs on ONE can wget from
+PACKAGE_NAME=conpaassql.tar		# package from step 5)
+DEST_DIR=/home/contrail/conpaassql	# location on agent VM
+\end{Verbatim}
+
+\subsection*{step7}
+
+change manager install script (2) in a following way:
+
+\begin{Verbatim}[frame=single]
+SERVER=contrail.xlab.si # public location, somewhere that VMs on ONE can wget from
+PACKAGE_NAME=conpaassql.tar # package from step 5)
+DEST_DIR=/home/contrail/conpaassql # location on manager VM
+\end{Verbatim}
+
+For deploying ConPaaS SQL Server image, we are using this template description:
+
+\begin{Verbatim}[frame=single]
+NAME   = conpaassql-manager
+CPU    = 0.2
+MEMORY = 512
+   OS     = [
+   arch = "i686",
+   boot = "hd",
+   root     = "hda" ]
+DISK   = [
+   image_id = "193", // The same as in step 4
+   bus = "scsi",
+   readonly = "no" ]
+NIC    = [ NETWORK_ID = 205 ] // The same as in step 4
+GRAPHICS = [
+  type="vnc"
+  ]
+CONTEXT = [
+  target=sdc,
+  files = /home/ales/sql/manager/conpaassql-install.sh \
+  // the same as in step 1, location (5)
+  ]
+RANK = "- RUNNING_VMS"
+\end{Verbatim}
+
+\section{ConPaaS MySQL Server Web front-end}
+\label{sec:web-front-end}
+ConPaaS MySQL Server Web front-end can easily be installed after the server already runs: 
+
+\begin{Verbatim}[frame=single]
+# apt-get install python-setuptools python-dev python-pycurl -y
+# easy_install pip
+# pip install oca apache-libcloud
+# pip install --extra-index-url http://eggs.contrail.xlab.si \
+conpaassql-manager-gui
+# mkdir -p /etc/conpaassql
+# cat > /etc/conpaassql/manager-gui.conf << EOF
+# MANAGER_HOST = 'localhost'
+# EOF
+# screen -S conpaasssql-manager-gui -d -m conpaassql_manager_gui
+\end{Verbatim}
+
+It also is not mandatory that the web front-end is installed on the same server as the SQL Server already runs. 
+
+\section{ConPaaS MySQL Server Manager API}
+
+Module {\tt conpaas.mysql.server.manager.internals} contains internals of the ConPaaS MySQL Server. ConPaaS MySQL Server consists of several nodes with different roles.
+
+\begin{itemize}
+	\item Manager node
+	\item Agent node(s)
+	\begin{itemize}
+		\item Master
+		\item Slave(s)
+	\end{itemize}	
+\end{itemize}
+
+\noindent {\bf platform:}
+Linux, Debian Squeeze, tested also within Ubuntu 10.10 (there should be no problem when using later distributions).
+
+\noindent {\bf synopsis:}
+Internals of ConPaaS MySQL Servers.
+
+\noindent {\bf moduleauthor:}
+Ales Cernivec <ales.cernivec@xlab.si>
+      
+\vspace{10pt}
+
+\noindent\conapi
+{conpaas.mysql.server.manager.internals.add\_nodes(kwargs)}
+{HTTP POST method. Creates new node and adds it to the list of existing nodes in the manager. A role of new node can be one of: agent, manager. Currently only agent is supported. It makes internal call to {\tt createServiceNodeThread()}.}
+{kwargs -- string describing a function (agent).}
+{HttpJsonResponse - JSON response with details about the node.}
+{ManagerException}
+
+Example
+\begin{Verbatim}[frame=single]
+POST / HTTP/1.1
+Accept: */*
+Content-Type: application/json
+
+Body content: {"params": {"function": "agent"}, "method": /
+"add_nodes", "id": "1"}
+\end{Verbatim}
+
+\noindent\conapi
+{ conpaas.mysql.server.manager.internals.remove\_nodes(params)}
+{HTTP POST method. Deletes specific node from a pool of agent nodes. Node deleted is given by {\tt \{'serviceNodeId':id\}.}}
+{kwargs --string identifying a node.}
+{HttpJsonResponse - HttpJsonResponse - JSON response with details about the node. OK if everything went well. }
+{ManagerException if something went wrong. It contains a detailed description about the error.}
+
+Example
+\begin{Verbatim}[frame=single]
+POST / HTTP/1.1
+Accept: */*
+Content-Type: application/json
+
+Body content: {"params": {"serviceNodeId": "12"}, "method": /
+"remove_nodes", "id": "1"}
+\end{Verbatim}
+
+\noindent\conapi
+{ conpaas.mysql.server.manager.internals.list\_nodes()}
+{ HTTP GET method. Uses {\tt IaaSClient.listVMs()} to get list of all service nodes. For each service node it checks if it is in servers list. If some of them are missing they are removed from the list. Returns list of all service nodes.}
+{}
+{HttpJsonResponse - JSON response with the list of services: {\tt \{ 'serviceNode': [<a list of ids>]\})}}
+{HttpErrorResponse}
+
+Example
+\begin{Verbatim}[frame=single]
+GET /?method=list_nodes&id=1 HTTP/1.1
+Accept: */*
+Content-Type: application/json
+\end{Verbatim}
+
+\noindent\conapi
+{ conpaas.mysql.server.manager.internals.get\_node\_info()}
+{HTTP GET method. Gets info of a specific node.}
+{param (str) -- serviceNodeId is a VMID of an existing service node.}
+{HttpJsonResponse - JSON response with details about the node: : {\tt \{'serviceNode':\{'id': serviceNode.vmid,'ip': serviceNode.ip,'isRunningMySQL': serviceNode.isRunningMySQL\}\}}.}
+{ManagerException}
+
+Example
+\begin{Verbatim}[frame=single]
+GET /?params=%7B%22serviceNodeId%22%3A+%221%22%7D&method=get_node_info&id=1 HTTP/1.1
+Accept: */*
+Content-Type: application/json
+\end{Verbatim}
+
+\noindent\conapi
+{ conpaas.mysql.server.manager.internals.get\_service\_info()}
+{HTTP GET method. Returns the current state of the manager.}
+{param (str) -- serviceNodeId is a VMID of an existing service node.}
+{HttpJsonResponse - JSON response with the description of the state.}
+{ManagerException}
+
+Example
+\begin{Verbatim}[frame=single]
+GET /?method=get_service_info&id=1 HTTP/1.1
+Accept: */*
+Content-Type: application/json
+\end{Verbatim}
+
+\noindent\conapi
+{ conpaas.mysql.server.manager.internals.set\_up\_replica\_master()}
+{HTTP POST method. Sets up a replica master node.}
+{ id -- new replica master id.}
+{HttpJsonResponse - JSON response with details about the new
+      node. ManagerException if something went wrong.}
+{ManagerException}
+     
+\noindent\conapi
+{ conpaas.mysql.server.manager.internals.set\_up\_replica\_slave()}
+{HTTP POST method. Sets up a replica master node.}
+{  id -- new replica slave id.}
+{ HttpJsonResponse - JSON response with details about the new
+      node. ManagerException if something went wrong.}
+{ManagerException}
+
+
+\noindent\conapi
+{ conpaas.mysql.server.manager.internals.shutdown()}
+{HTTP POST method. Shuts down the manager service.}
+{  id -- new replica slave id.}
+{ HttpJsonResponse - JSON response with details about the status
+      of a manager node: :py:attr`S\_EPILOGUE`. ManagerException if
+      something went wrong.}
+{ManagerException}
+
+\noindent\conapi
+{ conpaas.mysql.server.manager.internals.get\_service\_performance()}
+{ HTTP GET method. Placeholder for obtaining performance metrics.}
+{ kwargs (dict) -- Additional parameters.}
+{HttpJsonResponse -- returns metrics}
+{}
+
+Example
+\begin{Verbatim}[frame=single]
+GET /?method=get_service_performance&id=1 HTTP/1.1
+Accept: */*
+Content-Type: application/json
+\end{Verbatim}
+
+\section{Conclusion}
+
+\newpage
+\vspace{4mm}
+
+\begin{thebibliography}{99}
+%	\bibitem{seriesX}Series X: Data Networks, Open System Communications and
+%Security, X.509, 08/2005
+%	\bibitem{rfcCertAndCRL}	R. Housley et al, Internet X.509 Public Key
+%Infrastructure Certificate and Certificate Revocation List (CRL) Profile, RSA
+%Laboratories, April 2002
+%	\bibitem{federal_office}The Office of the Federal Privacy Commissioner,
+%Privacy and Public Key Infrastructure: Guidelines for Agencies using PKI to
+%communicate or transact with individuals, 21 December 2001
+%	\bibitem {ten_risks} Carl Ellison and Bruce Schneier, Ten Risks of PKI:
+%What You are not Being Told about Public Key Infrastructure, Computer Security
+%Journal, Volume XVI, Number 1, 2000
+%	\bibitem {rfcOCSP} X.509 Internet Public Key Infrastructure Online
+%Certificate Status Protocol - OCSP http://www.ietf.org/rfc/rfc2560.txt	
+%	\bibitem {applied}Alfred J. Menezes, Paul C. Van Oorschot, Scott A.
+%Vanstone, Handbook of Applied Cryptography, 5th ED
+%	\bibitem{beginning}Hook D., Beginning Cryptography with Java, 2005
+%	\bibitem{securityplus}Pastore M., Dulaney M., Security+, Second
+%Edition, Exam SYO-101, 2004
+\end{thebibliography}
+
+\end{document}
