@@ -29,7 +29,7 @@
 
 
 PREFIX=/
-$DEBIAN_DIST=squeeze
+DEBIAN_DIST=squeeze
 
 function install_deb() {
   sed --in-place 's/main/main contrib non-free/' /etc/apt/sources.list
