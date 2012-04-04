@@ -6,7 +6,7 @@
 
 # Is filled in by the frontend
 FRONTEND=%FRONTEND_URL%
-SOURCE=$FRONTEND/code
+SOURCE=$FRONTEND/download
 ROOT_DIR=/root
 CPS_HOME=$ROOT_DIR/ConPaaS
 
