@@ -29,7 +29,8 @@
 
 \begin{document}
 \title{ConPaaS -- Administrator guide}
-\author{Ismail El Helw \and Guillaume Pierre}
+\author{Ismail El Helw \and Adriana Szekeres \and Guillaume Pierre}
+\date{ConPaaS-1.0.0}
 \maketitle
 
 \vfil
@@ -39,27 +40,25 @@
 
 \section{Installation Overview}
 
-For installing and using the ConPaaS web hosting platform, you will need:
+ConPaaS is composed of two parts: a front end, and a collection of
+services. The front-end is a regular Web site which allows ConPaaS
+users to access the system. It is implemented in PHP with MySQL, and
+can run on any PHP-enabled Web server (inside or outside the cloud).
+Services are designed to run either in an OpenNebula cloud
+installation, or in the Amazon Web Services cloud.
 
-\begin{itemize} 
-\item access to Amazon EC2 or to an OpenNebula cloud
-\item a machine (not necessarily part of the cloud) to host the ConPaaS
-web front-end
-\end{itemize}
+Installing ConPaaS requires to take the following steps:
 
-ConPaaS uses customized VM images for hosting web applications. The first
-step of the installation is to create a ConPaaS customized image. Section
-~\ref{sec:ec2image} describes the creation of VM images for Amazon EC2,
-while section~\ref{sec:oneimage} describes the creation of VM images for
-OpenNebula.
-
-Alternatively, you can download one of the ConPaaS images that we created
-for OpenNebula, from the ``Downloads'' section of our web site:
-
- \url{http://www.conpaas.eu}
-
-The second (and last) step of the ConPaaS installation is to setup the 
-ConPaaS web front-end. This is discussed in section~\ref{sec:frontend}. 
+\begin{enumerate}
+\item Create a VM image customized for hosting the services. Details
+  on how to do this vary depending on the choice of cloud where
+  ConPaaS will run. Instructions on how to create a ConPaaS image can
+  be found in Section~\ref{sec:ec2image} (for EC2) and
+  Section~\ref{sec:oneimage} for OpenNebula.
+\item Setup and configure the ConPaaS frontend. All system
+  configuration takes place in the frontend. Frontend installation and
+  configuration is discussed in Section~\ref{sec:frontend}.
+\end{enumerate}
 
 \section{Creating a ConPaaS image for Amazon EC2}
 \label{sec:ec2image}
@@ -105,14 +104,13 @@ explains how to setup an AMI using this methodology.
   processes as well as create the necessary directory structure. At
   some point the script requests to accept licenses, accept them.
 
-\item Clean the filesystem by removing the
-  \verb+conpaas_web_deps+ file and any other temporary files you might
-  have created.
+\item Clean the filesystem by removing the \verb+conpaas_web_deps+
+  file.
 
 \item Go to the EC2 administration page at the AWS website, right
   click on the running instance and select ``\emph{Create Image (EBS
-    AMI)}''.  AWS
-  documentation is available at
+    AMI)}''.  This step take a few minutes. AWS documentation is
+  available at
   \url{http://docs.amazonwebservices.com/AWSEC2/latest/UserGuide/index.html?Tutorial_CreateImage.html}.
 
 \item After the image has been fully created, you can return to the
@@ -164,15 +162,16 @@ To create an image for OpenNebula you can execute the script\\
   by default. You can now register it in OpenNebula:
 \begin{code}
   cat <<EOF > /tmp/conpaas.image
-  NAME          = "Conpaas"
+  NAME          = "ConPaaS"
   PATH          = ${PWD}/conpaas.img
   PUBLIC        = YES
-  DESCRIPTION   = "Conpaas vm image"
+  DESCRIPTION   = "ConPaaS VM image"
   EOF
 
   oneimage register /tmp/conpaas.image
 \end{code}
 \end{enumerate}
+% $
 
 
 \paragraph{If things go wrong}~\\

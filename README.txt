@@ -33,6 +33,14 @@ ConPaaS currently contains:
 - One service dedicated to hosting static Web content as well as Web
   applications written in PHP.
 
+- One service dedicated to hosting MySQL databases.
+
+- One service dedicated to hosting a Scalarix key-value store.
+
+- One service dedicated to MapReduce.
+
+- One service dedicate to Task Farming.
+
 - More services are currently being developed. They will be released
   as soon as they are reasonably well tested and integrated with the
   frontend.
