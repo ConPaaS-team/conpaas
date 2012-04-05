@@ -47,7 +47,6 @@ class EC2Manager extends Manager {
 	private $manager_ami;
 	private $security_group;
 	private $keypair;
-	private $user_data_file;
 
 	public function __construct($data) {
 		parent::__construct($data);
@@ -63,7 +62,6 @@ class EC2Manager extends Manager {
 		$this->manager_ami = $conf['ami'];
 		$this->security_group = $conf['security_group'];
 		$this->keypair = $conf['keypair'];
-		$this->user_data_file = $conf['user_data_file'];
 		$this->instance_type = $conf['instance_type'];
 	}
 
