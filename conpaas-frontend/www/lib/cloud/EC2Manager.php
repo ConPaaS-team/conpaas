@@ -108,16 +108,6 @@ class EC2Manager extends Manager {
 		return $instance->dnsName;
 	}
 
-	/**
-	 * @param $vmid id of the virtual instance we are fetching address for
-	 * @return the address (DNS) of the instance
-	 * 		   false if the state is not 'running'
-	 * @throws Exception
-	 */
-	public function getAddress() {
-		return $this->resolveAddress($this->vmid);
-	}
-
 	public function terminate() {
 		$response = $this->ec2->terminate_instances($this->vmid);
 		if (!$response->isOK()) {

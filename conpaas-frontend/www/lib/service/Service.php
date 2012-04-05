@@ -372,10 +372,6 @@ abstract class Service {
 		return $this->state;
 	}
 
-	public function getManagerVirtualID() {
-		return $this->vmid;
-	}
-
 	public function getManagerInstance() {
 		return $this->manager_instance;
 	}
@@ -407,7 +403,7 @@ abstract class Service {
 	 * @return true if updated
 	 */
 	public function checkManagerInstance() {
-		$manager_addr = $this->manager_instance->getAddress();
+		$manager_addr = $this->manager_instance->getHostAddress();
 		if ($manager_addr !== false) {
 			$manager_url = $manager_addr;
 			if (strpos($manager_addr, 'http://') !== 0) {
@@ -422,11 +418,6 @@ abstract class Service {
 			}
 		}
 		return false;
-	}
-
-	public function getManagerIP() {
-		preg_match('/([\d\.]+):/', $this->manager, $matches);
-		return $matches[1];
 	}
 
 	public function getInstanceRoles() {

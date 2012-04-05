@@ -49,6 +49,14 @@ class Manager {
 		$this->vmid = $data['vmid'];
 	}
 
+	public function getID() {
+		return $this->vmid;
+	}
+
+	public function getHostAddress() {
+		return $this->resolveAddress($this->vmid);
+	}
+
 	public function createContextFile($cloud) {
 		$type = $this->service_type;
 		$service_id = $this->sid;
@@ -92,36 +100,31 @@ class Manager {
 			$mngr_cfg .= "\n".file_get_contents($mngr_cfg_dir.'/'.$type
 				.'-manager.cfg');
 		}
-
 		if ($mngr_cfg  === false) {
 			throw new Exception('Could not read manager config file');
 		}
-
 		$mngr_cfg = str_replace(array('%FRONTEND_URL%', '%CONPAAS_SERVICE_ID%',
 				'%CONPAAS_SERVICE_TYPE%'),
 			array($frontend, $service_id, $type),
 			$mngr_cfg);
-
 		if (file_exists($mngr_scripts_dir.'/'.$type.'-manager-start')) {
 			$mngr_start_script = file_get_contents($mngr_scripts_dir.'/'.$type
 				.'-manager-start');
-		}
-		else {
+		} else {
 			$mngr_start_script = file_get_contents($mngr_scripts_dir
 				.'/default-manager-start');
 		}
-
 		if ($mngr_start_script  === false) {
 			throw new Exception('Could not read manager start script');
 		}
 
 		// Concatenate these
-		$user_data = $cloud_script."\n\n";
-		$user_data .= $mngr_setup."\n\n";
-		$user_data .= "cat <<EOF > \$ROOT_DIR/config.cfg"."\n";
-		$user_data .= $cloud_cfg."\n";
-		$user_data .= $mngr_cfg."\n". "EOF"."\n\n";
-		$user_data .= $mngr_start_script."\n";
+		$user_data = $cloud_script."\n\n"
+			.$mngr_setup."\n\n"
+			."cat <<EOF > \$ROOT_DIR/config.cfg"."\n"
+			.$cloud_cfg."\n"
+			.$mngr_cfg."\n". "EOF"."\n\n"
+			.$mngr_start_script."\n";
 
 		return $user_data;
 	}

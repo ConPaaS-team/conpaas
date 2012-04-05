@@ -174,15 +174,6 @@ class OpenNebulaManager extends Manager {
 		return false;
 	}
 
-	/**
-	 * @return false if the state is not 'running'
-	 * 		   the address (DNS) of the instance
-	 * @throws Exception
-	 */
-	public function getAddress() {
-		return $this->resolveAddress($this->vmid);
-	}
-
 	public function terminate() {
     	$response = $this->http_request('DELETE', '/compute/'.$this->vmid);
 	}
