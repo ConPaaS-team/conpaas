@@ -64,10 +64,11 @@ explains how to setup an AMI using this methodology.
   instance of it. If you are going to use micro-instances then the AMI
   with ID \verb+ami-e0e11289+ could be a good choice.
 
-\item Upload the \verb+web-servers/conpaas_web_deps+ script to the instance:
+\item Upload the \verb+conpaas-services/scripts/conpaas_prepare_image.sh+ script to the instance:
   \begin{code}
     chmod 0400 yourpublickey.pem
-    scp -i yourpublickey.pem web-servers/conpaas_web_deps \
+    scp -i yourpublickey.pem \
+      conpaas-services/scripts/conpaas_prepare_image.sh \
       root@instancename.com:
   \end{code}
 
@@ -75,13 +76,13 @@ explains how to setup an AMI using this methodology.
   \begin{code}
     ssh -i yourpublickey.pem root@your.instancename.com
   \end{code}
-  Run the \verb+conpaas_web_deps+ script inside the instance. This
+  Run the \verb+conpaas_prepare_image.sh+ script inside the instance. This
   script will install all of the dependencies of the manager and agent
   processes as well as create the necessary directory structure. At
   some point the script requests to accept licenses, accept them.
 
 \item Clean the filesystem by removing the
-  \verb+conpaas_web_deps+ file and any other temporary files you might
+  \verb+conpaas_prepare_image.sh+ file and any other temporary files you might
   have created.
 
 \item Go to the EC2 administration page at the AWS website, right
@@ -134,13 +135,21 @@ To create an image for OpenNebula you can execute the script\\
   sections are marked by comment lines containing the text "TO CUSTOMIZE:".
   There are comments explaining each customizable parameter. 
 \item Execute the image generation script as root.
-\item The script generates an image file called \verb+conpaasweb.img+
+\item The script generates an image file called \verb+conpaas.img+
   by default. You can now register it in OpenNebula:
+
+\vspace{10 mm}
+
 \begin{code}
-  oneimage register conpaasweb.img
+  cat <<EOF > /tmp/conpaas-one.image
+  NAME          = "Conpaas"
+  PATH          = ${PWD}/conpaas.img
+  PUBLIC        = YES
+  DESCRIPTION   = "Conpaas vm image"
+  EOF
+  oneimage register /tmp/conpaas-one.image
 \end{code}
 \end{enumerate}
-
 
 \paragraph{If things go wrong}~\\
 
