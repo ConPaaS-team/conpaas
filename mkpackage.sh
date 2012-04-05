@@ -5,13 +5,13 @@ release_dir=$1
 mkdir $release_dir
 
 cp -r conpaas-services $release_dir/
+cp -r conpaas-frontend $release_dir/frontend
 
 # TODO: temporary move the doc outside of conpaas-services
 mv $release_dir/conpaas-services/doc $release_dir/
 # clean the doc folder
 rm $release_dir/doc/*.tex
-
-cp -r conpaas-frontend $release_dir/frontend
+rm $release_dir/doc/Makefile
 
 cp LICENSE.txt $release_dir/
 cp AUTHORS.txt $release_dir/
@@ -20,6 +20,7 @@ cp README.txt $release_dir/
 cd $release_dir
 
 rm -Rf `find . -name ".svn"`
+rm -Rf `find . -name "*~"`
 
 cp -r conpaas-services/scripts frontend/conf/
 cp -r conpaas-services/config frontend/conf/
