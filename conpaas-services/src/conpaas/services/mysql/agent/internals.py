@@ -46,11 +46,11 @@ from shutil import rmtree
 from threading import Lock
 import pickle, zipfile, tarfile
 
+#from conpaas.core.misc import get_ip_address
 from conpaas.core.log import create_logger
 from conpaas.services.mysql.agent import role 
 
 from conpaas.core.http import HttpErrorResponse, HttpJsonResponse, FileUploadField
-from conpaas.core.misc import get_ip_address
 from conpaas.core.expose import expose
 
 
@@ -92,7 +92,8 @@ class MySQLAgent():
 
     def __init__(self, config_parser):
       self.config_parser = config_parser
- 
+
+      self.my_ip = config_parser.get('agent', 'MY_IP')
       self.VAR_TMP = config_parser.get('agent', 'VAR_TMP')
       self.VAR_CACHE = config_parser.get('agent', 'VAR_CACHE')
       self.VAR_RUN = config_parser.get('agent', 'VAR_RUN')
@@ -365,7 +366,7 @@ class MySQLAgent():
                from conpaas.services.mysql.agent import client
                client.setup_slave(str(slave['ip']), slave['port'], \
                              key, \
-                             get_ip_address('eth0'), master_log_file, \
+			     self.my_ip, master_log_file, \
                              master_log_pos, mysqldump_path)
                self.logger.debug('Created slave %s' % str(slave['ip']))
           return HttpJsonResponse()

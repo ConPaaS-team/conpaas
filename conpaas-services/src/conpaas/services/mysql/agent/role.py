@@ -328,6 +328,7 @@ class MySQLMaster(MySQLServer):
         exc.execute ("grant all privileges on *.* TO '" + new_username + "'@'localhost' with grant option;")
         exc.execute ("create user '" + new_username + "'@'%' identified by '" + new_password + "'")
         exc.execute ("grant all privileges on *.* TO '" + new_username + "'@'%' with grant option;")
+	exc.execute ("flush privileges;")
         db.close()
 
     #def grant_user(self, username,  hosts, password):
@@ -346,6 +347,7 @@ class MySQLMaster(MySQLServer):
         exc = db.cursor()
         exc.execute ("drop user '" + username +"'@'localhost'")
         exc.execute ("drop user '" + username +"'@'%'")
+	exc.execute ("flush privileges;")
         db.close()
     
     def get_users(self):
@@ -364,7 +366,7 @@ class MySQLMaster(MySQLServer):
     def set_password(self, username, password):
         db = MySQLdb.connect(self.conn_location, 'root', self.conn_password)
         exc = db.cursor()
-        exc.execute("set password for '" + username + "'@'%' = password('" + password + "')")
+        exc.execute ("set password for '" + username + "'@'%' = password('" + password + "')")
 	db.close()
 
     def status(self):
@@ -397,6 +399,10 @@ class MySQLSlave(MySQLServer):
         os.system("mysqladmin -u root password "  + self.conn_password)
 
         # Configure it as a slave
+
+        if mysqldump_file != None:
+            self._load_dump(mysqldump_file)
+
         db = MySQLdb.connect(self.conn_location, 'root', self.conn_password)
         exc = db.cursor()
         query=(("CHANGE MASTER TO  MASTER_HOST='%s', " + 
@@ -406,13 +412,10 @@ class MySQLSlave(MySQLServer):
                     "MASTER_LOG_POS=%s;") % (master_host, 'root', self.conn_password, master_log_file, master_log_pos))
         exc.execute(query)
 
-        # TODO: get the dump from the master ( replication from another slave?? )
-        if mysqldump_file != None:
-            self._load_dump(mysqldump_file)
+        exc.execute ("FLUSH PRIVILEGES;")
 
         # Start the slave thread
-        query=('START SLAVE;') 
-        exc.execute(query)
+        exc.execute ("START SLAVE;")
         db.close()
         
     def status(self):

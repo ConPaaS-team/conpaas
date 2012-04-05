@@ -43,9 +43,9 @@ Created on Jan 21, 2011
 import urlparse 
 from string import Template
 
-from libcloud.types import Provider, NodeState
-from libcloud.providers import get_driver
-from libcloud.base import NodeImage
+from libcloud.compute.types import Provider, NodeState
+from libcloud.compute.providers import get_driver
+from libcloud.compute.base import NodeImage
 
 import libcloud.security
 libcloud.security.VERIFY_SSL_CERT = False
@@ -145,10 +145,14 @@ class OpenNebulaCloud(Cloud):
         nodes = self.driver.list_nodes()
         vms = {}
         for i in nodes:
+            if i.public_ips:
+                ip = i.public_ips[0].address
+            else:
+                ip = ''   
             vms[i.id] = {'id': i.id, \
                          'state': i.state, \
                          'name': i.name, \
-                         'ip': i.public_ip[0]}
+                         'ip': ip}
         return vms
 
     def list_instace_types(self):
@@ -184,7 +188,7 @@ class OpenNebulaCloud(Cloud):
         kwargs['image'] = NodeImage(self.img_id, '', None)
 
         # 'NIC'
-        kwargs['network'] = self.net_id
+        kwargs['networks'] = self.net_id
 
         # 'CONTEXT'
         context = {}
@@ -199,10 +203,14 @@ class OpenNebulaCloud(Cloud):
         nodes = []
         for _ in range(count):
             node = self.driver.create_node(**kwargs)
+            if node.public_ips:
+                ip = node.public_ips[0].address
+            else:
+                ip = ''   
             nodes.append({'id': node.id,
                           'state': node.state,
                           'name': node.name,
-                          'ip': node.public_ip[0]})
+                          'ip': ip})
         return nodes
 
     def kill_instance(self, vm_id):

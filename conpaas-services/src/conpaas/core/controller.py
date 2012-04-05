@@ -143,7 +143,6 @@ class Controller(object):
                 raise e
             finally:
                 self.__force_terminate_lock.release()
-
             poll, failed = self.__wait_for_nodes(poll, test_agent, port)
             ready += poll
             poll = []
@@ -338,8 +337,9 @@ class Controller(object):
       agent_scripts_dir = conpaas_home + '/scripts/agent'
 
       bootstrap = self.__config_parser.get('manager', 'BOOTSTRAP')
+      manager_ip = self.__config_parser.get('manager', 'MY_IP')
 
-      # Get contextualization script for the cloud in which the manager resides
+      # Get contextualization script for the corresponding cloud
       cloud_script_file = open(cloud_scripts_dir + '/' + cloud, 'r')
       cloud_script = cloud_script_file.read()
 
@@ -353,7 +353,7 @@ class Controller(object):
       default_agent_cfg_file = open(agent_cfg_dir + '/default-agent.cfg')
       agent_cfg = Template(default_agent_cfg_file.read()). \
                            safe_substitute(AGENT_TYPE=service_name, \
-                                           MANAGER_IP=get_ip_address('eth0'))
+                                           MANAGER_IP=manager_ip)
 
       if os.path.isfile(agent_cfg_dir + '/' + service_name + '-agent.cfg'):
           agent_cfg_file = open(agent_cfg_dir + '/'+ service_name + '-agent.cfg')
