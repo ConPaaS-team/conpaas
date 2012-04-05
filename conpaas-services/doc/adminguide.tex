@@ -28,8 +28,9 @@
 
 
 \begin{document}
-\title{ConPaaS -- Administrator guide}
-\author{Ismail El Helw \and Guillaume Pierre}
+\title{ConPaaS -- Installation guide}
+\author{Ismail El Helw \and Adriana Szekeres \and Guillaume Pierre}
+\date{Version 1.0.0}
 \maketitle
 
 \vfil
@@ -37,7 +38,30 @@
 \vfil
 \newpage
 
+\section{Installation Overview}
+
+ConPaaS is composed of two parts: a front end, and a collection of
+services. The front-end is a regular Web site which allows ConPaaS
+users to access the system. It is implemented in PHP with MySQL, and
+can run on any PHP-enabled Web server (inside or outside the cloud).
+Services are designed to run either in an OpenNebula cloud
+installation, or in the Amazon Web Services cloud.
+
+Installing ConPaaS requires to take the following steps:
+
+\begin{enumerate}
+\item Create a VM image customized for hosting the services. Details
+  on how to do this vary depending on the choice of cloud where
+  ConPaaS will run. Instructions on how to create a ConPaaS image can
+  be found in Section~\ref{sec:ec2image} (for EC2) and
+  Section~\ref{sec:oneimage} for OpenNebula.
+\item Setup and configure the ConPaaS frontend. All system
+  configuration takes place in the frontend. Frontend installation and
+  configuration is discussed in Section~\ref{sec:frontend}.
+\end{enumerate}
+
 \section{Creating a ConPaaS image for Amazon EC2}
+\label{sec:ec2image}
 
 The Web Hosting Service is capable of running over the Elastic Compute
 Cloud (EC2) of Amazon Web Services (AWS). This section describes the
@@ -107,6 +131,7 @@ documentation is available at
 \url{http://docs.amazonwebservices.com/AWSEC2/latest/UserGuide/index.html?using-network-security.html}.
 
 \section{Creating a ConPaaS image for OpenNebula}
+\label{sec:oneimage}
 
 The Web Hosting Service is capable of running over an OpenNebula
 installation. This section describes the process of configuring
@@ -150,6 +175,7 @@ To create an image for OpenNebula you can execute the script\\
   oneimage register /tmp/conpaas-one.image
 \end{code}
 \end{enumerate}
+% $>
 
 \paragraph{If things go wrong}~\\
 
@@ -210,7 +236,13 @@ There are two main topics that you should pay attention to:
   \end{itemize}
 \end{enumerate}
 
-\section{Setup ConPaaS}
+\section{Setup ConPaaS's Frontend}
+\label{sec:frontend}
+
+The ConPaaS frontend is a web application that allows users to manager
+their ConPaaS services. Users can create, configure and terminate
+services through it. This section describes the process of setting up
+a ConPaaS frontend.
 
 To setup ConPaaS, you only need to setup the ConPaaS's frontend. The
 actual ConPaaS code is just archived and put in a folder on the frontend.
