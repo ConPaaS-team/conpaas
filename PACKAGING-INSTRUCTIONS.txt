@@ -1,59 +1,9 @@
-This is how to create a tarball package out of this directory.
+To create a tarball for this svn copy, run the mkpackage.sh script inside this directory (trunk).
 
-1. Checkout a fresh copy of this directory:
+This script requires one argument, i.e. the name of the release.
 
-svn checkout svn+ssh://yourusername@svn.forge.objectweb.org/svnroot/contrail/conpaas/trunk 
+Example:
+  
+   ./mkpackage.sh ConPaaS-1.0.0-rc1
 
-2. Change the directory name "trunk" to something more meaningful such
-   as "conpaas-0.1rc1".
-
-3. Enter this directory, and delete the parts which should not be
-   released. At the moment this are directories "base map-reduce
-   scalaris bag-of-tasks sql".
-
-4. Remove all directories ".svn":
-
-   rm -Rf `find . -name .svn`
-
-5. Rename directory "web-servers" into "ConPaaSWeb"
-   (case-sensitive). Build a gzipped tarball of this directory, move
-   the tarball to directory "frontend/www/code", then rename directory
-   "ConPaaSWeb" back to "web-servers". (I know, this is ugly).
-
-   mv web-servers ConPaaSWeb
-   tar czvf ConPaaSWeb.tar.gz ConPaaSWeb
-   mv ConPaaSWeb.tar.gz frontend/www/code/
-   mv ConPaaSWeb web-servers
-
-6. Copy all scripts from directory "web-servers/scripts" into
-   "frontend/code": 
-
-   cp web-servers/scripts/* frontend/www/code/
-
-7. Move the "ec2-manager-user-data" and "opennebula-manager-user-data"
-   files fron the "frontend/www/code" directory to the "frontend/conf"
-   directory. Files called "ec2-agent-user-data" and
-   "opennebula-agent-user-data" must stay where they are.
-
-   mv frontend/www/code/ec2-manager-user-data frontend/conf/
-   mv frontend/www/code/opennebula-manager-user-data frontend/conf/
-
-8. Download the AWS sdk for PHP from
-   http://aws.amazon.com/sdkforphp/. Expand it and move it to
-   directory "frontend/www/lib/aws-sdk/" such that file
-   config-sample.inc.php is directly beneath it:
-
-   wget http://pear.amazonwebservices.com/get/sdk-latest.zip
-   unzip sdk-latest.zip
-   mv sdk-1.4.2.1/sdk-1.4.2.1 frontend/www/lib/aws-sdk 
-   rm -Rf sdk-1.4.2.1 sdk-latest.zip
-
-9. Remove the file you are currently reading:
-
-   rm PACKAGING-INSTRUCTIONS.txt
-
-10. Move one directory up, and create the final tarball:
-
-    tar czvf conpaas-0.1rc1.tar.gz conpaas-0.1rc1
-
-11. That's it!
+   You will obtain the archive ConPaaS-1.0.0-rc1.tar.gz inside this directory 

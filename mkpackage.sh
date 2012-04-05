@@ -1,23 +1,49 @@
 #!/bin/bash 
 
-rm -Rf base map-reduce scalaris bag-of-tasks sql
+release_dir=$1
 
-rm -Rf `find . -name .svn`
+mkdir $release_dir
 
-mv web-servers ConPaaSWeb
-tar czvf ConPaaSWeb.tar.gz ConPaaSWeb
-mv ConPaaSWeb.tar.gz frontend/www/code/
-mv ConPaaSWeb web-servers
+cp -r conpaas-services $release_dir/
 
-cp web-servers/scripts/* frontend/www/code/
+# TODO: temporary move the doc outside of conpaas-services
+mv $release_dir/conpaas-services/doc $release_dir/
+# clean the doc folder
+rm $release_dir/doc/*.tex
 
-mv frontend/www/code/ec2-manager-user-data frontend/conf/
-mv frontend/www/code/opennebula-manager-user-data frontend/conf/
+cp -r conpaas-frontend $release_dir/frontend
 
-wget http://pear.amazonwebservices.com/get/sdk-latest.zip
-unzip sdk-latest.zip
-mv sdk-1.4.2.1/sdk-1.4.2.1 frontend/www/lib/aws-sdk 
-rm -Rf sdk-1.4.2.1 sdk-latest.zip
+cp LICENSE.txt $release_dir/
+cp AUTHORS.txt $release_dir/
+cp README.txt $release_dir/
 
-rm PACKAGING-INSTRUCTIONS.txt
-rm mkpackage.sh
+cd $release_dir
+
+rm -Rf `find . -name ".svn"`
+
+cp -r conpaas-services/scripts frontend/conf/
+cp -r conpaas-services/config frontend/conf/
+
+# Frontend doesn't need info about the agent
+rm -fr frontend/conf/scripts/agent
+rm -fr frontend/conf/config/agent
+rm -fr frontend/conf/scripts/create_vm
+
+
+# Make the ConPaaS archive and put it into frontend/www/download
+cd conpaas-services
+mkdir ConPaaS
+cp -r bin config contrib misc sbin scripts src ConPaaS/
+tar -zcvf ConPaaS.tar.gz ConPaaS
+rm -fr ConPaaS
+mv ConPaaS.tar.gz ../frontend/www/download/
+
+# Also, move the aws-sdk dir inside frontend/lib
+mv contrib/aws-sdk/* ../frontend/www/lib/aws-sdk/ 
+rm -fr contrib/aws-sdk
+
+# Go back and make the tarball
+cd ../..
+tar -zcvf $release_dir.tar.gz $release_dir
+rm -fr $release_dir
+
