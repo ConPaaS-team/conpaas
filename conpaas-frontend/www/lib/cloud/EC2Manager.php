@@ -119,7 +119,7 @@ class EC2Manager extends Manager {
 	}
 
 	public function terminate() {
-		$response = $this->ec2->terminate_instances();
+		$response = $this->ec2->terminate_instances($this->vmid);
 		if (!$response->isOK()) {
 			dlog($response);
 			throw new Exception('terminate_instances('.$this->vmid.') '.

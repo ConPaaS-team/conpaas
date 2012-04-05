@@ -38,4 +38,8 @@
 
 class JavaPage extends HostingPage {
 
+	public function renderContent() {
+		return $this->renderInstancesSection()
+			.$this->renderCodeSection();
+	}
 }
