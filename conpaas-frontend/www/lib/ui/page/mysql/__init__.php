@@ -36,6 +36,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+require_module('ui');
 require_module('ui/page');
 
 class MysqlPage extends ServicePage {
@@ -44,6 +45,25 @@ class MysqlPage extends ServicePage {
 		parent::__construct($service);
 		$this->addJS('js/jquery.form.js');
 		$this->addJS('js/mysql.js');
+		if ($this->service->isRunning() && $this->needsPasswordReset()) {
+			$this->addMessage($this->passwordResetMessage(),
+				MessageBox::WARNING);
+		}
+	}
+
+	private function passwordResetMessage() {
+		return
+		'You must '
+		.'<a id="warningResetPasswd" href="javascript: void(0);">'
+			.'reset the password'
+		.'</a>'
+		.', otherwise you cannot access the database. Because your password is '
+		.'not stored in clear text, you can only reset it, but you cannot view '
+		.'it.';
+	}
+
+	public function needsPasswordReset() {
+		return $this->service->needsPasswordReset();
 	}
 
 	protected function renderApplicationAccess() {
@@ -66,8 +86,9 @@ class MysqlPage extends ServicePage {
 	}
 
 	private function renderPasswordInput() {
+		$invisible = $this->needsPasswordReset() ? '' : 'invisible';
 		return
-			'<div id="passwordForm" class="invisible">'
+			'<div id="passwordForm" class="'.$invisible.'">'
 				.'<div class="left-stack name">new password</div>'
 				.'<div class="left-stack details">'
 					.'<input id="passwd" type="password" />'
@@ -82,9 +103,22 @@ class MysqlPage extends ServicePage {
 			.'</div>';
 	}
 
+	private function renderPasswordResetIndicator() {
+		if (!$this->needsPasswordReset()) {
+			return '';
+		}
+		return
+		'<div class="selectHint">'
+			.'<img src="images/warning.png" /> please reset your password '
+			.'<img width="12px" src="images/lookdown.png" />'
+		.'</div>';
+	}
+
 	private function renderPasswordReset() {
-		return $this->renderPasswordInput()
-			.'<div id="resetPasswordForm" class="invisible">'
+		$invisible = $this->needsPasswordReset() ? '' : 'invisible';
+		return $this->renderPasswordResetIndicator()
+			.$this->renderPasswordInput()
+			.'<div id="resetPasswordForm" class="'.$invisible.'">'
 				.'<div class="left-stack name"></div>'
 				.'<div class="left-stack details">'
 					.'<input id="resetPassword" type="button" '

@@ -132,9 +132,18 @@ a:hover {
 	background-color: #dedede;
 }
 
+#pgstatRightWrap {
+	float: right;
+	width: 500px;
+}
+
 #pgstatInfo, #pgstatError {
 	float: left;
-	margin-left: 300px;
+	margin-left: 10px;
+}
+
+#backLinks {
+	float: left;
 }
 
 #pgstatLoading, #pgstatTimer {
@@ -1148,7 +1157,7 @@ body.loginbody {
 }
 
 .loginbody .logo {
-	margin: 30px 30px 30px 100px;
+	margin: 50px 30px 30px 100px;
 }
 
 .login #error {
@@ -1253,7 +1262,7 @@ body.loginbody {
 	float: right;
 }
 
-#selectHint {
+.selectHint {
 	margin: 10px 5px 0 15px;
 	font-size: 11px;
 	color: #69A3D6;
@@ -1269,4 +1278,38 @@ img {
 
 .mysql-load form img, .mysql-load form input {
 	margin-right: 10px;
+}
+
+#backLinks {
+	padding: 3px;
+}
+
+.msgbox {
+	padding: 10px 10px 10px 30px;
+	border-right: 1px solid #ccc;
+    border-left: 1px solid #ccc;
+    border-top: 1px solid #ccc;
+    border-bottom: 1px solid white;
+    background-repeat: no-repeat;
+    background-position: 5px 12px;
+}
+
+.msgbox-info {
+	background-image: url('images/info.png');
+	background-color: #E4ECF5;
+	color: #457299;
+    background-position: 10px 13px;
+}
+
+.msgbox-warning {
+    background-image: url('images/warning.png');
+	background-color: #F5F5F5;
+	color: #333;
+}
+
+.msgbox-error {
+    background-position: 7px 10px;
+    background-image: url('images/error.png');
+	background-color: #FFEDF4;
+	color: red;
 }

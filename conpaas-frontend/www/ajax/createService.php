@@ -67,6 +67,11 @@ try {
     }
 	$sid = ServiceData::createService($default_name, $type, $cloud, $uid,
 		Service::STATE_PREINIT);
+	// HACK: keep a must_reset_password flag for the MySQL service
+	// we should keep this information in the service's manager state
+	if ($type == 'mysql') {
+		$_SESSION['must_reset_passwd_for_'.$sid] = true;
+	}
 	/* start the instance */
 	$service_data = ServiceData::getServiceById($sid);
 	$service = ServiceFactory::create($service_data);

@@ -54,7 +54,7 @@ conpaas.ui = (function (this_module) {
         var that = this;
         conpaas.ui.ServicePage.prototype.attachHandlers.call(this);
         $('#resetPassword').click(this, this.onResetPassword);
-        $('#showResetPasswd').click(function () {
+        $('#showResetPasswd, #warningResetPasswd').click(function () {
             $('#passwordForm').show();
             $('#resetPasswordForm').show();
             $('#passwd').focus();
@@ -130,6 +130,7 @@ conpaas.ui = (function (this_module) {
             $('#resetPassword').removeAttr('disabled');
             $('#passwd').val('');
             $('#passwdRe').val('');
+            $('.selectHint, .msgbox').hide();
         }, function (response) {
             // error
             page.showResetStatus('error', 'Password was not reset');

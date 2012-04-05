@@ -79,6 +79,12 @@ class ServicePage extends Page {
 		return $state['result']['state'];
 	}
 
+	protected function renderBackLinks() {
+		return LinkUI('back to Dashboard', 'index.php')
+			->setIconPosition(LinkUI::POS_LEFT)
+			->setIconURL('images/link_s_back.png');
+	}
+
 	public function renderActions() {
 		$startButton = InputButton('start')
 			->setId('start');
@@ -129,10 +135,9 @@ class ServicePage extends Page {
 		$selected = array();
 		$nodesLists = $this->service->getNodesLists();
 		if ($this->service->hasDedicatedManager()) {
-			$nodes_info[] = new ManagerInstance(
-				$this->service->getManagerVirtualID(),
-				$this->service->getManagerIP()
-			);
+			$manager = $this->service->getManagerInstance();
+			$nodes_info[] = new ManagerInstance($manager->getID(),
+				$manager->getHostAddress());
 		}
 		$roles = $this->service->getInstanceRoles();
 		if ($roles === false) {

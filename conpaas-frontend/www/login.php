@@ -59,7 +59,7 @@ $page = new Page();
 </head>
 <body class="loginbody">
 	<div class="logo">
-		<img src="images/conpaas_large.png" />
+		<img src="images/conpaas-logo-large.png" />
 	</div>
 	<div class="login">
 		<table><tr>

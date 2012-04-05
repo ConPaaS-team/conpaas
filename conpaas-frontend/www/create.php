@@ -75,7 +75,7 @@ $page = new Page();
   	<div class="pagecontent createpage">
     	<div class="pageheader">
   		</div>
-		<div id="selectHint">
+		<div class="selectHint">
 			please select one of the services below <img width="12px" src="images/lookdown.png" />
 		</div>
   		<table class="form" cellspacing="0" cellpading="0">

@@ -45,6 +45,7 @@ class Page {
 	protected $user_credit;
 	protected $username;
 	protected $browser;
+	protected $messages = array();
 	protected $jsFiles = array('js/jquery-1.5.js', 'js/conpaas.js');
 
 	public function __construct() {
@@ -71,6 +72,15 @@ class Page {
 
 	protected function addJS($url) {
 		$this->jsFiles []= $url;
+	}
+
+	/**
+	 * stack messages to signal issues to the user
+	 * @param string $type @see MessageBox for types
+	 * @param string $text message text
+	 */
+	protected function addMessage($type, $text) {
+		$this->messages []= array('type' => $type, 'text' => $text);
 	}
 
 	public static function redirect($toURL) {
@@ -147,50 +157,72 @@ class Page {
 		return '<link rel="shortcut icon" href="images/conpaas.ico">';
 	}
 
+	protected function renderBackLinks() {
+		return '';
+	}
+
+	protected function renderMessages() {
+		$html = '';
+		foreach ($this->messages as $msg) {
+			$html .= MessageBox($msg['type'], $msg['text']);
+		}
+		return $html;
+	}
+
 	public function renderPageStatus() {
 		return
 			'<div id="pgstat">'
-			.'<div id="pgstatInfo" style="display: none;">'
-				.'<img src="images/info.png" style="margin-right: 5px;"/>'
-				.'<span id="pgstatInfoText">service is starting</span>'
-				.'</div>'
-			.'<div id="pgstatError" style="display: none;">'
-				.'<img src="images/error.png" style="vertical-align: middle; margin-right: 5px;"/>'
-				.'<span id="pgstatErrorName">service error</span>'
-				.'<a id="pgstatErrorDetails" href="javascript: void(0);">'
-					.'<img src="images/link_s.png" />details'
-				.'</a>'
+			.'<div id="backLinks">'
+				.$this->renderBackLinks()
 			.'</div>'
-			.'<div id="pgstatLoading" style="display: none;">'
+			.'<div id="pgstatRightWrap">'
+			.'<div id="pgstatLoading" class="invisible">'
 				.'<span id="pgstatLoadingText">creating service...</span>'
 				.'<img class="loading" src="images/icon_loading.gif" style="vertical-align: middle;" /> '
 			.'</div>'
-			.'<div id="pgstatTimer" style="display: none;">'
-				.'<img src="images/refresh.png" /> recheck in <i id="pgstatTimerSeconds">6</i> seconds </div>'
+			.'<div id="pgstatTimer" class="invisible">'
+				.'<img src="images/refresh.png" /> recheck in '
+				.'<i id="pgstatTimerSeconds">6</i> seconds '
+			.'</div>'
+				.'<div id="pgstatInfo" class="invisible">'
+					.'<img src="images/info.png" style="margin-right: 5px;"/>'
+					.'<span id="pgstatInfoText">service is starting</span>'
+				.'</div>'
+				.'<div id="pgstatError" class="invisible">'
+					.'<img src="images/error.png" style="vertical-align: middle; margin-right: 5px;"/>'
+					.'<span id="pgstatErrorName">service error</span>'
+					.'<a id="pgstatErrorDetails" href="javascript: void(0);">'
+						.'<img src="images/link_s.png" />details'
+					.'</a>'
+				.'</div>'
+				.'<div class="clear"></div>'
+			.'</div>'
 			.'<div class="clear"></div>'
 			.'</div>';
 	}
 
 	public function renderHeader() {
 		return
-			'<div class="header">'.
-  				'<a id="logo" href="index.php"></a>'.
-  				'<div class="user">'.
-  					'<div class="logout">'.
-  						'<a href="javascript: void(0);" id="logout">logout</a>'.
-  					'</div>'.
-  					'<div class="usercredit" id="user_credit_container" title="credits">'.
-  						'<span id="user_credit">'.
-  					      $this->getUserCredit().
-  					    '</span>'.
-  					'</div>'.
-					'<div class="username">'
+			'<div class="header">'
+  				.'<a id="logo" href="index.php"></a>'
+  				.'<div class="user">'
+  					.'<div class="logout">'
+  						.'<a href="javascript: void(0);" id="logout">logout</a>'
+  					.'</div>'
+  					.'<div class="usercredit" id="user_credit_container" '
+  							.' title="credits">'
+  						.'<span id="user_credit">'
+  					     	.$this->getUserCredit()
+  					    .'</span>'
+  					.'</div>'
+					.'<div class="username">'
 						.$this->getUsername()
-					.'</div> '.
-  				'</div>'.
-  				'<div class="clear"></div>'.
-  			'</div>'.
-			$this->renderPageStatus();
+					.'</div> '
+  				.'</div>'
+  				.'<div class="clear"></div>'
+  			.'</div>'
+  			.$this->renderMessages()
+			.$this->renderPageStatus();
 	}
 
 	public function renderFooter() {

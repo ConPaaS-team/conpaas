@@ -73,11 +73,18 @@ class MysqlService extends Service {
 		return new MysqlInstance($info);
 	}
 
+	public function needsPasswordReset() {
+		return
+			isset($_SESSION['must_reset_passwd_for_'.$this->sid]);
+	}
+
 	public function setPassword($user, $password) {
-		return $this->managerRequest('post', 'set_password', array(
+		$resp = $this->managerRequest('post', 'set_password', array(
 			'user' => $user,
 			'password' => $password
 		));
+		unset($_SESSION['must_reset_passwd_for_'.$this->sid]);
+		return $resp;
 	}
 
 	public function getMasterAddr() {

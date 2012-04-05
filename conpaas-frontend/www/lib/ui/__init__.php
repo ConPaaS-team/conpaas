@@ -44,3 +44,4 @@ require_once($dir.'LinkUI.php');
 require_once($dir.'InputButton.php');
 require_once($dir.'Tag.php');
 require_once($dir.'EditableTag.php');
+require_once($dir.'MessageBox.php');
