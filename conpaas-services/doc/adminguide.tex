@@ -88,11 +88,11 @@ explains how to setup an AMI using this methodology.
   instance of it. If you are going to use micro-instances then the AMI
   with ID \verb+ami-e0e11289+ could be a good choice.
 
-\item Upload the \verb+conpaas-services/scripts/conpaas_prepare_image.sh+ script to the instance:
+\item Upload the \textit{conpaas-services/scripts/create\_vm/ec2-setup-new-vm-image.sh} script to the instance:
   \begin{code}
     chmod 0400 yourpublickey.pem
     scp -i yourpublickey.pem \
-      conpaas-services/scripts/conpaas_prepare_image.sh \
+      conpaas-services/scripts/create_vm/ec2-setup-new-vm-image.sh \
       root@instancename.com:
   \end{code}
 
@@ -100,20 +100,20 @@ explains how to setup an AMI using this methodology.
   \begin{code}
     ssh -i yourpublickey.pem root@your.instancename.com
   \end{code}
-  Run the \verb+conpaas_prepare_image.sh+ script inside the instance. This
+  Run the \verb+ec2-setup-new-vm-image.sh+ script inside the instance. This
   script will install all of the dependencies of the manager and agent
   processes as well as create the necessary directory structure. At
   some point the script requests to accept licenses, accept them.
 
 \item Clean the filesystem by removing the
-  \verb+conpaas_prepare_image.sh+ file and any other temporary files you might
+  \verb+ec2-setup-new-vm-image.sh+ file and any other temporary files you might
   have created.
 
 \item Go to the EC2 administration page at the AWS website, right
   click on the running instance and select ``\emph{Create Image (EBS
     AMI)}''.  AWS
   documentation is available at
-  \url{http://docs.amazonwebservices.com/AWSEC2/latest/UserGuide/index.html?Tutorial_CreateImage.html}.
+  \url{http://docs.amazonwebservices.com/AWSEC2/latest/UserGuide/index.html?Tutorial\_CreateImage.html}.
 
 \item After the image has been fully created, you can return to the
   EC2 dashboard, right-click on your instance, and terminate it.
@@ -139,7 +139,7 @@ OpenNebula to run ConPaaS. You can skip this section if you plan to
 deploy ConPaaS over Amazon Web Services.
 
 To create an image for OpenNebula you can execute the script\\
-\verb+web-servers/scripts/opennebula-create-new-vm-image+ in any
+\textit{conpaas-services/scripts/create\_vm/opennebula-create-new-vm-image.sh} in any
 64-bit Debian or Ubuntu machine.
 
 \begin{enumerate}
@@ -154,7 +154,7 @@ To create an image for OpenNebula you can execute the script\\
   sudo apt-get install grub2
   \end{code}
 \item Edit the
-  \verb+web-servers/scripts/opennebula-create-new-vm-image+ script
+  \textit{conpaas-services/scripts/create\_vm/opennebula-create-new-vm-image.sh} script
   if necessary: there are two sections in the script that you might need
   to customize with parameters that are specific to your system. These
   sections are marked by comment lines containing the text "TO CUSTOMIZE:".
