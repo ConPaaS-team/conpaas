@@ -45,12 +45,23 @@ class ScalarisPage extends ServicePage {
 		$this->addJS('js/scalaris.js');
 	}
 
+  
+	protected function renderMngmtConsole() {
+		if (!$this->service->isRunning()) {
+			return '';
+		}
+		return LinkUI('management console',
+			      'http://'.$this->service->getMngmtServAddr().':8000')
+			              ->setExternal(true).'&middot';
+	}
+
+
 	protected function renderRightMenu() {
-		return
-			'<div class="rightmenu">'
-				.LinkUI('manager log',
-						'viewlog.php?sid='.$this->service->getSID())
-					->setExternal(true)
+		return '<div class="rightmenu">'
+			.$this->renderMngmtConsole()
+			.LinkUI('manager log',
+				'viewlog.php?sid='.$this->service->getSID())
+				       ->setExternal(true)
 			.'</div>';
 	}
 

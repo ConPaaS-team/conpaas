@@ -59,6 +59,11 @@ class ScalarisService extends Service {
 		return false;
 	}
 
+	public function getMngmtServAddr() {
+		$mngm_node = $this->getNodeInfo($this->nodesLists['scalaris'][0]);
+		return $mngm_node['ip'];
+	}
+
 	public function getInstanceRoles() {
 		return array('scalaris');
 	}
