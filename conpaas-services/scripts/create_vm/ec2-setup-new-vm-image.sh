@@ -76,8 +76,8 @@ function install_deb() {
 
   # add cloudera repo for hadoop
   echo "deb http://archive.cloudera.com/debian $DEBIAN_DIST-cdh3 contrib" >> /etc/apt/sources.list
-  apt-get -f -y update
   wget -O - http://archive.cloudera.com/debian/archive.key 2>/dev/null | apt-key add -
+  apt-get -f -y update
   apt-get -f -y --no-install-recommends --no-upgrade install \
     hadoop-0.20 hadoop-0.20-namenode hadoop-0.20-datanode \
     hadoop-0.20-secondarynamenode hadoop-0.20-jobtracker  \
@@ -97,8 +97,8 @@ function install_deb() {
 
   # add scalaris repo
   echo "deb http://download.opensuse.org/repositories/home:/scalaris/Debian_6.0 /" >> /etc/apt/sources.list
-  apt-get -f -y update
   wget -O - http://download.opensuse.org/repositories/home:/scalaris/Debian_6.0/Release.key 2>/dev/null | apt-key add -
+  apt-get -f -y update
   apt-get -f -y --no-install-recommends --no-upgrade install scalaris screen
   update-rc.d -f scalaris remove
   # remove scalaris repo
@@ -106,8 +106,8 @@ function install_deb() {
 
   # add xtreemfs repo
   echo "deb http://download.opensuse.org/repositories/home:/xtreemfs:/unstable/Debian_6.0 /" >> /etc/apt/sources.list
-  apt-get -f -y update
   wget -O - http://download.opensuse.org/repositories/home:/xtreemfs:/unstable/Debian_6.0/Release.key 2>/dev/null | apt-key add -
+  apt-get -f -y update
   apt-get -f -y --no-install-recommends --no-upgrade install xtreemfs-server xtreemfs-client
   update-rc.d -f xtreemfs-osd remove
   update-rc.d -f xtreemfs-mrc remove
