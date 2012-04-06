@@ -84,9 +84,11 @@ and save the resulting filesystem as a new AMI. The following steps
 explains how to setup an AMI using this methodology.
 
 \begin{enumerate}
-\item Search the public AMIs for a Debian squeeze EBS AMI and run an
-  instance of it. If you are going to use micro-instances then the AMI
-  with ID \verb+ami-e0e11289+ could be a good choice.
+\item Log in the AWS management console, select the ``EC2'' tab, then
+  ``AMIs'' in the left-side menu. Search the public AMIs for a Debian
+  squeeze EBS AMI and run an instance of it. If you are going to use
+  micro-instances then the AMI with ID \verb+ami-e0e11289+ could be a
+  good choice.
 
 \item Upload the \textit{conpaas-services/scripts/create\_vm/ec2-setup-new-vm-image.sh} script to the instance:
   \begin{code}
@@ -100,10 +102,11 @@ explains how to setup an AMI using this methodology.
   \begin{code}
     ssh -i yourpublickey.pem root@your.instancename.com
   \end{code}
-  Run the \verb+ec2-setup-new-vm-image.sh+ script inside the instance. This
-  script will install all of the dependencies of the manager and agent
-  processes as well as create the necessary directory structure. At
-  some point the script requests to accept licenses, accept them.
+  Run the \verb+ec2-setup-new-vm-image.sh+ script inside the instance.
+  This script will install all of the dependencies of the manager and
+  agent processes as well as create the necessary directory structure.
+  At some point the script requests for MySQL password, leave it
+  empty. It also requests to accept licenses, accept them.
 
 \item Clean the filesystem by removing the
   \verb+ec2-setup-new-vm-image.sh+ file and any other temporary files you might
@@ -111,8 +114,8 @@ explains how to setup an AMI using this methodology.
 
 \item Go to the EC2 administration page at the AWS website, right
   click on the running instance and select ``\emph{Create Image (EBS
-    AMI)}''.  AWS
-  documentation is available at
+    AMI)}''.  This step will take several minutes. AWS documentation
+  is available at
   \url{http://docs.amazonwebservices.com/AWSEC2/latest/UserGuide/index.html?Tutorial\_CreateImage.html}.
 
 \item After the image has been fully created, you can return to the
