@@ -41,9 +41,18 @@ session_start();
 date_default_timezone_set('Europe/Amsterdam');
 
 class Conf {
+        // Edit the CONF_DIR variable to point to the directory
+        // containing your frontend's configuration files.
+	const CONF_DIR = '/etc/conpaas';
 
-	const CONF_DIR = '/home/vuadriana/conpaas_v2/conf';
-	const HOST = 'cumulus.zib.de';
+	// Edit the HOST variable to contain the DNS name under 
+	// which your front-end will be accessible
+	const HOST = 'conpaas.yourdomain.com';
+
+	/////////////////////////////////////////////////////////////////////
+	// DO NOT EDIT BELOW THIS LINE UNLESS YOU KNOW WHAT YOU ARE DOING! //
+	/////////////////////////////////////////////////////////////////////
+
 	public static $ROOT_DIR = '';
 
 	public static function getFrontendURL() {

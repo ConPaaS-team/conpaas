@@ -9,6 +9,11 @@ create database DB_NAME;
 grant all on DB_NAME.* to 'DB_USER'@'%';
 use DB_NAME;
 
+
+-- -------------------------------------------------------------------
+-- Do not edit beyond this point unless you know what you are doing...
+-- -------------------------------------------------------------------
+
 CREATE TABLE `services` (
   `sid` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(256) DEFAULT NULL,
