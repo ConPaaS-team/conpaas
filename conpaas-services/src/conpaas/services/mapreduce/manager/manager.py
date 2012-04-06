@@ -95,8 +95,8 @@ class MapReduceManager(object):
         return HttpJsonResponse({'state': self.S_PROLOGUE})
 
     def _do_startup(self):
-        ''' Starts up the service. The first node will be the MYSQL master. 
-            The next nodes will be slaves to this master.
+        ''' Starts up the service. The first node will be the job 
+	    master as well as an hadoop worker.
         '''
         try:
 	    self.controller.update_context(self.context)

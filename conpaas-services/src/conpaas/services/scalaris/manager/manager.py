@@ -94,8 +94,8 @@ class ScalarisManager(object):
         return HttpJsonResponse({'state': self.S_PROLOGUE})
 
     def _do_startup(self):
-        ''' Starts up the service. The first node will be the MYSQL master. 
-            The next nodes will be slaves to this master.
+        ''' Starts up the service. At least one node should be running scalaris
+	    when the service is started.
         '''
         try:
 	    self.controller.update_context(self.context)
