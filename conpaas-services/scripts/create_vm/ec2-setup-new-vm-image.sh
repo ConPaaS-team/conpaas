@@ -32,9 +32,8 @@ PREFIX=/
 DEBIAN_DIST=squeeze
 
 function install_deb() {
-  sed --in-place 's/main/main contrib non-free/' /etc/apt/sources.list
-  # Check if I didn't introduce duplicates with the previous command
-  sed --in-place 's/contrib non-free contrib non-free/contrib non-free/' /etc/apt/sources.list
+  sed --in-place '/non-free/!s/main/main non-free/' /etc/apt/sources.list
+  sed --in-place '/contrib/!s/main contrib/' /etc/apt/sources.list
   apt-get -f -y update
   # install packages
   apt-get -f -y install openssh-server \
