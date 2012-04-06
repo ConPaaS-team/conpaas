@@ -33,6 +33,8 @@ DEBIAN_DIST=squeeze
 
 function install_deb() {
   sed --in-place 's/main/main contrib non-free/' /etc/apt/sources.list
+  # Check if I didn't introduce duplicates with the previous command
+  sed --in-place 's/contrib non-free contrib non-free/contrib non-free/' /etc/apt/sources.list
   apt-get -f -y update
   # install packages
   apt-get -f -y install openssh-server \
@@ -59,9 +61,6 @@ function install_deb() {
 
   # remove dotdeb repo
   sed --in-place 's%deb http://packages.dotdeb.org stable all%%' /etc/apt/sources.list
-  apt-get -f -y update
-  # remove cached .debs from /var/cache/apt/archives to save disk space
-  apt-get clean
 
   echo > /var/log/cpsagent.log
   mkdir /etc/cpsagent/
@@ -77,8 +76,8 @@ function install_deb() {
 
   # add cloudera repo for hadoop
   echo "deb http://archive.cloudera.com/debian $DEBIAN_DIST-cdh3 contrib" >> /etc/apt/sources.list
-  wget -O - http://archive.cloudera.com/debian/archive.key 2>/dev/null | apt-key add -
   apt-get -f -y update
+  wget -O - http://archive.cloudera.com/debian/archive.key 2>/dev/null | apt-key add -
   apt-get -f -y --no-install-recommends --no-upgrade install \
     hadoop-0.20 hadoop-0.20-namenode hadoop-0.20-datanode \
     hadoop-0.20-secondarynamenode hadoop-0.20-jobtracker  \
@@ -94,23 +93,21 @@ function install_deb() {
   mkdir -p /etc/hadoop-0.20/conf.contrail
   update-alternatives --install /etc/hadoop-0.20/conf hadoop-0.20-conf /etc/hadoop-0.20/conf.contrail 99
   # remove cloudera repo
-  sed --in-place 's%deb http://archive.cloudera.com/debian $DEBIAN_DIST-cdh3 contrib%%' /etc/apt/sources.list
-  apt-get -f -y update  
+  sed --in-place "s%deb http://archive.cloudera.com/debian $DEBIAN_DIST-cdh3 contrib%%" /etc/apt/sources.list
 
   # add scalaris repo
   echo "deb http://download.opensuse.org/repositories/home:/scalaris/Debian_6.0 /" >> /etc/apt/sources.list
-  wget -O - http://download.opensuse.org/repositories/home:/scalaris/Debian_6.0/Release.key 2>/dev/null | apt-key add -
   apt-get -f -y update
+  wget -O - http://download.opensuse.org/repositories/home:/scalaris/Debian_6.0/Release.key 2>/dev/null | apt-key add -
   apt-get -f -y --no-install-recommends --no-upgrade install scalaris screen
   update-rc.d -f scalaris remove
   # remove scalaris repo
   sed --in-place 's%deb http://download.opensuse.org/repositories/home:/scalaris/Debian_6.0 /%%' /etc/apt/sources.list
-  apt-get -f -y update
 
   # add xtreemfs repo
   echo "deb http://download.opensuse.org/repositories/home:/xtreemfs:/unstable/Debian_6.0 /" >> /etc/apt/sources.list
-  wget -O - http://download.opensuse.org/repositories/home:/xtreemfs:/unstable/Debian_6.0/Release.key 2>/dev/null | apt-key add -
   apt-get -f -y update
+  wget -O - http://download.opensuse.org/repositories/home:/xtreemfs:/unstable/Debian_6.0/Release.key 2>/dev/null | apt-key add -
   apt-get -f -y --no-install-recommends --no-upgrade install xtreemfs-server xtreemfs-client
   update-rc.d -f xtreemfs-osd remove
   update-rc.d -f xtreemfs-mrc remove
@@ -118,6 +115,8 @@ function install_deb() {
   # remove xtreemfs repo
   sed --in-place 's%deb http://download.opensuse.org/repositories/home:/xtreemfs:/unstable/Debian_6.0 /%%' /etc/apt/sources.list
   apt-get -f -y update
+  # remove cached .debs from /var/cache/apt/archives to save disk space
+  apt-get clean
 	
   # To allow copntextualization to run after snapshotting this instance
   rm /var/lib/ec2-bootstrap/*

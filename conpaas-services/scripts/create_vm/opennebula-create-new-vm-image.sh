@@ -263,7 +263,7 @@ update-rc.d -f hue remove
 mkdir -p /etc/hadoop-0.20/conf.contrail
 update-alternatives --install /etc/hadoop-0.20/conf hadoop-0.20-conf /etc/hadoop-0.20/conf.contrail 99
 # remove cloudera repo
-sed --in-place 's%deb http://archive.cloudera.com/debian $DEBIAN_DIST-cdh3 contrib%%' /etc/apt/sources.list
+sed --in-place "s%deb http://archive.cloudera.com/debian $DEBIAN_DIST-cdh3 contrib%%" /etc/apt/sources.list
 apt-get -f -y update
 
 
