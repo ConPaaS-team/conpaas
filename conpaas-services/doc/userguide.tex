@@ -17,27 +17,87 @@
  \end{framed}
 }
 
-\pagestyle{myheadings}
-\markright{User Manual:ConPaaS Web Hosting Service}
 
 \begin{document}
-\title{User Manual: ConPaaS Web Hosting Service}
-\date{August 15, 2011}
-\thispagestyle{empty}
 
-\begin{center}
-\begingroup
-\fontsize{20pt}{20pt}\selectfont
-\textbf{User Manual: ConPaaS Web Hosting Service} \linebreak
-\endgroup
+\title{ConPaaS User Manual}
+\author{Ismail El Helw \and Guillaume Pierre}
+\date{Version 1.0.0}
+\maketitle
 
-\begingroup
-\fontsize{16pt}{16pt}\selectfont
-August 15, 2011
-\endgroup
-\end{center}
+\vfil
+\tableofcontents
+\newpage
 
-\section{Cloud Front-end}
+\section{Introduction}
+
+ConPaaS is an open-source runtime environment for hosting applications
+in the cloud which aims at offering the full power of the cloud to
+application developers while shielding them from the associated
+complexity of the cloud.
+
+ConPaaS is designed to host both high-performance scientific
+applications and online Web applications. It runs on a variety of
+public and private clouds, and is easily extensible.  ConPaaS
+automates the entire life-cycle of an application, including
+collaborative development, deployment, performance monitoring, and
+automatic scaling. This allows developers to focus their attention on
+application-specific concerns rather than on cloud-specific details.
+
+ConPaaS is organized as a collection of \textbf{services}, where each
+service acts as a replacement for a commonly used runtime environment.
+For example, to replace a MySQL database, ConPaaS provides a
+cloud-based MySQL service which acts as a high-level database
+abstraction. The service uses real MySQL databases internally, and
+therefore makes it easy to port an cloud application to ConPaaS.
+Unlike a regular centralized database, however, it is self-managed and
+fully elastic: one can dynamically increase or decrease its processing
+capacity by requesting it to reconfigure itself with a different
+number of virtual machines.
+
+ConPaaS currently contains six services: 
+
+\begin{itemize}
+\item \textbf{Two Web hosting services} respectively specialized for
+  hosting PHP and JSP applications;
+\item \textbf{MySQL database} service;
+\item \textbf{Scalarix service} offering a scalable in-memory
+  key-value store;
+\item \textbf{MapReduce service} providing thewell-known
+  high-performance computation framework;
+\item \textbf{TaskFarming service} high-performance batch processing.
+\end{itemize}
+
+ConPaaS applications can be composed of any number of services. For
+example, a bio-informatics application may make use of a PHP and a
+MySQL service to host a Web-based frontend, and link this frontend to
+a MapReduce backend service for conducting high-performance genomic
+computations on demand.
+
+\section{ConPaaS usage overview}
+
+Most operations in ConPaaS can be done using the ConPaaS frontend,
+which gives a Web-based interface to the system. The front-end allows
+users to register, create services, upload code and data to the
+services, and configure each service. 
+
+\begin{itemize}
+\item The Dashboard page displays the list of services currently
+  active in the system. Beware: each active service uses credits, even
+  if it is in ``stopped'' state. To stop using credits you must
+  terminate the services completely.
+\item Each service comes with a separate page which allows one to
+  configure it, upload code and data, and scale it up and down.
+\end{itemize}
+
+All the functionalities of the frontend are also available using a
+command-line interface. This allows one to script commands for
+ConPaaS. The command-line interface also features additional advanced
+functionalities, which are not available using the front-end.
+
+
+\section{The Front-end}
+
 The cloud front-end provides an intuitive web-based user interface that
 allows users to register new accounts in order to start using the Web
 Hosting Service. Registered users can create as well as terminate
@@ -49,9 +109,9 @@ Note: User registration can only be done through the cloud front-end.
 \begin{enumerate}
 \item Click on the "register" link.
 \item Enter your user name and click on the "register" button.
-\item You will be automatically logged in. Notice your user name and the "logout"
-      link at the top right corner of the web page. You are now ready to
-      experiment with the Web Hosting Service.
+\item You will be automatically logged in. Notice your user name and
+  the "logout" link at the top right corner of the web page. You are
+  now ready to experiment with the Web Hosting Service.
 \end{enumerate}
 
 \subsection{Create a Web Hosting Service}

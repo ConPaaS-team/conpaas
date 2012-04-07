@@ -31,8 +31,8 @@
 }
 
 % Modify these paths accordingly %
-\newcommand{\ConPaaSHOME}{/home/adriana/Desktop/contrail_v4/conpaas}
-\newcommand{\ConPaaSCONF}{/home/adriana/Desktop/contrail_v4/conpaas}
+\newcommand{\ConPaaSHOME}{..}
+\newcommand{\ConPaaSCONF}{..}
 
 \newenvironment{framedbox}[1]%
 {\begin{framed}
@@ -44,27 +44,15 @@
  \end{framed}
 }
 
-\pagestyle{myheadings}
-\markright{Developer's Guide: Adding a new ConPaaS service}
-
 \begin{document}
-\title{Developer's Guide: Adding a new ConPaaS service}
-\date{January 17, 2012}
-\thispagestyle{empty}
+\title{ConPaaS internals: Creating new ConPaaS services}
+\author{Adriana Szekeres}
+\date{Version 1.0.0}
+\maketitle
 
-\begin{center}
-\begingroup
-\fontsize{20pt}{20pt}\selectfont
-\textbf{Developer's Guide: Adding a new ConPaaS service} \linebreak
-\endgroup
-
-\begingroup
-\fontsize{16pt}{16pt}\selectfont
-January 17, 2012
-\endgroup
-\end{center}
-
-\vspace{5 cm}
+\vfil
+\tableofcontents
+\newpage
 
 \section{Introduction}
 
@@ -158,7 +146,7 @@ Examples:
 
 \lstinputlisting[language=bash, caption=Script (5) - ConPaaS/scripts/manager/default-manager-start,label=lst:managerstart]{\ConPaaSCONF/scripts/manager/default-manager-start}
 
-\lstinputlisting[language=python, caption=Script (6) - ConPaaS/sbin/manager/default-cpsmanager,label=lst:managersbin]{\ConPaaSHOME/sbin/manager/default-cpsmanager}
+\lstinputlisting[language=python, caption=Script (6) - ConPaaS/sbin/manager/default-cpsmanager,label=lst:managersbin]{../sbin/manager/default-cpsmanager}
 
 \item Files specific to the Agent
 

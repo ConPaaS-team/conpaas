@@ -1,5 +1,5 @@
 
-all: userguide.pdf adminguide.pdf newservice.pdf
+all: userguide.pdf installation.pdf internals.pdf
 
 %.pdf : %.tex
 	pdflatex $<
