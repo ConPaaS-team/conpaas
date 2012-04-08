@@ -1,12 +1,5 @@
 #!/bin/bash
 
-# fix dns record
-grep -q 130.73.121.1 /etc/resolv.conf && echo "nameserver 130.73.79.13" > /etc/resolv.conf
-
-# fix hostname
-HOSTNAME=`/usr/bin/host $IP_PUBLIC | cut -d' ' -f5 | cut -d'.' -f1`
-/bin/hostname $HOSTNAME
-
 # setup and run local agent
 for FILE in core-site.xml.tmpl hadoop-env.sh hadoop-metrics.properties.tmpl hadoop-policy.xml mapred-site.xml.tmpl; do
   cp $CPS_HOME/src/conpaas/services/mapreduce/etc/$FILE /etc/hadoop/conf/$FILE
