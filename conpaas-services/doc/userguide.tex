@@ -1,7 +1,7 @@
 \documentclass[10pt]{article}
 \usepackage{listings}
 \usepackage{framed}
-
+\usepackage{hyperref}
 
 \newenvironment{what}
 {\begin{description} \item [What is happening now?] \hfill \\}
@@ -100,7 +100,7 @@ functionalities, which are not available using the front-end.
 The PHP Web hosting service is dedicated to hosting Web applications
 written in PHP. It can also host static Web content.
 
-\subsection{Basic usage}
+\subsection{Basic usage with the front-end}
 
 \begin{description}
 \item[Create a service.] Click on ``create new service'', then select
@@ -142,15 +142,24 @@ written in PHP. It can also host static Web content.
   lost.
 \end{description}
 
-\subsection{Advanced usage}
+\subsection{Advanced usage with the command-line tool}
 
 The PHP service can also be controled using the \texttt{cpsclient.web}
 script. This command-line tool can issue the same operations as the
 front-end, except creating a new service. It also has additional
 functionalities which are useful for advanced usage.
 
+To use the \texttt{cpsclient.web} tool you must first set the
+PYTHONPATH variable to contain the full path name of the ``src''
+subdirectory within the ConPaaS directory:
+\begin{verbatim}
+$ export PYTHONPATH=/path/to/conpaas/src
+\end{verbatim}
+
 The \texttt{cpsclient.web} tool always takes the URL of the service
 manager as its first argument. This URL is provided by the front-end.
+
+\vspace{1em}
 
 \begin{description}
 \item[List all options of the command-line tool.]~
@@ -206,7 +215,8 @@ $ ./cpsclient.web http://x-x-x-x/ remove_nodes -w 1 -b 1
   developing an application it is however useful to let PHP display
   erors.
 \begin{verbatim}
-WHAT WAS THE EXACT COMMAND ALREADY???
+$ ./cpsclient.web http://x-x-x-x/ update_php_configuration \
+  -p "display_errors=On" 
 \end{verbatim}
 \end{description}
 
@@ -217,7 +227,7 @@ The Java Web hosting service is dedicated to hosting Web applications
 written in Java using JSP or servlets. It can also host static Web
 content.
 
-\subsection{Basic usage}
+\subsection{Basic usage with the front-end}
 
 \begin{description}
 \item[Create a service.] Click on ``create new service'', then select
@@ -258,15 +268,24 @@ content.
   lost.
 \end{description}
 
-\subsection{Advanced usage}
+\subsection{Advanced usage with the command-line tool}
 
 The Java service can also be controled using the \texttt{cpsclient.web}
 script. This command-line tool can issue the same operations as the
 front-end, except creating a new service. It also has additional
 functionalities which are useful for advanced usage.
 
+To use the \texttt{cpsclient.web} tool you must first set the
+PYTHONPATH variable to contain the full path name of the ``src''
+subdirectory within the ConPaaS directory:
+\begin{verbatim}
+$ export PYTHONPATH=/path/to/conpaas/src
+\end{verbatim}
+
 The \texttt{cpsclient.web} tool always takes the URL of the service
 manager as its first argument. This URL is provided by the front-end.
+
+\vspace{1em}
 
 \begin{description}
 \item[List all options of the command-line tool.]~
@@ -325,7 +344,7 @@ $ ./cpsclient.web http://x-x-x-x/ remove_nodes -w 1 -b 1
 
 \section{The TaskFarming service}
 
-\section{Building new kinds of services}
+\section{Building new types of services}
 
 The architecture of ConPaaS allows developers to build new types of
 services. To learn how to do this, please check the ``Internals''
