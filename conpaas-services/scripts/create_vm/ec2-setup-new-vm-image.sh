@@ -33,18 +33,23 @@ DEBIAN_DIST=squeeze
 
 function install_deb() {
   sed --in-place '/non-free/!s/main/main non-free/' /etc/apt/sources.list
-  sed --in-place '/contrib/!s/main contrib/' /etc/apt/sources.list
+  sed --in-place '/contrib/!s/main/main contrib/' /etc/apt/sources.list
   apt-get -f -y update
   # install packages
   apt-get -f -y install openssh-server \
-        python python-pycurl python-cheetah nginx tomcat6-user memcached mysql-server\
-        make gcc g++ sun-java6-jdk erlang ant libxslt1-dev yaws subversion
+        python python-pycurl python-cheetah nginx tomcat6-user memcached \
+        make gcc g++ erlang ant libxslt1-dev yaws subversion
   update-rc.d -f memcached remove
   update-rc.d -f nginx remove
   /etc/init.d/memcached stop
   /etc/init.d/nginx stop
   update-rc.d -f yaws remove
   /etc/init.d/yaws stop
+
+  # pre-accept sun-java6 licence
+  echo "debconf shared/accepted-sun-dlj-v1-1 boolean true" | debconf-set-selections
+  DEBIAN_FRONTEND=noninteractive apt-get -y --force-yes --no-install-recommends --no-upgrade \
+        install mysql-server sun-java6-jdk
   update-rc.d -f mysql remove
   /etc/init.d/mysql stop
 
