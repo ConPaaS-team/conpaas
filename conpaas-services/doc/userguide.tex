@@ -25,7 +25,7 @@
 \date{Version 1.0.0}
 \maketitle
 
-\vfil
+\newpage
 \tableofcontents
 \newpage
 
@@ -95,43 +95,38 @@ command-line interface. This allows one to script commands for
 ConPaaS. The command-line interface also features additional advanced
 functionalities, which are not available using the front-end.
 
-\section{The PHP Web hosting service}
+\subsection{Controlling services using the front-end}
 
-The PHP Web hosting service is dedicated to hosting Web applications
-written in PHP. It can also host static Web content.
-
-\subsection{Basic usage with the front-end}
+The ConPaaS front-end provides a simple and intuitive interface for
+controlling services. We discuss here the features that are common to
+all services, and refer to the next sections for service-specific
+functionality.
 
 \begin{description}
 \item[Create a service.] Click on ``create new service'', then select
-  ``PHP service''. This operation starts a new ``Manager'' virtual
-  machine. The manager is in charge of taking care of the service, but
-  it does not host Web applications itself. To make use of the PHP
-  service you need to start it.
+  the service you want to create. This operation starts a new
+  ``Manager'' virtual machine. The manager is in charge of taking care
+  of the service, but it does not host applications itself. Note
+  however that a manager VM uses credits. To stop using credits you
+  need to terminate the service.
 \item[Start a service.] Click on ``start'', this will create a new
-  virtual machine which can host your Web application.
-\item[Rename the service.] By default all new PHP services are named
-  ``New PHP service.'' To give it a meaningful name, click on this
+  virtual machine which can host applications, depending on the type
+  of service.
+\item[Rename the service.] By default all new services are named ``New
+  service.'' To give a meaningful name to a service, click on this
   name in the service-specific page and enter a new name.
-\item[Upload an application to the service.] Applications can be
-  uploaded in the form of a \texttt{tar} or \texttt{zip} archive.
-  Attention: the archive must expand \emph{in the current directory}
-  rather than in a subdirectory. The service does not immediately use
-  new applications when they are uploaded. The frontend shows the list
-  of versions that have been uploaded; choose one version and click
-  ``make active'' to activate it. Note that the frontend only allows
-  uploading archives smaller than a certain size. To upload large
-  archives, you must use the command-line tool (see Advanced usage).
-\item[Access your application.] The frontend gives a link to the
-  running application. This URL will remain valid as long as you do
-  not stop the service.
-\item[Scale the service up and down.] The front-end shows the list of
-  virtual machine instances used to run a service. The minimum
-  configuration to run a PHP application requires two instances: one
-  manager instance, and one instance containing a load balancer, a web
-  server and a PHP server. To scale the capacity up or down, click the
-  numbers below to request adding or removing servers. The system
-  reconfigures itself without any service interruption.
+\item[Check the list of virtual instances.] A service can run using
+  one or more virtual machine instances. THe service-specific page
+  shows the list of instances, their respective IP addresses, and the
+  role each instance is currently having in the service. Certain
+  services use a single role for all instances, while other services
+  specialize different instances to take different roles.
+\item[Scale the service up and down.] When a service is started it
+  uses a single ``agent'' instance. To add more capacity, or to later
+  reduce capacity you can vary the number of instances used by the
+  service. Click the numbers below the list of instances to request
+  adding or removing servers. The system reconfigures itself without
+  any service interruption.
 \item[Stop the service.] When you do not need to run the application
   any more, click ``stop'' to stop the service. This stops all
   instances except the manager which keeps on running. Beware that the
@@ -142,21 +137,30 @@ written in PHP. It can also host static Web content.
   lost.
 \end{description}
 
-\subsection{Advanced usage with the command-line tool}
+\subsection{Controlling services using the command-line interfaces}
 
-The PHP service can also be controled using the \texttt{cpsclient.web}
-script. This command-line tool can issue the same operations as the
-front-end, except creating a new service. It also has additional
-functionalities which are useful for advanced usage.
+Command-line interfaces allow one to control services without using
+the graphical interface. The command-likne interfaces also offer
+additional functionality for advanced usage of the services.
 
-To use the \texttt{cpsclient.web} tool you must first set the
-PYTHONPATH variable to contain the full path name of the ``src''
-subdirectory within the ConPaaS directory:
+Each service can be controlled using its own command-line tool:
+
+\begin{itemize}
+\item The two Web hosting services are controlled using \texttt{cpsclient.web}
+\item The MySQL service is controlled using \texttt{cpsclient.mysql}
+\item The Scalarix service is controlled using \texttt{cpsclient.scalarix}
+\item The MapReduce service is controlled using cpsclient.mapreduce
+\end{itemize}
+
+To use these tools you must first set the PYTHONPATH variable to
+contain the full path name of the ``src'' subdirectory within the
+ConPaaS directory:
 \begin{verbatim}
 $ export PYTHONPATH=/path/to/conpaas/src
 \end{verbatim}
+% $
 
-The \texttt{cpsclient.web} tool always takes the URL of the service
+The \texttt{cpsclient.*} tools always take the URL of the service
 manager as its first argument. This URL is provided by the front-end.
 
 \vspace{1em}
@@ -164,62 +168,133 @@ manager as its first argument. This URL is provided by the front-end.
 \begin{description}
 \item[List all options of the command-line tool.]~
 \begin{verbatim}
-$ ./cpsclient.web help
+$ ./cpsclient.servicename help
 \end{verbatim}
+%$
 
 \item[Start the service.]~
 \begin{verbatim}
-$ ./cpsclient.web http://x-x-x-x/ startup
+$ ./cpsclient.servicename http://x-x-x-x/ startup
 \end{verbatim}
+%$
 
 \item[Stop the service.]~
 \begin{verbatim}
-$ ./cpsclient.web http://x-x-x-x/ shutdown
+$ ./cpsclient.servicename http://x-x-x-x/ shutdown
 \end{verbatim}
-
-\item[Upload a new version of the application]~
-\begin{verbatim}
-$ ./cpsclient.web http://x-x-x-x/ upload_code_version path/to/archive.zip
-\end{verbatim}
-Note that this operation allows one to upload bigger archive files than the frontend.
+%$
 
 \item[Scale the service up and down.]~
 \begin{verbatim}
-$ ./cpsclient.web http://x-x-x-x/ add_nodes -h
-Usage: add_nodes
-
-Options:
-  -h, --help            show this help message and exit
-  -p PROXY, --proxy=PROXY
-  -w WEB, --web=WEB     
-  -b BACKEND, --backend=BACKEND
-
+$ ./cpsclient.servicename http://x-x-x-x/ add_nodes -h
+$ ./cpsclient.servicename http://x-x-x-x/ remove_nodes -h
 $ ./cpsclient.web http://x-x-x-x/ add_nodes -w 1 -b 1
-
-$ ./cpsclient.web http://x-x-x-x/ remove_nodes -h
-Usage: remove_nodes
-
-Options:
-  -h, --help            show this help message and exit
-  -p PROXY, --proxy=PROXY
-  -w WEB, --web=WEB     
-  -b BACKEND, --backend=BACKEND
-
 $ ./cpsclient.web http://x-x-x-x/ remove_nodes -w 1 -b 1
 \end{verbatim}
 
-\item[Set the service in debug mode.] By default the PHP service does
-  not display anything in case PHP errors occur while executing the
-  application. This setting is useful for production, when you do not
-  want to reveal internal information to external users. While
-  developing an application it is however useful to let PHP display
-  erors.
+\end{description}
+
+\section{Tutorial: hosting WordPress in ConPaaS}
+
+This short tutorial illustrates the way to use ConPaaS to install and host WordPress (\url{www.wordpress.org}), a well-known third-party Web application. WordPress is implemented in PHP using a MySQL database so we will need a PHP and a MySQL service in ConPaaS.
+
+\begin{enumerate}
+\item Open the ConPaaS front-end in your Web browser and log in. If
+  necessary, create yourself a user account and make sure that you
+  have at least 5 credits. Your credits are always shown in the
+  top-right corner of the front-end. One credit corresponds to one
+  hour of execution of one virtual machine instance.
+\item Create a MySQL service, start it, reset its password. Copy the
+  IP address of the master node somewhere, we will need it in step 5.
+\item Create a PHP service, start it.
+\item Download a Wordpress tarball from \url{www.wordpress.org}, and
+  expand it in your computer.
+\item Copy file wordpress/wp-config-sample.php to
+  wordpress/wp-config.php and edit the \texttt{DB\_NAME},
+  \texttt{DB\_USER}, \texttt{DB\_PASSWORD} and \texttt{DB\_HOST}
+  variables to point to the database service. You can choose any
+  database name for the \texttt{DB\_NAME} variable as long as it does
+  not contain any special character. We will reuse the same name in
+  step 7.
+\item Rebuild a tarball of the directory such that it will expand in
+  the current directory rather than in a \texttt{wordpress}
+  subdirectory. Upload this tarball to the PHP service, and make the
+  new version active. 
+\item Connect to the database using the command proposed by the
+  frontend. Create a database of the same name as in step 5 using
+  command "\texttt{CREATE DATABASE databasename;}"
+\item Open the page of the PHP service, and click ``access
+  application.'' Your browser will display nothing because the
+  application is not fully installed yet. Visit the same site at URL
+  http://xxx.yyy.zzz.ttt/wp-admin/install.php and fill in the
+  requested information (site name etc).
+\item That's it! The system works, and can be scaled up and down. 
+\end{enumerate}
+
+Note that the ``file upload'' functionality of WordPress will not work
+if you scale the system up. This is because WordPress stores files in
+the local file system of the PHP server where the upload has been
+processed. If a subsequent request for this file is processed by
+another PHP server then the file will not be found. In a next ConPaaS
+release we wil provide a shared file system service which will allow
+one to avoid this issue.
+
+
+\section{The PHP Web hosting service}
+
+The PHP Web hosting service is dedicated to hosting Web applications
+written in PHP. It can also host static Web content.
+
+\subsection{Uploading application code}
+
+PHP applications can be uploaded in the form of a \texttt{tar} or
+\texttt{zip} archive.  Attention: the archive must expand \emph{in the
+  current directory} rather than in a subdirectory. The service does
+not immediately use new applications when they are uploaded. The
+frontend shows the list of versions that have been uploaded; choose
+one version and click ``make active'' to activate it.
+
+Note that the frontend only allows uploading archives smaller than a
+certain size.  To upload large archives, you must use the command-line
+tool:
+\begin{verbatim}
+$ ./cpsclient.web http://x-x-x-x/ upload_code_version path/to/archive.zip
+\end{verbatim}
+%$
+
+\subsection{Access the application}
+
+The frontend gives a link to the running application. This URL will
+remain valid as long as you do not stop the service.
+
+\subsection{Using PHP sessions}
+
+PHP normally stores session state in its main memory. When scaling up
+the PHP service, this creates problems because multiple PHP servers
+running in different VM instances cannot share their memory. To
+support PHP sessions the PHP service features a key-value store where
+session states can be transparently stored. To overwrite PHP session
+functions such that they make use of the shared key-value store, you
+must insert this PHP command before using sessions:
+
+\begin{verbatim}
+<?php
+WHAT IS THE EXACT COMMAND THAT NEEDS TO BE INSERTED HERE?
+?>
+\end{verbatim}
+
+\subsection{Debug mode}
+
+By default the PHP service does not display anything in case PHP
+errors occur while executing the application. This setting is useful
+for production, when you do not want to reveal internal information to
+external users. While developing an application it is however useful
+to let PHP display erors.
 \begin{verbatim}
 $ ./cpsclient.web http://x-x-x-x/ update_php_configuration \
   -p "display_errors=On" 
 \end{verbatim}
-\end{description}
-
+%$
 
 \section{The Java Web hosting service}
 
@@ -227,120 +302,95 @@ The Java Web hosting service is dedicated to hosting Web applications
 written in Java using JSP or servlets. It can also host static Web
 content.
 
-\subsection{Basic usage with the front-end}
+\subsection{Uploading application code}
 
-\begin{description}
-\item[Create a service.] Click on ``create new service'', then select
-  ``Java service''. This operation starts a new ``Manager'' virtual
-  machine. The manager is in charge of taking care of the service, but
-  it does not host Web applications itself. To make use of the Java
-  service you need to start it.
-\item[Start a service.] Click on ``start'', this will create a new
-  virtual machine which can host your Web application.
-\item[Rename the service.] By default all new Java services are named
-  ``New Java service.'' To give it a meaningful name, click on this
-  name in the service-specific page and enter a new name.
-\item[Upload an application to the service.] Applications can be
-  uploaded in the form of a \texttt{war} file. The service does not
-  immediately use new applications when they are uploaded. The
-  frontend shows the list of versions that have been uploaded; choose
-  one version and click ``make active'' to activate it. Note that the
-  frontend only allows uploading archives smaller than a certain size.
-  To upload large archives, you must use the command-line tool (see
-  Advanced usage).
-\item[Access your application.] The frontend gives a link to the
-  running application. This URL will remain valid as long as you do
-  not stop the service.
-\item[Scale the service up and down.] The front-end shows the list of
-  virtual machine instances used to run a service. The minimum
-  configuration to run a Java application requires two instances: one
-  manager instance, and one instance containing a load balancer, a web
-  server and a Java server. To scale the capacity up or down, click the
-  numbers below to request adding or removing servers. The system
-  reconfigures itself without any service interruption.
-\item[Stop the service.] When you do not need to run the application
-  any more, click ``stop'' to stop the service. This stops all
-  instances except the manager which keeps on running. Beware that the
-  manager still uses credit while it is running. To stop using credit
-  you must terminate the service.
-\item[Terminate the service.] Click ``terminate'' to terminate the
-  service. At this point all the state of the service manager will be
-  lost.
-\end{description}
+Applications in the Java Web hosting service can be uploaded in the
+form of a \texttt{war} file. The service does not immediately use new
+applications when they are uploaded. The frontend shows the list of
+versions that have been uploaded; choose one version and click ``make
+active'' to activate it.  
 
-\subsection{Advanced usage with the command-line tool}
-
-The Java service can also be controled using the \texttt{cpsclient.web}
-script. This command-line tool can issue the same operations as the
-front-end, except creating a new service. It also has additional
-functionalities which are useful for advanced usage.
-
-To use the \texttt{cpsclient.web} tool you must first set the
-PYTHONPATH variable to contain the full path name of the ``src''
-subdirectory within the ConPaaS directory:
-\begin{verbatim}
-$ export PYTHONPATH=/path/to/conpaas/src
-\end{verbatim}
-
-The \texttt{cpsclient.web} tool always takes the URL of the service
-manager as its first argument. This URL is provided by the front-end.
-
-\vspace{1em}
-
-\begin{description}
-\item[List all options of the command-line tool.]~
-\begin{verbatim}
-$ ./cpsclient.web help
-\end{verbatim}
-
-\item[Start the service.]~
-\begin{verbatim}
-$ ./cpsclient.web http://x-x-x-x/ startup
-\end{verbatim}
-
-\item[Stop the service.]~
-\begin{verbatim}
-$ ./cpsclient.web http://x-x-x-x/ shutdown
-\end{verbatim}
-
-\item[Upload a new version of the application]~
+Note that the frontend only allows uploading archives smaller than a
+certain size.  To upload large archives, you must use the command-line
+tool.
 \begin{verbatim}
 $ ./cpsclient.web http://x-x-x-x/ upload_code_version path/to/archive.war
 \end{verbatim}
-Note that this operation allows one to upload bigger archive files than the frontend.
+%$
 
-\item[Scale the service up and down.]~
-\begin{verbatim}
-$ ./cpsclient.web http://x-x-x-x/ add_nodes -h
-Usage: add_nodes
+\subsection{Access your application}
 
-Options:
-  -h, --help            show this help message and exit
-  -p PROXY, --proxy=PROXY
-  -w WEB, --web=WEB     
-  -b BACKEND, --backend=BACKEND
-
-$ ./cpsclient.web http://x-x-x-x/ add_nodes -w 1 -b 1
-
-$ ./cpsclient.web http://x-x-x-x/ remove_nodes -h
-Usage: remove_nodes
-
-Options:
-  -h, --help            show this help message and exit
-  -p PROXY, --proxy=PROXY
-  -w WEB, --web=WEB     
-  -b BACKEND, --backend=BACKEND
-
-$ ./cpsclient.web http://x-x-x-x/ remove_nodes -w 1 -b 1
-\end{verbatim}
-\end{description}
+The frontend gives a link to the running application. This URL will
+remain valid as long as you do not stop the service.
 
 
 \section{The MySQL database service}
 
+The MySQL service provides the famous database in the form of a
+ConPaaS service. When scaling the service up and down, it creates (or
+deletes) database replicas using the master-slave mechanism. At the
+moment, the service does not implement load balancing of database
+queries between the master and its slaves. Replication therefore
+provides fault-tolerance properties but no performance improvement.
+
+\subsection{Resetting the user password}
+
+When a MySQL service is started, a new user \texttt{mysqldb} is
+created with a randomly-generated password. To gain access to the
+database you must first reset this password. Click ``Reset password''
+in the front-end, and choose the new password.
+
+Note that the user password is \emph{not} kept by the ConPaaS
+frontend. If you forget the password the only thing you can do is
+reset the password again to a new value.
+
+\subsection{Accessing the database} 
+
+The frontend provides the command-line to access the database.
+Copy-paste this command in a terminal. You will be asked for the user
+password, after which you can use the database as you wish.
+
+Note that the \texttt{mysqldb} user has extended priviledges. It can
+create new databases, new users etc.
+
+\subsection{Uploading a database dump to the MYSQL service}
+
+The ConPaaS frontend allows to easily upload database dumps to a MySQL service. Note that this functionality is restricted to dumps of a relatively small size. To upload larger dumps you can always use the regular mysql command for this:
+\begin{verbatim}
+$ mysql mysql-ip-address -u mysqldb -p < dumpfile.sql
+\end{verbatim}
+% $
+
 \section{The Scalarix key-value store service}
 
+The Scalarix service provices an in-memory key-value store. It is
+highly scalable and fault-tolerant. This service deviates slightly
+from the organization of other services in that it does not have a
+separate manager virtual machine instance. Scalarix is fully symmetric
+so any scalarix node can act as a service manager.
+
+\subsection{Accessing the key-value store}
+
+Clients of the Scalarix service need the IP address of (at least) one
+node to connect to the servicve. Copy-paste the address of any of the
+running instances in the client. A good choice is the first instance
+in the list: when scaling the service up and down, other instances may
+be created or removed. The first instance will however remain across
+these reconfigurations, until the service is terminated.
+
+\textbf{IS THIS TRUE? CHECK WITH THORSTEN.}
+
+
+\subsection{Managine the key-value store}
+
+Scalarix provides its own Web-based interface to monitor the state and
+performance of the key-value store, manually add or query key-value
+pairs, etc. For convenience reasons the ConPaaS front-end provides a
+link to this interface.
+
 \section{The MapReduce service}
+
+
 
 \section{The TaskFarming service}
 
