@@ -23,8 +23,6 @@
 # hosting any of the ConPaaSWeb components such as web servers, proxies and
 # PHP processes.
 # 
-# NOTE: This is an interactive script! The user must accept licenses and attend
-#       to other prompts.
 ##
 
 
@@ -35,6 +33,14 @@ function install_deb() {
   sed --in-place '/non-free/!s/main/main non-free/' /etc/apt/sources.list
   sed --in-place '/contrib/!s/main/main contrib/' /etc/apt/sources.list
   apt-get -f -y update
+ 
+  # install and configure locale 
+  export LC_ALL=C
+  apt-get -f -y install locales
+  sed --in-place 's/^# en_US.UTF-8/en_US.UTF-8/' /etc/locale.gen
+  locale-gen
+  update-locale LANG=en_US.UTF-8
+
   # install packages
   apt-get -f -y install openssh-server \
         python python-pycurl python-cheetah nginx tomcat6-user memcached \
