@@ -70,7 +70,7 @@ $page = new Page();
 			<ul>
 				<li> it can deploy itself on the cloud </li>
 				<li> monitor its own performance
-				<li> increase or decrease its processing capacity by dynamically (de-)provisioning instances of itself in the cloud </li>
+				<li> increase or decrease its processing capacity by dynamically <br />(de-)provisioning instances of itself in the cloud </li>
 			</ul>
 			</p>
 		</td>
@@ -251,6 +251,8 @@ $page = new Page();
 			$('#login').hide();
 			$('#register').show();
 			$('#username').focus();
+			$('.login .form').width(300);
+			console.log($('.form').width());
 		});
 	});
 	</script>

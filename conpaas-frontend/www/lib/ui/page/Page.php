@@ -64,7 +64,8 @@ class Page {
 		}
 		$uinfo = UserData::getUserById($this->uid);
 		if ($uinfo === false) {
-			throw new Exception('User does not exist');
+			unset($_SESSION['uid']);
+			self::redirect('login.php');
 		}
 		$this->username = $uinfo['username'];
 		$this->user_credit = $uinfo['credit'];

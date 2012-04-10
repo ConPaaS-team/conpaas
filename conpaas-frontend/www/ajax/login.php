@@ -90,11 +90,11 @@ function register() {
 	  "From: ".$conf['admin_email']."\r\n".
 	  "Reply-To: ".$conf['admin_email']."\r\n"
       );
-	  if ( $mailr !== TRUE ) {
-	    return array(
-		'register' => 0,
-	    'error' => 'Failed to send email'
-	    );
+	  if ($mailr !== TRUE) {
+	  	// throw an error in the log, but still login the user
+	  	$msg = 'Failed to send registration email to '.$_POST['email'];
+	  	dlog($msg);
+	  	error_log($msg);
 	  }
 	/* already login the user */
 	$_SESSION['uid'] = $uinfo['uid'];
