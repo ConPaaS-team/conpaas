@@ -28,3 +28,8 @@ fi
 /sbin/ifconfig eth0 $IP_PUBLIC
 /sbin/ip route add default via $IP_GATEWAY
 echo "nameserver $NAMESERVER" > /etc/resolv.conf
+
+#fix hostname
+HOSTNAME=`/usr/bin/host $IP_PUBLIC | cut -d' ' -f5 | cut -d'.' -f1`
+/bin/hostname $HOSTNAME
+
