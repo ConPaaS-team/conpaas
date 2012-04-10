@@ -95,20 +95,20 @@ class ScalarisManager(object):
 
     def _do_startup(self):
         ''' Starts up the service. At least one node should be running scalaris
-	    when the service is started.
+            when the service is started.
         '''
         try:
-	    self.controller.update_context(self.context)
-	    instance = self.controller.create_nodes(1, \
-			    client.check_agent_process, 5555)
-	    self.nodes += instance
-	    self.logger.info('Created node: %s', instance[0])
-	    client.startup(instance[0].ip, 5555, instance[0].ip)
-	    self.logger.info('Called startup: %s', instance[0])
-	    self.context['FIRST'] = 'false'
-	    self.context['MGMT_SERVER']=self._render_node(instance[0], 'mgmt_server')
-	    self.logger.info('Finished first node')
-	    self.controller.update_context(self.context)
+          self.controller.update_context(self.context)
+          instance = self.controller.create_nodes(1, \
+            client.check_agent_process, 5555)
+          self.nodes += instance
+          self.logger.info('Created node: %s', instance[0])
+          client.startup(instance[0].ip, 5555, instance[0].ip)
+          self.logger.info('Called startup: %s', instance[0])
+          self.context['FIRST'] = 'false'
+          self.context['MGMT_SERVER']=self._render_node(instance[0], 'mgmt_server')
+          self.logger.info('Finished first node')
+          self.controller.update_context(self.context)
         except:
             self.logger.exception('do_startup: Failed to request a new node')
             self.state = self.S_STOPPED
@@ -122,11 +122,14 @@ class ScalarisManager(object):
         return HttpJsonResponse()
 
     def _do_shutdown(self):
-        self.controller.delete_nodes(self.nodes)
-	#TODO: solve race condition wih get_service_info?
-        self.nodes = []
-        self.state = self.S_STOPPED
-        return HttpJsonResponse()
+      self.controller.delete_nodes(self.nodes)
+      #TODO: solve race condition wih get_service_info?
+      self.nodes = []
+      self.state = self.S_STOPPED
+      self.context['FIRST'] = 'true'
+      self.context['MGMT_SERVER']= ''
+      self.context['KNOWN_HOSTS']= ''
+      return HttpJsonResponse()
 
     @expose('POST')
     def add_nodes(self, kwargs):

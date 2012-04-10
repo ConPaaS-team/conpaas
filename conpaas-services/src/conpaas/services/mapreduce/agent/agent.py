@@ -118,6 +118,10 @@ class MapReduceAgent():
                                               stdout=subprocess.PIPE).communicate()
         self.logger.info('Started jobtracker: %s; %s', stdout, stderr)
 
+        (stdout, stderr) = subprocess.Popen(["/etc/init.d/hue", "start"], \
+                                              stdout=subprocess.PIPE).communicate()
+        self.logger.info('Started hue: %s; %s', stdout, stderr)
+
 
       (stdout, stderr) = subprocess.Popen(["/etc/init.d/hadoop-0.20-datanode", "start"], \
                                             stdout=subprocess.PIPE).communicate()

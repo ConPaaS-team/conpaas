@@ -96,23 +96,23 @@ class MapReduceManager(object):
 
     def _do_startup(self):
         ''' Starts up the service. The first node will be the job 
-	    master as well as an hadoop worker.
+            master as well as an hadoop worker.
         '''
         try:
-	    self.controller.update_context(self.context)
-	    instance = self.controller.create_nodes(1, \
-			    client.check_agent_process, 5555)
-	    self.nodes += instance
-	    self.logger.info('Created node: %s', instance[0])
-	    client.startup(instance[0].ip, 5555, instance[0].ip)
-	    self.logger.info('Called startup: %s', instance[0])
-	    self.context['FIRST'] = 'false'
-	    self.context['MGMT_SERVER'] = instance[0].ip
-	    self.controller.update_context(self.context)
+          self.controller.update_context(self.context)
+          instance = self.controller.create_nodes(1, \
+            client.check_agent_process, 5555)
+          self.nodes += instance
+          self.logger.info('Created node: %s', instance[0])
+          client.startup(instance[0].ip, 5555, instance[0].ip)
+          self.logger.info('Called startup: %s', instance[0])
+          self.context['FIRST'] = 'false'
+          self.context['MGMT_SERVER'] = instance[0].ip
+          self.controller.update_context(self.context)
         except:
-            self.logger.exception('do_startup: Failed to request a new node')
-            self.state = self.S_STOPPED
-            return
+          self.logger.exception('do_startup: Failed to request a new node')
+          self.state = self.S_STOPPED
+          return
         self.state = self.S_RUNNING
 
     @expose('POST')
@@ -122,10 +122,12 @@ class MapReduceManager(object):
         return HttpJsonResponse()
 
     def _do_shutdown(self):
-        self.controller.delete_nodes(self.nodes)
-	self.nodes = []
-        self.state = self.S_STOPPED
-        return HttpJsonResponse()
+      self.controller.delete_nodes(self.nodes)
+      self.nodes = []
+      self.state = self.S_STOPPED
+      self.context['FIRST'] = 'true'
+      self.context['MGMT_SERVER'] = ''
+      return HttpJsonResponse()
 
     @expose('POST')
     def add_nodes(self, kwargs):
@@ -175,8 +177,8 @@ class MapReduceManager(object):
         if self.state != self.S_RUNNING:
             return HttpErrorResponse('ERROR: Wrong state to list_nodes')
         return HttpJsonResponse({
-	      'masters' : [self.nodes[0].vmid],
-	      'workers': [ node.vmid for node in self.nodes[1:] ]
+          'masters' : [self.nodes[0].vmid],
+          'workers': [ node.vmid for node in self.nodes[1:] ]
               })
 
     @expose('GET')
