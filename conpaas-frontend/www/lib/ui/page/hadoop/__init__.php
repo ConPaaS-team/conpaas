@@ -57,6 +57,9 @@ class HadoopPage extends ServicePage {
 					->setExternal(true)
 				.' &middot; '
 				.LinkUI('job tracker', $master_addr.':50030')
+					->setExternal(true)
+				.' &middot; '
+				.LinkUI('HUE', $master_addr.':8088')
 					->setExternal(true);
 		}
 		return '<div class="rightmenu">'.$links.'</div>';
