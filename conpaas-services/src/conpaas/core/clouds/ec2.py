@@ -114,10 +114,15 @@ class EC2Cloud(Cloud):
                 ip = i.public_ips[0]
             else:
                 ip = ''   
+            if i.private_ips:
+                private_ip = i.private_ips[0]
+            else:
+                private_ip = ''   
             vms[i.id] = {'id': i.id, \
                          'state': i.state, \
                          'name': i.name, \
-                         'ip': ip}
+                         'ip': ip,
+                         'private_ip': private_ip}
         return vms
 
     def new_instances(self, count):
@@ -144,10 +149,15 @@ class EC2Cloud(Cloud):
                 ip = node.public_ips[0]
             else:
                 ip = ''   
+            if node.private_ips:
+                private_ip = node.private_ips[0]
+            else:
+                private_ip = ''   
             nodes.append({'id': node.id,
                           'state': node.state,
                           'name': node.name,
-                          'ip': ip})
+                          'ip': ip,
+                          'private_ip': private_ip})
         return nodes
 
     def kill_instance(self, vm_id):

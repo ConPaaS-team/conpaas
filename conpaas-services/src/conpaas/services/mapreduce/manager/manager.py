@@ -71,7 +71,6 @@ class MapReduceManager(object):
         self.logfile = config_parser.get('manager', 'LOG_FILE')
         self.state = self.S_INIT
         self.nodes = []
-        self.context = {'FIRST': 'true', 'MGMT_SERVER': ''}
         # Setup the clouds' controller
         self.controller = Controller(config_parser)
         self.controller.generate_context('mapreduce')
@@ -99,15 +98,20 @@ class MapReduceManager(object):
             master as well as an hadoop worker.
         '''
         try:
+          self.context = {'FIRST': 'true',
+                          'MGMT_SERVER': ''}
           self.controller.update_context(self.context)
           instance = self.controller.create_nodes(1, \
             client.check_agent_process, 5555)
           self.nodes += instance
+
           self.logger.info('Created node: %s', instance[0])
-          client.startup(instance[0].ip, 5555, instance[0].ip)
+          client.startup(instance[0].ip, 5555,
+                         instance[0].ip,
+                         instance[0].private_ip)
           self.logger.info('Called startup: %s', instance[0])
-          self.context['FIRST'] = 'false'
-          self.context['MGMT_SERVER'] = instance[0].ip
+          self.context = {'FIRST': 'false',
+                          'MGMT_SERVER': instance[0].ip}
           self.controller.update_context(self.context)
         except:
           self.logger.exception('do_startup: Failed to request a new node')
@@ -125,8 +129,6 @@ class MapReduceManager(object):
       self.controller.delete_nodes(self.nodes)
       self.nodes = []
       self.state = self.S_STOPPED
-      self.context['FIRST'] = 'true'
-      self.context['MGMT_SERVER'] = ''
       return HttpJsonResponse()
 
     @expose('POST')
@@ -154,7 +156,7 @@ class MapReduceManager(object):
             self.nodes += node_instances
             # Startup agents
             for node in node_instances:
-                client.startup(node.ip, 5555, node.ip)
+                client.startup(node.ip, 5555, node.ip, node.private_ip)
             self.logger.info('Started nodes: %d %s', count, self.state)
             return HttpJsonResponse()
         except HttpError as e:

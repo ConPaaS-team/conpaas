@@ -149,10 +149,11 @@ class OpenNebulaCloud(Cloud):
                 ip = i.public_ips[0].address
             else:
                 ip = ''   
-            vms[i.id] = {'id': i.id, \
-                         'state': i.state, \
-                         'name': i.name, \
-                         'ip': ip}
+            vms[i.id] = {'id': i.id,
+                         'state': i.state,
+                         'name': i.name,
+                         'ip': ip,
+                         'private_ip': ip}
         return vms
 
     def list_instace_types(self):
@@ -210,7 +211,8 @@ class OpenNebulaCloud(Cloud):
             nodes.append({'id': node.id,
                           'state': node.state,
                           'name': node.name,
-                          'ip': ip})
+                          'ip': ip,
+                          'private_ip': ip})
         return nodes
 
     def kill_instance(self, vm_id):

@@ -52,7 +52,9 @@ from conpaas.core.node import ServiceNode
 
 class WebServiceNode(ServiceNode):
   def __init__(self, node, runProxy=False, runWeb=False, runBackend=False):
-    ServiceNode.__init__(self, node.vmid, node.ip, node.cloud_name)
+    ServiceNode.__init__(self, node.vmid,
+                         node.ip, node.private_ip,
+                         node.cloud_name)
     self.isRunningProxy = runProxy
     self.isRunningWeb = runWeb
     self.isRunningBackend = runBackend

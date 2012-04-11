@@ -80,10 +80,11 @@ class MapReduceAgent():
     def startup(self, kwargs):
       self.logger.info('called startup with "%s" %s', self.first_node, kwargs)
       self.ip = kwargs.pop('ip')
+      self.private_ip = kwargs.pop('private_ip')
       mgmt_server = ''
       
       if self.first_node == 'true':
-        mgmt_server = self.ip
+        mgmt_server = self.private_ip
       else:
         mgmt_server = self.mgmt_server
 
@@ -132,7 +133,6 @@ class MapReduceAgent():
       self.logger.info('Started tasktracker: %s; %s', stdout, stderr)
       self.state = 'RUNNING'
       self.logger.info('Agent is running')
-
 
     def _write_config(self, mgmt_server):
       self.logger.debug('called _write_config')

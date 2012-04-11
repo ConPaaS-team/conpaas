@@ -54,6 +54,8 @@ def check_agent_process(host, port):
   method = 'check_agent_process'
   return _check(_jsonrpc_get(host, port, '/', method))
 
-def startup(host, port, ip):
+def startup(host, port, ip, private_ip):
   method = 'startup'
-  return _check(_jsonrpc_post(host, port, '/', method, {'ip': ip}))
+  params = {'ip': ip,
+            'private_ip': private_ip}
+  return _check(_jsonrpc_post(host, port, '/', method, params))

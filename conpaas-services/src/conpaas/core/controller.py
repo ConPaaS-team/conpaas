@@ -152,7 +152,7 @@ class Controller(object):
                                     % (len(failed), str(failed)))
                 self.__kill_nodesById([i['id'] for i in failed])   
 
-        additional_nodes = [ ServiceNode(i['id'], i['ip'], \
+        additional_nodes = [ ServiceNode(i['id'], i['ip'], i['private_ip'], \
                                          self.__default_cloud.get_cloud_name()) \
                                          for i in ready ]
         self.__force_terminate_lock.acquire()
@@ -303,7 +303,7 @@ class Controller(object):
         for i in nodes:
           up = True
           try:
-            if i['ip'] != '':
+            if i['ip'] != '' and i['private_ip'] != '':
               test_agent(i['ip'], port)
             else:
               up = False
@@ -319,13 +319,14 @@ class Controller(object):
           self.__logger.debug('[_wait_for_nodes]: waiting for %d nodes' \
                             % len(nodes))
           time.sleep(poll_interval)
-          no_ip_nodes = [ i for i in nodes if i['ip'] == '' ]
+          no_ip_nodes = [ i for i in nodes if i['ip'] == '' or i['private_ip'] == '']
           if no_ip_nodes:
             self.__logger.debug('[_wait_for_nodes]: refreshing %d nodes' \
                               % len(no_ip_nodes))
             refreshed_list = self.__default_cloud.list_vms()
             for i in no_ip_nodes:
               i['ip'] = refreshed_list[i['id']]['ip']
+              i['private_ip'] = refreshed_list[i['id']]['private_ip']
       self.__logger.debug('[_wait_for_nodes]: All nodes are ready %s' \
                         % str(done))
       return (done, [])
