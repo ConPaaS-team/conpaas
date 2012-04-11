@@ -83,9 +83,7 @@ services, and configure each service.
 
 \begin{itemize}
 \item The Dashboard page displays the list of services currently
-  active in the system. Beware: each active service uses credits, even
-  if it is in ``stopped'' state. To stop using credits you must
-  terminate the services completely.
+  active in the system. 
 \item Each service comes with a separate page which allows one to
   configure it, upload code and data, and scale it up and down.
 \end{itemize}
@@ -105,10 +103,10 @@ functionality.
 \begin{description}
 \item[Create a service.] Click on ``create new service'', then select
   the service you want to create. This operation starts a new
-  ``Manager'' virtual machine. The manager is in charge of taking care
-  of the service, but it does not host applications itself. Note
-  however that a manager VM uses credits. To stop using credits you
-  need to terminate the service.
+  ``Manager'' virtual machine instance. The manager is in charge of
+  taking care of the service, but it does not host applications
+  itself. Other instances in charge of running the actual application
+  are called ``agent'' instances.
 \item[Start a service.] Click on ``start'', this will create a new
   virtual machine which can host applications, depending on the type
   of service.
@@ -120,7 +118,9 @@ functionality.
   shows the list of instances, their respective IP addresses, and the
   role each instance is currently having in the service. Certain
   services use a single role for all instances, while other services
-  specialize different instances to take different roles.
+  specialize different instances to take different roles. For example,
+  the PHP Web hosting service distinguishes three roles: load
+  balancers, web servers, and PHP servers.
 \item[Scale the service up and down.] When a service is started it
   uses a single ``agent'' instance. To add more capacity, or to later
   reduce capacity you can vary the number of instances used by the
@@ -129,9 +129,7 @@ functionality.
   any service interruption.
 \item[Stop the service.] When you do not need to run the application
   any more, click ``stop'' to stop the service. This stops all
-  instances except the manager which keeps on running. Beware that the
-  manager still uses credit while it is running. To stop using credit
-  you must terminate the service.
+  instances except the manager which keeps on running. 
 \item[Terminate the service.] Click ``terminate'' to terminate the
   service. At this point all the state of the service manager will be
   lost.
@@ -194,9 +192,28 @@ $ ./cpsclient.web http://x-x-x-x/ remove_nodes -w 1 -b 1
 
 \end{description}
 
+\subsection{The credit system}
+
+In Cloud computing, resources come at a cost. ConPaaS reflects this
+reality in the form of a credit system. Each user is given a number of
+credits that she can use as she wishes. One credit corresponds to one
+hour of execution of one virtual machine. The number of available
+credits is always mentioned in the top-right corner of the front-end.
+Once credits are exhausted, your running instances will be stopped and
+you will not be able to use the system until the administrator decides
+to give additional credit.
+
+Note that every service consumes credit, even if it is in ``stopped''
+state. The reason is that stopped services still have one ``manager''
+instance running. To stop using credits you must completely terminate
+your services.
+
 \section{Tutorial: hosting WordPress in ConPaaS}
 
-This short tutorial illustrates the way to use ConPaaS to install and host WordPress (\url{www.wordpress.org}), a well-known third-party Web application. WordPress is implemented in PHP using a MySQL database so we will need a PHP and a MySQL service in ConPaaS.
+This short tutorial illustrates the way to use ConPaaS to install and
+host WordPress (\url{www.wordpress.org}), a well-known third-party Web
+application. WordPress is implemented in PHP using a MySQL database so
+we will need a PHP and a MySQL service in ConPaaS.
 
 \begin{enumerate}
 \item Open the ConPaaS front-end in your Web browser and log in. If
