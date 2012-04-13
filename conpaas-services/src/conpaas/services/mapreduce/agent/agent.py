@@ -92,9 +92,10 @@ class MapReduceAgent():
 
       try:
         Thread(target=self._do_startup, args=[]).start()
+	#TODO: return only after everithing started
+        #self._do_startup()
       except Exception as e:
         self.logger.debug('Exception in startup: %s', e)
-      
       return HttpJsonResponse()
 
     def _do_startup(self):
