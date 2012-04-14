@@ -79,23 +79,29 @@ function register() {
 			'error' => 'user could not be added into the database',
 		);
 	}
-	$mailr = mail($conf['admin_email'], 'New user at ZIB - ' . $username,
-	  'New user:'
-	  .'Username: ' . $_POST['username'] . "\r\n"
-	  .'First name: ' . $_POST['fname'] . "\r\n"
-	  .'Last name: ' . $_POST['lname'] . "\r\n"
-	  .'email: ' . $_POST['email'] . "\r\n"
-	  .'Affiliation: ' . $_POST['affiliation'] . "\r\n"
-	  ."\r\n",
-	  "From: ".$conf['admin_email']."\r\n".
-	  "Reply-To: ".$conf['admin_email']."\r\n"
-      );
-	  if ($mailr !== TRUE) {
+	// prepare the email paramaters
+	$to = $_POST['email'];
+	$from = $conf['admin_email'];
+	$subject = $conf['welcome_email_subject'];
+	$message = 'Dear '.$_POST['fname'].",\n\n"
+		.file_get_contents(Conf::CONF_DIR.'/'.$conf['welcome_email_message'])
+		."\n\n\n"
+		.'Username: '.$_POST['username']."\n"
+		.'First name: '.$_POST['fname']."\n"
+		.'Last name: '.$_POST['lname']."\n"
+		.'Email: '.$_POST['email']."\n"
+		.'Affiliation: '.$_POST['affiliation']."\n"
+		.'IP address: '.$_SERVER['REMOTE_ADDR'];
+	$headers = 'From: '.$from."\r\n"
+	  .'Reply-To: '.$from."\r\n"
+	  .'CC: '.$from."\r\n";
+	$mailr = mail($to, $subject, $message, $headers);
+	if ($mailr !== true) {
 	  	// throw an error in the log, but still login the user
 	  	$msg = 'Failed to send registration email to '.$_POST['email'];
 	  	dlog($msg);
 	  	error_log($msg);
-	  }
+	}
 	/* already login the user */
 	$_SESSION['uid'] = $uinfo['uid'];
 	return array(

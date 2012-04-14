@@ -252,7 +252,6 @@ $page = new Page();
 			$('#register').show();
 			$('#username').focus();
 			$('.login .form').width(300);
-			console.log($('.form').width());
 		});
 	});
 	</script>
