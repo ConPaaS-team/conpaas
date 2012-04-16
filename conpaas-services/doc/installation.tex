@@ -125,7 +125,7 @@ explains how to setup an AMI using this methodology.
 An AWS security group is an abstraction of a set of firewall rules to
 limit inbound traffic. The default policy of a new group is to deny
 all inbound traffic. Therefore, one needs to specify a whitelist of
-protocols and destination ports that are accesible from the outside.
+protocols and destination ports that are accessible from the outside.
 The Web Hosting Service uses TCP ports 80, 3306, 5555, 8080 and 9000. All
 these ports should be open for all running instances.  AWS
 documentation is available at
@@ -240,7 +240,7 @@ There are two main topics that you should pay attention to:
 \section{Setup ConPaaS's Frontend}
 \label{sec:frontend}
 
-The ConPaaS frontend is a web application that allows users to manager
+The ConPaaS frontend is a web application that allows users to manage
 their ConPaaS services. Users can create, configure and terminate
 services through it. This section describes the process of setting up
 a ConPaaS frontend.
@@ -272,7 +272,7 @@ and their services. The script located in
 schema. You must update the first four lines to change \verb+DB_USER+,
 \verb+DB_PASSWD+ and \verb+DB_NAME+ to reasonable values.
 
-Install a MysQL database if you don't have one already. You can now
+Install a MySQL database if you don't have one already. You can now
 create the database schema using this command, replacing \verb+ADMIN+
 and \verb+ADMINPASSWORD+ with the MySQL administrator's name and
 password:
@@ -297,7 +297,7 @@ server.
 \item Copy all files from the \verb+frontend/conf+ directory to a
   location \uline{\emph{outside}} of the Web server's document root.
   This directory contains sensitive configuration parameters which
-  must not be accesible by external users. A good location could be
+  must not be accessible by external users. A good location could be
   for example \verb+/etc/conpaas+. Note that files in this
   directory must be readable by the Web server (in Debian and Ubuntu
   distributions the Web server runs under username \verb+www-data+).
@@ -347,7 +347,7 @@ server.
   subdirectory named \verb+download+, containing the archive
   \verb+ConPaaS.tar.gz+, which contains the entire implementation
   of the conpaas framework and services. This archive is downloaded by newly
-  created VM instances upon startup. This archive can be obtaied
+  created VM instances upon startup. This archive can be obtained
   by running the mkpackage.sh, inside the \verb+conpaas-services+ folder.
 
 \end{enumerate}
@@ -360,7 +360,7 @@ At this point, your front-end should be working!
 The frontend is designed to maintain accounting of resources used by
 each user. When a new user is created, (s)he receives a number of
 credits as specified in the ``main.ini'' configuration file. Later on,
-one credit is substracted each time a VM is executed for (a fraction
+one credit is subtracted each time a VM is executed for (a fraction
 of) one hour. The administrator can change the number of credits by
 directly editing the frontend's database. 
 
