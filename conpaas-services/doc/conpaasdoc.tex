@@ -1,7 +1,11 @@
 \usepackage{hyperlatex} % for HTML generation
 
 \begin{ifhtml}
-  \usepackage[simple]{frames}     % for building HTML frames
+  
+  \begin{ifclear}{noframe}
+    \usepackage[simple]{frames}     % for building HTML frames
+  \end{ifclear}
+
   \htmlcss{conpaas.css}
   \providecommand{\url}[1]{\xlink{#1}{#1}}
   \setcounter{htmlautomenu}{4}

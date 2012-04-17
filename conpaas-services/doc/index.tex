@@ -1,0 +1,36 @@
+\documentclass[10pt]{article}
+
+\usepackage{hyperlatex} % for HTML generation
+\htmlcss{conpaas.css}
+\providecommand{\url}[1]{\xlink{#1}{#1}}
+
+\title{ConPaaS -- Documentation}
+\htmltitle{ConPaaS -- Documentation}
+  \htmladdress{Copyright \copyright 2011-2012 \xlink{Contrail}{http://www.contrail-project.eu} consortium.\\
+    All rights reserved.}
+\date{Version 1.0.0}
+
+\renewcommand{\maketitle}{\EmptyP{\HlxTitleP}{
+    \HlxBlk\xml{frontmatter}
+    \xml{h1 align=center}\HlxTitle\xml{/h2}
+    \EmptyP{\HlxAuthorP}{\xml{h2 align=center}\HlxAuthor\xml{/h2}}{}
+    \EmptyP{\HlxDate}{\xml{h2 align=center}\HlxDate\xml{/h2}}{}
+    \xml{/frontmatter}
+  }{}}
+
+\begin{document}
+
+\maketitle
+
+The ConPaaS documentation is organized in three parts:
+
+\begin{itemize}
+\item \textbf{ConPaaS installation guide}:
+  [ \xlink{html}{installation.html} | \xlink{pdf}{installation.pdf} ]
+\item \textbf{ConPaaS user guide}:
+  [ \xlink{html}{userguide.html} | \xlink{pdf}{userguide.pdf} ]
+\item \textbf{ConPaaS internals guide}: [ \xlink{pdf}{internals.pdf} ]
+\end{itemize}
+
+\end{document}
+
