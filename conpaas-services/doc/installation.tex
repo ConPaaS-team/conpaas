@@ -1,51 +1,31 @@
 \documentclass[10pt]{article}
 
-%\usepackage{listings}
-%\usepackage{framed}
-\usepackage{hyperref}
-\usepackage{url}
-\usepackage{ulem} \normalem
+\input{conpaasdoc}
 
-\usepackage{fancyvrb}
-\DefineVerbatimEnvironment%
-  {code}%
-  {Verbatim}%
-  {frame=single,framesep=1mm,fontsize=\rm,resetmargins=true}
-
-% \newenvironment{what}
-% {\begin{description} \item [What is happening now?] \hfill \\}
-% {\end{description}}
-
-% \newenvironment{framedbox}[1]%
-% {\begin{framed}
-%  \begingroup
-%  \fontsize{#1}{#1}\selectfont
-% }
-% {
-%  \endgroup
-%  \end{framed}
-% }
-
-
-\begin{document}
 \title{ConPaaS -- Installation guide}
+\htmltitle{ConPaaS -- Installation guide}
 \author{Ismail El Helw \and Adriana Szekeres \and Guillaume Pierre}
 \date{Version 1.0.0}
+
+\begin{document}
+
 \maketitle
 
-\vfil
-\tableofcontents
-\vfil
-\newpage
+\T\vfil
+\T\tableofcontents
+\T\vfil
+\T\newpage
 
 \section{Installation Overview}
+\label{sec:overview}
 
-ConPaaS is composed of two parts: a front end, and a collection of
-services. The front-end is a regular Web site which allows ConPaaS
-users to access the system. It is implemented in PHP with MySQL, and
-can run on any PHP-enabled Web server (inside or outside the cloud).
-Services are designed to run either in an OpenNebula cloud
-installation, or in the Amazon Web Services cloud.
+\xlink{ConPaaS}{http://www.conpaas.eu} is composed of two parts: a
+front end, and a collection of services. The front-end is a regular
+Web site which allows ConPaaS users to access the system. It is
+implemented in PHP with MySQL, and can run on any PHP-enabled Web
+server (inside or outside the cloud).  Services are designed to run
+either in an OpenNebula cloud installation, or in the Amazon Web
+Services cloud.
 
 Installing ConPaaS requires to take the following steps:
 
@@ -91,17 +71,17 @@ explains how to setup an AMI using this methodology.
   good choice.
 
 \item Upload the \textit{conpaas-services/scripts/create\_vm/ec2-setup-new-vm-image.sh} script to the instance:
-  \begin{code}
+  \begin{verbatim}
     chmod 0400 yourpublickey.pem
     scp -i yourpublickey.pem \
       conpaas-services/scripts/create_vm/ec2-setup-new-vm-image.sh \
       root@instancename.com:
-  \end{code}
+  \end{verbatim}
 
 \item Now, ssh to your instance:
-  \begin{code}
+  \begin{verbatim}
     ssh -i yourpublickey.pem root@your.instancename.com
-  \end{code}
+  \end{verbatim}
   Run the \verb+ec2-setup-new-vm-image.sh+ script inside the instance.
   This script will install all of the dependencies of the manager and
   agent processes as well as create the necessary directory structure.
@@ -151,9 +131,9 @@ To create an image for OpenNebula you can execute the script\\
     chroot umount grub-install}
 \item It is particularly important that you use Grub version 2. To
   install it:
-  \begin{code}
+  \begin{verbatim}
   sudo apt-get install grub2
-  \end{code}
+  \end{verbatim}
 \item Edit the
   \textit{conpaas-services/scripts/create\_vm/opennebula-create-new-vm-image.sh} script
   if necessary: there are two sections in the script that you might need
@@ -166,7 +146,7 @@ To create an image for OpenNebula you can execute the script\\
 
 \vspace{10 mm}
 
-\begin{code}
+\begin{verbatim}
   cat <<EOF > /tmp/conpaas-one.image
   NAME          = "Conpaas"
   PATH          = ${PWD}/conpaas.img
@@ -174,7 +154,7 @@ To create an image for OpenNebula you can execute the script\\
   DESCRIPTION   = "Conpaas vm image"
   EOF
   oneimage register /tmp/conpaas-one.image
-\end{code}
+\end{verbatim}
 \end{enumerate}
 % $>
 
@@ -192,24 +172,24 @@ instructions:
   
 \item There may be a \verb+dev+ and a \verb+proc+ directories mounted
   inside it. Unmount everything using:
-  \begin{code}
+  \begin{verbatim}
     sudo umount /tmp/tmp.X/dev /tmp/tmp.X/proc /tmp/tmp.X
-  \end{code}
+  \end{verbatim}
   
 \item Find which loop device your using:
-  \begin{code}
+  \begin{verbatim}
     sudo losetup -a
-  \end{code}
+  \end{verbatim}
   
 \item Remove the device mapping:
-  \begin{code}
+  \begin{verbatim}
     sudo kpartx -d /dev/loopX
-  \end{code}
+  \end{verbatim}
   
 \item Remove the binding of the loop device:
-  \begin{code}
+  \begin{verbatim}
     sudo losetup -d /dev/loopX
-  \end{code}
+  \end{verbatim}
 
 \item Delete the image file 
 
@@ -256,10 +236,10 @@ To setup your frontend, you will need a PHP-enabled web server and a
 MySQL database. The easiest way to install them on a Debian or Ubuntu
 machine is:
 
-\begin{code}
+\begin{verbatim}
   sudo apt-get install libapache2-mod-php5 php5-curl \
      php5-mysql mysql-server mysql-client
-\end{code}
+\end{verbatim}
 
 \subsection{Create a MySQL Database}
 
@@ -277,9 +257,9 @@ create the database schema using this command, replacing \verb+ADMIN+
 and \verb+ADMINPASSWORD+ with the MySQL administrator's name and
 password:
 
-\begin{code}
+\begin{verbatim}
   mysql -u ADMIN -p < frontend-db.sql
-\end{code}
+\end{verbatim}
 
 
 You will be prompted for the administrator's password, then the
@@ -295,7 +275,7 @@ server.
 
 \begin{enumerate}
 \item Copy all files from the \verb+frontend/conf+ directory to a
-  location \uline{\emph{outside}} of the Web server's document root.
+  location \emph{outside} of the Web server's document root.
   This directory contains sensitive configuration parameters which
   must not be accessible by external users. A good location could be
   for example \verb+/etc/conpaas+. Note that files in this
@@ -355,6 +335,8 @@ server.
 At this point, your front-end should be working!
 
 \section{Miscellaneous}
+\label{sec:misc}
+
 \subsection{The credit system}
 
 The frontend is designed to maintain accounting of resources used by
@@ -387,5 +369,48 @@ measures to a more usable level, you need to edit two files:
   ``frontend/conf/manager-user-data''.
 \end{itemize}
 
+\section{About this document}
+\label{sec:about}
+
+
+\begin{verbatim}
+Copyright (c) 2010-2012, Contrail consortium.
+All rights reserved.
+
+Redistribution and use in source and binary forms, 
+with or without modification, are permitted provided
+that the following conditions are met:
+
+ 1. Redistributions of source code must retain the
+    above copyright notice, this list of conditions
+    and the following disclaimer.
+ 2. Redistributions in binary form must reproduce
+    the above copyright notice, this list of 
+    conditions and the following disclaimer in the
+    documentation and/or other materials provided
+    with the distribution.
+ 3. Neither the name of the Contrail consortium nor the
+    names of its contributors may be used to endorse
+    or promote products derived from this software 
+    without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
+BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
+\end{verbatim}
+
 
 \end{document}
+
+

@@ -1,0 +1,48 @@
+\usepackage{hyperlatex} % for HTML generation
+
+\begin{ifhtml}
+  \usepackage[simple]{frames}     % for building HTML frames
+  \htmlcss{conpaas.css}
+  \providecommand{\url}[1]{\xlink{#1}{#1}}
+  \setcounter{htmlautomenu}{4}
+  \setcounter{secnumdepth}{2} 
+  \setcounter{htmldepth}{1}
+  
+  \htmladdress{Copyright \copyright 2011-2012 \xlink{Contrail}{http://www.contrail-project.eu} consortium.\\
+    All rights reserved.}
+
+  \renewcommand{\maketitle}{\EmptyP{\HlxTitleP}{
+      \HlxBlk\xml{frontmatter}
+      \xml{h1 align=center}\HlxTitle\xml{/h2}
+      \EmptyP{\HlxAuthorP}{\xml{h2 align=center}\HlxAuthor\xml{/h2}}{}
+      \EmptyP{\HlxDate}{\xml{h2 align=center}\HlxDate\xml{/h2}}{}
+      \xml{/frontmatter}
+    }{}}
+
+  \renewcommand{\HlxFramesDescription}[2]{
+    \xml{frameset rows="100%" cols="25%,75%"}
+      \xml{frame src="#1_toc#2" name="contents" marginwidth="5"
+        marginheight="5" border="0"}
+      \xml{frame src="#1_0#2" name="main" marginwidth="20" 
+        marginheight="20"}
+      \xml{noframes}
+      This document uses frames to assist navigation.
+      Your browser is currently not supporting the use of frames, but you 
+      may still access the 
+      \xml{a target="_top" href="#1_0#2"}non-framed version\xml{/a}.
+      \xml{/noframes}
+      \xml{/frameset}}
+    
+    \renewcommand{\HlxFramesNavigation}{%
+      \HlxTocName
+      \htmlpanel{0}
+      \HlxSection{-5}{}*{\navigationname}
+      \xml{base target="main"}
+      \htmlmenu[0]{2}
+      \renewcommand{\bottommatter}{}}
+
+\end{ifhtml}
+
+
+\T\usepackage{hyperref}
+\T\usepackage{url}

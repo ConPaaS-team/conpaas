@@ -1,40 +1,46 @@
 \documentclass[10pt]{article}
-\usepackage{listings}
-\usepackage{framed}
-\usepackage{hyperref}
 
-\newenvironment{what}
-{\begin{description} \item [What is happening now?] \hfill \\}
-{\end{description}}
+\input{conpaasdoc}
 
-\newenvironment{framedbox}[1]%
-{\begin{framed}
- \begingroup
- \fontsize{#1}{#1}\selectfont
-}
-{
- \endgroup
- \end{framed}
-}
+\title{ConPaaS -- User Manual}
+\htmltitle{ConPaaS -- User Manual}
+\author{Ismail El Helw \and Guillaume Pierre}
+\date{Version 1.0.0}
+
+% \usepackage{listings}
+% \usepackage{framed}
+% \usepackage{hyperref}
+
+% \newenvironment{what}
+% {\begin{description} \item [What is happening now?] \hfill \\}
+% {\end{description}}
+
+% \newenvironment{framedbox}[1]%
+% {\begin{framed}
+%  \begingroup
+%  \fontsize{#1}{#1}\selectfont
+% }
+% {
+%  \endgroup
+%  \end{framed}
+% }
 
 
 \begin{document}
 
-\title{ConPaaS User Manual}
-\author{Ismail El Helw \and Guillaume Pierre}
-\date{Version 1.0.0}
 \maketitle
 
-\newpage
-\tableofcontents
-\newpage
+\T\vfil
+\T\tableofcontents
+\T\vfil
+\T\newpage
 
 \section{Introduction}
 
-ConPaaS is an open-source runtime environment for hosting applications
-in the cloud which aims at offering the full power of the cloud to
-application developers while shielding them from the associated
-complexity of the cloud.
+\xlink{ConPaaS}{http://www.conpaas.eu} is an open-source runtime
+environment for hosting applications in the cloud which aims at
+offering the full power of the cloud to application developers while
+shielding them from the associated complexity of the cloud.
 
 ConPaaS is designed to host both high-performance scientific
 applications and online Web applications. It runs on a variety of
@@ -410,9 +416,13 @@ link to this interface.
 
 \section{The MapReduce service}
 
+The MapReduce service provides the well-known Apache Hadoop framework
+in ConPaaS. Once the MapReduce service is created and started, the
+front-end provides useful links to the Hadoop namenode, the job
+tracker, and to a graphical interface which allows to upload/download
+data to/from the service and issue MapReduce jobs.
 
-
-\section{The TaskFarming service}
+%\section{The TaskFarming service}
 
 \section{Building new types of services}
 

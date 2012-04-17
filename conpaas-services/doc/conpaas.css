@@ -1,0 +1,1319 @@
+/*
+ * Copyright (c) 2010-2012, Contrail consortium.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms,
+ * with or without modification, are permitted provided
+ * that the following conditions are met:
+ *
+ *  1. Redistributions of source code must retain the
+ *     above copyright notice, this list of conditions
+ *     and the following disclaimer.
+ *  2. Redistributions in binary form must reproduce
+ *     the above copyright notice, this list of
+ *     conditions and the following disclaimer in the
+ *     documentation and/or other materials provided
+ *     with the distribution.
+ *  3. Neither the name of the Contrail consortium nor the
+ *     names of its contributors may be used to endorse
+ *     or promote products derived from this software
+ *     without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+ * CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+ * INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+ * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+@CHARSET "UTF-8";
+
+body {
+	margin: 0;
+	font-size: 12px;
+	color: #0055A5;
+	font-family: Verdana, Tahoma, sans serif;
+	width: 800px;
+}
+
+h1 {
+	font-size: 18px;
+	padding: 3px 3px 3px 3px;
+	margin: 3px;
+	color: #666;
+	font-family: Tahoma;
+}
+
+.pagecontent {
+	padding: 3px 10px 10px 3px;
+	border: 1px solid #eee;
+	border-top: none;
+}
+
+a,a:visited {
+	color: #008cf7;
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+.clear {
+	clear: both;
+}
+
+.blue {
+	color: #0055A5;
+}
+
+.footer {
+	color: #999;
+	padding: 10px;
+	background-color: #eee;
+	text-align: right;
+}
+
+#logo {
+	width: 100px;
+	height: 32px;
+	margin-left: 5px;
+	background: url('images/conpaas.png') top left no-repeat;
+	display: block;
+	float: left;
+}
+
+#pgstat {
+	color: #666;
+	padding: 0px 3px 3px 3px;
+	font-size: 13px;
+	font-weight: normal;
+	margin: 0;
+	border-top: 1px solid #ccc;
+	border-right: 1px solid #eee;
+	border-left: 1px solid #eee;
+	height: 22px;
+}
+
+#pgstatTimer {
+	color: #999;
+}
+
+#pgstatTimerSeconds {
+	font-weight: bold;
+	color: #333;
+	font-style: normal;
+}
+
+#pgstatError {
+    color: #B50E51;
+	background-color: #FFE3EE;
+	padding: 5px 10px 3px 10px;
+	font-weight: bold;
+}
+
+#pgstatError a {
+    color: #6A5D7A;
+	margin-left: 10px;
+	font-size: 12px;
+	font-weight: normal;
+}
+
+#pgstatInfo {
+	padding: 5px 10px 3px 10px;
+	background-color: #dedede;
+}
+
+#pgstatRightWrap {
+	float: right;
+	width: 500px;
+}
+
+#pgstatInfo, #pgstatError {
+	float: left;
+	margin-left: 10px;
+}
+
+#backLinks {
+	float: left;
+}
+
+#pgstatLoading, #pgstatTimer {
+    float: right;
+    margin-right: 10px;
+	text-align: right;
+	margin-top: 5px;
+}
+
+#pgstatLoadingText {
+	margin-right: 3px;
+}
+
+.user {
+	float: right;
+	padding: 3px 3px 3px 0;
+	font-weight: bold;
+	color: #666;
+	font-size: 12px;
+}
+
+.user .usercredit,.user .username,.user .logout {
+	padding: 1px 3px 3px 18px;
+	margin: 3px;
+	float: right;
+}
+
+.user .usercredit {
+	background: url('images/credits.png') top left no-repeat;
+	margin-left: 5px;
+	padding-left: 20px;
+}
+
+.user .logout {
+	background: url('images/logout.png') top left no-repeat;
+}
+
+.user .username {
+	background: url('images/user.png') top left no-repeat;
+}
+
+.header {
+	padding: 3px;
+	border-right: 1px solid #eee;
+	border-bottom: 5px solid #eee;
+}
+
+.pageheader .info {
+	float: left;
+	margin: 5px;
+	line-height: 20px;
+}
+
+.pageheader .info .actions {
+	margin: 3px 5px 5px 0px;
+	color: #999;
+    font-size: 12px;
+    font-weight: normal;
+    padding-left: 3px;
+}
+
+.pageheader h1 {
+	float: left;
+}
+
+.pageheader .info .nameWrapper,.pageheader .info img.stype {
+	float: left;
+}
+
+.info .nameWrapper {
+	margin: 5px;
+}
+
+.pageheader .info .name {
+	padding: 0 3px 0 3px;
+	margin: 3px 5px 1px 0;
+	font-size: 16px;
+	color: #333;
+	border: 1px solid white;
+	font-style: normal;
+	font-weight: bold;
+}
+
+.rightmenu .link {
+	display: inline;
+}
+
+.editable {
+	border: 1px solid white;
+}
+
+.actionsbar .editable {
+	border: 1px solid #ccc;
+	padding: 1px;
+}
+
+.editable:hover {
+	background-color: #fff6d5;
+	border: 1px solid #ffdd55;
+}
+
+.pageheader .menu {
+	margin-top: 5px;
+	padding: 5px;
+}
+
+.pageheader .rightmenu {
+    margin-top: 5px;
+    padding: 5px;
+	float: right;
+}
+
+.menu img.loading {
+	float: right;
+}
+
+.menu .led {
+	padding: 3px;
+}
+
+.loadingWrapper {
+	height: 30px;
+	position: fixed;
+	top: 0;
+	left: 320px;
+	border-left: 2px solid #003380;
+	border-right: 2px solid #003380;
+	border-bottom: 2px solid #003380;
+	background-color: white;
+	padding: 3px 10px 3px 10px;
+}
+
+.loadingWrapper b {
+	vertical-align: top;
+	line-height: 30px;
+}
+
+.status {
+	display: inline;
+	padding: 3px;
+}
+
+a.button, a.button-disabled {
+	padding: 6px;
+	margin: 1px;
+	color: white;
+	font-size: 12px;
+	text-shadow: #333 1px 1px 0px;
+	border: 1px solid #003380;
+}
+
+a.button-disabled {
+	color: #ccc;
+	text-shadow: none;
+	border-color: black;
+	cursor: none;
+}
+
+a.button img, a.button-disabled img {
+	margin-left: 3px;
+	margin-right: 3px;
+}
+
+body.webkit a.button, body.webkit a.button-disabled {
+	background: -webkit-gradient(linear, 0% 0, 0% 100%, from(#008cf7),
+		to(#003380) );
+	border-radius: 5px;
+}
+
+body.firefox a.button, body.firefox a.button-disabled {
+	background: -moz-linear-gradient(270deg, #008cf7, #003380) repeat scroll
+		0 0 transparent;
+	-moz-border-radius: 5px;
+}
+
+a.button:hover, a.button-disabled:hover {
+	text-decoration: none;
+}
+
+.services {
+	margin-top: 20px;
+}
+
+.brief {
+	padding: 3px;
+	font-weight: normal;
+	color: #666;
+	font-size: 12px;
+}
+
+.services ul.slist {
+	list-style: none;
+	padding-left: 0;
+	margin-top: 0;
+	border: 1px solid #eee;
+}
+
+.services ul.slist li.service {
+	padding: 0;
+}
+
+.services ul.slist li.service:hover {
+	background-color: #eee;
+	border-top: 1px solid #999;
+	border-right: 1px solid #ccc;
+	border-left: 1px solid #ccc;
+}
+
+.services table.slist {
+	width: 100%;
+}
+
+tr.service {
+	
+}
+
+.service .instances {
+	padding: 5px 0 0px 24px;
+	margin-top: 7px;
+	margin-left: 5px;
+	color: #666;
+	font-family: Helvetica, Verdana;
+	font-size: 16px;
+	line-height: 20px;
+	background: url('images/server.png') top left no-repeat;
+	cursor: pointer;
+}
+
+.service:hover .instances {
+	visibility: visible;
+}
+
+.service .content,.service .icon {
+	float: left;
+}
+
+.service .statistic {
+	float: right;
+}
+
+.service .statistic img {
+	vertical-align: top;
+}
+
+.service .content {
+	margin-left: 15px;
+}
+
+.service .last {
+	border-bottom: 1px solid #ccc;
+}
+
+.service .statistic {
+	margin-left: 15px;
+	margin-right: 5px;
+}
+
+.service .statistic .statcontent {
+	text-align: center;
+	padding: 6px 3px 0 3px;
+}
+
+.service .statistic .statcontent .text {
+	color: #000;
+	font-size: 24px;
+	text-shadow: white 1px 1px 0px;
+	font-family: Helvetica, Tahoma, sans-serif;
+	font-style: normal;
+	font-weight: bold;
+	margin: 5px;
+}
+
+.service .statistic .note {
+	color: #999;
+	font-size: 12px;
+	font-weight: normal;
+	padding: 3px;
+}
+
+.service .wrapper {
+	padding: 10px;
+	border-right: 1px solid #ccc;
+	border-top: 1px solid #ddd;
+}
+
+.service:hover .wrapper {
+	background-color: #eee;
+}
+
+.service .content .title {
+	font-size: 14px;
+	padding: 5px 3px 2px 3px;
+	text-shadow: white 1px 1px 0px;
+	font-weight: bold;
+	color: #666;
+}
+
+.service .title a {
+	font-size: 16px;
+	font-weight: bold;
+}
+
+.service .colortag {
+	width: 20px;
+	margin-right: 10px;
+	border-right: 1px solid white;
+}
+
+.service:hover .colortag-active {
+	background-color: #008300;
+}
+
+.service .colortag-active {
+	background-color: #00b100;
+}
+
+.service:hover .colortag-stopped {
+	background-color: #999;
+}
+
+.service .colortag-stopped {
+	background-color: #ccc;
+}
+
+.service .icon {
+	width: 70px;
+	height: 50px;
+}
+
+.service .led {
+	padding: 0px 0px 0px 10px;
+	vertical-align: bottom;
+}
+
+.info .led {
+	margin: 1px 3px 3px 5px;
+}
+
+.service .content .link {
+	margin: 10px 0 0 30px;
+}
+
+.service .content .actions {
+	font-size: 12px;
+	color: #999;
+	font-weight: normal;
+	padding: 3px;
+}
+
+.services .slist .service .info {
+	float: right;
+	text-align: right;
+}
+
+.status {
+	font-size: 11px;
+}
+
+.created {
+	color: #999;
+	font-size: 10px;
+	font-weight: normal;
+}
+
+.active {
+	color: #008000;
+}
+
+.stopped {
+	color: #800000;
+}
+
+.services ul.slist li.service .title img {
+	padding: 1px 4px 0 4px;
+	margin: 0;
+}
+
+.link {
+	color: #666;
+	font-weight: normal;
+}
+
+.services a,.services a:visited {
+	color: #008cf7;
+	font-weight: normal;
+	font-size: 12px;
+}
+
+.createpage .form {
+	margin: 0px 0px 5px 5px;
+	padding: 10px 0px 10px 5px;
+}
+
+.form td {
+	vertical-align: top;
+}
+
+.form #status {
+	font-weight: normal;
+	color: #666;
+	font-size: 10px;
+	font-style: normal;
+	padding: 3px;
+}
+
+.form .description {
+	color: #666;
+	font-size: 12px;
+	font-weight: bold;
+	padding: 5px;
+	text-align: right;
+	line-height: 20px;
+}
+
+.createpage .form .service {
+	cursor: pointer;
+}
+
+.createpage .form .selectedservice {
+	background-color: #DFE5EB;
+}
+
+.createpage .form .service .info {
+	border-right: 5px solid white;
+}
+
+.createpage .form .selectedservice .info {
+	border-right: 5px solid #236CA8;
+}
+
+.createpage .form .service .description,.createpage .form .service .radio,.createpage .form .service .info
+	{
+	border-bottom: 1px solid #eee;
+}
+
+.createpage .form .service .description img {
+	opacity: 0.4;
+	filter: alpha(opacity = 40); /* For IE8 and earlier */
+}
+
+.createpage .form .service:hover .radio {
+	color: black;
+}
+
+.createpage .form .service:hover .info,.createpage .form .selectedservice  .info
+	{
+	color: #333;
+}
+
+.createpage .form .service:hover .info {
+	border-right: 5px solid #666;
+}
+
+.createpage .form .service:hover .description img {
+	opacity: 1.0;
+	filter: alpha(opacity = 100); /* For IE8 and earlier */
+}
+
+.createpage .form .service .description,.createpage .form .selectedservice .description
+	{
+	line-height: 16px;
+	text-align: center;
+}
+
+.createpage .form .selectedservice .radio {
+	color: black;
+	font-size: 14px;
+	font-weight: bold;
+	vertical-align: middle;
+	padding-left: 10px;
+}
+
+.createpage .form .service .radio {
+	color: #666;
+	font-size: 14px;
+	font-weight: bold;
+	vertical-align: middle;
+	padding-left: 10px;
+}
+
+.form {
+	padding: 3px;
+}
+
+.form .info {
+	color: #999;
+	font-weight: normal;
+	font-size: 12px;
+	padding: 10px;
+}
+
+.form .input {
+	padding: 5px;
+	color: #333;
+}
+
+.form .input select,.form .input option {
+	font-size: 13px;
+}
+
+.form .input input[type="text"] {
+	padding: 1px;
+	color: #333;
+	font-weight: bold;
+	font-size: 12px;
+}
+
+input.button {
+	margin: 3px;
+	font-weight: bold;
+}
+
+.timestamp {
+	font-weight: normal;
+	color: #333;
+	padding: 4px 2px 2px 1px;
+	margin: 0;
+}
+
+.form-section {
+	padding: 15px 5px;
+	color: #333;
+	font-weight: normal;
+}
+
+.form-section .form-header {
+	background-color: #e9f1f9;
+	border-top: 1px solid #0055A5;
+	padding: 5px 5px 5px 10px;
+}
+
+.form-section .left-stack {
+	float: left;
+	padding: 5px;
+	margin: 5px 5px 0 5px;
+}
+
+.command {
+	padding: 5px;
+	border: 1px solid #ccc;
+	color: #666;
+	font-family: Courier;
+	font-size: 12px;
+	font-weight: bold;
+	width: 250px;
+}
+
+.form-section .name {
+	font-size: 12px;
+	color: #999;
+	text-align: right;
+}
+
+.mysql-access .name {
+	width: 100px;
+}
+
+.form-section .form-header {
+	margin-bottom: 10px;
+}
+
+.form-section .details {
+	color: #333;
+	font-weight: bold;
+}
+
+.form-header .title {
+	font-size: 14px;
+	color: #0055A5;
+	float: left;
+}
+
+.form-header .access-box {
+	float: right;
+	font-size: 10px;
+	text-align: right;
+}
+
+.form-header .access-box a {
+	font-size: 12px;
+}
+
+.form-header .access {
+	padding: 3px;
+}
+
+.form-header img {
+	vertical-align: top;
+	margin-right: 5px;
+}
+
+.access .access-type {
+	color: #999;
+	display: inline;
+}
+
+.access .access-info {
+	padding: 2px 0 2px 5px;
+	font-weight: bold;
+	text-align: left;
+	display: inline;
+	color: #0055A5;
+}
+
+.access .access-info a {
+	color: inherit;
+}
+
+.tag {
+	font-size: 10px;
+	display: inline;
+	padding: 2px;
+	margin: 3px;
+	border: 2px solid;
+	border-radius: 5px;
+}
+
+.actionsbar .tag {
+	font-size: 11px;
+	padding: 5px;
+}
+
+.purple {
+	color: #800080;
+	border-color: #800080;
+}
+
+.blue {
+	color: blue;
+	border-color: blue;
+}
+
+.orange {
+	color: #ff6600;
+	border-color: #ff6600;
+}
+
+.black {
+	color: black;
+	border-color: black;
+}
+
+ul.versions {
+	list-style: none;
+	border: 1px solid #999;
+	margin: 3px 0 5px 0;
+	padding: 0;
+}
+
+ul.versions li {
+	padding: 5px 3px 3px 10px;
+	line-height: 25px;
+	border-bottom: 1px solid #999;
+	color: #333;
+	font-weight: bold;
+}
+
+.versions li .loading {
+	margin-bottom: 5px;
+	margin-left: 10px;
+}
+
+ul.versions li.last {
+	border: none;
+}
+
+ul.versions li.inactive:hover {
+	background-color: #eee;
+}
+
+ul.versions li.inactive .version-actions {
+	display: inline;
+	visibility: hidden;
+}
+
+ul.versions li.inactive:hover .version-actions {
+	visibility: visible;
+}
+
+ul.versions li.active {
+	background-color: #ddd;
+}
+
+ul.versions li.active .version-actions {
+	display: inline;
+	visibility: visible;
+}
+
+ul.versions li a.link {
+	font-size: 11px;
+	color: #008cf7;
+}
+
+.versions .address {
+	font-size: 12px;
+	font-weight: bold;
+	color: #333;
+	display: inline;
+}
+
+.versions .address a {
+	color: #333;
+}
+
+.versions .filename {
+	font-size: 10px;
+	font-weight: normal;
+	color: #999;
+	margin-left: 5px;
+}
+
+ul.versions li a.activate,ul.versions li .status {
+	
+}
+
+ul.versions li .timestamp {
+	float: right;
+	padding: 1px;
+	color: #999;
+}
+
+.newversion {
+	margin: 2px 10px 2px 10px;
+}
+
+#deployform {
+	padding: 15px 10px;
+	color: #999;
+}
+
+.deployoptions {
+	width: 40%;
+}
+
+.deployoptions,.deployactions {
+	float: left;
+}
+
+.deployactions {
+	padding: 10px;
+}
+
+.deployoption {
+	margin-left: 10px;
+	padding: 3px;
+	color: #333;
+}
+
+.deploycontent {
+	margin: 5px;
+}
+
+.visibleblock {
+	display: block;
+}
+
+.invisible {
+	display: none;
+}
+
+.checkoption {
+	padding: 5px 10px 5px 5px;
+	float: left;
+}
+
+.unchecked {
+	font-weight: normal;
+	color: #999;
+}
+
+.hint {
+	color: #999;
+	font-size: 9px;
+	padding: 3px;
+}
+
+#createServiceBtn {
+	margin-top: 5px;
+}
+
+.transient {
+	text-align: center;
+}
+
+.transient h3 {
+	
+}
+
+/* two sided layout box */
+.dualbox {
+	display: block;
+}
+
+.dualbox .left {
+	float: left;
+}
+
+.dualbox .right {
+	float: right;
+}
+
+.positive, .error {
+    font-size: 10px;
+    font-style: normal;
+    font-weight: normal;
+    margin: 5px;	
+}
+
+.positive {
+	color: green;
+}
+
+.error {
+	color: red;
+}
+
+#fileForm,.deployactions .additional {
+	float: left;
+}
+
+.deployactions .additional {
+	padding-left: 10px;
+	padding-top: 5px;
+}
+
+.deployactions .positive {
+	
+}
+
+.settings-form {
+	margin-left: 5px;
+}
+
+.front-section img.stype,.front-section .form {
+	float: left;
+}
+
+.front-section img.stype {
+	margin-left: 20px;
+}
+
+.front-section .form {
+	margin-left: 0px;
+}
+
+.form a.link {
+	font-weight: bold;
+	font-size: 12px;
+}
+
+/* instances */
+#instances {
+	border: 1px solid #ccc;
+}
+
+#instances .instance {
+	border-bottom: 1px solid #999;
+	padding: 10px 10px 5px 30px;
+	background: url('images/server.png') no-repeat 7px 5px;
+}
+
+#instances .instance .title {
+	font-size: 12px;
+	font-weight: bold;
+	color: #333;
+	font-style: normal;
+	line-height: 20px;
+	padding: 3px 20px 3px 3px;
+}
+
+#instances .instance .timestamp {
+	color: #999;
+}
+
+#instances .instance .address {
+	font-style: normal;
+	color: #aaa;
+}
+
+#instances .cluster {
+	padding: 5px 0 0 0px;
+	margin-bottom: 1px;
+	border-left: 10px solid;
+}
+
+#instances .cluster .instance {
+	border-left: none;
+}
+
+#instances .cluster .cluster-header {
+	padding: 5px 3px 5px 5px;
+}
+
+#instances .cluster-web,#instances .cluster-masters,#instances .cluster-scalaris
+	{
+	border-color: blue;
+}
+
+#instances .cluster-backend {
+	border-color: purple;
+}
+
+#instances .cluster-proxy,#instances .cluster-workers, #instances .cluster-slaves {
+	border-color: orange;
+}
+
+#instances .cluster .tag {
+	margin-left: 3px;
+}
+
+#instances .instance:hover {
+	background-color: #eee;
+}
+
+/* MapReduce */
+#jarform {
+	margin-top: 20px;
+}
+
+#mrapp {
+	
+}
+
+.mrform i {
+	font-weight: bold;
+	color: #999;
+}
+
+.mrform i,.mrform select,.mrform input {
+	margin: 3px;
+}
+
+.mrform .action {
+	padding: 0 5px 0 5px;
+	font-weight: bold;
+	color: #333;
+}
+
+.joblist {
+	border: 1px solid #ccc;
+	margin: 5px 0 20px 0;
+}
+
+.joblist .mrjob {
+	padding: 10px;
+	border-bottom: 1px solid #999;
+}
+
+.mrjob .title {
+	font-weight: bold;
+	font-size: 14px;
+	color: #333;
+}
+
+.mrjob .subtitle {
+	font-size: 10px;
+	color: #999;
+}
+
+.mrjob .jobicon {
+	margin: 0 10px 0 0;
+}
+
+.mrjob .progress {
+	margin-top: 5px;
+	margin-left: 20px;
+}
+
+.mrjob .left {
+	float: left;
+}
+
+.mrjob .right {
+	float: right;
+	text-align: right;
+}
+
+.actionsbar {
+	margin: 10px 3px 10px 0;
+}
+
+.actionstitle {
+	padding: 10px 3px 3px 3px;
+	color: #999;
+}
+
+.actionsbar .loading {
+	margin-left: 10px;
+}
+
+/* login */
+body.loginbody {
+	background: url('images/onclouds.jpg') top left no-repeat;
+}
+
+.login {
+	width: 800px;
+	margin: 10px 10px 10px 10px;
+	border: 3px solid #999;
+	background-color: white;
+}
+
+.login .form .input {
+	padding: 3px 3px 0 5px;
+}
+
+.login .form a,.login #error {
+	font-weight: normal;
+	font-size: 10px;
+	margin: 3px;
+}
+
+.loginbody .logo {
+	margin: 50px 30px 30px 100px;
+}
+
+.login #error {
+	color: red;
+	margin-left: 1px;
+}
+
+.login .title {
+	padding-left: 85px;
+}
+
+.login input.active {
+	color: #333;
+}
+
+.login .descr {
+	padding: 50px 30px 50px 30px;
+	border-right: 1px dotted #333;
+	background-color: #eee;
+}
+
+.login .formwrap {
+	vertical-align: top;
+}
+
+.login input[type="text"], .login input[type="password"] {
+	width: 150px;
+}
+
+.login #register-title {
+	padding-left: 115px;
+}
+
+.login .form {
+	padding: 20px;
+	margin: 0;
+}
+
+.login .formwrap {
+}
+
+.login .actions {
+	padding: 10px 5px 10px 5px;
+}
+
+.login .descr {
+	font-size: 12px;
+	color: #333;
+	font-weight: normal;
+	vertical-align: top;
+}
+
+.login .descr img {
+	margin-top: 10px;
+}
+
+.login .form .name {
+	vertical-align: middle;
+	text-align: right;
+	padding-right: 5px;
+}
+
+.login .form .hint {
+	font-weight: normal;
+}
+
+.box {
+	padding: 10px;
+	border: 1px solid;
+	color: #666;
+	font-size: 12px;
+	font-weight: normal;
+}
+
+.infobox {
+	border-color: #ccc;
+	background-color: #eee;
+	margin-top: 10px;
+}
+
+.deleteService {
+	cursor: pointer;
+}
+
+.botconf {
+	padding-top: 10px;
+	padding-bottom: 20px;
+}
+
+#botexec {
+	padding: 10px;
+}
+
+#scheduleDetails {
+	color: #666;
+	font-weight: bold;
+	padding: 10px 10px 5px 50px;
+}
+
+.createWrap {
+	margin: 5px;
+}
+
+#create {
+	margin: 5px 5px 15px 5px;
+	float: right;
+}
+
+.selectHint {
+	margin: 10px 5px 0 15px;
+	font-size: 11px;
+	color: #69A3D6;
+}
+
+#selectHint img {
+	vertical-align: bottom;
+}
+
+img {
+	vertical-align: middle;
+}
+
+.mysql-load form img, .mysql-load form input {
+	margin-right: 10px;
+}
+
+#backLinks {
+	padding: 3px;
+}
+
+.msgbox {
+	padding: 10px 10px 10px 30px;
+	border-right: 1px solid #ccc;
+    border-left: 1px solid #ccc;
+    border-top: 1px solid #ccc;
+    border-bottom: 1px solid white;
+    background-repeat: no-repeat;
+    background-position: 5px 12px;
+}
+
+.msgbox-info {
+	background-image: url('images/info.png');
+	background-color: #E4ECF5;
+	color: #457299;
+    background-position: 10px 13px;
+}
+
+.msgbox-warning {
+    background-image: url('images/warning.png');
+	background-color: #F5F5F5;
+	color: #333;
+}
+
+.msgbox-error {
+    background-position: 7px 10px;
+    background-image: url('images/error.png');
+	background-color: #FFEDF4;
+	color: red;
+}
