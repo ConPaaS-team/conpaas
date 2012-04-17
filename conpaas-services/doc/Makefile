@@ -1,5 +1,5 @@
 
-all: userguide.pdf installation.pdf internals.pdf installation.html userguide.html
+all: userguide.pdf installation.pdf internals.pdf installation.html userguide.html smallclean
 
 %.pdf : %.tex
 	pdflatex $<
@@ -9,5 +9,9 @@ all: userguide.pdf installation.pdf internals.pdf installation.html userguide.ht
 	hyperlatex $<
 	hyperlatex $<
 
-clean:
-	rm -f *.pdf *.out *.aux *.log *.toc *.html *~
+smallclean:
+	rm -f *.out *.aux *.log *.toc *~
+
+clean: smallclean
+	rm -f *.pdf *.html
+
