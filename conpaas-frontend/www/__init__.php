@@ -36,26 +36,16 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-// Edit the CONF_DIR variable to point to the directory
-// containing your frontend's configuration files.
-const CONF_DIR='/etc/conpaas';
-
-// Edit the HOST variable to contain the DNS name under 
-// which your front-end will be accessible
-const HOST='conpaas.yourdomain.com';
-
-
-/////////////////////////////////////////////////////////////////////
-// DO NOT EDIT BELOW THIS LINE UNLESS YOU KNOW WHAT YOU ARE DOING! //
-/////////////////////////////////////////////////////////////////////
-
 session_set_cookie_params(60 * 60 * 24 * 15); // expires in 15 days
 session_start();
 date_default_timezone_set('Europe/Amsterdam');
 
+require_once('config.php');
+
 class Conf {
-	const CONF_DIR = CONF_DIR;
-	const HOST     = HOST;
+	const CONF_DIR = CONPAAS_CONF_DIR;
+	const HOST = CONPAAS_HOST;
+
 	public static $ROOT_DIR = '';
 
 	public static function getFrontendURL() {
@@ -90,7 +80,7 @@ function require_module($name) {
 	$module_dir = $lib.'/'.$name;
 	if (!is_dir($module_dir)) {
 		throw new Exception('Module '.$name.' cannot be found: directory '.
-			$module_dir.' doesn\'t exist');
+		$module_dir.' doesn\'t exist');
 	}
 	if (!is_file($module_dir.'/__init__.php')) {
 		throw new Exception('Module '.$name.' doesn\'t have __init__.php file');
