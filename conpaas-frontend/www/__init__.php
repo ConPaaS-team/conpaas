@@ -36,23 +36,26 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+// Edit the CONF_DIR variable to point to the directory
+// containing your frontend's configuration files.
+const CONF_DIR='/etc/conpaas';
+
+// Edit the HOST variable to contain the DNS name under 
+// which your front-end will be accessible
+const HOST='conpaas.yourdomain.com';
+
+
+/////////////////////////////////////////////////////////////////////
+// DO NOT EDIT BELOW THIS LINE UNLESS YOU KNOW WHAT YOU ARE DOING! //
+/////////////////////////////////////////////////////////////////////
+
 session_set_cookie_params(60 * 60 * 24 * 15); // expires in 15 days
 session_start();
 date_default_timezone_set('Europe/Amsterdam');
 
 class Conf {
-        // Edit the CONF_DIR variable to point to the directory
-        // containing your frontend's configuration files.
-	const CONF_DIR = '/etc/conpaas';
-
-	// Edit the HOST variable to contain the DNS name under 
-	// which your front-end will be accessible
-	const HOST = 'conpaas.yourdomain.com';
-
-	/////////////////////////////////////////////////////////////////////
-	// DO NOT EDIT BELOW THIS LINE UNLESS YOU KNOW WHAT YOU ARE DOING! //
-	/////////////////////////////////////////////////////////////////////
-
+	const CONF_DIR = CONF_DIR;
+	const HOST     = HOST;
 	public static $ROOT_DIR = '';
 
 	public static function getFrontendURL() {

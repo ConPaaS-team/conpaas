@@ -1,0 +1,386 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+   "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<!-- XML file produced from file: installation.tex
+     using Hyperlatex v 2.9-in-waiting-rk (oct06) (c) Otfried Cheong
+     on Emacs 22.2.1, Tue Apr 17 18:07:54 2012 -->
+<head>
+<title>ConPaaS -- Installation guide</title>
+
+<style type="text/css">
+.maketitle { align : center }
+div.abstract { margin-left: 20%; margin-right: 10%; }
+h3.abstract  { align : center }
+div.verse, div.quote, div.quotation {
+  margin-left : 10%; 
+  margin-right : 10%;
+}
+dt {font-weight: bold}
+</style>
+<link rel=stylesheet
+        href="conpaas.css" type="text/css" />
+</head>
+<body>
+<p><frontmatter>
+<h1 align=center>ConPaaS - Installation guide</h2>
+<h2 align=center>Ismail El Helw <br />Adriana Szekeres <br />Guillaume Pierre</h2>
+<h2 align=center>Version 1.0.0</h2>
+</frontmatter>
+</p>
+
+<h1><a name="sec:overview">1 Installation Overview</a></h1>
+<p><a href="http://www.conpaas.eu">ConPaaS</a> is composed of two parts: a
+front end, and a collection of services. The front-end is a regular
+Web site which allows ConPaaS users to access the system. It is
+implemented in PHP with MySQL, and can run on any PHP-enabled Web
+server (inside or outside the cloud).  Services are designed to run
+either in an OpenNebula cloud installation, or in the Amazon Web
+Services cloud.
+</p>
+<p>Installing ConPaaS requires to take the following steps:
+</p>
+<ol><li>Create a VM image customized for hosting the services. Details
+on how to do this vary depending on the choice of cloud where
+ConPaaS will run. Instructions on how to create a ConPaaS image can
+be found in Section&nbsp;<a href="#sec:ec2image">2</a> (for EC2) and
+Section&nbsp;<a href="#sec:oneimage">3</a> for OpenNebula.
+</li><li>Setup and configure the ConPaaS frontend. All system
+configuration takes place in the frontend. Frontend installation and
+configuration is discussed in Section&nbsp;<a href="#sec:frontend">4</a>.
+</li></ol>
+
+<h1><a name="sec:ec2image">2 Creating a ConPaaS image for Amazon EC2</a></h1>
+<p>The Web Hosting Service is capable of running over the Elastic Compute
+Cloud (EC2) of Amazon Web Services (AWS). This section describes the
+process of configuring an AWS account to run the Web Hosting Service.
+You can skip this section if you plan to install ConPaaS over
+OpenNebula.
+</p>
+<p>If you are new to EC2, you will need to create an account at
+<a href="http://aws.amazon.com/ec2/">http://aws.amazon.com/ec2/</a>. A very good EC2 documentation can be
+found at
+<a href="http://docs.amazonwebservices.com/AWSEC2/latest/GettingStartedGuide/">http://docs.amazonwebservices.com/AWSEC2/latest/GettingStartedGuide/</a>.
+</p>
+
+<h2><a name="id3">2.1 Create an EBS backed AMI on Amazon EC2</a></h2><p>
+The Web Hosting Service requires the creation of an Amazon Machine
+Image (AMI) to contain the dependencies of it's processes.  The
+easiest method of creating a new Elastic Block Store backed Amazon
+Machine Image is to start from an already existing one, customize it
+and save the resulting filesystem as a new AMI. The following steps
+explains how to setup an AMI using this methodology.
+</p>
+<ol><li>Log in the AWS management console, select the "EC2" tab, then
+"AMIs" in the left-side menu. Search the public AMIs for a Debian
+squeeze EBS AMI and run an instance of it. If you are going to use
+micro-instances then the AMI with ID <code>ami-e0e11289</code> could be a
+good choice.
+</li><li>Upload the <i>conpaas-services/scripts/create&#95;vm/ec2-setup-new-vm-image.sh</i> script to the instance:
+<pre>
+    chmod 0400 yourpublickey.pem
+    scp -i yourpublickey.pem \
+      conpaas-services/scripts/create_vm/ec2-setup-new-vm-image.sh \
+      root@instancename.com:
+  </pre>
+</li><li>Now, ssh to your instance:
+<pre>
+    ssh -i yourpublickey.pem root@your.instancename.com
+  </pre>
+<p>Run the <code>ec2-setup-new-vm-image.sh</code> script inside the instance.
+This script will install all of the dependencies of the manager and
+agent processes as well as create the necessary directory structure.
+</p>
+</li><li>Clean the filesystem by removing the
+<code>ec2-setup-new-vm-image.sh</code> file and any other temporary files you might
+have created.
+</li><li>Go to the EC2 administration page at the AWS website, right
+click on the running instance and select "<em>Create Image (EBS
+AMI)</em>".  This step will take several minutes. AWS documentation
+is available at
+<a href="http://docs.amazonwebservices.com/AWSEC2/latest/UserGuide/index.html?Tutorial&#95;CreateImage.html">http://docs.amazonwebservices.com/AWSEC2/latest/UserGuide/index.html?Tutorial&#95;CreateImage.html</a>.
+</li><li>After the image has been fully created, you can return to the
+EC2 dashboard, right-click on your instance, and terminate it.
+</li></ol>
+
+<h2><a name="id4">2.2 Create a Security Group</a></h2><p>
+An AWS security group is an abstraction of a set of firewall rules to
+limit inbound traffic. The default policy of a new group is to deny
+all inbound traffic. Therefore, one needs to specify a whitelist of
+protocols and destination ports that are accessible from the outside.
+The Web Hosting Service uses TCP ports 80, 3306, 5555, 8080 and 9000. All
+these ports should be open for all running instances.  AWS
+documentation is available at
+<a href="http://docs.amazonwebservices.com/AWSEC2/latest/UserGuide/index.html?using-network-security.html">http://docs.amazonwebservices.com/AWSEC2/latest/UserGuide/index.html?using-network-security.html</a>.
+</p>
+
+<h1><a name="sec:oneimage">3 Creating a ConPaaS image for OpenNebula</a></h1>
+<p>The Web Hosting Service is capable of running over an OpenNebula
+installation. This section describes the process of configuring
+OpenNebula to run ConPaaS. You can skip this section if you plan to
+deploy ConPaaS over Amazon Web Services.
+</p>
+<p>To create an image for OpenNebula you can execute the script<br /><i>conpaas-services/scripts/create&#95;vm/opennebula-create-new-vm-image.sh</i> in any
+64-bit Debian or Ubuntu machine.
+</p>
+<ol><li>Make sure your system has the following executables installed
+(they are usually located in <code>/sbin</code> or <code>/usr/sbin</code>, so
+make sure these directories are in your <code>$PATH</code>): <em>dd parted losetup kpartx mkfs.ext3 tune2fs mount debootstrap
+chroot umount grub-install</em>
+</li><li>It is particularly important that you use Grub version 2. To
+install it:
+<pre>
+  sudo apt-get install grub2
+  </pre>
+</li><li>Edit the
+<i>conpaas-services/scripts/create&#95;vm/opennebula-create-new-vm-image.sh</i> script
+if necessary: there are two sections in the script that you might need
+to customize with parameters that are specific to your system. These
+sections are marked by comment lines containing the text "TO CUSTOMIZE:".
+There are comments explaining each customizable parameter. 
+</li><li>Execute the image generation script as root.
+</li><li>The script generates an image file called <code>conpaas.img</code>
+by default. You can now register it in OpenNebula:
+<pre>
+  cat &lt;&lt;EOF &gt; /tmp/conpaas-one.image
+  NAME          = "Conpaas"
+  PATH          = ${PWD}/conpaas.img
+  PUBLIC        = YES
+  DESCRIPTION   = "Conpaas vm image"
+  EOF
+  oneimage register /tmp/conpaas-one.image
+</pre>
+</li></ol>
+
+<h4><a name="id6">If things go wrong</a></h4><p>&nbsp;<br />Note that if anything fails during the image file creation, the script
+will stop. However, it will not always reset your system to its
+original state. To undo everything the script has done, follow these
+instructions:
+</p>
+<ol><li>The image has been mounted as a separate file system. Find the
+mounted directory using command <code>df -h</code>. The directory should
+be in the form of <code>/tmp/tmp.X</code>.
+</li><li>There may be a <code>dev</code> and a <code>proc</code> directories mounted
+inside it. Unmount everything using:
+<pre>
+    sudo umount /tmp/tmp.X/dev /tmp/tmp.X/proc /tmp/tmp.X
+  </pre>
+</li><li>Find which loop device your using:
+<pre>
+    sudo losetup -a
+  </pre>
+</li><li>Remove the device mapping:
+<pre>
+    sudo kpartx -d /dev/loopX
+  </pre>
+</li><li>Remove the binding of the loop device:
+<pre>
+    sudo losetup -d /dev/loopX
+  </pre>
+</li><li>Delete the image file 
+</li><li>Your system should be back to its original state.
+</li></ol>
+
+<h2><a name="id7">3.1 Make sure OpenNebula is properly configured</a></h2><p>
+There are two main topics that you should pay attention to:
+</p>
+<ol><li>Make sure you started OpenNebula's OCCI deamon. ConPaaS relies
+on it to communicate with OpenNebula.
+</li><li>At the end of the OCCI profile file <code>occi_templates/common.erb</code> 
+from your OpenNebula installation, add the content of the file
+<code>misc/common.erb</code> from the ConPaaS distribution. This new version 
+features a number of improvements from the standard version:
+<ul><li>The match for <code>OS TYPE:arch</code> allows the caller to specify
+the architecture of the machine.
+</li><li>The graphics line allows for using vnc to connect to the VM.
+This is very useful for debugging purposes and is not necessary
+once testing is complete.
+</li></ul>
+</li></ol>
+
+<h1><a name="sec:frontend">4 Setup ConPaaS's Frontend</a></h1>
+<p>The ConPaaS frontend is a web application that allows users to manage
+their ConPaaS services. Users can create, configure and terminate
+services through it. This section describes the process of setting up
+a ConPaaS frontend.
+</p>
+<p>To setup ConPaaS, you only need to setup the ConPaaS's frontend. The
+actual ConPaaS code is just archived and put in a folder on the frontend.
+The ConPaaS frontend is a web application that allows users to manage
+their ConPaaS services. Users can create, configure and terminate
+services through it. This section describes the process of setting up
+a ConPaaS frontend.
+</p>
+<p>To setup your frontend, you will need a PHP-enabled web server and a
+MySQL database. The easiest way to install them on a Debian or Ubuntu
+machine is:
+</p>
+<pre>
+  sudo apt-get install libapache2-mod-php5 php5-curl \
+     php5-mysql mysql-server mysql-client
+</pre>
+
+<h2><a name="id9">4.1 Create a MySQL Database</a></h2><p>
+The ConPaaS frontend uses a MySQL database to store data about users
+and their services. The script located in
+<code>frontend/scripts/frontend-db.sql</code> creates a new user
+<code>DB_USER</code> with password <code>DB_PASSWD</code> and a database
+<code>DB_NAME</code>. It grants all access permissions to user
+<code>DB_USER</code> on the new database. Finally, it creates the database
+schema. You must update the first four lines to change <code>DB_USER</code>,
+<code>DB_PASSWD</code> and <code>DB_NAME</code> to reasonable values.
+</p>
+<p>Install a MySQL database if you don't have one already. You can now
+create the database schema using this command, replacing <code>ADMIN</code>
+with the MySQL administrator's name:
+</p>
+<pre>
+  mysql -u ADMIN -p &lt; frontend-db.sql
+</pre>
+<p>You will be prompted for the administrator's password, then the
+database schema will be created automatically.
+</p>
+
+<h2><a name="id10">4.2 Configure the Front-end</a></h2><p>
+The ConPaaS Front-end code is a collection of PHP scripts. It can run
+on any PHP-enabled Web server. We recommend using Apache with the
+<code>mod_php</code> module. The following instructions detail the
+configuration of the frontend once you have a working PHP-enabled Web
+server.
+</p>
+<ol><li>Copy all files from the <code>frontend/conf</code> directory to a
+location <em>outside</em> of the Web server's document root.
+This directory contains sensitive configuration parameters which
+must not be accessible by external users. A good location could be
+for example <code>/etc/conpaas</code>. Note that files in this
+directory must be readable by the Web server (in Debian and Ubuntu
+distributions the Web server runs under username <code>www-data</code>).
+<p>Edit the following configuration files to setup the required
+configuration parameters:
+</p>
+<ul><li><tt>main.ini</tt>: general ConPaaS configuration
+</li><li><tt>db.ini</tt>: information about the frontend's database location
+</li><li><tt>aws.ini</tt>: information about your Amazon Web Services
+account (only necessary if you are installing ConPaaS on EC2)
+</li><li><tt>opennebula.ini</tt>: information about your OpenNebula
+deployment (only necessary if you are installing ConPaaS on
+OpenNebula)
+</li><li><tt>welcome.txt</tt>: the text of the email which will be sent
+to each new user
+</li><li><tt>config/cloud/ec2.cfg</tt>: information about your Amazon
+Web Services account (only necessary if you are installing ConPaaS
+on EC2)
+</li><li><tt>config/cloud/opennebula.cfg</tt>: information about your
+OpenNebula deployment (only necessary if you are installing
+ConPaaS on OpenNebula)
+</li></ul>
+<p>Each variable should be described in the config file itself. 
+</p>
+</li><li>Place the PHP code found in directory <code>frontend/www</code> at the
+document root of the frontend web server such that the file named
+<code>__init__.php</code> is directly underneath it.
+</li><li>Edit the <code>CONF_DIR</code> and <code>HOSTS</code> variables in
+<code>__init__.php</code> such that they point to the configuration
+directory path chosen in step 1 and to the DNS name of the frontend
+(or its public IP address).
+</li><li>(Only if you are installing ConPaaS on EC2, and you obtained it 
+from the svn repository) To run on EC2, the frontend uses the AWS
+sdk for PHP. Download the AWS sdk for PHP from
+<a href="http://aws.amazon.com/sdkforphp/">http://aws.amazon.com/sdkforphp/</a>.  Extract the sdk directory
+and rename it to <code>aws-sdk</code>. Place it under the lib directory of
+the web document root such that <code>lib/aws-sdk/</code> contains a
+file named <code>config-sample.inc.php</code> (among others).
+</li><li>(Only if you are installing ConPaaS on EC2) 
+Inside the web document's root, copy
+<code>lib/aws-sdk/config-sample.inc.php</code> to
+<code>lib/aws-sdk/config.inc.php</code> and fill in <code>AWS_KEY</code>,
+<code>AWS_SECRET_KEY</code>, <code>AWS_ACCOUNT_ID</code> and
+<code>AWS_CANONICAL_ID</code> as instructed in the file's documentation.
+</li><li>(Only if you are installing ConPaaS from the svn repository)
+Make sure to copy folders <code>config/manager</code>, <code>config/cloud</code>,
+<code>scripts/manager</code> and <code>scripts/cloud</code> inside the 
+<code>/etc/conpass</code> folder. Then edit the 
+following file: config/cloud/opennebula.cfg or config/cloud/ec2.cfg,
+depending on the deployment cloud.
+<p>Make sure that the Web server's document directory contains a
+subdirectory named <code>download</code>, containing the archive
+<code>ConPaaS.tar.gz</code>, which contains the entire implementation
+of the conpaas framework and services. This archive is downloaded by newly
+created VM instances upon startup. This archive can be obtained
+by running the mkpackage.sh, inside the <code>conpaas-services</code> folder.
+</p>
+</li></ol>
+<p>At this point, your front-end should be working!
+</p>
+
+<h1><a name="sec:misc">5 Miscellaneous</a></h1>
+
+<h2><a name="id12">5.1 The credit system</a></h2><p>
+The frontend is designed to maintain accounting of resources used by
+each user. When a new user is created, (s)he receives a number of
+credits as specified in the "main.ini" configuration file. Later on,
+one credit is subtracted each time a VM is executed for (a fraction
+of) one hour. The administrator can change the number of credits by
+directly editing the frontend's database. 
+</p>
+
+<h2><a name="id13">5.2 Application sandboxing</a></h2><p>
+The default ConPaaS configuration creates strong sandboxing so that
+applications cannot open sockets, access the file system, execute
+commands, etc. This makes the platform relatively secure against
+malicious applications. On the other hand, it strongly restricts the
+actions that ConPaaS applications can do. To reduce these security
+measures to a more usable level, you need to edit two files:
+</p>
+<ul><li>To change restrictions applied to PHP applications, edit file
+<code>web-servers/etc/fpm.tmpl</code> to change the list of
+<code>disable\_functions</code>. Do not forget to recreate a file
+<code>ConPaaSWeb.tar.gz</code> out of the entire <code>web-servers</code>
+directory, and to copy it at the URL specified in file
+<code>frontend/conf/manager-user-data</code>.
+</li><li>To change restrictions applied to Java applications, edit file
+"web-servers/etc/tomcat-catalina.policy". Do not forget to
+recreate a file ConPaaSWeb.tar.gz out of the entire "web-servers"
+directory, and to copy it at the URL specified in file
+"frontend/conf/manager-user-data".
+</li></ul>
+
+<h1><a name="sec:about">6 About this document</a></h1>
+<pre>
+Copyright (c) 2010-2012, Contrail consortium.
+All rights reserved.
+
+Redistribution and use in source and binary forms, 
+with or without modification, are permitted provided
+that the following conditions are met:
+
+ 1. Redistributions of source code must retain the
+    above copyright notice, this list of conditions
+    and the following disclaimer.
+ 2. Redistributions in binary form must reproduce
+    the above copyright notice, this list of 
+    conditions and the following disclaimer in the
+    documentation and/or other materials provided
+    with the distribution.
+ 3. Neither the name of the Contrail consortium nor the
+    names of its contributors may be used to endorse
+    or promote products derived from this software 
+    without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
+BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
+</pre>
+<hr /><address><p>Copyright &#169;2011-2012 <a href="http://www.contrail-project.eu">Contrail</a> consortium.<br />All rights reserved.</address><br />
+</body></html>

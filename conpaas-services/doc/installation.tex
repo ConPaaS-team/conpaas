@@ -254,13 +254,11 @@ schema. You must update the first four lines to change \verb+DB_USER+,
 
 Install a MySQL database if you don't have one already. You can now
 create the database schema using this command, replacing \verb+ADMIN+
-and \verb+ADMINPASSWORD+ with the MySQL administrator's name and
-password:
+with the MySQL administrator's name:
 
 \begin{verbatim}
   mysql -u ADMIN -p < frontend-db.sql
 \end{verbatim}
-
 
 You will be prompted for the administrator's password, then the
 database schema will be created automatically.
@@ -282,24 +280,36 @@ server.
   directory must be readable by the Web server (in Debian and Ubuntu
   distributions the Web server runs under username \verb+www-data+).
 
-  Edit each of the .ini files to setup the required configuration
-  parameters. Each variable should be described in the config file
-  itself. If you are installing ConPaaS on EC2 you do not need to edit
-  file \verb+opennebula.ini+. If you are installing ConPaaS on
-  OpenNebula you do not need to edit file \verb+aws.ini+.
+  Edit the following configuration files to setup the required
+  configuration parameters:
+  \begin{itemize}
+  \item \texttt{main.ini}: general ConPaaS configuration
+  \item \texttt{db.ini}: information about the frontend's database location
+  \item \texttt{aws.ini}: information about your Amazon Web Services
+    account (only necessary if you are installing ConPaaS on EC2)
+  \item \texttt{opennebula.ini}: information about your OpenNebula
+    deployment (only necessary if you are installing ConPaaS on
+    OpenNebula)
+  \item \texttt{welcome.txt}: the text of the email which will be sent
+    to each new user
+  \item \texttt{config/cloud/ec2.cfg}: information about your Amazon
+    Web Services account (only necessary if you are installing ConPaaS
+    on EC2)
+  \item \texttt{config/cloud/opennebula.cfg}: information about your
+    OpenNebula deployment (only necessary if you are installing
+    ConPaaS on OpenNebula)
+  \end{itemize}
 
-  Also, edit the following file: config/cloud/opennebula.cfg, if you
-  deploy ConPaaS on an Opennebula cloud or config/cloud/ec2.cfg, if
-  your deployment will use the Amazon EC2 cloud.
+  Each variable should be described in the config file itself. 
 
 \item Place the PHP code found in directory \verb+frontend/www+ at the
   document root of the frontend web server such that the file named
   \verb+__init__.php+ is directly underneath it.
 
-\item Edit the \verb+CONF_DIR+ variable in \verb+__init__.php+ such
-  that it points to the configuration directory path chosen in step 1.
-  Edit the \verb+HOST+ variable in \verb+__init__.php+ such that
-  it points to the DNS name of the frontend (or the public IP address).
+\item Edit the \verb+CONF_DIR+ and \verb+HOSTS+ variables in
+  \verb+__init__.php+ such that they point to the configuration
+  directory path chosen in step 1 and to the DNS name of the frontend
+  (or its public IP address).
 
 \item (Only if you are installing ConPaaS on EC2, and you obtained it 
   from the svn repository) To run on EC2, the frontend uses the AWS
