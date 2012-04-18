@@ -37,6 +37,7 @@
  */
 
 class JavaPage extends HostingPage {
+	private $conf = null;
 
 	public function renderContent() {
 		return $this->renderInstancesSection()

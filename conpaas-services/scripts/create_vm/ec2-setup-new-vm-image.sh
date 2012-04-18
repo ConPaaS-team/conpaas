@@ -132,6 +132,14 @@ function install_deb() {
   rm /var/lib/ec2-bootstrap/*
 }
 
+# Make swap partition to solve the map-reduce memory issues
+# Note: TODO Temporary solution
+dd if=/dev/zero of=/usr/local/swapfile bs=1M count=1024
+chmod 600 /usr/local/swapfile
+mkswap /usr/local/swapfile
+swapon /usr/local/swapfile
+echo "/usr/local/swapfile swap swap defaults 0 0" >> /etc/fstab
+
 mkdir -p $PREFIX
 
 install_deb

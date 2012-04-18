@@ -171,7 +171,7 @@ public class OpenNebulaOcaCluster extends Cluster {
                 + "target  = \"sda\"\n"
                 + "]\n\n"
                 + "NIC    = [\n"
-                + "NETWORK = \"Private LAN\"\n"
+                + "NETWORK = \"PrivateNet2\"\n"
                 + "]\n\n"
                 + "GRAPHICS = [\n"
                 + "TYPE    = \"vnc\",\n"
@@ -190,7 +190,7 @@ public class OpenNebulaOcaCluster extends Cluster {
                 + "dns        = " + dns + ",\n"
                 /*    + "gateway    = \"$NETWORK[GATEWAY, NAME=\\\"Small network\\\"]\",\n"*/
                 + "gateway    = " + gateway + ",\n"
-                + "ip_public  = \"$NIC[IP, NETWORK=\\\"Private LAN\\\"]\",\n"
+                + "ip_public  = \"$NIC[IP, NETWORK=\\\"PrivateNet2\\\"]\",\n"
                 /* variables required by a BoT worker */
                 + "LOCATION=\"" + location + "\",\n"
                 + "ELECTIONNAME=\"" + electionName + "\",\n"
