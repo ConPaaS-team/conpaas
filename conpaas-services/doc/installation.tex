@@ -105,10 +105,15 @@ explains how to setup an AMI using this methodology.
 An AWS security group is an abstraction of a set of firewall rules to
 limit inbound traffic. The default policy of a new group is to deny
 all inbound traffic. Therefore, one needs to specify a whitelist of
-protocols and destination ports that are accessible from the outside.
-The Web Hosting Service uses TCP ports 80, 3306, 5555, 8080 and 9000. All
-these ports should be open for all running instances.  AWS
-documentation is available at
+protocols and destination ports that are accessible from the outside. 
+The following ports shoud be open for all running instances: 
+\begin{itemize}
+\item TCP ports 80, 5555, 8080 and 9000 - used by the Web Hosting service
+\item TCP port 3306 - used by the MySQL service
+\item TCP ports 8020, 8021, 8088, 50010, 50020, 50030, 50105, 54310, 54311, 50060, 50070, 50075 and 50090 - used by the Map Reduce service 
+\end{itemize}
+
+AWS documentation is available at
 \url{http://docs.amazonwebservices.com/AWSEC2/latest/UserGuide/index.html?using-network-security.html}.
 
 \section{Creating a ConPaaS image for OpenNebula}
@@ -306,10 +311,10 @@ server.
   document root of the frontend web server such that the file named
   \verb+__init__.php+ is directly underneath it.
 
-\item Edit the \verb+CONF_DIR+ and \verb+HOSTS+ variables in
-  \verb+__init__.php+ such that they point to the configuration
+\item Edit the \verb+CONPAAS_CONF_DIR+ and \verb+CONPAAS_HOST+ variables in
+  \verb+config-example.php+ such that they point to the configuration
   directory path chosen in step 1 and to the DNS name of the frontend
-  (or its public IP address).
+  (or its public IP address). Rename this file \verb+config.php+.
 
 \item (Only if you are installing ConPaaS on EC2, and you obtained it 
   from the svn repository) To run on EC2, the frontend uses the AWS
@@ -337,8 +342,9 @@ server.
   subdirectory named \verb+download+, containing the archive
   \verb+ConPaaS.tar.gz+, which contains the entire implementation
   of the conpaas framework and services. This archive is downloaded by newly
-  created VM instances upon startup. This archive can be obtained
-  by running the mkpackage.sh, inside the \verb+conpaas-services+ folder.
+  created VM instances upon startup. If you are installing ConPaaS from the svn
+  repository, this archive can be obtained
+  by running the mkarchive.sh, inside the \verb+conpaas-services+ folder.
 
 \end{enumerate}
 

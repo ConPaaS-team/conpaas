@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <!-- XML file produced from file: installation.tex
      using Hyperlatex v 2.9-in-waiting-rk (oct06) (c) Otfried Cheong
-     on Emacs 22.2.1, Tue Apr 17 18:35:12 2012 -->
+     on Emacs 22.2.1, Wed Apr 18 16:59:37 2012 -->
 <head>
 <title>ConPaaS -- Installation guide</title>
 
@@ -107,10 +107,14 @@ EC2 dashboard, right-click on your instance, and terminate it.
 An AWS security group is an abstraction of a set of firewall rules to
 limit inbound traffic. The default policy of a new group is to deny
 all inbound traffic. Therefore, one needs to specify a whitelist of
-protocols and destination ports that are accessible from the outside.
-The Web Hosting Service uses TCP ports 80, 3306, 5555, 8080 and 9000. All
-these ports should be open for all running instances.  AWS
-documentation is available at
+protocols and destination ports that are accessible from the outside. 
+The following ports shoud be open for all running instances: 
+</p>
+<ul><li>TCP ports 80, 5555, 8080 and 9000 - used by the Web Hosting service
+</li><li>TCP port 3306 - used by the MySQL service
+</li><li>TCP ports 8020, 8021, 8088, 50010, 50020, 50030, 50105, 54310, 54311, 50060, 50070, 50075 and 50090 - used by the Map Reduce service 
+</li></ul>
+<p>AWS documentation is available at
 <a href="http://docs.amazonwebservices.com/AWSEC2/latest/UserGuide/index.html?using-network-security.html">http://docs.amazonwebservices.com/AWSEC2/latest/UserGuide/index.html?using-network-security.html</a>.
 </p>
 
@@ -279,10 +283,10 @@ ConPaaS on OpenNebula)
 </li><li>Place the PHP code found in directory <code>frontend/www</code> at the
 document root of the frontend web server such that the file named
 <code>__init__.php</code> is directly underneath it.
-</li><li>Edit the <code>CONF_DIR</code> and <code>HOSTS</code> variables in
-<code>__init__.php</code> such that they point to the configuration
+</li><li>Edit the <code>CONPAAS_CONF_DIR</code> and <code>CONPAAS_HOST</code> variables in
+<code>config-example.php</code> such that they point to the configuration
 directory path chosen in step 1 and to the DNS name of the frontend
-(or its public IP address).
+(or its public IP address). Rename this file <code>config.php</code>.
 </li><li>(Only if you are installing ConPaaS on EC2, and you obtained it 
 from the svn repository) To run on EC2, the frontend uses the AWS
 sdk for PHP. Download the AWS sdk for PHP from
