@@ -23,8 +23,12 @@ fi
 
 ##############################################################
 #Please set all variables accordingly:
-ONE_USER=oneadmin
-ONE_PASSWD=contrail
+ONE_USER=
+ONE_PASSWD=
+#paste the content of your ~/.ssh/id_rsa.pub between quotes
+PUBKEY=""
+#use the xtreemfs url where the latest BaTS jars reside (e.g. 10.0.0.1/TaskFarm)
+FRESH_BATS= 
 
 echo $HOSTNAME > /etc/hostname
 hostname $HOSTNAME
@@ -69,6 +73,16 @@ export ONE_PASSWD
 export ONE_AUTH_CONTENT=$ONE_USER:$ONE_PASSWD
 
 
+# no files passed in the contextualization, so no id_rsa.pub
+# set here your own key to enable access to the vm
+
+export PUBKEY
+if [ -n "$PUBKEY" ]; then
+	mkdir -p /root/.ssh
+	echo $PUBKEY >> /root/.ssh/authorized_keys
+	chmod 600 /root/.ssh/authorized_keys
+	chmod 700 /root/.ssh	
+fi
 ##############################################################
 
 if [ -n "$IP_PUBLIC" ]; then
@@ -77,6 +91,24 @@ fi
  
 if [ -n "$NETMASK" ]; then
 	ifconfig eth0 netmask $NETMASK
+fi
+
+if [ -f /mnt/$ROOT_PUBKEY ]; then
+	mkdir -p /root/.ssh
+	cat /mnt/$ROOT_PUBKEY >> /root/.ssh/authorized_keys
+	#chmod -R 600 /root/.ssh/
+	chmod 600 /root/.ssh/authorized_keys
+	chmod 700 /root/.ssh
+fi
+
+if [ -n "$USERNAME" ]; then
+	useradd -s /bin/bash -m $USERNAME
+	if [ -f /mnt/$USER_PUBKEY ]; then
+		mkdir -p /home/$USERNAME/.ssh/
+		cat /mnt/$USER_PUBKEY >> /home/$USERNAME/.ssh/authorized_keys
+		chown -R $USERNAME:$USERNAME /home/$USERNAME/.ssh
+		chmod 600 /home/$USERNAME/.ssh/authorized_keys
+	fi
 fi
 
 # added:
@@ -98,19 +130,14 @@ fi
 #=============================================================================
 # Specifics for the Bats manager
 #-----------------------------------------------------------------------------
-FRONTEND=testbed2.conpaas.eu/conpaas-v2-opennebula
-SOURCE=$FRONTEND/download
-ROOT_DIR=/root
 
-export BATS_HOME=$ROOT_DIR/bats
+export BATS_HOME=/home/opennebula/BoT
 export BATS_HOME_LIB=$BATS_HOME/lib
-export IPL_HOME=$BATS_HOME/ipl
+export IPL_HOME=$BATS_HOME/ibis
 
 export FRESH_BATS
 
-mkdir $BATS_HOME
 mkdir $BATS_HOME_LIB
-mkdir $IPL_HOME
 #----------------------------------------------------------------------------
 
 #============================================================================
@@ -167,6 +194,14 @@ echo "10.0.0.230  n30.cumulus.zib.de n30" >> /etc/hosts
 echo "10.0.0.231  n31.cumulus.zib.de n31" >> /etc/hosts
 
 ##########################################################
+# don't escape PUBKEY. it will be the same as the manager's
+if [ -n "$PUBKEY" ]; then
+        mkdir -p /root/.ssh
+        echo $PUBKEY >> /root/.ssh/authorized_keys
+        chmod 600 /root/.ssh/authorized_keys
+        chmod 700 /root/.ssh
+fi
+##########################################################
 
 if [ -n "\$IP_PUBLIC" ]; then
         ifconfig eth0 \$IP_PUBLIC
@@ -174,6 +209,24 @@ fi
 
 if [ -n "\$NETMASK" ]; then
         ifconfig eth0 netmask \$NETMASK
+fi
+
+if [ -f /mnt/\$ROOT_PUBKEY ]; then
+        mkdir -p /root/.ssh
+        cat /mnt/\$ROOT_PUBKEY >> /root/.ssh/authorized_keys
+        #chmod -R 600 /root/.ssh/
+        chmod 600 /root/.ssh/authorized_keys
+        chmod 700 /root/.ssh
+fi
+
+if [ -n "\$USERNAME" ]; then
+        useradd -s /bin/bash -m \$USERNAME
+        if [ -f /mnt/\$USER_PUBKEY ]; then
+                mkdir -p /home/\$USERNAME/.ssh/
+                cat /mnt/\$USER_PUBKEY >> /home/\$USERNAME/.ssh/authorized_keys
+                chown -R \$USERNAME:\$USERNAME /home/\$USERNAME/.ssh
+                chmod 600 /home/\$USERNAME/.ssh/authorized_keys
+        fi
 fi
 
 # added:
@@ -194,25 +247,22 @@ fi
 
 ########################################################################################
 # Specs for BaTS worker
-FRONTEND=testbed2.conpaas.eu/conpaas-v2-opennebula
-SOURCE=$FRONTEND/download
-ROOT_DIR=/root
 
-export BATS_HOME=$ROOT_DIR/bats
-export BATS_HOME_LIB=$BATS_HOME/lib
-export IPL_HOME=$BATS_HOME/ipl
-
-export FRESH_BATS
-
-mkdir $BATS_HOME
+export BATS_HOME=/home/opennebula/BoT
+export IPL_HOME=\$BATS_HOME/ibis
+export MOUNT_FOLDER=\$BATS_HOME/mount
+mkdir \$MOUNT_FOLDER
 
 ########################################################################################
 # Copy the freshest version of conpaas-bot.jar
 # don't escape FRESH_BATS.  use the same for both master and worker
+mount.xtreemfs --interrupt-signal=0 $FRESH_BATS \$MOUNT_FOLDER
 
-wget -P $ROOT_DIR/ $SOURCE/bat.tar.gz
-tar -zxf $ROOT_DIR/bat.tar.gz -C $BATS_HOME
+# need conpaas-bot.jar and one_libraries
+mkdir \$BATS_HOME/lib
+cp \$MOUNT_FOLDER/lib/*.jar \$BATS_HOME/lib 1> \$BATS_HOME/mounting.log 2> \$BATS_HOME/mounting.err.log
 
+umount.xtreemfs \$MOUNT_FOLDER
 ########################################################################################
 
 ########################################################################################
@@ -233,11 +283,11 @@ echo "MOUNT_FOLDER=\$MOUNT_FOLDER" >> \$BATS_HOME/info.txt
 # \$MOUNTURL is an environment variable, passed down from the contextualization process
 mount.xtreemfs --interrupt-signal=0 \$MOUNTURL \$MOUNT_FOLDER 1>> \$BATS_HOME/mounting.log 2>> \$BATS_HOME/mounting.err.log
 
-cd $BATS_HOME 
+cd /home/opennebula
 
 # The JVM will set as working directory \$MOUNT_FOLDER in the JVM 
 java                                                                                            \
-        -classpath \$BATS_HOME_LIB/*:\$IPL_HOME/lib/*:\$IPL_HOME/external/*                                             \
+        -classpath \$BATS_HOME/lib/*:\$IPL_HOME/lib/*                                             \
         -Dibis.location=\$LOCATION                                                               \
         org.koala.runnersFramework.runners.bot.OneVMWorker \$ELECTIONNAME \$POOLNAME \$SERVERADDRESS \$SPEEDFACTOR \
         1> \$MOUNT_FOLDER/logs/vm_\$VM_ID.out.log 2> \$MOUNT_FOLDER/logs/vm_\$VM_ID.err.log
@@ -268,30 +318,26 @@ chmod 600 /root/.one/one_auth
 chmod 700 /root/.one
 # env var required by the .jar
 export ONE_AUTH=/root/.one/one_auth
-export ONE_XMLRPC=http://testbed2.conpaas.eu:2633/RPC2
+export ONE_XMLRPC=http://cumulus.zib.de:2633/RPC2
 #-----------------------------------------------------------------------------
 
 #-----------------------------------------------------------------------------
 # Get the freshest copy of conpaas-bot.jar
+MOUNT_FOLDER=mount
+mount_log=$BATS_HOME/mount.log
 
-wget -P $ROOT_DIR/ $SOURCE/bat.tar.gz
-tar -zxf $ROOT_DIR/bat.tar.gz -C $BATS_HOME
+mkdir $MOUNT_FOLDER
 
-#MOUNT_FOLDER=mount
-#mount_log=$BATS_HOME/mount.log
+mount.xtreemfs --interrupt-signal=0 $FRESH_BATS $MOUNT_FOLDER > $mount_log
 
-#mkdir $MOUNT_FOLDER
+echo >> $mount_log
 
-#mount.xtreemfs --interrupt-signal=0 $FRESH_BATS $MOUNT_FOLDER > $mount_log
+cp $MOUNT_FOLDER/lib/*.jar $BATS_HOME_LIB >> $mount_log
 
-#echo >> $mount_log
+echo >> $mount_log
 
-#cp $MOUNT_FOLDER/lib/*.jar $BATS_HOME_LIB >> $mount_log
-
-#echo >> $mount_log
-
-#umount.xtreemfs $MOUNT_FOLDER >> $mount_log
-#rm -r $MOUNT_FOLDER
+umount.xtreemfs $MOUNT_FOLDER >> $mount_log
+rm -r $MOUNT_FOLDER
 #-----------------------------------------------------------------------------
 
 #-----------------------------------------------------------------------------
@@ -299,7 +345,7 @@ tar -zxf $ROOT_DIR/bat.tar.gz -C $BATS_HOME
 port=8999
 iplServerOutput=$BATS_HOME/iplServer.out
 
-java -classpath .:$IPL_HOME/lib/*:$IPL_HOME/external/* \
+java -classpath "$IPL_HOME/lib/*" \
         -Dlog4j.configuration=file:$IPL_HOME/log4j.properties  \
         -Xmx256M ibis.ipl.server.Server \
         --events --errors --stats  --port $port \
@@ -319,16 +365,13 @@ poolname="master_pool"
 
 #-----------------------------------------------------------------------------
 # Start the listener
-echo $BATS_HOME > info.txt
-echo $BATS_HOME_LIB >> info.txt
-echo $IPL_HOME >>info.txt
 
-java -cp .:$BATS_HOME_LIB/*:$BATS_HOME/:$IPL_HOME/lib/*:$IPL_HOME/external/* \
+java -cp $BATS_HOME_LIB/*:$BATS_HOME/:$IPL_HOME/lib/* \
 	-Dlog4j.configuration=log4j.properties:$IPL_HOME/log4j.properties \
 	-Dibis.pool.name=$poolname \
 	-Dibis.server.address=$address \
 	-Dibis.server.port=$port \
-	org.koala.runnersFramework.runners.bot.listener.BatsWrapper 1> $BATS_HOME/out.log 2> $BATS_HOME/err.log &
+	org.koala.runnersFramework.runners.bot.listener.BatsWrapper 1> $BATS_HOME/out.log 2> $BATS_HOME/err.log
 #-----------------------------------------------------------------------------
 
 # fin

@@ -6,8 +6,8 @@
 mkdir $BATS_HOME/temp 
 
 javac -cp $BATS_HOME/lib/*:$IPL_HOME/lib/* \
-	$BATS_HOME/src/org/koala/runnersFramework/runners/bot/*.java \
-	$BATS_HOME/src/org/koala/runnersFramework/runners/bot/listener/*.java \
+	$BATS_HOME/org/koala/runnersFramework/runners/bot/*.java \
+	$BATS_HOME/org/koala/runnersFramework/runners/bot/listener/*.java \
 	-d $BATS_HOME/temp/
 
 cd $BATS_HOME/temp

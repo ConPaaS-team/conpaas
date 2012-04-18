@@ -111,7 +111,7 @@ class EC2Manager extends Manager {
 		if (!$response->isOK()) {
 			dlog($response);
 			throw new Exception('terminate_instances('.$this->vmid.') '.
-				'failed for service ['.$this->sid.']');
+				'failed for service '.$this->name.'['.$this->sid.']');
 		}
 	}
 

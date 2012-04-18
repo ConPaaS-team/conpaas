@@ -45,6 +45,7 @@ class ScalarisPage extends ServicePage {
 		$this->addJS('js/scalaris.js');
 	}
 
+  
 	protected function renderMngmtConsole() {
 		if (!$this->service->isRunning()) {
 			return '';
@@ -53,6 +54,7 @@ class ScalarisPage extends ServicePage {
 			      'http://'.$this->service->getMngmtServAddr().':8000')
 			              ->setExternal(true).'&middot';
 	}
+
 
 	protected function renderRightMenu() {
 		return '<div class="rightmenu">'
