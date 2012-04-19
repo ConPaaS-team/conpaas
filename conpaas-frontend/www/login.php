@@ -133,7 +133,7 @@ $page = new Page();
 				</tr>
 				<tr>
 					<td></td>
-					<td><div id="error invisible"></div></td>
+					<td><div id="error"></div></td>
 				</tr>
 			</table>
 		</div>
