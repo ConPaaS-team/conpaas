@@ -6,8 +6,11 @@ mkdir $release_dir
 
 cp -r conpaas-services $release_dir/
 cp -r conpaas-frontend $release_dir/frontend
+
+# Copy the documentation to the frontend
+(cd conpaas-services/doc; make)
 mkdir $release_dir/frontend/www/help
-cp -r conpaas-services/doc/* $release_dir/frontend/www/help/
+cp conpaas-services/doc/*.{html,css,pdf} $release_dir/frontend/www/help/
 
 # TODO: temporary move the doc outside of conpaas-services
 mv $release_dir/conpaas-services/doc $release_dir/
