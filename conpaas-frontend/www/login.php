@@ -59,19 +59,20 @@ $page = new Page();
 </head>
 <body class="loginbody">
 	<div class="logo">
-		<img src="images/conpaas-logo-large.png" />
+		<a href="http://www.conpaas.eu/"><img src="images/conpaas-logo-large.png" /></a>
 	</div>
 	<div class="login">
 		<table><tr>
 		<td class="descr" width="65%">
-			<p><b>ConPaaS</b> is the Platform-as-a-Service component of the <a href="http://contrail-project.eu/">Contrail</a> project.</p>
+			<p><b><a href="http://www.conpaas.eu/">ConPaaS</a></b> is the Platform-as-a-Service component of the <a href="http://contrail-project.eu/">Contrail</a> E.U. project.</p>
 			<p><b>ConPaaS</b> aims at facilitating the deployment of applications in the cloud. It provides a number of services to address common developer needs.
 			Each service is self-managed and elastic:
 			<ul>
 				<li> it can deploy itself on the cloud </li>
-				<li> monitor its own performance
-				<li> increase or decrease its processing capacity by dynamically <br />(de-)provisioning instances of itself in the cloud </li>
+				<li> it monitors its own performance
+				<li> it can increase or decrease its processing capacity by dynamically <br />(de-)provisioning instances of itself in the cloud </li>
 			</ul>
+			<em>Copyright &copy;2011-2012 Contrail consortium.<br>All rights reserved.</em>
 			</p>
 		</td>
 		<td class="formwrap">
