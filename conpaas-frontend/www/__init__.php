@@ -46,6 +46,13 @@ class Conf {
 	const CONF_DIR = CONPAAS_CONF_DIR;
 	const HOST = CONPAAS_HOST;
 
+	/*
+	 * time, in seconds, elapsed since the creation of a service, after which
+	 * that service is turned to ERROR state due to a prolongue unreachable INIT
+	 * state, typical for a service that failed to start properly.
+	 */
+	const FAILOUT_TIME = 600; // 10 minutes
+
 	public static $ROOT_DIR = '';
 
 	public static function getFrontendURL() {

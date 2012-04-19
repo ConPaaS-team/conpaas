@@ -121,11 +121,11 @@ abstract class Service {
 	}
 
 	private function checkTimeout() {
-		if ($this->state != self::STATE_PREINIT) {
+		if ($this->state != self::STATE_INIT) {
 			return;
 		}
 		$init_time = time() - strtotime($this->creation_date);
-		if ($init_time > 15 * 60) {
+		if ($init_time > Conf::FAILOUT_TIME) {
 			dlog('Switching '.$this->sid.' to ERROR state');
 			ServiceData::updateState($this->sid, 'ERROR');
 			$this->state = 'ERROR';
@@ -137,10 +137,10 @@ abstract class Service {
 			$this->$key = $value;
 		}
 		$this->manager_instance = $manager_instance;
-		if ($this->state == self::STATE_PREINIT) {
+		$this->pingManager();
+		if (!$this->reachable && $this->state == self::STATE_INIT) {
 			$this->checkTimeout();
 		}
-		$this->pingManager();
 		/* fetch the nodes and arrange them */
 		if ($this->reachable && $this->state == self::STATE_RUNNING) {
 			$this->nodesLists = $this->fetchNodesLists();
