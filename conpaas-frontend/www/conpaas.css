@@ -165,7 +165,7 @@ a:hover {
 	font-size: 12px;
 }
 
-.user .usercredit,.user .username,.user .logout {
+.user .usercredit,.user .username,.user .help,.user .logout {
 	padding: 1px 3px 3px 18px;
 	margin: 3px;
 	float: right;
@@ -183,6 +183,10 @@ a:hover {
 
 .user .username {
 	background: url('images/user.png') top left no-repeat;
+}
+
+.user .help {
+	background: url('images/info.png') top left no-repeat;
 }
 
 .header {

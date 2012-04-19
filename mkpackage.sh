@@ -6,6 +6,8 @@ mkdir $release_dir
 
 cp -r conpaas-services $release_dir/
 cp -r conpaas-frontend $release_dir/frontend
+mkdir $release_dir/frontend/www/help
+cp -r conpaas-services/doc/* $release_dir/frontend/www/help/
 
 # TODO: temporary move the doc outside of conpaas-services
 mv $release_dir/conpaas-services/doc $release_dir/
