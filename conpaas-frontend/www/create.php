@@ -126,8 +126,16 @@ $page = new Page();
   						?>
   					</select>
   				</td>
-  				<td class="info">
-  					only OpenNebula is enabled on this deployment
+				<td class="info">
+					<?php
+						if ($default_cloud == 'ec2') {
+							$cloud_text = 'Amazon EC2';
+						}
+						else {
+							$cloud_text = 'OpenNebula';
+						}
+   						echo "Only $cloud_text is enabled on this deployment";
+                                        ?>
   				</td>
   			</tr>
   		</table>
