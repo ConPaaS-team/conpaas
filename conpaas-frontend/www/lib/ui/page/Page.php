@@ -232,7 +232,7 @@ class Page {
 	public function renderFooter() {
 		return
 			'<div class="footer">'.
-				'&copy;2010-2012 <a href="http://contrail-project.eu/">Contrail</a> - ConPaaS is the PaaS component of <a href="http://contrail-project.eu/">Contrail</a>'.
+				'Copyright &copy;2011-2012 Contrail consortium - <a href="http://www.conpaas.eu/">ConPaaS</a> is the PaaS component of <a href="http://contrail-project.eu/">Contrail</a>'.
 			'</div>';
 	}
 
