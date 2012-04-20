@@ -7,7 +7,7 @@
   <fileSets>
     <fileSet>
       <directory>src/main/resources</directory>
-      <outputDirectory></outputDirectory>
+      <outputDirectory>/ConPaaSWeb</outputDirectory>
     </fileSet>
   </fileSets>
 </assembly>
