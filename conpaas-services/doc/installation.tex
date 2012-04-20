@@ -40,8 +40,7 @@ Installing ConPaaS requires to take the following steps:
   configuration is discussed in Section~\ref{sec:frontend}.
 \end{enumerate}
 
-\section{Creating a ConPaaS image for Amazon EC2}
-\label{sec:ec2image}
+\section{Using ConPaaS on Amazon EC2}
 
 The Web Hosting Service is capable of running over the Elastic Compute
 Cloud (EC2) of Amazon Web Services (AWS). This section describes the
@@ -54,14 +53,23 @@ If you are new to EC2, you will need to create an account at
 found at
 \url{http://docs.amazonwebservices.com/AWSEC2/latest/GettingStartedGuide/}.
 
-\subsection{Create an EBS backed AMI on Amazon EC2}
+\subsection{Pre-built EBS Amazon Machine Image}
 
-The Web Hosting Service requires the creation of an Amazon Machine
-Image (AMI) to contain the dependencies of it's processes.  The
-easiest method of creating a new Elastic Block Store backed Amazon
-Machine Image is to start from an already existing one, customize it
-and save the resulting filesystem as a new AMI. The following steps
-explains how to setup an AMI using this methodology.
+The Web Hosting Service requires the usage of an Amazon Machine Image (AMI) to
+contain the dependencies of its processes. For your convenience we provide a
+public ConPaaS AMI which is already configured and ready to be used on Amazon
+EC2. The AMI ID of said image is \emph{ami-6a568e03}. % TODO: this is an image of
+% ConPaaS RC3. Update the id when releasing! 
+You can use this value when configuring your ConPaaS frontend installation as
+described in Section~\ref{sec:frontend}.
+
+\subsection{Create an EBS backed AMI on Amazon EC2}
+\label{sec:ec2image}
+
+Should you decide to create a new Elastic Block Store backed Amazon Machine
+Image yourself, the easiest method is to start from an already existing one,
+customize it and save the resulting filesystem as a new AMI. The following
+steps explains how to setup an AMI using this methodology.
 
 \begin{enumerate}
 \item Log in the AWS management console, select the ``EC2'' tab, then
@@ -101,6 +109,7 @@ explains how to setup an AMI using this methodology.
 \end{enumerate}
 
 \subsection{Create a Security Group}
+\label{sec:secgroup}
 
 An AWS security group is an abstraction of a set of firewall rules to
 limit inbound traffic. The default policy of a new group is to deny
@@ -237,6 +246,37 @@ their ConPaaS services. Users can create, configure and terminate
 services through it. This section describes the process of setting up
 a ConPaaS frontend.
 
+\subsection{Pre-built Frontend Amazon Machine Image}
+\label{sec:frontend-ami}
+
+We provide an Amazon Machine Image (AMI) with the ConPaaS frontend code and all
+the required dependencies already installed. This is the easiest way to get
+started with ConPaaS, as all you need to do is setup a few configuration
+files.
+
+\begin{enumerate}
+% TODO: update the frontend AMI ID with the released one.
+\item Log in the AWS management console, select the ``EC2'' tab, then ``AMIs''
+  in the left-side menu. Search the public AMI with ID \verb+ami-60578f09+ and
+  run an instance of it.
+\item In the ``Configure Firewall'' step of the Wizard, create a security group
+  with port 80 (HTTP) open. Also, if you haven't done so already, create a
+  security group for the Web Hosting Service as explained in
+  Section~\ref{sec:secgroup} and write its name down.
+\item Once the instance is running, log into it and fill in the following
+  configuration values:
+  \begin{itemize}
+  \item \verb+security_group+ and \verb|keypair| in /etc/conpaas/aws.ini
+  \item \verb+USER+, \verb+PASSWORD+, \verb+SECURITY_GROUP_NAME+ and \verb+KEY_NAME+ in /etc/conpaas/config/cloud/ec2.cfg
+  \item \verb+AWS_KEY+, \verb+AWS_SECRET_KEY+, \verb+AWS_ACCOUNT_ID+, \verb+AWS_CANONICAL_ID+ in /var/www/lib/aws-sdk/config.inc.php
+  \end{itemize}
+\item Point your browser to the public IP address of your instance. You should
+  see the ConPaaS frontend web page and you should be able to create a new user
+  and start using ConPaaS.
+\end{enumerate}
+
+\subsection{Manual setup}
+\label{sec:frontend-manual}
 To setup your frontend, you will need a PHP-enabled web server and a
 MySQL database. The easiest way to install them on a Debian or Ubuntu
 machine is:
@@ -246,7 +286,7 @@ machine is:
      php5-mysql mysql-server mysql-client
 \end{verbatim}
 
-\subsection{Create a MySQL Database}
+\subsubsection{Create a MySQL Database}
 
 The ConPaaS frontend uses a MySQL database to store data about users
 and their services. The script located in
@@ -268,7 +308,7 @@ with the MySQL administrator's name:
 You will be prompted for the administrator's password, then the
 database schema will be created automatically.
 
-\subsection{Configure the Front-end}
+\subsubsection{Configure the Front-end}
 
 The ConPaaS Front-end code is a collection of PHP scripts. It can run
 on any PHP-enabled Web server. We recommend using Apache with the
