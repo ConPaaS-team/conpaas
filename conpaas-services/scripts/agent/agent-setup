@@ -3,6 +3,12 @@
 ROOT_DIR=/root
 CPS_HOME=$ROOT_DIR/ConPaaS
 
+LOG_FILE=/var/log/cpsagent.log
+ETC=/etc/cpsagent
+VAR_TMP=/var/tmp/cpsagent
+VAR_CACHE=/var/cache/cpsagent
+VAR_RUN=/var/run/cpsagent
+
 # Source is filled in by the manager
 wget -P $ROOT_DIR/ $SOURCE/ConPaaS.tar.gz
 tar -zxf $ROOT_DIR/ConPaaS.tar.gz -C $ROOT_DIR/

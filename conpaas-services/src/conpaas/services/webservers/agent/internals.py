@@ -40,7 +40,8 @@ Created on Mar 7, 2011
 @author: ielhelw
 '''
 
-from os.path import exists, join
+from os.path import exists, devnull, join
+from subprocess import Popen
 from os import remove, makedirs
 from shutil import rmtree
 from threading import Lock
@@ -383,6 +384,17 @@ class WebServersAgent():
       with self.php_lock:
         return self._stop(kwargs, self.php_file, role.PHPProcessManager)
 
+    def fix_session_handlers(self, dir):
+      session_dir = join(self.VAR_CACHE, 'www')
+      cmd_path = join(session_dir, 'phpsession.sh')
+      script_path = join(session_dir, 'phpsession.php')
+      devnull_fd = open(devnull, 'w')
+      proc = Popen([cmd_path, dir, script_path], stdout=devnull_fd, stderr=devnull_fd, close_fds=True)
+      proc.wait()
+      #if proc.wait() != 0:
+      #  self.logger.exception('Failed to start the script to fix the session handlers')
+      #  raise OSError('Failed to start the script to fix the session handlers')
+
     @expose('UPLOAD')
     def updatePHPCode(self, kwargs):
       if 'file' not in kwargs:
@@ -412,6 +424,10 @@ class WebServersAgent():
       if exists(target_dir):
         rmtree(target_dir)
       source.extractall(target_dir)
+
+      # Fix session handlers
+      self.fix_session_handlers(target_dir)
+
       return HttpJsonResponse()
 
     @expose('GET')

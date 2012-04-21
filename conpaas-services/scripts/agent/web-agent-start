@@ -1,10 +1,9 @@
 #!/bin/bash
 
-cp $CPS_HOME/src/conpaas/services/webservers/etc/nginx-proxy.tmpl /etc/cpsagent/nginx-proxy.tmpl
-cp $CPS_HOME/src/conpaas/services/webservers/etc/nginx-static.tmpl /etc/cpsagent/nginx-static.tmpl
-cp $CPS_HOME/src/conpaas/services/webservers/etc/fpm.tmpl /etc/cpsagent/fpm.tmpl
-cp $CPS_HOME/src/conpaas/services/webservers/etc/tomcat-server-xml.tmpl /etc/cpsagent/tomcat-server-xml.tmpl
-cp $CPS_HOME/src/conpaas/services/webservers/etc/tomcat-catalina.policy /etc/cpsagent/tomcat-catalina.policy
+cp $CPS_HOME/src/conpaas/services/webservers/etc/* $ETC/
+
+mkdir $VAR_CACHE/www
+cp $CPS_HOME/src/conpaas/services/webservers/agent/session/* $VAR_CACHE/www/ 2> /tmp/error
 
 $CPS_HOME/sbin/agent/web-cpsagent -c $ROOT_DIR/config.cfg 1>$ROOT_DIR/agent.out 2>$ROOT_DIR/agent.err &
 agent_pid=$!
