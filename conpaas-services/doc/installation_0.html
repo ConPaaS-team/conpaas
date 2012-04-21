@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <!-- XML file produced from file: installation.tex
      using Hyperlatex v 2.9-in-waiting-rk (oct06) (c) Otfried Cheong
-     on Emacs 22.2.1, Wed Apr 18 16:59:37 2012 -->
+     on Emacs 22.2.1, Fri Apr 20 16:05:22 2012 -->
 <head>
 <title>ConPaaS -- Installation guide</title>
 
@@ -43,15 +43,15 @@ Services cloud.
 <ol><li>Create a VM image customized for hosting the services. Details
 on how to do this vary depending on the choice of cloud where
 ConPaaS will run. Instructions on how to create a ConPaaS image can
-be found in Section&nbsp;<a href="#sec:ec2image">2</a> (for EC2) and
+be found in Section&nbsp;<a href="#sec:ec2image">2.2</a> (for EC2) and
 Section&nbsp;<a href="#sec:oneimage">3</a> for OpenNebula.
 </li><li>Setup and configure the ConPaaS frontend. All system
 configuration takes place in the frontend. Frontend installation and
 configuration is discussed in Section&nbsp;<a href="#sec:frontend">4</a>.
 </li></ol>
 
-<h1><a name="sec:ec2image">2 Creating a ConPaaS image for Amazon EC2</a></h1>
-<p>The Web Hosting Service is capable of running over the Elastic Compute
+<h1><a name="id2">2 Using ConPaaS on Amazon EC2</a></h1><p>
+The Web Hosting Service is capable of running over the Elastic Compute
 Cloud (EC2) of Amazon Web Services (AWS). This section describes the
 process of configuring an AWS account to run the Web Hosting Service.
 You can skip this section if you plan to install ConPaaS over
@@ -63,13 +63,19 @@ found at
 <a href="http://docs.amazonwebservices.com/AWSEC2/latest/GettingStartedGuide/">http://docs.amazonwebservices.com/AWSEC2/latest/GettingStartedGuide/</a>.
 </p>
 
-<h2><a name="id3">2.1 Create an EBS backed AMI on Amazon EC2</a></h2><p>
-The Web Hosting Service requires the creation of an Amazon Machine
-Image (AMI) to contain the dependencies of it's processes.  The
-easiest method of creating a new Elastic Block Store backed Amazon
-Machine Image is to start from an already existing one, customize it
-and save the resulting filesystem as a new AMI. The following steps
-explains how to setup an AMI using this methodology.
+<h2><a name="id3">2.1 Pre-built EBS Amazon Machine Image</a></h2><p>
+The Web Hosting Service requires the usage of an Amazon Machine Image (AMI) to
+contain the dependencies of its processes. For your convenience we provide a
+public ConPaaS AMI which is already configured and ready to be used on Amazon
+EC2. The AMI ID of said image is <em>ami-6a568e03</em>. You can use this value when configuring your ConPaaS frontend installation as
+described in Section&nbsp;<a href="#sec:frontend">4</a>.
+</p>
+
+<h2><a name="sec:ec2image">2.2 Create an EBS backed AMI on Amazon EC2</a></h2>
+<p>Should you decide to create a new Elastic Block Store backed Amazon Machine
+Image yourself, the easiest method is to start from an already existing one,
+customize it and save the resulting filesystem as a new AMI. The following
+steps explains how to setup an AMI using this methodology.
 </p>
 <ol><li>Log in the AWS management console, select the "EC2" tab, then
 "AMIs" in the left-side menu. Search the public AMIs for a Debian
@@ -103,8 +109,8 @@ is available at
 EC2 dashboard, right-click on your instance, and terminate it.
 </li></ol>
 
-<h2><a name="id4">2.2 Create a Security Group</a></h2><p>
-An AWS security group is an abstraction of a set of firewall rules to
+<h2><a name="sec:secgroup">2.3 Create a Security Group</a></h2>
+<p>An AWS security group is an abstraction of a set of firewall rules to
 limit inbound traffic. The default policy of a new group is to deny
 all inbound traffic. Therefore, one needs to specify a whitelist of
 protocols and destination ports that are accessible from the outside. 
@@ -156,7 +162,7 @@ by default. You can now register it in OpenNebula:
 </pre>
 </li></ol>
 
-<h4><a name="id6">If things go wrong</a></h4><p>&nbsp;<br />Note that if anything fails during the image file creation, the script
+<h4><a name="id7">If things go wrong</a></h4><p>&nbsp;<br />Note that if anything fails during the image file creation, the script
 will stop. However, it will not always reset your system to its
 original state. To undo everything the script has done, follow these
 instructions:
@@ -185,7 +191,7 @@ inside it. Unmount everything using:
 </li><li>Your system should be back to its original state.
 </li></ol>
 
-<h2><a name="id7">3.1 Make sure OpenNebula is properly configured</a></h2><p>
+<h2><a name="id8">3.1 Make sure OpenNebula is properly configured</a></h2><p>
 There are two main topics that you should pay attention to:
 </p>
 <ol><li>Make sure you started OpenNebula's OCCI deamon. ConPaaS relies
@@ -215,7 +221,33 @@ their ConPaaS services. Users can create, configure and terminate
 services through it. This section describes the process of setting up
 a ConPaaS frontend.
 </p>
-<p>To setup your frontend, you will need a PHP-enabled web server and a
+
+<h2><a name="sec:frontend-ami">4.1 Pre-built Frontend Amazon Machine Image</a></h2>
+<p>We provide an Amazon Machine Image (AMI) with the ConPaaS frontend code and all
+the required dependencies already installed. This is the easiest way to get
+started with ConPaaS, as all you need to do is setup a few configuration
+files.
+</p>
+<ol><li>Log in the AWS management console, select the "EC2" tab, then "AMIs"
+in the left-side menu. Search the public AMI with ID <code>ami-60578f09</code> and
+run an instance of it.
+</li><li>In the "Configure Firewall" step of the Wizard, create a security group
+with port 80 (HTTP) open. Also, if you haven't done so already, create a
+security group for the Web Hosting Service as explained in
+Section&nbsp;<a href="#sec:secgroup">2.3</a> and write its name down.
+</li><li>Once the instance is running, log into it and fill in the following
+configuration values:
+<ul><li><code>security_group</code> and <code>keypair</code> in /etc/conpaas/aws.ini
+</li><li><code>USER</code>, <code>PASSWORD</code>, <code>SECURITY_GROUP_NAME</code> and <code>KEY_NAME</code> in /etc/conpaas/config/cloud/ec2.cfg
+</li><li><code>AWS_KEY</code>, <code>AWS_SECRET_KEY</code>, <code>AWS_ACCOUNT_ID</code>, <code>AWS_CANONICAL_ID</code> in /var/www/lib/aws-sdk/config.inc.php
+</li></ul>
+</li><li>Point your browser to the public IP address of your instance. You should
+see the ConPaaS frontend web page and you should be able to create a new user
+and start using ConPaaS.
+</li></ol>
+
+<h2><a name="sec:frontend-manual">4.2 Manual setup</a></h2><p>
+To setup your frontend, you will need a PHP-enabled web server and a
 MySQL database. The easiest way to install them on a Debian or Ubuntu
 machine is:
 </p>
@@ -224,7 +256,7 @@ machine is:
      php5-mysql mysql-server mysql-client
 </pre>
 
-<h2><a name="id9">4.1 Create a MySQL Database</a></h2><p>
+<h3><a name="id12">Create a MySQL Database</a></h3><p>
 The ConPaaS frontend uses a MySQL database to store data about users
 and their services. The script located in
 <code>frontend/scripts/frontend-db.sql</code> creates a new user
@@ -245,7 +277,7 @@ with the MySQL administrator's name:
 database schema will be created automatically.
 </p>
 
-<h2><a name="id10">4.2 Configure the Front-end</a></h2><p>
+<h3><a name="id13">Configure the Front-end</a></h3><p>
 The ConPaaS Front-end code is a collection of PHP scripts. It can run
 on any PHP-enabled Web server. We recommend using Apache with the
 <code>mod_php</code> module. The following instructions detail the
@@ -310,8 +342,9 @@ depending on the deployment cloud.
 subdirectory named <code>download</code>, containing the archive
 <code>ConPaaS.tar.gz</code>, which contains the entire implementation
 of the conpaas framework and services. This archive is downloaded by newly
-created VM instances upon startup. This archive can be obtained
-by running the mkpackage.sh, inside the <code>conpaas-services</code> folder.
+created VM instances upon startup. If you are installing ConPaaS from the svn
+repository, this archive can be obtained
+by running the mkarchive.sh, inside the <code>conpaas-services</code> folder.
 </p>
 </li></ol>
 <p>At this point, your front-end should be working!
@@ -319,7 +352,7 @@ by running the mkpackage.sh, inside the <code>conpaas-services</code> folder.
 
 <h1><a name="sec:misc">5 Miscellaneous</a></h1>
 
-<h2><a name="id12">5.1 The credit system</a></h2><p>
+<h2><a name="id15">5.1 The credit system</a></h2><p>
 The frontend is designed to maintain accounting of resources used by
 each user. When a new user is created, (s)he receives a number of
 credits as specified in the "main.ini" configuration file. Later on,
@@ -328,7 +361,7 @@ of) one hour. The administrator can change the number of credits by
 directly editing the frontend's database. 
 </p>
 
-<h2><a name="id13">5.2 Application sandboxing</a></h2><p>
+<h2><a name="id16">5.2 Application sandboxing</a></h2><p>
 The default ConPaaS configuration creates strong sandboxing so that
 applications cannot open sockets, access the file system, execute
 commands, etc. This makes the platform relatively secure against
