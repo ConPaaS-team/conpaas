@@ -199,7 +199,7 @@ your services.
 \section{Tutorial: hosting WordPress in ConPaaS}
 
 This short tutorial illustrates the way to use ConPaaS to install and
-host WordPress (\url{www.wordpress.org}), a well-known third-party Web
+host WordPress (\url{http://www.wordpress.org}), a well-known third-party Web
 application. WordPress is implemented in PHP using a MySQL database so
 we will need a PHP and a MySQL service in ConPaaS.
 
@@ -212,10 +212,10 @@ we will need a PHP and a MySQL service in ConPaaS.
 \item Create a MySQL service, start it, reset its password. Copy the
   IP address of the master node somewhere, we will need it in step 5.
 \item Create a PHP service, start it.
-\item Download a Wordpress tarball from \url{www.wordpress.org}, and
+\item Download a Wordpress tarball from \url{http://www.wordpress.org}, and
   expand it in your computer.
-\item Copy file wordpress/wp-config-sample.php to
-  wordpress/wp-config.php and edit the \texttt{DB\_NAME},
+\item Copy file \texttt{wordpress/wp-config-sample.php} to
+  \texttt{wordpress/wp-config.php} and edit the \texttt{DB\_NAME},
   \texttt{DB\_USER}, \texttt{DB\_PASSWORD} and \texttt{DB\_HOST}
   variables to point to the database service. You can choose any
   database name for the \texttt{DB\_NAME} variable as long as it does
@@ -231,7 +231,7 @@ we will need a PHP and a MySQL service in ConPaaS.
 \item Open the page of the PHP service, and click ``access
   application.'' Your browser will display nothing because the
   application is not fully installed yet. Visit the same site at URL
-  http://xxx.yyy.zzz.ttt/wp-admin/install.php and fill in the
+  \texttt{http://xxx.yyy.zzz.ttt/wp-admin/install.php} and fill in the
   requested information (site name etc).
 \item That's it! The system works, and can be scaled up and down. 
 \end{enumerate}
