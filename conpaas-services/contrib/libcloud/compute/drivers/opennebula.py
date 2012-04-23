@@ -677,11 +677,15 @@ class OpenNebula_2_0_NodeDriver(OpenNebulaNodeDriver):
 
         # 'OS'
         os_tag = ET.SubElement(compute, 'OS')
-        os_type = ET.SubElement(os_tag, 'TYPE', {'arch': 'x86_64'})
+        os_type = ET.SubElement(os_tag, 'TYPE', {'arch': kwargs['os_arch']})
+        os_root = ET.SubElement(os_tag, 'ROOT')
+        os_root.text = kwargs['os_root']
 
         disk = ET.SubElement(compute, 'DISK')
         ET.SubElement(disk, 'STORAGE', {'href': '/storage/%s' %
                                                   (str(kwargs['image'].id))})
+        disk_target = ET.SubElement(disk, 'TARGET')
+        disk_target.text = kwargs['disk_target']
 
         if 'networks' in kwargs:
             if not isinstance(kwargs['networks'], list):

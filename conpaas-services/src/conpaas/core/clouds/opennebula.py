@@ -64,7 +64,11 @@ class OpenNebulaCloud(Cloud):
         cloud_params = ['URL', 'USER', 'PASSWORD', \
                         'IMAGE_ID', 'INST_TYPE',   \
                         'NET_ID', 'NET_GATEWAY',   \
-                        'NET_NAMESERVER']
+                        'NET_NAMESERVER',
+			'OS_ARCH',
+			'OS_ROOT',
+			'DISK_TARGET',
+			'CONTEXT_TARGET']
 
         for field in cloud_params:
             if not iaas_config.has_option(cloud_name, field)\
@@ -86,6 +90,10 @@ class OpenNebulaCloud(Cloud):
         self.net_id = _get('NET_ID')
         self.net_gw = _get('NET_GATEWAY')
         self.net_ns = _get('NET_NAMESERVER')
+        self.os_arch = _get('OS_ARCH')
+        self.os_root = _get('OS_ROOT')
+	self.disk_target = _get('DISK_TARGET')
+	self.context_target = _get('CONTEXT_TARGET')
 
         self.cpu = None
         self.mem = None
@@ -185,8 +193,13 @@ class OpenNebulaCloud(Cloud):
         if self.mem != None:
             kwargs['mem'] = self.mem
 
+        # 'OS'
+        kwargs['os_arch'] = self.os_arch
+	kwargs['os_root'] = self.os_root
+
         # 'DISK'
         kwargs['image'] = NodeImage(self.img_id, '', None)
+	kwargs['disk_target'] = self.disk_target
 
         # 'NIC'
         kwargs['networks'] = self.net_id
@@ -198,7 +211,7 @@ class OpenNebulaCloud(Cloud):
         context['IP_GATEWAY'] = self.net_gw
         context['NAMESERVER'] = self.net_ns
         context['USERDATA'] = self.cx
-        context['TARGET'] = 'sdb'
+        context['TARGET'] = self.context_target
         kwargs['context'] = context
  
         nodes = []
