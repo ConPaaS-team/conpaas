@@ -62,7 +62,7 @@ MySQL service to host a Web-based frontend, and link this frontend to
 a MapReduce backend service for conducting high-performance genomic
 computations on demand.
 
-\section{ConPaaS usage overview}
+\section{Usage overview}
 
 Most operations in ConPaaS can be done using the ConPaaS frontend,
 which gives a Web-based interface to the system. The front-end allows
@@ -279,22 +279,15 @@ the PHP service, this creates problems because multiple PHP servers
 running in different VM instances cannot share their memory. To
 support PHP sessions the PHP service features a key-value store where
 session states can be transparently stored. To overwrite PHP session
-functions such that they make use of the shared key-value store, the PHP
-service includes a .php file to the beginning of each .php file of your
-application that uses sessions, i.e. in which function session\_start()
-is encountered:
-
-\begin{verbatim}
-<?php
-  require_once '/path/to/phpsession.php';
-?>
-\end{verbatim}
-
-This file, called phpsessions.php, overwrittes the session handlers using the
+functions such that they make use of the shared key-value store, the
+PHP service includes a standard ``phpsession.php'' file at the
+beginning of every .php file of your application that uses sessions,
+i.e. in which function session\_start() is encountered.  This file
+overwrittes the session handlers using the
 session\_set\_save\_handler() function.
 
-Although this modification should not affect your application, please be aware
-of it.
+This modification is transparent to your application so no particular
+action is necessary to use PHP sessions in ConPaaS.
 
 \subsection{Debug mode}
 
@@ -331,7 +324,7 @@ $ ./cpsclient.web http://x-x-x-x/ upload_code_version path/to/archive.war
 \end{verbatim}
 %$
 
-\subsection{Access your application}
+\subsection{Access the application}
 
 The frontend gives a link to the running application. This URL will
 remain valid as long as you do not stop the service.
@@ -366,7 +359,7 @@ password, after which you can use the database as you wish.
 Note that the \texttt{mysqldb} user has extended priviledges. It can
 create new databases, new users etc.
 
-\subsection{Uploading a database dump to the MYSQL service}
+\subsection{Uploading a database dump}
 
 The ConPaaS frontend allows to easily upload database dumps to a MySQL service. Note that this functionality is restricted to dumps of a relatively small size. To upload larger dumps you can always use the regular mysql command for this:
 \begin{verbatim}
@@ -413,8 +406,8 @@ data to/from the service and issue MapReduce jobs.
 \section{Building new types of services}
 
 The architecture of ConPaaS allows developers to build new types of
-services. To learn how to do this, please check the ``Internals''
-ConPaaS documentation.
+services. To learn how to do this, please check the
+``\xlink{Internals}{internals.pdf}'' ConPaaS documentation.
 
 \section{About this document}
 
