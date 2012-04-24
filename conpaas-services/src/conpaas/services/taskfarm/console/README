@@ -1,0 +1,39 @@
+The contents of this folder is required to run BaTS in stand-alone mode. 
+
+This means that using the provided tools, one can simply execute BaTS on top
+of bare OpenNebula installation or Amazon EC2.
+
+You need to follow these steps for OpenNebula:
+
+1) Update init.sh with your OpenNebula credentials as well as your XtreemFS 
+path which contains the BaTS as well as required libraries in correct locations.
+You also need to have the cluster configuration file (clusterConf.xml) as well
+as the bag of task definition file (bagMountTest.bot) in a subdirectory called 
+config in your XtreemFS volume.
+
+2) Use generate_template.sh to create a final VM template out of template.vm 
+and the modified init.sh. The generated template contains the hexed init.sh in
+a contextualization variable.
+
+3) Upload the generated template (final_template.vm) to your OpenNebula 
+installation and issue a onevm create final_template.vm
+
+The Manager will starts the sampling phase and then stops.
+
+4) Connect to the Manager (con_bats) and look at the suggested schedules by 
+executing list_sched.sh in $BATS_HOME.
+
+5) Finally, start the execution phase by running execute_console.sh $sched 
+where $sched is the number of preferred schedule returned from previous step.
+
+to run on Amazon EC2:
+
+1) Update clusterConf.xml to contain the credentials for your Amazon account. 
+Use the same XML tags as the Eucalyptus clusters, but use ec2 for alias and 
+EC2ClusterAmazonAPI class for reflection.
+
+2) The default is using the t1.micro instances. Currently this is hardcoded in
+ EC2ClusterAmazonAPI. You also need BaTS and libraries to be there in /root/BoT
+ in the AMI which you are going to use. Minimal requirements for the AMI are a 
+ java installation plus curl.
+ 
