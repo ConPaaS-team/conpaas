@@ -54,6 +54,13 @@ if($service->getUID() !== $_SESSION['uid']) {
     throw new Exception('Not allowed');
 }
 
+if (!isset($_FILES['code'])) {
+	echo json_encode(array(
+		'error' => 'file was not uploaded (e.g. file size exceeded)'
+	));
+	exit();
+}
+
 $path = '/tmp/'.$_FILES['code']['name'];
 if (move_uploaded_file($_FILES['code']['tmp_name'], $path) === false) {
 	echo json_encode(array(

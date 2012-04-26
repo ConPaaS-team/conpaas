@@ -111,6 +111,7 @@ class HostingPage extends ServicePage {
 					.'<img class="loading invisible" '
 						.' src="images/icon_loading.gif" />'
 					.'<i class="positive invisible">Submitted successfully</i>'
+					.'<i class="error invisible"></i>'
 					.'</div>'
 					.'<div class="clear"></div>'
 					.'<div class="hint">'

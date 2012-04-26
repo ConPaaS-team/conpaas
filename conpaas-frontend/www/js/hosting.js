@@ -74,6 +74,13 @@ conpaas.ui = (function (this_module) {
             success: function (response) {
                 $('.additional .loading').toggleClass('invisible');
                 $('#file').val('');
+                // we need to perform error checking here, as we don't use
+                // the server object that normally does that for us
+                if (response.error) {
+                    $('.additional .error').html(response.error);
+                    $('.additional .error').show();
+                    return;
+                }
                 $('.additional .positive').show();
                 setTimeout(function () {
                     $('.additional .positive').fadeOut();
@@ -88,6 +95,7 @@ conpaas.ui = (function (this_module) {
            }
         });
         $('#fileForm input:file').change(function() {
+            $('.additional .error').hide();
             $('.additional .loading').toggleClass('invisible');
             $('#fileForm').submit();
         });
