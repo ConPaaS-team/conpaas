@@ -183,7 +183,7 @@ class OpenNebulaCloud(Cloud):
 
         # 'INSTANCE_TYPE'
         kwargs['size'] = [ i for i in self.driver.list_sizes() \
-                                 if i.id == self.inst_type ][0]
+                                 if i.name == self.inst_type ][0]
 
         # 'CPU'
         if self.cpu != None:
