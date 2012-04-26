@@ -111,7 +111,8 @@ class ScalarisAgent():
           mgmt_server = self.mgmt_server
       self.logger.info('writing config')
       self._write_config(known_hosts, mgmt_server)
-      cmd_wo_d = '/usr/bin/scalarisctl -n node@' + self.ip + ' -p 14195 -y 8000 ' + flags + ' start'
+      dist_erlang_port = ' -e "-kernel inet_dist_listen_min 14194 inet_dist_listen_max 14194"'
+      cmd_wo_d = '/usr/bin/scalarisctl -n node@' + self.ip + ' -p 14195 -y 8000 ' + flags + dist_erlang_port + ' start'
       (stdout, stderr) = subprocess.Popen(["screen", "-d", "-m", "/bin/bash", "-c", cmd_wo_d], \
                                               stdout=subprocess.PIPE).communicate()
       self.logger.info('Started scalaris: %s; %s', stdout, stderr)
