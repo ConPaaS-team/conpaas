@@ -125,15 +125,27 @@ class MySQLServer(object):
             raise e
 
     def start(self):
+        # Note: There seems to be a bug in the debian/mysql package. Sometimes, mysql says it
+	# failed to start, even though it started. We will try to restart it three times. 
+	# Temporary fix until further debugging.
         self.state = S_STARTING
         devnull_fd = open(devnull, 'w')
+	i = -1 
         proc = Popen([self.path_mysql_ssr, "start"], stdout=devnull_fd, stderr=devnull_fd, close_fds=True)
         if proc.wait() != 0:
+	    i = 2
             sql_logger.critical('Failed to start mysqld (code=%d)' % proc.returncode)
-            self.state = S_STOPPED
-            raise OSError('Failed to start web server (code=%d)' % proc.returncode)
+	while i > 0:
+	    i = i - 1
+            proc = Popen([self.path_mysql_ssr, "restart"], stdout=devnull_fd, stderr=devnull_fd, close_fds=True)
+            if proc.wait() != 0:
+              sql_logger.critical('Failed to start mysqld (code=%d)' % proc.returncode)
+            else:
+              i = -1 
+	if i != -1:
+          raise OSError('Failed to start mysql (code=%d)' % proc.returncode) 
+        sql_logger.debug('Mysql server started')
 	self.state = S_RUNNING
-	sql_logger.info(' started')
 
     def stop(self):
         if self.state == S_RUNNING:
