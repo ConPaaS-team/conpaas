@@ -226,8 +226,6 @@ class ThreadHandler extends Thread {
 
     private void handleBodyPart(String name, BodyPart part,
             HashMap<String, String> jsonrpcMap) throws Exception {
-        Object content = part.getContent();
-
         if ("method".equals(name)) {
             jsonrpcMap.put("method", part.getContent().toString());
         } else if ("uriLocation".equals(name)) {
@@ -237,14 +235,14 @@ class ThreadHandler extends Thread {
             if (botFile == null || "".equals(botFile)) {
                 botFile = "botFile.bot";
             }
-            writeToFile((InputStream) content, botFile);
+            writeToFile(part.getInputStream(), botFile);
             jsonrpcMap.put("botFile", botFile);
         } else if ("clusterFile".equals(name)) {
             String clusterFile = part.getFileName();
             if (clusterFile == null || "".equals(clusterFile)) {
                 clusterFile = "clusterFile.xml";
             }
-            writeToFile((InputStream) content, clusterFile);
+            writeToFile(part.getInputStream(), clusterFile);
             jsonrpcMap.put("clusterFile", clusterFile);
         }
     }

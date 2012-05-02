@@ -47,6 +47,8 @@ class BatsServiceApiImpl implements BatsServiceApi {
         schedulesFolder = new File(schedulesFolderString);
         /* Create, if non-existing, the schedules dump folder */
         schedulesFolder.mkdirs();
+        
+        demo = new DemoWrapper();
     }
 
     @Override
@@ -93,30 +95,14 @@ class BatsServiceApiImpl implements BatsServiceApi {
         } catch (Exception ex) {
             synchronized (lock) {
                 serviceState.state = State.RUNNING;
+                return new MethodReportError(ex.getLocalizedMessage());
             }
-            return new MethodReportError(ex.getLocalizedMessage());
         }
         return new MethodReportSuccess("Sampling started.");
     }
 
     @Override
     public Object get_sampling_results() {
-        /**
-         * FAKE
-         *
-        List<SamplingResult> list = new ArrayList<SamplingResult>();
-        List<String> sched = new ArrayList<String>();
-        sched.add("\t" + 323 + "\t" + 100 + "\t" + 1000);
-        sched.add("\t" + 421233 + "\t" + 100 + "\t" + 1000);
-        sched.add("\t" + 323 + "\t" + 20 + "\t" + 30);
-        sched.add("\t" + 32123 + "\t" + 100 + "\t" + 1000);
-        sched.add("\t" + 3123 + "\t" + 1400 + "\t" + 10);
-        SamplingResult sr = new SamplingResult("1873477324884", sched);
-        list.add(sr);
-        return list;
-        **
-         * END FAKE
-         */
         List<SamplingResult> list = new ArrayList<SamplingResult>();
         
         for (File file : schedulesFolder.listFiles()) {
@@ -160,7 +146,9 @@ class BatsServiceApiImpl implements BatsServiceApi {
         }
 
         if(list.isEmpty()) {
-            return new MethodReportError("No schedules files available.");
+//            return new MethodReportError("No schedules files available.");
+//            Claudiu asked for this method not to return an error, but an empty non-error message.
+            return new MethodReportSuccess();
         }
         
         return list;
@@ -223,14 +211,14 @@ class BatsServiceApiImpl implements BatsServiceApi {
         } catch (Exception ex) {
             synchronized (lock) {
                 serviceState.state = State.STOPPED;
+                return new MethodReportError(ex.getLocalizedMessage());
             }
-            return new MethodReportError(ex.getLocalizedMessage());
         }
         return new MethodReportSuccess("Ok.");
     }
     
     @Override
-	public MethodReport terminate_workers() {
+    public MethodReport terminate_workers() {
     	MethodReport retVal = new MethodReportSuccess();
     	int totalNoWorkersTerminated = 0;
     	try{
@@ -291,4 +279,53 @@ class BatsServiceApiImpl implements BatsServiceApi {
         return retVal;
     }
 
+    /*
+     * Start demo API's impl.
+     */
+    DemoWrapper demo;
+    
+    @Override
+    public MethodReport start_sampling_demo(String filesLocation, String inputFile, String clusterConfigurationFile) {
+        return demo.start_sampling(inputFile);
+    }
+
+    @Override
+    public MethodReport start_execution_demo(long schedulesFileTimeStamp, int scheduleNo) {
+        return demo.start_execution();
+    }
+
+    @Override
+    public Object get_sampling_results_demo() {
+        return demo.get_sampling_result();
+    }
+
+    @Override
+    public State get_service_info_demo() {
+        return demo.get_service_info();
+    }
+
+    @Override
+    public MethodReport get_log_demo() {
+        return demo.get_log();
+    }
+
+    @Override
+    public MethodReport terminate_workers_demo() {
+        return demo.terminate_workers();
+    }
+
+    @Override
+    public int get_tasks_done_demo() {
+        return demo.get_tasks_done();
+    }
+
+    @Override
+    public int get_total_no_tasks_demo() {
+        return demo.get_total_no_tasks();
+    }
+
+    @Override
+    public double get_money_spent_demo() {
+        return demo.get_money_spent();
+    }
 }

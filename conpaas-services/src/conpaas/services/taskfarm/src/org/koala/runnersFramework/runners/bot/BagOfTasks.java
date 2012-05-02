@@ -21,7 +21,7 @@ public class BagOfTasks implements Serializable {
 	private ArrayList<Job> tasks;
 	private String inputFile;
 	
-	BagOfTasks(String inputFile) {
+	public BagOfTasks(String inputFile) {
 		tasks = new ArrayList<Job>();
 		this.inputFile = inputFile;
 		
@@ -31,7 +31,7 @@ public class BagOfTasks implements Serializable {
         }
 	}
 
-	BagOfTasks() {
+	public BagOfTasks() {
 		tasks = new ArrayList<Job>();
 	}
 	
