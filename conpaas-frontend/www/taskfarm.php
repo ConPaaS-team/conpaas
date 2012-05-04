@@ -96,13 +96,14 @@ $backendType = $service->getType();
   				</td>
   				<td class="info">more info about .bot file</td>
   			</tr>
-  			<tr>
+                        <!--<tr>
   				<td class="description">configuration file</td>
   				<td class="input">
   				<input id="xmlFile" type="file" name="clusterFile" />
   				</td>
   				<td class="info"> XML file</td>
-  			</tr>
+			</tr>
+                        -->
   			<tr>
   				<td class="description">URL</td>
   				<td class="input">

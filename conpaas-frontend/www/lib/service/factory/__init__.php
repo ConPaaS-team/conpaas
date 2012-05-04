@@ -68,7 +68,7 @@ class ServiceFactory {
 				return new MysqlService($service_data, $manager);
 			case 'taskfarm':
 				require_module('service/taskfarm');
-				return new TaskFarmService($service_data);
+				return new TaskFarmService($service_data, $manager);
 			case 'scalaris':
 				require_module('service/scalaris');
 				return new ScalarisService($service_data, $manager);

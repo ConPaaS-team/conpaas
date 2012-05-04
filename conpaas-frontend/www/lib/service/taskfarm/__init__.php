@@ -42,8 +42,8 @@ require_module('logging');
 
 class TaskFarmService extends Service {
 
-	public function __construct($data) {
-		parent::__construct($data, new TaskFarmManager($data));
+	public function __construct($data, $manager) {
+		parent::__construct($data, $manager);
 	}
 
 	public function getTypeName() {

@@ -62,7 +62,7 @@ function unlink_paths($paths) {
 }
 
 $paths = array();
-foreach (array('botFile', 'clusterFile') as $file) {
+foreach (array('botFile') as $file) {
 	$path = $_FILES[$file]['tmp_name'];
 	// build the cURL parameter
 	$paths[$file] = '@'.$path;

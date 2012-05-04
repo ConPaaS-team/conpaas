@@ -104,13 +104,13 @@ $page = new Page();
   				<td class="radio"><input type="radio" name="type" value="hadoop" /> map-reduce</td>
   				<td class="info"> Hadoop MapReduce cluster </td>
   			</tr>
-<?php
-	 //  			<tr class="service">
-	 //  				<td class="description"> <img src="images/taskfarm.png" height="32" /></td>
-	 //  				<td class="radio"><input type="radio" name="type" value="taskfarm" /> task farm</td>
-	 //  				<td class="info"> Service for running bags of tasks </td>
-	 //  			</tr>
-?>
+
+	   			<tr class="service">
+	   				<td class="description"> <img src="images/taskfarm.png" height="32" /></td>
+	   				<td class="radio"><input type="radio" name="type" value="taskfarm" /> task farm</td>
+	   				<td class="info"> Service for running bags of tasks </td>
+	   			</tr>
+
   			<tr>
   				<td>&nbsp;</td>
   			</tr>

@@ -41,4 +41,3 @@ $dir = dirname(__FILE__).'/';
 require_once($dir.'Manager.php');
 require_once($dir.'EC2Manager.php');
 require_once($dir.'OpenNebulaManager.php');
-require_once($dir.'TaskFarmManager.php');

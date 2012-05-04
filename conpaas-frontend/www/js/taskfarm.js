@@ -144,10 +144,6 @@ conpaas.ui = (function (this_module) {
                 alert('Please choose a .bot file');
                 return;
             }
-            if ($('#xmlFile').val() == '') {
-                alert('Please choose a .xml file');
-                return;
-            }
             $('.additional .loading').toggleClass('invisible');
             $('#fileForm').submit();
         });
