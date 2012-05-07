@@ -2,6 +2,12 @@
 
 release_dir=$1
 
+if [ -d "$release_dir" ]
+then
+  echo "Release dir $release_dir already exists. Exiting."
+  exit 1
+fi
+
 mkdir $release_dir
 
 cp -r conpaas-services $release_dir/
