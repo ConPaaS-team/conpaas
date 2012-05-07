@@ -54,6 +54,9 @@ http {
     listen  $port default;
     root    $doc_root/$code_version;
     location / {
+
+      try_files \$uri \$uri/ /index.php?q=\$request_uri;
+
       #if $web_list
       proxy_set_header  Host $code_version;
       proxy_set_header  X-Real-IP \$remote_addr;
