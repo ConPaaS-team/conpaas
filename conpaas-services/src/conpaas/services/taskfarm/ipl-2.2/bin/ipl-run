@@ -1,0 +1,18 @@
+#!/bin/sh
+
+# This script is a convenience script to automatically set the correct
+# classpath for the IPL given the location of a IPL installation,
+# specified in the $IPL_HOME environment variable.
+
+# Check setting of IPL_HOME
+if [ -z "$IPL_HOME" ];  then
+    echo "please set IPL_HOME to the location of your Ibis installation" 1>&2
+    exit 1
+fi
+
+# Run ...
+# Note: this requires Java 6
+exec java \
+    -classpath "$CLASSPATH:$IPL_HOME/lib/"'*' \
+    -Dlog4j.configuration=file:$IPL_HOME/log4j.properties \
+    "$@"

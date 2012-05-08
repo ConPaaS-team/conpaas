@@ -1,0 +1,9 @@
+#!/bin/sh
+
+# Check IPL_HOME.
+if [ -z "$IPL_HOME" ];  then
+    echo "please set IPL_HOME to the location of your Ibis installation" 1>&2
+    exit 1
+fi
+
+exec "$IPL_HOME"/bin/ipl-run ibis.smartsockets.viz.SmartsocketsViz "$@"

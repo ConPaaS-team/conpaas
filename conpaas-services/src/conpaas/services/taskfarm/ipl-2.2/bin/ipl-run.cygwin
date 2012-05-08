@@ -1,0 +1,46 @@
+#!/bin/sh
+
+# This script is a convenience script to automatically set the correct
+# classpath for the IPL given the location of an IPL installation,
+# specified in the $IPL_HOME environment variable.
+
+# Check setting of IPL_HOME
+if [ -z "$IPL_HOME" ];  then
+    echo "please set IPL_HOME to the location of your Ibis installation" 1>&2
+    exit 1
+fi
+
+# convert paths to unix format before dealing with them.
+IPL_HOME=`cygpath --unix "$IPL_HOME"`
+CLASSPATH=`cygpath --unix --path "$CLASSPATH"`
+
+# Jar-files from library.
+LIBCLASSPATH=""
+add_to_libclasspath () {
+    JARFILES=`cd "$1" && ls *.jar 2>/dev/null`
+    for i in ${JARFILES} ; do
+	if [ -z "$LIBCLASSPATH" ] ; then
+	    LIBCLASSPATH="$1/$i"
+	else
+	    LIBCLASSPATH="$LIBCLASSPATH:$1/$i"
+	fi
+    done
+}
+
+# Add the jar files in the Ibis lib dir to the classpath.
+add_to_libclasspath "${IPL_HOME}"/lib
+
+
+# Put value of environment variable CLASSPATH in front, if present.
+if [ -z "$CLASSPATH" ] ; then
+    :
+else 
+    LIBCLASSPATH="$CLASSPATH:$LIBCLASSPATH"
+fi
+
+# Convert paths back.
+LIBCLASSPATH=`cygpath --path --windows "$LIBCLASSPATH"`
+LOG4J=`cygpath --windows "$IPL_HOME/log4j.properties"`
+
+# And finally, run ...
+java -classpath "$LIBCLASSPATH" -Dlog4j.configuration=file:"$LOG4J" "$@"
