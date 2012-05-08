@@ -53,6 +53,7 @@ from conpaas.core.http import HttpErrorResponse, HttpJsonResponse
 
 from . import BasicWebserversManager, ManagerException
 from conpaas.core.expose import expose
+from conpaas.core import git
 
 class JavaManager(BasicWebserversManager):
   
@@ -63,6 +64,12 @@ class JavaManager(BasicWebserversManager):
   
   def _update_code(self, config, nodes):
     for serviceNode in nodes:
+      # Push the current code version via GIT if necessary
+      if config.codeVersions[config.currentCodeVersion].type == 'git':
+        _, err = git.git_push(git.DEFAULT_CODE_REPO, serviceNode.ip)
+        if err:
+          self.logger.debug('git-push to %s: %s' % (serviceNode.ip, err))
+
       try:
         if serviceNode.isRunningBackend:  ## UPLOAD TOMCAT CODE TO TOMCAT
           client.updateTomcatCode(serviceNode.ip, 5555, config.currentCodeVersion, config.codeVersions[config.currentCodeVersion].type, os.path.join(self.code_repo, config.currentCodeVersion))
@@ -162,19 +169,36 @@ class JavaManager(BasicWebserversManager):
       return HttpErrorResponse(ManagerException(ManagerException.E_STATE_ERROR).message)
     return HttpJsonResponse()
   
-  def _get_servlet_urls(self, codeVersionId):
-    arch = archive_open(os.path.join(self.code_repo, codeVersionId))
-    filelist = archive_get_members(arch)
+  def _get_servlet_urls_from_webxml(self, webxml_filename):
     ret = []
-    if 'WEB-INF/web.xml' in filelist:
-      tmp_dir = mkdtemp()
-      arch.extract('WEB-INF/web.xml', path=tmp_dir)
-      doc = minidom.parse(tmp_dir + '/WEB-INF/web.xml')
-      mappers = doc.getElementsByTagName('servlet-mapping')
-      for m in mappers:
-        url = m.getElementsByTagName('url-pattern')[0].firstChild.wholeText
-        ret.append(url)
-      rmtree(tmp_dir, ignore_errors=True)
+    doc = minidom.parse(webxml_filename)
+    mappers = doc.getElementsByTagName('servlet-mapping')
+    for m in mappers:
+      url = m.getElementsByTagName('url-pattern')[0].firstChild.wholeText
+      ret.append(url)
+    return ret
+
+  def _get_servlet_urls(self, codeVersionId):
+    ret = []
+    archname = os.path.join(self.code_repo, codeVersionId)
+
+    if os.path.isfile(archname):
+      # File-based code upload
+      arch = archive_open(archname)
+      filelist = archive_get_members(arch)
+      if 'WEB-INF/web.xml' in filelist:
+        tmp_dir = mkdtemp()
+        arch.extract('WEB-INF/web.xml', path=tmp_dir)
+        ret = self._get_servlet_urls_from_webxml(os.path.join(tmp_dir, 'WEB-INF', 'web.xml'))
+        rmtree(tmp_dir, ignore_errors=True)
+
+      return ret
+
+    # git-based code upload
+    webxml_filename = os.path.join(archname, 'WEB-INF', 'web.xml')
+    if os.path.isfile(webxml_filename):
+      ret = self._get_servlet_urls_from_webxml(webxml_filename)
+
     return ret
   
   def do_update_configuration(self, config, codeVersionId):

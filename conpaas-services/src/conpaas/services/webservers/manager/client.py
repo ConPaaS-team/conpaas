@@ -99,6 +99,10 @@ def get_node_info(host, port, serviceNodeId):
   params = {'serviceNodeId': serviceNodeId}
   return _check(_jsonrpc_get(host, port, '/', method, params=params))
 
+def list_authorized_keys(host, port):
+  method = 'list_authorized_keys'
+  return _check(_jsonrpc_get(host, port, '/', method))  
+
 def list_code_versions(host, port):
   method = 'list_code_versions'
   return _check(_jsonrpc_get(host, port, '/', method))
@@ -106,6 +110,11 @@ def list_code_versions(host, port):
 def upload_code_version(host, port, filename):
   params = {'method': 'upload_code_version'}
   files = {'code': filename}
+  return _check(_http_post(host, port, '/', params, files=files))
+
+def upload_authorized_key(host, port, filename):
+  params = {'method': 'upload_authorized_key'}
+  files = {'key': filename}
   return _check(_http_post(host, port, '/', params, files=files))
 
 def get_configuration(host, port):
@@ -129,3 +138,7 @@ def update_java_configuration(host, port, codeVersionId):
 def get_service_performance(host, port):
   method = 'get_service_performance'
   return _check(_jsonrpc_get(host, port, '/', method))
+
+def git_push_hook(host, port):
+  method = 'git_push_hook'
+  return _check(_jsonrpc_post(host, port, '/', method))

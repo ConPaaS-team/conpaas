@@ -74,6 +74,7 @@ from conpaas.core.http import HttpJsonResponse, HttpErrorResponse,\
 from conpaas.core.expose import expose
 from conpaas.core.controller import Controller
 
+from conpaas.core import git
 
 class ManagerException(Exception):
 
@@ -560,6 +561,13 @@ class BasicWebserversManager(object):
             })
 
   @expose('GET')  
+  def list_authorized_keys(self, kwargs):
+    if len(kwargs) != 0:
+      return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
+
+    return HttpJsonResponse({ 'authorizedKeys': git.get_authorized_keys() })
+
+  @expose('GET')  
   def list_code_versions(self, kwargs):
     if len(kwargs) != 0:
       return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
@@ -632,6 +640,23 @@ class BasicWebserversManager(object):
     self._configuration_set(config)
     return HttpJsonResponse({'codeVersionId': os.path.basename(codeVersionId)})
   
+  @expose('UPLOAD')
+  def upload_authorized_key(self, kwargs):
+    if 'key' not in kwargs:
+      return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_MISSING, 'key').message)
+
+    key = kwargs.pop('key')
+
+    if len(kwargs) != 0:
+      return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
+    if not isinstance(key, FileUploadField):
+      return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_INVALID, detail='key should be a file').message)
+
+    key_lines = key.file.readlines()
+    num_added = git.add_authorized_keys(key_lines)
+    
+    return HttpJsonResponse({'outcome': "%s keys added to authorized_keys" % num_added })
+
   @expose('GET')
   def get_service_performance(self, kwargs):
     if len(kwargs) != 0:
@@ -642,6 +667,25 @@ class BasicWebserversManager(object):
             'throughput': 0,
             'response_time': 0,
             })
+
+  @expose('POST')
+  def git_push_hook(self, kwargs):
+    if len(kwargs) != 0:
+      return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
+
+    config = self._configuration_get()
+    webServiceNodes = config.getWebServiceNodes()
+
+    repo = git.DEFAULT_CODE_REPO
+    codeVersionId = git.git_code_version(repo)
+
+    config.codeVersions[codeVersionId] = CodeVersion(id=codeVersionId, 
+                                                     filename=codeVersionId, 
+                                                     atype="git", 
+                                                     description=git.git_last_description(repo))
+
+    self._configuration_set(config)
+    return HttpJsonResponse({ 'codeVersionId': codeVersionId })
   
   @expose('GET')
   def getLog(self, kwargs):

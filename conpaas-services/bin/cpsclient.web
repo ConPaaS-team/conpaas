@@ -156,6 +156,19 @@ def get_node_info(args):
     if  response['serviceNode']['isRunningBackend']: print 'BACKEND',
     print
 
+def list_authorized_keys(args):
+  '''Get the list of known SSH keys'''
+  parser = OptionParser(usage='list_authorized_keys')
+  _, pargs = parser.parse_args(args)
+  if pargs:
+    parser.print_help()
+  else:
+    response = client.list_authorized_keys(host, port)
+    keys = response['authorizedKeys']
+    print len(keys), "keys found"
+    for k in keys:
+      print k
+
 def list_code_versions(args):
   '''List identifiers of all code versions stored by a deployment'''
   parser = OptionParser(usage='list_code_versions')
@@ -182,6 +195,16 @@ def upload_code_version(args):
   else:
     response = client.upload_code_version(host, port, args[0])
     print 'codeVersionId:', response['codeVersionId']
+
+def upload_authorized_key(args):
+  '''Upload the given SSH public key'''
+  parser = OptionParser(usage='upload_authorized_key <filename>')
+  _, pargs = parser.parse_args(args)
+  if len(pargs) != 1:
+    parser.print_help()
+  else:
+    response = client.upload_authorized_key(host, port, args[0])
+    print response['outcome']
 
 def get_configuration(args):
   '''Get the configuration of a deployment'''
@@ -246,6 +269,15 @@ def getLog(args):
     response = client.getLog(host, port)
     print response['log']
 
+def git_push_hook(args):
+  parser = OptionParser(usage='git_push_hook')
+  _, pargs = parser.parse_args(args)
+  if pargs:
+    parser.print_help()
+  else:
+    response = client.git_push_hook(host, port)
+    print "Code version %s successfully uploaded" % response['codeVersionId']
+
 def help(args=[]):
   '''Print the help menu'''
   l = ['add_nodes',
@@ -256,6 +288,7 @@ def help(args=[]):
        'get_service_info',
        'get_service_history',
        'help',
+       'list_authorized_keys',
        'list_code_versions',
        'list_nodes',
        'remove_nodes',
@@ -263,7 +296,8 @@ def help(args=[]):
        'startup',
        'update_php_configuration',
        'update_java_configuration',
-       'upload_code_version']
+       'upload_code_version',
+       'upload_authorized_key']
   l.sort()
   module = sys.modules[__name__]
   l = [ getattr(module, i) for i in l ]

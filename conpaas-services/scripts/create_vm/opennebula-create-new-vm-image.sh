@@ -245,7 +245,7 @@ DEBIAN_FRONTEND=noninteractive apt-get -y --force-yes --no-install-recommends --
         install openssh-server \
         python python-pycurl python-cheetah nginx \
         tomcat6-user memcached mysql-server \
-        make gcc g++ sun-java6-jdk erlang ant libxslt1-dev yaws subversion
+        make gcc g++ sun-java6-jdk erlang ant libxslt1-dev yaws subversion git
 update-rc.d -f memcached remove
 update-rc.d -f nginx remove
 update-rc.d -f yaws remove
@@ -279,6 +279,27 @@ mkdir /var/tmp/cpsmanager/
 mkdir /var/run/cpsmanager/
 mkdir /var/cache/cpsmanager/
 
+# add git user
+useradd git --shell /usr/bin/git-shell --create-home -k /dev/null
+# create ~git/.ssh and authorized_keys
+install -d -m 700 --owner=git --group=git /home/git/.ssh 
+install -m 600 --owner=git --group=git /dev/null ~git/.ssh/authorized_keys 
+# create default repository
+git init --bare ~git/code
+# create SSH key for manager -> agent access
+ssh-keygen -N "" -f ~root/.ssh/id_rsa
+echo StrictHostKeyChecking no > ~root/.ssh/config
+# allow manager -> agent passwordless pushes 
+cat ~root/.ssh/id_rsa.pub > ~git/.ssh/authorized_keys
+# post update hook 
+echo '#!/bin/sh
+
+PYTHONPATH=/root/ConPaaS/src/:/root/ConPaaS/contrib/ python /root/ConPaaS/bin/cpsclient.web http://127.0.0.1 git_push_hook' > ~git/code/hooks/post-update
+chmod +x ~git/code/hooks/post-update
+# fix repository permissions
+chown -R git:git ~git/code
+# allow the git user to traverse root's home and execute cpsclient
+chmod o+x /root/
 
 # add cloudera repo for hadoop
 echo "deb http://archive.cloudera.com/debian $DEBIAN_DIST-cdh3 contrib" >> /etc/apt/sources.list

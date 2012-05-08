@@ -50,6 +50,8 @@ from conpaas.core.http import HttpErrorResponse, HttpJsonResponse
 from . import BasicWebserversManager, ManagerException
 from conpaas.core.expose import expose
 
+from conpaas.core import git
+
 class PHPManager(BasicWebserversManager):
   
     def __init__(self, config_parser, **kwargs):
@@ -60,6 +62,12 @@ class PHPManager(BasicWebserversManager):
   
     def _update_code(self, config, nodes):
       for serviceNode in nodes:
+        # Push the current code version via GIT if necessary
+        if config.codeVersions[config.currentCodeVersion].type == 'git':
+          _, err = git.git_push(git.DEFAULT_CODE_REPO, serviceNode.ip)
+          if err:
+            self.logger.debug('git-push to %s: %s' % (serviceNode.ip, err))
+        
         try:
           client.updatePHPCode(serviceNode.ip, 5555, config.currentCodeVersion, config.codeVersions[config.currentCodeVersion].type, os.path.join(self.code_repo, config.currentCodeVersion))
         except client.AgentException:
