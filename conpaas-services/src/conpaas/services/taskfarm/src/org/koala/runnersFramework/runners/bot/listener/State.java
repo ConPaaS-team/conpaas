@@ -3,6 +3,12 @@ package org.koala.runnersFramework.runners.bot.listener;
 public class State {
     
     public String state;
+    /*
+     * Progress fields.
+     */
+    public int noTotalTasks;
+    public int noCompletedTasks;
+    public double moneySpent;
 
     State(String state) {
         this.state = state;

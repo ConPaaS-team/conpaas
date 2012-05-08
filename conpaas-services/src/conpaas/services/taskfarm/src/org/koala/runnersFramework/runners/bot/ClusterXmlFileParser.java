@@ -29,12 +29,16 @@ public class ClusterXmlFileParser {
     static final String COSTUNIT = "costunit";
     static final String MAXNODES = "maxnodes";
     static final String SPEEDFACTOR = "speedfactor";
-    static final String IMAGE = "image";
+    static final String IMAGE_ID = "imageid";
+    static final String NETWORK_ID = "networkid";
     static final String INSTANCETYPE = "instancetype";
     static final String KEYPAIRNAME = "keypairname";
     static final String KEYPAIRPATH = "keypairpath";
     static final String ACCESSKEY = "accesskey";
     static final String SECRETKEY = "secretkey";
+    static final String DNS = "nameserver";
+    static final String GATEWAY = "gateway";
+    
 
     public List<ClusterMetadata> readConfig(String configFile) {
         List<ClusterMetadata> listClustersMetadata = new ArrayList<ClusterMetadata>();
@@ -104,9 +108,15 @@ public class ClusterXmlFileParser {
                         continue;
                     }
 
-                    if (event.asStartElement().getName().getLocalPart().equals(IMAGE)) {
+                    if (event.asStartElement().getName().getLocalPart().equals(IMAGE_ID)) {
                         event = eventReader.nextEvent();
-                        clusterMetadata.image = event.asCharacters().getData();
+                        clusterMetadata.image_id = Integer.parseInt(event.asCharacters().getData());
+                        continue;
+                    }
+                    
+                    if (event.asStartElement().getName().getLocalPart().equals(NETWORK_ID)) {
+                        event = eventReader.nextEvent();
+                        clusterMetadata.network_id = Integer.parseInt(event.asCharacters().getData());
                         continue;
                     }
 
@@ -137,6 +147,18 @@ public class ClusterXmlFileParser {
                     if (event.asStartElement().getName().getLocalPart().equals(SECRETKEY)) {
                         event = eventReader.nextEvent();
                         clusterMetadata.secretKey = event.asCharacters().getData();
+                        continue;
+                    }
+                    
+                    if (event.asStartElement().getName().getLocalPart().equals(DNS)) {
+                        event = eventReader.nextEvent();
+                        clusterMetadata.dns = event.asCharacters().getData();
+                        continue;
+                    }
+                    
+                    if (event.asStartElement().getName().getLocalPart().equals(GATEWAY)) {
+                        event = eventReader.nextEvent();
+                        clusterMetadata.gateway = event.asCharacters().getData();
                         continue;
                     }
                 }

@@ -14,7 +14,6 @@ class DemoWrapper {
     private final Timer t;
     private long samplingStartTime, samplingFinishTime;
     private long executionStartTime, executionFinishTime;
-    private int noTotalTasks, noCompletedTasks;
     private double samplingPhaseTime = 20000; // ms
     private double samplingPercentage = 0.4;
     private double timePerTask;
@@ -64,8 +63,8 @@ class DemoWrapper {
             }
         }
 
-        noTotalTasks = list.size();
-        timePerTask = samplingPhaseTime / (samplingPercentage * noTotalTasks);
+        serviceState.noTotalTasks = list.size();
+        timePerTask = samplingPhaseTime / (samplingPercentage * serviceState.noTotalTasks);
         samplingStartTime = System.currentTimeMillis();
         samplingFinishTime = 0;
 
@@ -83,7 +82,8 @@ class DemoWrapper {
         executionStartTime = System.currentTimeMillis();
         executionFinishTime = 0;
 
-        double executionPhaseTime = timePerTask * (1 - samplingPercentage) * noTotalTasks;
+        double executionPhaseTime = timePerTask * (1 - samplingPercentage)
+                * serviceState.noTotalTasks;
         t.schedule(new ExecutionTask(), (long) executionPhaseTime);
         return new MethodReportSuccess("Execution started.");
     }
@@ -99,7 +99,53 @@ class DemoWrapper {
     }
 
     State get_service_info() {
-        return serviceState;
+        long currTime = System.currentTimeMillis();
+        synchronized (lock) {
+            if (State.ADAPTING.equals(serviceState.state)) {
+                // service is either in sampling or execution phase
+                if (samplingFinishTime == 0) {
+                    serviceState.noCompletedTasks = (int) ((double) (currTime
+                            - samplingStartTime) / timePerTask);
+                } else {
+                    serviceState.noCompletedTasks = (int) (samplingPercentage
+                            * serviceState.noTotalTasks + (currTime - executionStartTime) / timePerTask);
+                }
+            } else {
+                // service is idle
+                if (samplingFinishTime == 0) {
+                    serviceState.noCompletedTasks = 0;
+                } else if (executionFinishTime == 0) {
+                    serviceState.noCompletedTasks = (int) (samplingPercentage
+                            * serviceState.noTotalTasks);
+                } else {
+                    serviceState.noCompletedTasks = serviceState.noTotalTasks;
+                }
+            }
+            // assume in 1 atu, X jobs are finished.
+            // and that there are N machines running.
+            // then the money spent = 
+            // ceil( (tasksCompleted * timePerTask / N) / atu ) * costperatu * N
+            int atu = 20000;
+            int N = 5;
+            double costPerAtu = 3;
+            int samplingPhaseNoTasks = (int) (serviceState.noTotalTasks * 
+                    samplingPercentage);
+            if (serviceState.noCompletedTasks >= samplingPhaseNoTasks) {
+                // sampling phase expired
+                serviceState.moneySpent = Math.ceil(
+                        samplingPhaseNoTasks * timePerTask / N / atu
+                        ) 
+                        * costPerAtu * N +
+                        Math.ceil(
+                        (serviceState.noCompletedTasks - samplingPhaseNoTasks)
+                        * timePerTask / N / atu
+                        ) * costPerAtu * N;
+            } else {
+                serviceState.moneySpent = Math.ceil(serviceState.noCompletedTasks
+                    * timePerTask / N / atu) * costPerAtu * N;
+            }
+            return serviceState;
+        }
     }
 
     Object get_sampling_result() {
@@ -113,46 +159,5 @@ class DemoWrapper {
         SamplingResult sr = new SamplingResult("1873477324884", sched);
         list.add(sr);
         return list;
-    }
-
-    int get_tasks_done() {
-        long currTime = System.currentTimeMillis();
-        synchronized (lock) {
-            if (State.ADAPTING.equals(serviceState.state)) {
-                // service is either in sampling or execution phase
-                if (samplingFinishTime == 0) {
-                    noCompletedTasks = (int) ((double) (currTime - samplingStartTime) / timePerTask);
-                } else {
-                    noCompletedTasks = (int) (samplingPercentage * noTotalTasks
-                            + (currTime - executionStartTime) / timePerTask);
-                }
-            } else {
-                // service is idle
-                if (samplingFinishTime == 0) {
-                    return 0;
-                } else if (executionFinishTime == 0) {
-                    noCompletedTasks = (int) (samplingPercentage * noTotalTasks);
-                } else {
-                    noCompletedTasks = noTotalTasks;
-                }
-            }
-            return noCompletedTasks;
-        }
-
-    }
-
-    int get_total_no_tasks() {
-        return this.noTotalTasks;
-    }
-
-    double get_money_spent() {
-        // assume in 1 atu, X jobs are finished.
-        // and that there are N machines running.
-        // then the money spent = 
-        // ceil( (tasksCompleted * timePerTask / N) / atu ) * costperatu
-        int atu = 20;
-        int N = 5;
-        double costPerAtu = 3;
-        return Math.ceil(get_tasks_done() * timePerTask / N / atu) * costPerAtu;
     }
 }

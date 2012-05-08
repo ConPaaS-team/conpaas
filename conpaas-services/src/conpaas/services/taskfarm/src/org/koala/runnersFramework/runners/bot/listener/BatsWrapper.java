@@ -11,9 +11,14 @@ public class BatsWrapper {
             throw new RuntimeException("You do not have BATS_HOME set!");
         }
         System.out.println("BATS_HOME=" + BoTRunner.path);
-
-       // BoTRunner.path = "/home/maricel/NetBeansProjects/BoT";
-       // System.out.println("MANUAL BATS_HOME set to:\t" + BoTRunner.path);
+        
+        String demoValue = System.getProperty("demo");
+        if ("on".equals(demoValue)) {
+            BatsServiceApiImpl.DEMO = true;
+        } else {
+            BatsServiceApiImpl.DEMO = false;
+        }
+        System.out.println("DEMO=" + BatsServiceApiImpl.DEMO);
 
         Thread serviceListener = new BatsServiceListener();
         serviceListener.start();

@@ -19,6 +19,7 @@ import ibis.ipl.ReceiveTimedOutException;
 import ibis.ipl.SendPort;
 import ibis.ipl.SendPortIdentifier;
 import ibis.ipl.WriteMessage;
+import org.koala.runnersFramework.runners.bot.listener.BatsServiceApiImpl;
 
 
 public class ExecutionPhaseMaster extends Master {
@@ -810,7 +811,10 @@ public class ExecutionPhaseMaster extends Master {
 				
 			workers.get(cluster).get(from.location().getLevel(0)).addJobStats(received.getStats().getRuntime());
 			
-			bot.Clusters.get(cluster).doneJob(received);	
+			bot.Clusters.get(cluster).doneJob(received);
+
+                        // just counting the finished tasks so far.
+                        bot.finishedTasks.add(bot.Clusters.get(cluster).getJob(received));
 			
 			decide(false);
 			
@@ -890,7 +894,8 @@ public class ExecutionPhaseMaster extends Master {
 					} else if (received instanceof JobResult) {
 						nextJob = handleJobResult((JobResult) received, from);
 					} else {
-						System.exit(1);
+						throw new RuntimeException("received "
+                                                        + "an object which is not JobRequest or JobResult:" + received);
 					}
 
 					nextJob.setNode(from.location().getLevel(0));
@@ -952,6 +957,17 @@ public class ExecutionPhaseMaster extends Master {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
+                                //
+                                // Update progres info in the cache object
+                                double price = 0;
+                                for (Cluster cluster : bot.Clusters.values()) {
+                                    Collection<WorkerStats> wss = workers.get(cluster.alias).values();					
+                                    for (WorkerStats ws : wss) {
+                                        price += Math.ceil((double)ws.getUptime() / 60000 / cluster.timeUnit) * cluster.costUnit;
+                                    }			
+                                }
+                                BatsServiceApiImpl.serviceState.moneySpent = price;
+                                BatsServiceApiImpl.serviceState.noCompletedTasks = bot.finishedTasks.size();
 			}
 		}
 

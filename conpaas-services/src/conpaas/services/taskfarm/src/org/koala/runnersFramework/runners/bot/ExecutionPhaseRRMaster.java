@@ -63,7 +63,8 @@ public class ExecutionPhaseRRMaster extends Master {
 					} else if (received instanceof JobResult) {
 						nextJob = handleJobResult((JobResult) received, from);
 					} else {
-						System.exit(1);
+						throw new RuntimeException("received "
+                                                        + "an object which is not JobRequest or JobResult:" + received);
 					}
 
 					nextJob.setNode(from.location().getLevel(0));

@@ -27,6 +27,7 @@ import java.io.FileOutputStream;
 import java.io.ObjectOutputStream;
 import java.util.HashSet;
 import java.util.Iterator;
+import org.koala.runnersFramework.runners.bot.listener.BatsServiceApiImpl;
 
 
 /**
@@ -59,10 +60,10 @@ public class SamplingPhaseMaster extends Master {
 		
 		if(bot.noSampleJobs < bot.noReplicatedJobs) {
 			System.out.println("Bag too small!");
-			System.exit(0);
+			throw new RuntimeException("Bag too small!");
 		}
 
-		bot.finishedTasks = new ArrayList<Job>();
+		bot.finishedTasks = new HashSet<Job>();
 
 		replicatedTasks = new ArrayList<Job>();
 		Random randomSample = new Random(1111111111L);
@@ -218,7 +219,7 @@ public class SamplingPhaseMaster extends Master {
 		doneJob.runtimes.put(clusterName, new Double(received.getStats().getRuntime()/1000000000)) ;
 		doneJob.done = true;
 
-		bot.finishedTasks.add(doneJob);
+		bot.finishedTasks.add(doneJob);                
 
 		workers.get(clusterName).get(node).addJobStats(received.getStats().getRuntime());
 
@@ -369,7 +370,8 @@ public class SamplingPhaseMaster extends Master {
 				} else if (received instanceof JobResult) {
 					nextJob = handleJobResult((JobResult) received, from);
 				} else {
-					System.exit(1);
+					throw new RuntimeException("received "
+                                                        + "an object which is not JobRequest or JobResult:" + received);
 				}
 
 				nextJob.setNode(from.location().getLevel(0));
@@ -414,9 +416,18 @@ public class SamplingPhaseMaster extends Master {
 				ioe.printStackTrace();
 				undone = ! areWeDone();
 			} catch (ClassNotFoundException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+                        // Update progres info in the cache object
+                        double price = 0;
+                        for (Cluster cluster : bot.Clusters.values()) {
+                            Collection<WorkerStats> wss = workers.get(cluster.alias).values();					
+                            for (WorkerStats ws : wss) {
+				price += Math.ceil((double)ws.getUptime() / 60000 / cluster.timeUnit) * cluster.costUnit;
+                            }			
+                        }
+                        BatsServiceApiImpl.serviceState.noCompletedTasks = bot.finishedTasks.size();
+                        BatsServiceApiImpl.serviceState.moneySpent = price;
 		}
 
 		//select last cluster as base for sampling points normalization,
@@ -510,8 +521,10 @@ public class SamplingPhaseMaster extends Master {
 						 - ws.getUptime()%(cluster.timeUnit*60000)));
 			}			
 		}
+                // Update cache object - this is probably redundant, but just making sure.
+                BatsServiceApiImpl.serviceState.moneySpent = price;
 
-		System.out.println("Due amount sampling " + price);
+		System.out.println("Due amount sampling " + price);                
 		sampleCost = price;
 		long totalTime = (System.currentTimeMillis()-actualStartTime)/1000;
 		sampleMakespan = totalTime;
@@ -841,6 +854,7 @@ public class SamplingPhaseMaster extends Master {
             bot.bag.cleanup();
             oos.writeObject(bot);
             oos.writeObject(schedules);
+            oos.writeDouble(BatsServiceApiImpl.serviceState.moneySpent);
             fos.close();
             System.out.println("Schedules and BoT dumped to file: " + fileName);
         } catch (IOException ex) {

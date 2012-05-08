@@ -20,19 +20,29 @@ import org.koala.runnersFramework.runners.bot.BoTRunner;
 import org.koala.runnersFramework.runners.bot.Executor;
 import org.koala.runnersFramework.runners.bot.Schedule;
 
-class BatsServiceApiImpl implements BatsServiceApi {
+public class BatsServiceApiImpl implements BatsServiceApi {
 
     private final String schedulesFolderString;
     private final File schedulesFolder;
     private final Object lock;
-    private volatile State serviceState;
     private final String logFile = "exceptions.log";
     private static final Logger exceptionsLogger =
             Logger.getAnonymousLogger();
     private BoTRunner serviceBoT;
-    
+    /**
+     * Cache object. Read by this class, updated inside the service.
+     */
+    public static volatile State serviceState = new State(State.RUNNING);
+    /**
+     * Demo object.
+     */
+    private DemoWrapper demo;
+    /**
+     * Boolean which determines if demo is on or off.
+     */
+    public static boolean DEMO;
+
     public BatsServiceApiImpl() {
-        serviceState = new State(State.RUNNING);
         lock = new Object();
         try {
             Handler handler = new FileHandler(BoTRunner.path + File.separator + logFile);
@@ -45,15 +55,19 @@ class BatsServiceApiImpl implements BatsServiceApi {
         }
         schedulesFolderString = BoTRunner.path + File.separator + "schedules";
         schedulesFolder = new File(schedulesFolderString);
-        /* Create, if non-existing, the schedules dump folder */
+        /*
+         * Create, if non-existing, the schedules dump folder
+         */
         schedulesFolder.mkdirs();
-        
         demo = new DemoWrapper();
     }
-
+   
     @Override
-    public MethodReport start_sampling(String filesLocationUrl,
-            String inputFile, String clusterConfigurationFile) {
+    public MethodReport start_sampling(String filesLocationUrl, String inputFile) {
+        if (DEMO) {
+            return demo.start_sampling(inputFile);
+        }
+
         try {
             synchronized (lock) {
                 if (State.ADAPTING.equals(serviceState.state)) {
@@ -63,13 +77,13 @@ class BatsServiceApiImpl implements BatsServiceApi {
             }
 
             serviceBoT = new BoTRunner(5, 0, 60, 24, 400,
-                    inputFile, clusterConfigurationFile);
+                    inputFile, ""); //clusterConfFile is set to default value.
 
             BoTRunner.schedulesFile = schedulesFolderString + File.separator
-                     + System.currentTimeMillis();
+                    + System.currentTimeMillis();
 //            old code:
 //            BoTRunner.schedulesFile = schedulesFile;
-            
+
             BoTRunner.filesLocationUrl = filesLocationUrl;
 
             Thread thread = new Thread() {
@@ -83,7 +97,7 @@ class BatsServiceApiImpl implements BatsServiceApi {
                                 "Sampling failed because of:\n{0}\n",
                                 ex.getLocalizedMessage());
                     }
-                    synchronized (lock) {                        
+                    synchronized (lock) {
                         serviceState.state = org.koala.runnersFramework.runners.bot.listener.State.RUNNING;
                     }
 
@@ -103,13 +117,17 @@ class BatsServiceApiImpl implements BatsServiceApi {
 
     @Override
     public Object get_sampling_results() {
+        if (DEMO) {
+            return demo.get_sampling_result();
+        }
+
         List<SamplingResult> list = new ArrayList<SamplingResult>();
-        
+
         for (File file : schedulesFolder.listFiles()) {
             if (file.length() <= 0) {
                 continue;
             }
-            
+
             List<Schedule> schedules = null;
             try {
                 FileInputStream fis = new FileInputStream(file);
@@ -127,40 +145,45 @@ class BatsServiceApiImpl implements BatsServiceApi {
             if (schedules == null) {
                 continue;
             }
-            
+
             /**
-             * Return an array of schedules files names with their corresponding schedules.
-             * Element of the array format:
-             * [schedule time stamp] [sched0] [sched1] ...
-             * 
-             * Schedule format:
-             * budget   cost    atus
-             */ 
-            
+             * Return an array of schedules files names with their corresponding
+             * schedules. Element of the array format: [schedule time stamp]
+             * [sched0] [sched1] ...
+             *
+             * Schedule format: budget cost atus
+             */
             List<String> schedulesString = new ArrayList<String>(schedules.size());
             for (int i = 0; i < schedules.size(); i++) {
                 schedulesString.add(schedules.get(i).toString());
             }
-            
+
             list.add(new SamplingResult(file.getName(), schedulesString));
         }
 
-        if(list.isEmpty()) {
+        if (list.isEmpty()) {
 //            return new MethodReportError("No schedules files available.");
 //            Claudiu asked for this method not to return an error, but an empty non-error message.
             return new MethodReportSuccess();
         }
-        
+
         return list;
-    }    
+    }
 
     @Override
     public State get_service_info() {
+        if (DEMO) {
+            return demo.get_service_info();
+        }
         return serviceState;
     }
 
     @Override
-    public MethodReport start_execution(long schedulesFileTimeStamp, int scheduleNo) {    
+    public MethodReport start_execution(long schedulesFileTimeStamp, int scheduleNo) {
+        if (DEMO) {
+            return demo.start_execution();
+        }
+
         File schedFile = null;
         try {
             synchronized (lock) {
@@ -178,18 +201,20 @@ class BatsServiceApiImpl implements BatsServiceApi {
 
             final Executor execute = new Executor(args);
             serviceBoT = execute.bot;
-            
-            /*work-around such that the "Sampling&Execution-in-the-same-VM" works well*/
-            
-            Properties initialIbisProps = execute.bot.myIbisProps;      
-            execute.bot.poolName = initialIbisProps.get(IbisProperties.POOL_NAME)+"-executionPhase";
-            execute.bot.myIbisProps.setProperty(IbisProperties.POOL_NAME, 
-            		execute.bot.poolName);
-            execute.bot.electionName = initialIbisProps.get("ibis.election.name")+"-executionPhase";
-            execute.bot.myIbisProps.setProperty("ibis.election.name", 
-            		execute.bot.electionName);
 
-                        
+            /*
+             * work-around such that the "Sampling&Execution-in-the-same-VM"
+             * works well
+             */
+            Properties initialIbisProps = execute.bot.myIbisProps;
+            execute.bot.poolName = initialIbisProps.get(IbisProperties.POOL_NAME) + "-executionPhase";
+            execute.bot.myIbisProps.setProperty(IbisProperties.POOL_NAME,
+                    execute.bot.poolName);
+            execute.bot.electionName = initialIbisProps.get("ibis.election.name") + "-executionPhase";
+            execute.bot.myIbisProps.setProperty("ibis.election.name",
+                    execute.bot.electionName);
+
+
             Thread thread = new Thread() {
 
                 @Override
@@ -216,35 +241,37 @@ class BatsServiceApiImpl implements BatsServiceApi {
         }
         return new MethodReportSuccess("Ok.");
     }
-    
+
     @Override
     public MethodReport terminate_workers() {
-    	MethodReport retVal = new MethodReportSuccess();
-    	int totalNoWorkersTerminated = 0;
-    	try{
-    		synchronized (lock) {
-    			if (serviceBoT == null) {
-    				serviceState.state = State.STOPPED;
-    				retVal.append(totalNoWorkersTerminated + "\n");
-    				retVal.append("Ok.");
-    				return retVal;           
-    			}    		 
-    		}    	
+        if (DEMO) {
+            return demo.terminate_workers();
+        }
 
-    		totalNoWorkersTerminated = serviceBoT.terminate();
-    		retVal.append(totalNoWorkersTerminated + "\n");
-    		
-    		serviceState.state = State.STOPPED;
+        MethodReport retVal = new MethodReportSuccess();
+        int totalNoWorkersTerminated = 0;
+        try {
+            synchronized (lock) {
+                if (serviceBoT == null) {
+                    serviceState.state = State.STOPPED;
+                    retVal.append(totalNoWorkersTerminated + "\n");
+                    retVal.append("Ok.");
+                    return retVal;
+                }
+            }
 
-    	} catch(IOException ioe) {
-    		
-    		return new MethodReportError(ioe.getLocalizedMessage());
-    	}    	
-    	
-    	retVal.append("Ok.");
-    	return retVal;
-	}
-    
+            totalNoWorkersTerminated = serviceBoT.terminate();
+            retVal.append(totalNoWorkersTerminated + "\n");
+
+            serviceState.state = State.STOPPED;
+        } catch (IOException ioe) {
+            return new MethodReportError(ioe.getLocalizedMessage());
+        }
+
+        retVal.append("Ok.");
+        return retVal;
+    }
+
     private File getSchedulesFile(long schedulesFileTimeStamp) {
         String schedulesFile = "" + schedulesFileTimeStamp;
 
@@ -264,6 +291,10 @@ class BatsServiceApiImpl implements BatsServiceApi {
 
     @Override
     public MethodReport get_log() {
+        if (DEMO) {
+            return demo.get_log();
+        }
+
         MethodReport retVal = new MethodReportSuccess();
         try {
             BufferedReader br = new BufferedReader(new InputStreamReader(
@@ -277,55 +308,5 @@ class BatsServiceApiImpl implements BatsServiceApi {
             return new MethodReportError(ex.getLocalizedMessage());
         }
         return retVal;
-    }
-
-    /*
-     * Start demo API's impl.
-     */
-    DemoWrapper demo;
-    
-    @Override
-    public MethodReport start_sampling_demo(String filesLocation, String inputFile, String clusterConfigurationFile) {
-        return demo.start_sampling(inputFile);
-    }
-
-    @Override
-    public MethodReport start_execution_demo(long schedulesFileTimeStamp, int scheduleNo) {
-        return demo.start_execution();
-    }
-
-    @Override
-    public Object get_sampling_results_demo() {
-        return demo.get_sampling_result();
-    }
-
-    @Override
-    public State get_service_info_demo() {
-        return demo.get_service_info();
-    }
-
-    @Override
-    public MethodReport get_log_demo() {
-        return demo.get_log();
-    }
-
-    @Override
-    public MethodReport terminate_workers_demo() {
-        return demo.terminate_workers();
-    }
-
-    @Override
-    public int get_tasks_done_demo() {
-        return demo.get_tasks_done();
-    }
-
-    @Override
-    public int get_total_no_tasks_demo() {
-        return demo.get_total_no_tasks();
-    }
-
-    @Override
-    public double get_money_spent_demo() {
-        return demo.get_money_spent();
     }
 }

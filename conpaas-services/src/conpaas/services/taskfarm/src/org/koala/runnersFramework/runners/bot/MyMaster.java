@@ -65,7 +65,7 @@ public class MyMaster extends Master {
 /*		if(bot.noSampleJobs*bot.Clusters.size() > 0.5 * totalNumberTasks)
 		{
 			System.out.println("Size of the BoT too small for the number of clusters");
-			System.exit(0);
+			throw new RuntimeException("Size of the BoT too small for the number of clusters");
 		}
 	*/			
 		for (Cluster cluster : clusters) {
@@ -205,7 +205,8 @@ public class MyMaster extends Master {
 				} else if (received instanceof JobResult) {
 					nextJob = handleJobResult((JobResult) received, from);
 				} else {
-					System.exit(1);
+					throw new RuntimeException("received "
+                                                        + "an object which is not JobRequest or JobResult:" + received);
 				}
 
 				nextJob.setNode(from.location().getLevel(0));

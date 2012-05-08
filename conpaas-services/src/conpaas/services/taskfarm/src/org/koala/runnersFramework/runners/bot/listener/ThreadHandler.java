@@ -68,6 +68,13 @@ class ThreadHandler extends Thread {
             byte[] byteArray, OutputStream ops) throws IOException {
 
         String header = new String(byteArray);
+        
+        /* Refuse any other request than POST requests */
+        if (!header.contains("POST")) {
+            writeJsonErrorAndClose(ops, "Can only handle POST requests!");
+            return;
+        }
+                
         String jsonString = header.substring(header.lastIndexOf("\n") + 1);
 
         if (jsonString == null) {
@@ -78,7 +85,12 @@ class ThreadHandler extends Thread {
 
         writeHeader(ops, "HTTP/1.1 200 OK");
 
-        jsonRpcServer.handle(baipsContent, ops);
+        try {
+            jsonRpcServer.handle(baipsContent, ops);
+        } catch (Exception ex) {
+            System.err.println("Caught exception:\n" + ex);
+            System.err.println("Request was:\n" + header + "\n" + jsonString);
+        }
     }
 
     private void handleMime(JsonRpcServer jsonRpcServer,
@@ -92,7 +104,7 @@ class ThreadHandler extends Thread {
         jsonrpcMap.put("method", "");
         jsonrpcMap.put("uriLocation", "");
         jsonrpcMap.put("botFile", "");
-        jsonrpcMap.put("clusterFile", "");
+//        jsonrpcMap.put("clusterFile", "");
         jsonrpcMap.put("id", "1");
 
         for (int idx = 0; idx < bodyParts; idx++) {
@@ -237,14 +249,15 @@ class ThreadHandler extends Thread {
             }
             writeToFile(part.getInputStream(), botFile);
             jsonrpcMap.put("botFile", botFile);
-        } else if ("clusterFile".equals(name)) {
-            String clusterFile = part.getFileName();
-            if (clusterFile == null || "".equals(clusterFile)) {
-                clusterFile = "clusterFile.xml";
-            }
-            writeToFile(part.getInputStream(), clusterFile);
-            jsonrpcMap.put("clusterFile", clusterFile);
         }
+//        else if ("clusterFile".equals(name)) {
+//            String clusterFile = part.getFileName();
+//            if (clusterFile == null || "".equals(clusterFile)) {
+//                clusterFile = "clusterFile.xml";
+//            }
+//            writeToFile(part.getInputStream(), clusterFile);
+//            jsonrpcMap.put("clusterFile", clusterFile);
+//        }
     }
 
     private void writeToFile(InputStream ips, String fileName)
@@ -279,8 +292,8 @@ class ThreadHandler extends Thread {
                 + "\"method\":\"" + map.get("method") + "\", "
                 + "\"params\":["
                 + "\"" + map.get("uriLocation") + "\", "
-                + "\"" + map.get("botFile") + "\", "
-                + "\"" + map.get("clusterFile") + "\"], "
+                + "\"" + map.get("botFile") + "\"], "
+//                + "\"" + map.get("clusterFile") + "\"], " // carefull with ]
                 + "\"id\":" + map.get("id") + "}";
     }
 }

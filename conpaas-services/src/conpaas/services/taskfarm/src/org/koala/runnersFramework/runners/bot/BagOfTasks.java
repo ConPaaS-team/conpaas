@@ -80,7 +80,7 @@ public class BagOfTasks implements Serializable {
 			out.close();
 		} catch (Exception e) {
 			System.err.println("Failed at writing tasks...");
-			System.exit(1);
+			throw new RuntimeException(e.getMessage());
 		}
 
 		System.out.println("tasks size: " + tasks.size());// + "; totalNumberTasks: " + totalNumberTasks);
@@ -144,7 +144,7 @@ public class BagOfTasks implements Serializable {
 			out.close();
 		} catch (Exception e) {
 			System.err.println("Failed at writing tasks...");
-			System.exit(1);
+			throw new RuntimeException(e.getMessage());
 		}
 
 		System.out.println("stable distribution tasks size: " + tasks.size());// + "; totalNumberTasks: " + totalNumberTasks);
@@ -193,7 +193,7 @@ public class BagOfTasks implements Serializable {
 			out.close();
 		} catch (Exception e) {
 			System.err.println("Failed at writing tasks...");
-			System.exit(1);
+			throw new RuntimeException(e.getMessage());
 		}
 
 		System.out.println("stable distribution Levy truncated tasks size: " + tasks.size());// + "; totalNumberTasks: " + totalNumberTasks);

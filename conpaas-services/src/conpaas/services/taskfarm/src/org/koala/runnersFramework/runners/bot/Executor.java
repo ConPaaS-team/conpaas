@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.koala.runnersFramework.runners.bot.listener.BatsServiceApiImpl;
 
 /**
  * This class launches the execution based on already computed schedules.
@@ -14,8 +15,8 @@ import java.util.logging.Logger;
  * @author Maricel
  */
 public class Executor {
-
-	private ArrayList<Schedule> schedules;
+    
+    private ArrayList<Schedule> schedules;
     public BoTRunner bot;
     // boolean to determine whether to print or run selected|default schedule
     private boolean run = true;
@@ -113,7 +114,7 @@ public class Executor {
         } catch (Exception ex) {
             Logger.getLogger(Executor.class.getName()).log(Level.SEVERE, null, ex);
             System.out.println("Master init/startInitWorkers/run failed.");
-            System.exit(1);
+            throw new RuntimeException(ex.getMessage());
         }
     }
 
@@ -122,7 +123,12 @@ public class Executor {
         ObjectInputStream ois = new ObjectInputStream(fis);
 
         bot = (BoTRunner) ois.readObject();
-        schedules = (ArrayList<Schedule>) ois.readObject();       
+        schedules = (ArrayList<Schedule>) ois.readObject();
+        
+        // Also update cache object progres information.
+        BatsServiceApiImpl.serviceState.moneySpent = ois.readDouble();
+        BatsServiceApiImpl.serviceState.noTotalTasks = bot.tasks.size();
+        BatsServiceApiImpl.serviceState.noCompletedTasks = bot.finishedTasks.size();
 
         ois.close();
 

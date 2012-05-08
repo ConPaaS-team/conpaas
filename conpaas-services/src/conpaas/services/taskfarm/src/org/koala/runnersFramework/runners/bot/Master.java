@@ -61,7 +61,7 @@ public abstract class Master {
                 
 		if (myIbis.identifier().compareTo(
 				myIbis.registry().elect(bot.electionName)) != 0)
-			System.exit(1);
+			throw new RuntimeException("I should be the master, but I'm not:" + myIbis);
 		
 		workers = new HashMap<String, HashMap<String, WorkerStats>>();
 		

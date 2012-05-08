@@ -16,7 +16,7 @@ public class OpenNebulaOcaCluster extends Cluster {
 
 	private static final long serialVersionUID = -3283811123364250109L;
     public transient int currentNoNodes = 0;
-    public String image;
+    public int image_id, network_id;
     public String mem;
     public String dns, gateway;
     /*number of CPUs for the VM*/
@@ -30,15 +30,20 @@ public class OpenNebulaOcaCluster extends Cluster {
      * Object used to execute ONE commands.
      */
     public transient Client oneClient = null;
-    public static final String DNS = "130.73.121.1";
+    /**
+     * irrelevant dns and gateway default values.
+     */
+    public static final String DNS = "130.73.79.13";
     public static final String Gateway = "10.0.0.1";
     public static final String DEF_MEM = "400";
     
     public OpenNebulaOcaCluster(String hostname, int port, String alias, long timeUnit,
             double costUnit, int maxNodes, String speedFactor,
-            String image, String mem, String dns, String gateway, String e) {
+            int image_id, int network_id,
+            String mem, String dns, String gateway, String e) {
         super(hostname, alias, timeUnit, costUnit, maxNodes);
-        this.image = image;        
+        this.image_id = image_id;        
+        this.network_id = network_id;
         this.speedFactor = speedFactor;
         if((mem != null) && (!mem.equals(""))) {
         	this.mem = mem;
@@ -55,7 +60,26 @@ public class OpenNebulaOcaCluster extends Cluster {
         } else {
         	this.gateway = Gateway;
         }
-       
+    }
+    
+    public OpenNebulaOcaCluster(ClusterMetadata cm) {
+        super(cm.hostName, cm.alias, cm.timeUnit, cm.costUnit, cm.maxNodes);
+        this.image_id = cm.image_id;        
+        this.network_id = cm.network_id;
+        this.speedFactor = cm.speedFactor;
+        
+        this.mem = DEF_MEM;
+
+        if((cm.dns != null) && (!cm.dns.equals(""))) {
+        	this.dns = cm.dns;
+        } else {
+        	this.dns = DNS;
+        } 
+        if(!"".equals(cm.gateway)) {
+        	this.gateway = cm.gateway;
+        } else {
+        	this.gateway = Gateway;
+        }
     }
 
     private void setOneClient() {
@@ -167,11 +191,11 @@ public class OpenNebulaOcaCluster extends Cluster {
                 + "arch = x86_64\n"
                 + "]\n\n"
                 + "DISK   = [\n"
-                + "image   = \"" + image + "\",\n"
+                + "IMAGE_ID  = " + image_id + ",\n"
                 + "target  = \"sda\"\n"
                 + "]\n\n"
                 + "NIC    = [\n"
-                + "NETWORK = \"Private LAN\"\n"
+                + "NETWORK_ID = " + network_id +"\n"
                 + "]\n\n"
                 + "GRAPHICS = [\n"
                 + "TYPE    = \"vnc\",\n"
@@ -187,10 +211,11 @@ public class OpenNebulaOcaCluster extends Cluster {
                 + "CONTEXT = [\n"
                 + "hostname   = \"$NAME\",\n"
                 /*+ "dns        = \"$NETWORK[DNS, NAME=\\\"Small network\\\"]\",\n"*/
-                + "dns        = " + dns + ",\n"
+                + "nameserver        = " + dns + ",\n"
                 /*    + "gateway    = \"$NETWORK[GATEWAY, NAME=\\\"Small network\\\"]\",\n"*/
-                + "gateway    = " + gateway + ",\n"
-                + "ip_public  = \"$NIC[IP, NETWORK=\\\"Private LAN\\\"]\",\n"
+                + "ip_gateway    = " + gateway + ",\n"
+//                + "ip_public  = \"$NIC[IP, NETWORK=\\\"Private LAN\\\"]\",\n"
+                  + "ip_public  = \"$NIC[IP]\",\n"
                 /* variables required by a BoT worker */
                 + "LOCATION=\"" + location + "\",\n"
                 + "ELECTIONNAME=\"" + electionName + "\",\n"
@@ -208,10 +233,7 @@ public class OpenNebulaOcaCluster extends Cluster {
                /*ISSUE: + "files = \"" + pathToInitSh + " " + pathToIdRsaPub + "\",\n"*/
 				/* PAY ATTENTION: this will work only if the worker's image is set to run $USERDATA*/
                 + "USERDATA = \"" + getHexContent(System.getenv("HEX_FILE")) + "\",\n"
-                + "target = \"sdb\",\n"
-                + "root_pubkey = \"id_rsa.pub\",\n"
-                + "username = \"opennebula\",\n"
-                + "user_pubkey = \"id_rsa.pub\"\n"
+                + "target = \"sdb\"\n"
                 + "]\n";
 
         return vmTemplate;
