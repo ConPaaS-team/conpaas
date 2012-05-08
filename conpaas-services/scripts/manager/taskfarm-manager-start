@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# This script is part of the contextualization file. It 
+# starts a python script that parses the given arguments
+# and starts the manager server, which in turn will start
+# the manager service. 
+
+# This file is the default manager-start file. It can be
+# customized as needed by the sevice.  
+
+$CPS_HOME/sbin/manager/taskfarm-cpsmanager -c $ROOT_DIR/config.cfg 1>$ROOT_DIR/manager.out 2>$ROOT_DIR/manager.err &
+manager_pid=$!
+echo $manager_pid > $ROOT_DIR/manager.pid

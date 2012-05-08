@@ -1,0 +1,38 @@
+#!/bin/bash
+
+########################################################################################
+# Specs for BaTS worker
+
+export BATS_HOME=$CPS_HOME/src/conpaas/services/taskfarm
+export BATS_HOME_LIB=$BATS_HOME/lib
+export IPL_HOME=$BATS_HOME/ipl-2.2
+
+export FRESH_BATS
+
+########################################################################################
+# Create the one_auth file from contextualization variable ONE_AUTH_CONTENT
+# and set it as an environment variable for the JVM
+
+export ONE_AUTH=$BATS_HOME/.one_auth
+export VM_ID
+export ONE_XMLRPC
+
+echo $ONE_AUTH_CONTENT > $ONE_AUTH
+########################################################################################
+
+echo "Running java OneVMWorker vm_id = $VM_ID, one_xmlrpc = $ONE_XMLRPC, one_auth = $ONE_AUTH, location=$LOCATION, elect=$ELECTIONNAME, pool=$POOLNAME, servaddr=$SERVERADDRESS, speedfct=$SPEEDFACTOR" > $BATS_HOME/info.txt
+#echo "MOUNTURL=\$MOUNTURL" >> $BATS_HOME/info.txt
+#echo "MOUNT_FOLDER=\$MOUNT_FOLDER" >> $BATS_HOME/info.txt
+
+# \$MOUNTURL is an environment variable, passed down from the contextualization process
+#mount.xtreemfs --interrupt-signal=0 $MOUNTURL $MOUNT_FOLDER 1>> $BATS_HOME/mounting.log 2>> $BATS_HOME/mounting.err.log
+
+cd $BATS_HOME 
+
+# The JVM will set as working directory \$MOUNT_FOLDER in the JVM 
+java -classpath $BATS_HOME_LIB/*:$IPL_HOME/lib/*  \
+	-Dibis.location=$LOCATION                                                               \
+	org.koala.runnersFramework.runners.bot.OneVMWorker $ELECTIONNAME $POOLNAME $SERVERADDRESS $SPEEDFACTOR \
+	1> $BATS_HOME/vm_$VM_ID.out.log 2> $BATS_HOME/vm_$VM_ID.err.log
+
+#umount.xtreemfs $MOUNT_FOLDER

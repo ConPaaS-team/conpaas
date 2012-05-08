@@ -1,0 +1,216 @@
+#!/usr/bin/python
+'''
+Copyright (c) 2010-2012, Contrail consortium.
+All rights reserved.
+
+Redistribution and use in source and binary forms, 
+with or without modification, are permitted provided
+that the following conditions are met:
+
+ 1. Redistributions of source code must retain the
+    above copyright notice, this list of conditions
+    and the following disclaimer.
+ 2. Redistributions in binary form must reproduce
+    the above copyright notice, this list of 
+    conditions and the following disclaimer in the
+    documentation and/or other materials provided
+    with the distribution.
+ 3. Neither the name of the Contrail consortium nor the
+    names of its contributors may be used to endorse
+    or promote products derived from this software 
+    without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
+BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
+
+
+Created on April, 2012
+
+@author: aaasz
+'''
+from os.path import exists, join
+from os import system, environ
+from xml.dom.minidom import *
+from string import Template
+
+def add_parameter(doc, root, name, text):
+    node = doc.createElement(name)
+    root.appendChild(node)
+
+    text = doc.createTextNode(text)
+    node.appendChild(text)
+
+def make_xml(dict):
+	
+    doc = Document()
+    config = doc.createElement('config')
+
+    cluster = doc.createElement('cluster')
+    config.appendChild(cluster)
+
+    for key in dict:
+        add_parameter(doc, cluster, key, dict[key])
+
+    doc.appendChild(config)
+    return doc
+
+def get_agent_context_file(config_parser):
+    cloud = config_parser.get('iaas', 'DRIVER').lower()
+    conpaas_home = config_parser.get('manager', 'CONPAAS_HOME')
+    cloud_scripts_dir = conpaas_home + '/scripts/cloud'
+    agent_scripts_dir = conpaas_home + '/scripts/agent'
+
+    bootstrap = config_parser.get('manager', 'BOOTSTRAP')
+
+    # Get contextualization script for the corresponding cloud
+    cloud_script_file = open(cloud_scripts_dir + '/' + cloud, 'r')
+    cloud_script = cloud_script_file.read()
+
+    # Get agent setup file 
+    agent_setup_file = open(agent_scripts_dir + '/agent-setup', 'r')
+    agent_setup = Template(agent_setup_file.read()). \
+                                   safe_substitute(SOURCE=bootstrap)
+
+    # Get agent start file for the taskfarm service
+    agent_start_file = open(agent_scripts_dir + '/taskfarm-agent-start')
+    agent_start = agent_start_file.read()
+
+    ## Concatenate the files
+    context_file = cloud_script + '\n\n' \
+                 + agent_setup           \
+                 + agent_start + '\n'
+
+    return context_file
+
+def bash(cmd):
+    system("bash -c '%s'" % cmd)
+
+if __name__ == '__main__':
+  from optparse import OptionParser
+  from ConfigParser import ConfigParser
+  import sys
+  
+  parser = OptionParser()
+  parser.add_option('-i', '--ip', type='string', default='0.0.0.0', dest='address')
+  parser.add_option('-c', '--config', type='string', default=None, dest='config')
+  options, args = parser.parse_args()
+  
+  if not options.config or not exists(options.config):
+    print >>sys.stderr, 'Failed to find configuration file'
+    sys.exit(1)
+  
+  config_parser = ConfigParser()
+  try:
+    config_parser.read(options.config)
+  except:
+    print >>sys.stderr, 'Failed to read configuration file'
+    sys.exit(1)
+
+  """
+  Verify some sections and variables that must exist in the configuration file
+  """
+  config_vars = {
+    'manager': ['TYPE', 'BOOTSTRAP', 'LOG_FILE',
+                'FE_CREDIT_URL', 'FE_TERMINATE_URL', 'FE_SERVICE_ID'],
+    'iaas': ['DRIVER'],
+  }
+  config_ok = True
+  for section in config_vars:
+    if not config_parser.has_section(section):
+      print >>sys.stderr, 'Missing configuration section "%s"' % (section)
+      print >>sys.stderr, 'Section "%s" should contain variables %s' % (section, str(config_vars[section]))
+      config_ok = False
+      continue
+    for field in config_vars[section]:
+      if not config_parser.has_option(section, field)\
+      or config_parser.get(section, field) == '':
+        print >>sys.stderr, 'Missing configuration variable "%s" in section "%s"' % (field, section)
+        config_ok = False
+  if not config_ok:
+    sys.exit(1)
+
+  """
+  Setup the environment
+  """
+  # Home folder of taskfarm
+  bats_home =join(config_parser.get('manager', 'CONPAAS_HOME'),
+                'src/conpaas/services/taskfarm')
+
+  if config_parser.get('iaas', 'DRIVER') == 'OPENNEBULA':
+    # For Opennebula: create one_auth file; set env variables
+    cmd = "mkdir " + bats_home + '/.one'
+    bash(cmd)
+    cmd = "echo " + config_parser.get('iaas', 'USER') + ':' \
+                  + config_parser.get('iaas', 'PASSWORD')   \
+                  + ' > ' + bats_home + '/.one/one_auth'
+    bash(cmd)
+    environ['ONE_AUTH'] = bats_home + '/.one/one_auth'
+    environ['ONE_XMLRPC'] = config_parser.get('iaas', 'XMLRPC')
+
+  environ['BATS_HOME'] = bats_home
+  environ['BATS_HOME_LIB'] = bats_home + '/lib'
+  environ['IPL_HOME'] = bats_home + '/ipl-2.2'
+  
+
+  """
+  Create the cluster config file
+  """
+  cmd = "mkdir $BATS_HOME/ClusterConfiguration"
+  bash(cmd)
+  
+  path = bats_home + "/ClusterConfiguration/clusterConf.xml"
+  f = open(path, "w")
+
+  dict = {'hostname':config_parser.get('iaas', 'HOSTNAME'),
+          'timeunit':config_parser.get('iaas', 'TIMEUNIT'),
+          'costunit':config_parser.get('iaas', 'COSTUNIT'),
+	  'maxnodes':config_parser.get('iaas', 'MAXNODES'),
+	  'imageid' :config_parser.get('iaas', 'IMAGE_ID'),
+	  'networkid':config_parser.get('iaas', 'NET_ID'),
+	  'nameserver':config_parser.get('iaas', 'NET_NAMESERVER'),
+	  'gateway':config_parser.get('iaas', 'NET_GATEWAY'),
+	  'speedfactor':config_parser.get('iaas', 'SPEEDFACTOR')
+	  }
+
+  if config_parser.get('iaas', 'DRIVER') == 'OPENNEBULA':
+    dict['classname'] = 'org.koala.runnersFramework.runners.bot.OpenNebulaOcaCluster'
+  else:
+    dict['classname'] = 'org.koala.runnersFramework.runners.bot.EC2ClusterAmazonAPI'
+    dict['instancetype'] = config_parser.get('iaas', 'SIZE_ID')
+    dict['port'] = config_parser.get('iaas', 'PORT')
+    dict['keypairname'] = config_parser.get('iaas', 'KEY_NAME')
+    dict['accesskey'] = config_parser.get('iaas', 'USER')
+    dict['secretkey'] = config_parser.get('iaas', 'PASSWORD')
+
+  make_xml(dict).writexml(f)
+  f.close()
+
+  """
+  Create contextualization file for workers
+  """
+  environ['HEX_FILE'] = bats_home + '/hex_init.sh'
+  context = get_agent_context_file(config_parser).encode('hex')
+
+  f = open(environ['HEX_FILE'], 'w')
+  f.write(context)
+  f.close()
+
+  """
+  Start the ibis server and Bats Wrapper
+  """
+  # Execute initialiaztion script 
+  cmd = bats_home + '/manager/init.sh'
+  bash(cmd)
+   
