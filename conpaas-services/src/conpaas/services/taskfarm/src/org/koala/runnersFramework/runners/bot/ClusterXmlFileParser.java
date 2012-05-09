@@ -29,6 +29,7 @@ public class ClusterXmlFileParser {
     static final String COSTUNIT = "costunit";
     static final String MAXNODES = "maxnodes";
     static final String SPEEDFACTOR = "speedfactor";
+    static final String IMAGE = "image";
     static final String IMAGE_ID = "imageid";
     static final String NETWORK_ID = "networkid";
     static final String INSTANCETYPE = "instancetype";
@@ -105,6 +106,12 @@ public class ClusterXmlFileParser {
                     if (event.asStartElement().getName().getLocalPart().equals(SPEEDFACTOR)) {
                         event = eventReader.nextEvent();
                         clusterMetadata.speedFactor = event.asCharacters().getData();
+                        continue;
+                    }
+                    
+                    if (event.asStartElement().getName().getLocalPart().equals(IMAGE)) {
+                        event = eventReader.nextEvent();
+                        clusterMetadata.image = event.asCharacters().getData();
                         continue;
                     }
 

@@ -97,7 +97,7 @@ public class EucalyptusCluster extends Cluster {
             /* Start an instance */
             rd = euca.runInstances(launchConfig);
         } catch (EC2Exception ex) {
-            Logger.getLogger(EC2Cluster.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, null, ex);
             throw new RuntimeException("FAILED to start Eucalyptus workers");
         }
 

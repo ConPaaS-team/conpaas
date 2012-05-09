@@ -68,13 +68,6 @@ class ThreadHandler extends Thread {
             byte[] byteArray, OutputStream ops) throws IOException {
 
         String header = new String(byteArray);
-        
-        /* Refuse any other request than POST requests */
-        if (!header.contains("POST")) {
-            writeJsonErrorAndClose(ops, "Can only handle POST requests!");
-            return;
-        }
-                
         String jsonString = header.substring(header.lastIndexOf("\n") + 1);
 
         if (jsonString == null) {

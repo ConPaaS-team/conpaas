@@ -56,6 +56,17 @@ public class EC2ClusterAmazonAPI extends Cluster {
 		this.ec2 = new AmazonEC2Client(new BasicAWSCredentials(accessKey, secretKey));
 		
 	}
+
+    public EC2ClusterAmazonAPI(ClusterMetadata cm) {
+        super(cm.hostName, cm.alias, cm.timeUnit, cm.costUnit, cm.maxNodes);
+
+        this.AMI = cm.image;
+        this.speedFactor = cm.speedFactor;
+        this.keyPairName = cm.keyPairName;
+        this.instanceType = cm.instanceType;
+        this.ec2 = new AmazonEC2Client(
+                new BasicAWSCredentials(cm.accessKey, cm.secretKey));
+    }
     
     private String getContent(String dataFile) {
         try {
