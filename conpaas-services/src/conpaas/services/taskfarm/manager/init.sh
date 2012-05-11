@@ -1,5 +1,7 @@
 #!/bin/bash
 
+export $IP_PUBLIC
+
 port=8999
 iplServerOutput=/root/iplServer.out
 
