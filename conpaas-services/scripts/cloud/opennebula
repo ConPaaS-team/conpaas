@@ -33,3 +33,15 @@ echo "nameserver $NAMESERVER" > /etc/resolv.conf
 HOSTNAME=`/usr/bin/host $IP_PUBLIC | cut -d' ' -f5 | cut -d'.' -f1`
 /bin/hostname $HOSTNAME
 
+########################################################################################
+# Create the one_auth file from contextualization variable ONE_AUTH_CONTENT
+# and set it as an environment variable for the JVM
+
+# This is needed for services that use XMLRPC instead of OCCI
+
+if [ $ONE_AUTH_CONTENT ]; then
+  export ONE_AUTH=/root/.one_auth
+  export ONE_XMLRPC
+  echo $ONE_AUTH_CONTENT > $ONE_AUTH
+fi
+

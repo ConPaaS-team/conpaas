@@ -10,17 +10,8 @@ export IPL_HOME=$BATS_HOME/ipl-2.2
 export FRESH_BATS
 
 ########################################################################################
-# Create the one_auth file from contextualization variable ONE_AUTH_CONTENT
-# and set it as an environment variable for the JVM
 
-export ONE_AUTH=$BATS_HOME/.one_auth
-export VM_ID
-export ONE_XMLRPC
-
-echo $ONE_AUTH_CONTENT > $ONE_AUTH
-########################################################################################
-
-echo "Running java OneVMWorker vm_id = $VM_ID, one_xmlrpc = $ONE_XMLRPC, one_auth = $ONE_AUTH, location=$LOCATION, elect=$ELECTIONNAME, pool=$POOLNAME, servaddr=$SERVERADDRESS, speedfct=$SPEEDFACTOR" > $BATS_HOME/info.txt
+echo "Running java OneVMWorker vm_id = $VM_ID, location=$LOCATION, elect=$ELECTIONNAME, pool=$POOLNAME, servaddr=$SERVERADDRESS, speedfct=$SPEEDFACTOR" > $BATS_HOME/info.txt
 #echo "MOUNTURL=\$MOUNTURL" >> $BATS_HOME/info.txt
 #echo "MOUNT_FOLDER=\$MOUNT_FOLDER" >> $BATS_HOME/info.txt
 
