@@ -111,6 +111,18 @@ public class OpenNebulaOcaCluster extends Cluster {
             String electionName, String poolName, String serverAddress) {
 
         System.out.println("Starting " + noWorkers + " workers with ONE...");
+    	
+    	// XXX: in ConPaaS, IP_PUBLIC is passed as an environment variable
+    	// This needs to go upper in the call tree when all the bindings 
+    	// are supported by ConPaaS.
+        
+    	String newServerAddress = System.getenv().get("IP_PUBLIC");
+    	if(newServerAddress != null)
+    	{
+    		serverAddress = newServerAddress;
+    	}
+    	System.out.println("Ibis server address is " + serverAddress);
+
 
         // place here and not in constructor, because client is not serializable,
         // so when the deserializing at the Executor occurs, oneClient will be null.
@@ -164,25 +176,7 @@ public class OpenNebulaOcaCluster extends Cluster {
 
     private String createVMTemplate(String electionName, String poolName,
             String serverAddress, String speedFactor, String location) {
-        /**
-         * SOLVED BY USERDATA:
-         * HORRIBLE ISSUE:
-         * The paths to init.sh and id_rsa.pub need to be accessible 
-         * by the ONE admin (bzcmaier) - for a successful onevm create command.
-         * Thus, on a VM, where BoTRunner.path is relative to that machine,
-         * it is useless.
-         * 
-         * POSSIBLE SOLUTION:
-         * just put these 2 files on the front-end somewhere accessible to anyone,
-         * irrespective of the user.
-         */
-//        String pathToInitSh = BoTRunner.path + "/OpenNebulaCluster/init.sh";
-//        String pathToIdRsaPub = BoTRunner.path + "/OpenNebulaCluster/id_rsa.pub";
-       /* String path = "/home/vumaricel/batsManager";
 
-        String pathToInitSh = path + "/OpenNebulaCluster/init.sh";
-        String pathToIdRsaPub = path + "/OpenNebulaCluster/id_rsa.pub";
-*/
         String vmTemplate =
                 "NAME = BoTSVM\n"
                 + "CPU = " + speedFactor  + "\n"

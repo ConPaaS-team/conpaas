@@ -39,8 +39,6 @@ public class EC2ClusterAmazonAPI extends Cluster {
 	/* Instance type */
 	private String instanceType;
 	
-	/* FIXME: Ibis server address */
-	private String ibisServer = "cumulus.zib.de:8999";
 	
     public EC2ClusterAmazonAPI(String hostname, int port, String alias, long timeUnit,
             double costUnit, int maxNodes, String speedFactor,
@@ -91,6 +89,20 @@ public class EC2ClusterAmazonAPI extends Cluster {
 		{
 			return null;
 		}
+		
+		System.out.println("Starting " + noNodes + " EC2 workers");
+		
+    	// XXX: in ConPaaS, IP_PUBLIC is passed as an environment variable
+    	// This needs to go upper in the call tree when all the bindings 
+    	// are supported by ConPaaS.
+        
+    	String newServerAddress = System.getenv().get("IP_PUBLIC");
+    	if(newServerAddress != null)
+    	{
+    		serverAddress = newServerAddress;
+    	}
+    	System.out.println("Ibis server address is " + serverAddress);
+		
 		/* set the requested VM properties */
 		RunInstancesRequest runInstancesRequest = new RunInstancesRequest()
 	    .withInstanceType(this.instanceType)
@@ -125,10 +137,10 @@ public class EC2ClusterAmazonAPI extends Cluster {
 			String serverAddress) {
         
 		String script =  getContent(System.getenv().get("EC2_WORKER_INIT_SH")).
-		replaceAll("ELECTIONNAME", electionName).
-		replaceAll("POOLNAME", poolName).
-		replaceAll("SERVERADDRESS", ((ibisServer.equals("")) ? serverAddress : this.ibisServer)).
-		replaceAll("SPEEDFACTOR", this.speedFactor);
+		replaceAll("$ELECTIONNAME", electionName).
+		replaceAll("$POOLNAME", poolName).
+		replaceAll("$SERVERADDRESS", System.getenv().get("IP_PUBLIC") + ":8999").
+		replaceAll("$SPEEDFACTOR", this.speedFactor);
         return script;
 	}
 
