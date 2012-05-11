@@ -16,6 +16,7 @@ IP_PUBLIC=$(ec2_get_metadata public-ipv4)
 PRIVATE_IP=$(ec2_get_metadata local-ipv4)
 PUBLIC_HOSTNAME=$(ec2_get_metadata public-hostname)
 PRIVATE_HOSTNAME=$(ec2_get_metadata hostname)
+VM_ID=$(ec2_get_metadata instance-id)
 
 # Temp fix
 echo "$PRIVATE_HOSTNAME" >/etc/hostname
