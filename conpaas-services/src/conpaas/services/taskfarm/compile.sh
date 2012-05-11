@@ -10,7 +10,6 @@ javac -cp $BATS_HOME/lib/*:$IPL_HOME/lib/* \
 	$BATS_HOME/src/org/koala/runnersFramework/runners/bot/listener/*.java \
 	-d $BATS_HOME/temp/
 
-cd $BATS_HOME/temp
-jar cf $BATS_HOME/lib/conpaas-bot.jar *
+jar cf $BATS_HOME/lib/conpaas-bot.jar $BATS_HOME/*
 
 rm -r $BATS_HOME/temp
