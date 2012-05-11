@@ -5,6 +5,7 @@ iplServerOutput=/root/iplServer.out
 
 java -classpath $CLASSPATH:$IPL_HOME/lib/* \
 	-Dlog4j.configuration=file:$IPL_HOME/log4j.properties \
+	-Dsmartsockets.external.manual=$IP_PUBLIC \
 	-Xmx256M ibis.ipl.server.Server \
 	--events --errors --stats  --port $port \
 	2> $iplServerOutput &
@@ -26,3 +27,5 @@ java -cp $BATS_HOME_LIB/*:$BATS_HOME/:$IPL_HOME/lib/* \
 	-Dibis.server.port=$port \
 	org.koala.runnersFramework.runners.bot.listener.BatsWrapper \
 	1> $BATS_HOME/out.log 2> $BATS_HOME/err.log &
+
+# to enable demo use: -Ddemo=on

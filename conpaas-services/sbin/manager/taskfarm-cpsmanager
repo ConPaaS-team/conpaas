@@ -103,7 +103,7 @@ if __name__ == '__main__':
   import sys
   
   parser = OptionParser()
-  parser.add_option('-i', '--ip', type='string', default='0.0.0.0', dest='address')
+  parser.add_option('-a', '--address', type='string', default='0.0.0.0', dest='address')
   parser.add_option('-c', '--config', type='string', default=None, dest='config')
   options, args = parser.parse_args()
   
@@ -111,6 +111,10 @@ if __name__ == '__main__':
     print >>sys.stderr, 'Failed to find configuration file'
     sys.exit(1)
   
+  if not options.address:
+    print >>sys.stderr, 'Failed to get the public IP address'
+    sys.exit(1)
+
   config_parser = ConfigParser()
   try:
     config_parser.read(options.config)
@@ -162,7 +166,7 @@ if __name__ == '__main__':
   environ['BATS_HOME'] = bats_home
   environ['BATS_HOME_LIB'] = bats_home + '/lib'
   environ['IPL_HOME'] = bats_home + '/ipl-2.2'
-  
+  environ['IP_PUBLIC'] = options.address
 
   """
   Create the cluster config file
@@ -177,17 +181,18 @@ if __name__ == '__main__':
           'timeunit':config_parser.get('iaas', 'TIMEUNIT'),
           'costunit':config_parser.get('iaas', 'COSTUNIT'),
 	  'maxnodes':config_parser.get('iaas', 'MAXNODES'),
-	  'imageid' :config_parser.get('iaas', 'IMAGE_ID'),
-	  'networkid':config_parser.get('iaas', 'NET_ID'),
-	  'nameserver':config_parser.get('iaas', 'NET_NAMESERVER'),
-	  'gateway':config_parser.get('iaas', 'NET_GATEWAY'),
 	  'speedfactor':config_parser.get('iaas', 'SPEEDFACTOR')
 	  }
 
   if config_parser.get('iaas', 'DRIVER') == 'OPENNEBULA':
     dict['classname'] = 'org.koala.runnersFramework.runners.bot.OpenNebulaOcaCluster'
-  else:
+    dict['networkid'] = config_parser.get('iaas', 'NET_ID')
+    dict['nameserver'] = config_parser.get('iaas', 'NET_NAMESERVER')
+    dict['gateway'] = config_parser.get('iaas', 'NET_GATEWAY')
+    dict['imageid'] = config_parser.get('iaas', 'IMAGE_ID')
+  elif config_parser.get('iaas', 'DRIVER') == 'EC2': 
     dict['classname'] = 'org.koala.runnersFramework.runners.bot.EC2ClusterAmazonAPI'
+    dict['image'] = config_parser.get('iaas', 'IMAGE_ID')
     dict['instancetype'] = config_parser.get('iaas', 'SIZE_ID')
     dict['port'] = config_parser.get('iaas', 'PORT')
     dict['keypairname'] = config_parser.get('iaas', 'KEY_NAME')

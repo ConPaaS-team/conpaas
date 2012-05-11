@@ -43,3 +43,11 @@ SECURITY_GROUP_NAME = contrail
 # the same value as field "keypair" from configuration file aws.ini.
 KEY_NAME = conpaas
 
+# The following params are needed for the Task Farming service
+# TODO: Why hostname needed? (deduce from XMLRPC?)
+HOSTNAME = hostname.com 
+PORT = 8889
+TIMEUNIT = 10
+COSTUNIT = 3
+MAXNODES = 3
+SPEEDFACTOR = 1 
