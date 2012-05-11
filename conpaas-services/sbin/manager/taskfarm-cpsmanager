@@ -205,11 +205,16 @@ if __name__ == '__main__':
   """
   Create contextualization file for workers
   """
-  environ['HEX_FILE'] = bats_home + '/hex_init.sh'
-  context = get_agent_context_file(config_parser).encode('hex')
+  agent_context = get_agent_context_file(config_parser)
+  agent_context_file = bats_home + '/agent_init.sh'
+  if config_parser.get('iaas', 'DRIVER') == 'OPENNEBULA':
+    agent_context = agent_context.encode('hex')
+    environ['HEX_FILE'] = agent_context_file
+  elif config_parser.get('iaas', 'DRIVER') == 'EC2': 
+    environ['EC2_WORKER_INIT_SH'] = agent_context_file 
 
-  f = open(environ['HEX_FILE'], 'w')
-  f.write(context)
+  f = open(agent_context_file, 'w')
+  f.write(agent_context)
   f.close()
 
   """
