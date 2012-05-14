@@ -119,9 +119,9 @@ public class OpenNebulaOcaCluster extends Cluster {
     	String newServerAddress = System.getenv().get("IP_PUBLIC");
     	if(newServerAddress != null)
     	{
-    		serverAddress = newServerAddress;
+    	//	serverAddress = newServerAddress;
     	}
-    	System.out.println("Ibis server address is " + serverAddress);
+    	System.out.println("Ibis server address is: old: " + serverAddress + " new: " + newServerAddress);
 
 
         // place here and not in constructor, because client is not serializable,
