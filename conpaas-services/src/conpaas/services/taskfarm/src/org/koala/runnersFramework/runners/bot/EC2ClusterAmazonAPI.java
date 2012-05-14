@@ -96,12 +96,12 @@ public class EC2ClusterAmazonAPI extends Cluster {
     	// This needs to go upper in the call tree when all the bindings 
     	// are supported by ConPaaS.
         
-    	String newServerAddress = System.getenv().get("IP_PUBLIC");
+    	String newServerAddress = System.getenv().get("IP_PUBLIC") + ":8999";
     	if(newServerAddress != null)
     	{
-    		serverAddress = newServerAddress;
+    		//serverAddress = newServerAddress;
     	}
-    	System.out.println("Ibis server address is " + serverAddress);
+    	System.out.println("Ibis server address is old: " + serverAddress + " new:" + newServerAddress);
 		
 		/* set the requested VM properties */
 		RunInstancesRequest runInstancesRequest = new RunInstancesRequest()
