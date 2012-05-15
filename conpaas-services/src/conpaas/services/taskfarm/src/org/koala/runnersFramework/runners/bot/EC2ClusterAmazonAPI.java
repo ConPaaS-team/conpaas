@@ -136,12 +136,15 @@ public class EC2ClusterAmazonAPI extends Cluster {
 	private String createUserData(String electionName, String poolName,
 			String serverAddress) {
         
+		System.out.println(getContent(System.getenv().get("EC2_WORKER_INIT_SH")));
 		String script =  getContent(System.getenv().get("EC2_WORKER_INIT_SH")).
-		replaceAll("$ELECTIONNAME", electionName).
-		replaceAll("$POOLNAME", poolName).
-		replaceAll("$SERVERADDRESS", System.getenv().get("IP_PUBLIC") + ":8999").
-		replaceAll("$SPEEDFACTOR", this.speedFactor);
-        return script;
+		replaceAll("\\$LOCATION", "\\$VM_ID@ec2").
+		replaceAll("\\$ELECTIONNAME", electionName).
+		replaceAll("\\$POOLNAME", poolName).
+		replaceAll("\\$SERVERADDRESS", System.getenv().get("IP_PUBLIC") + ":8999").
+		replaceAll("\\$SPEEDFACTOR", this.speedFactor);
+		System.out.println("new script: \n" + script);
+		return script;
 	}
 
 	@Override

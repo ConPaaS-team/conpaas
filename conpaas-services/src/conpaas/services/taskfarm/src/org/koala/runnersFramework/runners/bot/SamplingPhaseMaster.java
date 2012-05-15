@@ -175,8 +175,12 @@ public class SamplingPhaseMaster extends Master {
 
 		/*DEBUG*/
 		System.err.println("job request from node " + from.location().toString() + " in cluster " + clusterName);
-
-		WorkerStats reacquiredMachine = workers.get(clusterName).get(node);
+		HashMap<String, WorkerStats> thisCluster = workers.get(clusterName);
+		if(thisCluster == null)
+		{
+			throw new RuntimeException("Cannot find the cluster with alias " + clusterName);
+		}
+		WorkerStats reacquiredMachine = thisCluster.get(node);
 		if(reacquiredMachine == null) {
 			workers.get(clusterName).put(node, new WorkerStats(node, System.currentTimeMillis(), from));
 		} else {
