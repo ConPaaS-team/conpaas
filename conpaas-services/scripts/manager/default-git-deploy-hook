@@ -1,0 +1,20 @@
+# This script enables GIT-based code/data uploads.
+#
+# The post-update hook defined here describes the behavior to be followed by
+# the manager upon receiving a git-push(1). Rather than being invoked directly,
+# this file should be sourced by the manager script. See for example
+# php-manager-start in this same directory.
+
+# Write the post-update hook
+cat <<EOF>~git/code/hooks/post-update
+#!/bin/sh
+export PYTHONPATH=$CPS_HOME/src/:$CPS_HOME/contrib/ 
+
+python $CPS_HOME/bin/cpsclient.web http://127.0.0.1 git_push_hook
+EOF
+
+# Make it executable
+chmod +x ~git/code/hooks/post-update
+
+# Allow $ROOT_DIR traversal: cpsclient.web has to be accessed by the git user
+chmod o+x $ROOT_DIR

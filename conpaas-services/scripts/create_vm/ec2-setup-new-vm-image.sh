@@ -113,15 +113,8 @@ function install_deb() {
   echo StrictHostKeyChecking no > ~root/.ssh/config
   # allow manager -> agent passwordless pushes 
   cat ~root/.ssh/id_rsa.pub > ~git/.ssh/authorized_keys
-  # post update hook 
-  echo '#!/bin/sh
-
-  PYTHONPATH=/root/ConPaaS/src/:/root/ConPaaS/contrib/ python /root/ConPaaS/bin/cpsclient.web http://127.0.0.1 git_push_hook' > ~git/code/hooks/post-update
-  chmod +x ~git/code/hooks/post-update
   # fix repository permissions
   chown -R git:git ~git/code
-  # allow the git user to traverse root's home and execute cpsclient
-  chmod o+x /root/
   
   # add cloudera repo for hadoop
   echo "deb http://archive.cloudera.com/debian $DEBIAN_DIST-cdh3 contrib" >> /etc/apt/sources.list
