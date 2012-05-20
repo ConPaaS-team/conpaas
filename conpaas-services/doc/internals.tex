@@ -120,7 +120,7 @@ In the ConPaaS home folder (\textdollar CONPAAS\_HOME) there is the \textit{conf
 \begin{itemize}
 \item Files specific to the Cloud:
 
-(1) \textdollar CONPAAS\_HOME/config/cloud/\textit{cloud\_name}.cfg, where \textit{cloud\_name} refers to the clouds supported by the system (for now OpenNebula and SC2). So there is one such file for each cloud the system supports. These files are filled in by the administrator. They contain information such as the username and password to access the cloud, the OS image to be used with the VMs, etc. These files are used by the frontend and the manager, as both need to ask the cloud to start VMs. 
+(1) \textdollar CONPAAS\_HOME/config/cloud/\textit{cloud\_name}.cfg, where \textit{cloud\_name} refers to the clouds supported by the system (for now OpenNebula and EC2). So there is one such file for each cloud the system supports. These files are filled in by the administrator. They contain information such as the username and password to access the cloud, the OS image to be used with the VMs, etc. These files are used by the frontend and the manager, as both need to ask the cloud to start VMs. 
 
 (2) \textdollar CONPAAS\_HOME/scripts/cloud/\textit{cloud\_name}, where \textit{cloud\_name} refers to the clouds supported by the system (for now OpenNebula and EC2). So, as above, there is one such file for each cloud the system supports. These scrips will be included in the contextualization files. For example, for OpenNebula, this file sets up the network. 
 
