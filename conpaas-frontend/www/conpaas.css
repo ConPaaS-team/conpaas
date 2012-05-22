@@ -1150,6 +1150,15 @@ body.loginbody {
 	background-color: white;
 }
 
+#user-form {
+	padding: 5px;
+}
+
+#user-form .name {
+	text-align: right;
+	padding-right: 5px;
+}
+
 .login .form .input {
 	padding: 3px 3px 0 5px;
 }
@@ -1167,6 +1176,7 @@ body.loginbody {
 .login #error {
 	color: red;
 	margin-left: 1px;
+    padding: 5px;
 }
 
 .login .title {
@@ -1192,7 +1202,7 @@ body.loginbody {
 }
 
 .login #register-title {
-	padding-left: 115px;
+	padding-left: 135px;
 }
 
 .login .form {
@@ -1204,7 +1214,7 @@ body.loginbody {
 }
 
 .login .actions {
-	padding: 10px 5px 10px 5px;
+	padding: 10px 5px 1px 5px;
 }
 
 .login .descr {
@@ -1320,4 +1330,8 @@ img {
     background-image: url('images/error.png');
 	background-color: #FFEDF4;
 	color: red;
+}
+
+#recaptcha {
+	padding: 10px 3px 3px 3px;
 }

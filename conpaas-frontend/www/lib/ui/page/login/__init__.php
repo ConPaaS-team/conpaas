@@ -36,7 +36,12 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-$dir = dirname(__FILE__).'/';
+require_module('ui/page');
 
-require_once($dir.'UserData.php');
-require_once($dir.'User.php');
+class LoginPage extends Page {
+
+	public function __construct() {
+		parent::__construct();
+		$this->addJS('js/login.js');
+	}
+}

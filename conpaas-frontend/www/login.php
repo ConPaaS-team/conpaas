@@ -37,26 +37,25 @@
  */
 
 require_once('__init__.php');
-require_module('ui/page');
+require_module('ui/page/login');
+require_module('recaptcha');
 
 if (isset($_SESSION['uid'])) {
 	header('Location: index.php');
 	exit();
 }
 
-$page = new Page();
+$page = new LoginPage();
 ?>
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<?php echo $page->renderDoctype(); ?>
 <html>
-<head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<title>ConPaaS login </title>
-<?php echo $page->renderIcon(); ?>
-<link type="text/css" rel="stylesheet" href="conpaas.css" />
-<script src="js/jquery-1.5.js"></script>
-<script src="js/jquery.form.js"></script>
-</head>
+	<head>
+	  	<?php echo $page->renderContentType(); ?>
+	    <?php echo $page->renderTitle(); ?>
+	    <?php echo $page->renderIcon(); ?>
+	    <?php echo $page->renderHeaderCSS(); ?>
+	</head>
 <body class="loginbody">
 	<div class="logo">
 		<a href="http://www.conpaas.eu/"><img src="images/conpaas-logo-large.png" /></a>
@@ -76,7 +75,7 @@ $page = new Page();
 			</p>
 		</td>
 		<td class="formwrap">
-		<div class="form">
+		<div id="user-form">
 			<h2 class="title" id="login-title">Login</h2>
 			<h2 class="title invisible" id="register-title">Register</h2>
 			<table>
@@ -95,13 +94,13 @@ $page = new Page();
 				<tr>
 					<td class="name">password</td>
 					<td class="input">
-						<input type="password" id="passwd" />
+						<input type="password" id="password" />
 					</td>
 				</tr>
 				<tr class="register_form" style="display: none">
 					<td class="name">retype password</td>
 					<td class="input">
-						<input type="password" id="passwd2" />
+						<input type="password" id="password2" />
 					</td>
 				</tr>
 				<tr class="register_form" style="display: none">
@@ -122,9 +121,19 @@ $page = new Page();
 						<input type="text" id="affiliation" />
 					</td>
 				</tr>
+				<script type="text/javascript">
+					var RecaptchaOptions = {
+    					theme : 'white'
+ 					};
+ 				</script>
+				<tr class="register_form invisible">
+					<td colspan="2" id="recaptcha">
+					<?php echo recaptcha_get_html(CAPTCHA_PUBLIC_KEY); ?>
+					</td>
+				</tr>
 				<tr>
 					<td class="name">
-						<img class="loading invisible" src="images/icon_loading.gif" />
+					<img class="loading invisible" src="images/icon_loading.gif" />
 					</td>
 					<td class="actions">
 						<input class="active" type="button" value="login" id="login" />
@@ -137,124 +146,12 @@ $page = new Page();
 					<td><div id="error"></div></td>
 				</tr>
 			</table>
+			<div id="error" class="invisible"></div>
 		</div>
 		</td>
-		</tr></table>
+		</tr>
+		</table>
 	</div>
-
-	<script type="text/javascript">
-
-	/*
-	 * type can be 'auth' or 'register'
-	 * success is the callback function, in case of normal response
-	 */
-	function userRequest(type, success) {
-		if (type == 'register') {
-			fields = ['#username', '#email', '#passwd', '#passwd2', '#fname', '#lname','#affiliation'];
-			if ($('#passwd').val() != $('#passwd2').val()) {
-				$('#error').html('Passwords do not match').show();
-				setTimeout("$('#error').fadeOut();", 2000);
-				return;
-			}
-			$data = {
-	  			action: type,
-	  			username: $('#username').val(),
-	  			email: $('#email').val(),
-	  			passwd: $('#passwd').val(),
-	  			fname: $('#fname').val(),
-	  			lname: $('#lname').val(),
-	  			affiliation: $('#affiliation').val()
-  			};
-		}
-		else {
-			fields = ['#username', '#passwd'];
-			$data = {
-	  			action: type,
-	  			username: $('#username').val(),
-	  			passwd: $('#passwd').val(),
-  			}
-		}
-		for (i in fields) {
-    		if ($(fields[i]).val() == '') {
-    			$(fields[i]).focus();
-    			return;
-    		}
-		}
-
-		$('.login .loading').show();
-  		$.ajax({
-  			url: 'ajax/login.php',
-  			data: $data,
-  			dataType: 'json',
-  			type: 'post',
-			success: function (response) {
-	  			$('.login .loading').hide();
-				if (typeof response.error != 'undefined') {
-					$('#error').html(response.error).show();
-					setTimeout("$('#error').fadeOut();", 2000);
-					$('#username').select().focus();
-				} else {
-					success(response);
-				}
-			}
-		});
-	}
-
-	function login() {
-		userRequest('auth', function (response) {
-			if (response.auth == 1){
-				window.location = 'index.php';
-			}
-		});
-	}
-
-	function register() {
-		userRequest('register', function (response) {
-			if (response.register == 1) {
-				window.location = 'index.php';
-			}
-		});
-	}
-
-	$(document).ready(function() {
-		$('#username').focus();
-		$('#username').keyup(function(e) {
-			var code = (e.keyCode ? e.keyCode : e.which);
-			if (code == 13) {
-			  if ($('#username').val() != "") {
-			    $('#passwd').focus();
-			  }
-			}
-		  });
-		 $('#passwd').keyup(function(e) {
-		     var code = (e.keyCode ? e.keyCode : e.which);
-		     if (code == 13) {
-		       if ($('#username').val() != "" && $('#passwd').val() != "") {
-			 login();
-		       }
-		     }
-		   });
-		$('#login').click(function() {
-			login();
-		});
-
-		$('#register').click(function() {
-			register();
-		});
-
-		$('#toregister').click(function() {
-			$('#login-title').hide("slow");
-			$('#register-title').show();
-			$(this).hide();
-			$('.register_form').show("slow");
-			$('#login').toggleClass('active');
-			$('#register').toggleClass('active');
-			$('#login').hide();
-			$('#register').show();
-			$('#username').focus();
-			$('.login .form').width(300);
-		});
-	});
-	</script>
+	<?php echo $page->renderJSLoad(); ?>
 </body>
 </html>
