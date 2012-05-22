@@ -302,7 +302,7 @@ apt-get -f -y --no-install-recommends --no-upgrade install \
   hadoop-0.20 hadoop-0.20-namenode hadoop-0.20-datanode \
   hadoop-0.20-secondarynamenode hadoop-0.20-jobtracker  \
   hadoop-0.20-tasktracker hadoop-pig hue-common  hue-filebrowser \
-  hue-jobbrowser hue-jobsub hue-plugins dnsutils
+  hue-jobbrowser hue-jobsub hue-plugins hue-server dnsutils
 update-rc.d -f hadoop-0.20-namenode remove
 update-rc.d -f hadoop-0.20-datanode remove
 update-rc.d -f hadoop-0.20-secondarynamenode remove
