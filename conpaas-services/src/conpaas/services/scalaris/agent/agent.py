@@ -52,7 +52,7 @@ import os
 import subprocess
 import commands
 from os.path import join
-from conpaas.services.scalaris.agent import scalarisclient
+from conpaas.services.scalaris.agent import scalaris
 
 ETC='/etc/scalaris/'
 
@@ -119,6 +119,14 @@ class ScalarisAgent():
       self.state = 'RUNNING'
       self.logger.info('Agent is running')
       return HttpJsonResponse()
+
+    @expose('POST')
+    def graceful_leave(self, kwargs):
+      self.logger.info('called graceful_leave')
+      vm = scalaris.ScalarisVM()
+      res = vm.shutdownVM()
+      self.logger.info('called shutdownVM %s', res)
+      return HttpJsonResponse(res)
 
     def _write_config(self, known_hosts, mgmt_server):
         tmpl = open(self.config_template).read()

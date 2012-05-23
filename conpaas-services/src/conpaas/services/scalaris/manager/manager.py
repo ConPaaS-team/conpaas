@@ -248,10 +248,21 @@ class ScalarisManager(object):
         if count > len(self.nodes) - 1:
             self.state = self.S_RUNNING
             return HttpErrorResponse('ERROR: Cannot delete so many workers')
-        for i in range(0, count):
-            self.controller.delete_nodes([self.nodes.pop(1)])
-        self.state = self.S_RUNNING
-        return HttpJsonResponse()
+        if count == len(self.nodes):
+            self.logger.info('killing the nodes')
+            for i in range(0, count):
+                self.controller.delete_nodes([self.nodes.pop(1)])
+            self.state = self.S_RUNNING
+            return HttpJsonResponse()
+        else:
+            for i in range(0, count):
+                node = self.nodes.pop(1)
+                self.logger.info('graceful leave on %s', node)
+                res = client.graceful_leave(node.ip, 5555)
+                self.logger.info('graceful leave: %s', res)
+                self.controller.delete_nodes([node])
+            self.state = self.S_RUNNING
+            return HttpJsonResponse()
 
     @expose('GET')
     def getLog(self, kwargs):
