@@ -321,7 +321,7 @@ conpaas.ui = (function (this_module) {
     attachHandlers: function () {
         var that = this;
         $('#logout').click(function () {
-            that.server.req('ajax/login.php', {action: 'logout'}, 'post',
+            that.server.req('ajax/logout.php', {}, 'post',
                     function () {
                 window.location = 'index.php';
                 });

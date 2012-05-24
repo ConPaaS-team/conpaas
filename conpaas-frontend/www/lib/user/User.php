@@ -76,6 +76,10 @@ class User {
 		$_SESSION['uid'] = $this->uid;
 	}
 
+	public function closeSession() {
+		unset($_SESSION['uid']);
+	}
+
 	public function authenticate($username, $password) {
 		$uinfo = UserData::getUserByName($username);
 		if ($uinfo === false) {
