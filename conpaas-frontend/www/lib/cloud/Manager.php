@@ -54,7 +54,13 @@ class Manager {
 	}
 
 	public function getHostAddress() {
-		return $this->resolveAddress($this->vmid);
+		try {
+			return $this->resolveAddress($this->vmid);
+		} catch (Exception $e) {
+			dlog($e->getMessage());
+			error_log($e->getTraceAsString());
+		}
+		return false;
 	}
 
 	public function createContextFile($cloud) {
