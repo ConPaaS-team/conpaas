@@ -92,16 +92,6 @@ public class EC2ClusterAmazonAPI extends Cluster {
 		
 		System.out.println("Starting " + noNodes + " EC2 workers");
 		
-    	// XXX: in ConPaaS, IP_PUBLIC is passed as an environment variable
-    	// This needs to go upper in the call tree when all the bindings 
-    	// are supported by ConPaaS.
-        
-    	String newServerAddress = System.getenv().get("IP_PUBLIC") + ":8999";
-    	if(newServerAddress != null)
-    	{
-    		//serverAddress = newServerAddress;
-    	}
-    	System.out.println("Ibis server address is old: " + serverAddress + " new:" + newServerAddress);
 		
 		/* set the requested VM properties */
 		RunInstancesRequest runInstancesRequest = new RunInstancesRequest()
@@ -110,7 +100,7 @@ public class EC2ClusterAmazonAPI extends Cluster {
 	    .withMinCount(noNodes)
 	    .withMaxCount(noNodes)
 	    .withKeyName(this.keyPairName)
-	    .withUserData(Base64.encodeBase64String(createUserData(electionName, poolName, serverAddress).getBytes()));
+	    .withUserData(Base64.encodeBase64String(createUserData(electionName, poolName).getBytes()));
 		
 		RunInstancesResult result;
 		
@@ -133,17 +123,14 @@ public class EC2ClusterAmazonAPI extends Cluster {
 		return null;
 	}
 
-	private String createUserData(String electionName, String poolName,
-			String serverAddress) {
-        
-		System.out.println(getContent(System.getenv().get("EC2_WORKER_INIT_SH")));
+	/* This method needs the VM_ID (instance-id) and IP_PUBLIC environment variables */
+	private String createUserData(String electionName, String poolName) {
 		String script =  getContent(System.getenv().get("EC2_WORKER_INIT_SH")).
 		replaceAll("\\$LOCATION", "\\$VM_ID@ec2").
 		replaceAll("\\$ELECTIONNAME", electionName).
 		replaceAll("\\$POOLNAME", poolName).
 		replaceAll("\\$SERVERADDRESS", System.getenv().get("IP_PUBLIC") + ":8999").
 		replaceAll("\\$SPEEDFACTOR", this.speedFactor);
-		System.out.println("new script: \n" + script);
 		return script;
 	}
 
