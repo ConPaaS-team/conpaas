@@ -1,4 +1,4 @@
-'''
+"""
 Copyright (c) 2010-2012, Contrail consortium.
 All rights reserved.
 
@@ -33,25 +33,39 @@ WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
 OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
+"""
 
+import json
+import httplib
 
-   This file contains all the available manager services
-implementations.
+from conpaas.core.http import _jsonrpc_get, _jsonrpc_post
 
-'''
+def _check(response):
+    """Check the given HTTP response, returning the result if everything went
+    fine"""
+    code, body = response
+    if code != httplib.OK: 
+        raise Exception('Received http response code %d' % (code))
 
-services = {'php'    : {'class' : 'PHPManager', 
-                        'module': 'conpaas.services.webservers.manager.internal.php'},
-            'java'   : {'class' : 'JavaManager',
-                        'module': 'conpaas.services.webservers.manager.internal.java'},
-            'scalaris' : {'class' : 'ScalarisManager',
-                        'module': 'conpaas.services.scalaris.manager.manager'},
-            'hadoop' : {'class' : 'MapReduceManager',
-                        'module': 'conpaas.services.mapreduce.manager.manager'},
-            'helloworld' : {'class' : 'HelloWorldManager',
-                        'module': 'conpaas.services.helloworld.manager.manager'},
-            'mysql' : {'class' : 'MySQLManager',
-                        'module': 'conpaas.services.mysql.manager.manager'},
-            'selenium' : {'class' : 'SeleniumManager',
-                        'module': 'conpaas.services.selenium.manager.manager'},
-           }
+    data = json.loads(body)
+    if data['error']: 
+        raise Exception(data['error'])
+    
+    return data['result']
+
+def check_agent_process(host, port):
+    """GET () check_agent_process"""
+    method = 'check_agent_process'
+    return _check(_jsonrpc_get(host, port, '/', method))
+
+def create_hub(host, port):
+    """POST (my_ip) create_hub"""
+    method = 'create_hub'
+    params = { 'my_ip': host }
+    return _check(_jsonrpc_post(host, port, '/', method, params))
+
+def create_node(host, port, hub_ip):
+    """POST (my_ip, hub_ip) create_node"""
+    method = 'create_node'
+    params = { 'my_ip': host, 'hub_ip': hub_ip }
+    return _check(_jsonrpc_post(host, port, '/', method, params))

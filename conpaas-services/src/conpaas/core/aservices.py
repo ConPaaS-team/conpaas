@@ -49,5 +49,7 @@ services = {'web' : {'class' : 'WebServersAgent',
             'helloworld' : {'class' : 'HelloWorldAgent',
                             'module': 'conpaas.services.helloworld.agent.agent'},
             'mysql' : {'class' : 'MySQLAgent',
-                            'module': 'conpaas.services.mysql.agent.internals'}
+                            'module': 'conpaas.services.mysql.agent.internals'},
+            'selenium' : {'class' : 'SeleniumAgent',
+                            'module': 'conpaas.services.selenium.agent.agent'},
            }

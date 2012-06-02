@@ -245,7 +245,8 @@ DEBIAN_FRONTEND=noninteractive apt-get -y --force-yes --no-install-recommends --
         install openssh-server \
         python python-pycurl python-cheetah nginx \
         tomcat6-user memcached mysql-server \
-        make gcc g++ sun-java6-jdk erlang ant libxslt1-dev yaws subversion git
+        make gcc g++ sun-java6-jdk erlang ant libxslt1-dev yaws subversion git \
+        xvfb xinit
 update-rc.d -f memcached remove
 update-rc.d -f nginx remove
 update-rc.d -f yaws remove
@@ -293,6 +294,15 @@ echo StrictHostKeyChecking no > ~root/.ssh/config
 cat ~root/.ssh/id_rsa.pub > ~git/.ssh/authorized_keys
 # fix repository permissions
 chown -R git:git ~git/code
+
+# recent versions of iceweasel and chrome
+echo "deb http://backports.debian.org/debian-backports squeeze-backports main" >> /etc/apt/sources.list
+echo "deb http://mozilla.debian.net/ squeeze-backports iceweasel-esr" >> /etc/apt/sources.list
+echo "deb http://dl.google.com/linux/deb/ stable main" >> /etc/apt/sources.list
+    
+apt-get -f -y update
+apt-get -f -y install -t squeeze-backports iceweasel
+apt-get -f -y install google-chrome-beta
 
 # add cloudera repo for hadoop
 echo "deb http://archive.cloudera.com/debian $DEBIAN_DIST-cdh3 contrib" >> /etc/apt/sources.list
