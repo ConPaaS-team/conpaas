@@ -111,6 +111,12 @@ $page = new Page();
 	   				<td class="info"> Service for running bags of tasks </td>
 	   			</tr>
 
+  			<tr class="service">
+  				<td class="description"> <img src="images/selenium.png" height="32" /></td>
+  				<td class="radio"><input type="radio" name="type" value="selenium" /> selenium</td>
+  				<td class="info"> Selenium functional testing service </td>
+  			</tr>
+
   			<tr>
   				<td>&nbsp;</td>
   			</tr>

@@ -37,50 +37,49 @@
  */
 
 require_module('cloud');
+require_module('http');
+require_module('service');
+require_module('ui/instance/selenium');
 
-class ServiceFactory {
+class SeleniumService extends Service {
 
-	public static function createManager($service_data) {
-		switch ($service_data['cloud']) {
-			case 'ec2':
-				return new EC2Manager($service_data);
-			case 'opennebula':
-				return new OpenNebulaManager($service_data);
-			default:
-				throw new Exception('Unknown cloud provider');
-		}
+	public function __construct($data, $manager) {
+		parent::__construct($data, $manager);
 	}
 
-	public static function create($service_data) {
-		$cloud = $service_data['cloud'];
-		$type = $service_data['type'];
-		$manager = self::createManager($service_data);
+	public function hasDedicatedManager() {
+		return true;
+	}
 
-		switch ($type) {
-			case 'php':
-				require_module('service/php');
-				return new PHPService($service_data, $manager);
-			case 'java':
-				require_module('service/java');
-				return new JavaService($service_data, $manager);
-			case 'mysql':
-				require_module('service/mysql');
-				return new MysqlService($service_data, $manager);
-			case 'taskfarm':
-				require_module('service/taskfarm');
-				return new TaskFarmService($service_data, $manager);
-			case 'scalaris':
-				require_module('service/scalaris');
-				return new ScalarisService($service_data, $manager);
-			case 'hadoop':
-				require_module('service/hadoop');
-				return new HadoopService($service_data, $manager);
-			case 'selenium':
-				require_module('service/selenium');
-				return new SeleniumService($service_data, $manager);
-			default:
-				throw new Exception('Unknown service type');
-		}
+	public function sendConfiguration($params) {
+		// we ignore this for now
+		return '{}';
+	}
+
+	public function fetchHighLevelMonitoringInfo() {
+		return false;
+	}
+
+	public function getInstanceRoles() {
+		return array('hub', 'node');
+	}
+
+	public function fetchStateLog() {
+		return array();
+	}
+
+	public function createInstanceUI($node) {
+		$info = $this->getNodeInfo($node);
+		return new SeleniumInstance($info);
+	}
+
+	public function getMasterAddr() {
+		$master_node = $this->getNodeInfo($this->nodesLists['hub'][0]);
+		return $master_node['ip'];
+	}
+
+	public function getAccessLocation() {
+		return "http://" . $this->getMasterAddr() . ':4444/grid/console';
 	}
 }
 

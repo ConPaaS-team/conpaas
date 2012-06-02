@@ -60,6 +60,9 @@ class PageFactory {
 			case 'hadoop':
 				require_module('ui/page/hadoop');
 				return new HadoopPage($service);
+			case 'selenium':
+				require_module('ui/page/selenium');
+				return new SeleniumPage($service);
 			default:
 				throw new Exception('Unknown service type');
 		}

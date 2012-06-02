@@ -36,52 +36,33 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-require_module('cloud');
+require_module('ui/page');
 
-class ServiceFactory {
+class SeleniumPage extends ServicePage {
+    public function __construct(Service $service) {
+            parent::__construct($service);
+            // The scalaris JS is more than enough for us
+            $this->addJS('js/scalaris.js');
+    }
 
-	public static function createManager($service_data) {
-		switch ($service_data['cloud']) {
-			case 'ec2':
-				return new EC2Manager($service_data);
-			case 'opennebula':
-				return new OpenNebulaManager($service_data);
-			default:
-				throw new Exception('Unknown cloud provider');
-		}
-	}
+    protected function renderRightMenu() {
+        $links = LinkUI('manager log',
+            'viewlog.php?sid='.$this->service->getSID())->setExternal(true);
 
-	public static function create($service_data) {
-		$cloud = $service_data['cloud'];
-		$type = $service_data['type'];
-		$manager = self::createManager($service_data);
+        if ($this->service->isRunning()) {
+            $console_url = $this->service->getAccessLocation();
+            $links .= ' &middot; ' .LinkUI('hub', $console_url)->setExternal(true);
+        }
 
-		switch ($type) {
-			case 'php':
-				require_module('service/php');
-				return new PHPService($service_data, $manager);
-			case 'java':
-				require_module('service/java');
-				return new JavaService($service_data, $manager);
-			case 'mysql':
-				require_module('service/mysql');
-				return new MysqlService($service_data, $manager);
-			case 'taskfarm':
-				require_module('service/taskfarm');
-				return new TaskFarmService($service_data, $manager);
-			case 'scalaris':
-				require_module('service/scalaris');
-				return new ScalarisService($service_data, $manager);
-			case 'hadoop':
-				require_module('service/hadoop');
-				return new HadoopService($service_data, $manager);
-			case 'selenium':
-				require_module('service/selenium');
-				return new SeleniumService($service_data, $manager);
-			default:
-				throw new Exception('Unknown service type');
-		}
-	}
+        return '<div class="rightmenu">'.$links.'</div>';
+    }
+
+    protected function renderInstanceActions() {
+        return EditableTag()->setColor('purple')->setID('node')->setValue('0')->setText('Selenium Nodes');
+    }
+
+    public function renderContent() {
+        return $this->renderInstancesSection();
+    }
 }
-
 ?>
