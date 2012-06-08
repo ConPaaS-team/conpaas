@@ -1,0 +1,16 @@
+Project: http://sourceforge.net/projects/pycurl/ - pycURL 7.19.2
+
+Dependencies:
+	apt-get install libcurl4-gnutls-dev
+
+Patch for Python3:
+	mypycurl.patch
+
+Install pycurl for Python3.2:
+	tar -xvzf pycurl-7.19.2.tar.gz
+        cd pycurl
+        cp ../mypycurl.patch . 
+	patch -p0 < mypycurl.patch
+	2to3 -w .
+	python3.2 setup.py build
+	python3.2 setup.py install
