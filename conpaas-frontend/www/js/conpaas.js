@@ -213,8 +213,13 @@ conpaas.http = (function (this_module) {
         this.method = method;
         this.loadingText_ = 'checking...';
         this.reset();
+        this._showTimer = true;
     },
     /* methods */{
+        showTimer: function (show) {
+            this._showTimer = show;
+            return this;
+        },
         setLoadingText: function (text) {
             this.loadingText_ = text;
             return this;
@@ -261,7 +266,9 @@ conpaas.http = (function (this_module) {
                 tick = function () {
                     if (that.pollRemaining_ > 0) {
                         $('#pgstatTimerSeconds').html(that.pollRemaining_);
-                        conpaas.ui.visible('pgstatTimer', true);
+                        if (that._showTimer) {
+                            conpaas.ui.visible('pgstatTimer', true);
+                        }
                         that.pollRemaining_ -= 1;
                         that.timerId_ = setTimeout(tick, 1000);
                         return;
@@ -326,6 +333,32 @@ conpaas.ui = (function (this_module) {
                 window.location = 'index.php';
                 });
             });
+    }
+    });
+
+    this_module.ProgressBar = conpaas.new_constructor(
+    /* extends */Object,
+    /* constructor */function (containerId) {
+        this.containerId = containerId;
+        this.ratio =
+            ($('#' + containerId + ' .progresswrapper').width() - 4) / 100;
+        this.progressElement = $('#' + this.containerId + ' .progress');
+        this.valueElement = $('#' + this.containerId + ' .percent');
+        this.init();
+    },
+    /* methods */{
+    init: function () {
+        this.valueElement.html('0%');
+        this.progressElement.width(1);
+    },
+    setPercent: function (percent) {
+        percent = Math.floor(percent);
+        if (percent == 0) {
+            this.init();
+            return;
+        }
+        this.valueElement.html(percent + '%');
+        this.progressElement.width(Math.ceil(percent * this.ratio));
     }
     });
 

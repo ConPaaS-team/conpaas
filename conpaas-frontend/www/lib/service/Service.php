@@ -56,6 +56,7 @@ abstract class Service {
 	protected $nodesLists;
 	private $nodesCount = 0;
 
+	private $cached_state = null;
 	private $reachable = false;
 	private $stable = true;
 
@@ -240,13 +241,17 @@ abstract class Service {
 		return $response['result'];
 	}
 
-	public function fetchState() {
+	public function fetchState($force_fetch=false) {
+		if (!$force_fetch && $this->cached_state !== null) {
+			return $this->cached_state;
+		}
 		$json = $this->managerRequest('get', 'get_service_info', array(), true);
 		$state = json_decode($json, true);
 		if ($state == null) {
 			return false;
 		}
-		return $state;
+		$this->cached_state = $state;
+		return $this->cached_state;
 	}
 
 	public function fetchCodeVersions() {

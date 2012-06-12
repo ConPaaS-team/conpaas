@@ -36,38 +36,34 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-require_once('../__init__.php');
-require_module('logging');
-require_module('service');
-require_module('service/factory');
-require_module('ui');
-
-if (!isset($_SESSION['uid'])) {
-	throw new Exception('User not logged in');
+function StatNumber($value, $note='', $metric='') {
+	return new StatNumber($value, $note, $metric);
 }
 
-$sid = $_GET['sid'];
-$service_data = ServiceData::getServiceById($sid);
-$service = ServiceFactory::create($service_data);
+class StatNumber {
 
-if($service->getUID() !== $_SESSION['uid']) {
-    throw new Exception('Not allowed');
-}
+	private $id = '';
+	private $value = 0;
+	private $note = '';
+	private $metric = '';
 
-try {
-	$sampling_results = $service->fetchSamplingResults();
-	if ($sampling_results === false) {
-		echo json_encode(array());
-		exit;
+	public function __construct($value, $note, $metric) {
+		$this->value = $value;
+		$this->note = $note;
+		$this->metric = $metric;
 	}
-	for ($i = 0; $i < count($sampling_results); $i++) {
-		$sampling = &$sampling_results[$i];
-		$utc_ts = intval(intval($sampling['timestamp']) / 1000);
-		$sampling['name'] = 'sampled '.
-			TimeHelper::timeRelativeDescr($utc_ts).' ago';
+
+	public function setId($id) {
+		$this->id = $id;
+		return $this;
 	}
-	echo json_encode($sampling_results);
-} catch (Exception $e) {
-	echo json_encode(array('error' => $e->getMessage()));
-	exit();
+
+	public function __toString() {
+		return
+		'<div class="statistic statnumber">'
+			.'<div class="note">'.$this->note.'</div>'
+			.'<div class="value" id="'.$this->id.'">'.$this->value.'</div>'
+			.'<div class="metric">'.$this->metric.'</div>'
+		.'</div>';
+	}
 }

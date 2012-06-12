@@ -42,6 +42,14 @@ class TaskFarmPage extends ServicePage {
 
 	public function __construct(Service $service) {
 		parent::__construct($service);
+		$this->addJS('http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/jquery-ui.min.js');
+		$this->addJS('https://www.google.com/jsapi');
+		$this->addJS('js/jquery.form.js');
+		$this->addJS('js/taskfarm.js');
+		if ($service->isDemo()) {
+			$this->addMessage('This service is running the Demo version of the'
+				.' TaskFarm service', MessageBox::INFO);
+		}
 	}
 
 	public function renderActions() {
@@ -53,10 +61,129 @@ class TaskFarmPage extends ServicePage {
 	protected function renderRightMenu() {
 		return
 			'<div class="rightmenu">'
-				.LinkUI('manager log',
-						'viewlog.php?sid='.$this->service->getSID())
-					->setExternal(true)
+				.$this->renderStatusSection()
 			.'</div>';
+	}
+
+	private function getSampleEndpoint() {
+		return 'ajax/taskfarm_sample.php?sid='.$this->service->getSID();
+	}
+
+	private function renderSampleForm() {
+		return
+		'<form id="fileForm" action="'.$this->getSampleEndpoint().'">'
+		.'<table class="form" cellspacing="0" cellpading="0">'
+  			.'<tr>'
+  				.'<td class="description">the *.bot file</td>'
+  				.'<td class="input">'
+				.'<input id="botFile" type="file" name="botFile" />'
+  				.'</td>'
+  				.'<td class="info">File containing the tasks for be run</td>'
+  			.'</tr>'
+  			.'<tr>'
+  				.'<td class="description">URL</td>'
+  				.'<td class="input">'
+  					.'<input type="text" name="uriLocation" />'
+  				.'</td>'
+  				.'<td class="info">'
+  					.'mount path for XtremeFS volume (optional)'
+  				.'</td>'
+  			.'</tr>'
+  			.'<tr>'
+  				.'<td class="description"></td>'
+  				.'<td><input type="button" value="Start sampling" id="startSample" />'
+				.'<div class="additional" style="display: inline;">'
+					.'<img class="loading invisible" src="images/icon_loading.gif" />'
+					.'<i class="positive" style="display: none;">Submitted successfully</i>'
+				.'</div>'
+  				.'</td>'
+  			.'</tr>'
+  		.'</table>'
+  		.'</form>';
+	}
+
+	private function renderSampleSection() {
+		return
+		'<div class="form-section samplephase">'
+		.'<div class="form-header">'
+			.'<div class="title">Sampling Phase</div>'
+			.'<div class="clear"></div>'
+		.'</div>'
+		.$this->renderSampleForm()
+		.'<div class="clear"></div>'
+		.'</div>';
+	}
+
+	private function renderExecutionSection() {
+		if (!$this->service->hasSamplingResults()) {
+			return '';
+		}
+		return
+		'<div class="form-section execphase">'
+			.'<div class="form-header">'
+				.'<div class="title">Execution phase</div>'
+				.'<div class="clear"></div>'
+			.'</div>'
+			.'<table class="form" id="botexec">'
+			.'<tr>'
+				.'<td class="description">schedule</td>'
+				.'<td class="input">'
+					.'<select id="samplings"></select>'
+				.'</td>'
+				.'<td class="input">'
+					.'<div id="executionChart">'
+					.'</div>'
+				.'</td>'
+			.'</tr>'
+			.'<tr>'
+				.'<td class="description"></td>'
+				.'<td class="input">'
+					.'<input id="startExec" type="button" value="Start execution"/>'
+				.'</td>'
+				.'<td>'
+					.'<div id="scheduleDetails">'
+						.'please click on the graph to select an execution'
+					.'</div>'
+				.'</td>'
+			.'</tr>'
+			.'</table>'
+		.'</div>';
+	}
+
+	private function renderStatusSection() {
+		$state = $this->service->fetchState();
+		if (!isset($state['result'])) {
+			dlog('Cannot read detailed state');
+			return '';
+		}
+		$state = $state['result'];
+		return
+		'<div id="taskfarm-status">'
+			.StatNumber($state['moneySpent'], 'money spent', '$')
+				->setId('moneySpent')
+			.StatNumber($state['noCompletedTasks'], 'completed tasks')
+				->setId('completedTasks')
+			.'<div class="clear"></div>'
+		.'</div>';
+	}
+
+	private function renderProgressBar() {
+		return
+		'<div id="progressbar" class="progressbar">'
+			.'<div class="progresswrapper">'
+				.'<div class="progress"></div>'
+			.'</div>'
+			.'<div class="percent">'
+				.'0%'
+			.'</div>'
+		.'</div>';
+	}
+
+	public function renderContent() {
+		return
+			$this->renderProgressBar()
+			.$this->renderSampleSection()
+			.$this->renderExecutionSection();
 	}
 }
 

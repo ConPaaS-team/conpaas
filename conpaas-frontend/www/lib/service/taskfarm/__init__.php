@@ -50,6 +50,10 @@ class TaskFarmService extends Service {
 		return 'TaskFarm';
 	}
 
+	public function isDemo() {
+		return true;
+	}
+
 	public function fetchState() {
 		$json = $this->managerRequest('post', 'get_service_info', array(),
 			true);
@@ -84,7 +88,6 @@ class TaskFarmService extends Service {
 		$json = $this->managerRequest('post', 'terminate_workers', array(),
 			true);
 		$response = json_decode($json, true);
-		dlog('terminate_workers: '.$response['result']['message']);
 		return $response['result'];
 	}
 
@@ -101,6 +104,9 @@ class TaskFarmService extends Service {
 		if (array_key_exists('error', $sampling_results)) {
 			throw new Exception('Error fetching sampling results: '.
 				$sampling_results['error']);
+		}
+		if (!isset($sampling_results[0])) {
+			return false;
 		}
 		return $sampling_results;
 	}
@@ -127,7 +133,7 @@ class TaskFarmService extends Service {
 	public function hasSamplingResults() {
 		try {
 			$sampling_results = $this->fetchSamplingResults();
-			return count($sampling_results) > 0;
+			return $sampling_results !== false && count($sampling_results) > 0;
 		} catch (Exception $e) {
 			dlog($e->getMessage());
 		}
@@ -158,4 +164,18 @@ class TaskFarmService extends Service {
 		return 8475;
 	}
 
+	public function toArray() {
+		try {
+			$state = $this->fetchState();
+			$state = $state['result'];
+			return array_merge(parent::toArray(), array(
+				'moneySpent' => $state['moneySpent'],
+				'completedTasks' => $state['noCompletedTasks'],
+				'totalTasks' => $state['noTotalTasks']
+		));
+		} catch (Exception $e) {
+			dlog($e->getMessage());
+			return parent::toArray();
+		}
+	}
 }

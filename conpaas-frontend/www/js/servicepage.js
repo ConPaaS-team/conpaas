@@ -91,7 +91,7 @@ conpaas.ui = (function (this_module) {
             }
         });
     },
-    pollState: function (onStableState) {
+    pollState: function (onStableState, onInstableState, maxInterval) {
         var that = this;
         this.statePoller.poll(function (response) {
             that.service.state = response.state;
@@ -106,8 +106,11 @@ conpaas.ui = (function (this_module) {
             }
             that.displayReason_();
             // returning false will cause the poller to continue polling
+            if (typeof onInstableState === 'function') {
+                onInstableState(response);
+            }
             return false;
-        }, {sid: this.service.sid});
+        }, {sid: this.service.sid}, maxInterval);
     },
     freezeInput: function (freeze) {
         this.freezeButtons(freeze);

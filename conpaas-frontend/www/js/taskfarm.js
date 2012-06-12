@@ -47,8 +47,10 @@ conpaas.ui = (function (this_module) {
         this.server = server;
         this.service = service;
         this.setupPoller_();
+        this.statePoller.showTimer(false);
         this.chart = null;
         this.samplingResults = null;
+        this.progressBar = new conpaas.ui.ProgressBar('progressbar');
     },
     /* methods */{
     freezeInput: function (freeze) {
@@ -70,6 +72,8 @@ conpaas.ui = (function (this_module) {
                             .attr("value", sampling.timestamp)
                             .text(sampling.name));
                     });
+                    // simulate a sample change event
+                    that.onSampleChange({data: that});
                 });
     },
     drawChart: function (schedules) {
@@ -80,7 +84,6 @@ conpaas.ui = (function (this_module) {
         data.addColumn('number', 'Cost');
         $.each(schedules, function (index, schedule) {
             budget = parseInt(schedule.split('\t')[1]);
-            console.log(schedule.split('\t'));
             data.addRow([(index + 1) * 15, budget]);
         });
         options = {
@@ -97,7 +100,8 @@ conpaas.ui = (function (this_module) {
         };
         this.chart = new google.visualization.LineChart(
                 document.getElementById('executionChart'));
-        google.visualization.events.addListener(chart, 'select', function () {
+        google.visualization.events.addListener(this.chart, 'select',
+                function () {
             var selectedSampling,
                 scheduleIndex;
             selectedSampling = that.samplingResults[$('#samplings').attr(
@@ -105,7 +109,6 @@ conpaas.ui = (function (this_module) {
             scheduleIndex = that.chart.getSelection()[0].row;
             $('#scheduleDetails').html(
                     selectedSampling.schedules[scheduleIndex]);
-            console.log(scheduleIndex);
         });
         this.chart.draw(data, options);
     },
@@ -126,11 +129,7 @@ conpaas.ui = (function (this_module) {
                 $('#xmlFile').val('');
                 that.displayInfo('performing sampling...');
                 that.freezeInput(true);
-                that.pollState(function () {
-                    window.location.reload();
-                }, function () {
-                    that.freezeInput(false);
-                });
+                that.pollAndUpdate();
             },
             error: function(response) {
                 that.poller.stop();
@@ -149,6 +148,23 @@ conpaas.ui = (function (this_module) {
         });
         $('#samplings').change(this, this.onSampleChange);
         $('#startExec').click(this, this.onStartExec);
+    },
+    pollAndUpdate: function () {
+        var that = this;
+        $('#progressbar').css('visibility', 'visible');
+        this.pollState(
+        /* on stable state */function () {
+            window.location.reload();
+        },
+        /* on instable state */function (state) {
+            $('#moneySpent').html(state.moneySpent);
+            $('#moneySpent').effect('highlight', {}, 1000);
+            $('#completedTasks').html(state.completedTasks);
+            $('#completedTasks').effect('highlight', {}, 1000);
+            var percentDone = state.completedTasks * 100 / state.totalTasks;
+            that.progressBar.setPercent(percentDone);
+        },
+        /* maximum poll interval */2);
     },
     onSampleChange: function (event) {
         var page = event.data,
@@ -169,15 +185,11 @@ conpaas.ui = (function (this_module) {
         page.server.req('ajax/taskfarm_runExecution.php', {
             sid: page.service.sid,
             schedulesFile: page.samplingResults[$('#samplings').attr('selectedIndex')].timestamp,
-            scheduleNo: executionOptions.row
+            scheduleNo: executionOption.row
         }, 'post', function (response) {
-            page.displayInfo('performing sampling...');
+            page.displayInfo('performing execution...');
             page.freezeInput(true);
-            page.pollState(function () {
-                window.location.reload();
-            }, function () {
-                page.freezeInput(false);
-            });            
+            page.pollAndUpdate();
         });
     }
     });
@@ -199,6 +211,11 @@ $(document).ready(function () {
                 data.instanceRoles, data.reachable);
         page = new conpaas.ui.TaskFarmPage(server, service);
         page.attachHandlers();
-        page.loadSamplingResults();
+        if (document.getElementById('samplings')) {
+            page.loadSamplingResults();
+        }
+        if (page.service.needsPolling()) {
+            page.pollAndUpdate();
+        }
     });
 });

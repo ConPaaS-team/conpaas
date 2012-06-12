@@ -184,21 +184,12 @@ class DashboardServiceUI {
 			'<td class="colortag '.$color_class.'"></td>';
 	}
 
-	private function getConfigureEndpoint() {
-		if ($this->service->getType() == 'taskfarm') {
-			return 'taskfarm.php';
-		}
-		// default
-		return 'service.php';
-	}
-
 	private function renderTitle() {
 		if (!$this->service->isConfigurable()) {
 			$title = $this->service->getName();
 		} else {
 			$title =
-			'<a href="'.$this->getConfigureEndpoint().'?sid='
-				.$this->service->getSID().'">'
+			'<a href="service.php?sid='.$this->service->getSID().'">'
 				.$this->service->getName()
 			.'</a>';
 		}
