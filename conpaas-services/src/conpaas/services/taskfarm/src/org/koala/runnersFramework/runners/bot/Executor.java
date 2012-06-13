@@ -61,6 +61,7 @@ public class Executor {
                 System.out.println("You have chosen schedule no. " + selectedSchedule
                         + ":\n" + schedules.get(selectedSchedule).toString());
             }
+            //BatsServiceApiImpl.serviceState.totalMoney = schedules.get(selectedSchedule).budget;
    }
         
 
@@ -125,7 +126,7 @@ public class Executor {
         bot = (BoTRunner) ois.readObject();
         schedules = (ArrayList<Schedule>) ois.readObject();
         
-        // Also update cache object progres information.
+        // Also update cache object progress information.
         BatsServiceApiImpl.serviceState.moneySpent = ois.readDouble();
         BatsServiceApiImpl.serviceState.noTotalTasks = bot.tasks.size();
         BatsServiceApiImpl.serviceState.noCompletedTasks = bot.finishedTasks.size();

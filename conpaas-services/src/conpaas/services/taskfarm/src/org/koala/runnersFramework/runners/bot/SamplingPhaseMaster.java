@@ -432,6 +432,7 @@ public class SamplingPhaseMaster extends Master {
                         }
                         BatsServiceApiImpl.serviceState.noCompletedTasks = bot.finishedTasks.size();
                         BatsServiceApiImpl.serviceState.moneySpent = price;
+                        BatsServiceApiImpl.serviceState.moneySpentSampling = price;
 		}
 
 		//select last cluster as base for sampling points normalization,

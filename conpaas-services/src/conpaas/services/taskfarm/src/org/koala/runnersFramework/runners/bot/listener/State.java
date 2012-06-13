@@ -9,6 +9,7 @@ public class State {
     public int noTotalTasks;
     public int noCompletedTasks;
     public double moneySpent;
+    public double moneySpentSampling;
 
     State(String state) {
         this.state = state;

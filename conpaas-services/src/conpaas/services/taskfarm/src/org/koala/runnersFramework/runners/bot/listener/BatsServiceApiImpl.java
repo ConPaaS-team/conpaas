@@ -9,8 +9,10 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
+import java.util.StringTokenizer;
 import java.util.logging.FileHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -60,6 +62,8 @@ public class BatsServiceApiImpl implements BatsServiceApi {
          */
         schedulesFolder.mkdirs();
         demo = new DemoWrapper();
+        this.serviceState.moneySpent = 0;
+        this.serviceState.moneySpentSampling = 0;
     }
    
     @Override
@@ -114,14 +118,59 @@ public class BatsServiceApiImpl implements BatsServiceApi {
         }
         return new MethodReportSuccess("Sampling started.");
     }
+    
+    private String create_json_schedules(List<SamplingResult> list)
+    {
+    	String schedulesJson = "";
+    	for (int i = 0; i < list.size(); i++) {
+			SamplingResult samplingResult = list.get(i);
+			schedulesJson += "{";
+
+			schedulesJson += "\"timestamp\": " + samplingResult.timestamp + ",";
+			schedulesJson += "\"schedules\": [";
+			for(int j = 0; j < samplingResult.schedules.size(); j++)
+			{
+				schedulesJson += "{";
+				String sched = samplingResult.schedules.get(j);
+				StringTokenizer st = new StringTokenizer(sched, " \t");
+				st.nextToken(); // first one is budget and we don't care about that
+				
+				schedulesJson += "\"cost\": " + st.nextToken() + ",";
+				schedulesJson += "\"time\": " + st.nextToken();
+				
+				if(j == (samplingResult.schedules.size() - 1))
+				{
+					schedulesJson += "}";
+				}
+				else
+				{
+					schedulesJson += "},";
+				}
+			}
+			schedulesJson += "]";
+			if(i == (list.size() - 1))
+			{
+				schedulesJson += "}";
+			}
+			else
+			{
+				schedulesJson += "},";
+			}
+		}
+    	
+    	return schedulesJson;
+    }
 
     @Override
     public Object get_sampling_results() {
-        if (DEMO) {
-            return demo.get_sampling_result();
-        }
-
+        
         List<SamplingResult> list = new ArrayList<SamplingResult>();
+        
+    	if (DEMO) {
+    		list = (List<SamplingResult>)demo.get_sampling_result();
+    		return list;
+    		//return create_json_schedules(list);
+        }
 
         for (File file : schedulesFolder.listFiles()) {
             if (file.length() <= 0) {
@@ -139,7 +188,7 @@ public class BatsServiceApiImpl implements BatsServiceApi {
 
                 ois.close();
             } catch (Exception ex) {
-                Logger.getLogger(BatsServiceApiImpl_Later.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(BatsServiceApiImpl.class.getName()).log(Level.SEVERE, null, ex);
             }
 
             if (schedules == null) {
@@ -166,8 +215,8 @@ public class BatsServiceApiImpl implements BatsServiceApi {
 //            Claudiu asked for this method not to return an error, but an empty non-error message.
             return new MethodReportSuccess();
         }
-
-        return list;
+        
+        return create_json_schedules(list);
     }
 
     @Override
@@ -180,8 +229,9 @@ public class BatsServiceApiImpl implements BatsServiceApi {
 
     @Override
     public MethodReport start_execution(long schedulesFileTimeStamp, int scheduleNo) {
-        if (DEMO) {
-            return demo.start_execution();
+    	
+    	if (DEMO) {
+            return demo.start_execution(scheduleNo);
         }
 
         File schedFile = null;

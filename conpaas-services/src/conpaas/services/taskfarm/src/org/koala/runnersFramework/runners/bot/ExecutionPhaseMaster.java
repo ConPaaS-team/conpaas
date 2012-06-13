@@ -966,7 +966,7 @@ public class ExecutionPhaseMaster extends Master {
                                         price += Math.ceil((double)ws.getUptime() / 60000 / cluster.timeUnit) * cluster.costUnit;
                                     }			
                                 }
-                                BatsServiceApiImpl.serviceState.moneySpent = price;
+                                BatsServiceApiImpl.serviceState.moneySpent = price + BatsServiceApiImpl.serviceState.moneySpentSampling;
                                 BatsServiceApiImpl.serviceState.noCompletedTasks = bot.finishedTasks.size();
 			}
 		}
