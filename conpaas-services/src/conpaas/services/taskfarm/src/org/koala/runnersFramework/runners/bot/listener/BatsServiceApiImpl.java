@@ -168,8 +168,7 @@ public class BatsServiceApiImpl implements BatsServiceApi {
         
     	if (DEMO) {
     		list = (List<SamplingResult>)demo.get_sampling_result();
-    		return list;
-    		//return create_json_schedules(list);
+    		return create_json_schedules(list);
         }
 
         for (File file : schedulesFolder.listFiles()) {
