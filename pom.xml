@@ -13,9 +13,9 @@
   </parent>
   <name>Contrail ConPaaS builder</name>
   <modules>
-    <module>conpaas-mysql</module>
+    <!-- <module>conpaas-mysql</module> -->
     <module>conpaas-frontend</module>
-    <module>conpaas-taskfarm</module>
-    <module>conpaas-web</module>
+    <!-- <module>conpaas-taskfarm</module> -->
+    <!-- <module>conpaas-web</module> -->
   </modules>
 </project>
