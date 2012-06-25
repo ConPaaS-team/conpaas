@@ -249,10 +249,10 @@ class SeleniumManager(object):
             return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
 
         selenium_nodes = [ 
-            node.vmid for node in self.nodes if not self.__is_hub(node) 
+            node.id for node in self.nodes if not self.__is_hub(node) 
         ]
         selenium_hub = [ 
-            node.vmid for node in self.nodes if self.__is_hub(node) 
+            node.id for node in self.nodes if self.__is_hub(node) 
         ]
 
         return HttpJsonResponse({
@@ -279,7 +279,7 @@ class SeleniumManager(object):
 
         serviceNode = None
         for node in self.nodes:
-            if serviceNodeId == node.vmid:
+            if serviceNodeId == node.id:
                 serviceNode = node
                 break
 
@@ -289,7 +289,7 @@ class SeleniumManager(object):
 
         return HttpJsonResponse({
             'serviceNode': { 
-                'id': serviceNode.vmid, 
+                'id': serviceNode.id, 
                 'ip': serviceNode.ip, 
                 'is_hub': self.__is_hub(serviceNode)
             }

@@ -179,8 +179,8 @@ class MapReduceManager(object):
         if self.state != self.S_RUNNING:
             return HttpErrorResponse('ERROR: Wrong state to list_nodes')
         return HttpJsonResponse({
-          'masters' : [self.nodes[0].vmid],
-          'workers': [ node.vmid for node in self.nodes[1:] ]
+          'masters' : [self.nodes[0].id],
+          'workers': [ node.id for node in self.nodes[1:] ]
               })
 
     @expose('GET')
@@ -200,14 +200,14 @@ class MapReduceManager(object):
             return HttpErrorResponse('ERROR: Arguments unexpected')
         serviceNode = None
         for node in self.nodes:
-            if serviceNodeId == node.vmid:
+            if serviceNodeId == node.id:
                 serviceNode = node
                 break
         if serviceNode is None:
             return HttpErrorResponse('ERROR: Invalid arguments')
         return HttpJsonResponse({
             'serviceNode': {
-                            'id': serviceNode.vmid,
+                            'id': serviceNode.id,
                             'ip': serviceNode.ip
                             }
             })

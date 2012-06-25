@@ -52,6 +52,8 @@ libcloud.security.VERIFY_SSL_CERT = False
 
 from .base import Cloud
 
+from conpaas.core.node import ServiceNode
+
 class EC2Cloud(Cloud):
 
     # connect to ec2 cloud 
@@ -153,26 +155,16 @@ class EC2Cloud(Cloud):
                 private_ip = node.private_ips[0]
             else:
                 private_ip = ''   
-            nodes.append({'id': node.id,
-                          'state': node.state,
-                          'name': node.name,
-                          'ip': ip,
-                          'private_ip': private_ip})
+            nodes.append(ServiceNode(node.id, ip, private_ip, self.cloud_name))
         return nodes
 
-    def kill_instance(self, vm_id):
+    def kill_instance(self, node):
         '''Kill a VM instance.
 
-           @param    vm_id:   Id of the VM
-       
+           @param node: A ServiceNode instance, where node.id is the
+                        vm_id
         '''
         if self.connected == False:
             raise Exception('Not connected to cloud')
-
-        nodes = self.driver.list_nodes()
-        for i in nodes:
-            if i.id == vm_id:
-                return self.driver.destroy_node(i)
-        return False
-  
+        return self.driver.destroy_node(node)
 

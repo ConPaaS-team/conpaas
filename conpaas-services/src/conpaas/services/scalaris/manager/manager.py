@@ -187,7 +187,7 @@ class ScalarisManager(object):
         if self.state != self.S_RUNNING:
             return HttpErrorResponse('ERROR: Wrong state to list_nodes')
         return HttpJsonResponse({
-              'scalaris': [ node.vmid for node in self.nodes ],
+              'scalaris': [ node.id for node in self.nodes ],
               })
 
     @expose('GET')
@@ -217,7 +217,7 @@ class ScalarisManager(object):
             return HttpErrorResponse('ERROR: Arguments unexpected')
         serviceNode = None
         for node in self.nodes:
-            if serviceNodeId == node.vmid:
+            if serviceNodeId == node.id:
                 serviceNode = node
                 break
 
@@ -225,7 +225,7 @@ class ScalarisManager(object):
             return HttpErrorResponse('ERROR: Invalid arguments')
         return HttpJsonResponse({
             'serviceNode': {
-                            'id': serviceNode.vmid,
+                            'id': serviceNode.id,
                             'ip': serviceNode.ip
                             }
             })

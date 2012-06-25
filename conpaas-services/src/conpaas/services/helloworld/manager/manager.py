@@ -81,7 +81,7 @@ class HelloWorldManager(object):
         if self.state != self.S_RUNNING:
             return HttpErrorResponse('ERROR: Wrong state to list_nodes')
         return HttpJsonResponse({
-              'helloworld': [ node.vmid for node in self.nodes ],
+              'helloworld': [ node.id for node in self.nodes ],
               })
 
     @expose('GET')
@@ -99,14 +99,14 @@ class HelloWorldManager(object):
             return HttpErrorResponse('ERROR: Arguments unexpected')
         serviceNode = None
         for node in self.nodes:
-            if serviceNodeId == node.vmid:
+            if serviceNodeId == node.id:
                 serviceNode = node
                 break
         if serviceNode is None:
             return HttpErrorResponse('ERROR: Invalid arguments')
         return HttpJsonResponse({
             'serviceNode': {
-                            'id': serviceNode.vmid,
+                            'id': serviceNode.id,
                             'ip': serviceNode.ip
                             }
             })
@@ -137,9 +137,9 @@ class HelloWorldManager(object):
         # Just get_helloworld from all the agents
         for node in self.nodes:
             data = client.get_helloworld(node.ip, 5555)
-            self.logger.info('Received %s from %s', data, node.vmid)
+            self.logger.info('Received %s from %s', data, node.id)
         return HttpJsonResponse({
-            'helloworld': [ node.vmid for node in self.nodes ],
+            'helloworld': [ node.id for node in self.nodes ],
             })
 
     @expose('GET')

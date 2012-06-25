@@ -51,6 +51,7 @@ import libcloud.security
 libcloud.security.VERIFY_SSL_CERT = False
 
 from .base import Cloud
+from conpaas.core.node import ServiceNode
 
 class OpenNebulaCloud(Cloud):
 
@@ -92,8 +93,8 @@ class OpenNebulaCloud(Cloud):
         self.net_ns = _get('NET_NAMESERVER')
         self.os_arch = _get('OS_ARCH')
         self.os_root = _get('OS_ROOT')
-	self.disk_target = _get('DISK_TARGET')
-	self.context_target = _get('CONTEXT_TARGET')
+        self.disk_target = _get('DISK_TARGET')
+        self.context_target = _get('CONTEXT_TARGET')
 
         self.cpu = None
         self.mem = None
@@ -195,11 +196,11 @@ class OpenNebulaCloud(Cloud):
 
         # 'OS'
         kwargs['os_arch'] = self.os_arch
-	kwargs['os_root'] = self.os_root
+        kwargs['os_root'] = self.os_root
 
         # 'DISK'
         kwargs['image'] = NodeImage(self.img_id, '', None)
-	kwargs['disk_target'] = self.disk_target
+        kwargs['disk_target'] = self.disk_target
 
         # 'NIC'
         kwargs['networks'] = self.net_id
@@ -221,25 +222,16 @@ class OpenNebulaCloud(Cloud):
                 ip = node.public_ips[0].address
             else:
                 ip = ''   
-            nodes.append({'id': node.id,
-                          'state': node.state,
-                          'name': node.name,
-                          'ip': ip,
-                          'private_ip': ip})
+            nodes.append(ServiceNode(node.id, ip, ip, self.cloud_name))
         return nodes
 
-    def kill_instance(self, vm_id):
+    def kill_instance(self, node):
         '''Kill a VM instance.
 
-           @param    vm_id:   Id of the VM
-       
+           @param node: A ServiceNode instance, where node.id is the
+                        vm_id
         '''
         if self.connected == False:
             raise Exception('Not connected to cloud')
-
-        nodes = self.driver.list_nodes()
-        for i in nodes:
-            if i.id == vm_id:
-                return self.driver.destroy_node(i)
-        return False
+        return self.driver.destroy_node(node)
 

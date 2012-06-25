@@ -185,18 +185,10 @@ class MySQLManager(object):
         """
         if len(kwargs) != 0:
             return HttpErrorResponse(ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
-        vms = self.controller.list_vms()
-        vms_mysql = self.config.getMySQLServiceNodes()
-        for vm in vms_mysql:
-            if not(vm.vmid in vms.keys()):
-                self.logger.debug('Removing instance ' + str(vm.vmid) + \
-                                  ' since it is not in the list returned by the listVMs().')
-                self.config.removeMySQLServiceNode(vm.vmid)
-        _nodes = [ serviceNode.vmid for serviceNode in self.config.getMySQLServiceNodes() ]
 
         return HttpJsonResponse({
-            'masters': [ node.vmid for node in self.config.getMySQLmasters() ],
-	    'slaves': [ node.vmid for node in self.config.getMySQLslaves() ]
+            'masters': [ node.id for node in self.config.getMySQLmasters() ],
+            'slaves': [ node.id for node in self.config.getMySQLslaves() ]
             })
 
     @expose('GET')
@@ -222,7 +214,7 @@ class MySQLManager(object):
         serviceNode = self.config.getMySQLNode(serviceNodeId)
         return HttpJsonResponse({
             'serviceNode': {
-                            'id': serviceNode.vmid,
+                            'id': serviceNode.id,
                             'ip': serviceNode.ip,
                             'isMaster': serviceNode.isMaster,
                             'isSlave': serviceNode.isSlave

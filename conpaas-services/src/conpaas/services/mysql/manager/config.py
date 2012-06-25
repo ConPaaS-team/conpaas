@@ -102,7 +102,7 @@ class SQLServiceNode(ServiceNode):
     '''
 
     def __init__(self, node, isMaster=False, isSlave=False):
-        ServiceNode.__init__(self, node.vmid,
+        ServiceNode.__init__(self, node.id,
                              node.ip, node.private_ip,
                              node.cloud_name)
         #self.name = vm['name']
@@ -115,7 +115,7 @@ class SQLServiceNode(ServiceNode):
     @return: returns service nodes information. Id ip and if mysql is running on this service node.'''
 
     def __repr__(self):
-        return 'ServiceNode(vmid=%s, ip=%s, master=%s)' % (str(self.vmid), self.ip, str(self.isMaster))
+        return 'ServiceNode(id=%s, ip=%s, master=%s)' % (str(self.id), self.ip, str(self.isMaster))
   
 class Configuration(object):
 
@@ -150,8 +150,8 @@ class Configuration(object):
     def getMySQLslaves(self):
         return [ serviceNode for serviceNode in self.serviceNodes.values() if serviceNode.isSlave ] 
 
-    def getMySQLNode(self, vmid):
-	return self.serviceNodes[vmid]
+    def getMySQLNode(self, id):
+        return self.serviceNodes[id]
 
     '''
       Add new Service Node to the server (configuration).
@@ -160,15 +160,15 @@ class Configuration(object):
     def addMySQLServiceNodes(self, nodes, isMaster=False, isSlave=False):
         self.logger.debug('Entering addMySQLServiceNode')
         for node in nodes:
-            self.serviceNodes[node.vmid] = SQLServiceNode(node, isMaster, isSlave)
+            self.serviceNodes[node.id] = SQLServiceNode(node, isMaster, isSlave)
         self.logger.debug('Exiting addMySQLServiceNode')
 
     '''
       Remove Service Node to the server (configuration).
     '''
-    def removeMySQLServiceNode(self, vmid):
-        del self.serviceNodes[vmid]
+    def removeMySQLServiceNode(self, id):
+        del self.serviceNodes[id]
 
     def remove_nodes(self, nodes):
         for node in nodes:
-            del self.serviceNodes[node.vmid]
+            del self.serviceNodes[node.id]

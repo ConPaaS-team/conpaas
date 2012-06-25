@@ -270,7 +270,7 @@ class BasicWebserversManager(object):
     config.serviceNodes.clear()
     i = 0
     for kwargs in serviceNodeKwargs:
-      config.serviceNodes[node_instances[i].vmid] = WebServiceNode(node_instances[i], **kwargs)
+      config.serviceNodes[node_instances[i].id] = WebServiceNode(node_instances[i], **kwargs)
       i += 1
     config.update_mappings()
     
@@ -375,8 +375,8 @@ class BasicWebserversManager(object):
     
     i = 0
     for kwargs in proxyNodesNew + webNodesNew + backendNodesNew:
-      config.serviceNodes[node_instances[i].vmid] = WebServiceNode(node_instances[i], **kwargs)
-      newNodes += [ config.serviceNodes[node_instances[i].vmid] ]
+      config.serviceNodes[node_instances[i].id] = WebServiceNode(node_instances[i], **kwargs)
+      newNodes += [ config.serviceNodes[node_instances[i].id] ]
       i += 1
     config.update_mappings()
     
@@ -509,7 +509,7 @@ class BasicWebserversManager(object):
     
     for i in config.serviceNodes.values():
       if not i.isRunningBackend and not i.isRunningWeb and not i.isRunningProxy:
-        del config.serviceNodes[i.vmid]
+        del config.serviceNodes[i.id]
         self.controller.delete_nodes([i])
     
     
@@ -535,9 +535,9 @@ class BasicWebserversManager(object):
     
     config = self._configuration_get()
     return HttpJsonResponse({
-            'proxy': [ serviceNode.vmid for serviceNode in config.getProxyServiceNodes() ],
-            'web': [ serviceNode.vmid for serviceNode in config.getWebServiceNodes() ],
-            'backend': [ serviceNode.vmid for serviceNode in config.getBackendServiceNodes() ]
+            'proxy': [ serviceNode.id for serviceNode in config.getProxyServiceNodes() ],
+            'web': [ serviceNode.id for serviceNode in config.getWebServiceNodes() ],
+            'backend': [ serviceNode.id for serviceNode in config.getBackendServiceNodes() ]
             })
   
   @expose('GET')
@@ -552,7 +552,7 @@ class BasicWebserversManager(object):
     serviceNode = config.serviceNodes[serviceNodeId]
     return HttpJsonResponse({
             'serviceNode': {
-                            'id': serviceNode.vmid,
+                            'id': serviceNode.id,
                             'ip': serviceNode.ip,
                             'isRunningProxy': serviceNode.isRunningProxy,
                             'isRunningWeb': serviceNode.isRunningWeb,
@@ -716,7 +716,7 @@ class BasicWebserversManager(object):
     ret = [pac[self.DEPLOYMENT_STATE], len(pac[self.CONFIG].serviceNodes)]
     if 'adapting_count' in pac: ret += [pac['adapting_count']]
     else: ret += [0]
-    nodes = [ i.vmid for i in pac[self.CONFIG].serviceNodes.values() ]
+    nodes = [ i.id for i in pac[self.CONFIG].serviceNodes.values() ]
     if 'nodes_additional' in pac: nodes += pac['nodes_additional']
     ret += [str(nodes)]
     return ret

@@ -45,6 +45,8 @@ from BaseHTTPServer import BaseHTTPRequestHandler
 from StringIO import StringIO
 import urlparse, urllib, cgi, httplib, json, pycurl, os
 
+import sys
+
 class HttpError(Exception): pass
 
 
@@ -203,6 +205,7 @@ class AbstractRequestHandler(BaseHTTPRequestHandler):
           self.send_custom_response(httplib.OK, json.dumps({'result': response.obj, 'error': None, 'id': request_id}))
       except Exception as e:
         print e
+        sys.stdout.flush()
   
   def _do_dispatch(self, callback_type, callback_name, params):
     return self.server.callback_dict[callback_type][callback_name](params)

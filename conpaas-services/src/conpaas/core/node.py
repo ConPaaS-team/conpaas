@@ -54,17 +54,18 @@ Created on Mar 9, 2011
 class ServiceNode(object):
 
   def __init__(self, vmid, ip, private_ip, cloud_name):
-      self.vmid = vmid
+      self.id = vmid
       self.ip = ip
       self.private_ip = private_ip
       self.cloud_name = cloud_name
   
   def __repr__(self):
-      return 'ServiceNode(vmid=%s, ip=%s)' % (str(self.vmid), self.ip)
+      return 'ServiceNode(id=%s, ip=%s)' % (str(self.id), self.ip)
   
   def __cmp__(self, other):
-      if self.vmid == other.vmid and \
-      self.cloud_name == other.cloud_name: 
+      if self.id == other.id and \
+         self.cloud_name == other.cloud_name: 
           return 0
-      elif self.vmid < other.vmid: return -1
+      elif self.id < other.id:
+          return -1
       else: return 1

@@ -118,7 +118,7 @@ class Controller(object):
                          inside the default cloud or wherever the controller
                          wants (for now only the default cloud is used)         
 
-            @return A list of nodes of type ServiceNode
+            @return A list of nodes of type node.ServiceNode
         """
 
         ready = []
@@ -133,12 +133,13 @@ class Controller(object):
                           % (iteration, count - len(ready)))
             try:
                 self.__force_terminate_lock.acquire()
-                if iteration == 1: request_start = time.time()
+                if iteration == 1:
+                    request_start = time.time()
                 poll = self.__default_cloud.new_instances(count - len(ready))
-                self.__partially_created_nodes += [ i['id'] for i in poll ]
+                self.__partially_created_nodes += poll
             except Exception as e:
                 self.__logger.exception('[_create_nodes]: Failed to request new nodes')
-                self.__kill_nodesById([i['id'] for i in ready])
+                self.__kill_nodes(ready)
                 self.__partially_created_nodes = []
                 raise e
             finally:
@@ -150,28 +151,26 @@ class Controller(object):
                 self.__logger.debug('[_create_nodes]: %d nodes ' \
                                     'failed to startup properly: %s' \
                                     % (len(failed), str(failed)))
-                self.__kill_nodesById([i['id'] for i in failed])   
+                self.__kill_nodes(failed)   
 
-        additional_nodes = [ ServiceNode(i['id'], i['ip'], i['private_ip'], \
-                                         self.__default_cloud.get_cloud_name()) \
-                                         for i in ready ]
+        additional_nodes = ready
         self.__force_terminate_lock.acquire()
         #self.__created_nodes += additional_nodes
-        self.__created_nodes += [ i['id'] for i in ready ]
+        self.__created_nodes += ready
         self.__partially_created_nodes = []
         self.__force_terminate_lock.release()
     
         # start reservation timer with slack of 3 mins + time already wasted
         # this should be enough time to terminate instances before
         # hitting the following hour
-        timer = ReservationTimer([ i['id'] for i in ready ],
+        timer = ReservationTimer([ i.id for i in ready ],
                                (55 * 60) - (time.time() - request_start),
                                self.__deduct_and_check_credit,
                                self.__reservation_logger)
         timer.start()
         # set mappings
         for i in ready:
-            self.__reservation_map[i['id']] = timer
+            self.__reservation_map[i.id] = timer
         return additional_nodes
 
     #===========================================================================#
@@ -184,7 +183,7 @@ class Controller(object):
                          ServiceNode or a class that extends ServiceNode
         """
       
-        self.__kill_nodesById([ i.vmid for i in nodes ])
+        self.__kill_nodes(nodes)
 
     #===========================================================================#
     #                     list_vms(self, cloud=None)                            #
@@ -280,19 +279,19 @@ class Controller(object):
 
     #===========================================================================#
 
-    def __kill_nodesById(self, ids):
+    def __kill_nodes(self, nodes):
     #TODO: send also the cloud
-      for id in ids:
-        self.__logger.debug('[_kill_nodes]: killing ' + str(id))
+      for node in nodes:
+        self.__logger.debug('[_kill_nodes]: killing ' + str(node.id))
         try:
           # node may not be in map if it failed to start
-          if id in self.__reservation_map:
-            timer = self.__reservation_map.pop(id)
-            if timer.remove_node(id) < 1:
+          if node.id in self.__reservation_map:
+            timer = self.__reservation_map.pop(node.id)
+            if timer.remove_node(node.id) < 1:
               timer.stop()
-          self.__default_cloud.kill_instance(id)
+          self.__default_cloud.kill_instance(node)
         except: self.__logger.exception('[_kill_nodes]: ' \
-                                      'Failed to kill node %s', id)
+                                      'Failed to kill node %s', node.id)
   
     def __wait_for_nodes(self, nodes, test_agent, port, poll_interval=10):
       self.__logger.debug('[__wait_for_nodes]: going to start polling')
@@ -300,33 +299,36 @@ class Controller(object):
       poll_cycles = 0
       while len(nodes) > 0:
         poll_cycles += 1
-        for i in nodes:
+        for node in nodes:
           up = True
           try:
-            if i['ip'] != '' and i['private_ip'] != '':
-              test_agent(i['ip'], port)
+            if node.ip != '' and node.private_ip != '':
+              test_agent(node.ip, port)
             else:
               up = False
-          except: up = False
+          except:
+              up = False
           if up:
-            done.append(i)
+            # On this node the agent started fine.
+            done.append(node)
         nodes = [ i for i in nodes if i not in done]
         if len(nodes):
           if poll_cycles * poll_interval > 180:
-            # at least 2mins of sleeping + poll time
+            # at least 3mins of sleeping + poll time
             return (done, nodes)
 
           self.__logger.debug('[_wait_for_nodes]: waiting for %d nodes' \
                             % len(nodes))
           time.sleep(poll_interval)
-          no_ip_nodes = [ i for i in nodes if i['ip'] == '' or i['private_ip'] == '']
+          no_ip_nodes = [ node for node in nodes if node.ip == '' or node.private_ip == '']
           if no_ip_nodes:
             self.__logger.debug('[_wait_for_nodes]: refreshing %d nodes' \
                               % len(no_ip_nodes))
             refreshed_list = self.__default_cloud.list_vms()
-            for i in no_ip_nodes:
-              i['ip'] = refreshed_list[i['id']]['ip']
-              i['private_ip'] = refreshed_list[i['id']]['private_ip']
+            for node in no_ip_nodes:
+              node.ip = refreshed_list[node.id]['ip']
+              node.private_ip = refreshed_list[node.id]['private_ip']
+
       self.__logger.debug('[_wait_for_nodes]: All nodes are ready %s' \
                         % str(done))
       return (done, [])
@@ -384,10 +386,10 @@ class Controller(object):
       self.__logger.debug('OUT OF CREDIT, TERMINATING SERVICE')
 
       # kill all partially created nodes
-      self.__kill_nodesById(self.__partially_created_nodes)
+      self.__kill_nodes(self.__partially_created_nodes)
 
       # kill all created nodes
-      self.__kill_nodesById(self.__created_nodes)
+      self.__kill_nodes(self.__created_nodes)
     
       # notify front-end, attempt 10 times until successful
       for _ in range(10):

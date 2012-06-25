@@ -52,7 +52,7 @@ from conpaas.core.node import ServiceNode
 
 class WebServiceNode(ServiceNode):
   def __init__(self, node, runProxy=False, runWeb=False, runBackend=False):
-    ServiceNode.__init__(self, node.vmid,
+    ServiceNode.__init__(self, node.id,
                          node.ip, node.private_ip,
                          node.cloud_name)
     self.isRunningProxy = runProxy
@@ -60,7 +60,9 @@ class WebServiceNode(ServiceNode):
     self.isRunningBackend = runBackend
   
   def __repr__(self):
-    return 'ServiceNode(vmid=%s, ip=%s, proxy=%s, web=%s, backend=%s)' % (str(self.vmid), self.ip, str(self.isRunningProxy), str(self.isRunningWeb), str(self.isRunningBackend))
+    return 'ServiceNode(id=%s, ip=%s, proxy=%s, web=%s, backend=%s)'\
+           % (str(self.id), self.ip, str(self.isRunningProxy), \
+             str(self.isRunningWeb), str(self.isRunningBackend))
   
 class CodeVersion(object):
   def __init__(self, id, filename, atype, description=''):

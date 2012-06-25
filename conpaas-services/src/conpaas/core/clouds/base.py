@@ -73,7 +73,7 @@ class Cloud:
         raise NotImplementedError, \
              'new_instances not implemented for this cloud driver'
 
-    def kill_instance(self, vm_id):
+    def kill_instance(self, node):
         raise NotImplementedError, \
              'kill_instance not implemented for this cloud driver'
 
