@@ -91,10 +91,8 @@ class DemoWrapper {
         executionStartTime = System.currentTimeMillis();
         executionFinishTime = 0;
         
-        double totalExecutionCost = get_execution_cost(scheduleNum);
-        pricePerTaskExecutionPhase = totalExecutionCost / 
-        (serviceState.noTotalTasks - serviceState.noCompletedTasks);
-        
+        double execCost = get_execution_cost(scheduleNum);
+	pricePerTaskExecutionPhase = execCost / ((1 - samplingPercentage) * serviceState.noTotalTasks);
         
         double executionPhaseTime = timePerTask * (1 - samplingPercentage)
                 * serviceState.noTotalTasks;
@@ -154,7 +152,7 @@ class DemoWrapper {
                     serviceState.noCompletedTasks = (int) (samplingPercentage
                             * serviceState.noTotalTasks);
                 } else {
-                    serviceState.noCompletedTasks = serviceState.noCompletedTasks;
+                    serviceState.noCompletedTasks = serviceState.noTotalTasks;
                 }
             }
 
@@ -165,9 +163,8 @@ class DemoWrapper {
             	
                 // sampling phase expired
                 
-            	serviceState.moneySpent =  Math.ceil(serviceState.moneySpentSampling +
+		serviceState.moneySpent =  Math.ceil(serviceState.moneySpentSampling +
             	pricePerTaskExecutionPhase * (serviceState.noCompletedTasks - samplingPhaseNumTasks));
-            	
             } else if((serviceState.noCompletedTasks != 0)){
             	// sampling
             	
