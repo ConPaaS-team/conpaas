@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <!-- XML file produced from file: installation.tex
      using Hyperlatex v 2.9-in-waiting-rk (oct06) (c) Otfried Cheong
-     on Emacs 22.2.1, Thu Apr 26 11:56:33 2012 -->
+     on Emacs 22.2.1, Wed Jun 27 14:39:06 2012 -->
 <head>
 <title>ConPaaS -- Installation guide</title>
 
@@ -67,8 +67,9 @@ found at
 The Web Hosting Service requires the usage of an Amazon Machine Image (AMI) to
 contain the dependencies of its processes. For your convenience we provide a
 public ConPaaS AMI which is already configured and ready to be used on Amazon
-EC2. The AMI ID of said image is <em>ami-3467bc5d</em>. You can use this value when configuring your ConPaaS frontend installation as
-described in Section&nbsp;<a href="#sec:frontend">4</a>.
+EC2. The AMI ID of said image is <em>ami-c4d208ad</em>. You can use this value
+when configuring your ConPaaS frontend installation as described in
+Section&nbsp;<a href="#sec:frontend">4</a>.
 </p>
 
 <h2><a name="sec:ec2image">2.2 Create an EBS backed AMI on Amazon EC2</a></h2>
@@ -120,6 +121,7 @@ The following ports shoud be open for all running instances:
 </li><li>TCP port 3306 - used by the MySQL service
 </li><li>TCP ports 8020, 8021, 8088, 50010, 50020, 50030, 50105, 54310, 54311, 50060, 50070, 50075 and 50090 - used by the Map Reduce service
 </li><li>TCP ports 4369, 14194 and 14195 - used by the Scalarix service
+</li><li>TCP ports 8475, 8999 - used by the TaskFarm service
 </li></ul>
 <p>AWS documentation is available at
 <a href="http://docs.amazonwebservices.com/AWSEC2/latest/UserGuide/index.html?using-network-security.html">http://docs.amazonwebservices.com/AWSEC2/latest/UserGuide/index.html?using-network-security.html</a>.
@@ -230,7 +232,7 @@ started with ConPaaS, as all you need to do is setup a few configuration
 files.
 </p>
 <ol><li>Log in the AWS management console, select the "EC2" tab, then "AMIs"
-in the left-side menu. Search the public AMI with ID <code>ami-d267bcbb</code> and
+in the left-side menu. Search the public AMI with ID <code>ami-b6d208df</code> and
 run an instance of it.
 </li><li>In the "Configure Firewall" step of the Wizard, create a security group
 with port 80 (HTTP) open. Also, if you haven't done so already, create a

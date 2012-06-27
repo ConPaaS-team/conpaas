@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <!-- XML file produced from file: userguide.tex
      using Hyperlatex v 2.9-in-waiting-rk (oct06) (c) Otfried Cheong
-     on Emacs 22.2.1, Thu Apr 26 11:36:41 2012 -->
+     on Emacs 22.2.1, Wed Jun 27 14:39:06 2012 -->
 <head>
 <title>ConPaaS -- User Guide</title>
 
@@ -383,13 +383,55 @@ tracker, and to a graphical interface which allows to upload/download
 data to/from the service and issue MapReduce jobs.
 </p>
 
-<h1><a name="id23">9 Building new types of services</a></h1><p>
+<h1><a name="id23">9 The TaskFarm service</a></h1><p>
+The TaskFarm service provides a bag of tasks scheduler for ConPaaS.
+The user needs to provide a list of independent tasks to be executed
+on the cloud and a file system location where the tasks can read 
+input data and/or write output data to it. The service first enters 
+a sampling phase, where its agents sample the runtime of the given tasks on 
+different cloud instances. The service then based on the sampled runtimes, 
+provides the user with a list of schedules.
+Schedules are presented in a graph and the user can choose between 
+cost/makespan of different schedules for the given set of tasks.
+After the choice is made the service enters the execution phase and 
+completes the execution of the rest of the tasks according to the user's
+choice.
+</p>
+
+<h2><a name="id24">9.1 The bag of tasks file</a></h2><p>The bag of tasks file is a simple plain text file that contains the 
+list of tasks along with their arguments to be executed. The tasks 
+are seperated by new lines. This file needs to be uploaded to the 
+service, before the service can start sampling. Below is an example of a simple bag of tasks file containing three tasks:
+</p>
+<hr /><pre>
+/bin/sleep 1 &amp;&amp; echo "slept for 1 seconds" &gt;&gt; /mnt/xtreemfs/log
+/bin/sleep 2 &amp;&amp; echo "slept for 2 seconds" &gt;&gt; /mnt/xtreemfs/log
+/bin/sleep 3 &amp;&amp; echo "slept for 3 seconds" &gt;&gt; /mnt/xtreemfs/log
+</pre>
+<hr />
+
+<h2><a name="id25">9.2 The filesystem location</a></h2><p>
+TaskFarm service uses XtreemFS for data input/output. The actual task 
+code can also reside in the XtreemFS. The user can optionally provide
+an XtreemFS location which is then mounted on TaskFarm agents.
+</p>
+
+<h2><a name="id26">9.3 The demo mode</a></h2><p>
+With large bags of tasks and/or with long running tasks, the TaskFarm 
+service can take a long time to execute the given bag.
+The service provides its users with a progress bar and reports the amount 
+money spent so far. TaskFarm service also provides a "demo" mode where 
+the users can try the service with custom bags without spending time and 
+money.
+</p>
+
+<h1><a name="id27">10 Building new types of services</a></h1><p>
 The architecture of ConPaaS allows developers to build new types of
 services. To learn how to do this, please check the
 "<a href="internals.pdf">Internals</a>" ConPaaS documentation.
 </p>
 
-<h1><a name="id24">10 About this document</a></h1>
+<h1><a name="id28">11 About this document</a></h1>
 <pre>
 Copyright (c) 2010-2012, Contrail consortium.
 All rights reserved.
