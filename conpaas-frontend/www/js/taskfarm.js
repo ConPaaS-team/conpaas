@@ -82,9 +82,8 @@ conpaas.ui = (function (this_module) {
             that = this;
         data.addColumn('number', 'Execution Time');
         data.addColumn('number', 'Cost');
-        $.each(schedules, function (index, schedule) {
-            budget = parseInt(schedule.split('\t')[1]);
-            data.addRow([(index + 1) * 15, budget]);
+        schedules.forEach(function (schedule) {
+            data.addRow([schedule.time, schedule.cost]);
         });
         options = {
             width: 400, height: 240,
@@ -151,7 +150,6 @@ conpaas.ui = (function (this_module) {
     },
     pollAndUpdate: function () {
         var that = this;
-        $('#progressbar').css('visibility', 'visible');
         this.pollState(
         /* on stable state */function () {
             window.location.reload();
@@ -211,6 +209,8 @@ $(document).ready(function () {
                 data.instanceRoles, data.reachable);
         page = new conpaas.ui.TaskFarmPage(server, service);
         page.attachHandlers();
+        var percentDone = data.completedTasks * 100 / data.totalTasks;
+        page.progressBar.setPercent(percentDone);
         if (document.getElementById('samplings')) {
             page.loadSamplingResults();
         }

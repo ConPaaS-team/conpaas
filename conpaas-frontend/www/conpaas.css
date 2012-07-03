@@ -1556,6 +1556,175 @@ img {
 }
 
 #progressbar {
-	visibility: hidden;
->>>>>>> bf0d045... progress bar for TaskFarm UI
+}
+
+.form-section .cds-subscribe {
+	margin-left: 5px;
+	color: #666;
+	font-size: 12px;
+}
+
+.form-section .cds-subscribe .subscribe-form {
+	margin: 3px;
+	padding: 3px;
+}
+
+.access-box .led {
+	margin-top: 4px;
+	margin-left: 10px;
+}
+
+.code {
+	padding: 10px;
+	margin: 10px 0 10px 0;
+	background-color: #eee;
+	font-family: Courier New, monospace;
+	color: #333;
+	font-size: 14px;
+}
+
+.code .line {
+	display: block;
+	margin: 1px;
+	padding: 2px;
+}
+
+.apps .app {
+	background-color: #eee;
+	padding: 5px;
+	margin-top: 1px;
+	border-right: 1px solid #eee;
+	border-left: 1px solid #eee;
+	border-top: 1px solid #eee;
+	border-bottom: 1px solid #ddd;
+}
+
+.app .appname {
+	font-weight: bold;
+	float: left;
+	padding: 3px;
+}
+
+.app .timestamp {
+	float: right;
+	padding: 3px;
+	color: #999;
+}
+
+.log {
+	padding: 0 3px 3px 3px;
+	font-family: Courier New, monospace;
+	font-size: 12px;
+}
+
+.log .line {
+	margin: 3px 0 3px 0;
+	border-bottom: 1px #eee solid;
+}
+
+.regionWrapper {
+    border-top: 1px dotted #ccc;
+    border-left: 1px dotted #ccc;
+    border-right: 1px dotted #ccc;
+}	
+
+.map {
+	margin-top: 5px;
+}
+
+#map-container .loading {
+	text-align: center;
+	color: #999;
+	font-style: italic;
+	margin-top: 100px;
+}
+
+.region {
+	padding: 10px 10px 3px 10px;
+	margin: 2px;
+}
+
+.region:hover {
+	background-color: #eee;
+}
+
+.regionWrapper:hover {
+    border-top: 1px solid #ccc;
+    border-left: 1px solid #ccc;
+    border-right: 1px solid #ccc;
+}
+
+.region img.cloud {
+	float: right;
+}
+
+.region .title, .region img.country {
+	float: left;
+}
+
+.region img.country {
+	padding: 3px;
+}
+
+.region .title {
+	font-size: 12px;
+	color: #666;
+	font-style: normal;
+	padding: 1px 3px 0 5px;
+}
+
+.region-end {
+	border-top: 1px dotted #ccc;
+}
+
+.region .menu {
+	padding: 3px 3px 0 0;
+}
+
+.region:hover .menu {
+	display: block;
+}
+
+.region .menu .button {
+	margin-left: 0;
+	padding-left: 0;
+}
+
+.region .instance {
+	border-bottom: none;
+	padding-top: 7px;
+}
+
+.region .edge {
+	margin-top: 5px;
+}
+
+.addressbox {
+	padding: 3px;
+}
+
+.addressbox i {
+	font-style: normal;
+}
+
+.addressbox .at {
+	font-family: Helvetica;
+	font-size: 14px;
+	color: brown;
+	padding: 5px 1px 3px 3px;
+}
+
+.addressbox input.address {
+	padding: 1px 3px 3px 3px;
+	font-weight: bold;
+	color: #333;
+	border: none;
+	font-size: 12px;
+	font-family: Verdana, Tahoma, sans serif;
+	margin-left: 0; 
+}
+
+.addressbox .address:hover {
+	cursor: pointer;
+>>>>>>> 86e0cc4... taskfarm service UI: remove hardcoded values used for chart drawing and align with the new encoding for sampling results
 }

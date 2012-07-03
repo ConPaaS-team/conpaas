@@ -352,6 +352,10 @@ conpaas.ui = (function (this_module) {
         this.progressElement.width(1);
     },
     setPercent: function (percent) {
+        if (!percent) {
+            this.valueElement.html('0%');
+            return;
+        }
         percent = Math.floor(percent);
         if (percent == 0) {
             this.init();

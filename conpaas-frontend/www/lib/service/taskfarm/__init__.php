@@ -91,26 +91,6 @@ class TaskFarmService extends Service {
 		return $response['result'];
 	}
 
-	public function fetchSamplingResults() {
-		$json = $this->managerRequest('post', 'get_sampling_results', array());
-		$result = json_decode($json, true);
-		if (!array_key_exists('result', $result)) {
-			if (array_key_exists('error', $result)) {
-				throw new Exception($result['error']['message']);
-			}
-			return false;
-		}
-		$sampling_results = $result['result'];
-		if (array_key_exists('error', $sampling_results)) {
-			throw new Exception('Error fetching sampling results: '.
-				$sampling_results['error']);
-		}
-		if (!isset($sampling_results[0])) {
-			return false;
-		}
-		return $sampling_results;
-	}
-
 	public function	startExecution($schedulesFile, $scheduleNo) {
 		$json = $this->managerRequest('post', 'start_execution', array(
 			$schedulesFile, $scheduleNo));
@@ -128,6 +108,17 @@ class TaskFarmService extends Service {
 				$result['error']);
 		}
 		return $result;
+	}
+
+	public function fetchSamplingResults() {
+		$json = $this->managerRequest('post', 'get_sampling_results', array());
+		$result = json_decode($json, true);
+		$sampling_results = array();
+		$sampling_results []= json_decode($result['result'], true);
+		if (!isset($sampling_results[0])) {
+			return false;
+		}
+		return $sampling_results;
 	}
 
 	public function hasSamplingResults() {
@@ -172,7 +163,7 @@ class TaskFarmService extends Service {
 				'moneySpent' => $state['moneySpent'],
 				'completedTasks' => $state['noCompletedTasks'],
 				'totalTasks' => $state['noTotalTasks']
-		));
+			));
 		} catch (Exception $e) {
 			dlog($e->getMessage());
 			return parent::toArray();
