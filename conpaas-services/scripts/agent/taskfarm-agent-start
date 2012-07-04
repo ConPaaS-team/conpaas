@@ -6,9 +6,9 @@
 export BATS_HOME=$CPS_HOME/src/conpaas/services/taskfarm
 export BATS_HOME_LIB=$BATS_HOME/lib
 export IPL_HOME=$BATS_HOME/ipl-2.2
-export MOUNT_FOLDER=/mnt/xtreemfs
 export VM_ID=$VM_ID
 
+#export MOUNT_FOLDER=/mnt/xtreemfs
 mkdir $MOUNT_FOLDER
 
 export FRESH_BATS
