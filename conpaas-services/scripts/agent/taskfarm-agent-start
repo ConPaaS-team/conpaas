@@ -6,17 +6,21 @@
 export BATS_HOME=$CPS_HOME/src/conpaas/services/taskfarm
 export BATS_HOME_LIB=$BATS_HOME/lib
 export IPL_HOME=$BATS_HOME/ipl-2.2
+export MOUNT_FOLDER=/mnt/xtreemfs
+export VM_ID=$VM_ID
+
+mkdir $MOUNT_FOLDER
 
 export FRESH_BATS
 
 ########################################################################################
 
 echo "Running java OneVMWorker vm_id = $VM_ID, location=$LOCATION, elect=$ELECTIONNAME, pool=$POOLNAME, servaddr=$SERVERADDRESS, speedfct=$SPEEDFACTOR" > $BATS_HOME/info.txt
-#echo "MOUNTURL=\$MOUNTURL" >> $BATS_HOME/info.txt
-#echo "MOUNT_FOLDER=\$MOUNT_FOLDER" >> $BATS_HOME/info.txt
+#echo "MOUNTURL=$MOUNTURL" >> $BATS_HOME/info.txt
+#echo "MOUNT_FOLDER=$MOUNT_FOLDER" >> $BATS_HOME/info.txt
 
-# \$MOUNTURL is an environment variable, passed down from the contextualization process
-#mount.xtreemfs --interrupt-signal=0 $MOUNTURL $MOUNT_FOLDER 1>> $BATS_HOME/mounting.log 2>> $BATS_HOME/mounting.err.log
+# $MOUNTURL is an environment variable, passed down from the contextualization process
+#mount.xtreemfs --interrupt-signal=0 $MOUNTURL $MOUNT_FOLDER 1>> $BATS_HOME/mounting.out.log 2>> $BATS_HOME/mounting.err.log
 
 cd $BATS_HOME 
 
