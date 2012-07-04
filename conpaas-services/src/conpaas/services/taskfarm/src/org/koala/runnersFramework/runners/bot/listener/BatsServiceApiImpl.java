@@ -43,6 +43,7 @@ public class BatsServiceApiImpl implements BatsServiceApi {
      * Boolean which determines if demo is on or off.
      */
     public static boolean DEMO;
+    private boolean demo_already_set = false;
 
     public BatsServiceApiImpl() {
         lock = new Object();
@@ -308,7 +309,7 @@ public class BatsServiceApiImpl implements BatsServiceApi {
                     return retVal;
                 }
             }
-
+            System.out.println("terminating workers!");
             totalNoWorkersTerminated = serviceBoT.terminate();
             retVal.append(totalNoWorkersTerminated + "\n");
 
@@ -358,4 +359,15 @@ public class BatsServiceApiImpl implements BatsServiceApi {
         }
         return retVal;
     }
+
+	@Override
+	public MethodReport set_demo_mode() {
+		if(demo_already_set)
+		{
+			return new MethodReportError("Demo mode is already set once!");
+		}
+		demo_already_set = true;
+		DEMO = true;
+		return new MethodReportSuccess();
+	}
 }

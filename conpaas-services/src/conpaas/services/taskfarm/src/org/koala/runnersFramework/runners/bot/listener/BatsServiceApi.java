@@ -32,4 +32,6 @@ public interface BatsServiceApi {
     public MethodReport get_log();
 
     public MethodReport terminate_workers();
+    
+    public MethodReport set_demo_mode();
 }

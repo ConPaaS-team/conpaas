@@ -112,16 +112,6 @@ public class OpenNebulaOcaCluster extends Cluster {
 
         System.out.println("Starting " + noWorkers + " workers with ONE...");
     	
-    	// XXX: in ConPaaS, IP_PUBLIC is passed as an environment variable
-    	// This needs to go upper in the call tree when all the bindings 
-    	// are supported by ConPaaS.
-        
-    	String newServerAddress = System.getenv().get("IP_PUBLIC");
-    	if(newServerAddress != null)
-    	{
-    	//	serverAddress = newServerAddress;
-    	}
-    	System.out.println("Ibis server address is: old: " + serverAddress + " new: " + newServerAddress);
 
 
         // place here and not in constructor, because client is not serializable,

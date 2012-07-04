@@ -129,6 +129,7 @@ public class EC2ClusterAmazonAPI extends Cluster {
 		replaceAll("\\$LOCATION", "\\$VM_ID@ec2").
 		replaceAll("\\$ELECTIONNAME", electionName).
 		replaceAll("\\$POOLNAME", poolName).
+		replaceAll("\\$MOUNTURL", BoTRunner.filesLocationUrl).
 		replaceAll("\\$SERVERADDRESS", System.getenv().get("IP_PUBLIC") + ":8999").
 		replaceAll("\\$SPEEDFACTOR", this.speedFactor);
 		return script;

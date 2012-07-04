@@ -101,12 +101,14 @@ public abstract class Master {
 		
 		for(Cluster c : bot.Clusters.values()) {
 			for(WorkerStats ws : workers.get(c.alias).values()) {
-				if(!ws.isFinished()) {
+				// XXX This should just work no matter what as user has requested
+				//if(!ws.isFinished()) {
 					c.terminateNode(ws.getIbisIdentifier(), myIbis);
 					noWorkerTerminatedNow ++;
-				}
+				//}
 			}
 		}
+		workers.clear();
 		return noWorkerTerminatedNow;
 	} 	
 	

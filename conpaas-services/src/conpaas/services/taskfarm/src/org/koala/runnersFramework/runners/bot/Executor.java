@@ -58,15 +58,14 @@ public class Executor {
                             + "are from 0 to " + (schedules.size() - 1) +
                             "Usage: list|<number> file ");
                 }
+
                 System.out.println("You have chosen schedule no. " + selectedSchedule
                         + ":\n" + schedules.get(selectedSchedule).toString());
             }
             //BatsServiceApiImpl.serviceState.totalMoney = schedules.get(selectedSchedule).budget;
    }
-        
 
-
-    public void go() {
+	public void go() {
         if (run) {
             run();
         } else {
@@ -125,12 +124,6 @@ public class Executor {
 
         bot = (BoTRunner) ois.readObject();
         schedules = (ArrayList<Schedule>) ois.readObject();
-        
-        // Also update cache object progress information.
-        BatsServiceApiImpl.serviceState.moneySpent = ois.readDouble();
-        BatsServiceApiImpl.serviceState.noTotalTasks = bot.tasks.size();
-        BatsServiceApiImpl.serviceState.noCompletedTasks = bot.finishedTasks.size();
-
         ois.close();
 
         // get the remaining tasks.
