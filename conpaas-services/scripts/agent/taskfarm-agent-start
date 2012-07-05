@@ -8,26 +8,33 @@ export BATS_HOME_LIB=$BATS_HOME/lib
 export IPL_HOME=$BATS_HOME/ipl-2.2
 export VM_ID=$VM_ID
 
-#export MOUNT_FOLDER=/mnt/xtreemfs
-mkdir $MOUNT_FOLDER
+export MOUNT_FOLDER=/root/mount
+mkdir -p $MOUNT_FOLDER
+
+# $MOUNTURL is an environment variable, passed down from the contextualization process
+# (e.g. for Opennebula), or replaced in this file (e.g. for EC2 that doesn't support
+# passing variables into contextualization)
+MOUNT_URL=$MOUNTURL
 
 export FRESH_BATS
 
 ########################################################################################
 
 echo "Running java OneVMWorker vm_id = $VM_ID, location=$LOCATION, elect=$ELECTIONNAME, pool=$POOLNAME, servaddr=$SERVERADDRESS, speedfct=$SPEEDFACTOR" > $BATS_HOME/info.txt
-#echo "MOUNTURL=$MOUNTURL" >> $BATS_HOME/info.txt
-#echo "MOUNT_FOLDER=$MOUNT_FOLDER" >> $BATS_HOME/info.txt
+echo "MOUNTURL=$MOUNT_URL" >> $BATS_HOME/info.txt
+echo "MOUNT_FOLDER=$MOUNT_FOLDER" >> $BATS_HOME/info.txt
 
-# $MOUNTURL is an environment variable, passed down from the contextualization process
-#mount.xtreemfs --interrupt-signal=0 $MOUNTURL $MOUNT_FOLDER 1>> $BATS_HOME/mounting.out.log 2>> $BATS_HOME/mounting.err.log
+
+if [ -n "$MOUNT_URL" ]; then
+    mount.xtreemfs --interrupt-signal=0 $MOUNT_URL $MOUNT_FOLDER 1>> $BATS_HOME/mounting.out.log 2>> $BATS_HOME/mounting.err.log
+fi
 
 cd $BATS_HOME 
 
-# The JVM will set as working directory \$MOUNT_FOLDER in the JVM 
+# The JVM will set as working directory $MOUNT_FOLDER in the JVM 
 java -classpath $BATS_HOME_LIB/*:$IPL_HOME/lib/*  \
 	-Dibis.location=$LOCATION                                                               \
 	org.koala.runnersFramework.runners.bot.OneVMWorker $ELECTIONNAME $POOLNAME $SERVERADDRESS $SPEEDFACTOR \
 	1> $BATS_HOME/vm_$VM_ID.out.log 2> $BATS_HOME/vm_$VM_ID.err.log
 
-#umount.xtreemfs $MOUNT_FOLDER
+umount.xtreemfs $MOUNT_FOLDER

@@ -27,8 +27,5 @@ java -cp $BATS_HOME_LIB/*:$BATS_HOME/:$IPL_HOME/lib/* \
 	-Dibis.pool.name=$poolname \
 	-Dibis.server.address=$address \
 	-Dibis.server.port=$port \
-        -Ddemo=on \
 	org.koala.runnersFramework.runners.bot.listener.BatsWrapper \
 	1> $BATS_HOME/out.log 2> $BATS_HOME/err.log &
-
-# to enable demo use: -Ddemo=on
