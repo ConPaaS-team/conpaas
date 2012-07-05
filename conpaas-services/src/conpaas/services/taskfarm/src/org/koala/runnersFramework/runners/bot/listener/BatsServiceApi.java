@@ -33,5 +33,5 @@ public interface BatsServiceApi {
 
     public MethodReport terminate_workers();
     
-    public MethodReport set_demo_mode();
+    public MethodReport set_service_mode(String mode);
 }

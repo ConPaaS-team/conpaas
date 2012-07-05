@@ -3,6 +3,7 @@ package org.koala.runnersFramework.runners.bot.listener;
 public class State {
     
     public String state;
+    public String mode;
     /*
      * Progress fields.
      */
@@ -13,7 +14,15 @@ public class State {
 
     State(String state) {
         this.state = state;
+        this.mode = MODE_NA;
     }
+    
+    /**
+     * System mode
+     */
+    public static String MODE_DEMO = "DEMO";
+    public static String MODE_REAL = "REAL";
+    public static String MODE_NA = "NA";
     
     /**
      * Stable states

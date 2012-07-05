@@ -42,8 +42,6 @@ public class BatsServiceApiImpl implements BatsServiceApi {
     /**
      * Boolean which determines if demo is on or off.
      */
-    public static boolean DEMO;
-    private boolean demo_already_set = false;
 
     public BatsServiceApiImpl() {
         lock = new Object();
@@ -63,13 +61,14 @@ public class BatsServiceApiImpl implements BatsServiceApi {
          */
         schedulesFolder.mkdirs();
         demo = new DemoWrapper();
-        this.serviceState.moneySpent = 0;
-        this.serviceState.moneySpentSampling = 0;
+        serviceState.moneySpent = 0;
+        serviceState.moneySpentSampling = 0;
     }
    
     @Override
     public MethodReport start_sampling(String filesLocationUrl, String inputFile) {
-        if (DEMO) {
+        
+    	if (serviceState.mode.equals(State.MODE_DEMO)) {
             return demo.start_sampling(inputFile);
         }
 
@@ -167,7 +166,7 @@ public class BatsServiceApiImpl implements BatsServiceApi {
         
         List<SamplingResult> list = new ArrayList<SamplingResult>();
         
-    	if (DEMO) {
+    	if (serviceState.mode.equals(State.MODE_DEMO)) {
     		list = (List<SamplingResult>)demo.get_sampling_result();
     		return create_json_schedules(list);
         }
@@ -221,7 +220,7 @@ public class BatsServiceApiImpl implements BatsServiceApi {
 
     @Override
     public State get_service_info() {
-        if (DEMO) {
+        if (serviceState.mode.equals(State.MODE_DEMO)) {
             return demo.get_service_info();
         }
         return serviceState;
@@ -230,7 +229,7 @@ public class BatsServiceApiImpl implements BatsServiceApi {
     @Override
     public MethodReport start_execution(long schedulesFileTimeStamp, int scheduleNo) {
     	
-    	if (DEMO) {
+    	if (serviceState.mode.equals(State.MODE_DEMO)) {
             return demo.start_execution(scheduleNo);
         }
 
@@ -294,7 +293,7 @@ public class BatsServiceApiImpl implements BatsServiceApi {
 
     @Override
     public MethodReport terminate_workers() {
-        if (DEMO) {
+        if (serviceState.mode.equals(State.MODE_DEMO)) {
             return demo.terminate_workers();
         }
 
@@ -341,7 +340,7 @@ public class BatsServiceApiImpl implements BatsServiceApi {
 
     @Override
     public MethodReport get_log() {
-        if (DEMO) {
+        if (serviceState.mode.equals(State.MODE_DEMO)) {
             return demo.get_log();
         }
 
@@ -361,13 +360,15 @@ public class BatsServiceApiImpl implements BatsServiceApi {
     }
 
 	@Override
-	public MethodReport set_demo_mode() {
-		if(demo_already_set)
+	public MethodReport set_service_mode(String mode) {
+		if(mode.equals(State.MODE_DEMO) || mode.equals(State.MODE_REAL))
 		{
-			return new MethodReportError("Demo mode is already set once!");
+			serviceState.mode = mode;
 		}
-		demo_already_set = true;
-		DEMO = true;
+		else
+		{
+			return new MethodReportError("Invalid service mode");
+		}
 		return new MethodReportSuccess();
 	}
 }
