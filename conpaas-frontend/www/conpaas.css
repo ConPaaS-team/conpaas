@@ -1540,6 +1540,17 @@ img {
 	cursor: pointer;
 }
 
+.demoform {
+	background-color: #E4ECF5;
+	border: 1px dashed;
+	padding: 10px;
+	color: #333;
+}
+
+.demoform .question {
+	border-top: 1px solid white;
+	padding-top: 10px;
+}
 .progressbar {
 	margin: 5px 60px 5px 60px;
 }

@@ -36,6 +36,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+require_module('ui');
 require_module('ui/page');
 
 class TaskFarmPage extends ServicePage {
@@ -47,8 +48,11 @@ class TaskFarmPage extends ServicePage {
 		$this->addJS('js/jquery.form.js');
 		$this->addJS('js/taskfarm.js');
 		if ($service->isDemo()) {
-			$this->addMessage('This service is running the Demo version of the'
-				.' TaskFarm service', MessageBox::INFO);
+			$this->addMessage('This service is running the <b>demo</b> version of the'
+				.' TaskFarm service. In this mode the service performs only '
+				.' fictional work and it is meant to be used for showing the '
+				.' interaction with the system.',
+				MessageBox::INFO);
 		}
 	}
 
@@ -179,7 +183,31 @@ class TaskFarmPage extends ServicePage {
 		.'</div>';
 	}
 
+	public function renderDemoQuestion() {
+		$intro = 'The TaskFarm service has the option of running in <b>demo</b> '
+		.'mode besides the regular <b>real</b> mode. The <b>demo</b> mode '
+		.'encapsulates a mocked service that is showing how the system works '
+		.'and how you can interact with it, so it might a good option when '
+		.'trying the system for the first time.';
+		$question = 'Do you want to run the system in <b>real</b> mode?';
+		return
+		'<div class="demoform">'
+			.'<p>'.$intro.'</p>'
+			.'<div class="question">'
+				.$question
+				.InputButton('Yes')->setId('enableReal')
+				.InputButton('No, run demo')->setId('enableDemo')
+				.'<span class="hint">'
+					.'once you choose a running mode, you cannot switch it again'
+				.'</span>'
+			.'</div>'
+		.'</div>';
+	}
+
 	public function renderContent() {
+		if ($this->service->isDemoNotSet()) {
+			return $this->renderDemoQuestion();
+		}
 		return
 			$this->renderProgressBar()
 			.$this->renderSampleSection()

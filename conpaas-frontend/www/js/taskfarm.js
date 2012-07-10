@@ -54,7 +54,7 @@ conpaas.ui = (function (this_module) {
     },
     /* methods */{
     freezeInput: function (freeze) {
-        var buttonsSelector = '#startSample, #startExec';
+        var buttonsSelector = '#startSample, #startExec, #enableReal, #enableDemo';
         if (freeze) {
             $(buttonsSelector).attr('disabled', 'disabled');
         } else {
@@ -74,6 +74,14 @@ conpaas.ui = (function (this_module) {
                     });
                     // simulate a sample change event
                     that.onSampleChange({data: that});
+                });
+    },
+    setMode: function (mode) {
+        this.freezeInput(true);
+        this.server.req('ajax/taskfarm_setmode.php',
+                {sid: this.service.sid, mode: mode}, 'post',
+                function (response) {
+                    window.location.reload();
                 });
     },
     drawChart: function (schedules) {
@@ -147,6 +155,8 @@ conpaas.ui = (function (this_module) {
         });
         $('#samplings').change(this, this.onSampleChange);
         $('#startExec').click(this, this.onStartExec);
+        $('#enableReal').click(this, this.onEnableReal);
+        $('#enableDemo').click(this, this.onEnableDemo);
     },
     pollAndUpdate: function () {
         var that = this;
@@ -163,6 +173,14 @@ conpaas.ui = (function (this_module) {
             that.progressBar.setPercent(percentDone);
         },
         /* maximum poll interval */2);
+    },
+    onEnableReal: function (event) {
+        var page = event.data;
+        page.setMode('REAL');
+    },
+    onEnableDemo: function (event) {
+        var page = event.data;
+        page.setMode('DEMO');
     },
     onSampleChange: function (event) {
         var page = event.data,

@@ -42,6 +42,8 @@ require_module('logging');
 
 class TaskFarmService extends Service {
 
+	private $cached_state = null;
+
 	public function __construct($data, $manager) {
 		parent::__construct($data, $manager);
 	}
@@ -51,7 +53,31 @@ class TaskFarmService extends Service {
 	}
 
 	public function isDemo() {
-		return true;
+		return $this->isMode('DEMO');
+	}
+
+	public function isReal() {
+		return $this->isMode('REAL');
+	}
+
+	public function isDemoNotSet() {
+		return $this->isMode('NA');
+	}
+
+	protected function isMode($mode) {
+		$state = $this->getCachedState();
+		if ($state['mode'] === $mode) {
+			return true;
+		}
+		return false;
+	}
+
+	public function getCachedState() {
+		if ($this->cached_state == null) {
+			$state_response = $this->fetchState();
+			$this->cached_state = $state_response['result'];
+		}
+		return $this->cached_state;
 	}
 
 	public function fetchState() {
@@ -87,6 +113,13 @@ class TaskFarmService extends Service {
 	public function terminateWorkers() {
 		$json = $this->managerRequest('post', 'terminate_workers', array(),
 			true);
+		$response = json_decode($json, true);
+		return $response['result'];
+	}
+
+	public function setMode($mode) {
+		$json = $this->managerRequest('post', 'set_service_mode',
+			array($mode), true);
 		$response = json_decode($json, true);
 		return $response['result'];
 	}
