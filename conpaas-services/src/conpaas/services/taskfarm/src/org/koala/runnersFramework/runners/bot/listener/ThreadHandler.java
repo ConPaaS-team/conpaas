@@ -169,8 +169,13 @@ class ThreadHandler extends Thread {
         }
 
         // we have read just the header; also need the content
-        for (counter = 0; counter < contentLength; counter += read) {
+        for (counter = 0; ; counter += read) {
             read = ips.read(buf, counter, size - counter);
+            if(read < 0)
+            {
+            	// EOF
+            	break;
+            }
 
             if (counter + read == size) {
                 // reallocate
