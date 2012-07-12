@@ -67,7 +67,7 @@ def add_nodes(host, port, count=0):
 def remove_nodes(host, port, count=0):
   method = 'remove_nodes'
   params = {}
-  params['count'] = count
+  params['workers'] = count
   return _check(_jsonrpc_post(host, port, '/', method, params=params))
 
 def list_nodes(host, port):
