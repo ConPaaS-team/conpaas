@@ -35,7 +35,7 @@ public class OpenNebulaOcaCluster extends Cluster {
      */
     public static final String DNS = "130.73.79.13";
     public static final String Gateway = "10.0.0.1";
-    public static final String DEF_MEM = "400";
+    public static final String DEF_MEM = "1024";
     
     public OpenNebulaOcaCluster(String hostname, int port, String alias, long timeUnit,
             double costUnit, int maxNodes, String speedFactor,
@@ -168,7 +168,7 @@ public class OpenNebulaOcaCluster extends Cluster {
             String serverAddress, String speedFactor, String location) {
 
         String vmTemplate =
-                "NAME = BoTSVM\n"
+                "NAME = taskfarm\n"
                 + "CPU = " + speedFactor  + "\n"
                 + "MEMORY = " + mem + "\n\n"
                 + "OS     = [\n"
