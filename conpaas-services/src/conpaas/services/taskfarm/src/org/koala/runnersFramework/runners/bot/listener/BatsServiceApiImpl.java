@@ -43,6 +43,8 @@ public class BatsServiceApiImpl implements BatsServiceApi {
      * Boolean which determines if demo is on or off.
      */
 
+    public static long longestATU = 0;
+    
     public BatsServiceApiImpl() {
         lock = new Object();
         try {
@@ -136,7 +138,7 @@ public class BatsServiceApiImpl implements BatsServiceApi {
 				st.nextToken(); // first one is budget and we don't care about that
 				
 				schedulesJson += "\"cost\": " + st.nextToken() + ",";
-				schedulesJson += "\"time\": " + st.nextToken();
+				schedulesJson += "\"time\": " + (Long.parseLong(st.nextToken()) * longestATU) ;
 				
 				if(j == (samplingResult.schedules.size() - 1))
 				{

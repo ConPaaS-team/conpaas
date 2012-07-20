@@ -26,6 +26,7 @@ class DemoWrapper  {
 	private List<SamplingResult> schedList = null;
 
 	public DemoWrapper() {
+		BatsServiceApiImpl.longestATU = atu;
 		lock = new Object();
 		t = new Timer();
 		schedList = new ArrayList<SamplingResult>();

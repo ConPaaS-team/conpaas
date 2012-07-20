@@ -789,6 +789,8 @@ public class SamplingPhaseMaster extends Master {
 			e.printStackTrace();
 		}
 
+		updateFEMaxATU();
+		
 		System.out.println("For me:");
 		System.out.println("Finished tasks: " + bot.finishedTasks.size());
 		System.out.println("Replicated tasks: " + this.replicatedTasks.size());
@@ -832,6 +834,15 @@ public class SamplingPhaseMaster extends Master {
 			e.printStackTrace();
 		}
 		 */
+	}
+
+	private void updateFEMaxATU() {
+		long maxATU = 0;
+		for (Cluster cluster : bot.Clusters.values()) {
+			if(cluster.timeUnit > maxATU)
+				maxATU = cluster.timeUnit;
+		}
+		BatsServiceApiImpl.longestATU = maxATU;
 	}
 
 	/*
