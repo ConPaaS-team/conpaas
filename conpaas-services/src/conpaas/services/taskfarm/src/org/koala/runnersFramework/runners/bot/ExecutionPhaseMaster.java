@@ -94,7 +94,8 @@ public class ExecutionPhaseMaster extends Master {
 						workers.get(cluster).get(j.getNode()).workerFinished(System.currentTimeMillis());
 
 						bot.Clusters.get(cluster).setCrtNodes(bot.Clusters.get(cluster).getCrtNodes()-1);
-						System.err.println("Node " + node + " in cluster " + cluster + 
+						Date d = new Date();
+						System.err.println(d.toString() + ": Node " + node + " in cluster " + cluster + 
 								" failed during execution of job " + j.jobID + 
 								" ; cost: " 
 								+ (Math.ceil((double)workers.get(cluster).get(j.getNode()).getUptime() / 60000 / bot.Clusters.get(cluster).timeUnit)  
