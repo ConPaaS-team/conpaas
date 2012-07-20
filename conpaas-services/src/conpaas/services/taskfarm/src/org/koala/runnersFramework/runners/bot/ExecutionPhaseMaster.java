@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -960,7 +961,8 @@ public class ExecutionPhaseMaster extends Master {
 						workers.get(cluster).get(j.getNode()).workerFinished(System.currentTimeMillis());
 
 						bot.Clusters.get(cluster).setCrtNodes(bot.Clusters.get(cluster).getCrtNodes()-1);
-						System.err.println("Node " + cfe.ibisIdentifier().location().toString() + 
+						Date d = new Date();
+						System.err.println(d.toString() + ": Node " + cfe.ibisIdentifier().location().toString() + 
 								" failed before receiving job " + j.jobID + 
 								" ; cost: " 
 								+ (Math.ceil((double)workers.get(cluster).get(j.getNode()).getUptime() / 60000 / bot.Clusters.get(cluster).timeUnit)  
