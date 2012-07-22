@@ -164,10 +164,18 @@ public class Worker implements RegistryEventHandler {
     	    
 
     	    System.out.println("Runtime(ms) " + ((double)(endTime - startTime) / 1000000000));
-			requestWork = workRequestPort.newMessage();
-			requestWork.writeObject(new JobResult(job.jobID, new JobStats(
-					endTime - startTime)));
-			requestWork.finish();
+    	    
+    	    try {
+    	    	requestWork = workRequestPort.newMessage();
+				requestWork.writeObject(new JobResult(job.jobID, new JobStats(
+						endTime - startTime)));
+				requestWork.finish();
+    	    }
+    	    catch (java.io.IOException E)
+    	    {
+    	    	System.err.println("Work request failed. " + E);
+    	    	break;
+    	    }
 			
 		}
 	}
