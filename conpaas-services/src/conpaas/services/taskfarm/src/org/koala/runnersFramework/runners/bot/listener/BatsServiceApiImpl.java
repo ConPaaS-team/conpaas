@@ -138,7 +138,7 @@ public class BatsServiceApiImpl implements BatsServiceApi {
 				st.nextToken(); // first one is budget and we don't care about that
 				
 				schedulesJson += "\"cost\": " + st.nextToken() + ",";
-				schedulesJson += "\"time\": " + (Long.parseLong(st.nextToken()) * longestATU) ;
+				schedulesJson += "\"time\": " + (int)((Double.parseDouble(st.nextToken()) * longestATU)) ;
 				
 				if(j == (samplingResult.schedules.size() - 1))
 				{
