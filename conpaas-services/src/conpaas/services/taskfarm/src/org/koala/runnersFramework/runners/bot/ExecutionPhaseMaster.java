@@ -876,7 +876,7 @@ public class ExecutionPhaseMaster extends Master {
 			for (WorkerStats ws : wss) {
 				price += Math.ceil((double)ws.getUptime() / 60000 / cluster.timeUnit) * cluster.costUnit;
 			}
-			allJobsDone += (cluster.noDoneJobs + cluster.subsetJobs.size());
+			allJobsDone += cluster.noDoneJobs;
 		}
 		BatsServiceApiImpl.serviceState.moneySpent = price + BatsServiceApiImpl.serviceState.moneySpentSampling;
 		BatsServiceApiImpl.serviceState.noCompletedTasks = allJobsDone;
