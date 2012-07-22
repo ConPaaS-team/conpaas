@@ -123,7 +123,7 @@ public class BatsServiceApiImpl implements BatsServiceApi {
     
     private String create_json_schedules(List<SamplingResult> list)
     {
-    	String schedulesJson = "";
+       	String schedulesJson = "";
     	for (int i = 0; i < list.size(); i++) {
 			SamplingResult samplingResult = list.get(i);
 			schedulesJson += "{";
@@ -132,13 +132,27 @@ public class BatsServiceApiImpl implements BatsServiceApi {
 			schedulesJson += "\"schedules\": [";
 			for(int j = 0; j < samplingResult.schedules.size(); j++)
 			{
-				schedulesJson += "{";
+				
 				String sched = samplingResult.schedules.get(j);
 				StringTokenizer st = new StringTokenizer(sched, " \t");
 				st.nextToken(); // first one is budget and we don't care about that
-				
-				schedulesJson += "\"cost\": " + st.nextToken() + ",";
-				schedulesJson += "\"time\": " + (int)((Double.parseDouble(st.nextToken()) * longestATU)) ;
+				int cost = (int)(Double.parseDouble(st.nextToken()));
+				int time = (int)(Double.parseDouble(st.nextToken()));
+				if(time > 1000)
+				{
+					// to prevent a bug in the optimization code when 
+					// there are not enough schedule points
+					if(j == (samplingResult.schedules.size() - 1))
+					{
+						schedulesJson = schedulesJson.substring(0, schedulesJson.length() - 2);
+						schedulesJson += "}";
+					}
+					
+					continue;
+				}
+				schedulesJson += "{";
+				schedulesJson += "\"cost\": " + cost + ",";
+				schedulesJson += "\"time\": " + time * longestATU ;
 				
 				if(j == (samplingResult.schedules.size() - 1))
 				{
@@ -159,7 +173,6 @@ public class BatsServiceApiImpl implements BatsServiceApi {
 				schedulesJson += "},";
 			}
 		}
-    	
     	return schedulesJson;
     }
 
