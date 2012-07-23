@@ -810,10 +810,10 @@ public class ExecutionPhaseMaster extends Master {
 
 		workers.get(cluster).get(from.location().getLevel(0)).addJobStats(received.getStats().getRuntime());
 
-		bot.Clusters.get(cluster).doneJob(received);
-
 		// just counting the finished tasks so far.
 		bot.finishedTasks.add(bot.Clusters.get(cluster).getJob(received));
+		
+		bot.Clusters.get(cluster).doneJob(received);
 
 		decide(false);
 
@@ -867,19 +867,15 @@ public class ExecutionPhaseMaster extends Master {
 	
 	void updateFrontEndCache()
 	{
-		System.out.println("in updatecache");
-		System.out.println("finishedtasks size" + bot.finishedTasks.size());
 		double price = 0;
-		int allJobsDone = 0;
 		for (Cluster cluster : bot.Clusters.values()) {
 			Collection<WorkerStats> wss = workers.get(cluster.alias).values();					
 			for (WorkerStats ws : wss) {
 				price += Math.ceil((double)ws.getUptime() / 60000 / cluster.timeUnit) * cluster.costUnit;
 			}
-			allJobsDone += cluster.noDoneJobs;
 		}
 		BatsServiceApiImpl.serviceState.moneySpent = price + BatsServiceApiImpl.serviceState.moneySpentSampling;
-		BatsServiceApiImpl.serviceState.noCompletedTasks = allJobsDone;
+		BatsServiceApiImpl.serviceState.noCompletedTasks = bot.finishedTasks.size();
 	}
 
 	@Override
