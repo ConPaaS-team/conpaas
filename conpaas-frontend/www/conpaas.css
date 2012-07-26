@@ -1025,7 +1025,7 @@ ul.versions li .timestamp {
 	border: 1px solid #ccc;
 }
 
-#instances .instance {
+.instance {
 	border-bottom: 1px solid #999;
 	padding: 10px 10px 5px 30px;
 	background: url('images/server.png') no-repeat 7px 5px;

@@ -38,6 +38,7 @@
 
 $dir = dirname(__FILE__).'/';
 
+require_once($dir.'Address.php');
 require_once($dir.'TimeHelper.php');
 require_once($dir.'StatusLed.php');
 require_once($dir.'LinkUI.php');

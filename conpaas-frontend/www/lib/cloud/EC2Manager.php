@@ -104,7 +104,6 @@ class EC2Manager extends Manager {
 		if (!isset($instance['dnsName']) || !$instance['dnsName']) {
 			return false;
 		}
-
 		return $instance['dnsName'];
 	}
 

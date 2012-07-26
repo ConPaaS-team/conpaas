@@ -37,6 +37,7 @@
  */
 
 require_once('../__init__.php');
+require_module('logging');
 require_module('service');
 require_module('service/factory');
 require_module('ui/service');
@@ -52,7 +53,7 @@ try {
 	foreach ($services_data as $service_data) {
 		$service = ServiceFactory::create($service_data);
 		$servicesList->addService($service);
-		if ($service->needsPolling()) {
+		if (!$service->isReachable()) {
 			$service->checkManagerInstance();
 		}
 	}
