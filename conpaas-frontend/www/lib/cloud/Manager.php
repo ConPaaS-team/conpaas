@@ -36,6 +36,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+require_module('logging');
+
 class Manager {
 
 	protected $sid;

@@ -737,6 +737,11 @@ input.button {
 	float: left;
 }
 
+.form-header .title i {
+	line-height: 23px;
+    font-style: normal;
+}
+
 .form-header .access-box {
 	float: right;
 	font-size: 10px;

@@ -39,7 +39,7 @@
 require_module('logging');
 require_module('http');
 
-abstract class Service {
+class Service {
 
 	protected $sid,
 		$name,
@@ -116,8 +116,8 @@ abstract class Service {
 			$this->reachable = true;
 			$this->state = self::STATE_ERROR;
 		} catch (Exception $e) {
-			dlog('error trying to connect to manager: '.$this->manager);
-			dlog($e->getMessage());
+			dlog(__FILE__.': error trying to connect to manager '
+				.$this->manager.': '.$e->getMessage());
 		}
 	}
 
@@ -191,12 +191,16 @@ abstract class Service {
 		return (!$this->reachable &&
 				($this->state == self::STATE_RUNNING ||
 				 $this->state == self::STATE_INIT ||
-				 $this->state == self::STATE_PREINIT));
+				 $this->state == self::STATE_PREINIT ||
+				 $this->state == self::STATE_ERROR));
 	}
 
 	private function decodeResponse($json, $method) {
 		$response = json_decode($json, true);
 		if ($response == null) {
+			if (strlen($json) > 256) {
+				$json = substr($json, 0, 256).'...[TRIMMED]';
+			}
 			throw new Exception('Error parsing response for '.$method
 				.': "'.$json.'"');
 		}
@@ -272,20 +276,6 @@ abstract class Service {
 		}
 		return $monitoring['result'];
 	}
-
-	public function getConfiguration() {
-		$json_conf = $this->managerRequest('get', 'get_configuration', array());
-		$responseObj = json_decode($json_conf);
-		if ($responseObj == null) {
-			return null;
-		}
-		if (!isset($responseObj->result->phpconf)) {
-			return null;
-		}
-		return $this->conf = $responseObj->result->phpconf;
-	}
-
- 	abstract public function sendConfiguration($params);
 
 	public function fetchStateLog() {
  		$json = $this->managerRequest('get', 'get_service_history', array());
@@ -416,9 +406,9 @@ abstract class Service {
 					.':'.$this->getManagerPort();
 			}
 			if ($manager_url != $this->manager) {
-				dlog('Service '.$this->sid.' updated manager to '.$manager_url);
 				ServiceData::updateManagerAddress($this->sid, $manager_url,
 					Service::STATE_INIT);
+				dlog('Service '.$this->sid.' updated manager to '.$manager_url);
 				return true;
 			}
 		}

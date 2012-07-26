@@ -36,55 +36,36 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-require_module('cloud');
+require_module('ui');
+require_module('ui/page');
 
-class ServiceFactory {
+class CDSPage extends ServicePage {
 
-	public static function createManager($service_data) {
-		switch ($service_data['cloud']) {
-			case 'ec2':
-				return new EC2Manager($service_data);
-			case 'opennebula':
-				return new OpenNebulaManager($service_data);
-			default:
-				throw new Exception('Unknown cloud provider');
-		}
+	public function __construct(Service $service) {
+		parent::__construct($service);
+		$this->addJS('js/cds.js');
 	}
 
-	public static function create($service_data) {
-		$cloud = $service_data['cloud'];
-		$type = $service_data['type'];
-		$manager = self::createManager($service_data);
+	/**
+	 * @overrides ServicePage::renderRightMenu()
+	 */
+	protected function renderRightMenu() {
+		$managerHost = $this->service->getManagerInstance()->getHostAddress();
+		return
+			'<div class="rightmenu">'
+				.'address: <b>'.$managerHost.'</b>'
+			.'</div>';
+	}
 
-		switch ($type) {
-			case 'php':
-				require_module('service/php');
-				return new PHPService($service_data, $manager);
-			case 'java':
-				require_module('service/java');
-				return new JavaService($service_data, $manager);
-			case 'mysql':
-				require_module('service/mysql');
-				return new MysqlService($service_data, $manager);
-			case 'taskfarm':
-				require_module('service/taskfarm');
-				return new TaskFarmService($service_data, $manager);
-			case 'scalaris':
-				require_module('service/scalaris');
-				return new ScalarisService($service_data, $manager);
-			case 'hadoop':
-				require_module('service/hadoop');
-				return new HadoopService($service_data, $manager);
-			case 'selenium':
-				require_module('service/selenium');
-				return new SeleniumService($service_data, $manager);
-			case 'cds':
-				require_module('service/cds');
-				return new ContentDeliveryService($service_data, $manager);
-			default:
-				throw new Exception('Unknown service type');
-		}
+	/**
+	 * @override ServicePage::renderActions()
+	 */
+	public function renderActions() {
+		return InputButton('terminate')
+			->setId('terminate');
+	}
+
+	public function renderContent() {
+		return '';
 	}
 }
-
-?>

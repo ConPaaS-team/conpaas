@@ -104,19 +104,21 @@ $page = new Page();
   				<td class="radio"><input type="radio" name="type" value="hadoop" /> map-reduce</td>
   				<td class="info"> Hadoop MapReduce cluster </td>
   			</tr>
-
-	   			<tr class="service">
-	   				<td class="description"> <img src="images/taskfarm.png" height="32" /></td>
-	   				<td class="radio"><input type="radio" name="type" value="taskfarm" /> task farm</td>
-	   				<td class="info"> Service for running bags of tasks </td>
-	   			</tr>
-
   			<tr class="service">
   				<td class="description"> <img src="images/selenium.png" height="32" /></td>
   				<td class="radio"><input type="radio" name="type" value="selenium" /> selenium</td>
   				<td class="info"> Selenium functional testing service </td>
   			</tr>
-
+	   		<tr class="service">
+	   			<td class="description"> <img src="images/cds.png" height="32" /></td>
+	   			<td class="radio"><input type="radio" name="type" value="cds" /> content delivery</td>
+	   			<td class="info"> Content-delivery service for offloading static content </td>
+	   		</tr>
+	   		<tr class="service">
+	   			<td class="description"> <img src="images/taskfarm.png" height="32" /></td>
+	   			<td class="radio"><input type="radio" name="type" value="taskfarm" /> task farm</td>
+	   			<td class="info"> Service for running bags of tasks </td>
+	   		</tr>
   			<tr>
   				<td>&nbsp;</td>
   			</tr>

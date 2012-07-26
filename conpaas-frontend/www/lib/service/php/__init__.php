@@ -36,17 +36,47 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+require_module('logging');
 require_module('service');
+require_module('service/factory');
 require_module('ui/instance/php');
 
 class PHPService extends Service {
 
+	protected $conf = null;
+	protected $cds = null;
+
 	public function __construct($data, $cloud) {
 		parent::__construct($data, $cloud);
+		if ($this->isCdnEnabled()) {
+			$cds_data = ServiceData::getCdsByAddress($this->conf->cdn);
+			$this->cds = ServiceFactory::create($cds_data);
+		}
 	}
 
 	public function hasDedicatedManager() {
 		return true;
+	}
+
+	public function getConfiguration() {
+		if (!$this->isReachable()) {
+			return null;
+		}
+		if ($this->conf !== null) {
+			return $this->conf;
+		}
+		$json = $this->managerRequest('get', 'get_configuration', array());
+		$conf = json_decode($json);
+		if ($conf == null) {
+			return null;
+		}
+		$this->conf = $conf->result;
+		return $this->conf;
+	}
+
+	public function getAppAddress() {
+		$loadbalancer = $this->getNodeInfo($this->nodesLists['proxy'][0]);
+		return $loadbalancer['ip'];
 	}
 
 	public function sendConfiguration($params) {
@@ -63,6 +93,42 @@ class PHPService extends Service {
 		return array('proxy', 'web', 'backend');
 	}
 
+	public function requestShutdown() {
+		// if we have cds enabled, we need to unsubscribe from it because once
+		// the service is stopped the origin address will be lost
+		if ($this->cds) {
+			$this->cdnEnable(false, '');
+			$this->cds->unsubscribe($this->getAppAddress());
+		}
+		// regular shutdown
+		return parent::requestShutdown();
+	}
+
+	public function isCdnEnabled() {
+		$conf = $this->getConfiguration();
+		if ($conf && isset($conf->cdn) && $conf->cdn) {
+			return true;
+		}
+		return false;
+	}
+
+	public function getCds() {
+		return $this->cds;
+	}
+
+	public function cdnEnable($enable, $address) {
+		return $this->managerRequest('post', 'cdn_enable',
+			array('enable' => $enable, 'address' => $address));
+	}
+
+	public function getAvailableCds($uid) {
+		$services_data = ServiceData::getAvailableCds($uid);
+		$services = array();
+		foreach ($services_data as $service_data) {
+			$services []= ServiceFactory::create($service_data);
+		}
+		return $services;
+	}
 }
 
 ?>

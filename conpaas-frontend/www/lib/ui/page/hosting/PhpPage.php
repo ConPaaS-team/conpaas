@@ -38,8 +38,6 @@
 
 class PhpPage extends HostingPage {
 
-	private $conf = null;
-
 	private function renderSettingsRow($description, $input) {
 		return
 			'<tr>'
@@ -57,14 +55,12 @@ class PhpPage extends HostingPage {
 	}
 
 	private function getCurrentExecLimit() {
-		if ($this->conf == null) {
-			$this->conf = $this->service->getConfiguration();
-		}
-		if ($this->conf == null || !isset($this->conf->max_execution_time)) {
+		$conf = $this->service->getConfiguration();
+		if ($conf === null || !isset($conf->phpconf->max_execution_time)) {
 			// default value
 			return 30;
 		}
-		return intval($this->conf->max_execution_time);
+		return intval($conf->phpconf->max_execution_time);
 	}
 
 	public function renderExecTimeOptions() {
@@ -82,14 +78,12 @@ class PhpPage extends HostingPage {
 	}
 
 	private function getCurrentMemLimit() {
-		if ($this->conf == null) {
-			$this->service->getConfiguration();
-		}
-		if ($this->conf == null || !isset($this->conf->memory_limit)) {
+		$conf = $this->service->getConfiguration();
+		if ($conf === null || !isset($conf->phpconf->memory_limit)) {
 			// default value
 			return '128M';
 		}
-		return $this->conf->memory_limit;
+		return $conf->phpconf->memory_limit;
 	}
 
 	public function renderMemLimitOptions() {
@@ -131,8 +125,83 @@ class PhpPage extends HostingPage {
 		.'</div>';
 	}
 
+	private function renderCdsForm() {
+		if ($this->service->isCdnEnabled()) {
+			return
+			'Content delivery is <b>ON</b> using '
+			.'<b>'.$this->service->getCds()->getName().'</b>. '
+			.'You should be able to get the following variables into your application:'
+			.'<div class="code">'
+				.'<b class="line" title="url prefix for offloaded content">'
+					.'$_SERVER[\'CDN_URL_PREFIX\']'
+				.'</b>'
+				.'<b class="line" title="country of the remote address">'
+					.'$_SERVER[\'GEOIP_COUNTRY_CODE\']'
+				.'</b>'
+			.'</div>';
+		}
+		$cdsServices = $this->service->getAvailableCds($this->getUID());
+		$options = '';
+		$subscribeButton = InputButton('subscribe')->setId('cds_subscribe');
+		if (count($cdsServices) > 0) {
+			foreach ($cdsServices as $cds) {
+				$options .= '<option value="'.$cds->getSID().'">'
+					.$cds->getName().'</option>';
+			}
+		} else {
+			$options = '<option>No available CDS</option>';
+			$subscribeButton->setDisabled(true);
+		}
+		// we cannot subscribe to a CDS if we are not running, because we don't
+		// have an origin address yet
+		if (!$this->service->isRunning()) {
+			$subscribeButton
+				->setDisabled(true)
+				->setTitle('the service must be running');
+		}
+		return
+		'Content delivery is <b>OFF</b>. To be able to offload static content '
+		.'you may want to subscribe to one of the available CDN services.'
+		.'<div class="subscribe-form">'
+			.'<select id="cds">'.$options.'</select> '
+			.$subscribeButton.' '
+			.'<img id="subscribe-loading" class="invisible" src="images/icon_loading.gif" />'
+		.'</div>';
+	}
+
+	public function renderCdsStatus() {
+		if ($this->service->isCdnEnabled()) {
+			return
+			InputButton('unsubscribe')->setId('cds_unsubscribe')
+			.'<img class="led" src="images/ledgreen.png" '
+				.'title="Content Delivery is ON" /> ';
+		}
+		return '<img class="led" src="images/ledorange.png" '
+			.'title="Content Delivery is OFF"/>';
+	}
+
+	public function renderCdsSection() {
+		return
+		'<div class="form-section">'
+			.'<div class="form-header">'
+				.''
+				.'<div class="title">'
+					.'<img src="images/cds.png" width="23"/><i>Content Delivery</i>'
+				.'</div>'
+				.'<div class="access-box">'
+					.$this->renderCdsStatus()
+				.'</div>'
+				.'<div class="clear"></div>'
+			.'</div>'
+			.'<div class="cds-subscribe">'
+				.$this->renderCdsForm()
+			.'</div>'
+		.'</div>';
+	}
+
 	public function renderContent() {
 		return $this->renderInstancesSection()
+			.$this->renderCdsSection()
 			.$this->renderCodeSection()
 			.$this->renderSettingsSection();
 	}

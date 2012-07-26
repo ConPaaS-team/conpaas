@@ -138,6 +138,30 @@ class ServiceData {
 		}
 	}
 
+	public static function getAvailableCds($uid) {
+		$query = sprintf("SELECT * FROM services WHERE type='cds'"
+			." and state='RUNNING'"
+			." and cloud='ec2'"
+			." and (uid = 1 or uid = %d)",
+			mysql_escape_string($uid));
+		$res = mysql_query($query, DB::getConn());
+		if ($res === false) {
+			throw new DBException(DB::getConn());
+		}
+		return DB::fetchAssocAll($res);
+	}
+
+	public static function getCdsByAddress($address) {
+		$query = sprintf("SELECT * FROM services WHERE type='cds'"
+			." and manager like '%s'",
+			'%'.mysql_escape_string($address).'%');
+		$res = mysql_query($query, DB::getConn());
+		if ($res === false) {
+			throw new DBException(DB::getConn());
+		}
+		$entries = DB::fetchAssocAll($res);
+		return $entries[0];
+	}
 }
 
 ?>

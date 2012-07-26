@@ -54,8 +54,10 @@ conpaas.ui = (function (this_module) {
      * @override conpaas.ui.ServicePage.freezeInput
      */
     freezeInput: function (freeze) {
-        var linksSelector = '.versions .activate';
+        var linksSelector = '.versions .activate',
+            buttons = ['cds_subscribe', 'cds_unsubscribe'];
         conpaas.ui.ServicePage.prototype.freezeInput.call(this, freeze);
+        this.freezeButtons(buttons, freeze);
         if (freeze) {
             $(linksSelector).hide();
         } else {
@@ -108,6 +110,8 @@ conpaas.ui = (function (this_module) {
             $('#saveconf').removeAttr('disabled');
         });
         $('#saveconf').click(that, that.onSaveConfig);
+        $('#cds_subscribe').click(that, that.onCdsSubscribe);
+        $('#cds_unsubscribe').click(that, that.onCdsUnsubscribe);
     },
     // handlers
     onActivateVersion: function (event) {
@@ -140,6 +144,35 @@ conpaas.ui = (function (this_module) {
         }, function () {
             $(event.target).removeAttr('disabled');
         });
+    },
+    onCdsSubscribe: function (event) {
+        var page = event.data;
+        page.freezeInput(true);
+        page.displayInfo('subscribing to CDN...');
+        conpaas.ui.visible('subscribe-loading', true);
+        page.server.req('ajax/cds_subscribe.php',
+                {sid: page.service.sid, cds: $('#cds').val(), subscribe: true},
+                'post', function (response) {
+                    if (response.subscribe) {
+                        window.location.reload();
+                    }
+                }, function () {
+                    page.freezeInput(false);
+                })
+    },
+    onCdsUnsubscribe: function (event) {
+        var page = event.data;
+        page.freezeInput(true);
+        page.displayInfo('unsubscribing from CDN...');
+        page.server.req('ajax/cds_subscribe.php',
+                {sid: page.service.sid, cds: '', subscribe: false},
+                'post', function (response) {
+                    if (response.unsubscribe) {
+                        window.location.reload();
+                    }
+                }, function () {
+                    page.freezeInput(false);
+                });
     },
     /**
      * load the rendered HTML for the versions container

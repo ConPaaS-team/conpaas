@@ -81,8 +81,7 @@ conpaas.ui = (function (this_module) {
         }
         this.displayInfo(reason);
     },
-    freezeButtons: function (freeze) {
-        var buttons = ['start', 'stop', 'terminate', 'submitnodes', 'file'];
+    freezeButtons: function (buttons, freeze) {
         buttons.forEach(function (id) {
             if (freeze) {
                 $('#' + id).attr('disabled', 'disabled');
@@ -113,7 +112,8 @@ conpaas.ui = (function (this_module) {
         }, {sid: this.service.sid}, maxInterval);
     },
     freezeInput: function (freeze) {
-        this.freezeButtons(freeze);
+        var buttons = ['start', 'stop', 'terminate', 'submitnodes', 'file'];
+        this.freezeButtons(buttons, freeze);
     },
     terminate: function (onSuccess, onError) {
         this.server.req('ajax/terminateService.php',

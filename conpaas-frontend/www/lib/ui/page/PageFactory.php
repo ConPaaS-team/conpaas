@@ -63,6 +63,9 @@ class PageFactory {
 			case 'selenium':
 				require_module('ui/page/selenium');
 				return new SeleniumPage($service);
+			case 'cds':
+				require_module('ui/page/cds');
+				return new CDSPage($service);
 			default:
 				throw new Exception('Unknown service type');
 		}

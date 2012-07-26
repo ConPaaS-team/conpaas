@@ -36,55 +36,34 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-require_module('cloud');
+require_module('service');
 
-class ServiceFactory {
+class ContentDeliveryService extends Service {
 
-	public static function createManager($service_data) {
-		switch ($service_data['cloud']) {
-			case 'ec2':
-				return new EC2Manager($service_data);
-			case 'opennebula':
-				return new OpenNebulaManager($service_data);
-			default:
-				throw new Exception('Unknown cloud provider');
-		}
+	public function __construct($data, $manager) {
+		parent::__construct($data, $manager);
 	}
 
-	public static function create($service_data) {
-		$cloud = $service_data['cloud'];
-		$type = $service_data['type'];
-		$manager = self::createManager($service_data);
-
-		switch ($type) {
-			case 'php':
-				require_module('service/php');
-				return new PHPService($service_data, $manager);
-			case 'java':
-				require_module('service/java');
-				return new JavaService($service_data, $manager);
-			case 'mysql':
-				require_module('service/mysql');
-				return new MysqlService($service_data, $manager);
-			case 'taskfarm':
-				require_module('service/taskfarm');
-				return new TaskFarmService($service_data, $manager);
-			case 'scalaris':
-				require_module('service/scalaris');
-				return new ScalarisService($service_data, $manager);
-			case 'hadoop':
-				require_module('service/hadoop');
-				return new HadoopService($service_data, $manager);
-			case 'selenium':
-				require_module('service/selenium');
-				return new SeleniumService($service_data, $manager);
-			case 'cds':
-				require_module('service/cds');
-				return new ContentDeliveryService($service_data, $manager);
-			default:
-				throw new Exception('Unknown service type');
-		}
+	public function hasDedicatedManager() {
+		return true;
 	}
+
+	public function subscribe($origin, $country) {
+		return $this->managerRequest('post', 'subscribe',
+			array('origin' => $origin, 'country' => $country));
+	}
+
+	public function unsubscribe($origin) {
+		return $this->managerRequest('post', 'unsubscribe',
+			array('origin' => $origin));
+	}
+
+	public function fetchHighLevelMonitoringInfo() {
+		return false;
+	}
+
+	public function fetchStateLog() {
+		return array();
+	}
+
 }
-
-?>

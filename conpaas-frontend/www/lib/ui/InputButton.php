@@ -46,6 +46,7 @@ class InputButton {
 	protected $text;
 	protected $visible = true;
 	protected $disabled = false;
+	protected $title = '';
 
 	public function __construct($text) {
 		$this->text = $text;
@@ -66,6 +67,11 @@ class InputButton {
 		return $this;
 	}
 
+	public function setTitle($title) {
+		$this->title = $title;
+		return $this;
+	}
+
 	private function invisibleClass() {
 		if ($this->visible) {
 			return '';
@@ -83,6 +89,7 @@ class InputButton {
 	public function __toString() {
 		return
 			'<input id="'.$this->id.'" type="button" '
+			.' title="'.$this->title.'"'
 			.' class="button '.$this->invisibleClass().'"'
 			.' value="'.$this->text.'" '.$this->disabledMarker().'/>';
 	}

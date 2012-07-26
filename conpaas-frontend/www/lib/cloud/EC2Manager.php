@@ -97,13 +97,15 @@ class EC2Manager extends Manager {
 			throw new Exception('describe_instances call failed');
 		}
 		$instance = $response->body->reservationSet->item->instancesSet->item;
-		if (!$instance->instanceState->name == 'running') {
+		$instance = $instance->to_array();
+		if (!$instance['instanceState']['name'] == 'running') {
 			return false;
 		}
-		if (!isset($instance->dnsName) || $instance->dnsName == '') {
+		if (!isset($instance['dnsName']) || !$instance['dnsName']) {
 			return false;
 		}
-		return $instance->dnsName;
+
+		return $instance['dnsName'];
 	}
 
 	public function terminate() {
