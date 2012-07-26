@@ -1,0 +1,14 @@
+#!/bin/bash
+
+memcached -m 64 -u nobody -d
+
+CDS_DIR=/usr/local/cds
+mkdir -p $CDS_DIR/apps
+cp -r $CPS_HOME/src/conpaas/services/cds/manager/run_command.sh $CPS_HOME/src/conpaas/services/cds/manager/commands $CDS_DIR
+
+nohup $CPS_HOME/src/conpaas/services/cds/manager/network_monitor.py --port 5555 --map=$CPS_HOME/src/conpaas/services/cds/manager/globalmap.txt &> /var/log/network_monitor.log &
+nohup $CPS_HOME/src/conpaas/services/cds/manager/conf_monitor.py --appsdir=/usr/local/cds/apps &> /var/log/conf_monitor.log &
+
+$CPS_HOME/sbin/manager/default-cpsmanager -p 80 -c $ROOT_DIR/config.cfg 1>$ROOT_DIR/manager.out 2>$ROOT_DIR/manager.err &
+manager_pid=$!
+echo $manager_pid > $ROOT_DIR/manager.pid

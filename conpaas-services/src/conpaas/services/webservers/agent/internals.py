@@ -162,23 +162,24 @@ class WebServersAgent():
         p.configure(**post_params)
         p.restart()
       except (ValueError, TypeError) as e:
-        ex = AgentException(E_ARGS_INVALID)
-        return HttpErrorResponse(ex.message)
-      except Exception as e:
-        ex = AgentException(E_UNKNOWN, detail=e)
-        self.logger.exception(e)
-        return HttpErrorResponse(ex.message)
-      else:
-        try:
-          fd = open(class_file, 'w')
-          pickle.dump(p, fd)
-          fd.close()
-        except Exception as e:
-          ex = AgentException(E_CONFIG_COMMIT_FAILED, detail=e)
-          self.logger.exception(ex.message)
+          self.logger.exception(e)
+          ex = AgentException(E_ARGS_INVALID)
           return HttpErrorResponse(ex.message)
-        else:
-          return HttpJsonResponse()
+      except Exception as e:
+          self.logger.exception(e)
+          ex = AgentException(E_UNKNOWN, detail=e)
+          return HttpErrorResponse(ex.message)
+      else:
+          try:
+              fd = open(class_file, 'w')
+              pickle.dump(p, fd)
+              fd.close()
+          except Exception as e:
+              self.logger.exception(ex.message)
+              ex = AgentException(E_CONFIG_COMMIT_FAILED, detail=e)
+              return HttpErrorResponse(ex.message)
+          else:
+              return HttpJsonResponse()
 
     def _stop(self, get_params, class_file, pClass):
       if not exists(class_file):
@@ -280,9 +281,8 @@ class WebServersAgent():
         ret['tomcat_list'] = kwargs.pop('tomcat_list')
         if 'tomcat_servlets' in kwargs:
           ret['tomcat_servlets'] = kwargs.pop('tomcat_servlets')
-  
-      if len(kwargs) != 0:
-        raise AgentException(E_ARGS_UNEXPECTED, kwargs.keys())
+
+      ret['cdn'] = kwargs.get('cdn', None)
       return ret
 
     @expose('GET')
@@ -305,13 +305,16 @@ class WebServersAgent():
 
     @expose('POST')
     def updateHttpProxy(self, kwargs):
-      """UPDATE the HttpProxy"""
-      try: kwargs = self._httpproxy_get_params(kwargs)
+      try:
+          kwargs = self._httpproxy_get_params(kwargs)
+          with self.httpproxy_lock:
+              return self._update(kwargs, self.httpproxy_file, self.HttpProxy)
       except AgentException as e:
-        return HttpErrorResponse(e.message)
-      else:
-        with self.httpproxy_lock:
-          return self._update(kwargs, self.httpproxy_file, self.HttpProxy)
+          self.logger.exception(e)
+          return HttpErrorResponse(e.message)
+      except Exception as e:
+          self.logger.exception(e)
+          return HttpErrorResponse(str(e))
 
     @expose('POST')
     def stopHttpProxy(self, kwargs):

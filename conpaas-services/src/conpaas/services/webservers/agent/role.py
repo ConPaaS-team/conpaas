@@ -196,11 +196,11 @@ class NginxStatic(Nginx):
 
 class NginxProxy(Nginx):
   
-  def __init__(self, port=None, code_version=None, web_list=[], fpm_list=[], tomcat_list=[], tomcat_servlets=[]):
+  def __init__(self, port=None, code_version=None, cdn=None, web_list=[], fpm_list=[], tomcat_list=[], tomcat_servlets=[]):
     self.cmd = NGINX_CMD
     self.config_template = join(ETC, 'nginx-proxy.tmpl')
     self.state = S_INIT
-    self.configure(port, code_version=code_version, web_list=web_list, fpm_list=fpm_list, tomcat_list=tomcat_list, tomcat_servlets=tomcat_servlets)
+    self.configure(port=port, code_version=code_version, cdn=cdn, web_list=web_list, fpm_list=fpm_list, tomcat_list=tomcat_list, tomcat_servlets=tomcat_servlets)
     self.start()
     self.stop_sig = SIGINT
   
@@ -219,12 +219,13 @@ class NginxProxy(Nginx):
                                'fpm_list'         : self.fpm_list,
                                'tomcat_list'      : self.tomcat_list,
                                'tomcat_servlets'  : self.tomcat_servlets,
+                               'cdn'              : self.cdn,
                                })
     conf_fd.write(str(template))
     conf_fd.close()
-    logger.debug('WebServer configuration written to %s' % (self.config_file))
+    logger.debug('Load Balancer configuration written to %s' % (self.config_file))
   
-  def configure(self, port=None, code_version=None, web_list=[], fpm_list=[], tomcat_list=[], tomcat_servlets=[]):
+  def configure(self, port=None, code_version=None, cdn=None, web_list=[], fpm_list=[], tomcat_list=[], tomcat_servlets=[]):
     verify_port(port)
     port = int(port)
     verify_ip_port_list(web_list)
@@ -238,6 +239,7 @@ class NginxProxy(Nginx):
       self.user = 'www-data'
     self.port = port
     self.codeversion = code_version
+    self.cdn = cdn
     self.web_list = web_list
     self.fpm_list = fpm_list
     self.tomcat_list = tomcat_list
@@ -249,6 +251,7 @@ class NginxProxy(Nginx):
     return {'state': self.state,
             'port': self.port,
             'code_version': self.codeversion,
+            'cdn': self.cdn,
             'web_list': self.web_list,
             'fpm_list': self.fpm_list,
             'tomcat_list': self.tomcat_list,

@@ -79,6 +79,7 @@ class PHPManager(BasicWebserversManager):
       kwargs = {
                 'web_list': config.getWebTuples(),
                 'fpm_list': config.getBackendTuples(),
+                'cdn': config.cdn,
                 }
     
       for proxyNode in nodes:
@@ -97,6 +98,7 @@ class PHPManager(BasicWebserversManager):
       kwargs = {
                 'web_list': config.getWebTuples(),
                 'fpm_list': config.getBackendTuples(),
+                'cdn': config.cdn
                 }
     
       for proxyNode in nodes:
@@ -153,7 +155,11 @@ class PHPManager(BasicWebserversManager):
           phpconf[key] = config.backend_config.php_conf.conf[key]
         else:
           phpconf[key] = config.backend_config.php_conf.defaults[key]
-      return HttpJsonResponse({'codeVersionId': config.currentCodeVersion, 'phpconf': phpconf})
+      return HttpJsonResponse({
+              'codeVersionId': config.currentCodeVersion,
+              'phpconf': phpconf,
+              'cdn': config.cdn,
+              })
 
     @expose('POST')
     def update_php_configuration(self, kwargs):
@@ -212,6 +218,7 @@ class PHPManager(BasicWebserversManager):
       config.backend_count = 0
       config.web_count = 0
       config.proxy_count = 1
+      config.cdn = False
     
       if not os.path.exists(self.code_repo):
         os.makedirs(self.code_repo)
@@ -243,3 +250,27 @@ class PHPManager(BasicWebserversManager):
       config = self._configuration_get()
       config.backend_config.scalaris = scalaris
       self._configuration_set(config)
+
+    @expose('POST')
+    def cdn_enable(self, params):
+        '''
+        Enable/disable CDN offloading.
+        The changes must be reflected on the load balancer a.k.a proxy
+        '''
+        try:
+            enable = params['enable']
+            if enable:
+                cdn = params['address']
+                self.logger.info('Enabling CDN hosted at "%s"' %(cdn))
+            else:
+                cdn = False
+                self.logger.info('Disabling CDN')
+            config = self._configuration_get()
+            config.cdn = cdn
+            self._update_proxy(config, config.getProxyServiceNodes())
+            self._configuration_set(config)
+            return HttpJsonResponse({'cdn': config.cdn})
+        except Exception as e:
+            self.logger.exception(e)
+            return HttpErrorResponse(str(e))
+

@@ -49,6 +49,42 @@ http {
     #end for
   }
   #end if
+
+  ## GEOLOCATION FOR CDS
+  #if $cdn
+  geoip_country      /usr/share/GeoIP/GeoIP.dat;
+  perl_set \$cdn_prefix '
+use IO::Socket;
+
+sub {
+    my \$req = shift;
+    my \$mc_host = "$cdn";
+    my \$mc_port = 11211;
+    my \$prefix = \$req->header_in("Host");
+    my \$country = \$req->variable("geoip_country_code");
+
+    my \$sock = new IO::Socket::INET (
+        PeerAddr => \$mc_host,
+	PeerPort => \$mc_port,
+	Proto => "tcp",
+    );
+    if (!\$sock) {
+       return \$prefix;
+    }
+    print \$sock "get \$country\r\n";
+    my \$line = <\$sock>;
+    if (\$line =~ /^VALUE/) {
+       \$line = <\$sock>;
+       \$line =~ s/\s+\$//;
+       if (\$line) {
+       	  \$prefix = "\$line/\$prefix";
+       }
+    }
+    close \$sock;
+    return \$prefix;
+}
+';
+  #end if
   
   server {
     listen  $port default;
@@ -84,6 +120,10 @@ http {
       include        /etc/nginx/fastcgi_params;
       fastcgi_param  SCRIPT_FILENAME \$document_root/\$fastcgi_script_name;
       fastcgi_param  SERVER_NAME \$host;
+      #if $cdn
+      fastcgi_param  GEOIP_COUNTRY_CODE \$geoip_country_code;
+      fastcgi_param  CDN_URL_PREFIX   \$cdn_prefix;
+      #end if
       fastcgi_intercept_errors off;
       fastcgi_pass   fpm_upstream;
     }

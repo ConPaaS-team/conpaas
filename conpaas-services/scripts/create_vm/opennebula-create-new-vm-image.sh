@@ -350,6 +350,18 @@ update-rc.d -f xtreemfs-dir remove
 sed --in-place 's%deb http://download.opensuse.org/repositories/home:/xtreemfs:/unstable/Debian_6.0 /%%' /etc/apt/sources.list
 apt-get -f -y update
 
+# install latest nginx (1.2.2) and other packages required by CDS
+DEBIAN_FRONTEND=noninteractive apt-get -y --force-yes --no-install-recommends --no-upgrade \
+    install libpcre3-dev libssl-dev libgeoip-dev libperl-dev
+wget http://nginx.org/download/nginx-1.2.2.tar.gz
+tar xzf nginx-1.2.2.tar.gz
+cd nginx-1.2.2
+./configure --sbin-path=/usr/sbin/nginx --conf-path=/etc/nginx/nginx.conf --error-log-path=/var/log/nginx/error.log --http-client-body-temp-path=/var/lib/nginx/body --http-fastcgi-temp-path=/var/lib/nginx/fastcgi --http-log-path=/var/log/nginx/access.log --http-proxy-temp-path=/var/lib/nginx/proxy --lock-path=/var/lock/nginx.lock --pid-path=/var/run/nginx.pid --with-debug --with-http_dav_module --with-http_flv_module --with-http_geoip_module --with-http_gzip_static_module --with-http_realip_module --with-http_stub_status_module --with-http_ssl_module --with-http_sub_module --with-ipv6 --with-mail --with-mail_ssl_module --with-http_perl_module
+make
+make install
+cd ..
+rm -rf nginx-1.2.2*
+
 
 apt-get -f -y clean
 exit 0
