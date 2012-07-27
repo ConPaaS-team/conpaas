@@ -97,6 +97,9 @@ class EC2Manager extends Manager {
 			throw new Exception('describe_instances call failed');
 		}
 		$instance = $response->body->reservationSet->item->instancesSet->item;
+		if (!$instance) {
+			return false;
+		}
 		$instance = $instance->to_array();
 		if (!$instance['instanceState']['name'] == 'running') {
 			return false;
