@@ -16,7 +16,7 @@ fi
 
 NGINX_CONF="location /$ORIGIN/ {
          proxy_pass http://$LINK/;
-         proxy_cache cloudsurfing;
+         proxy_cache cds;
 }"
 
 # write the configuration patch for our app

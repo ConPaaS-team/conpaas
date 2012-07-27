@@ -6,6 +6,7 @@ if [[ -z $1 || -z $2 ]]; then
 fi
 
 BASE_DIR="/usr/local/cds"
+EDGE_DIR="$BASE_DIR/edge"
 HOST=$1
 USER=ubuntu
 KEY="$BASE_DIR/cds.pem"
@@ -25,5 +26,5 @@ if [ ! -x $BASE_DIR/$CMD ]; then
     exit 1
 fi
 
-rsync $BASE_DIR/$CMD -e "ssh -i $KEY" $USER@$HOST:control/$CMD
-ssh -i $KEY $USER@$HOST "control/$CMD $@"
+rsync $BASE_DIR/$CMD -e "ssh -i $KEY" $USER@$HOST:$EDGE_DIR/$CMD
+ssh -i $KEY $USER@$HOST "$EDGE_DIR/$CMD $@"
