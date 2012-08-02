@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# This script is part of the agent contextualization file. It 
+# starts a python script that parses the given arguments
+# and starts the agent server, which in turn will start
+# the agent service. 
+
+SELENIUM_DOWNLOAD_URL="http://selenium.googlecode.com/files/selenium-server-standalone-2.21.0.jar"
+CHROMEDRIVER_DOWNLOAD_URL="http://chromedriver.googlecode.com/files/chromedriver_linux64_20.0.1133.0.zip"
+
+if [ ! -f "$CPS_HOME/`basename $SELENIUM_DOWNLOAD_URL`" ]
+then
+    # Download Selenium
+    wget "$SELENIUM_DOWNLOAD_URL" -P "$CPS_HOME"
+
+    # Create a symlink to the JAR file so that the agent code does not have to
+    # rely on a specific server version
+    ln -s "$CPS_HOME/`basename $SELENIUM_DOWNLOAD_URL`" "$CPS_HOME/selenium-server"
+
+    # Download chromedriver
+    wget "$CHROMEDRIVER_DOWNLOAD_URL" -P "$CPS_HOME"
+    cd "$CPS_HOME" && unzip `basename $CHROMEDRIVER_DOWNLOAD_URL`
+fi
+
+# setup and run local agent
+$CPS_HOME/sbin/agent/default-cpsagent -c $ROOT_DIR/config.cfg 1>$ROOT_DIR/agent.out 2>$ROOT_DIR/agent.err &
+agent_pid=$!
+echo $agent_pid > $ROOT_DIR/agent.pid

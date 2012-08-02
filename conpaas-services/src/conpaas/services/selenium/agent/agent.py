@@ -35,7 +35,6 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 """
 
-from os.path import join
 from subprocess import Popen
 
 from conpaas.core.expose import expose
@@ -57,9 +56,8 @@ class SeleniumAgent():
         self.logger = create_logger(__name__)
         self.state = 'INIT' 
   
-        conpaas_home = config_parser.get('agent', 'CONPAAS_HOME')
-  
-        self.selenium_dir = join(conpaas_home, 'contrib', 'selenium')
+        # Path to the Selenium JAR file
+        self.selenium_dir = config_parser.get('agent', 'CONPAAS_HOME')
   
         # The following two variables have the same value on the Hub
         self.my_ip_address = None
