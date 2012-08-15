@@ -47,6 +47,9 @@ def get_cloud_instance(cloud_name, cloud_type, iaas_config):
     elif cloud_type == 'ec2':
         from .clouds.ec2 import EC2Cloud
         return EC2Cloud(cloud_name, iaas_config)
+    elif cloud_type == 'dummy':
+        from .clouds.dummy import DummyCloud
+        return DummyCloud(cloud_name, iaas_config)
     elif cloud_type == 'federation':
         # ConPaaS running in federation mode
         pass
