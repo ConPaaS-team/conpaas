@@ -109,11 +109,13 @@ $page = new Page();
   				<td class="radio"><input type="radio" name="type" value="selenium" /> selenium</td>
   				<td class="info"> Selenium functional testing service </td>
   			</tr>
+            <!--
 	   		<tr class="service">
 	   			<td class="description"> <img src="images/cds.png" height="32" /></td>
 	   			<td class="radio"><input type="radio" name="type" value="cds" /> content delivery</td>
 	   			<td class="info"> Content-delivery service for offloading static content </td>
 	   		</tr>
+            -->
 	   		<tr class="service">
 	   			<td class="description"> <img src="images/taskfarm.png" height="32" /></td>
 	   			<td class="radio"><input type="radio" name="type" value="taskfarm" /> task farm</td>
