@@ -68,9 +68,8 @@ from conpaas.services.webservers.agent import client
 from conpaas.services.webservers.manager.config import WebServiceNode, CodeVersion
 from conpaas.services.webservers.misc import archive_open, archive_get_members, archive_close,\
   archive_get_type
-from conpaas.core.http import HttpJsonResponse, HttpErrorResponse,\
-                         HttpFileDownloadResponse, HttpRequest,\
-                         FileUploadField, HttpError, _http_post
+from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse,\
+                         HttpFileDownloadResponse, FileUploadField
 from conpaas.core.expose import expose
 from conpaas.core.controller import Controller
 

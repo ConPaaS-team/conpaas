@@ -41,7 +41,8 @@ Created February, 2012
 '''
 
 import httplib, json
-from conpaas.core.http import HttpError, _jsonrpc_get, _jsonrpc_post, _http_post, _http_get
+
+from conpaas.core import https
 
 def _check(response):
   code, body = response
@@ -52,25 +53,25 @@ def _check(response):
 
 def get_service_info(host, port):
   method = 'get_service_info'
-  return _check(_jsonrpc_get(host, port, '/', method))
+  return _check(https.client.jsonrpc_get(host, port, '/', method))
 
 def startup(host, port):
   method = 'startup'
-  return _check(_jsonrpc_post(host, port, '/', method))
+  return _check(https.client.jsonrpc_post(host, port, '/', method))
 
 def add_nodes(host, port, count=0):
   method = 'add_nodes'
   params = {}
   params['workers'] = count
-  return _check(_jsonrpc_post(host, port, '/', method, params=params))
+  return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
 
 def remove_nodes(host, port, count=0):
   method = 'remove_nodes'
   params = {}
   params['workers'] = count
-  return _check(_jsonrpc_post(host, port, '/', method, params=params))
+  return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
 
 def list_nodes(host, port):
   method = 'list_nodes'
-  return _check(_jsonrpc_get(host, port, '/', method))
+  return _check(https.client.jsonrpc_get(host, port, '/', method))
 

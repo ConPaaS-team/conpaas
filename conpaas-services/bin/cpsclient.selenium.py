@@ -34,19 +34,16 @@ WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
 OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
-
-
-Created on Mar 01, 2012
-
-@author: doebbelin
 '''
 
 from optparse import OptionParser
 import sys, time, urlparse
 from inspect import isfunction
+from os import environ
 
 try:
-  from conpaas.services.mapreduce.manager import client
+  from conpaas.core import https
+  from conpaas.services.selenium.manager import client
 except ImportError as e:
   print >>sys.stderr, 'Failed to locate conpaas modules'
   print >>sys.stderr, e
@@ -71,6 +68,16 @@ def startup(args):
     parser.print_help()
   else:
     response = client.startup(host, port)
+    print response['state']
+
+def shutdown(args):
+  '''Shutdown a deployment'''
+  parser = OptionParser(usage='shutdown')
+  _, pargs = parser.parse_args(args)
+  if pargs:
+    parser.print_help()
+  else:
+    response = client.shutdown(host, port)
     print response['state']
 
 def add_nodes(args):
@@ -101,9 +108,29 @@ def list_nodes(args):
     parser.print_help()
   else:
     response = client.list_nodes(host, port)
-    all = list(set(response['mapreduce']))
+    all = list(set(response['hub'] + response['node']))
     for i in all:
-      print i
+      print '%-20s%s' % (i,
+                          (i in response['hub'] and ' HUB' or '')
+                            + (i in response['node'] and ' NODE' or ''))
+
+def get_node_info(args):
+  '''Get information about a single service node'''
+  parser = OptionParser(usage='get_node_info <nodeId>')
+  _, pargs = parser.parse_args(args)
+  if len(pargs) != 1:
+    parser.print_help()
+  else:
+    response = client.get_node_info(host, port, args[0])
+    print '%-20s %-20s %s' % ('Service Node', 'Address', 'Role(s)')
+    print '%-20s %-20s' % (response['serviceNode']['id'], response['serviceNode']['ip']),
+
+    if  response['serviceNode']['is_hub']: 
+      print 'HUB',
+    else:                                  
+      print 'NODE',
+
+    print
 
 def help(args=[]):
   '''Print the help menu'''
@@ -111,7 +138,9 @@ def help(args=[]):
        'get_service_info',
        'help',
        'list_nodes',
+       'get_node_info',
        'remove_nodes',
+       'shutdown',
        'startup']
   l.sort()
   module = sys.modules[__name__]
@@ -127,11 +156,23 @@ if __name__ == '__main__':
   if len(sys.argv) < 3:
     help()
     sys.exit(1)
+  
+  try:  
+    certs_dir = environ['CONPAAS_CERTS_DIR']
+  except KeyError: 
+    print "Please set the environment variable CONPAAS_CERTS_DIR"
+    sys.exit(1)
+
+  try:
+      https.client.conpaas_init_ssl_ctx(certs_dir, 'user')
+  except Exception as e:
+      print e
+      
   global host, port
   try:
     url = urlparse.urlparse(sys.argv[1], scheme='http')
     host = url.hostname
-    port = url.port or 80
+    port = url.port or 443 
     if not host: raise Exception()
   except:
     print >>sys.stderr, 'Invalid URL'

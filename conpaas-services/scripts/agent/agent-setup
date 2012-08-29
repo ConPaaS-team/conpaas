@@ -5,11 +5,15 @@ CPS_HOME=$ROOT_DIR/ConPaaS
 
 LOG_FILE=/var/log/cpsagent.log
 ETC=/etc/cpsagent
+CERT_DIR=$ETC/certs 
 VAR_TMP=/var/tmp/cpsagent
 VAR_CACHE=/var/cache/cpsagent
 VAR_RUN=/var/run/cpsagent
 
+mkdir $CERT_DIR
+mv /tmp/*.pem $CERT_DIR
+
 # Source is filled in by the manager
-wget -P $ROOT_DIR/ $SOURCE/ConPaaS.tar.gz
+wget --ca-certificate=$CERT_DIR/ca_cert.pem -P $ROOT_DIR/ $SOURCE/ConPaaS.tar.gz
 tar -zxf $ROOT_DIR/ConPaaS.tar.gz -C $ROOT_DIR/
 export PYTHONPATH=$CPS_HOME/src/:$CPS_HOME/contrib/

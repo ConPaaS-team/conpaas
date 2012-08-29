@@ -41,8 +41,9 @@ Created February, 2012
 '''
 
 
-from conpaas.core.http import _jsonrpc_get, _jsonrpc_post, _http_post
 import httplib, json
+
+from conpaas.core import https
 
 def _check(response):
   code, body = response
@@ -53,16 +54,16 @@ def _check(response):
 
 def check_agent_process(host, port):
   method = 'check_agent_process'
-  return _check(_jsonrpc_get(host, port, '/', method))
+  return _check(https.client.jsonrpc_get(host, port, '/', method))
 
 def get_service_info(host, port):
   method = 'get_service_info'
-  return _check(_jsonrpc_get(host, port, '/', method))
+  return _check(https.client.jsonrpc_get(host, port, '/', method))
 
 def startup(host, port, ip):
   method = 'startup'
-  return _check(_jsonrpc_post(host, port, '/', method, {'ip': ip}))
+  return _check(https.client.jsonrpc_post(host, port, '/', method, {'ip': ip}))
 
 def graceful_leave(host, port):
   method = 'graceful_leave'
-  return _check(_jsonrpc_post(host, port, '/', method, {}))
+  return _check(https.client.jsonrpc_post(host, port, '/', method, {}))

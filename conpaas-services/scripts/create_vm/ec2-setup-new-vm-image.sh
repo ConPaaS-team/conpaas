@@ -60,7 +60,9 @@ function install_deb() {
 
   # install packages
   apt-get -f -y install openssh-server \
-        python python-pycurl python-cheetah nginx tomcat6-user memcached \
+        python python-pycurl python-cheetah python-openssl \
+        python-m2crypto python-mysqldb \
+        nginx tomcat6-user memcached \
         make gcc g++ erlang ant libxslt1-dev yaws subversion git \
         xvfb xinit
   update-rc.d -f memcached remove
@@ -84,8 +86,8 @@ function install_deb() {
   apt-get -f -y --no-install-recommends --no-upgrade install php5-fpm php5-curl \
               php5-mcrypt php5-mysql php5-odbc \
               php5-pgsql php5-sqlite php5-sybase php5-xmlrpc php5-xsl \
-              php5-adodb php5-memcache python-mysqldb
-  update-rc.d -f php5-fpm remove  
+              php5-adodb php5-memcache
+  update-rc.d -f php5-fpm remove
 
   # remove dotdeb repo
   sed --in-place 's%deb http://packages.dotdeb.org stable all%%' /etc/apt/sources.list

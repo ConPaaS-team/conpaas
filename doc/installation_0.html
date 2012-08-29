@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <!-- XML file produced from file: installation.tex
      using Hyperlatex v 2.9-in-waiting-rk (oct06) (c) Otfried Cheong
-     on Emacs 22.2.1, Wed Jun 27 14:39:06 2012 -->
+     on Emacs 22.2.1, Fri Jul  6 15:32:48 2012 -->
 <head>
 <title>ConPaaS -- Installation guide</title>
 
@@ -121,7 +121,6 @@ The following ports shoud be open for all running instances:
 </li><li>TCP port 3306 - used by the MySQL service
 </li><li>TCP ports 8020, 8021, 8088, 50010, 50020, 50030, 50105, 54310, 54311, 50060, 50070, 50075 and 50090 - used by the Map Reduce service
 </li><li>TCP ports 4369, 14194 and 14195 - used by the Scalarix service
-</li><li>TCP ports 8475, 8999 - used by the TaskFarm service
 </li></ul>
 <p>AWS documentation is available at
 <a href="http://docs.amazonwebservices.com/AWSEC2/latest/UserGuide/index.html?using-network-security.html">http://docs.amazonwebservices.com/AWSEC2/latest/UserGuide/index.html?using-network-security.html</a>.
@@ -241,8 +240,10 @@ Section&nbsp;<a href="#sec:secgroup">2.3</a> and write its name down.
 </li><li>Once the instance is running, log into it and fill in the following
 configuration values:
 <ul><li><code>security_group</code> and <code>keypair</code> in /etc/conpaas/aws.ini
-</li><li><code>USER</code>, <code>PASSWORD</code>, <code>SECURITY_GROUP_NAME</code> and <code>KEY_NAME</code> in /etc/conpaas/config/cloud/ec2.cfg
-</li><li><code>AWS_KEY</code>, <code>AWS_SECRET_KEY</code>, <code>AWS_ACCOUNT_ID</code>, <code>AWS_CANONICAL_ID</code> in /var/www/lib/aws-sdk/config.inc.php
+</li><li><code>USER</code>, <code>PASSWORD</code>, <code>SECURITY_GROUP_NAME</code> and
+<code>KEY_NAME</code> in /etc/conpaas/config/cloud/ec2.cfg
+</li><li><code>AWS_KEY</code>, <code>AWS_SECRET_KEY</code>, <code>AWS_ACCOUNT_ID</code> and
+<code>AWS_CANONICAL_ID</code> in /var/www/lib/aws-sdk/config.inc.php
 </li></ul>
 </li><li>Point your browser to the public IP address of your instance. You should
 see the ConPaaS frontend web page and you should be able to create a new user
@@ -257,6 +258,15 @@ machine is:
 <pre>
   sudo apt-get install libapache2-mod-php5 php5-curl \
      php5-mysql mysql-server mysql-client
+</pre>
+<p>ConPaaS uses PHP and Python OpenSSL wrappers to secure the HTTP communication.
+Therefore, you must also install the openssl package. On Debian or Ubuntu,
+openssl should have been installed with the installation of
+package php5-curl, as it is one of its dependencies. Else, you could issue
+the command:
+</p>
+<pre>
+  sudo apt-get install openssl
 </pre>
 
 <h3><a name="id12">Create a MySQL Database</a></h3><p>
@@ -349,6 +359,77 @@ created VM instances upon startup. If you are installing ConPaaS from the svn
 repository, this archive can be obtained
 by running the mkarchive.sh, inside the <code>conpaas-services</code> folder.
 </p>
+</li></ol>
+<p>As ConPaaS uses SSL certificates, you must follow two more steps to setup
+the secure communication. First, you must configure OpenSSL, and second,
+you must configure Apache (or any other web server you are using)
+to work with SSL. The idea is to make certificates optional (the user
+is not required to provide a certificate
+when he/she uses the frontend, as the website is protected by login checks),
+except for one folder, where access must be granted only based on
+valid certificates. This folder contains a php script that generates new
+certificates as requested by the manager in the name of its agents
+- this folder basically contains the CA implementation.
+</p>
+<p>In this guide we explain how to configure Apache or Nginx to work with
+SSL for ConPaaS. Of course that a correct SSL configuration depends on the
+existing configuration of you web server (e.g., if it host multiple
+websites, etc.) but we will explain ConPaaS's needs on a default configuration
+(clean Apache or Nginx installation) which can further be applied to 
+your existing configuration.
+</p>
+<ol>[resume]
+<li>Configure OpenSSL.
+<p>OpenSSL has a configuration file where you can set the default values of
+some of the fields that appear in the certificate. On Ubuntu or Debian
+this file can be found in <i>/etc/ssl/openssl.cnf</i>. You should fill
+in the following fields from the section <i>[</i><i>req&#95;distingushed&#95;name</i><i>]</i>:
+<i>countryName&#95;default</i>, <i>stateOrProvinceName&#95;default</i>.
+</p>
+<p>Also, you can make any other changes you consider. For example, you could
+change the number of bits used to generate a password from 1024 to 2048
+by filling in the <i>default&#95;bits</i> field in the <i>[</i><i>req</i><i>]</i> section.
+</p>
+</li><li>Configure the webserver to work with SSL.
+<p>First, generate the CA certificate and the certificate of the frontend
+with the following command (assuming that the folder you chose at step
+1 to keep the sensitive configuration files is <code>/etc/conpaas</code> ):
+</p>
+<pre>
+  sudo php frontend/scripts/generate-certs.php \
+                                          /etc/conpaas/certs
+  </pre>
+<p>Second, configure the web server:
+</p>
+<ul><li>To configure Apache with SSL support, you have to setup a new apache
+site that enables SSL support. Apache comes with a default ssl site that
+enables Apache to listen on port 443 for requests coming to the default
+Virtual Host. On Debian or Ubuntu this file can be found in
+<i>/etc/apache2/sites-available/default-ssl</i>. You can start from this file
+and change it as you see fit for your site. For ConPaaS, it is enough just to
+edit a few lines in the existing default-ssl site in Apache:
+<p>- inside <i>&lt;</i><i>Directory /var/www/</i><i>&gt;</i> change <i>AllowOverride</i>
+to All (we provide a .htaccess file whose instructions must be taken
+into account).
+(TODO: Check this. Note: Probably you
+could make SSL mandatory for a given folder directly from the default-ssl file)
+</p>
+<p>- change <i>SSLCertificateFile</i> and <i>SSLCertificateKeyFile</i> to point to
+<i>/etc/conpaas/certs/cert.pem</i> and <i>/etc/conpaas/certs/key.pem</i>, respectively.
+</p>
+<p>- uncomment the line containing the <i>SSLCACertificateFile</i> variable and make it point
+to <i>/etc/conpaas/certs/ca&#95;cert.pem</i>.
+</p>
+<p>Enable SSL and the SSL site with:
+</p>
+<pre>
+        sudo a2enmod ssl
+        sudo a2ensite default-ssl
+        sudo /etc/init.d/apache2 reload
+      </pre>
+</li><li>To configure Nginx with SSL support
+TODO:
+</li></ul>
 </li></ol>
 <p>At this point, your front-end should be working!
 </p>

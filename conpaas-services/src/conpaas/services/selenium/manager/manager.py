@@ -40,7 +40,7 @@ from threading import Thread
 from conpaas.core.expose import expose
 from conpaas.core.controller import Controller
 
-from conpaas.core.http import HttpJsonResponse, HttpErrorResponse
+from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse
                           
 from conpaas.core.log import create_logger
 from conpaas.services.selenium.agent import client

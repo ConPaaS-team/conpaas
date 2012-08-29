@@ -120,7 +120,6 @@ The following ports shoud be open for all running instances:
 \item TCP port 3306 -- used by the MySQL service
 \item TCP ports 8020, 8021, 8088, 50010, 50020, 50030, 50105, 54310, 54311, 50060, 50070, 50075 and 50090 -- used by the Map Reduce service
 \item TCP ports 4369, 14194 and 14195 -- used by the Scalarix service
-\item TCP ports 8475, 8999 -- used by the TaskFarm service
 \end{itemize}
 
 AWS documentation is available at
@@ -267,8 +266,10 @@ files.
   configuration values:
   \begin{itemize}
   \item \verb+security_group+ and \verb|keypair| in /etc/conpaas/aws.ini
-  \item \verb+USER+, \verb+PASSWORD+, \verb+SECURITY_GROUP_NAME+ and \verb+KEY_NAME+ in /etc/conpaas/config/cloud/ec2.cfg
-  \item \verb+AWS_KEY+, \verb+AWS_SECRET_KEY+, \verb+AWS_ACCOUNT_ID+, \verb+AWS_CANONICAL_ID+ in /var/www/lib/aws-sdk/config.inc.php
+  \item \verb+USER+, \verb+PASSWORD+, \verb+SECURITY_GROUP_NAME+ and
+  \verb+KEY_NAME+ in /etc/conpaas/config/cloud/ec2.cfg
+  \item \verb+AWS_KEY+, \verb+AWS_SECRET_KEY+, \verb+AWS_ACCOUNT_ID+ and
+  \verb+AWS_CANONICAL_ID+ in /var/www/lib/aws-sdk/config.inc.php
   \end{itemize}
 \item Point your browser to the public IP address of your instance. You should
   see the ConPaaS frontend web page and you should be able to create a new user
@@ -284,6 +285,16 @@ machine is:
 \begin{verbatim}
   sudo apt-get install libapache2-mod-php5 php5-curl \
      php5-mysql mysql-server mysql-client
+\end{verbatim}
+
+ConPaaS uses PHP and Python OpenSSL wrappers to secure the HTTP communication.
+Therefore, you must also install the openssl package. On Debian or Ubuntu,
+openssl should have been installed with the installation of
+package php5-curl, as it is one of its dependencies. Else, you could issue
+the command:
+
+\begin{verbatim}
+  sudo apt-get install openssl
 \end{verbatim}
 
 \subsubsection{Create a MySQL Database}
@@ -317,7 +328,7 @@ configuration of the frontend once you have a working PHP-enabled Web
 server.
 
 \begin{enumerate}
-\item Copy all files from the \verb+frontend/conf+ directory to a
+  \item Copy all files from the \verb+frontend/conf+ directory to a
   location \emph{outside} of the Web server's document root.
   This directory contains sensitive configuration parameters which
   must not be accessible by external users. A good location could be
@@ -347,16 +358,16 @@ server.
 
   Each variable should be described in the config file itself. 
 
-\item Place the PHP code found in directory \verb+frontend/www+ at the
+  \item Place the PHP code found in directory \verb+frontend/www+ at the
   document root of the frontend web server such that the file named
   \verb+__init__.php+ is directly underneath it.
 
-\item Edit the \verb+CONPAAS_CONF_DIR+ and \verb+CONPAAS_HOST+ variables in
+  \item Edit the \verb+CONPAAS_CONF_DIR+ and \verb+CONPAAS_HOST+ variables in
   \verb+config-example.php+ such that they point to the configuration
   directory path chosen in step 1 and to the DNS name of the frontend
   (or its public IP address). Rename this file \verb+config.php+.
 
-\item (Only if you are installing ConPaaS on EC2, and you obtained it 
+  \item (Only if you are installing ConPaaS on EC2, and you obtained it 
   from the svn repository) To run on EC2, the frontend uses the AWS
   sdk for PHP. Download the AWS sdk for PHP from
   \url{http://aws.amazon.com/sdkforphp/}.  Extract the sdk directory
@@ -364,14 +375,14 @@ server.
   the web document root such that \verb+lib/aws-sdk/+ contains a
   file named \verb+config-sample.inc.php+ (among others).
 
-\item (Only if you are installing ConPaaS on EC2) 
+  \item (Only if you are installing ConPaaS on EC2) 
   Inside the web document's root, copy
   \verb+lib/aws-sdk/config-sample.inc.php+ to
   \verb+lib/aws-sdk/config.inc.php+ and fill in \verb+AWS_KEY+,
   \verb+AWS_SECRET_KEY+, \verb+AWS_ACCOUNT_ID+ and
   \verb+AWS_CANONICAL_ID+ as instructed in the file's documentation.
 
-\item (Only if you are installing ConPaaS from the svn repository)
+  \item (Only if you are installing ConPaaS from the svn repository)
   Make sure to copy folders \verb+config/manager+, \verb+config/cloud+,
   \verb+scripts/manager+ and \verb+scripts/cloud+ inside the 
   \verb+/etc/conpass+ folder. Then edit the 
@@ -386,6 +397,80 @@ server.
   repository, this archive can be obtained
   by running the mkarchive.sh, inside the \verb+conpaas-services+ folder.
 
+\end{enumerate}
+
+As ConPaaS uses SSL certificates, you must follow two more steps to setup
+the secure communication. First, you must configure OpenSSL, and second,
+you must configure Apache (or any other web server you are using)
+to work with SSL. The idea is to make certificates optional (the user
+is not required to provide a certificate
+when he/she uses the frontend, as the website is protected by login checks),
+except for one folder, where access must be granted only based on
+valid certificates. This folder contains a php script that generates new
+certificates as requested by the manager in the name of its agents
+- this folder basically contains the CA implementation.
+
+In this guide we explain how to configure Apache or Nginx to work with
+SSL for ConPaaS. Of course that a correct SSL configuration depends on the
+existing configuration of you web server (e.g., if it host multiple
+websites, etc.) but we will explain ConPaaS's needs on a default configuration
+(clean Apache or Nginx installation) which can further be applied to 
+your existing configuration.
+
+\begin{enumerate}[resume]
+\item Configure OpenSSL.
+
+  OpenSSL has a configuration file where you can set the default values of
+  some of the fields that appear in the certificate. On Ubuntu or Debian
+  this file can be found in \textit{/etc/ssl/openssl.cnf}. You should fill
+  in the following fields from the section $[$\textit{req\_distingushed\_name}$]$:
+  \textit{countryName\_default}, \textit{stateOrProvinceName\_default}.
+
+  Also, you can make any other changes you consider. For example, you could
+  change the number of bits used to generate a password from 1024 to 2048
+  by filling in the \textit{default\_bits} field in the $[$\textit{req}$]$ section.
+
+\item Configure the webserver to work with SSL.
+
+  First, generate the CA certificate and the certificate of the frontend
+  with the following command (assuming that the folder you chose at step
+  1 to keep the sensitive configuration files is \verb+/etc/conpaas+ ):
+  \begin{verbatim}
+  sudo php frontend/scripts/generate-certs.php \
+                                          /etc/conpaas/certs
+  \end{verbatim}
+  Second, configure the web server:
+  \begin{itemize}
+    \item To configure Apache with SSL support, you have to setup a new apache
+      site that enables SSL support. Apache comes with a default ssl site that
+      enables Apache to listen on port 443 for requests coming to the default
+      Virtual Host. On Debian or Ubuntu this file can be found in
+      \textit{/etc/apache2/sites-available/default-ssl}. You can start from this file
+      and change it as you see fit for your site. For ConPaaS, it is enough just to
+      edit a few lines in the existing default-ssl site in Apache:
+
+      - inside $<$\textit{Directory /var/www/}$>$ change \textit{AllowOverride}
+        to All (we provide a .htaccess file whose instructions must be taken
+        into account).
+        (TODO: Check this. Note: Probably you
+        could make SSL mandatory for a given folder directly from the default-ssl file)
+
+      - change \textit{SSLCertificateFile} and \textit{SSLCertificateKeyFile} to point to
+      \textit{/etc/conpaas/certs/cert.pem} and \textit{/etc/conpaas/certs/key.pem}, respectively.
+      
+      - uncomment the line containing the \textit{SSLCACertificateFile} variable and make it point
+      to \textit{/etc/conpaas/certs/ca\_cert.pem}.
+
+      Enable SSL and the SSL site with:
+      \begin{verbatim}
+        sudo a2enmod ssl
+        sudo a2ensite default-ssl
+        sudo /etc/init.d/apache2 reload
+      \end{verbatim}
+
+    \item To configure Nginx with SSL support
+      TODO:
+  \end{itemize}
 \end{enumerate}
 
 At this point, your front-end should be working!

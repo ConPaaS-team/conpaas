@@ -42,6 +42,13 @@ Created on Feb 8, 2011
 
 import zipfile, tarfile, socket, fcntl, struct
 
+
+def file_get_contents(filepath):
+  f = open(filepath, 'r')
+  filecontent = f.read() 
+  f.close()
+  return filecontent
+
 def verify_port(port):
   '''Raise Type Error if port is not an integer.
   Raise ValueError if port is an invlid integer value.

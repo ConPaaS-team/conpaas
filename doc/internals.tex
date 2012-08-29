@@ -33,8 +33,8 @@
 }
 
 % Modify these paths accordingly %
-\newcommand{\ConPaaSHOME}{../conpaas-services}
-\newcommand{\ConPaaSCONF}{../conpaas-services}
+\newcommand{\ConPaaSHOME}{..}
+\newcommand{\ConPaaSCONF}{..}
 
 \newenvironment{framedbox}[1]%
 {\begin{framed}
@@ -76,16 +76,13 @@ A new service should be added in a new python module under the \textit{ConPaaS/s
 .5 base.py.
 .5 opennebula.py.
 .5 ec2.py.
-.4 aserver.py.
-.4 aservices.py.
 .4 controller.py.
 .4 expose.py.
-.4 http.py.
+.4 https.
 .4 iaas.py.
 .4 log.py.
 .4 misc.py.
-.4 mserver.py.
-.4 mservices.py.
+.4 services.py.
 .4 node.py.
 .3 \textcolor{red}{services}.
 .4 bagoftasks.
@@ -148,7 +145,7 @@ Examples:
 
 \lstinputlisting[language=bash, caption=Script (5) - ConPaaS/scripts/manager/default-manager-start,label=lst:managerstart]{\ConPaaSCONF/scripts/manager/default-manager-start}
 
-\lstinputlisting[language=python, caption=Script (6) - ConPaaS/sbin/manager/default-cpsmanager,label=lst:managersbin]{\ConPaaSHOME/sbin/manager/default-cpsmanager}
+\lstinputlisting[language=python, caption=Script (6) - ConPaaS/sbin/manager/default-cpsmanager,label=lst:managersbin]{../sbin/manager/default-cpsmanager}
 
 \item Files specific to the Agent
 
@@ -232,11 +229,10 @@ We can also implement a client for the manager server (see Listing~\ref{lst:hell
 
 \lstinputlisting[language=Python, caption=conpaas/services/helloworld/manager/client.py,label=lst:helloworldmanagerclient]{\ConPaaSHOME/src/conpaas/services/helloworld/manager/client.py}
 
-The last step is to register the new service to the conpaas core. One entry must be added to files \textit{conpaas/core/mservices.py} and \textit{conpaas/core/aservices.py}, as it is indicated in Listing~\ref{lst:helloworldmservices} and Listing~\ref{lst:helloworldaservices}. Because the java and php services use the same code for the agent, there is only one entry in the agent services (\textit{aservices.py}), called \textit{web} which is used by both the webservices.
+The last step is to register the new service to the conpaas core. One entry must be added to file \textit{conpaas/core/services.py}, as it is indicated in Listing~\ref{lst:helloworldservices}. Because the java and php services use the same code for the agent, there is only one entry in the agent services, called \textit{web} which is used by both webservices.
 
-\lstinputlisting[language=Python, caption=conpaas/core/mservices.py,label=lst:helloworldmservices]{\ConPaaSHOME/src/conpaas/core/mservices.py}
+\lstinputlisting[language=Python, caption=conpaas/core/services.py,label=lst:helloworldservices]{\ConPaaSHOME/src/conpaas/core/services.py}
 
-\lstinputlisting[language=Python, caption=conpaas/core/aservices.py,label=lst:helloworldaservices]{\ConPaaSHOME/src/conpaas/core/aservices.py}
 
 \section{Integrating the new service with the frontend}
 

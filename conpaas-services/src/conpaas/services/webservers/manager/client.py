@@ -42,7 +42,8 @@ Created on Mar 29, 2011
 
 import httplib, json
 
-from conpaas.core.http import HttpError, _jsonrpc_get, _jsonrpc_post, _http_post, _http_get
+from conpaas.core import https
+from conpaas.core.misc import file_get_contents
 
 class ClientError(Exception): pass
 
@@ -56,23 +57,23 @@ def _check(response):
 
 def get_service_info(host, port):
   method = 'get_service_info'
-  return _check(_jsonrpc_get(host, port, '/', method))
+  return _check(https.client.jsonrpc_get(host, port, '/', method))
 
 def get_service_history(host, port):
   method = 'get_service_history'
-  return _check(_jsonrpc_get(host, port, '/', method))
+  return _check(https.client.jsonrpc_get(host, port, '/', method))
 
 def getLog(host, port):
   method = 'getLog'
-  return _check(_jsonrpc_get(host, port, '/', method))
+  return _check(https.client.jsonrpc_get(host, port, '/', method))
 
 def startup(host, port):
   method = 'startup'
-  return _check(_jsonrpc_post(host, port, '/', method))
+  return _check(https.client.jsonrpc_post(host, port, '/', method))
 
 def shutdown(host, port):
   method = 'shutdown'
-  return _check(_jsonrpc_post(host, port, '/', method))
+  return _check(https.client.jsonrpc_post(host, port, '/', method))
 
 def add_nodes(host, port, proxy=None, web=None, backend=None):
   method = 'add_nodes'
@@ -80,7 +81,7 @@ def add_nodes(host, port, proxy=None, web=None, backend=None):
   if proxy: params['proxy'] = proxy
   if web: params['web'] = web
   if backend: params['backend'] = backend
-  return _check(_jsonrpc_post(host, port, '/', method, params=params))
+  return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
 
 def remove_nodes(host, port, proxy=None, web=None, backend=None):
   method = 'remove_nodes'
@@ -88,38 +89,38 @@ def remove_nodes(host, port, proxy=None, web=None, backend=None):
   if proxy: params['proxy'] = proxy
   if web: params['web'] = web
   if backend: params['backend'] = backend
-  return _check(_jsonrpc_post(host, port, '/', method, params=params))
+  return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
 
 def list_nodes(host, port):
   method = 'list_nodes'
-  return _check(_jsonrpc_get(host, port, '/', method))
+  return _check(https.client.jsonrpc_get(host, port, '/', method))
 
 def get_node_info(host, port, serviceNodeId):
   method = 'get_node_info'
   params = {'serviceNodeId': serviceNodeId}
-  return _check(_jsonrpc_get(host, port, '/', method, params=params))
+  return _check(https.client.jsonrpc_get(host, port, '/', method, params=params))
 
 def list_authorized_keys(host, port):
   method = 'list_authorized_keys'
-  return _check(_jsonrpc_get(host, port, '/', method))  
+  return _check(https.client.jsonrpc_get(host, port, '/', method))  
 
 def list_code_versions(host, port):
   method = 'list_code_versions'
-  return _check(_jsonrpc_get(host, port, '/', method))
+  return _check(https.client.jsonrpc_get(host, port, '/', method))
 
-def upload_code_version(host, port, filename):
+def upload_code_version(host, port, filepath):
   params = {'method': 'upload_code_version'}
-  files = {'code': filename}
-  return _check(_http_post(host, port, '/', params, files=files))
+  files = [('code', filepath, file_get_contents(filepath))]
+  return _check(https.client.https_post(host, port, '/', params, files=files))
 
-def upload_authorized_key(host, port, filename):
+def upload_authorized_key(host, port, filepath):
   params = {'method': 'upload_authorized_key'}
-  files = {'key': filename}
-  return _check(_http_post(host, port, '/', params, files=files))
+  files = [('key', filepath, file_get_contents(filepath))]
+  return _check(https.client.https_post(host, port, '/', params, files=files))
 
 def get_configuration(host, port):
   method = 'get_configuration'
-  return _check(_jsonrpc_get(host, port, '/', method))
+  return _check(https.client.jsonrpc_get(host, port, '/', method))
 
 def update_php_configuration(host, port, codeVersionId=None, phpconf={}):
   method = 'update_php_configuration'
@@ -128,17 +129,17 @@ def update_php_configuration(host, port, codeVersionId=None, phpconf={}):
     params['codeVersionId'] = codeVersionId
   if phpconf:
     params['phpconf'] = phpconf
-  return _check(_jsonrpc_post(host, port, '/', method, params=params))
+  return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
 
 def update_java_configuration(host, port, codeVersionId):
   method = 'update_java_configuration'
   params = {'codeVersionId': codeVersionId}
-  return _check(_jsonrpc_post(host, port, '/', method, params=params))
+  return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
 
 def get_service_performance(host, port):
   method = 'get_service_performance'
-  return _check(_jsonrpc_get(host, port, '/', method))
+  return _check(https.client.jsonrpc_get(host, port, '/', method))
 
 def git_push_hook(host, port):
   method = 'git_push_hook'
-  return _check(_jsonrpc_post(host, port, '/', method))
+  return _check(https.client.jsonrpc_post(host, port, '/', method))

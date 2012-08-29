@@ -50,7 +50,7 @@ import pickle, zipfile, tarfile
 from conpaas.core.log import create_logger
 from conpaas.services.mysql.agent import role 
 
-from conpaas.core.http import HttpErrorResponse, HttpJsonResponse, FileUploadField
+from conpaas.core.https.server import HttpErrorResponse, HttpJsonResponse, FileUploadField
 from conpaas.core.expose import expose
 
 

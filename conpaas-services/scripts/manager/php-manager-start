@@ -6,6 +6,6 @@
 # Enable GIT-based code uploads
 . $CPS_HOME/scripts/manager/default-git-deploy-hook 
 
-$CPS_HOME/sbin/manager/php-cpsmanager -p 80 -c $ROOT_DIR/config.cfg -s $IP_PUBLIC 1>$ROOT_DIR/manager.out 2>$ROOT_DIR/manager.err &
+$CPS_HOME/sbin/manager/php-cpsmanager -c $ROOT_DIR/config.cfg -s $IP_PUBLIC 1>$ROOT_DIR/manager.out 2>$ROOT_DIR/manager.err &
 manager_pid=$!
 echo $manager_pid > $ROOT_DIR/manager.pid

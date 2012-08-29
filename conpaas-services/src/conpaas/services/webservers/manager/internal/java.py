@@ -49,7 +49,7 @@ import zipfile, tempfile, stat, os.path
 from conpaas.services.webservers.manager.config import CodeVersion, JavaServiceConfiguration
 from conpaas.services.webservers.agent import client
 from conpaas.services.webservers.misc import archive_open, archive_get_members
-from conpaas.core.http import HttpErrorResponse, HttpJsonResponse
+from conpaas.core.https.server import HttpErrorResponse, HttpJsonResponse
 
 from . import BasicWebserversManager, ManagerException
 from conpaas.core.expose import expose

@@ -42,7 +42,7 @@ Created on Jul 4, 2011
 '''
 from os.path import exists
 
-from conpaas.core.aserver import AgentServer
+from conpaas.core import https
 
 if __name__ == '__main__':
   from optparse import OptionParser
@@ -77,6 +77,14 @@ if __name__ == '__main__':
   if not config_ok:
     sys.exit(1)
   
+  # Initialize the context for the client   
+  https.client.conpaas_init_ssl_ctx(config_parser.get('agent', 'CERT_DIR'),
+                                    'agent', config_parser.get('agent', 'USER_ID'),
+                                    config_parser.get('agent', 'SERVICE_ID'))
+
+  # Start the agent server
   print options.address, options.port
-  agent = AgentServer((options.address, options.port), config_parser)
-  agent.serve_forever()
+  d = https.server.ConpaasSecureServer((options.address, options.port),
+                     config_parser,
+		     'agent')
+  d.serve_forever()

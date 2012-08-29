@@ -58,9 +58,8 @@ import os, time, tempfile
 import string
 from random import choice
 
-from conpaas.core.http import HttpJsonResponse, HttpErrorResponse,\
-                         HttpFileDownloadResponse, HttpRequest,\
-                         FileUploadField, HttpError, _http_post
+from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse, \
+                         HttpFileDownloadResponse, FileUploadField
 from conpaas.core.log import create_logger
 from conpaas.core.expose import expose
 from conpaas.core.controller import Controller
@@ -163,8 +162,7 @@ class MySQLManager(object):
         try:
             self.logger.debug('create_slave for master.ip  = %s' % master)
             client.create_slave(master.ip, 
-                                self.config.AGENT_PORT,
-				slaves)
+                                self.config.AGENT_PORT, slaves)
         except client.AgentException:
             self.logger.exception('Failed to start MySQL Slave at node %s' % str(serviceNode))
             self.state = self.S_ERROR
@@ -258,7 +256,7 @@ class MySQLManager(object):
             self.config.addMySQLServiceNodes(nodes=node_instances, isSlave=True)
         except:
             self.logger.exception('_do_add_nodes: Could not start slave')
-            self.state = S_ERROR
+            self.state = self.S_ERROR
             return
         self.state = self.S_RUNNING
 

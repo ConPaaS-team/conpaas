@@ -34,14 +34,21 @@ WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
 OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
+
+
+Created on March, 2012
+
+@author: ielhelw, aaasz
 '''
 
 from optparse import OptionParser
 import sys, time, urlparse
 from inspect import isfunction
+from os import environ
 
 try:
-  from conpaas.services.selenium.manager import client
+  from conpaas.core import https
+  from conpaas.services.mysql.manager import client
 except ImportError as e:
   print >>sys.stderr, 'Failed to locate conpaas modules'
   print >>sys.stderr, e
@@ -87,6 +94,7 @@ def add_nodes(args):
     parser.print_help()
   else:
     response = client.add_nodes(host, port, count=opts.count)
+    print "OK"
 
 def remove_nodes(args):
   '''Remove some service nodes from a deployment'''
@@ -97,6 +105,7 @@ def remove_nodes(args):
     parser.print_help()
   else:
     response = client.remove_nodes(host, port, count=opts.count)
+    print "OK"
 
 def list_nodes(args):
   '''Get a list of service nodes'''
@@ -106,11 +115,9 @@ def list_nodes(args):
     parser.print_help()
   else:
     response = client.list_nodes(host, port)
-    all = list(set(response['hub'] + response['node']))
+    all = list(set(response['mysql']))
     for i in all:
-      print '%-20s%s' % (i,
-                          (i in response['hub'] and ' HUB' or '')
-                            + (i in response['node'] and ' NODE' or ''))
+      print i
 
 def get_node_info(args):
   '''Get information about a single service node'''
@@ -122,24 +129,50 @@ def get_node_info(args):
     response = client.get_node_info(host, port, args[0])
     print '%-20s %-20s %s' % ('Service Node', 'Address', 'Role(s)')
     print '%-20s %-20s' % (response['serviceNode']['id'], response['serviceNode']['ip']),
-
-    if  response['serviceNode']['is_hub']: 
-      print 'HUB',
-    else:                                  
-      print 'NODE',
-
     print
+
+def set_password(args):
+  '''Get information about a single service node'''
+  parser = OptionParser(usage='set_password <user> <password>')
+  _, pargs = parser.parse_args(args)
+  if len(pargs) != 2:
+    parser.print_help()
+  else:
+    client.set_password(host, port, args[0], args[1])
+    print "OK"
+
+def load_dump(args):
+  '''Load a database file'''	
+  parser = OptionParser(usage='load_dump <mysqldump_file>')
+  _, pargs = parser.parse_args(args)
+  if len(pargs) != 1:
+    parser.print_help()
+  else:
+    client.load_dump(host, port, args[0])
+
+def get_log(args):
+  '''Get raw logging'''
+  parser = OptionParser(usage='get_log')
+  _, pargs = parser.parse_args(args)
+  if pargs:
+    parser.print_help()
+  else:
+    response = client.get_log(host, port)
+    print response['log']
 
 def help(args=[]):
   '''Print the help menu'''
   l = ['add_nodes',
+       'get_log',
+       'get_node_info',
        'get_service_info',
        'help',
        'list_nodes',
-       'get_node_info',
        'remove_nodes',
        'shutdown',
-       'startup']
+       'startup',
+       'set_password',
+       'load_dump']
   l.sort()
   module = sys.modules[__name__]
   l = [ getattr(module, i) for i in l ]
@@ -154,11 +187,23 @@ if __name__ == '__main__':
   if len(sys.argv) < 3:
     help()
     sys.exit(1)
+
+  try:  
+    certs_dir = environ['CONPAAS_CERTS_DIR']
+  except KeyError: 
+    print "Please set the environment variable CONPAAS_CERTS_DIR"
+    sys.exit(1)
+  
+  try:
+      https.client.conpaas_init_ssl_ctx(certs_dir, 'user')
+  except Exception as e:
+      print e
+
   global host, port
   try:
     url = urlparse.urlparse(sys.argv[1], scheme='http')
     host = url.hostname
-    port = url.port or 80
+    port = url.port or 443 
     if not host: raise Exception()
   except:
     print >>sys.stderr, 'Invalid URL'
@@ -171,6 +216,9 @@ if __name__ == '__main__':
       sys.exit(1)
     try:
       func(sys.argv[3:])
+    except client.ClientError as e:
+      if len(e.args) == 1: print >>sys.stderr, e.args[0]
+      else: print >>sys.stderr, e.args[1]
     except Exception as e:
       print >>sys.stderr, e
   else:

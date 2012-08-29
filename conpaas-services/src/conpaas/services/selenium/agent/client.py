@@ -38,7 +38,7 @@ POSSIBILITY OF SUCH DAMAGE.
 import json
 import httplib
 
-from conpaas.core.http import _jsonrpc_get, _jsonrpc_post
+from conpaas.core import https 
 
 def _check(response):
     """Check the given HTTP response, returning the result if everything went
@@ -56,16 +56,16 @@ def _check(response):
 def check_agent_process(host, port):
     """GET () check_agent_process"""
     method = 'check_agent_process'
-    return _check(_jsonrpc_get(host, port, '/', method))
+    return _check(https.client.jsonrpc_get(host, port, '/', method))
 
 def create_hub(host, port):
     """POST (my_ip) create_hub"""
     method = 'create_hub'
     params = { 'my_ip': host }
-    return _check(_jsonrpc_post(host, port, '/', method, params))
+    return _check(https.client.jsonrpc_post(host, port, '/', method, params))
 
 def create_node(host, port, hub_ip):
     """POST (my_ip, hub_ip) create_node"""
     method = 'create_node'
     params = { 'my_ip': host, 'hub_ip': hub_ip }
-    return _check(_jsonrpc_post(host, port, '/', method, params))
+    return _check(https.client.jsonrpc_post(host, port, '/', method, params))

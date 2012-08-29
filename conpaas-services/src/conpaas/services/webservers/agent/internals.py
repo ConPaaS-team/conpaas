@@ -50,7 +50,7 @@ import pickle, zipfile, tarfile
 from conpaas.core.log import create_logger
 from conpaas.services.webservers.agent import role 
 
-from conpaas.core.http import HttpErrorResponse, HttpJsonResponse, FileUploadField
+from conpaas.core.https.server import HttpErrorResponse, HttpJsonResponse, FileUploadField
 from conpaas.core.expose import expose
 from conpaas.core import git
 
@@ -401,47 +401,48 @@ class WebServersAgent():
 
     @expose('UPLOAD')
     def updatePHPCode(self, kwargs):
-      if 'filetype' not in kwargs:
-        return HttpErrorResponse(AgentException(E_ARGS_MISSING, 'filetype').message)
-      filetype = kwargs.pop('filetype')
+
+        if 'filetype' not in kwargs:
+          return HttpErrorResponse(AgentException(E_ARGS_MISSING, 'filetype').message)
+        filetype = kwargs.pop('filetype')
+      
+        if 'codeVersionId' not in kwargs:
+          return HttpErrorResponse(AgentException(E_ARGS_MISSING, 'codeVersionId').message)
+        codeVersionId = kwargs.pop('codeVersionId')
+
+        if 'file' not in kwargs:
+          return HttpErrorResponse(AgentException(E_ARGS_MISSING, 'file').message)
+        file = kwargs.pop('file')
+
+        if filetype != 'git' and not isinstance(file, FileUploadField):
+          return HttpErrorResponse(AgentException(E_ARGS_INVALID, detail='"file" should be a file').message)
+
+        if len(kwargs) != 0:
+          return HttpErrorResponse(AgentException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
+
+        if filetype == 'zip': source = zipfile.ZipFile(file.file, 'r')
+        elif filetype == 'tar': source = tarfile.open(fileobj=file.file)
+        elif filetype == 'git': source = git.DEFAULT_CODE_REPO
+        else: return HttpErrorResponse('Unknown archive type ' + str(filetype))
   
-      if 'codeVersionId' not in kwargs:
-        return HttpErrorResponse(AgentException(E_ARGS_MISSING, 'codeVersionId').message)
-      codeVersionId = kwargs.pop('codeVersionId')
-
-      if 'file' not in kwargs:
-        return HttpErrorResponse(AgentException(E_ARGS_MISSING, 'file').message)
-      file = kwargs.pop('file')
-
-      if filetype != 'git' and not isinstance(file, FileUploadField):
-        return HttpErrorResponse(AgentException(E_ARGS_INVALID, detail='"file" should be a file').message)
-
-      if len(kwargs) != 0:
-        return HttpErrorResponse(AgentException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
-
-      if filetype == 'zip': source = zipfile.ZipFile(file.file, 'r')
-      elif filetype == 'tar': source = tarfile.open(fileobj=file.file)
-      elif filetype == 'git': source = git.DEFAULT_CODE_REPO
-      else: return HttpErrorResponse('Unknown archive type ' + str(filetype))
+        if not exists(join(self.VAR_CACHE, 'www')):
+          makedirs(join(self.VAR_CACHE, 'www'))
   
-      if not exists(join(self.VAR_CACHE, 'www')):
-        makedirs(join(self.VAR_CACHE, 'www'))
-  
-      target_dir = join(self.VAR_CACHE, 'www', codeVersionId)
-      if exists(target_dir):
-        rmtree(target_dir)
+        target_dir = join(self.VAR_CACHE, 'www', codeVersionId)
+        if exists(target_dir):
+          rmtree(target_dir)
 
-      if filetype == 'git':
-        target_dir = join(self.VAR_CACHE, 'www')
-        self.logger.debug("git_enable_revision('%s', '%s', '%s')" % (target_dir, source, codeVersionId))
-        git.git_enable_revision(target_dir, source, codeVersionId)
-      else:
-        source.extractall(target_dir)
+        if filetype == 'git':
+          target_dir = join(self.VAR_CACHE, 'www')
+          self.logger.debug("git_enable_revision('%s', '%s', '%s')" % (target_dir, source, codeVersionId))
+          git.git_enable_revision(target_dir, source, codeVersionId)
+        else:
+          source.extractall(target_dir)
 
-      # Fix session handlers
-      self.fix_session_handlers(target_dir)
-
-      return HttpJsonResponse()
+        # Fix session handlers
+        self.fix_session_handlers(target_dir)
+      
+        return HttpJsonResponse()
 
     @expose('GET')
     def getTomcatState(self, kwargs):

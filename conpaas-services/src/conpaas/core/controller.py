@@ -48,13 +48,9 @@ import inspect, tempfile, os, os.path, tarfile, time, stat, json, urlparse
 from string import Template
 
 from conpaas.core.log import create_logger
-from conpaas.core.http import HttpJsonResponse, HttpErrorResponse,\
-                         HttpFileDownloadResponse, HttpRequest,\
-                         FileUploadField, HttpError, _http_post
-
 from conpaas.core.node import ServiceNode
 from conpaas.core import iaas
-from conpaas.core.misc import get_ip_address
+from conpaas.core import https
 
 class Controller(object):
     """Implementation of the clouds controller. This class implements functions
@@ -74,6 +70,10 @@ class Controller(object):
                                                    'FE_TERMINATE_URL')
         self.__fe_service_id = config_parser.get('manager', \
                                                  'FE_SERVICE_ID')
+        self.__fe_user_id = config_parser.get('manager', \
+                                              'FE_USER_ID')
+        self.__fe_caUrl = config_parser.get('manager', \
+                                            'FE_CA_URL')
 
         # For crediting system
         self.__reservation_logger = create_logger('ReservationTimer')
@@ -96,7 +96,7 @@ class Controller(object):
         drivername = config_parser.get('iaas', 'DRIVER').lower()
         self.__default_cloud = iaas.get_cloud_instance('iaas', \
                                                drivername,   \
-                                               config_parser)
+					       config_parser)
 
     #===========================================================================#
     #                create_nodes(self, count, contextFile, test_agent)         #
@@ -173,6 +173,7 @@ class Controller(object):
             self.__reservation_map[i.id] = timer
         return additional_nodes
 
+
     #===========================================================================#
     #                     delete_nodes(self, nodes)                             #
     #===========================================================================#
@@ -182,7 +183,6 @@ class Controller(object):
             @param nodes The list of nodes to be removed - a node must be of type 
                          ServiceNode or a class that extends ServiceNode
         """
-      
         self.__kill_nodes(nodes)
 
     #===========================================================================#
@@ -356,7 +356,9 @@ class Controller(object):
       default_agent_cfg_file = open(agent_cfg_dir + '/default-agent.cfg')
       agent_cfg = Template(default_agent_cfg_file.read()). \
                            safe_substitute(AGENT_TYPE=service_name, \
-                                           MANAGER_IP=manager_ip)
+                                           MANAGER_IP=manager_ip,
+                                           CONPAAS_USER_ID=self.__fe_user_id,
+                                           CONPAAS_SERVICE_ID= self.__fe_service_id)
 
       if os.path.isfile(agent_cfg_dir + '/' + service_name + '-agent.cfg'):
           agent_cfg_file = open(agent_cfg_dir + '/'+ service_name + '-agent.cfg')
@@ -370,14 +372,51 @@ class Controller(object):
           agent_start_file = open(agent_scripts_dir + '/default-agent-start')
       agent_start = agent_start_file.read()
 
+      # Get key and a certificate from CA
+      agent_certs = self._get_certificate()
+
       ## Concatenate the files
-      context_file = cloud_script + '\n\n'
-      context_file += agent_setup + '\n\n'
-      context_file += 'cat <<EOF > $ROOT_DIR/config.cfg\n'
-      context_file += agent_cfg + '\n' + 'EOF\n\n'
-      context_file += agent_start + '\n'
+      context_file = cloud_script + '\n\n'  \
+                     + 'cat <<EOF > /tmp/cert.pem\n' \
+                     + agent_certs['cert'] + '\n' + 'EOF\n\n' \
+                     + 'cat <<EOF > /tmp/key.pem\n' \
+                     + agent_certs['key'] + '\n' + 'EOF\n\n' \
+                     + 'cat <<EOF > /tmp/ca_cert.pem\n' \
+                     + agent_certs['ca_cert'] + '\n' + 'EOF\n\n' \
+                     + agent_setup + '\n\n' \
+                     + 'cat <<EOF > $ROOT_DIR/config.cfg\n' \
+                     + agent_cfg + '\n' + 'EOF\n\n' \
+                     + agent_start + '\n'
 
       return context_file
+
+    def _get_certificate(self):
+        '''
+        Requests a certificate from the CA
+        '''
+        parsed_url = urlparse.urlparse(self.__fe_caUrl)
+
+        req_key = https.x509.gen_rsa_keypair()
+        x509_req = https.x509.create_x509_req(req_key,
+                self.__fe_user_id,
+                self.__fe_service_id,
+                'ConPaaS',
+                'info@conpaas.eu', 'ConPaaS', 'agent')
+        _, cert =  https.client.https_post(parsed_url.hostname,
+                                           parsed_url.port or 443,
+                                           parsed_url.path,
+                                           files = [('csr',
+                                                     'csr.pem',
+                                                     x509_req.as_pem())])
+        cert_dir = self.__config_parser.get('manager', 'CERT_DIR')
+        ca_cert_file = open(os.path.join(cert_dir, 'ca_cert.pem'), 'r')
+        ca_cert = ca_cert_file.read()
+
+        certs = {'ca_cert':ca_cert,
+                 'key':req_key.as_pem(cipher=None),
+                 'cert':cert}
+        
+        return certs
 
     def __force_terminate_service(self):
       # DO NOT release lock after acquiring it
@@ -395,10 +434,10 @@ class Controller(object):
       for _ in range(10):
         try:
           parsed_url = urlparse.urlparse(self.__fe_terminateUrl)
-          _, body = _http_post(parsed_url.hostname, 
-                               parsed_url.port or 80,
-                               parsed_url.path, 
-                               {'sid': self.__fe_service_id})
+          _, body = https.client.https_post(parsed_url.hostname, 
+                                            parsed_url.port or 443,
+                                            parsed_url.path, 
+                                            {'sid': self.__fe_service_id})
           obj = json.loads(body)
           if not obj['error']: break
         except:
@@ -407,8 +446,8 @@ class Controller(object):
     def __deduct_credit(self, value):
       try:
         parsed_url = urlparse.urlparse(self.__fe_creditUrl)
-        _, body = _http_post(parsed_url.hostname, parsed_url.port or 80,
-                             parsed_url.path, {'sid': self.__fe_service_id,
+        _, body = https.client.https_post(parsed_url.hostname, parsed_url.port or 443,
+                                          parsed_url.path, {'sid': self.__fe_service_id,
                                                'decrement': value})
         obj = json.loads(body)
         return not obj['error']

@@ -234,4 +234,3 @@ class OpenNebulaCloud(Cloud):
         if self.connected == False:
             raise Exception('Not connected to cloud')
         return self.driver.destroy_node(node)
-

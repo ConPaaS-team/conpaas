@@ -36,17 +36,19 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 
 
-Created on March, 2012
+Created on Feb 15, 2012
 
-@author: ielhelw, aaasz
+@author: schuett
 '''
 
 from optparse import OptionParser
 import sys, time, urlparse
 from inspect import isfunction
+from os import environ
 
 try:
-  from conpaas.services.mysql.manager import client
+  from conpaas.core import https
+  from conpaas.services.scalaris.manager import client
 except ImportError as e:
   print >>sys.stderr, 'Failed to locate conpaas modules'
   print >>sys.stderr, e
@@ -71,16 +73,6 @@ def startup(args):
     parser.print_help()
   else:
     response = client.startup(host, port)
-    print response['state']
-
-def shutdown(args):
-  '''Shutdown a deployment'''
-  parser = OptionParser(usage='shutdown')
-  _, pargs = parser.parse_args(args)
-  if pargs:
-    parser.print_help()
-  else:
-    response = client.shutdown(host, port)
     print response['state']
 
 def add_nodes(args):
@@ -111,62 +103,18 @@ def list_nodes(args):
     parser.print_help()
   else:
     response = client.list_nodes(host, port)
-    all = list(set(response['mysql']))
+    all = list(set(response['scalaris']))
     for i in all:
       print i
-
-def get_node_info(args):
-  '''Get information about a single service node'''
-  parser = OptionParser(usage='get_node_info <nodeId>')
-  _, pargs = parser.parse_args(args)
-  if len(pargs) != 1:
-    parser.print_help()
-  else:
-    response = client.get_node_info(host, port, args[0])
-    print '%-20s %-20s %s' % ('Service Node', 'Address', 'Role(s)')
-    print '%-20s %-20s' % (response['serviceNode']['id'], response['serviceNode']['ip']),
-    print
-
-def set_password(args):
-  '''Get information about a single service node'''
-  parser = OptionParser(usage='set_password <user> <password>')
-  _, pargs = parser.parse_args(args)
-  if len(pargs) != 2:
-    parser.print_help()
-  else:
-    client.set_password(host, port, args[0], args[1])
-
-def load_dump(args):
-  parser = OptionParser(usage='load_dump <mysqldump_file>')
-  _, pargs = parser.parse_args(args)
-  if len(pargs) != 1:
-    parser.print_help()
-  else:
-    client.load_dump(host, port, args[0])
-
-def getLog(args):
-  '''Get raw logging'''
-  parser = OptionParser(usage='getLog')
-  _, pargs = parser.parse_args(args)
-  if pargs:
-    parser.print_help()
-  else:
-    response = client.getLog(host, port)
-    print response['log']
 
 def help(args=[]):
   '''Print the help menu'''
   l = ['add_nodes',
-       'getLog',
-       'get_node_info',
        'get_service_info',
        'help',
        'list_nodes',
        'remove_nodes',
-       'shutdown',
-       'startup',
-       'set_password',
-       'load_dump']
+       'startup']
   l.sort()
   module = sys.modules[__name__]
   l = [ getattr(module, i) for i in l ]
@@ -181,11 +129,23 @@ if __name__ == '__main__':
   if len(sys.argv) < 3:
     help()
     sys.exit(1)
+  
+  try:  
+    certs_dir = environ['CONPAAS_CERTS_DIR']
+  except KeyError: 
+    print "Please set the environment variable CONPAAS_CERTS_DIR"
+    sys.exit(1)
+
+  try:
+      https.client.conpaas_init_ssl_ctx(certs_dir, 'user')
+  except Exception as e:
+      print e
+
   global host, port
   try:
     url = urlparse.urlparse(sys.argv[1], scheme='http')
     host = url.hostname
-    port = url.port or 80
+    port = url.port or 443
     if not host: raise Exception()
   except:
     print >>sys.stderr, 'Invalid URL'
@@ -198,9 +158,6 @@ if __name__ == '__main__':
       sys.exit(1)
     try:
       func(sys.argv[3:])
-    except client.ClientError as e:
-      if len(e.args) == 1: print >>sys.stderr, e.args[0]
-      else: print >>sys.stderr, e.args[1]
     except Exception as e:
       print >>sys.stderr, e
   else:

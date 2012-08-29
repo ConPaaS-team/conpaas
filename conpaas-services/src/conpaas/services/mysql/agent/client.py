@@ -39,9 +39,13 @@ Created on Jun 8, 2011
 
 @author: ales, aaasz
 '''
-from conpaas.core.http import _http_get, _http_post, _jsonrpc_get, _jsonrpc_post
+
+
 import httplib, json
 import sys
+
+
+from conpaas.core import https
 from conpaas.core.log import create_logger
 
 
@@ -62,7 +66,7 @@ def _check(response):
 
 def get_master_state(host, port):
     method = 'get_master_state'
-    result = _jsonrpc_get(host, port, '/', method)
+    result = https.client.jsonrpc_get(host, port, '/', method)
     if _check(result):
         return result
     else:
@@ -70,7 +74,7 @@ def get_master_state(host, port):
 
 def get_slave_state(host, port):
     method = 'get_slave_state'
-    result = _jsonrpc_get(host, port, '/', method)
+    result = https.client.jsonrpc_get(host, port, '/', method)
     if _check(result):
         return result
     else:
@@ -82,25 +86,26 @@ def create_master(host, port, master_server_id):
     params = {
         'master_server_id': master_server_id
     }
-    return _check(_jsonrpc_post(host, port, '/', method, params=params))
+    return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
+
 
 '''
-   Method called by the manager and executed on a master agent
+    Methods called by the manager and executed on a master agent
 '''
 def create_slave(host, port, slaves):
     method = 'create_slave'
     params = {'slaves': slaves}
-    return _check(_jsonrpc_post(host, port, '/', method, params=params))
+    return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
 
 def configure_user(host, port, username, password):
     method = 'configure_user'
     params = {'username': username,
               'password': password}
-    return _check(_jsonrpc_post(host, port, '/', method, params=params))
+    return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
         
 def get_all_users(host, port):
     method = 'get_all_users'
-    result = _jsonrpc_get(host, port, '/', method)
+    result = https.client.jsonrpc_get(host, port, '/', method)
     if _check(result):
         return result
     else:
@@ -110,23 +115,27 @@ def set_password(host, port, username, password):
     method = 'set_password'
     params = {'username': username,
               'password': password}
-    return _check(_jsonrpc_post(host, port, '/', method, params=params))
+    return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
 
 def remove_user(host,port,name):
     method = 'remove_user'
     params = {'username': name}
-    return _check(_jsonrpc_get(host, port, '/', method, params=params))
+    return _check(https.client.jsonrpc_get(host, port, '/', method, params=params))
 
 def check_agent_process(host, port):
     method = 'check_agent_process'
-    return _check(_jsonrpc_get(host, port, '/', method))
+    return _check(https.client.jsonrpc_get(host, port, '/', method))
 
 def load_dump(host, port, mysqldump_path):
     params = {'method': 'load_dump'}
-    files = {'mysqldump_file': mysqldump_path} 
-    return _check(_http_post(host, port, '/', params, files=files))
-'''
+    f = open(mysqldump_path, 'r')
+    filecontent = f.read() 
+    f.close()
+    files = [('mysqldump_file', mysqldump_path, filecontent)]
+    return _check(https.client.https_post(host, port, '/', params, files=files))
 
+
+'''
     Method called by a master agent to configure a slave agent
     (is executed inside the slave)
 '''
@@ -140,5 +149,8 @@ def setup_slave(host, port, slave_server_id, master_host, \
         'master_log_pos': master_log_pos,
         'slave_server_id': slave_server_id
     }
-    files = {'mysqldump_file': mysqldump_path} 
-    return _check(_http_post(host, port, '/', params, files=files))
+    f = open(mysqldump_path, 'r')
+    filecontent = f.read() 
+    f.close()
+    files = [('mysqldump_file', mysqldump_path, filecontent)]
+    return _check(https.client.https_post(host, port, '/', params, files=files))

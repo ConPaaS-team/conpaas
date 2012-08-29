@@ -38,7 +38,7 @@ POSSIBILITY OF SUCH DAMAGE.
 from subprocess import Popen
 
 from conpaas.core.expose import expose
-from conpaas.core.http import HttpJsonResponse, HttpErrorResponse
+from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse
 from conpaas.core.log import create_logger
 
 class SeleniumAgent():

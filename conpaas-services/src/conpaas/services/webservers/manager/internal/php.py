@@ -45,7 +45,7 @@ import re, tarfile, tempfile, stat, os.path
 
 from conpaas.services.webservers.manager.config import CodeVersion, PHPServiceConfiguration
 from conpaas.services.webservers.agent import client
-from conpaas.core.http import HttpErrorResponse, HttpJsonResponse
+from conpaas.core.https.server import HttpErrorResponse, HttpJsonResponse
 
 from . import BasicWebserversManager, ManagerException
 from conpaas.core.expose import expose

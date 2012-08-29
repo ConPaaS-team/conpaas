@@ -243,7 +243,8 @@ apt-get -f -y update
 echo "debconf shared/accepted-sun-dlj-v1-1 boolean true" | debconf-set-selections
 DEBIAN_FRONTEND=noninteractive apt-get -y --force-yes --no-install-recommends --no-upgrade \
         install openssh-server \
-        python python-pycurl python-cheetah nginx \
+        python python-pycurl python-openssl python-m2crypto \
+        python-mysqldb python-cheetah nginx \
         tomcat6-user memcached mysql-server \
         make gcc g++ sun-java6-jdk erlang ant libxslt1-dev yaws subversion git \
         xvfb xinit
@@ -259,7 +260,7 @@ apt-get -f -y update
 apt-get -f -y --no-install-recommends --no-upgrade install php5-fpm php5-curl \
               php5-mcrypt php5-mysql php5-odbc \
               php5-pgsql php5-sqlite php5-sybase php5-xmlrpc php5-xsl \
-              php5-adodb php5-memcache python-mysqldb
+              php5-adodb php5-memcache
 update-rc.d -f php5-fpm remove
 
 # remove dotdeb repo

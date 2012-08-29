@@ -38,7 +38,7 @@ POSSIBILITY OF SUCH DAMAGE.
 import json
 import httplib
 
-from conpaas.core.http import HttpError, _jsonrpc_get, _jsonrpc_post
+from conpaas.core import https
 
 def _check(response):
     """Check the given HTTP response, returning the result if everything went
@@ -56,39 +56,39 @@ def _check(response):
 def startup(host, port):
     """POST () startup"""
     method = 'startup'
-    return _check(_jsonrpc_post(host, port, '/', method))
+    return _check(https.client.jsonrpc_post(host, port, '/', method))
 
 def shutdown(host, port):
     """POST () shutdown"""
     method = 'shutdown'
-    return _check(_jsonrpc_post(host, port, '/', method))
+    return _check(https.client.jsonrpc_post(host, port, '/', method))
 
 def get_service_info(host, port):
     """GET () get_service_info"""
     method = 'get_service_info'
-    return _check(_jsonrpc_get(host, port, '/', method))
+    return _check(https.client.jsonrpc_get(host, port, '/', method))
 
 def add_nodes(host, port, count=0):
     """POST (count) add_nodes"""
     method = 'add_nodes'
     params = {}
     params['count'] = count
-    return _check(_jsonrpc_post(host, port, '/', method, params=params))
+    return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
 
 def remove_nodes(host, port, count=0):
     """POST (count) remove_nodes"""
     method = 'remove_nodes'
     params = {}
     params['count'] = count
-    return _check(_jsonrpc_post(host, port, '/', method, params=params))
+    return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
 
 def list_nodes(host, port):
     """GET () list_nodes"""
     method = 'list_nodes'
-    return _check(_jsonrpc_get(host, port, '/', method))
+    return _check(https.client.jsonrpc_get(host, port, '/', method))
 
 def get_node_info(host, port, serviceNodeId):
     """GET (serviceNodeId) get_node_info"""
     method = 'get_node_info'
     params = { 'serviceNodeId': serviceNodeId }
-    return _check(_jsonrpc_get(host, port, '/', method, params=params))
+    return _check(https.client.jsonrpc_get(host, port, '/', method, params=params))
