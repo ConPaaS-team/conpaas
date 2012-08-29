@@ -39,6 +39,7 @@
 require_module('cloud');
 require_module('service');
 require_module('logging');
+require_module('http');
 
 class TaskFarmService extends Service {
 
@@ -48,6 +49,73 @@ class TaskFarmService extends Service {
 		parent::__construct($data, $manager);
 	}
 
+	/* 
+	 * Temporary:
+	 *
+	 * Overrode this function to send HTTP requests,
+	 * not HTTPS
+	 *
+	 */
+	protected function managerRequest($http_method, $method, array $params,
+			$ping=false) {
+		$json = HTTP::jsonrpc($this->manager, $http_method, $method, $params,
+			$ping);
+		$this->decodeResponse($json, $method);
+		return $json;
+	}
+	
+	/* 
+	 * Temporary:
+	 *
+	 * Overrode this function to send HTTP requests,
+	 * not HTTPS
+	 *
+	 */
+	
+	public function checkManagerInstance() {
+		$manager_addr = $this->manager_instance->getHostAddress();
+		if ($manager_addr !== false) {
+			$manager_url = $manager_addr;
+			if (strpos($manager_addr, 'http://') !== 0) {
+				$manager_url = 'http://'.$manager_addr
+					.':'.$this->getManagerPort();
+			}
+			if ($manager_url != $this->manager) {
+				dlog('Service '.$this->sid.' updated manager to '.$manager_url);
+				ServiceData::updateManagerAddress($this->sid, $manager_url,
+					Service::STATE_INIT);
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/* 
+	 * Temporary:
+	 *
+	 * Overrode this function to send HTTP requests,
+	 * not HTTPS
+	 *
+	 */
+
+	private function decodeResponse($json, $method) {
+		$response = json_decode($json, true);
+		if ($response == null) {
+			throw new Exception('Error parsing response for '.$method
+				.': "'.$json.'"');
+		}
+		if (isset($response['error']) && $response['error'] !== null) {
+			$message = $response['error'];
+			if (is_array($response['error'])) {
+				$message = $response['error']['message'];
+			}
+			throw new ManagerException('Remote error: '.$message);
+		}
+		return $response;
+	}
+        //########################
+	
+	
 	public function getTypeName() {
 		return 'TaskFarm';
 	}

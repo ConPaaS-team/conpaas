@@ -1,0 +1,4 @@
+SSLRequireSSL
+SSLVerifyClient require 
+SSLVerifyDepth 1
+SSLOptions +StdEnvVars

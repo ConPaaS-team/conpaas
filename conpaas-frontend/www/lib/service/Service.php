@@ -37,7 +37,7 @@
  */
 
 require_module('logging');
-require_module('http');
+require_module('https');
 
 class Service {
 
@@ -216,7 +216,7 @@ class Service {
 
 	protected function managerRequest($http_method, $method, array $params,
 			$ping=false) {
-		$json = HTTP::jsonrpc($this->manager, $http_method, $method, $params,
+		$json = HTTPS::jsonrpc($this->manager, $http_method, $method, $params,
 			$ping);
 		$this->decodeResponse($json, $method);
 		return $json;
@@ -391,7 +391,7 @@ class Service {
 	}
 
 	public function getManagerPort() {
-		return 80;
+		return 443;
 	}
 
 	/**
@@ -401,8 +401,8 @@ class Service {
 		$manager_addr = $this->manager_instance->getHostAddress();
 		if ($manager_addr !== false) {
 			$manager_url = $manager_addr;
-			if (strpos($manager_addr, 'http://') !== 0) {
-				$manager_url = 'http://'.$manager_addr
+			if (strpos($manager_addr, 'https://') !== 0) {
+				$manager_url = 'https://'.$manager_addr
 					.':'.$this->getManagerPort();
 			}
 			if ($manager_url != $this->manager) {

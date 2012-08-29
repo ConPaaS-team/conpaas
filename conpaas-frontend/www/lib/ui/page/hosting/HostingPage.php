@@ -131,8 +131,9 @@ class HostingPage extends ServicePage {
 	}
 
 	private function getVersionDownloadURL($versionID) {
-		return $this->service->getManager()
-			.'?action=downloadCodeVersion&codeVersionId='.$versionID;
+		$url = 'ajax/downloadCodeVersion.php?sid='.$this->service->getSID();
+		$url.= '&codeVersionId='.$versionID;
+		return $url;
 	}
 
 	public function renderCodeVersions() {

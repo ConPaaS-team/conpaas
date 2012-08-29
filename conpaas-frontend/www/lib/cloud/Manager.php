@@ -36,11 +36,13 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+require_module('ca');
 require_module('logging');
 
 class Manager {
 
 	protected $sid;
+	protected $uid;
 	protected $vmid;
 	private $instance_type;
 	private $service_type;
@@ -48,6 +50,7 @@ class Manager {
 	public function __construct($data) {
 		$this->service_type = $data['type'];
 		$this->sid = $data['sid'];
+		$this->uid = $data['uid'];
 		$this->vmid = $data['vmid'];
 	}
 
@@ -56,18 +59,12 @@ class Manager {
 	}
 
 	public function getHostAddress() {
-		try {
-			return $this->resolveAddress($this->vmid);
-		} catch (Exception $e) {
-			dlog($e->getMessage());
-			error_log($e->getTraceAsString());
-		}
-		return false;
+		return $this->resolveAddress($this->vmid);
 	}
 
+ 
 	public function createContextFile($cloud) {
 		$type = $this->service_type;
-		$service_id = $this->sid;
 		$root_dir = Conf::CONF_DIR;
 		$cloud_scripts_dir = $root_dir.'/scripts/cloud';
 		$cloud_cfg_dir = $root_dir.'/config/cloud';
@@ -89,8 +86,8 @@ class Manager {
 			throw new Exception('Could not read the manager setup file: '.
 				$mngr_scripts_dir.'/manager-setup');
 		}
-		$mngr_setup = str_replace(array('%FRONTEND_URL%', '%CLOUD%'),
-			array($frontend, $cloud),
+		$mngr_setup = str_replace(array('%FRONTEND_URL%'),
+			array($frontend),
 			$mngr_setup);
 
 		// Get cloud config file (could be multiple clouds - TODO)
@@ -112,9 +109,13 @@ class Manager {
 			throw new Exception('Could not read manager config file');
 		}
 		$mngr_cfg = str_replace(array('%FRONTEND_URL%', '%CONPAAS_SERVICE_ID%',
-				'%CONPAAS_SERVICE_TYPE%'),
-			array($frontend, $service_id, $type),
-			$mngr_cfg);
+                                      '%CONPAAS_SERVICE_TYPE%',
+                                      '%CONPAAS_USER_ID%'),
+                                array($frontend, $this->sid,
+                                      $type,
+                                      $this->uid),
+			                    $mngr_cfg);
+
 		if (file_exists($mngr_scripts_dir.'/'.$type.'-manager-start')) {
 			$mngr_start_script = file_get_contents($mngr_scripts_dir.'/'.$type
 				.'-manager-start');
@@ -126,8 +127,19 @@ class Manager {
 			throw new Exception('Could not read manager start script');
 		}
 
+		// Generate certificate for the master
+		$mgr_certs = generate_certificate($this->uid, $this->sid,
+                                          'manager', 'info@conpaas.eu',
+                                          'ConPaaS', 'Contrail');
+
 		// Concatenate these
 		$user_data = $cloud_script."\n\n"
+			."cat <<EOF > /tmp/ca_cert.pem"."\n"
+			.$mgr_certs['ca_cert']."\n". "EOF"."\n\n"
+			."cat <<EOF > /tmp/key.pem"."\n"
+			.$mgr_certs['key']."\n". "EOF"."\n\n"
+			."cat <<EOF > /tmp/cert.pem"."\n"
+			.$mgr_certs['cert']."\n". "EOF"."\n\n"
 			.$mngr_setup."\n\n"
 			."cat <<EOF > \$ROOT_DIR/config.cfg"."\n"
 			.$cloud_cfg."\n"

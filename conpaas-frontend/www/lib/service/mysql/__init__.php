@@ -37,7 +37,7 @@
  */
 
 require_module('cloud');
-require_module('http');
+require_module('https');
 require_module('service');
 require_module('ui/instance/mysql');
 
@@ -101,7 +101,7 @@ class MysqlService extends Service {
 	}
 
 	public function loadFile($file) {
-		return HTTP::post($this->getManager(), array(
+		return HTTPS::post($this->getManager(), array(
 			'method' => 'load_dump',
 			'mysqldump_file' => '@'.$file));
 	}

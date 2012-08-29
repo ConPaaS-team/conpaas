@@ -35,31 +35,67 @@
  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+require_once('../__init__.php');
+require_module('logging');
+require_module('ca');
 
-require_module('ui/page');
-
-class Dashboard extends Page {
-
-	public function __construct() {
-		parent::__construct();
-		$this->addJS('js/servicepage.js');
-		$this->addJS('js/index.js');
+/**
+ * Determines if the client provided a valid SSL certificate
+ *
+ * @return boolean True if the client cert is there and is valid
+ */
+function has_valid_cert()
+{
+	if (!isset($_SERVER['SSL_CLIENT_M_SERIAL'])
+		|| !isset($_SERVER['SSL_CLIENT_V_END'])
+		|| !isset($_SERVER['SSL_CLIENT_VERIFY'])
+		|| $_SERVER['SSL_CLIENT_VERIFY'] !== 'SUCCESS'
+		|| !isset($_SERVER['SSL_CLIENT_I_DN'])) {
+			return false;
+		}
+	//TODO: verify that requester is manager    
+	if ($_SERVER['SSL_CLIENT_V_REMAIN'] <= 0) {
+		return false;
 	}
-
-	public function renderPageHeader() {
-		return
-			'<div class="menu">'
-  				.'<a class="button" href="create.php">'
-  					.'<img src="images/service-plus.png" /> create new service'
-  				.'</a>'
-  				.'<a class="button" href="ajax/getCertificate.php">'
-  					.' download certificate'
-  				.'</a>'
-  			.'</div>'
-  			.'<div class="clear"></div>';
-	}
-
-	public function renderContent() {
-
-	}
+	return true;
 }
+
+if (!has_valid_cert()) {
+	echo json_encode(array(
+		'error' => 'Client did not provide a valid certificate'
+	));
+	exit();
+}
+
+dlog('Valid certificate provided by: '.$_SERVER['SSL_CLIENT_S_DN_CN']);
+
+// Get the CSR - TODO: verify the CSR with the CN of requestor
+if (!isset($_FILES['csr'])) {
+	echo json_encode(array(
+		'error' => 'CSR file not found'
+	));
+	exit();
+}
+
+$path = '/tmp/'.$_FILES['csr']['name'];
+if (move_uploaded_file($_FILES['csr']['tmp_name'], $path) === false) {
+	echo json_encode(array(
+		'error' => 'could not move uploaded file'
+	));
+	exit();
+}
+
+$csr = file_get_contents($path);
+
+//TODO: Implement crs verification
+//if (!valid_req($csr)) {
+//	echo json_encode(array(
+//		'error' => 'CSR not valid'
+//	));
+//	exit();
+//}
+
+// Generate the request
+echo create_x509_cert($csr);
+unlink($path);
+?>
