@@ -11,13 +11,26 @@ CAPTCHA_PUBLIC_KEY=""
 CAPTCHA_PRIVATE_KEY=""
 
 # Configuration values for Amazon EC2. The script will assume you want to
-# deploy ConPaaS on EC2 if AMI_ID is not empty. If you want to use ConPaaS on
+# deploy ConPaaS on EC2 if EC2_USER is not empty. If you want to use ConPaaS on
 # another type of cloud, keep on reading this file.
+
+# EC2_USER should be set to your EC2 user name. Beware: this is not the
+# email address you normally use to login at the AWS management console. 
+# An EC2 user name is a long opaque string. It can be found at
+# https://aws-portal.amazon.com/gp/aws/developer/account/index.html?action=access-key#account_identifiers
+# under the name "Access key ID"
+EC2_USER=""
+
+# EC2_PASSWORD should be set to the corresponding password.
+# Again, this is a long opaque string. You can find it next to your
+# Access Key ID by clicking "Show Secret Access Key".
+EC2_PASSWORD=""
+
 
 # This variable contains the identifier of the Amazon Machine Image created
 # from the Web hosting service. Your AMIs can be found at
 # https://console.aws.amazon.com/ec2/home?region=us-east-1#s=Images
-AMI_ID=""
+AMI_ID="ami-4b249322"
 
 # This variable contains the created security group from the Web hosting
 # service. Your security groups can be found at
@@ -31,18 +44,6 @@ KEYPAIR=""
 # This variable contains the type of EC2 instances to use. A good value to use
 # inexpensive, low-performance instances is "t1.micro".
 EC2_INSTANCE_TYPE="t1.micro"
-
-# EC2_USER should be set to your EC2 user name. Beware: this is not the
-# email address you normally use to login at the AWS management console. 
-# An EC2 user name is a long opaque string. It can be found at
-# https://aws-portal.amazon.com/gp/aws/developer/account/index.html?action=access-key#account_identifiers
-# under the name "Access key ID"
-EC2_USER=""
-
-# EC2_PASSWORD should be set to the corresponding password.
-# Again, this is a long opaque string. You can find it next to your
-# Access Key ID by clicking "Show Secret Access Key".
-EC2_PASSWORD=""
 
 # Amazon Account ID without dashes. Used for identification with Amazon EC2.
 # Found in the AWS Security Credentials.
@@ -200,9 +201,11 @@ a2ensite default-ssl
 
 # Edit conf/main.ini
 sed -i s#^logfile.*#'logfile = "/var/log/conpaas-frontend.log"'# /etc/conpaas/main.ini
+touch /var/log/conpaas-frontend.log
+chown www-data: /var/log/conpaas-frontend.log
 
 # Deploy on EC2
-if [ -n "$AMI_ID" ]
+if [ -n "$EC2_USER" ]
 then
     echo "ami = \"$AMI_ID\"" > /etc/conpaas/aws.ini
     echo "security_group = \"$SECURITY_GROUP\"" >> /etc/conpaas/aws.ini
