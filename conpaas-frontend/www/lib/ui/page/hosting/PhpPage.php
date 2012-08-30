@@ -181,7 +181,8 @@ class PhpPage extends HostingPage {
 	}
 
 	public function renderCdsSection() {
-		return
+		return '';
+        /*
 		'<div class="form-section">'
 			.'<div class="form-header">'
 				.''
@@ -197,6 +198,7 @@ class PhpPage extends HostingPage {
 				.$this->renderCdsForm()
 			.'</div>'
 		.'</div>';
+       */
 	}
 
 	public function renderContent() {
