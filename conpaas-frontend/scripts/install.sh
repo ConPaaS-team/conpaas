@@ -171,6 +171,9 @@ sed -i s/"'secret' => 'development-secret',"/"'secret' => '$EC2_PASSWORD', 'cano
 # Hardcoded /etc/apache2/sites-available/default-ssl
 cp conf/apache.conf.sample /etc/apache2/sites-available/default-ssl
 
+# Bump php's upload_max_filesize
+sed -i s/'.*upload_max_filesize.*'/'upload_max_filesize = 20M'/ /etc/php5/apache2/php.ini
+
 # Create /var/www/config.php
 cp /var/www/config-example.php /var/www/config.php
 
