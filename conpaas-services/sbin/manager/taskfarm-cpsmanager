@@ -44,6 +44,9 @@ from os.path import exists, join
 from os import system, environ
 from xml.dom.minidom import *
 from string import Template
+from urlparse import urlparse
+
+from ConfigParser import ConfigParser, NoOptionError
 
 def add_parameter(doc, root, name, text):
     node = doc.createElement(name)
@@ -97,9 +100,14 @@ def get_agent_context_file(config_parser):
 def bash(cmd):
     system("bash -c '%s'" % cmd)
 
+def config_get_default(config_parser, section, option, default):
+    try:
+        return config_parser.get(section, option)
+    except NoOptionError:
+        return default
+
 if __name__ == '__main__':
   from optparse import OptionParser
-  from ConfigParser import ConfigParser
   import sys
   
   parser = OptionParser()
@@ -177,11 +185,29 @@ if __name__ == '__main__':
   path = bats_home + "/ClusterConfiguration/clusterConf.xml"
   f = open(path, "w")
 
-  dict = {'hostname':config_parser.get('iaas', 'HOSTNAME'),
-          'timeunit':config_parser.get('iaas', 'TIMEUNIT'),
-          'costunit':config_parser.get('iaas', 'COSTUNIT'),
-	  'maxnodes':config_parser.get('iaas', 'MAXNODES'),
-	  'speedfactor':config_parser.get('iaas', 'SPEEDFACTOR')
+  # Generate default hostname (cloud-unique identifier)
+  if config_parser.get('iaas', 'DRIVER') == 'OPENNEBULA':
+      # Use the hostname part of OpenNebula's URL
+      hostname = urlparse(config_parser.get('iaas', 'URL')).hostname
+  else:
+      # 'ec2' as the default if we are not on OpenNebula
+      hostname = "ec2"
+
+  dict = {
+    # a unique name used in the service to specify different clouds
+    'hostname': config_get_default(config_parser, 'iaas', 'HOSTNAME', hostname),
+
+    # the accountable time unit. Different clouds charge at different
+    # frequencies (e.g. Amazon charges per hour = 60 minutes)
+    'timeunit': config_get_default(config_parser, 'iaas', 'TIMEUNIT', '60'),
+
+    # the price per TIMEUNIT of this specific machine type on this cloud
+    'costunit': config_get_default(config_parser, 'iaas', 'COSTUNIT', '1'),
+
+    # the maximum number of VMs that the system is allowed to allocate from
+    # this cloud
+    'maxnodes': config_get_default(config_parser, 'iaas', 'MAXNODES', '20'),
+    'speedfactor': config_get_default(config_parser, 'iaas', 'SPEEDFACTOR', '1'),
 	  }
 
   if config_parser.get('iaas', 'DRIVER') == 'OPENNEBULA':
@@ -195,10 +221,10 @@ if __name__ == '__main__':
     dict['alias'] = 'ec2'
     dict['image'] = config_parser.get('iaas', 'IMAGE_ID')
     dict['instancetype'] = config_parser.get('iaas', 'SIZE_ID')
-    dict['port'] = config_parser.get('iaas', 'PORT')
     dict['keypairname'] = config_parser.get('iaas', 'KEY_NAME')
     dict['accesskey'] = config_parser.get('iaas', 'USER')
     dict['secretkey'] = config_parser.get('iaas', 'PASSWORD')
+    dict['port'] = config_get_default(config_parser, 'iaas', 'PORT', '8889')
 
   make_xml(dict).writexml(f)
   f.close()
