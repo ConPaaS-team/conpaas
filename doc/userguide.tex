@@ -401,7 +401,47 @@ front-end provides useful links to the Hadoop namenode, the job
 tracker, and to a graphical interface which allows to upload/download
 data to/from the service and issue MapReduce jobs.
 
-%\section{The TaskFarming service}
+\section{The TaskFarm service}
+The TaskFarm service provides a bag of tasks scheduler for ConPaaS.
+The user needs to provide a list of independent tasks to be executed
+on the cloud and a file system location where the tasks can read 
+input data and/or write output data to it. The service first enters 
+a sampling phase, where its agents sample the runtime of the given tasks on 
+different cloud instances. The service then based on the sampled runtimes, 
+provides the user with a list of schedules.
+Schedules are presented in a graph and the user can choose between 
+cost/makespan of different schedules for the given set of tasks.fter the choice is made the service enters the execution phase and 
+completes the execution of the rest of the tasks according to the user's
+choice.
+
+\subsection{The bag of tasks file}
+The bag of tasks file is a simple plain text file that contains the 
+list of tasks along with their arguments to be executed. The tasks 
+are seperated by new lines. This file needs to be uploaded to the 
+service, before the service can start sampling. Below is an example of a simple bag of tasks file containing three tasks:
+\texonly{\rule{\linewidth}{0.5mm}}
+\htmlrule
+\begin{verbatim}
+/bin/sleep 1 && echo "slept for 1 seconds" >> /mnt/xtreemfs/log
+/bin/sleep 2 && echo "slept for 2 seconds" >> /mnt/xtreemfs/log
+/bin/sleep 3 && echo "slept for 3 seconds" >> /mnt/xtreemfs/log
+\end{verbatim}
+\texonly{\rule{\linewidth}{0.5mm}}
+\htmlrule
+
+\subsection{The filesystem location}
+TaskFarm service uses XtreemFS for data input/output. The actual task 
+code can also reside in the XtreemFS. The user can optionally provide
+an XtreemFS location which is then mounted on TaskFarm agents.
+
+\subsection{The demo mode}
+
+With large bags of tasks and/or with long running tasks, the TaskFarm 
+service can take a long time to execute the given bag.
+The service provides its users with a progress bar and reports the amount 
+money spent so far. TaskFarm service also provides a ``demo'' mode where 
+the users can try the service with custom bags without spending time and 
+money.
 
 \section{Building new types of services}
 
