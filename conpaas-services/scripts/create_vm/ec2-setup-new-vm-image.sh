@@ -51,8 +51,11 @@ function install_deb() {
   sed --in-place '/contrib/!s/main/main contrib/' /etc/apt/sources.list
   apt-get -f -y update
  
-  # install and configure locale 
   export LC_ALL=C
+  # set keyboard layout
+  echo "debconf keyboard-configuration/variant  select  USA" | debconf-set-selections
+
+  # install and configure locale 
   apt-get -f -y install locales
   sed --in-place 's/^# en_US.UTF-8/en_US.UTF-8/' /etc/locale.gen
   locale-gen
@@ -64,7 +67,7 @@ function install_deb() {
         python-m2crypto python-mysqldb \
         nginx tomcat6-user memcached \
         make gcc g++ erlang ant libxslt1-dev yaws subversion git \
-        xvfb xinit
+        xvfb xinit unzip
   update-rc.d -f memcached remove
   update-rc.d -f nginx remove
   /etc/init.d/memcached stop
@@ -86,7 +89,7 @@ function install_deb() {
   apt-get -f -y --no-install-recommends --no-upgrade install php5-fpm php5-curl \
               php5-mcrypt php5-mysql php5-odbc \
               php5-pgsql php5-sqlite php5-sybase php5-xmlrpc php5-xsl \
-              php5-adodb php5-memcache
+              php5-adodb php5-memcache php5-gd
   update-rc.d -f php5-fpm remove
 
   # remove dotdeb repo
@@ -125,8 +128,8 @@ function install_deb() {
   echo "deb http://dl.google.com/linux/deb/ stable main" >> /etc/apt/sources.list
 
   apt-get -f -y update
-  apt-get -f -y install -t squeeze-backports iceweasel
-  apt-get -f -y install google-chrome-beta
+  apt-get -f -y --force-yes install -t squeeze-backports iceweasel
+  apt-get -f -y --force-yes install google-chrome-beta
 
   # add cloudera repo for hadoop
   echo "deb http://archive.cloudera.com/debian $DEBIAN_DIST-cdh3 contrib" >> /etc/apt/sources.list
