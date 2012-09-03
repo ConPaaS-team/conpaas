@@ -112,6 +112,7 @@ conpaas.ui = (function (this_module) {
         $('#saveconf').click(that, that.onSaveConfig);
         $('#cds_subscribe').click(that, that.onCdsSubscribe);
         $('#cds_unsubscribe').click(that, that.onCdsUnsubscribe);
+        $('#submitPubKey').click(that, that.onSubmitPubKey);        
     },
     // handlers
     onActivateVersion: function (event) {
@@ -128,6 +129,44 @@ conpaas.ui = (function (this_module) {
         }, function () {
             page.freezeInput(false);
         });
+    },
+    onSubmitPubKey: function (event) {
+        var page = event.data;
+        var pubkey = $('#pubkey').val();
+
+        $('.additional .error').html("");
+        $('.additional .error').hide();
+
+        if (!pubkey.match(/^ssh-(rsa|dss)/)) {
+            $('.additional .error').html("Key is invalid. It must begin with 'ssh-rsa' or 'ssh-dss'");
+            $('.additional .error').show();
+            return false;
+        }
+
+        page.freezeInput(true);
+        $('.additional .loading').toggleClass('invisible');
+
+        page.server.req('ajax/uploadSshPubKey.php', { sid: page.service.sid, sshkey: pubkey },
+                'post', function (response) {
+                    page.freezeInput(false);
+                    if (response.error) {
+                        $('.additional .error').html(response.error);
+                        $('.additional .error').show();
+                        return false;
+                    }
+
+                    $('.additional .loading').toggleClass('invisible');
+                    $('.additional .positive').show();
+
+                    setTimeout(function () {
+                        $('.additional .positive').fadeOut();
+                    }, 1000);
+
+                }, function () {
+                    page.freezeInput(false);
+                    $('.additional .loading').toggleClass('invisible');
+                }
+        );
     },
     onSaveConfig: function (event) {
         var page = event.data,
