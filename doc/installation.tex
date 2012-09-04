@@ -231,6 +231,12 @@ There are two main topics that you should pay attention to:
   \item The graphics line allows for using vnc to connect to the VM.
     This is very useful for debugging purposes and is not necessary
     once testing is complete.
+\item Ensure your occi-server.conf contains the following lines in instance\_types:
+\begin{verbatim}
+:custom:
+  :template: custom.erb
+\end{verbatim}
+
   \end{itemize}
 \end{enumerate}
 
