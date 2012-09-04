@@ -120,7 +120,7 @@ NAMESERVER=""
 OS_ROOT="sda"
 
 # The device on which the VM image disk is mapped. 
-DISK_TARGET=""
+DISK_TARGET="sda"
 
 # The device associated with the CD-ROM on the virtual machine. This
 # will be used for contextualization in OpenNebula. Most often it is
