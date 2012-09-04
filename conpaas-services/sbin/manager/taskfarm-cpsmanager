@@ -208,6 +208,7 @@ if __name__ == '__main__':
     # this cloud
     'maxnodes': config_get_default(config_parser, 'iaas', 'MAXNODES', '20'),
     'speedfactor': config_get_default(config_parser, 'iaas', 'SPEEDFACTOR', '1'),
+    'port': config_get_default(config_parser, 'iaas', 'PORT', '8889')
 	  }
 
   if config_parser.get('iaas', 'DRIVER') == 'OPENNEBULA':
@@ -224,7 +225,6 @@ if __name__ == '__main__':
     dict['keypairname'] = config_parser.get('iaas', 'KEY_NAME')
     dict['accesskey'] = config_parser.get('iaas', 'USER')
     dict['secretkey'] = config_parser.get('iaas', 'PASSWORD')
-    dict['port'] = config_get_default(config_parser, 'iaas', 'PORT', '8889')
 
   make_xml(dict).writexml(f)
   f.close()
