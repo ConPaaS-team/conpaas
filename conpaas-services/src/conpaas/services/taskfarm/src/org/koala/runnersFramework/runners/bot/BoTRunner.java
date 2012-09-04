@@ -239,7 +239,8 @@ public class BoTRunner implements Serializable {
                 if (!"".equals(cm.image_id) && "".equals(cm.instanceType)) {
                     cluster = (Cluster) getClusterInstance(cm.className, cm.hostName, cm.port,
                             cm.alias, cm.timeUnit, cm.costUnit, cm.maxNodes, "" + cm.speedFactor,
-                            cm.image_id, cm.network_id, cm.keyPairName, cm.keyPairPath, cm.accessKey, cm.secretKey);
+                            cm.image_id, cm.network_id, cm.keyPairName, cm.keyPairPath, cm.accessKey, 
+                            cm.secretKey, cm.disk_target, cm.contex_target);
                 } else if (!"".equals(cm.instanceType) && !"".equals(cm.instanceType)) {
                     cluster = (Cluster) getClusterInstance(cm.className, cm.hostName, cm.port,
                             cm.alias, cm.timeUnit, cm.costUnit, cm.maxNodes, "" + cm.speedFactor,
@@ -363,10 +364,10 @@ public class BoTRunner implements Serializable {
     private Object getClusterInstance(String className, String hostname, int port,
             String alias, long timeUnit, double costUnit, int maxNodes, String speedFactor,
             int imageId, int networkId, String keyPairName, String keyPairPath,
-            String accessKey, String secretKey) {
+            String accessKey, String secretKey, String diskTarget, String contextTarget) {
         try {
             Class cl = Class.forName(className);
-            Class[] cloudClusterClass = new Class[13];
+            Class[] cloudClusterClass = new Class[15];
             cloudClusterClass[0] = String.class;
             cloudClusterClass[1] = int.class;
             cloudClusterClass[2] = String.class;
@@ -380,13 +381,15 @@ public class BoTRunner implements Serializable {
             cloudClusterClass[10] = String.class;
             cloudClusterClass[11] = String.class;
             cloudClusterClass[12] = String.class;
+            cloudClusterClass[13] = String.class;
+            cloudClusterClass[14] = String.class;
 
             java.lang.reflect.Constructor constructor = cl.getConstructor(cloudClusterClass);
             Object invoker = constructor.newInstance(new Object[]{
                         hostname, port, alias, timeUnit, costUnit, maxNodes,
                         speedFactor, imageId, networkId,
                         keyPairName, keyPairPath,
-                        accessKey, secretKey});
+                        accessKey, secretKey, diskTarget, contextTarget});
             if (!(invoker instanceof Cluster)) {
                 System.out.println("The class " + className + " is not a subclass of class Cluster.");
                 return null;

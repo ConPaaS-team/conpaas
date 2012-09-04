@@ -39,6 +39,9 @@ public class ClusterXmlFileParser {
     static final String SECRETKEY = "secretkey";
     static final String DNS = "nameserver";
     static final String GATEWAY = "gateway";
+    static final String DISKTARGET = "disktarget";
+    static final String CONTEXTTARGET = "contexttarget";
+    
     
 
     public List<ClusterMetadata> readConfig(String configFile) {
@@ -166,6 +169,16 @@ public class ClusterXmlFileParser {
                     if (event.asStartElement().getName().getLocalPart().equals(GATEWAY)) {
                         event = eventReader.nextEvent();
                         clusterMetadata.gateway = event.asCharacters().getData();
+                        continue;
+                    }
+                    if (event.asStartElement().getName().getLocalPart().equals(DISKTARGET)) {
+                        event = eventReader.nextEvent();
+                        clusterMetadata.disk_target = event.asCharacters().getData();
+                        continue;
+                    }
+                    if (event.asStartElement().getName().getLocalPart().equals(CONTEXTTARGET)) {
+                        event = eventReader.nextEvent();
+                        clusterMetadata.contex_target = event.asCharacters().getData();
                         continue;
                     }
                 }

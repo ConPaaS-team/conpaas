@@ -19,6 +19,7 @@ public class OpenNebulaOcaCluster extends Cluster {
     public int image_id, network_id;
     public String mem;
     public String dns, gateway;
+    public String diskTarget, contextTarget;
     /*number of CPUs for the VM*/
     public String speedFactor;
     /**
@@ -37,14 +38,18 @@ public class OpenNebulaOcaCluster extends Cluster {
     public static final String Gateway = "10.0.0.1";
     public static final String DEF_MEM = "1024";
     
+    
     public OpenNebulaOcaCluster(String hostname, int port, String alias, long timeUnit,
             double costUnit, int maxNodes, String speedFactor,
             int image_id, int network_id,
-            String mem, String dns, String gateway, String e) {
+            String mem, String dns, String gateway, String e, 
+            String diskTarget, String contextTarget) {
         super(hostname, alias, timeUnit, costUnit, maxNodes);
         this.image_id = image_id;        
         this.network_id = network_id;
         this.speedFactor = speedFactor;
+        this.diskTarget = diskTarget;
+        this.contextTarget = contextTarget;
         if((mem != null) && (!mem.equals(""))) {
         	this.mem = mem;
         } else {
@@ -67,6 +72,8 @@ public class OpenNebulaOcaCluster extends Cluster {
         this.image_id = cm.image_id;        
         this.network_id = cm.network_id;
         this.speedFactor = cm.speedFactor;
+        this.diskTarget = cm.disk_target;
+        this.contextTarget = cm.contex_target;
         
         this.mem = DEF_MEM;
 
@@ -176,7 +183,7 @@ public class OpenNebulaOcaCluster extends Cluster {
                 + "]\n\n"
                 + "DISK   = [\n"
                 + "IMAGE_ID  = " + image_id + ",\n"
-                + "target  = \"sda\"\n"
+                + "target  = \"" + diskTarget + "\"\n"
                 + "]\n\n"
                 + "NIC    = [\n"
                 + "NETWORK_ID = " + network_id +"\n"
@@ -217,7 +224,7 @@ public class OpenNebulaOcaCluster extends Cluster {
                /*ISSUE: + "files = \"" + pathToInitSh + " " + pathToIdRsaPub + "\",\n"*/
 				/* PAY ATTENTION: this will work only if the worker's image is set to run $USERDATA*/
                 + "USERDATA = \"" + getHexContent(System.getenv("HEX_FILE")) + "\",\n"
-                + "target = \"sdb\"\n"
+                + "target = \""+ contextTarget + "\"\n"
                 + "]\n";
 
         return vmTemplate;
@@ -252,6 +259,20 @@ public class OpenNebulaOcaCluster extends Cluster {
     @Override
     public void terminateNode(IbisIdentifier node, Ibis myIbis)
             throws IOException {
+        /*
+		// XXX Another deletion method which can be used when self-VM
+		// Deletion causes OpenNebula to crash.
+    	System.err.println("Deleting with ID: " + Integer.parseInt(map.get(node.location())));
+    	VirtualMachine vm = new VirtualMachine(Integer.parseInt(map.get(node.location())), oneClient);
+        OneResponse oneResponse = vm.finalizeVM();
+        map.remove(node.location());
+        if (oneResponse.isError()) {
+            System.err.println("Failed to finalize VM:\n"
+                    + oneResponse.getMessage());
+        } else {
+            System.err.println("All went fine...");
+        }
+		*/
         myIbis.registry().signal("die", node);
     }
 }

@@ -24,5 +24,8 @@ public class ClusterMetadata {
     String secretKey = "";
     String dns = "";
     String gateway = "";
+    String disk_target = "sda";
+    String contex_target = "sdb";
+    
     
 }
