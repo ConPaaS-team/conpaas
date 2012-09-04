@@ -53,6 +53,29 @@ EC2_ACCOUNT_ID=""
 # Credentials.
 EC2_CANONICAL_ID=""
 
+####################################################################
+# The following values are only needed by the Task Farming service #
+####################################################################
+
+PORT="8889"
+
+# A unique name used in the service to specify different clouds. 
+# For Amazon EC2, 'ec2' is a good value. 
+# For OpenNebula, use the OCCI server hostname.
+CLOUD_ID="ec2" 
+
+# The accountable time unit. Different clouds charge at different
+# frequencies (e.g. Amazon charges per hour = 60 minutes)
+TIMEUNIT="60" 
+
+# The price per TIMEUNIT of this specific machine type on this cloud
+COSTUNIT="1" 
+
+# The maximum number of VMs that the system is allowed to allocate from this
+# cloud
+MAXNODES="20" 
+SPEEDFACTOR="1" 
+
 ###########################################################################
 # DON'T CHANGE ANYTHING BELOW THIS LINE UNLESS YOU WANT TO USE OPENNEBULA #
 ###########################################################################
@@ -90,6 +113,26 @@ GATEWAY=""
 
 # The DNS server that VMs should use to resolve DNS names (an IP address)
 NAMESERVER=""
+
+# The device that will be mounted as root on the VM. Most often it
+# is "sda" or "hda" for KVM, and "xvda2" for Xen.
+# (corrseponds to the OpenNebula "ROOT" parameter from the VM template)
+OS_ROOT="sda"
+
+# The device on which the VM image disk is mapped. 
+DISK_TARGET=""
+
+# The device associated with the CD-ROM on the virtual machine. This
+# will be used for contextualization in OpenNebula. Most often it is
+# "sr0" for KVM and "xvdb" for Xen.
+# (corresponds to the OpenNebula "TARGET" parameter from the "CONTEXT" 
+# section of the VM template)
+CONTEXT_TARGET="sr0"
+
+# The TaskFarming service uses XMLRPC to talk to Opennebula. This is the url to
+# the server (Ex. http://dns.name.or.ip:2633/RPC2)
+XMLRPC=""
+
 
 ###########################################################################
 # DON'T CHANGE ANYTHING BELOW THIS LINE UNLESS YOU KNOW WHAT YOU'RE DOING #
@@ -149,6 +192,7 @@ mysql_pass=`awk '/^password/ { print $3 }' /etc/mysql/debian.cnf | head -n 1`
 # Change the DB config script
 sed -i s/\'DB_USER\'/\'$mysql_user\'/ scripts/frontend-db.sql
 sed -i s/\'DB_PASSWD\'/\'$mysql_pass\'/ scripts/frontend-db.sql
+sed -i s/DB_NAME/conpaas/ scripts/frontend-db.sql
 
 # Create ConPaaS database
 mysql -u $mysql_user --password=$mysql_pass < scripts/frontend-db.sql
@@ -156,7 +200,7 @@ mysql -u $mysql_user --password=$mysql_pass < scripts/frontend-db.sql
 /bin/echo -e '[mysql]\nserver = "localhost"' > /etc/conpaas/db.ini
 echo "user = \"$mysql_user\"" >> /etc/conpaas/db.ini
 echo "pass = \"$mysql_pass\"" >> /etc/conpaas/db.ini
-echo "db = \"DB_NAME\"" >> /etc/conpaas/db.ini
+echo "db = \"conpaas\"" >> /etc/conpaas/db.ini
 
 # Get and install the AWS SDK
 wget http://pear.amazonwebservices.com/get/sdk-latest.zip
@@ -222,6 +266,14 @@ then
     echo "SIZE_ID = $EC2_INSTANCE_TYPE" >> /etc/conpaas/config/cloud/ec2.cfg
     echo "SECURITY_GROUP_NAME = $SECURITY_GROUP" >> /etc/conpaas/config/cloud/ec2.cfg
     echo "KEY_NAME = $KEYPAIR" >> /etc/conpaas/config/cloud/ec2.cfg
+
+    # Task Farming
+    echo "PORT = $PORT" >> /etc/conpaas/config/cloud/ec2.cfg
+    echo "HOSTNAME = $CLOUD_ID" >> /etc/conpaas/config/cloud/ec2.cfg
+    echo "TIMEUNIT = $TIMEUNIT" >> /etc/conpaas/config/cloud/ec2.cfg
+    echo "COSTUNIT = $COSTUNIT" >> /etc/conpaas/config/cloud/ec2.cfg
+    echo "MAXNODES = $MAXNODES" >> /etc/conpaas/config/cloud/ec2.cfg
+    echo "SPEEDFACTOR = $SPEEDFACTOR" >> /etc/conpaas/config/cloud/ec2.cfg
 # Deploy on OpenNebula
 elif [ -n "$IMAGE" ]
 then
@@ -236,6 +288,9 @@ then
     echo "url = \"$URL\"" >> /etc/conpaas/opennebula.ini
     echo "gateway = \"$GATEWAY\"" >> /etc/conpaas/opennebula.ini
     echo "nameserver = \"$NAMESERVER\"" >> /etc/conpaas/opennebula.ini
+    echo "os_root = \"$OS_ROOT\"" >> /etc/conpaas/opennebula.ini
+    echo "disk_target = \"$DISK_TARGET\"" >> /etc/conpaas/opennebula.ini
+    echo "context_target = \"$CONTEXT_TARGET\"" >> /etc/conpaas/opennebula.ini
 
     /bin/echo -e "[iaas]\nDRIVER = OPENNEBULA" > /etc/conpaas/config/cloud/opennebula.cfg
     echo "USER = $ON_USER" >> /etc/conpaas/config/cloud/opennebula.cfg
@@ -245,6 +300,18 @@ then
     echo "NET_ID = $NETWORK" >> /etc/conpaas/config/cloud/opennebula.cfg
     echo "NET_GATEWAY = $GATEWAY" >> /etc/conpaas/config/cloud/opennebula.cfg
     echo "NET_NAMESERVER = $NAMESERVER" >> /etc/conpaas/config/cloud/opennebula.cfg
+    echo "OS_ROOT = $OS_ROOT" >> /etc/conpaas/config/cloud/opennebula.cfg
+    echo "DISK_TARGET = $DISK_TARGET" >> /etc/conpaas/config/cloud/opennebula.cfg
+    echo "CONTEXT_TARGET = $CONTEXT_TARGET" >> /etc/conpaas/config/cloud/opennebula.cfg
+
+    # Task Farming
+    echo "XMLRPC = $XMLRPC" >> /etc/conpaas/config/cloud/opennebula.cfg
+    echo "PORT = $PORT" >> /etc/conpaas/config/cloud/opennebula.cfg
+    echo "HOSTNAME = $CLOUD_ID" >> /etc/conpaas/config/cloud/opennebula.cfg
+    echo "TIMEUNIT = $TIMEUNIT" >> /etc/conpaas/config/cloud/opennebula.cfg
+    echo "COSTUNIT = $COSTUNIT" >> /etc/conpaas/config/cloud/opennebula.cfg
+    echo "MAXNODES = $MAXNODES" >> /etc/conpaas/config/cloud/opennebula.cfg
+    echo "SPEEDFACTOR = $SPEEDFACTOR" >> /etc/conpaas/config/cloud/opennebula.cfg
 fi
 
 echo "Installation completed!"
