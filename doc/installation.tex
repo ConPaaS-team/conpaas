@@ -155,6 +155,8 @@ To create an image for OpenNebula you can execute the script\\
   to customize with parameters that are specific to your system. These
   sections are marked by comment lines containing the text "TO CUSTOMIZE:".
   There are comments explaining each customizable parameter. 
+\item Obtain the id of the OpenNebula datastore you want to use by running
+  \verb+onedatastore list+. In the following example, we will use "100" as our datastore id.
 \item Execute the image generation script as root.
 \item The script generates an image file called \verb+conpaas.img+
   by default. You can now register it in OpenNebula:
@@ -168,7 +170,7 @@ To create an image for OpenNebula you can execute the script\\
   PUBLIC        = YES
   DESCRIPTION   = "Conpaas vm image"
   EOF
-  oneimage register /tmp/conpaas-one.image
+  oneimage create /tmp/conpaas-one.image -d 100
 \end{verbatim}
 \end{enumerate}
 % $>
