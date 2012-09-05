@@ -300,6 +300,15 @@ you have just installed Debian Squeeze on your own hardware.
   and start using ConPaaS
 \end{enumerate}
 
+\subsubsection{Updating a previous frontend installation}
+The installation script can also be used in case you want to upgrade from a
+previous ConPaaS installation. A backup of your document root, as well of your
+\verb+/etc/conpaas+, will be created under \verb+/var/backups+.
+
+Just make sure to follow all the steps described in the previous section, in
+particular do not forget to edit \verb+frontend/scripts/install.sh+ to reflect
+your cloud setup.
+
 \subsubsection{Important note on SSL certificates}
 ConPaaS uses SSL certificates in order to secure the communication between you
 and the frontend, but also to ensure that only authorized parties such as
