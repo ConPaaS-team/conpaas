@@ -5,7 +5,7 @@
 \title{ConPaaS -- Installation guide\htmlonly{ [\xml{a href="installation.pdf"}pdf\xml{/a}]}}
 \htmltitle{ConPaaS -- Installation guide}
 \author{Ismail El Helw \and Adriana Szekeres \and Guillaume Pierre}
-\date{ConPaaS-0.9.0}
+\date{ConPaaS-1.0.0}
 
 \begin{document}
 
@@ -32,9 +32,9 @@ Installing ConPaaS requires to take the following steps:
 \begin{enumerate}
 \item Create a VM image customized for hosting the services. Details
   on how to do this vary depending on the choice of cloud where
-  ConPaaS will run. Instructions on how to create a ConPaaS image can
-  be found in Section~\ref{sec:ec2image} (for EC2) and
-  Section~\ref{sec:oneimage} for OpenNebula.
+  ConPaaS will run. Instructions on how to create a ConPaaS image suitable
+to run on Amazon EC2 can be found in Section~\ref{sec:ec2image}. 
+  Section~\ref{sec:oneimage} describes how to create a ConPaaS image for OpenNebula.
 \item Setup and configure the ConPaaS frontend. All system
   configuration takes place in the frontend. Frontend installation and
   configuration is discussed in Section~\ref{sec:frontend}.
@@ -58,8 +58,9 @@ found at
 The Web Hosting Service requires the usage of an Amazon Machine Image (AMI) to
 contain the dependencies of its processes. For your convenience we provide a
 public ConPaaS AMI which is already configured and ready to be used on Amazon
-EC2. The AMI ID of said image is \emph{ami-c4d208ad}. You can use this value
-when configuring your ConPaaS frontend installation as described in
+EC2. The AMI ID of said image for the US East Amazon availability zone is
+\verb+ami-4b249322+. (TODO: mention the AMI IDs for other zones). You can use
+this value when configuring your ConPaaS frontend installation as described in
 Section~\ref{sec:frontend}.
 
 \subsection{Create an EBS backed AMI on Amazon EC2}
@@ -71,11 +72,10 @@ customize it and save the resulting filesystem as a new AMI. The following
 steps explains how to setup an AMI using this methodology.
 
 \begin{enumerate}
-\item Log in the AWS management console, select the ``EC2'' tab, then
-  ``AMIs'' in the left-side menu. Search the public AMIs for a Debian
-  squeeze EBS AMI and run an instance of it. If you are going to use
-  micro-instances then the AMI with ID \verb+ami-e0e11289+ could be a
-  good choice.
+\item Log in the AWS management console, select the ``EC2'' tab, then ``AMIs''
+in the left-side menu. Search the public AMIs for a Debian Squeeze EBS AMI and
+run an instance of it. If you are going to use micro-instances then the AMI
+with ID \verb+ami-e0e11289+, for th US East zone, could be a good choice.
 
 \item Upload the \textit{conpaas-services/scripts/create\_vm/ec2-setup-new-vm-image.sh} script to the instance:
   \begin{verbatim}
@@ -255,35 +255,70 @@ their ConPaaS services. Users can create, configure and terminate
 services through it. This section describes the process of setting up
 a ConPaaS frontend.
 
-\subsection{Pre-built Frontend Amazon Machine Image}
-\label{sec:frontend-ami}
+\subsection{Server installation}
+\label{sec:frontend-server}
 
-We provide an Amazon Machine Image (AMI) with the ConPaaS frontend code and all
-the required dependencies already installed. This is the easiest way to get
-started with ConPaaS, as all you need to do is setup a few configuration
-files.
+The frontend can run on any Debian Squeeze machine. 
+
+In case you want to run the frontend on Amazon EC2, make sure to perform the
+following steps:
 
 \begin{enumerate}
 \item Log in the AWS management console, select the ``EC2'' tab, then ``AMIs''
-  in the left-side menu. Search the public AMI with ID \verb+ami-b6d208df+ and
+  in the left-side menu. Search the public AMI of a Debian Squeeze instance and
   run an instance of it.
 \item In the ``Configure Firewall'' step of the Wizard, create a security group
-  with port 80 (HTTP) open. Also, if you haven't done so already, create a
+  with port 443 (HTTPS) open. Also, if you haven't done so already, create a
   security group for the Web Hosting Service as explained in
   Section~\ref{sec:secgroup} and write its name down.
-\item Once the instance is running, log into it and fill in the following
-  configuration values:
-  \begin{itemize}
-  \item \verb+security_group+ and \verb|keypair| in /etc/conpaas/aws.ini
-  \item \verb+USER+, \verb+PASSWORD+, \verb+SECURITY_GROUP_NAME+ and
-  \verb+KEY_NAME+ in /etc/conpaas/config/cloud/ec2.cfg
-  \item \verb+AWS_KEY+, \verb+AWS_SECRET_KEY+, \verb+AWS_ACCOUNT_ID+ and
-  \verb+AWS_CANONICAL_ID+ in /var/www/lib/aws-sdk/config.inc.php
-  \end{itemize}
+\end{enumerate}
+
+If you decide to run the frontend on your own infrastructure, install Debian
+Squeeze and make sure port 443 (HTTPS) is open.
+
+Once the machine is running, log into it and follow the steps described in the
+next section.
+
+\subsection{Installation script}
+\label{sec:frontend-installation-script}
+
+An installation script is made available to ease the process of installing and
+configuring a ConPaaS frontend. The script can be used if you are installing
+the ConPaaS frontend starting from a Amazon Machine Image, but also in the case
+you have just installed Debian Squeeze on your own hardware.
+
+\begin{enumerate}
+\item Download the version of ConPaaS you want to run from
+\url{http://www.conpaas.eu}. For example: 
+
+\verb+wget http://www.conpaas.eu/dl/ConPaaS-1.0.0.tar.gz+
+
+\item Uncompress the downloaded tarball and edit the configuration options available in \verb+frontend/scripts/install.sh+
+\item Execute \verb+frontend/scripts/install.sh+
 \item Point your browser to the public IP address of your instance. You should
   see the ConPaaS frontend web page and you should be able to create a new user
-  and start using ConPaaS.
+  and start using ConPaaS
 \end{enumerate}
+
+\subsubsection{Important note on SSL certificates}
+ConPaaS uses SSL certificates in order to secure the communication between you
+and the frontend, but also to ensure that only authorized parties such as
+yourself and the various component of ConPaaS can interact with the system.
+
+It is therefore crucial that the SSL certificate of your frontend contains the
+proper information. In particular, the commonName field of the certificate
+should carry the public hostname of your frontend server. The installation
+script takes care of setting up such a field. However, should your frontend
+hostname change, please ensure you run the following commands:
+
+\begin{verbatim}
+sudo php frontend/scripts/generate-certs.php /etc/conpaas/certs
+sudo service apache2 restart
+\end{verbatim}
+
+The next section describes in detail all the steps performed by the
+installation script. You don't have to read it unless something went wrong with
+the automatic installation procedure, or unless you want to know more about it.
 
 \subsection{Manual setup}
 \label{sec:frontend-manual}
