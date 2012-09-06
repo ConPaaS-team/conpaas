@@ -69,7 +69,7 @@ def make_xml(dict):
     doc.appendChild(config)
     return doc
 
-def get_agent_context_file(config_parser):
+def get_agent_context_file(config_parser, options):
     cloud = config_parser.get('iaas', 'DRIVER').lower()
     conpaas_home = config_parser.get('manager', 'CONPAAS_HOME')
     cloud_scripts_dir = conpaas_home + '/scripts/cloud'
@@ -90,10 +90,26 @@ def get_agent_context_file(config_parser):
     agent_start_file = open(agent_scripts_dir + '/taskfarm-agent-start')
     agent_start = agent_start_file.read()
 
+    # Get certificates
+    cert_pem_file = open(join(options.certs, 'cert.pem'))
+    cert_pem = cert_pem_file.read()
+
+    key_pem_file = open(join(options.certs, 'key.pem'))
+    key_pem = key_pem_file.read()
+
+    ca_cert_pem_file = open(join(options.certs, 'ca_cert.pem'))
+    ca_cert_pem = ca_cert_pem_file.read()
+
     ## Concatenate the files
     context_file = cloud_script + '\n\n' \
-                 + agent_setup           \
-                 + agent_start + '\n'
+            + 'cat <<EOF > /tmp/cert.pem\n' \
+            + cert_pem + '\n' + 'EOF\n\n' \
+            + 'cat <<EOF > /tmp/key.pem\n' \
+            + key_pem + '\n' + 'EOF\n\n' \
+            + 'cat <<EOF > /tmp/ca_cert.pem\n' \
+            + ca_cert_pem + '\n' + 'EOF\n\n' \
+            + agent_setup           \
+            + agent_start + '\n'
 
     return context_file
 
@@ -113,6 +129,7 @@ if __name__ == '__main__':
   parser = OptionParser()
   parser.add_option('-a', '--address', type='string', default='0.0.0.0', dest='address')
   parser.add_option('-c', '--config', type='string', default=None, dest='config')
+  parser.add_option('-s', '--certs', type='string', default='/etc/cpsmanager/certs', dest='certs')
   options, args = parser.parse_args()
   
   if not options.config or not exists(options.config):
@@ -121,6 +138,10 @@ if __name__ == '__main__':
   
   if not options.address:
     print >>sys.stderr, 'Failed to get the public IP address'
+    sys.exit(1)
+
+  if not options.certs:
+    print >>sys.stderr, 'Failed to get the certificates'
     sys.exit(1)
 
   config_parser = ConfigParser()
@@ -234,7 +255,7 @@ if __name__ == '__main__':
   """
   Create contextualization file for workers
   """
-  agent_context = get_agent_context_file(config_parser)
+  agent_context = get_agent_context_file(config_parser, options)
   agent_context_file = bats_home + '/agent_init.sh'
   if config_parser.get('iaas', 'DRIVER') == 'OPENNEBULA':
     agent_context = agent_context.encode('hex')

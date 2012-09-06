@@ -8,6 +8,6 @@
 # This file is the default manager-start file. It can be
 # customized as needed by the sevice.  
 
-$CPS_HOME/sbin/manager/taskfarm-cpsmanager -c $ROOT_DIR/config.cfg -a $IP_PUBLIC 1>$ROOT_DIR/manager.out 2>$ROOT_DIR/manager.err &
+$CPS_HOME/sbin/manager/taskfarm-cpsmanager -c $ROOT_DIR/config.cfg -a $IP_PUBLIC -s $CERT_DIR 1>$ROOT_DIR/manager.out 2>$ROOT_DIR/manager.err &
 manager_pid=$!
 echo $manager_pid > $ROOT_DIR/manager.pid
