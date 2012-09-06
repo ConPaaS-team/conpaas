@@ -74,8 +74,8 @@ steps explains how to setup an AMI using this methodology.
 \begin{enumerate}
 \item Log in the AWS management console, select the ``EC2'' tab, then ``AMIs''
 in the left-side menu. Search the public AMIs for a Debian Squeeze EBS AMI and
-run an instance of it. If you are going to use micro-instances then the AMI
-with ID \verb+ami-e0e11289+, for th US East zone, could be a good choice.
+start an instance of it. If you are going to use micro-instances then the AMI
+with ID \verb+ami-e0e11289+ in the US East zone could be a good choice.
 
 \item Upload the \textit{conpaas-services/scripts/create\_vm/ec2-setup-new-vm-image.sh} script to the instance:
   \begin{verbatim}
@@ -118,7 +118,7 @@ The following ports shoud be open for all running instances:
 \begin{itemize}
 \item TCP ports 80, 443, 5555, 8000, 8080 and 9000 -- used by the Web Hosting service
 \item TCP port 3306 -- used by the MySQL service
-\item TCP ports 8020, 8021, 8088, 50010, 50020, 50030, 50105, 54310, 54311, 50060, 50070, 50075 and 50090 -- used by the Map Reduce service
+\item TCP ports 8020, 8021, 8088, 50010, 50020, 50030, 50060, 50070, 50075, 50090, 50105, 54310 and 54311 -- used by the Map Reduce service
 \item TCP ports 4369, 14194 and 14195 -- used by the Scalarix service
 \item TCP ports 8475, 8999 -- used by the TaskFarm service
 \end{itemize}
@@ -243,13 +243,6 @@ There are two main topics that you should pay attention to:
 \section{Setup ConPaaS's Frontend}
 \label{sec:frontend}
 
-The ConPaaS frontend is a web application that allows users to manage
-their ConPaaS services. Users can create, configure and terminate
-services through it. This section describes the process of setting up
-a ConPaaS frontend.
-
-To setup ConPaaS, you only need to setup the ConPaaS's frontend. The
-actual ConPaaS code is just archived and put in a folder on the frontend.
 The ConPaaS frontend is a web application that allows users to manage
 their ConPaaS services. Users can create, configure and terminate
 services through it. This section describes the process of setting up
