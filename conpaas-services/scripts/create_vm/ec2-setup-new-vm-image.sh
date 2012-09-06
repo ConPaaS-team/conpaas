@@ -202,3 +202,77 @@ echo "/usr/local/swapfile swap swap defaults 0 0" >> /etc/fstab
 mkdir -p $PREFIX
 
 install_deb
+
+## install ec2 startup scripts
+{
+cat <<_EOF_
+#!/bin/bash
+### BEGIN INIT INFO
+# Provides:          ec2-get-credentials
+# Required-Start:    \$remote_fs
+# Required-Stop:
+# Should-Start:
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Retrieve the ssh credentials and add to authorized_keys
+# Description:
+#
+### END INIT INFO
+_EOF_
+wget -O - https://ec2ubuntu.googlecode.com/svn/trunk/etc/init.d/ec2-get-credentials
+} >/etc/init.d/ec2-get-credentials
+
+{
+cat <<_EOF_
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          ec2-ssh-host-key-gen
+# Required-Start:    \$remote_fs
+# Required-Stop:
+# Should-Start:      sshd
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Generate new ssh host keys on first boot
+# Description:       Re-generates the ssh host keys on every
+#                    new instance (i.e., new AMI). If you want
+#                    to keep the same ssh host keys for rebundled
+#                    AMIs, then disable this before rebundling
+#                    using a command like:
+#                       rm -f /etc/rc?.d/S*ec2-ssh-host-key-gen
+#
+### END INIT INFO
+_EOF_
+wget -O - https://ec2ubuntu.googlecode.com/svn/trunk/etc/init.d/ec2-ssh-host-key-gen
+} >/etc/init.d/ec2-ssh-host-key-gen
+
+{
+cat <<_EOF_
+#!/bin/bash
+### BEGIN INIT INFO
+# Provides:          ec2-run-user-data
+# Required-Start:    \$all
+# Required-Stop:
+# Should-Start:
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Run instance user-data if it looks like a script.
+# Description:       Only retrieves and runs the user-data script once per
+#                    instance. If you want the user-data script to run again
+#                    (e.g., on the next boot) then add this command in the
+#                    user-data script:
+#                    rm -f /var/ec2/ec2-run-user-data.*
+### END INIT INFO
+_EOF_
+wget -O - https://ec2ubuntu.googlecode.com/svn/trunk/etc/init.d/ec2-run-user-data
+} >/etc/init.d/ec2-run-user-data
+
+## fix gzip detection in ec2-run-user-data
+## "file -bi" output looks like "application/x-gzip; charset=binary"
+## "file -b --mime-type" output looks like "application/x-gzip"
+sed -i -e 's/$(file -bi /$(file -b --mime-type /' /etc/init.d/ec2-run-user-data
+
+## enable ec2 startup scripts
+chmod a+x /etc/init.d/ec2-*
+update-rc.d ec2-get-credentials defaults
+update-rc.d ec2-ssh-host-key-gen defaults
+update-rc.d ec2-run-user-data defaults
