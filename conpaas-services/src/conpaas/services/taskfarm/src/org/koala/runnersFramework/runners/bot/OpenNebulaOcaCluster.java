@@ -181,7 +181,7 @@ public class OpenNebulaOcaCluster extends Cluster {
                 + "CPU = " + speedFactor  + "\n"
                 + "MEMORY = " + mem + "\n\n"
                 + "OS     = [\n"
-                + "arch = +" + this.OSArch + "\n"
+                + "arch = " + this.OSArch + "\n"
                 + "]\n\n"
                 + "DISK   = [\n"
                 + "IMAGE_ID  = " + image_id + ",\n"
