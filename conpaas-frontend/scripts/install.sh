@@ -127,6 +127,9 @@ GATEWAY=""
 # The DNS server that VMs should use to resolve DNS names (an IP address)
 NAMESERVER=""
 
+# The virtual machines OS architecture (eg: "x86_64")
+OS_ARCH=""
+
 # The device that will be mounted as root on the VM. Most often it
 # is "sda" or "hda" for KVM, and "xvda2" for Xen.
 # (corrseponds to the OpenNebula "ROOT" parameter from the VM template)
@@ -304,6 +307,7 @@ then
     echo "url = \"$URL\"" >> /etc/conpaas/opennebula.ini
     echo "gateway = \"$GATEWAY\"" >> /etc/conpaas/opennebula.ini
     echo "nameserver = \"$NAMESERVER\"" >> /etc/conpaas/opennebula.ini
+    echo "os_arch = \"$OS_ARCH\"" >> /etc/conpaas/opennebula.ini
     echo "os_root = \"$OS_ROOT\"" >> /etc/conpaas/opennebula.ini
     echo "disk_target = \"$DISK_TARGET\"" >> /etc/conpaas/opennebula.ini
     echo "context_target = \"$CONTEXT_TARGET\"" >> /etc/conpaas/opennebula.ini
@@ -317,6 +321,7 @@ then
     echo "NET_ID = $NETWORK" >> /etc/conpaas/config/cloud/opennebula.cfg
     echo "NET_GATEWAY = $GATEWAY" >> /etc/conpaas/config/cloud/opennebula.cfg
     echo "NET_NAMESERVER = $NAMESERVER" >> /etc/conpaas/config/cloud/opennebula.cfg
+    echo "OS_ARCH = $OS_ARCH" >> /etc/conpaas/config/cloud/opennebula.cfg
     echo "OS_ROOT = $OS_ROOT" >> /etc/conpaas/config/cloud/opennebula.cfg
     echo "DISK_TARGET = $DISK_TARGET" >> /etc/conpaas/config/cloud/opennebula.cfg
     echo "CONTEXT_TARGET = $CONTEXT_TARGET" >> /etc/conpaas/config/cloud/opennebula.cfg
