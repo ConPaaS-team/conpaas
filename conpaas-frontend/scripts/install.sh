@@ -313,6 +313,7 @@ then
     echo "PASSWORD = $ON_PASSWD" >> /etc/conpaas/config/cloud/opennebula.cfg
     echo "URL = $URL" >> /etc/conpaas/config/cloud/opennebula.cfg
     echo "IMAGE_ID = $IMAGE" >> /etc/conpaas/config/cloud/opennebula.cfg
+    echo "INST_TYPE = $ON_INSTANCE_TYPE" >> /etc/conpaas/config/cloud/opennebula.cfg
     echo "NET_ID = $NETWORK" >> /etc/conpaas/config/cloud/opennebula.cfg
     echo "NET_GATEWAY = $GATEWAY" >> /etc/conpaas/config/cloud/opennebula.cfg
     echo "NET_NAMESERVER = $NAMESERVER" >> /etc/conpaas/config/cloud/opennebula.cfg
