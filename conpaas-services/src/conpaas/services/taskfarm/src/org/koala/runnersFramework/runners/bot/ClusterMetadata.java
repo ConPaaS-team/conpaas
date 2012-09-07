@@ -26,6 +26,6 @@ public class ClusterMetadata {
     String gateway = "";
     String disk_target = "sda";
     String contex_target = "sdb";
-    
+    String os_arch = "i386";
     
 }

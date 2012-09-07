@@ -19,7 +19,7 @@ public class OpenNebulaOcaCluster extends Cluster {
     public int image_id, network_id;
     public String mem;
     public String dns, gateway;
-    public String diskTarget, contextTarget;
+    public String diskTarget, contextTarget, OSArch;
     /*number of CPUs for the VM*/
     public String speedFactor;
     /**
@@ -43,13 +43,14 @@ public class OpenNebulaOcaCluster extends Cluster {
             double costUnit, int maxNodes, String speedFactor,
             int image_id, int network_id,
             String mem, String dns, String gateway, String e, 
-            String diskTarget, String contextTarget) {
+            String diskTarget, String contextTarget, String OSArch) {
         super(hostname, alias, timeUnit, costUnit, maxNodes);
         this.image_id = image_id;        
         this.network_id = network_id;
         this.speedFactor = speedFactor;
         this.diskTarget = diskTarget;
         this.contextTarget = contextTarget;
+        this.OSArch = OSArch;
         if((mem != null) && (!mem.equals(""))) {
         	this.mem = mem;
         } else {
@@ -74,6 +75,7 @@ public class OpenNebulaOcaCluster extends Cluster {
         this.speedFactor = cm.speedFactor;
         this.diskTarget = cm.disk_target;
         this.contextTarget = cm.contex_target;
+        this.OSArch = cm.os_arch;
         
         this.mem = DEF_MEM;
 
@@ -179,7 +181,7 @@ public class OpenNebulaOcaCluster extends Cluster {
                 + "CPU = " + speedFactor  + "\n"
                 + "MEMORY = " + mem + "\n\n"
                 + "OS     = [\n"
-                + "arch = x86_64\n"
+                + "arch = +" + this.OSArch + "\n"
                 + "]\n\n"
                 + "DISK   = [\n"
                 + "IMAGE_ID  = " + image_id + ",\n"

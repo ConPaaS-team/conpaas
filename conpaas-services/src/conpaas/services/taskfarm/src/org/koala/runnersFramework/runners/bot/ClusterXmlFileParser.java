@@ -41,6 +41,7 @@ public class ClusterXmlFileParser {
     static final String GATEWAY = "gateway";
     static final String DISKTARGET = "disktarget";
     static final String CONTEXTTARGET = "contexttarget";
+    static final String OSARCH = "osarch";
     
     
 
@@ -179,6 +180,11 @@ public class ClusterXmlFileParser {
                     if (event.asStartElement().getName().getLocalPart().equals(CONTEXTTARGET)) {
                         event = eventReader.nextEvent();
                         clusterMetadata.contex_target = event.asCharacters().getData();
+                        continue;
+                    }
+                    if (event.asStartElement().getName().getLocalPart().equals(OSARCH)) {
+                        event = eventReader.nextEvent();
+                        clusterMetadata.os_arch = event.asCharacters().getData();
                         continue;
                     }
                 }
