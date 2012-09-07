@@ -1,0 +1,139 @@
+\documentclass[10pt,twocolumn]{article}
+
+\usepackage{url}
+\usepackage{ulem}\normalem
+\usepackage{graphicx}
+\usepackage{lettrine}
+\usepackage{multicol}
+\usepackage[usenames,dvipsnames,table]{xcolor}
+
+% \newcommand{\commentary}[2]{{\bf {\sc #1:} \emph{#2}}}
+% \newcommand{\guillaume}[1]{\commentary{guillaume}{#1}}
+% \newcommand{\corina}[1]{\commentary{corina}{#1}}
+
+\clubpenalty=10000
+\widowpenalty=10000
+
+\renewcommand{\topfraction}{0.9}	% max fraction of floats at top
+\renewcommand{\textfraction}{0.1}
+\renewcommand{\floatpagefraction}{0.8}
+\setcounter{topnumber}{1}
+
+\begin{document}
+
+\begin{multicols}{2}
+\title{Automatic Scaling for Cloud Web Applications in Practice}
+\author{Corina Stratan, Guillaume Pierre, Hector Fernandez, Eliana Tirsa and Valentin Cristea} 
+\date{Vrije Universiteit Amsterdam and University Politehnica of Bucharest}
+\maketitle
+\end{multicols}
+
+
+Other versions for the title:
+
+A Practical Approach for Automatic Scaling (Resource Provisioning?) of
+Web Applications in the Cloud
+
+Implementing Automatic Scaling for Cloud Web Applications
+
+
+\section*{Introduction}
+
+Why is automatic scaling in the cloud important/useful? (give a real-world example)
+
+Challenges:
+\begin{itemize}
+\item web applications have multiple tiers with different performance
+models and requirements
+\item cloud resources are often heterogeneous
+\item the behaviour of the servers might change in time, either due to
+changes in the type of workload or to VM migration
+\item it is difficult to estimate what will be the performance effect
+of provisioning and de-provisioning the application with resources
+\end{itemize}
+
+
+The automatic scaling mechanisms currently available in clouds are based
+on simple rules and do not take all these issues into account. Our solution
+aims to address them as follows:
+
+\begin{itemize}
+\item monitoring tier-specific metrics like request rate and response time
+\item maintaining a performance profile for each VM instance, that is updated
+dynamically
+\item a provisioning mechanism that uses the performance profiles to estimate
+the potential effect of adding and removing resources
+\item load balancing with dynamically adjusted weights
+\end{itemize}
+
+Our solution was tested with a real-world application and access traces (Wikibench).
+
+
+\section*{System overview}
+
+\begin{itemize}
+\item performance profiling (offline and online)
+\item dynamic weighted load balancing
+\item resource provisioning mechanism
+\end{itemize}
+
+
+\section*{Implementation in ConPaaS}
+
+
+\begin{itemize}
+\item ConPaaS overview
+\item Ganglia integration
+\item the provisioning / profiling manager
+\end{itemize}
+
+
+\section*{The Wikipedia workload}
+
+Describe the application and the workload traces. Explain
+the particularities of this application, like:
+
+\begin{itemize}
+\item the PHP pages take significantly more time to process
+than the web pages
+\item each PHP page needs a lot of DB queries 
+\item the pages vary in complexity so it is difficult to make
+predictions (maybe compute the standard deviation of the response time
+from a trace to show this)
+\end{itemize}
+
+
+\section*{Experiments}
+
+1. Basic provisioning (similar to the currently available mechanisms in clouds):
+experiment on the DAS-3 nodes
+
+
+2. Heterogeneity-aware provisioning: experiment on the UPB nodes with both the
+basic and heterogeneity-aware provisioning. Compare them in terms of:
+
+\begin{itemize}
+\item SLA compliance (for example the percentage of requests that met the SLA?)
+\item amount of used resources
+\end{itemize}
+
+
+\section*{Conclusion}
+
+
+?
+
+
+\section*{Acknowledgments}
+
+This work is partially funded by the FP7 Programme of the European
+Commission in the context of the Contrail project under Grant
+Agreement FP7-ICT-257438.
+
+Probably also mention ERRIC here.
+
+
+\bibliographystyle{plain}
+\bibliography{paper}
+
+\end{document}
