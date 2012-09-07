@@ -206,6 +206,7 @@ mysql_pass=`awk '/^password/ { print $3 }' /etc/mysql/debian.cnf | head -n 1`
 sed -i s/\'DB_USER\'/\'$mysql_user\'/ scripts/frontend-db.sql
 sed -i s/\'DB_PASSWD\'/\'$mysql_pass\'/ scripts/frontend-db.sql
 sed -i s/DB_NAME/conpaas/ scripts/frontend-db.sql
+sed -i s/'^create user'/'-- create user'/ scripts/frontend-db.sql
 
 # Create ConPaaS database
 mysql -u $mysql_user --password=$mysql_pass < scripts/frontend-db.sql
