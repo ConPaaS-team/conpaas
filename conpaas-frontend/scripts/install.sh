@@ -26,19 +26,32 @@ EC2_USER=""
 # Access Key ID by clicking "Show Secret Access Key".
 EC2_PASSWORD=""
 
+# Amazon EC2 region. 
+# 
+# Valid values are:
+#
+# - ec2.us-west-2.amazonaws.com # United States West (Oregon)
+# - ec2.us-east-1.amazonaws.com # United States East (Northern Virginia) 
+# - ec2.eu-west-1.amazonaws.com # Europe West (Ireland)
+#
+EC2_REGION="ec2.us-west-2.amazonaws.com" 
 
-# This variable contains the identifier of the Amazon Machine Image created
-# from the Web hosting service. Your AMIs can be found at
-# https://console.aws.amazon.com/ec2/home?region=us-east-1#s=Images
-AMI_ID="ami-4b249322"
+# This variable contains the identifier of the ConPaaS Amazon Machine Image.
+# 
+# Please set this value according to the region you want to use (see
+# EC2_REGION).
+#
+AMI_ID="ami-c2941af2"  # United States West (Oregon)
+#AMI_ID="ami-4b249322" # United States East (Northern Virginia)
+#AMI_ID="ami-99fcfaed" # Europe West (Ireland)
 
 # This variable contains the created security group from the Web hosting
-# service. Your security groups can be found at
-# https://console.aws.amazon.com/ec2/home?region=us-east-1#s=SecurityGroups
+# service. Your security groups can be found under "NETWORK & SECURITY" on
+# https://console.aws.amazon.com/ec2/ 
 SECURITY_GROUP=""
 
 # This variable contains the Key Pair name  to be used.  Your keypairs can be
-# found at https://console.aws.amazon.com/ec2/home?region=us-east-1#s=KeyPairs
+# found under "NETWORK & SECURITY" on https://console.aws.amazon.com/ec2/
 KEYPAIR=""
 
 # This variable contains the type of EC2 instances to use. A good value to use
@@ -258,6 +271,7 @@ then
     echo "security_group = \"$SECURITY_GROUP\"" >> /etc/conpaas/aws.ini
     echo "keypair = \"$KEYPAIR\"" >> /etc/conpaas/aws.ini
     echo "instance_type = \"$EC2_INSTANCE_TYPE\"" >> /etc/conpaas/aws.ini
+    echo "region = \"$EC2_REGION\"" >> /etc/conpaas/aws.ini
 
     /bin/echo -e "[iaas]\nDRIVER = EC2" > /etc/conpaas/config/cloud/ec2.cfg
     echo "USER = $EC2_USER" >> /etc/conpaas/config/cloud/ec2.cfg
@@ -266,6 +280,7 @@ then
     echo "SIZE_ID = $EC2_INSTANCE_TYPE" >> /etc/conpaas/config/cloud/ec2.cfg
     echo "SECURITY_GROUP_NAME = $SECURITY_GROUP" >> /etc/conpaas/config/cloud/ec2.cfg
     echo "KEY_NAME = $KEYPAIR" >> /etc/conpaas/config/cloud/ec2.cfg
+    echo "REGION = $EC2_REGION" >> /etc/conpaas/config/cloud/ec2.cfg
 
     # Task Farming
     echo "PORT = $PORT" >> /etc/conpaas/config/cloud/ec2.cfg

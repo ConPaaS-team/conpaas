@@ -81,13 +81,20 @@ class EC2Cloud(Cloud):
         self.size_id = iaas_config.get(cloud_name, 'SIZE_ID')
         self.key_name = iaas_config.get(cloud_name, 'KEY_NAME')
         self.sg = iaas_config.get(cloud_name, 'SECURITY_GROUP_NAME')
+        self.ec2_region = iaas_config.get(cloud_name, 'REGION')
 
     def get_cloud_type(self):
         return 'ec2'
 
     # connect to ec2 cloud 
     def _connect(self):
-        EC2Driver = get_driver(Provider.EC2_US_EAST)
+        if self.ec2_region == "ec2.us-east-1.amazonaws.com":
+            EC2Driver = get_driver(Provider.EC2_US_EAST)
+        elif self.ec2_region == "ec2.us-west-2.amazonaws.com":
+            EC2Driver = get_driver(Provider.EC2_US_WEST_OREGON)
+        elif  self.ec2_region == "ec2.eu-west-1.amazonaws.com":
+            EC2Driver = get_driver(Provider.EC2_EU_WEST)
+
         self.driver = EC2Driver(self.user, \
                                 self.passwd)
         self.connected = True

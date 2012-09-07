@@ -52,6 +52,7 @@ class EC2Manager extends Manager {
 		parent::__construct($data);
 		$this->ec2 = new AmazonEC2();
 		$this->loadConfiguration();
+		$this->ec2->set_region($this->region);
 	}
 
 	private function loadConfiguration() {
@@ -63,6 +64,7 @@ class EC2Manager extends Manager {
 		$this->security_group = $conf['security_group'];
 		$this->keypair = $conf['keypair'];
 		$this->instance_type = $conf['instance_type'];
+		$this->region = $conf['region'];
 	}
 
 	/**
@@ -73,6 +75,7 @@ class EC2Manager extends Manager {
 	 */
 	public function run() {
 		$user_data = $this->createContextFile('ec2');
+
 		$response = $this->ec2->run_instances($this->manager_ami, 1, 1, array(
 			'InstanceType' => $this->instance_type,
 			'KeyName' => $this->keypair,
