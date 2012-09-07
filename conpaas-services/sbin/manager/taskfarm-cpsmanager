@@ -240,6 +240,7 @@ if __name__ == '__main__':
     dict['imageid'] = config_parser.get('iaas', 'IMAGE_ID')
     dict['disktarget'] = config_parser.get('iaas', 'DISK_TARGET')
     dict['contexttarget'] = config_parser.get('iaas', 'CONTEXT_TARGET')
+    dict['osarch'] = config_parser.get('iaas', 'OS_ARCH')
   elif config_parser.get('iaas', 'DRIVER') == 'EC2': 
     dict['classname'] = 'org.koala.runnersFramework.runners.bot.EC2ClusterAmazonAPI'
     dict['alias'] = 'ec2'
