@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # These parameters are used for performing CAPTCHA[1] operations and they are
 # issued for a specific domain. To generate a pair of keys for your domain,
@@ -162,7 +162,7 @@ fi
 
 if [ ! -d "frontend" ]
 then
-    echo "E: $0 should be run from the ConPaaS top-level directory" > /dev/stderr
+    echo "E: $0 has to be run from the ConPaaS top-level directory" > /dev/stderr
     exit 1
 fi
 
@@ -170,32 +170,45 @@ cd frontend
 
 CONPAAS_TARBALL="www/download/ConPaaS.tar.gz"
 
-# Backup /var/www
-if [ -d "/var/www" ]
+DESTDIR="/var/www"
+CONFDIR="/etc/conpaas"
+BACKUPDIR="/var/backups"
+
+read -e -i "$DESTDIR" -p "Please enter the path where you want to install the frontend code: " input
+DESTDIR="${input:-$DESTDIR}"
+
+read -e -i "$CONFDIR" -p "Please enter the path where the ConPaaS configuration files should be installed: " input
+CONFDIR="${input:-$CONFDIR}"
+
+read -e -i "$BACKUPDIR" -p "Please enter the path where you want to backup your current $DESTDIR and $CONFDIR: " input
+BACKUPDIR="${input:-$BACKUPDIR}"
+
+# Backup $DESTDIR
+if [ -d "$DESTDIR" ]
 then
-    mv /var/www /var/backups/var_www-`date +%s`
+    mv $DESTDIR $BACKUPDIR/conpaas-docroot-`date +%s`
 fi
 
-# Backup /etc/conpaas
-if [ -d "/etc/conpaas" ]
+# Backup $CONFDIR
+if [ -d "$CONFDIR" ]
 then
-    mv /etc/conpaas /var/backups/etc_conpaas-`date +%s`
+    mv $CONFDIR $BACKUPDIR/conpaas-confdir-`date +%s`
 fi
 
-# Install the application under /var/www
-cp -a www /var
+# Install the application under $DESTDIR
+cp -a www $DESTDIR
 
-# Put the configuration files under /etc/conpaas
-cp -a conf /etc/conpaas
+# Put the configuration files under $CONFDIR
+cp -a conf $CONFDIR
 
 # Uncompress the ConPaaS release we want to work with
 cp $CONPAAS_TARBALL . && tar xfz `basename $CONPAAS_TARBALL`
 
 # Copy the necessary scripts
-cp -a ConPaaS/config /etc/conpaas && rm -rf ConPaaS ConPaaS.tar.gz
+cp -a ConPaaS/config $CONFDIR && rm -rf ConPaaS ConPaaS.tar.gz
 
 # Fix permissions
-chown -R www-data: /etc/conpaas /var/www
+chown -R www-data: $CONFDIR $DESTDIR
 
 # Install the dependencies
 apt-get update
@@ -214,126 +227,184 @@ sed -i s/'^create user'/'-- create user'/ scripts/frontend-db.sql
 # Create ConPaaS database
 mysql -u $mysql_user --password=$mysql_pass < scripts/frontend-db.sql
 
-/bin/echo -e '[mysql]\nserver = "localhost"' > /etc/conpaas/db.ini
-echo "user = \"$mysql_user\"" >> /etc/conpaas/db.ini
-echo "pass = \"$mysql_pass\"" >> /etc/conpaas/db.ini
-echo "db = \"conpaas\"" >> /etc/conpaas/db.ini
+/bin/echo -e '[mysql]\nserver = "localhost"' > $CONFDIR/db.ini
+echo "user = \"$mysql_user\"" >> $CONFDIR/db.ini
+echo "pass = \"$mysql_pass\"" >> $CONFDIR/db.ini
+echo "db = \"conpaas\"" >> $CONFDIR/db.ini
 
 # Get and install the AWS SDK
 wget http://pear.amazonwebservices.com/get/sdk-latest.zip
 unzip sdk-latest.zip
-cp -a sdk-*/* /var/www/lib/aws-sdk/
+cp -a sdk-*/* $DESTDIR/lib/aws-sdk/
 rm -rf sdk-*
 
-cp /var/www/lib/aws-sdk/config-sample.inc.php /var/www/lib/aws-sdk/config.inc.php
-sed -i s/"'key' => 'development-key',"/"'key' => '$EC2_USER', 'account_id' => '$EC2_ACCOUNT_ID',"/ /var/www/lib/aws-sdk/config.inc.php
-sed -i s/"'secret' => 'development-secret',"/"'secret' => '$EC2_PASSWORD', 'canonical_id' => '$EC2_CANONICAL_ID',"/ /var/www/lib/aws-sdk/config.inc.php
+cp $DESTDIR/lib/aws-sdk/config-sample.inc.php $DESTDIR/lib/aws-sdk/config.inc.php
+sed -i s/"'key' => 'development-key',"/"'key' => '$EC2_USER', 'account_id' => '$EC2_ACCOUNT_ID',"/ $DESTDIR/lib/aws-sdk/config.inc.php
+sed -i s/"'secret' => 'development-secret',"/"'secret' => '$EC2_PASSWORD', 'canonical_id' => '$EC2_CANONICAL_ID',"/ $DESTDIR/lib/aws-sdk/config.inc.php
 
-# Hardcoded /etc/apache2/sites-available/default-ssl
-cp conf/apache.conf.sample /etc/apache2/sites-available/default-ssl
+if [ -f "/etc/apache2/sites-available/conpaas-ssl" ]
+then
+    mv /etc/apache2/sites-available/conpaas-ssl $BACKUPDIR/conpaas-apache-conf-`date +%s`
+fi
+
+cp conf/apache.conf.sample /etc/apache2/sites-available/conpaas-ssl
+
+# Update apache's conf with the right configuration dir value
+sed -i s#"/etc/conpaas"#"$CONFDIR"# /etc/apache2/sites-available/conpaas-ssl
 
 # Bump php's upload_max_filesize
 sed -i s/'.*upload_max_filesize.*'/'upload_max_filesize = 20M'/ /etc/php5/apache2/php.ini
 
-# Create /var/www/config.php
-cp /var/www/config-example.php /var/www/config.php
+# Create $DESTDIR/config.php
+cp $DESTDIR/config-example.php $DESTDIR/config.php
 
 # reCAPTCHA config
-sed -i s/'const CAPTCHA_PRIVATE_KEY.*'/"const CAPTCHA_PRIVATE_KEY = \'$CAPTCHA_PRIVATE_KEY\';"/ /var/www/config.php
-sed -i s/'const CAPTCHA_PUBLIC_KEY.*'/"const CAPTCHA_PUBLIC_KEY = \'$CAPTCHA_PUBLIC_KEY\';"/ /var/www/config.php
+sed -i s/'const CAPTCHA_PRIVATE_KEY.*'/"const CAPTCHA_PRIVATE_KEY = \'$CAPTCHA_PRIVATE_KEY\';"/ $DESTDIR/config.php
+sed -i s/'const CAPTCHA_PUBLIC_KEY.*'/"const CAPTCHA_PUBLIC_KEY = \'$CAPTCHA_PUBLIC_KEY\';"/ $DESTDIR/config.php
 
 # If we are installing the frontend on EC2 
-if [ -f "/var/lib/ec2-bootstrap/user-data" ]
+if [ -d "/var/lib/ec2-bootstrap" ]
 then
     # Then we know the public hostname
     hostname=`curl -s http://169.254.169.254/latest/meta-data/public-hostname`
     # Setting CONPAAS_HOST here to give a good default value to generate-certs.php
-    sed -i s/'const CONPAAS_HOST.*'/"const CONPAAS_HOST = \'$hostname\';"/ /var/www/config.php
+    sed -i s/'const CONPAAS_HOST.*'/"const CONPAAS_HOST = \'$hostname\';"/ $DESTDIR/config.php
 fi
 
-# Generate SSL certificates and ask for hostname confirmation
-php scripts/generate-certs.php /etc/conpaas/certs
+# SSL certificates 
+read -e -i "y" -p "Do you want to generate a self-signed certificate? " input
 
+if [ "$input" = "y" ]
+then
+    # Generate SSL certificates and ask for hostname confirmation
+    php scripts/generate-certs.php $CONFDIR/certs
+
+    certfile="$CONFDIR/certs/cert.pem"
+else
+    # Prompt for certificate/private key/ca certificate filenames
+
+    unset certfile
+    while [ ! -f "$certfile" ]
+    do
+        read -e -i "$CONFDIR/certs/cert.pem" -p "Please provide your certificate filename " certfile
+    done
+
+    sed -i s#"$CONFDIR/certs/cert.pem"#"$certfile"# /etc/apache2/sites-available/conpaas-ssl
+
+    unset certkey
+    while [ ! -f "$certkey" ]
+    do
+        read -e -i "$CONFDIR/certs/key.pem" -p "Please provide your private key filename " certkey
+    done
+
+    sed -i s#"$CONFDIR/certs/key.pem"#"$certkey"# /etc/apache2/sites-available/conpaas-ssl
+
+    unset cacert
+    while [ ! -f "$cacert" ]
+    do
+        read -e -i "$CONFDIR/certs/ca_cert.pem" -p "Please provide your CA certificate filename " cacert
+    done
+
+    sed -i s#"$CONFDIR/certs/ca_cert.pem"#"$cacert"# /etc/apache2/sites-available/conpaas-ssl
+fi
+    
 # Get hostname
-hostname=`openssl x509 -in /etc/conpaas/certs/cert.pem -text -noout|grep role=frontend | sed s/.*CN=//g | sed s#/.*##`
-sed -i s/'const CONPAAS_HOST.*'/"const CONPAAS_HOST = \'$hostname\';"/ /var/www/config.php
+hostname=`openssl x509 -in $certfile -text -noout|grep role=frontend | sed s/.*CN=//g | sed s#/.*##`
+
+# Keep on looping till we manage to ping the provided hostname. Certainly not a
+# bullet-proof way to check whether the hostname makes sense, but better than
+# nothing.
+while [ 1 ]
+do
+    read -e -i "$hostname" -p "Please confirm your machine public hostname. It has to be reachable from ConPaaS instances " hostname
+    ping -c1 -W1 "$hostname" > /dev/null 2>&1
+
+    if [ "$?" = 0 ]
+    then
+        break
+    else
+        echo "WARNING: Unable to ping $hostname."
+    fi
+done
+
+sed -i s/'const CONPAAS_HOST.*'/"const CONPAAS_HOST = \'$hostname\';"/ $DESTDIR/config.php
 
 # Enable SSL and restart apache
 a2enmod ssl
-a2ensite default-ssl
+a2ensite conpaas-ssl
 /etc/init.d/apache2 restart
 
 # Edit conf/main.ini
-sed -i s#^logfile.*#'logfile = "/var/log/conpaas-frontend.log"'# /etc/conpaas/main.ini
+sed -i s#^logfile.*#'logfile = "/var/log/conpaas-frontend.log"'# $CONFDIR/main.ini
 touch /var/log/conpaas-frontend.log
 chown www-data: /var/log/conpaas-frontend.log
 
 # Deploy on EC2
 if [ -n "$EC2_USER" ]
 then
-    echo "ami = \"$AMI_ID\"" > /etc/conpaas/aws.ini
-    echo "security_group = \"$SECURITY_GROUP\"" >> /etc/conpaas/aws.ini
-    echo "keypair = \"$KEYPAIR\"" >> /etc/conpaas/aws.ini
-    echo "instance_type = \"$EC2_INSTANCE_TYPE\"" >> /etc/conpaas/aws.ini
-    echo "region = \"$EC2_REGION\"" >> /etc/conpaas/aws.ini
+    echo "ami = \"$AMI_ID\"" > $CONFDIR/aws.ini
+    echo "security_group = \"$SECURITY_GROUP\"" >> $CONFDIR/aws.ini
+    echo "keypair = \"$KEYPAIR\"" >> $CONFDIR/aws.ini
+    echo "instance_type = \"$EC2_INSTANCE_TYPE\"" >> $CONFDIR/aws.ini
+    echo "region = \"$EC2_REGION\"" >> $CONFDIR/aws.ini
 
-    /bin/echo -e "[iaas]\nDRIVER = EC2" > /etc/conpaas/config/cloud/ec2.cfg
-    echo "USER = $EC2_USER" >> /etc/conpaas/config/cloud/ec2.cfg
-    echo "PASSWORD = $EC2_PASSWORD" >> /etc/conpaas/config/cloud/ec2.cfg
-    echo "IMAGE_ID = $AMI_ID" >> /etc/conpaas/config/cloud/ec2.cfg
-    echo "SIZE_ID = $EC2_INSTANCE_TYPE" >> /etc/conpaas/config/cloud/ec2.cfg
-    echo "SECURITY_GROUP_NAME = $SECURITY_GROUP" >> /etc/conpaas/config/cloud/ec2.cfg
-    echo "KEY_NAME = $KEYPAIR" >> /etc/conpaas/config/cloud/ec2.cfg
-    echo "REGION = $EC2_REGION" >> /etc/conpaas/config/cloud/ec2.cfg
+    /bin/echo -e "[iaas]\nDRIVER = EC2" > $CONFDIR/config/cloud/ec2.cfg
+    echo "USER = $EC2_USER" >> $CONFDIR/config/cloud/ec2.cfg
+    echo "PASSWORD = $EC2_PASSWORD" >> $CONFDIR/config/cloud/ec2.cfg
+    echo "IMAGE_ID = $AMI_ID" >> $CONFDIR/config/cloud/ec2.cfg
+    echo "SIZE_ID = $EC2_INSTANCE_TYPE" >> $CONFDIR/config/cloud/ec2.cfg
+    echo "SECURITY_GROUP_NAME = $SECURITY_GROUP" >> $CONFDIR/config/cloud/ec2.cfg
+    echo "KEY_NAME = $KEYPAIR" >> $CONFDIR/config/cloud/ec2.cfg
+    echo "REGION = $EC2_REGION" >> $CONFDIR/config/cloud/ec2.cfg
 
     # Task Farming
-    echo "PORT = $PORT" >> /etc/conpaas/config/cloud/ec2.cfg
-    echo "HOSTNAME = $CLOUD_ID" >> /etc/conpaas/config/cloud/ec2.cfg
-    echo "TIMEUNIT = $TIMEUNIT" >> /etc/conpaas/config/cloud/ec2.cfg
-    echo "COSTUNIT = $COSTUNIT" >> /etc/conpaas/config/cloud/ec2.cfg
-    echo "MAXNODES = $MAXNODES" >> /etc/conpaas/config/cloud/ec2.cfg
-    echo "SPEEDFACTOR = $SPEEDFACTOR" >> /etc/conpaas/config/cloud/ec2.cfg
+    echo "PORT = $PORT" >> $CONFDIR/config/cloud/ec2.cfg
+    echo "HOSTNAME = $CLOUD_ID" >> $CONFDIR/config/cloud/ec2.cfg
+    echo "TIMEUNIT = $TIMEUNIT" >> $CONFDIR/config/cloud/ec2.cfg
+    echo "COSTUNIT = $COSTUNIT" >> $CONFDIR/config/cloud/ec2.cfg
+    echo "MAXNODES = $MAXNODES" >> $CONFDIR/config/cloud/ec2.cfg
+    echo "SPEEDFACTOR = $SPEEDFACTOR" >> $CONFDIR/config/cloud/ec2.cfg
 # Deploy on OpenNebula
 elif [ -n "$IMAGE" ]
 then
-    sed -i s#^enable_ec2.*#'enable_ec2 = "no"'# /etc/conpaas/main.ini
-    sed -i s#^enable_opennebula.*#'enable_opennebula = "yes"'# /etc/conpaas/main.ini
+    sed -i s#^enable_ec2.*#'enable_ec2 = "no"'# $CONFDIR/main.ini
+    sed -i s#^enable_opennebula.*#'enable_opennebula = "yes"'# $CONFDIR/main.ini
 
-    echo "instance_type = \"$ON_INSTANCE_TYPE\"" > /etc/conpaas/opennebula.ini
-    echo "user = \"$ON_USER\"" >> /etc/conpaas/opennebula.ini
-    echo "passwd = \"$ON_PASSWD\"" >> /etc/conpaas/opennebula.ini
-    echo "image = \"$IMAGE\"" >> /etc/conpaas/opennebula.ini
-    echo "network = \"$NETWORK\"" >> /etc/conpaas/opennebula.ini
-    echo "url = \"$URL\"" >> /etc/conpaas/opennebula.ini
-    echo "gateway = \"$GATEWAY\"" >> /etc/conpaas/opennebula.ini
-    echo "nameserver = \"$NAMESERVER\"" >> /etc/conpaas/opennebula.ini
-    echo "os_arch = \"$OS_ARCH\"" >> /etc/conpaas/opennebula.ini
-    echo "os_root = \"$OS_ROOT\"" >> /etc/conpaas/opennebula.ini
-    echo "disk_target = \"$DISK_TARGET\"" >> /etc/conpaas/opennebula.ini
-    echo "context_target = \"$CONTEXT_TARGET\"" >> /etc/conpaas/opennebula.ini
+    echo "instance_type = \"$ON_INSTANCE_TYPE\"" > $CONFDIR/opennebula.ini
+    echo "user = \"$ON_USER\"" >> $CONFDIR/opennebula.ini
+    echo "passwd = \"$ON_PASSWD\"" >> $CONFDIR/opennebula.ini
+    echo "image = \"$IMAGE\"" >> $CONFDIR/opennebula.ini
+    echo "network = \"$NETWORK\"" >> $CONFDIR/opennebula.ini
+    echo "url = \"$URL\"" >> $CONFDIR/opennebula.ini
+    echo "gateway = \"$GATEWAY\"" >> $CONFDIR/opennebula.ini
+    echo "nameserver = \"$NAMESERVER\"" >> $CONFDIR/opennebula.ini
+    echo "os_arch = \"$OS_ARCH\"" >> $CONFDIR/opennebula.ini
+    echo "os_root = \"$OS_ROOT\"" >> $CONFDIR/opennebula.ini
+    echo "disk_target = \"$DISK_TARGET\"" >> $CONFDIR/opennebula.ini
+    echo "context_target = \"$CONTEXT_TARGET\"" >> $CONFDIR/opennebula.ini
 
-    /bin/echo -e "[iaas]\nDRIVER = OPENNEBULA" > /etc/conpaas/config/cloud/opennebula.cfg
-    echo "USER = $ON_USER" >> /etc/conpaas/config/cloud/opennebula.cfg
-    echo "PASSWORD = $ON_PASSWD" >> /etc/conpaas/config/cloud/opennebula.cfg
-    echo "URL = $URL" >> /etc/conpaas/config/cloud/opennebula.cfg
-    echo "IMAGE_ID = $IMAGE" >> /etc/conpaas/config/cloud/opennebula.cfg
-    echo "INST_TYPE = $ON_INSTANCE_TYPE" >> /etc/conpaas/config/cloud/opennebula.cfg
-    echo "NET_ID = $NETWORK" >> /etc/conpaas/config/cloud/opennebula.cfg
-    echo "NET_GATEWAY = $GATEWAY" >> /etc/conpaas/config/cloud/opennebula.cfg
-    echo "NET_NAMESERVER = $NAMESERVER" >> /etc/conpaas/config/cloud/opennebula.cfg
-    echo "OS_ARCH = $OS_ARCH" >> /etc/conpaas/config/cloud/opennebula.cfg
-    echo "OS_ROOT = $OS_ROOT" >> /etc/conpaas/config/cloud/opennebula.cfg
-    echo "DISK_TARGET = $DISK_TARGET" >> /etc/conpaas/config/cloud/opennebula.cfg
-    echo "CONTEXT_TARGET = $CONTEXT_TARGET" >> /etc/conpaas/config/cloud/opennebula.cfg
+    /bin/echo -e "[iaas]\nDRIVER = OPENNEBULA" > $CONFDIR/config/cloud/opennebula.cfg
+    echo "USER = $ON_USER" >> $CONFDIR/config/cloud/opennebula.cfg
+    echo "PASSWORD = $ON_PASSWD" >> $CONFDIR/config/cloud/opennebula.cfg
+    echo "URL = $URL" >> $CONFDIR/config/cloud/opennebula.cfg
+    echo "IMAGE_ID = $IMAGE" >> $CONFDIR/config/cloud/opennebula.cfg
+    echo "INST_TYPE = $ON_INSTANCE_TYPE" >> $CONFDIR/config/cloud/opennebula.cfg
+    echo "NET_ID = $NETWORK" >> $CONFDIR/config/cloud/opennebula.cfg
+    echo "NET_GATEWAY = $GATEWAY" >> $CONFDIR/config/cloud/opennebula.cfg
+    echo "NET_NAMESERVER = $NAMESERVER" >> $CONFDIR/config/cloud/opennebula.cfg
+    echo "OS_ARCH = $OS_ARCH" >> $CONFDIR/config/cloud/opennebula.cfg
+    echo "OS_ROOT = $OS_ROOT" >> $CONFDIR/config/cloud/opennebula.cfg
+    echo "DISK_TARGET = $DISK_TARGET" >> $CONFDIR/config/cloud/opennebula.cfg
+    echo "CONTEXT_TARGET = $CONTEXT_TARGET" >> $CONFDIR/config/cloud/opennebula.cfg
 
     # Task Farming
-    echo "XMLRPC = $XMLRPC" >> /etc/conpaas/config/cloud/opennebula.cfg
-    echo "PORT = $PORT" >> /etc/conpaas/config/cloud/opennebula.cfg
-    echo "HOSTNAME = $CLOUD_ID" >> /etc/conpaas/config/cloud/opennebula.cfg
-    echo "TIMEUNIT = $TIMEUNIT" >> /etc/conpaas/config/cloud/opennebula.cfg
-    echo "COSTUNIT = $COSTUNIT" >> /etc/conpaas/config/cloud/opennebula.cfg
-    echo "MAXNODES = $MAXNODES" >> /etc/conpaas/config/cloud/opennebula.cfg
-    echo "SPEEDFACTOR = $SPEEDFACTOR" >> /etc/conpaas/config/cloud/opennebula.cfg
+    echo "XMLRPC = $XMLRPC" >> $CONFDIR/config/cloud/opennebula.cfg
+    echo "PORT = $PORT" >> $CONFDIR/config/cloud/opennebula.cfg
+    echo "HOSTNAME = $CLOUD_ID" >> $CONFDIR/config/cloud/opennebula.cfg
+    echo "TIMEUNIT = $TIMEUNIT" >> $CONFDIR/config/cloud/opennebula.cfg
+    echo "COSTUNIT = $COSTUNIT" >> $CONFDIR/config/cloud/opennebula.cfg
+    echo "MAXNODES = $MAXNODES" >> $CONFDIR/config/cloud/opennebula.cfg
+    echo "SPEEDFACTOR = $SPEEDFACTOR" >> $CONFDIR/config/cloud/opennebula.cfg
 fi
 
 echo "Installation completed!"

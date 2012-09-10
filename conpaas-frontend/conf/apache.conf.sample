@@ -1,7 +1,5 @@
 # Apache configuration file for the ConPaaS frontend
 #
-# It assumes SSL certificates are available under /etc/conpaas/certs
-#
 <IfModule mod_ssl.c>
 <VirtualHost _default_:443>
 	ServerAdmin webmaster@localhost
