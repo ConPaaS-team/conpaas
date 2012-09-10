@@ -4,7 +4,7 @@
 
 \title{ConPaaS -- Installation guide\htmlonly{ [\xml{a href="installation.pdf"}pdf\xml{/a}]}}
 \htmltitle{ConPaaS -- Installation guide}
-\author{Ismail El Helw \and Adriana Szekeres \and Guillaume Pierre}
+\author{Ismail El Helw \and Adriana Szekeres \and Guillaume Pierre \and Emanuele Rocca}
 \date{ConPaaS-1.0.0}
 
 \begin{document}
@@ -135,8 +135,12 @@ OpenNebula to run ConPaaS. You can skip this section if you plan to
 deploy ConPaaS over Amazon Web Services.
 
 To create an image for OpenNebula you can execute the script\\
-\textit{conpaas-services/scripts/create\_vm/opennebula-create-new-vm-image.sh} in any
-64-bit Debian or Ubuntu machine.
+\textit{conpaas-services/scripts/create\_vm/opennebula-create-new-vm-image.sh}
+in any 64-bit Debian or Ubuntu machine. Please note that you will need to have
+root privileges on such a system. In case you do not have root access to a
+Debian or Ubuntu machine please consider installing a virtual machine using
+your favorite virtualization technology, or running a Debian/Ubuntu instance in
+the cloud.
 
 \begin{enumerate}
 \item Make sure your system has the following executables installed
