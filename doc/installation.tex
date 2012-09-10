@@ -162,8 +162,9 @@ the cloud.
 \item Obtain the id of the OpenNebula datastore you want to use by running
   \verb+onedatastore list+. In the following example, we will use "100" as our datastore id.
 \item Execute the image generation script as root.
-\item The script generates an image file called \verb+conpaas.img+
-  by default. You can now register it in OpenNebula:
+\item The script generates an image file called \verb+conpaas.img+ by default.
+You can now register it in OpenNebula, replacing '100' in this example with the
+datastore id obtained with \verb+onedatastore list+.
 
 \vspace{10 mm}
 
@@ -291,7 +292,7 @@ you have just installed Debian Squeeze on your own hardware.
 \verb+wget http://www.conpaas.eu/dl/ConPaaS-1.0.0.tar.gz+
 
 \item Uncompress the downloaded tarball and edit the configuration options available in \verb+frontend/scripts/install.sh+
-\item Execute \verb+frontend/scripts/install.sh+
+\item Execute \verb+frontend/scripts/install.sh+ as root
 \item Point your browser to the public IP address of your instance. You should
   see the ConPaaS frontend web page and you should be able to create a new user
   and start using ConPaaS
