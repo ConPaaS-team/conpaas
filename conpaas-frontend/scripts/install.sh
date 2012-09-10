@@ -262,6 +262,9 @@ cp $DESTDIR/config-example.php $DESTDIR/config.php
 sed -i s/'const CAPTCHA_PRIVATE_KEY.*'/"const CAPTCHA_PRIVATE_KEY = \'$CAPTCHA_PRIVATE_KEY\';"/ $DESTDIR/config.php
 sed -i s/'const CAPTCHA_PUBLIC_KEY.*'/"const CAPTCHA_PUBLIC_KEY = \'$CAPTCHA_PUBLIC_KEY\';"/ $DESTDIR/config.php
 
+# ConPaaS configuration dir
+sed -i s#"/etc/conpaas"#"$CONFDIR"# $DESTDIR/config.php
+
 # If we are installing the frontend on EC2 
 if [ -d "/var/lib/ec2-bootstrap" ]
 then
@@ -316,7 +319,7 @@ hostname=`openssl x509 -in $certfile -text -noout|grep role=frontend | sed s/.*C
 # nothing.
 while [ 1 ]
 do
-    read -e -i "$hostname" -p "Please confirm your machine public hostname. It has to be reachable from ConPaaS instances " hostname
+    read -e -i "$hostname" -p "Please confirm your machine public hostname. It has to be reachable from ConPaaS instances: " hostname
     ping -c1 -W1 "$hostname" > /dev/null 2>&1
 
     if [ "$?" = 0 ]
@@ -408,4 +411,7 @@ then
 fi
 
 echo "Installation completed!"
+echo "An apache configuration file has been generated for you (/etc/apache2/sites-available/conpaas-ssl)"
+echo "Please double-check the contents of said file, reloading apache in case you make any changes"
+echo
 echo "Your ConPaaS system is online at the following URL: https://$hostname"
