@@ -174,7 +174,7 @@ auto eth0
 iface eth0 inet static
 EOF
 cecho "Removing udev persistent rules"
-rm $ROOT_DIR/etc/udev/rules.d/70-persistent*
+rm $ROOT_DIR/etc/udev/rules.d/70-persistent* || true
 
 cecho "Changing hostname"
 cat <<EOF > $ROOT_DIR/etc/hostname
