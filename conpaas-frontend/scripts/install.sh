@@ -166,6 +166,13 @@ then
     exit 1
 fi
 
+# Little check to ensure users have configured this script
+if [ -z "$EC2_USER" ] && [ -z "$IMAGE" ]
+then
+    echo "E: It appears you haven't configured $0 yet. Please modify it according to your needs" > /dev/stderr
+    exit 1
+fi
+
 cd frontend 
 
 CONPAAS_TARBALL="www/download/ConPaaS.tar.gz"
