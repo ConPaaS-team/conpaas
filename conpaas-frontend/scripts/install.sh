@@ -225,10 +225,12 @@ apt-get -f -y install libapache2-mod-php5 php5-curl php5-mysql mysql-server mysq
 mysql_user=`awk '/^user/ { print $3 }' /etc/mysql/debian.cnf | head -n 1`
 mysql_pass=`awk '/^password/ { print $3 }' /etc/mysql/debian.cnf | head -n 1`
 
+read -e -i "conpaas" -p "Please enter the name of the MySQL database you want to use: " mysql_dbname
+
 # Change the DB config script
 sed -i s/\'DB_USER\'/\'$mysql_user\'/ scripts/frontend-db.sql
 sed -i s/\'DB_PASSWD\'/\'$mysql_pass\'/ scripts/frontend-db.sql
-sed -i s/DB_NAME/conpaas/ scripts/frontend-db.sql
+sed -i s/DB_NAME/$mysql_dbname/ scripts/frontend-db.sql
 sed -i s/'^create user'/'-- create user'/ scripts/frontend-db.sql
 
 # Create ConPaaS database
@@ -237,7 +239,7 @@ mysql -u $mysql_user --password=$mysql_pass < scripts/frontend-db.sql
 /bin/echo -e '[mysql]\nserver = "localhost"' > $CONFDIR/db.ini
 echo "user = \"$mysql_user\"" >> $CONFDIR/db.ini
 echo "pass = \"$mysql_pass\"" >> $CONFDIR/db.ini
-echo "db = \"conpaas\"" >> $CONFDIR/db.ini
+echo "db = \"$mysql_dbname\"" >> $CONFDIR/db.ini
 
 # Get and install the AWS SDK
 wget http://pear.amazonwebservices.com/get/sdk-latest.zip
