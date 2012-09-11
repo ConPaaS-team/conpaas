@@ -22,11 +22,9 @@ cp -r conpaas-frontend $release_dir/frontend > /dev/null
 # Copy the documentation to the frontend
 echo "Compiling documentation..."
 (cd doc; make clean > /dev/null; make > /dev/null)
-cp -r doc $release_dir/ > /dev/null
-rm $release_dir/doc/*.tex
-rm $release_dir/doc/Makefile
-mkdir $release_dir/frontend/www/help
-cp $release_dir/doc/*.{html,css,pdf} $release_dir/frontend/www/help/
+mkdir $release_dir/doc $release_dir/frontend/www/help
+cp doc/*.{html,css,pdf} $release_dir/doc
+cp doc/*.{html,css,pdf} $release_dir/frontend/www/help/
 
 cp LICENSE.txt $release_dir/
 cp AUTHORS.txt $release_dir/
