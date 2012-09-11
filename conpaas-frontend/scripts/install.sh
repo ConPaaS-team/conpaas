@@ -228,13 +228,15 @@ mysql_pass=`awk '/^password/ { print $3 }' /etc/mysql/debian.cnf | head -n 1`
 read -e -i "conpaas" -p "Please enter the name of the MySQL database you want to use: " mysql_dbname
 
 # Change the DB config script
-sed -i s/\'DB_USER\'/\'$mysql_user\'/ scripts/frontend-db.sql
-sed -i s/\'DB_PASSWD\'/\'$mysql_pass\'/ scripts/frontend-db.sql
-sed -i s/DB_NAME/$mysql_dbname/ scripts/frontend-db.sql
-sed -i s/'^create user'/'-- create user'/ scripts/frontend-db.sql
+tempsql=`tempfile`
+sed s/\'DB_USER\'/\'$mysql_user\'/ scripts/frontend-db.sql > $tempsql
+sed -i s/\'DB_PASSWD\'/\'$mysql_pass\'/ $tempsql
+sed -i s/DB_NAME/$mysql_dbname/ $tempsql
+sed -i s/'^create user'/'-- create user'/ $tempsql
 
 # Create ConPaaS database
-mysql -u $mysql_user --password=$mysql_pass < scripts/frontend-db.sql
+mysql -u $mysql_user --password=$mysql_pass < $tempsql
+rm $tempsql
 
 /bin/echo -e '[mysql]\nserver = "localhost"' > $CONFDIR/db.ini
 echo "user = \"$mysql_user\"" >> $CONFDIR/db.ini
