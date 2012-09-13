@@ -30,17 +30,18 @@ Services cloud.
 Installing ConPaaS requires to take the following steps:
 
 \begin{enumerate}
-\item Create a VM image customized for hosting the services. Details
-  on how to do this vary depending on the choice of cloud where
-  ConPaaS will run. Instructions on how to create a ConPaaS image suitable
-to run on Amazon EC2 can be found in Section~\ref{sec:ec2image}. 
-  Section~\ref{sec:oneimage} describes how to create a ConPaaS image for OpenNebula.
+\item Choose a VM image customized for hosting the services, or create a new
+one. Details on how to do this vary depending on the choice of cloud where
+ConPaaS will run. Instructions on how to find or create a ConPaaS image
+suitable to run on Amazon EC2 can be found in Section~\ref{sec:ec2image}. 
+Section~\ref{sec:oneimage} describes how to create a ConPaaS image for OpenNebula.
 \item Setup and configure the ConPaaS frontend. All system
   configuration takes place in the frontend. Frontend installation and
   configuration is discussed in Section~\ref{sec:frontend}.
 \end{enumerate}
 
 \section{Using ConPaaS on Amazon EC2}
+\label{sec:ec2image}
 
 The Web Hosting Service is capable of running over the Elastic Compute
 Cloud (EC2) of Amazon Web Services (AWS). This section describes the
@@ -49,27 +50,35 @@ You can skip this section if you plan to install ConPaaS over
 OpenNebula.
 
 If you are new to EC2, you will need to create an account at
-\url{http://aws.amazon.com/ec2/}. A very good EC2 documentation can be
-found at
-\url{http://docs.amazonwebservices.com/AWSEC2/latest/GettingStartedGuide/}.
+\url{http://aws.amazon.com/ec2/}. A very good introduction to EC2 can be found
+at \url{http://docs.amazonwebservices.com/AWSEC2/latest/GettingStartedGuide/}.
 
 \subsection{Pre-built EBS Amazon Machine Image}
 
 The Web Hosting Service requires the usage of an Amazon Machine Image (AMI) to
 contain the dependencies of its processes. For your convenience we provide a
-public ConPaaS AMI which is already configured and ready to be used on Amazon
-EC2. The AMI ID of said image for the US East Amazon availability zone is
-\verb+ami-4b249322+. (TODO: mention the AMI IDs for other zones). You can use
-this value when configuring your ConPaaS frontend installation as described in
-Section~\ref{sec:frontend}.
+pre-built public AMI, already configured and ready to be used on Amazon EC2,
+for each availability zone supported by ConPaaS. The AMI IDs of said images
+are:
+
+\begin{itemize}
+    \item \verb+ami-c2941af2+ United States West (Oregon)
+    \item \verb+ami-4b249322+ United States East (Northern Virginia)
+    \item \verb+ami-99fcfaed+ Europe West (Ireland)
+\end{itemize}
+
+You can use one of these values when configuring your ConPaaS frontend
+installation as described in Section~\ref{sec:frontend}.
 
 \subsection{Create an EBS backed AMI on Amazon EC2}
-\label{sec:ec2image}
 
-Should you decide to create a new Elastic Block Store backed Amazon Machine
-Image yourself, the easiest method is to start from an already existing one,
-customize it and save the resulting filesystem as a new AMI. The following
-steps explains how to setup an AMI using this methodology.
+Using pre-built Amazon Machine Images is the recommended way of running ConPaaS
+on Amazon EC2, as described in the previous section. However, you can also
+create a new Elastic Block Store backed Amazon Machine Image yourself, for example
+in case you wish to run ConPaaS in a different Availability Zone.
+The easiest way to do that is to start from an already existing AMI, customize
+it and save the resulting filesystem as a new image. The following steps explains
+how to setup an AMI using this methodology.
 
 \begin{enumerate}
 \item Log in the AWS management console, select the ``EC2'' tab, then ``AMIs''
@@ -99,8 +108,8 @@ with ID \verb+ami-e0e11289+ in the US East zone could be a good choice.
 
 \item Go to the EC2 administration page at the AWS website, right
   click on the running instance and select ``\emph{Create Image (EBS
-    AMI)}''.  This step will take several minutes. AWS documentation
-  is available at
+    AMI)}''.  This step will take several minutes. More information about this step
+ can be found at
   \url{http://docs.amazonwebservices.com/AWSEC2/latest/UserGuide/index.html?Tutorial\_CreateImage.html}.
 
 \item After the image has been fully created, you can return to the
@@ -114,7 +123,7 @@ An AWS security group is an abstraction of a set of firewall rules to
 limit inbound traffic. The default policy of a new group is to deny
 all inbound traffic. Therefore, one needs to specify a whitelist of
 protocols and destination ports that are accessible from the outside. 
-The following ports shoud be open for all running instances: 
+The following ports should be open for all running instances: 
 \begin{itemize}
 \item TCP ports 80, 443, 5555, 8000, 8080 and 9000 -- used by the Web Hosting service
 \item TCP port 3306 -- used by the MySQL service
@@ -182,10 +191,10 @@ datastore id obtained with \verb+onedatastore list+.
 
 \paragraph{If things go wrong}~\\
 
-Note that if anything fails during the image file creation, the script
-will stop. However, it will not always reset your system to its
-original state. To undo everything the script has done, follow these
-instructions:
+Note that if anything fails during the image file creation, the script will
+stop and it will try to revert any change it has done. However, it might not
+always reset your system to its original state. To undo everything the script
+has done, follow these instructions:
 
 \begin{enumerate}
 \item The image has been mounted as a separate file system. Find the
@@ -220,12 +229,15 @@ instructions:
 
 \subsection{Make sure OpenNebula is properly configured}
 
-There are two main topics that you should pay attention to:
+OpenNebula's OCCI daemon is used by ConPaaS to communicate with your
+OpenNebula cluster.
 
 \begin{enumerate}
-\item Make sure you started OpenNebula's OCCI deamon. ConPaaS relies
-  on it to communicate with OpenNebula.
-
+\item Ensure your occi-server.conf contains the following lines in instance\_types:
+\begin{verbatim}
+:custom:
+  :template: custom.erb
+\end{verbatim}
 \item At the end of the OCCI profile file \verb+occi_templates/common.erb+ 
   from your OpenNebula installation, add the content of the file
   \verb+misc/common.erb+ from the ConPaaS distribution. This new version 
@@ -236,13 +248,11 @@ There are two main topics that you should pay attention to:
   \item The graphics line allows for using vnc to connect to the VM.
     This is very useful for debugging purposes and is not necessary
     once testing is complete.
-\item Ensure your occi-server.conf contains the following lines in instance\_types:
-\begin{verbatim}
-:custom:
-  :template: custom.erb
-\end{verbatim}
 
   \end{itemize}
+
+\item Make sure you started OpenNebula's OCCI daemon
+
 \end{enumerate}
 
 \section{Setup ConPaaS's Frontend}
@@ -263,8 +273,8 @@ following steps:
 
 \begin{enumerate}
 \item Log in the AWS management console, select the ``EC2'' tab, then ``AMIs''
-  in the left-side menu. Search the public AMI of a Debian Squeeze instance and
-  run an instance of it.
+in the left-side menu. Search the public AMI of Debian Squeeze and run an
+instance of it.
 \item In the ``Configure Firewall'' step of the Wizard, create a security group
   with port 443 (HTTPS) open. Also, if you haven't done so already, create a
   security group for the Web Hosting Service as explained in
@@ -291,7 +301,8 @@ you have just installed Debian Squeeze on your own hardware.
 
 \verb+wget http://www.conpaas.eu/dl/ConPaaS-1.0.0.tar.gz+
 
-\item Uncompress the downloaded tarball and edit the configuration options available in \verb+frontend/scripts/install.sh+
+\item Uncompress the downloaded tarball and edit the configuration options
+available in \verb+frontend/scripts/install.sh+
 \item Execute \verb+frontend/scripts/install.sh+ as root
 \item Point your browser to the public IP address of your instance. You should
   see the ConPaaS frontend web page and you should be able to create a new user
@@ -300,8 +311,8 @@ you have just installed Debian Squeeze on your own hardware.
 
 \subsubsection{Updating a previous frontend installation}
 The installation script can also be used in case you want to upgrade from a
-previous ConPaaS installation. A backup of your document root, as well of your
-\verb+/etc/conpaas+, will be created under \verb+/var/backups+.
+previous ConPaaS installation. A backup of the ConPaaS frontend code, as well as
+its configuration, will be created.
 
 Just make sure to follow all the steps described in the previous section, in
 particular do not forget to edit \verb+frontend/scripts/install.sh+ to reflect
@@ -450,23 +461,21 @@ server.
 
 \end{enumerate}
 
-As ConPaaS uses SSL certificates, you must follow two more steps to setup
-the secure communication. First, you must configure OpenSSL, and second,
-you must configure Apache (or any other web server you are using)
-to work with SSL. The idea is to make certificates optional (the user
-is not required to provide a certificate
-when he/she uses the frontend, as the website is protected by login checks),
-except for one folder, where access must be granted only based on
+As ConPaaS uses SSL certificates, you must follow two more steps to setup the
+secure communication. First, you must configure OpenSSL, and second, you must
+configure Apache (or any other web server you are using) to work with SSL. The
+idea is to make certificates optional (the user is not required to provide a
+certificate when he/she uses the frontend, as the website is protected by login
+checks), except for one folder, where access must be granted only based on
 valid certificates. This folder contains a php script that generates new
 certificates as requested by the manager in the name of its agents
 - this folder basically contains the CA implementation.
 
-In this guide we explain how to configure Apache or Nginx to work with
-SSL for ConPaaS. Of course that a correct SSL configuration depends on the
-existing configuration of you web server (e.g., if it host multiple
-websites, etc.) but we will explain ConPaaS's needs on a default configuration
-(clean Apache or Nginx installation) which can further be applied to 
-your existing configuration.
+In this guide we explain how to configure Apache to work with SSL for ConPaaS.
+Of course a correct SSL configuration depends on the existing configuration of
+you web server (e.g., if it host multiple websites, etc.) but we will explain
+ConPaaS's needs on a default configuration (clean Apache installation) which
+can further be applied to your existing configuration.
 
 \begin{enumerate}[resume]
 \item Configure OpenSSL.
@@ -503,8 +512,6 @@ your existing configuration.
       - inside $<$\textit{Directory /var/www/}$>$ change \textit{AllowOverride}
         to All (we provide a .htaccess file whose instructions must be taken
         into account).
-        (TODO: Check this. Note: Probably you
-        could make SSL mandatory for a given folder directly from the default-ssl file)
 
       - change \textit{SSLCertificateFile} and \textit{SSLCertificateKeyFile} to point to
       \textit{/etc/conpaas/certs/cert.pem} and \textit{/etc/conpaas/certs/key.pem}, respectively.
@@ -519,8 +526,7 @@ your existing configuration.
         sudo /etc/init.d/apache2 reload
       \end{verbatim}
 
-    \item To configure Nginx with SSL support
-      TODO:
+    %\item To configure Nginx with SSL support TODO:
   \end{itemize}
 \end{enumerate}
 
