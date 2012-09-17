@@ -5,7 +5,7 @@
 -- to enter these three values in the frontend/cond/db.ini file as well.
 
 create user 'DB_USER'@'%' identified by 'DB_PASSWD';
-create database DB_NAME;
+create database if not exists DB_NAME;
 grant all on DB_NAME.* to 'DB_USER'@'%';
 use DB_NAME;
 
