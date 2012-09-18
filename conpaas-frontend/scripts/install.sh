@@ -233,6 +233,7 @@ sed s/\'DB_USER\'/\'$mysql_user\'/ scripts/frontend-db.sql > $tempsql
 sed -i s/\'DB_PASSWD\'/\'$mysql_pass\'/ $tempsql
 sed -i s/DB_NAME/$mysql_dbname/ $tempsql
 sed -i s/'^create user'/'-- create user'/ $tempsql
+sed -i s/'^grant all'/'-- grant all'/ $tempsql
 
 # Create ConPaaS database
 mysql -u $mysql_user --password=$mysql_pass < $tempsql
