@@ -152,7 +152,7 @@ class ConpaasSecureServer(HTTPSServer):
             module = __import__(services[service_type]['module'], \
                                 globals(), locals(), ['*'])
         except ImportError:
-            raise Exception('Could no import the module containing the service class')
+            raise Exception('Could not import the module containing the service class')
 
         try:
             instance_class = getattr(module, services[service_type]['class'])
