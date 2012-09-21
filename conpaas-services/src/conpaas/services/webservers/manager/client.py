@@ -49,7 +49,7 @@ class ClientError(Exception): pass
 
 def _check(response):
   code, body = response
-  if code != httplib.OK: raise HttpError('Received http response code %d' % (code))
+  if code != httplib.OK: raise https.server.HttpError('Received http response code %d' % (code))
   try: data = json.loads(body)
   except Exception as e: raise ClientError(*e.args)
   if data['error']: raise ClientError(data['error'])
