@@ -54,30 +54,30 @@ from conpaas.core.https.server import HttpErrorResponse, HttpJsonResponse, FileU
 from conpaas.core.expose import expose
 from conpaas.core import git
 
+E_CONFIG_NOT_EXIST = 0
+E_CONFIG_EXISTS = 1
+E_CONFIG_READ_FAILED = 2
+E_CONFIG_CORRUPT = 3
+E_CONFIG_COMMIT_FAILED = 4
+E_ARGS_INVALID = 5
+E_ARGS_UNEXPECTED = 6
+E_ARGS_MISSING = 7
+E_UNKNOWN = 8
+
+E_STRINGS = [
+  'No configuration exists',
+  'Configuration already exists',
+  'Failed to read configuration state of %s from %s', # 2 params
+  'Configuration is corrupted',
+  'Failed to commit configuration',
+  'Invalid arguments',
+  'Unexpected arguments %s', # 1 param (a list)
+  'Missing argument "%s"', # 1 param
+  'Unknown error',
+]
 
 class AgentException(Exception):
 
-    E_CONFIG_NOT_EXIST = 0
-    E_CONFIG_EXISTS = 1
-    E_CONFIG_READ_FAILED = 2
-    E_CONFIG_CORRUPT = 3
-    E_CONFIG_COMMIT_FAILED = 4
-    E_ARGS_INVALID = 5
-    E_ARGS_UNEXPECTED = 6
-    E_ARGS_MISSING = 7
-    E_UNKNOWN = 8
-
-    E_STRINGS = [
-      'No configuration exists',
-      'Configuration already exists',
-      'Failed to read configuration state of %s from %s', # 2 params
-      'Configuration is corrupted',
-      'Failed to commit configuration',
-      'Invalid arguments',
-      'Unexpected arguments %s', # 1 param (a list)
-      'Missing argument "%s"', # 1 param
-      'Unknown error',
-    ]
     def __init__(self, code, *args, **kwargs):
       self.code = code
       self.args = args
