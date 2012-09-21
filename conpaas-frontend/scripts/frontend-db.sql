@@ -14,7 +14,7 @@ use DB_NAME;
 -- Do not edit beyond this point unless you know what you are doing...
 -- -------------------------------------------------------------------
 
-CREATE TABLE `services` (
+CREATE TABLE IF NOT EXISTS `services` (
   `sid` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(256) DEFAULT NULL,
   `type` varchar(32) DEFAULT NULL,
@@ -29,7 +29,7 @@ CREATE TABLE `services` (
   KEY `searchbyuser` (`uid`)
 ) ENGINE=InnoDB AUTO_INCREMENT=301 DEFAULT CHARSET=latin1;
 
-CREATE TABLE `users` (
+CREATE TABLE IF NOT EXISTS `users` (
   `uid` int(11) NOT NULL AUTO_INCREMENT,
   `username` varchar(256) DEFAULT NULL,
   `fname` varchar(256) DEFAULT NULL,
