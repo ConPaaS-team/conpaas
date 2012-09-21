@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 # These parameters are used for performing CAPTCHA[1] operations and they are
 # issued for a specific domain. To generate a pair of keys for your domain,
@@ -41,9 +41,9 @@ EC2_REGION="ec2.us-west-2.amazonaws.com"
 # Please set this value according to the region you want to use (see
 # EC2_REGION).
 #
-AMI_ID="ami-c2941af2"  # United States West (Oregon)
+AMI_ID="ami-4055db70"  # United States West (Oregon)
 #AMI_ID="ami-4b249322" # United States East (Northern Virginia)
-#AMI_ID="ami-99fcfaed" # Europe West (Ireland)
+#AMI_ID="ami-db0a0baf" # Europe West (Ireland)
 
 # This variable contains the created security group from the Web hosting
 # service. Your security groups can be found under "NETWORK & SECURITY" on
@@ -177,18 +177,23 @@ cd frontend
 
 CONPAAS_TARBALL="www/download/ConPaaS.tar.gz"
 
-DESTDIR="/var/www"
 CONFDIR="/etc/conpaas"
 BACKUPDIR="/var/backups"
 
-read -e -i "$DESTDIR" -p "Please enter the path where you want to install the frontend code: " input
-DESTDIR="${input:-$DESTDIR}"
+read -e -p "Please enter the path where you want to install the frontend code: /var/www/" relroot
+DESTDIR="/var/www/${relroot}"
 
 read -e -i "$CONFDIR" -p "Please enter the path where the ConPaaS configuration files should be installed: " input
 CONFDIR="${input:-$CONFDIR}"
 
 read -e -i "$BACKUPDIR" -p "Please enter the path where you want to backup your current $DESTDIR and $CONFDIR: " input
 BACKUPDIR="${input:-$BACKUPDIR}"
+
+# Create the backup dir if it does not exist
+if [ ! -d "$BACKUPDIR" ]
+then
+    mkdir "$BACKUPDIR"
+fi
 
 # Backup $DESTDIR
 if [ -d "$DESTDIR" ]
@@ -426,4 +431,4 @@ echo "Installation completed!"
 echo "An apache configuration file has been generated for you (/etc/apache2/sites-available/conpaas-ssl)"
 echo "Please double-check the contents of said file, reloading apache in case you make any changes"
 echo
-echo "Your ConPaaS system is online at the following URL: https://$hostname"
+echo "Your ConPaaS system is online at the following URL: https://$hostname/$relroot"
