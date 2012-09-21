@@ -22,6 +22,9 @@ then
     cd "$CPS_HOME" && unzip `basename $CHROMEDRIVER_DOWNLOAD_URL`
 fi
 
+# Make sure that java will choose ipv4 over ipv6
+export _JAVA_OPTIONS="-Djava.net.preferIPv4Stack=true"
+
 # setup and run local agent
 $CPS_HOME/sbin/agent/default-cpsagent -c $ROOT_DIR/config.cfg 1>$ROOT_DIR/agent.out 2>$ROOT_DIR/agent.err &
 agent_pid=$!
