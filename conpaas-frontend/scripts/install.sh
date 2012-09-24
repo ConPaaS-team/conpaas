@@ -262,8 +262,8 @@ cp -a sdk-*/* $DESTDIR/lib/aws-sdk/
 rm -rf sdk-*
 
 cp $DESTDIR/lib/aws-sdk/config-sample.inc.php $DESTDIR/lib/aws-sdk/config.inc.php
-sed -i s/"'key' => 'development-key',"/"'key' => '$EC2_USER', 'account_id' => '$EC2_ACCOUNT_ID',"/ $DESTDIR/lib/aws-sdk/config.inc.php
-sed -i s/"'secret' => 'development-secret',"/"'secret' => '$EC2_PASSWORD', 'canonical_id' => '$EC2_CANONICAL_ID',"/ $DESTDIR/lib/aws-sdk/config.inc.php
+sed -i s#"'key' => 'development-key',"#"'key' => '$EC2_USER', 'account_id' => '$EC2_ACCOUNT_ID',"# $DESTDIR/lib/aws-sdk/config.inc.php
+sed -i s#"'secret' => 'development-secret',"#"'secret' => '$EC2_PASSWORD', 'canonical_id' => '$EC2_CANONICAL_ID',"# $DESTDIR/lib/aws-sdk/config.inc.php
 
 if [ -f "/etc/apache2/sites-available/conpaas-ssl" ]
 then
