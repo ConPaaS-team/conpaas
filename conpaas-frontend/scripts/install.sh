@@ -59,11 +59,13 @@ KEYPAIR=""
 EC2_INSTANCE_TYPE="t1.micro"
 
 # Amazon Account ID without dashes. Used for identification with Amazon EC2.
-# Found in the AWS Security Credentials.
+# Found in the AWS Security Credentials:
+# https://portal.aws.amazon.com/gp/aws/securityCredentials#account_identifiers
 EC2_ACCOUNT_ID=""
 
-# Your CanonicalUser ID. Used for setting access control settings in AmazonS3. Found in the AWS Security
-# Credentials.
+# Your CanonicalUser ID. Used for setting access control settings in AmazonS3. 
+# Found in the AWS Security Credentials:
+# https://portal.aws.amazon.com/gp/aws/securityCredentials#account_identifiers
 EC2_CANONICAL_ID=""
 
 ####################################################################
