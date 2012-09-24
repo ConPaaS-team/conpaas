@@ -217,8 +217,9 @@ fi
 cp -a www $DESTDIR
 
 # Put the configuration files under $CONFDIR. Skip 'certs'.
-cp conf/* $CONFDIR
-mkdir $CONFDIR/certs
+mkdir -p $CONFDIR/certs
+cp conf/*.{ini,txt,sample} $CONFDIR
+cp -a conf/{config,scripts} $CONFDIR
 
 # Uncompress the ConPaaS release we want to work with
 cp $CONPAAS_TARBALL . && tar xfz `basename $CONPAAS_TARBALL`
