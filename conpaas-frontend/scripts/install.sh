@@ -337,6 +337,13 @@ fi
 # Get hostname
 hostname=`openssl x509 -in $certfile -text -noout|grep role=frontend | sed s/.*CN=//g | sed s#/.*##`
 
+if [ -z "$hostname" ]
+then
+    echo "E: The commonName field of your certificate seems to be empty" > /dev/stderr
+    echo "E: Please check your certificate file ($certfile)" > /dev/stderr
+    exit 1
+fi
+
 # Keep on looping till we manage to ping the provided hostname. Certainly not a
 # bullet-proof way to check whether the hostname makes sense, but better than
 # nothing.
