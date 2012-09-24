@@ -17,7 +17,7 @@ CAPTCHA_PRIVATE_KEY=""
 # EC2_USER should be set to your EC2 user name. Beware: this is not the
 # email address you normally use to login at the AWS management console. 
 # An EC2 user name is a long opaque string. It can be found at
-# https://aws-portal.amazon.com/gp/aws/developer/account/index.html?action=access-key#account_identifiers
+# https://portal.aws.amazon.com/gp/aws/securityCredentials#access_credentials
 # under the name "Access key ID"
 EC2_USER=""
 
@@ -25,6 +25,16 @@ EC2_USER=""
 # Again, this is a long opaque string. You can find it next to your
 # Access Key ID by clicking "Show Secret Access Key".
 EC2_PASSWORD=""
+
+# Amazon Account ID without dashes. Used for identification with Amazon EC2.
+# Found in the AWS Security Credentials:
+# https://portal.aws.amazon.com/gp/aws/securityCredentials#account_identifiers
+EC2_ACCOUNT_ID=""
+
+# Your CanonicalUser ID. Used for setting access control settings in AmazonS3. 
+# Found in the AWS Security Credentials:
+# https://portal.aws.amazon.com/gp/aws/securityCredentials#account_identifiers
+EC2_CANONICAL_ID=""
 
 # Amazon EC2 region. 
 # 
@@ -47,26 +57,20 @@ AMI_ID="ami-4055db70"  # United States West (Oregon)
 
 # This variable contains the created security group from the Web hosting
 # service. Your security groups can be found under "NETWORK & SECURITY" on
-# https://console.aws.amazon.com/ec2/ 
+# https://console.aws.amazon.com/ec2/.
+# Please make sure that the security group you specify here exists in the
+# region you want to use.
 SECURITY_GROUP=""
 
 # This variable contains the Key Pair name  to be used.  Your keypairs can be
 # found under "NETWORK & SECURITY" on https://console.aws.amazon.com/ec2/
+# Please make sure that the keypair you specify here exists in the region you
+# want to use.
 KEYPAIR=""
 
 # This variable contains the type of EC2 instances to use. A good value to use
 # inexpensive, low-performance instances is "t1.micro".
 EC2_INSTANCE_TYPE="t1.micro"
-
-# Amazon Account ID without dashes. Used for identification with Amazon EC2.
-# Found in the AWS Security Credentials:
-# https://portal.aws.amazon.com/gp/aws/securityCredentials#account_identifiers
-EC2_ACCOUNT_ID=""
-
-# Your CanonicalUser ID. Used for setting access control settings in AmazonS3. 
-# Found in the AWS Security Credentials:
-# https://portal.aws.amazon.com/gp/aws/securityCredentials#account_identifiers
-EC2_CANONICAL_ID=""
 
 ####################################################################
 # The following values are only needed by the Task Farming service #
