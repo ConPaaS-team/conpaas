@@ -204,21 +204,24 @@ fi
 # Backup $DESTDIR
 if [ -d "$DESTDIR" ]
 then
-    mv $DESTDIR $BACKUPDIR/conpaas-docroot-`date +%s`
+    tmpdir="$BACKUPDIR/conpaas-docroot-`date +%s`"
+    mv $DESTDIR $tmpdir
+    echo "Backup of '$DESTDIR' created under '$tmpdir'"
 fi
 
 # Backup $CONFDIR
 if [ -d "$CONFDIR" ]
 then
-    mv $CONFDIR $BACKUPDIR/conpaas-confdir-`date +%s`
+    tmpdir="$BACKUPDIR/conpaas-confdir-`date +%s`"
+    cp -a $CONFDIR $tmpdir
+    echo "Backup of '$CONFDIR' created under '$tmpdir'"
 fi
 
 # Install the application under $DESTDIR
 cp -a www $DESTDIR
 
 # Put the configuration files under $CONFDIR. Skip 'certs'.
-mkdir -p $CONFDIR/certs
-cp conf/*.{ini,txt,sample} $CONFDIR
+cp conf/*.{ini,txt} $CONFDIR
 cp -a conf/{config,scripts} $CONFDIR
 
 # Uncompress the ConPaaS release we want to work with
@@ -231,7 +234,7 @@ cp -a ConPaaS/config $CONFDIR && rm -rf ConPaaS ConPaaS.tar.gz
 chown -R www-data: $CONFDIR $DESTDIR
 
 # Install the dependencies
-apt-get update
+apt-get update > /dev/null
 apt-get -f -y install libapache2-mod-php5 php5-curl php5-mysql mysql-server mysql-client openssl unzip curl
 
 # Get MySQL credentials
@@ -259,7 +262,7 @@ echo "db = \"$mysql_dbname\"" >> $CONFDIR/db.ini
 
 # Get and install the AWS SDK
 wget http://pear.amazonwebservices.com/get/sdk-latest.zip
-unzip sdk-latest.zip
+unzip sdk-latest.zip > /dev/null
 cp -a sdk-*/* $DESTDIR/lib/aws-sdk/
 rm -rf sdk-*
 
