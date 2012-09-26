@@ -404,6 +404,8 @@ class WebServersAgent():
       user_id = getpwnam('www-data').pw_uid
       group_id = getpwnam('www-data').pw_gid
 
+      chown(target_dir, user_id, group_id)
+
       for root, dirs, files in walk(target_dir):  
         for directory in dirs:  
           chown(join(root, directory), user_id, group_id)
