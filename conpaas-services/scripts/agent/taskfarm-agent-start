@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Make sure that java will choose ipv4 over ipv6
+export _JAVA_OPTIONS="-Djava.net.preferIPv4Stack=true"
+
 ########################################################################################
 # Specs for BaTS worker
 
