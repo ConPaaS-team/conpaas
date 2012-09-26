@@ -127,16 +127,7 @@ class ConpaasSecureServer(HTTPSServer):
 
     '''
 
-    def __init__(self,
-                 server_address,
-                 config_parser,
-                 role,
-                 **kwargs):
-
-        ctx = self._conpaas_init_ssl_ctx(role,
-                                    config_parser.get(role, 'CERT_DIR'), SSL.SSLv23_METHOD)
-        HTTPSServer.__init__(self, server_address, ConpaasRequestHandler, ctx)
-
+    def __init__(self, server_address, config_parser, role, **kwargs):
         log.init(config_parser.get(role, 'LOG_FILE'))
         self.config_parser = config_parser
         self.callback_dict = {'GET': {}, 'POST': {}, 'UPLOAD': {}}
@@ -154,11 +145,13 @@ class ConpaasSecureServer(HTTPSServer):
         except ImportError:
             raise Exception('Could not import the module containing the service class')
 
+        # Get the appropriate class for this service
         try:
             instance_class = getattr(module, services[service_type]['class'])
         except AttributeError:
             raise Exception('Could not get the service class')
 
+        # Create an instance of the service class
         self.instance = instance_class(config_parser, **kwargs)
 
         # Register the callable functions
@@ -167,6 +160,11 @@ class ConpaasSecureServer(HTTPSServer):
             for func_name in exposed_functions[http_method]:
                 self._register_method(http_method, func_name,
                             exposed_functions[http_method][func_name])
+
+        # Start the HTTPS server
+        ctx = self._conpaas_init_ssl_ctx(role,
+                                    config_parser.get(role, 'CERT_DIR'), SSL.SSLv23_METHOD)
+        HTTPSServer.__init__(self, server_address, ConpaasRequestHandler, ctx)
 
     def _register_method(self, http_method, func_name, callback):
         self.callback_dict[http_method][func_name] = callback
