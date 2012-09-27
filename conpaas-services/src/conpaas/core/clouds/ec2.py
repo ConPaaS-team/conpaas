@@ -47,9 +47,6 @@ from libcloud.compute.types import Provider, NodeState
 from libcloud.compute.providers import get_driver
 from libcloud.compute.base import NodeImage
 
-import libcloud.security
-libcloud.security.VERIFY_SSL_CERT = False
-
 from .base import Cloud
 
 from conpaas.core.node import ServiceNode

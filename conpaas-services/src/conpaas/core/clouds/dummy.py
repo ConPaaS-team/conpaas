@@ -38,9 +38,6 @@ POSSIBILITY OF SUCH DAMAGE.
 from libcloud.compute.types import Provider
 from libcloud.compute.providers import get_driver
 
-import libcloud.security
-libcloud.security.VERIFY_SSL_CERT = False
-
 from .base import Cloud
 
 from conpaas.core.node import ServiceNode
