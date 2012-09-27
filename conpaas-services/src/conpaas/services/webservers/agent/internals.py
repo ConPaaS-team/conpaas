@@ -42,11 +42,10 @@ Created on Mar 7, 2011
 
 from os.path import exists, devnull, join
 from subprocess import Popen
-from os import remove, makedirs, chown, walk
+from os import remove, makedirs
 from shutil import rmtree
 from threading import Lock
 import pickle, zipfile, tarfile
-from pwd import getpwnam
 
 from conpaas.core.log import create_logger
 from conpaas.services.webservers.agent import role 
@@ -400,19 +399,6 @@ class WebServersAgent():
       #  self.logger.exception('Failed to start the script to fix the session handlers')
       #  raise OSError('Failed to start the script to fix the session handlers')
 
-    def fix_permissions(self, target_dir):
-      user_id = getpwnam('www-data').pw_uid
-      group_id = getpwnam('www-data').pw_gid
-
-      chown(target_dir, user_id, group_id)
-
-      for root, dirs, files in walk(target_dir):  
-        for directory in dirs:  
-          chown(join(root, directory), user_id, group_id)
-
-        for file_ in files:
-          chown(join(root, file_), user_id, group_id)
-
     @expose('UPLOAD')
     def updatePHPCode(self, kwargs):
 
@@ -455,8 +441,6 @@ class WebServersAgent():
 
         # Fix session handlers
         self.fix_session_handlers(target_dir)
-
-        self.fix_permissions(target_dir)
       
         return HttpJsonResponse()
 
@@ -525,7 +509,5 @@ class WebServersAgent():
         git.git_enable_revision(target_dir, source, codeVersionId)
       else:
         source.extractall(target_dir)
-
-      self.fix_permissions(target_dir)
 
       return HttpJsonResponse()
