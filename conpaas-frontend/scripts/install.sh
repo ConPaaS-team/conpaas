@@ -198,7 +198,7 @@ BACKUPDIR="${input:-$BACKUPDIR}"
 # Create the backup dir if it does not exist
 if [ ! -d "$BACKUPDIR" ]
 then
-    mkdir "$BACKUPDIR"
+    mkdir -p "$BACKUPDIR"
 fi
 
 # Backup $DESTDIR
@@ -207,6 +207,9 @@ then
     tmpdir="$BACKUPDIR/conpaas-docroot-`date +%s`"
     mv $DESTDIR $tmpdir
     echo "Backup of '$DESTDIR' created under '$tmpdir'"
+else
+# Create $DESTDIR if it does not exist already
+    mkdir -p "$DESTDIR"
 fi
 
 # Backup $CONFDIR
@@ -215,6 +218,9 @@ then
     tmpdir="$BACKUPDIR/conpaas-confdir-`date +%s`"
     cp -a $CONFDIR $tmpdir
     echo "Backup of '$CONFDIR' created under '$tmpdir'"
+else
+# Create $CONFDIR if it does not exist already
+    mkdir -p "$CONFDIR"
 fi
 
 # Install the application under $DESTDIR
@@ -223,6 +229,9 @@ cp -a www $DESTDIR
 # Put the configuration files under $CONFDIR. Skip 'certs'.
 cp conf/*.{ini,txt} $CONFDIR
 cp -a conf/{config,scripts} $CONFDIR
+
+# Create certs directory if missing
+[ ! -d "$CONFDIR/certs" ] && mkdir "$CONFDIR/certs"
 
 # Uncompress the ConPaaS release we want to work with
 cp $CONPAAS_TARBALL . && tar xfz `basename $CONPAAS_TARBALL`
