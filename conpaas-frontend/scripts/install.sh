@@ -312,41 +312,10 @@ then
 fi
 
 # SSL certificates 
-read -e -i "y" -p "Do you want to generate a self-signed certificate? " input
+# Generate SSL certificates and ask for hostname confirmation
+php scripts/generate-certs.php $CONFDIR/certs
 
-if [ "$input" = "y" ]
-then
-    # Generate SSL certificates and ask for hostname confirmation
-    php scripts/generate-certs.php $CONFDIR/certs
-
-    certfile="$CONFDIR/certs/cert.pem"
-else
-    # Prompt for certificate/private key/ca certificate filenames
-
-    unset certfile
-    while [ ! -f "$certfile" ]
-    do
-        read -e -i "$CONFDIR/certs/cert.pem" -p "Please provide your certificate filename " certfile
-    done
-
-    sed -i s#"$CONFDIR/certs/cert.pem"#"$certfile"# /etc/apache2/sites-available/conpaas-ssl
-
-    unset certkey
-    while [ ! -f "$certkey" ]
-    do
-        read -e -i "$CONFDIR/certs/key.pem" -p "Please provide your private key filename " certkey
-    done
-
-    sed -i s#"$CONFDIR/certs/key.pem"#"$certkey"# /etc/apache2/sites-available/conpaas-ssl
-
-    unset cacert
-    while [ ! -f "$cacert" ]
-    do
-        read -e -i "$CONFDIR/certs/ca_cert.pem" -p "Please provide your CA certificate filename " cacert
-    done
-
-    sed -i s#"$CONFDIR/certs/ca_cert.pem"#"$cacert"# /etc/apache2/sites-available/conpaas-ssl
-fi
+certfile="$CONFDIR/certs/cert.pem"
     
 # Get hostname
 hostname=`openssl x509 -in $certfile -text -noout|grep role=frontend | sed s/.*CN=//g | sed s#/.*##`
@@ -358,21 +327,14 @@ then
     exit 1
 fi
 
-# Keep on looping till we manage to ping the provided hostname. Certainly not a
-# bullet-proof way to check whether the hostname makes sense, but better than
-# nothing.
-while [ 1 ]
-do
-    read -e -i "$hostname" -p "Please confirm your machine public hostname. It has to be reachable from ConPaaS instances: " hostname
-    ping -c1 -W1 "$hostname" > /dev/null 2>&1
+# Try to ping the provided hostname. Certainly not a bullet-proof way to check
+# whether the hostname makes sense, but better than nothing.
+ping -c1 -W1 "$hostname" > /dev/null 2>&1
 
-    if [ "$?" = 0 ]
-    then
-        break
-    else
-        echo "WARNING: Unable to ping $hostname."
-    fi
-done
+if [ "$?" != 0 ]
+then
+    echo "WARNING: Unable to ping $hostname. It has to be reachable from ConPaaS instances."
+fi
 
 sed -i s/'const CONPAAS_HOST.*'/"const CONPAAS_HOST = \'$hostname\';"/ $DESTDIR/config.php
 
