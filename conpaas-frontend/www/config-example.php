@@ -16,3 +16,4 @@ const CONPAAS_HOST = 'conpaas.yourdomain.com';
 // [2] https://www.google.com/recaptcha/admin/create
 const CAPTCHA_PRIVATE_KEY = 'YOUR_DOMAIN_CAPTCHA_PRIVATE_KEY';
 const CAPTCHA_PUBLIC_KEY = 'YOUR_DOMAIN_CAPTCHA_PUBLIC_KEY';
+?>
