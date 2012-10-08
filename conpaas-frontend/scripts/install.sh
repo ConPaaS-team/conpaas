@@ -208,8 +208,8 @@ then
     mv $DESTDIR $tmpdir
     echo "Backup of '$DESTDIR' created under '$tmpdir'"
 else
-# Create $DESTDIR if it does not exist already
-    mkdir -p "$DESTDIR"
+# Create $DESTDIR if it does not exist already 
+    mkdir -p "`dirname $DESTDIR`"
 fi
 
 # Backup $CONFDIR
