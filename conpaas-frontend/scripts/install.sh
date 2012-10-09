@@ -239,6 +239,9 @@ cp $CONPAAS_TARBALL . && tar xfz `basename $CONPAAS_TARBALL`
 # Copy the necessary scripts
 cp -a ConPaaS/config $CONFDIR && rm -rf ConPaaS ConPaaS.tar.gz
 
+# Default serial for SSL certificates 
+echo "100" > "$CONFDIR/certs/ca_serial"
+
 # Fix permissions
 chown -R www-data: $CONFDIR $DESTDIR
 
@@ -419,5 +422,7 @@ fi
 echo "Installation completed!"
 echo "An apache configuration file has been generated for you (/etc/apache2/sites-available/conpaas-ssl)"
 echo "Please double-check the contents of said file, reloading apache in case you make any changes"
+echo "Please take a look at the configuration file in $CONFDIR/main.ini and adjust parameters to your liking"
+echo "Do not change any other file unless you know what you are doing"
 echo
 echo "Your ConPaaS system is online at the following URL: https://$hostname/$relroot"

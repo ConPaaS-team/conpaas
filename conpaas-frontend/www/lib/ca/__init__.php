@@ -79,7 +79,16 @@ function create_x509_cert($x509_req) {
 	
 	$cacert = file_get_contents($ca_cert_file);
 	$cakey = file_get_contents($ca_key_file);
+
+	// Get serial from file
 	$serial = file_get_contents($ca_serial_file);
+
+	// Default serial
+	if (!$serial) {
+		$serial = 100;
+	}
+
+	$serial = (int)$serial;
 	
 	$configs = array('x509_extensions' => 'v3_req');
 	
@@ -88,9 +97,10 @@ function create_x509_cert($x509_req) {
 				$cakey, 365, $configs, intval($serial));
 	openssl_x509_export($cert, $csrout, FALSE);
 	dlog("Generated new certificate with serial = ".$serial);
+
+	// Increment serial and save it to file
 	$serial++;
-	//TODO
-	//file_put_contents($ca_serial_file, $serial);
+	file_put_contents($ca_serial_file, $serial);
 	
 	return $csrout;
 }
