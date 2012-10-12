@@ -248,6 +248,11 @@ public class BatsServiceApiImpl implements BatsServiceApi {
             return demo.start_execution(scheduleNo);
         }
 
+    	if(serviceState.noCompletedTasks == serviceState.noTotalTasks)
+    	{
+    		return new MethodReportError("Execution failed! Service has already executed all tasks.");
+    	}
+    	
         File schedFile = null;
         try {
             synchronized (lock) {
