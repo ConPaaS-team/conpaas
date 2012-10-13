@@ -10,7 +10,7 @@ cat <<EOF>~git/code/hooks/post-update
 #!/bin/sh
 export PYTHONPATH=$CPS_HOME/src/:$CPS_HOME/contrib/ 
 export CONPAAS_CERTS_DIR=$CERT_DIR 
-python $CPS_HOME/bin/cpsclient.web.py http://127.0.0.1 git_push_hook
+python $CPS_HOME/bin/cpsclient.web http://127.0.0.1 git_push_hook
 EOF
 
 # Make it executable
