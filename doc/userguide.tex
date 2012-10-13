@@ -4,7 +4,7 @@
 
 \title{ConPaaS -- User Guide\htmlonly{ [\xml{a href="userguide.pdf"}pdf\xml{/a}]}}
 \htmltitle{ConPaaS -- User Guide}
-\author{Ismail El Helw \and Guillaume Pierre}
+\author{Ismail El Helw \and Guillaume Pierre \and Emanuele Rocca}
 \date{ConPaaS-1.0.0}
 
 
@@ -43,7 +43,7 @@ fully elastic: one can dynamically increase or decrease its processing
 capacity by requesting it to reconfigure itself with a different
 number of virtual machines.
 
-ConPaaS currently contains six services: 
+ConPaaS currently contains seven services: 
 
 \begin{itemize}
 \item \textbf{Two Web hosting services} respectively specialized for
@@ -51,9 +51,10 @@ ConPaaS currently contains six services:
 \item \textbf{MySQL database} service;
 \item \textbf{Scalarix service} offering a scalable in-memory
   key-value store;
-\item \textbf{MapReduce service} providing thewell-known
+\item \textbf{MapReduce service} providing the well-known
   high-performance computation framework;
-\item \textbf{TaskFarming service} high-performance batch processing.
+\item \textbf{TaskFarming service} high-performance batch processing;
+\item \textbf{Selenium service} for functional testing of web applications.
 \end{itemize}
 
 ConPaaS applications can be composed of any number of services. For
@@ -135,8 +136,15 @@ Each service can be controlled using its own command-line tool:
 \item The two Web hosting services are controlled using \texttt{cpsclient.web}
 \item The MySQL service is controlled using \texttt{cpsclient.mysql}
 \item The Scalarix service is controlled using \texttt{cpsclient.scalarix}
-\item The MapReduce service is controlled using cpsclient.mapreduce
+\item The MapReduce service is controlled using \texttt{cpsclient.mapreduce}
+\item The Selenium service is controlled using \texttt{cpsclient.selenium}
 \end{itemize}
+
+The command line tools can be downloaded from
+\url{http://www.conpaas.eu/dl/cps-tools-1.0.0.tar.gz}. In order to use them you
+first need to obtain a copy of your SSL certificates from the ConPaaS dashboard
+and extract it on your machine. Please refer to the README file coming with
+cps-tools for more information.
 
 To use these tools you must first set the PYTHONPATH variable to
 contain the full path name of the ``src'' subdirectory within the
@@ -251,21 +259,41 @@ The PHP Web hosting service is dedicated to hosting Web applications
 written in PHP. It can also host static Web content.
 
 \subsection{Uploading application code}
+\label{codeupload}
 
-PHP applications can be uploaded in the form of a \texttt{tar} or
-\texttt{zip} archive.  Attention: the archive must expand \emph{in the
-  current directory} rather than in a subdirectory. The service does
-not immediately use new applications when they are uploaded. The
-frontend shows the list of versions that have been uploaded; choose
-one version and click ``make active'' to activate it.
+PHP applications can be uploaded as an archive or via the Git version control
+system.
+ 
+Archives can be either in the \texttt{tar} or \texttt{zip} format. Attention:
+the archive must expand \emph{in the current directory} rather than in a
+subdirectory. The service does not immediately use new applications when they
+are uploaded. The frontend shows the list of versions that have been uploaded;
+choose one version and click ``make active'' to activate it.
 
 Note that the frontend only allows uploading archives smaller than a
-certain size.  To upload large archives, you must use the command-line
-tool:
+certain size. To upload large archives, you must use the command-line
+tools or Git.
+
+The following example illustrates how to upload an archive with the
+\texttt{cpsclient.web} command line tool:
 \begin{verbatim}
 $ ./cpsclient.web http://x-x-x-x/ upload_code_version path/to/archive.zip
 \end{verbatim}
-%$
+
+To enable Git-based code uploads you first need to upload your SSH public key
+from the frontend by choosing the ``checking out repository'' option in the
+``Code management'' section of your PHP service. Once the key is uploaded the
+frontend will show the \texttt{git} command to be executed in order to obtain
+a copy of the repository. The repository itself can then be used as usual. A new
+version of your application can be uploaded with \texttt{git push}.
+
+For example:
+
+\begin{verbatim}
+user@host:~/code$ git add index.php
+user@host:~/code$ git commit -am "New index.php version"
+user@host:~/code$ git push origin master
+\end{verbatim}
 
 \subsection{Access the application}
 
@@ -310,19 +338,24 @@ content.
 
 \subsection{Uploading application code}
 
-Applications in the Java Web hosting service can be uploaded in the
-form of a \texttt{war} file. The service does not immediately use new
-applications when they are uploaded. The frontend shows the list of
-versions that have been uploaded; choose one version and click ``make
+Applications in the Java Web hosting service can be uploaded in the form of a
+\texttt{war} file or via the Git version control system. The service does not
+immediately use new applications when they are uploaded. The frontend shows the
+list of versions that have been uploaded; choose one version and click ``make
 active'' to activate it.  
 
 Note that the frontend only allows uploading archives smaller than a
 certain size.  To upload large archives, you must use the command-line
-tool.
+tools or Git.
+
+The following example illustrates how to upload an archive with the
+\texttt{cpsclient.web} command line tool:
 \begin{verbatim}
 $ ./cpsclient.web http://x-x-x-x/ upload_code_version path/to/archive.war
 \end{verbatim}
-%$
+
+To upload new versions of your application via Git, please refer to
+Section~\ref{codeupload} of this document.
 
 \subsection{Access the application}
 
