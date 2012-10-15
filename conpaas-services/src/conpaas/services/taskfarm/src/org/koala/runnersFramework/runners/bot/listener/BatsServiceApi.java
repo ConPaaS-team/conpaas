@@ -34,4 +34,6 @@ public interface BatsServiceApi {
     public MethodReport terminate_workers();
     
     public MethodReport set_service_mode(String mode);
+    
+    public MethodReport execute_command(String command);
 }

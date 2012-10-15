@@ -5,7 +5,9 @@ import ibis.ipl.IbisProperties;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.util.ArrayList;
@@ -44,6 +46,9 @@ public class BatsServiceApiImpl implements BatsServiceApi {
      */
 
     public static long longestATU = 0;
+    private int command_nr = 0;
+	private static final int TMPSIZE = 2048;
+	byte tmp[] = new byte[TMPSIZE];
     
     public BatsServiceApiImpl() {
         lock = new Object();
@@ -389,6 +394,138 @@ public class BatsServiceApiImpl implements BatsServiceApi {
 		{
 			return new MethodReportError("Invalid service mode");
 		}
+		return new MethodReportSuccess();
+	}
+
+	
+	private static void dumpData(File file, byte data[], int len)
+	{
+		try {
+		    FileOutputStream fs = new FileOutputStream(file, true);
+		    fs.write(data, 0, len);
+		    fs.flush();
+		    fs.close();
+		} catch (IOException e) {
+			Logger.getLogger(BatsServiceApiImpl.class.getName()).log(Level.SEVERE, null, e);
+		}
+	}
+	
+	private static void dumpData(File file, String str)
+	{
+		try {
+		    FileOutputStream fs = new FileOutputStream(file);
+		    fs.write(str.getBytes());
+		    fs.flush();
+		    fs.close();
+		} catch (IOException e) {
+			Logger.getLogger(BatsServiceApiImpl.class.getName()).log(Level.SEVERE, null, e);
+		}
+	}
+
+	
+	private void executeShellCommand(final String command)
+	{
+		 Thread thread = new Thread() {
+
+	            @Override
+	            public void run() {
+	        		long startTime = System.nanoTime();
+	                
+	                ProcessBuilder pb = new ProcessBuilder("bash", "-c", command);
+	                
+	                /* modify current working directory for the ProcessBuilder
+	                 * so as to treat as relative path the mounted file system */
+	                try {
+	                    String mountFolder = System.getenv("MOUNT_FOLDER");
+	                    if (mountFolder != null && !"".equals(mountFolder)) {
+	                        pb.directory(new File(mountFolder));
+	                    }
+	                } catch (Exception ex) {
+	                    System.err.println(ex.getLocalizedMessage());
+	                }
+	                /* end */
+	                
+	        		File jobPath = new File(System.getenv("MOUNT_FOLDER") + "/commands/" + command_nr);
+	        		
+	        		jobPath.mkdirs();
+	        		
+	        		File pathOut = new File(System.getenv("MOUNT_FOLDER") + "/commands/" + command_nr + "/out");
+	        		File pathErr = new File(System.getenv("MOUNT_FOLDER") + "/commands/" + command_nr + "/err");
+	        		File pathParam = new File(System.getenv("MOUNT_FOLDER") + "/commands/" + command_nr + "/param");
+	        		
+	        		// Update number for the next command 
+	        		command_nr++;
+	        		
+	        		dumpData(pathParam, command);
+	                
+	                Process shell;
+	        		try {
+	        			shell = pb.start();
+	        		} catch (IOException e) {
+	        			e.printStackTrace();
+	        			return;
+	        		}
+
+	        		
+	                int len;
+	                
+	                InputStream is = shell.getInputStream();
+	                InputStream es = shell.getErrorStream();
+	                
+	                // XXX might not be the best idea to first read Out and then Err.
+	                
+	                try {
+	        			while ((len = is.read(tmp, 0, TMPSIZE)) != -1) {
+	        				dumpData(pathOut, tmp, len);
+	        			}
+	                
+	        			while ((len = es.read(tmp, 0, TMPSIZE)) != -1) {
+	                		dumpData(pathErr, tmp, len);
+	                	}
+	        		} catch (IOException e) {
+	        			e.printStackTrace();
+	        			return;
+	        		}
+	                
+	                try {
+	        			shell.waitFor();
+	        		} catch (InterruptedException e) {
+	        			e.printStackTrace();
+	        			return;
+	        		}
+	                
+	        	    long endTime = System.nanoTime();
+	        	    
+
+	        	    System.out.println("Runtime(ms) " + ((double)(endTime - startTime) / 1000000000));
+	        	    
+	                synchronized (lock) {
+	                    serviceState.state = org.koala.runnersFramework.runners.bot.listener.State.RUNNING;
+	                }
+
+	            }
+	        };
+	        thread.setPriority(Thread.MAX_PRIORITY);
+            thread.start();
+	}
+	
+	@Override
+	public MethodReport execute_command(final String command) {
+		
+        if (serviceState.mode.equals(State.MODE_DEMO)) {
+			return new MethodReportError(
+			"No support for command execution in the DEMO mode.");
+        }
+		
+        synchronized (lock) {
+    		if (State.ADAPTING.equals(BatsServiceApiImpl.serviceState.state)) {
+    			return new MethodReportError(
+    					"Command execution failed! Service is busy.");
+    		}
+    		BatsServiceApiImpl.serviceState.state = State.ADAPTING;
+        }
+        executeShellCommand(command);
+        
 		return new MethodReportSuccess();
 	}
 }

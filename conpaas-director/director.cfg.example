@@ -1,0 +1,47 @@
+[conpaas]
+# Path to ConPaaS source code
+ROOT_DIR = /home/user/conpaas/conpaas-services
+# Path to certificates
+CERT_DIR = /var/tmp/certs
+
+[iaas]
+# Config for Amazon EC2 
+# DRIVER = ec2
+# USER = 
+# PASSWORD = 
+# SECURITY_GROUP_NAME = 
+# KEY_NAME = 
+# IMAGE_ID = ami-4055db70
+# SIZE_ID = t1.micro
+# REGION = ec2.us-west-2.amazonaws.com
+
+# Config for OpenNebula
+# DRIVER = opennebula
+# USER = 
+# PASSWORD =
+# URL =
+# IMAGE_ID = 
+# INST_TYPE = small
+# NET_ID = 
+# NET_GATEWAY = 
+# NET_NAMESERVER =
+# OS_ARCH =
+# OS_ROOT = sda
+# DISK_TARGET = sda
+# CONTEXT_TARGET = sr0
+
+# Task farming service
+# PORT = 8889
+# HOSTNAME = 
+# TIMEUNIT = 60
+# COSTUNIT = 1
+# MAXNODES = 20
+# SPEEDFACTOR = 1
+# XMLRPC = 
+
+[director]
+DATABASE_URI = sqlite:///director.db
+# This is where ConPaaS.tar.gz is expected to be found, as well as the
+# decrement credit callback. conpaas-director provides both functionalities:
+# put the public IP address of the machine running the director here.
+DIRECTOR_URL = https://your.host.name

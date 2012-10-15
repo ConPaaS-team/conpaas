@@ -1,5 +1,5 @@
 
-all: userguide.pdf installation.pdf internals.pdf installation.html userguide.html index.html smallclean
+all: api.pdf userguide.pdf installation.pdf internals.pdf installation.html userguide.html index.html smallclean
 
 %.pdf : %.tex
 	pdflatex $<

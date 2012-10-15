@@ -1,0 +1,90 @@
+\documentclass[10pt]{article}
+
+\input{conpaasdoc}
+
+\title{ConPaaS -- API documentation\htmlonly{ [\xml{a href="api.pdf"}pdf\xml{/a}]}}
+\htmltitle{ConPaaS -- API documentation}
+\author{Emanuele Rocca}
+\date{ConPaaS-1.0.0}
+
+\begin{document}
+
+\maketitle
+
+%\T\vfil
+%\T\tableofcontents
+%\T\vfil
+%\T\newpage
+
+\section{Introduction}
+\label{intro}
+ConPaaS services are composed by a manager and one or more agents: the
+manager's role is to oversee the functioning of a specific service. ConPaaS
+managers are responsible, among other things, for starting up and shutting down
+ConPaaS agents, which in turn provide the functionality offered by a specific
+service.
+
+It is possible to create and administer ConPaaS services through an HTTP/JSON
+Application Programing Interface exposed by a web service called ConPaaS
+Director. 
+
+\pagebreak 
+
+\section{Available methods}
+Let us list the ConPaaS API methods, together with a brief description of their
+behavior.
+
+\begin{verbatim}
+GET /available_services
+
+    Return a list of available service types. For example: 
+    ['scalaris', 'selenium', 'hadoop', 'mysql', 'java', 'php']
+
+POST /start/<servicetype>
+
+    Return a dictionary with service data (manager's vmid and IP address,
+    service name and ID) in case of correct service creation. False is returned
+    otherwise. Only service types returned by the 'available_services' method
+    described above are allowed.
+
+POST /stop/<serviceid>
+
+    Return a boolean value. True in case of proper service termination, false
+    otherwise. <serviceid> has to be an integer representing the service id of a
+    running service.
+
+GET  /list
+
+    List running ConPaaS services. Return data as a list of dictionaries
+    (associative arrays).
+
+GET|POST /manager
+
+    Proxy GET/POST requests to the manager responsible for the given service id
+    (the sid parameter). This method allows to call any method made available by
+    managers through the director.
+
+GET  /download/ConPaaS.tar.gz
+
+    Used by ConPaaS services. Download a tarball with the ConPaaS source code.
+
+POST /callback/decrementUserCredit.php
+    
+    Used by ConPaaS services. Decrement user credit and check if it is enough.
+    Return a dictionary with the 'error' attribute set to false if the user had
+    enough credit, true otherwise.
+\end{verbatim}
+
+The first four methods, namely \textbf{start}, \textbf{stop}, \textbf{list} and
+\textbf{manager} are of interest for developers wishing to control a ConPaaS
+installation from their programs. They all require two additional parameters:
+\textbf{username} and \textbf{password}. The remaining methods are, conversely,
+only used internally by ConPaaS services and they do not require any additional
+parameter. 
+
+One of the above mentioned methods is worth a particular mention: the
+\textbf{manager} method can be used to access any method available on the
+manager responsible for a specific service. For example, a developer might want
+to use the manager method to get the logs of running service, or add and remove
+agents. 
+\end{document}

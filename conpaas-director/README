@@ -1,0 +1,76 @@
+conpaas-director
+================
+
+This application allows to start and stop ConPaaS service managers. The idea is
+that once a manager is running, every subsequent operation can be done directly
+through the manager.
+
+Installation 
+------------
+Ensure you have virtualenv installed 
+    http://pypi.python.org/pypi/virtualenv
+
+On Debian/Ubuntu systems it can be installed by means of 
+    apt-get install python-virtualenv 
+
+You will also need a bunch of other packages:
+    apt-get install python-dev libcurl4-openssl-dev swig
+
+From within the directory where this README resides
+    virtualenv --no-site-packages .
+    source bin/activate
+    pip install -r requirements.txt
+
+The above mentioned commands will create a isolated Python environment, with
+all the required libraries installed.
+
+Rename director.cfg.example to director.cfg and edit it.
+
+Also put a copy of ConPaaS.tar.gz here containing the ConPaaS services code.
+
+Deployment
+----------
+In a production environment you can use mod-wsgi to deploy conpaas-director:
+
+    apt-get install libapache2-mod-wsgi
+
+Apache needs to know where to find the director. An example of how to configure
+Apache to serve conpaas-director follows. 
+
+    <VirtualHost *>
+        ServerName example.com
+
+        WSGIDaemonProcess director user=user1 group=group1 threads=5
+        WSGIScriptAlias / /var/www/conpaas-director/director.wsgi
+
+        <Directory /var/www/conpaas-director>
+            WSGIProcessGroup director
+            WSGIApplicationGroup %{GLOBAL}
+            Order deny,allow
+            Allow from all
+        </Directory>
+
+        SSLEngine on
+
+        SSLCertificateFile    /etc/conpaas/certs/cert.pem
+        SSLCertificateKeyFile /etc/conpaas/certs/key.pem
+
+        SSLCACertificateFile  /etc/conpaas/certs/ca_cert.pem
+    </VirtualHost>
+
+Usage
+-----
+Create a new user:
+    python adduser.py email@example.org user pass
+
+conpaas-director can then be started for testing purposes as follows:
+    python app.py
+
+New services can easily be started via curl:
+    curl --cacert ca_cert.pem -d "username=user&password=pass" https://director.example.org/start/php
+
+Stopped:
+    curl --cacert ca_cert.pem -d "username=user&password=pass" https://director.example.org/stop/1
+
+And listed:
+    curl --cacert ca_cert.pem "https://director.example.org/list?username=user&password=pass"
