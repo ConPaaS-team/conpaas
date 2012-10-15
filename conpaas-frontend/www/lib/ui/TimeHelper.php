@@ -40,10 +40,10 @@ class TimeHelper {
 
 	public static function timeRelativeDescr($utc_ts) {
 		$ts = strftime("%s", $utc_ts);
-		$delta = time() - $ts;
+		$delta = strftime("%s", time()) - $ts;
 		if ($delta < 0) {
 			// this is in the future
-			return 'a few moments';
+			return 'in a few moments';
 		}
 		$delta = ($delta > 0) ? $delta : - $delta;
 		static $seconds = array(
