@@ -91,6 +91,8 @@ class Controller(object):
         self.__partially_created_nodes = []
         self.__logger = create_logger(__name__)
 
+        self.service_type = config_parser.get('manager', 'TYPE')
+
         # TODO: for now, it receives only 1 cloud credentials - we will 
         # modify this in the near future
         drivername = config_parser.get('iaas', 'DRIVER').lower()
@@ -135,7 +137,12 @@ class Controller(object):
                 self.__force_terminate_lock.acquire()
                 if iteration == 1:
                     request_start = time.time()
-                poll = self.__default_cloud.new_instances(count - len(ready))
+                
+                # eg: conpaas-agent-php-u34-s316
+                name = "conpaas-agent-%s-u%s-s%s" % (
+                    self.service_type, self.__fe_user_id, self.__fe_service_id)
+
+                poll = self.__default_cloud.new_instances(count - len(ready), name)
                 self.__partially_created_nodes += poll
             except Exception as e:
                 self.__logger.exception('[_create_nodes]: Failed to request new nodes')

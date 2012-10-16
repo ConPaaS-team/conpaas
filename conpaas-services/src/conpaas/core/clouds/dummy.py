@@ -95,7 +95,7 @@ class DummyCloud(Cloud):
                          'private_ip': private_ip}
         return vms
 
-    def new_instances(self, count):
+    def new_instances(self, count, name='conpaas'):
         if self.connected == False:
             self._connect()
 

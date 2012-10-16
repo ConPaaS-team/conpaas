@@ -131,23 +131,23 @@ class EC2Cloud(Cloud):
                          'private_ip': private_ip}
         return vms
 
-    def new_instances(self, count):
+    def new_instances(self, count, name='conpaas'):
         if self.connected == False:
             self._connect()
 
         size = [ i for i in self.driver.list_sizes() \
                    if i.id == self.size_id ][0]
         img = NodeImage(self.img_id, '', None)
-        kwargs = {'size': size,
-                  'image': img
-                }
+        kwargs = { 'size' : size,
+                   'image': img,
+                   'name' : name }
         nodes = []
         kwargs['ex_mincount'] = str(count)
         kwargs['ex_maxcount'] = str(count)
         kwargs['ex_securitygroup'] = self.sg
         kwargs['ex_keyname'] = self.key_name
         kwargs['ex_userdata'] = self.cx
-        instances = self.driver.create_node(name='conpaas', **kwargs)
+        instances = self.driver.create_node(**kwargs)
         if count == 1:
             instances = [instances]
         for node in instances:

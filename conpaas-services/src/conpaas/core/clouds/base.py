@@ -69,7 +69,7 @@ class Cloud:
         raise NotImplementedError, \
              'list_vms not implemented for this cloud driver'
 
-    def new_instances(self, count):
+    def new_instances(self, count, name='conpaas'):
         raise NotImplementedError, \
              'new_instances not implemented for this cloud driver'
 
