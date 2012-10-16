@@ -41,10 +41,15 @@ public class BatsServiceApiImpl implements BatsServiceApi {
      * Demo object.
      */
     private DemoWrapper demo;
-    /**
-     * Boolean which determines if demo is on or off.
-     */
 
+    /**
+     * XXX
+     * For security reasons TaskFarm manager does not accept shell commands
+     * by default. This can change in future once the communication between 
+     * TaskFarm manager and the director is secured.
+     */
+    private static Boolean executeCommands = false;
+    
     public static long longestATU = 0;
     private int command_nr = 0;
 	private static final int TMPSIZE = 2048;
@@ -514,9 +519,13 @@ public class BatsServiceApiImpl implements BatsServiceApi {
 		
         if (serviceState.mode.equals(State.MODE_DEMO)) {
 			return new MethodReportError(
-			"No support for command execution in the DEMO mode.");
+					"No support for command execution in the DEMO mode.");
         }
-		
+		if(executeCommands == false)
+		{
+			return new MethodReportError(
+					"Executing commands is disabled in this deployment.");
+		}
         synchronized (lock) {
     		if (State.ADAPTING.equals(BatsServiceApiImpl.serviceState.state)) {
     			return new MethodReportError(
