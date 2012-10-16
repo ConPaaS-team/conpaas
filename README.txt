@@ -39,7 +39,9 @@ ConPaaS currently contains:
 
 - One service dedicated to MapReduce.
 
-- One service dedicate to Task Farming.
+- One service dedicated to Task Farming.
+
+- One service dedicated to functional testing of web applications.
 
 - More services are currently being developed. They will be released
   as soon as they are reasonably well tested and integrated with the
@@ -49,8 +51,7 @@ ConPaaS currently contains:
 Installation
 ============
 
-You will find a small documentation in the "doc" directory.
-
+You will find the ConPaaS Installation guide in the "doc" directory.
 
 Bugs
 ====

@@ -6,7 +6,7 @@ Agreement FP7-ICT-257438.
 
 The main ConPaaS developers are:
 
-- Frontend: Claudiu-Dan Gheorghe, Ismail El Helw, Adriana Szekeres.
+- Frontend: Claudiu-Dan Gheorghe, Ismail El Helw, Adriana Szekeres, Emanuele Rocca.
 
 - Web hosting service: Ismail El Helw, Adriana Szekeres, Emanuele Rocca.
 
@@ -18,3 +18,4 @@ The main ConPaaS developers are:
 
 - TaskFarming service: Ana-Maria Oprescu, Kaveh Razavi, Maricel Mihalcea.
 
+- Selenium service: Emanuele Rocca.
