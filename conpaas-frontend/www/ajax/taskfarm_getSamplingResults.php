@@ -62,7 +62,7 @@ try {
 	}
 	for ($i = 0; $i < count($sampling_results); $i++) {
 		$sampling = &$sampling_results[$i];
-		$utc_ts = intval(intval($sampling['timestamp']) / 1000);
+		$utc_ts = intval($sampling['timestamp'] / 1000);
 		$sampling['name'] = 'sampled '.
 			TimeHelper::timeRelativeDescr($utc_ts).' ago';
 	}
