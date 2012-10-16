@@ -84,7 +84,7 @@ def getHttpProxyState(host, port):
   method = 'getHttpProxyState'
   return _check(https.client.jsonrpc_get(host, port, '/', method))
 
-def createHttpProxy(host, port, proxy_port, code_version, cdn, web_list=[], fpm_list=[], tomcat_list=[], tomcat_servlets=[]):
+def createHttpProxy(host, port, proxy_port, code_version, cdn=False, web_list=[], fpm_list=[], tomcat_list=[], tomcat_servlets=[]):
   method = 'createHttpProxy'
   params = {
     'port': proxy_port,
@@ -98,7 +98,7 @@ def createHttpProxy(host, port, proxy_port, code_version, cdn, web_list=[], fpm_
     params['cdn'] = cdn
   return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
 
-def updateHttpProxy(host, port, proxy_port, code_version, cdn, web_list=[], fpm_list=[], tomcat_list=[], tomcat_servlets=[]):
+def updateHttpProxy(host, port, proxy_port, code_version, cdn=False, web_list=[], fpm_list=[], tomcat_list=[], tomcat_servlets=[]):
   method = 'updateHttpProxy'
   params = {
     'port': proxy_port,
