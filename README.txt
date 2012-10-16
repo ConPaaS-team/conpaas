@@ -31,7 +31,7 @@ ConPaaS currently contains:
   and manage applications in ConPaaS.
 
 - One service dedicated to hosting static Web content as well as Web
-  applications written in PHP.
+  applications written in PHP or Java.
 
 - One service dedicated to hosting MySQL databases.
 
