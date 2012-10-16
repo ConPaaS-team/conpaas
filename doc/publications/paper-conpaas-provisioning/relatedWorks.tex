@@ -1,0 +1,38 @@
+
+{\bf B. Urgaonkar et al., Agile Dynamic provisioning of Multi-Tier Internet Applications:}
+They use predictive and reactive provisioning. They propose a queuing model
+for multi-tier applications, but I don't think it's very accurate (they use
+a G/G/1 queue, and don't take into account processor sharing at all. At
+the end there is a paragraph to address multi-threaded servers, probably
+added at the request of a reviewer; but it doesn't match with what's 
+in the previous paragraphs). For testing they use Rubis and Rubbos. To generate
+workload for Rubis they use some processed access traces from a real-world site.
+The interesting part: they did have flash crowds in their traces. 
+
+{\bf Z. Whang et al., AppRAISE:}
+Similarly to the previous paper, they use predictive and reactive provisioning.
+But they work at the hardware level, adjusting the CPU capacity allocated to
+VMs. They also use a queuing model for this. For testing they use Rubis,
+but with processed traces from a real-world application.
+
+[Homogeneous experiments] [No real traces]
+
+{\bf H. Zhang et al., Resilient Workload Manager:} 
+This paper splits the workload in ``base workload'' and ``tresspassing'' (flash crowd)
+workload. These workloads are served by different groups of servers. They attempt to 
+divide the data items into popular and less popular, and place them in the right
+group of servers. It's not clear how they do the actual provisioning.
+
+[Heterogeneous experiments] [Real Traces] [No profiling]
+
+{\bf N. Kaviani et al., Profiling-as-a-Service:}
+The aim of this paper is to provide an application profiling service. To do
+this, they substitute at runtime a regular VM from the application with
+a VM that has the same application, but with profiling instrumentation.
+They don't have much results and also not much details about how the
+profiling is done.
+
+[Homogeneous experiments] [Use of profiling techniques] [No Real traces]
+
+{\bf http://www.aschroder.com/2012/01/using-aws-auto-scaling-with-an-elastic-load-balancer-cluster-on-ec2/ }
+A blog post with advice on setting up AWS auto-scaling.

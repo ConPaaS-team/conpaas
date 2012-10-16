@@ -1,0 +1,54 @@
+Why is automatic scaling in the cloud important/useful? (give a real-world example)
+
+Current possibilities for users who want to run web applications in the
+cloud: 
+
+1) Systems currently available in clouds: most of them define triggers for 
+adding and removing VMs from the application, based on the monitoring 
+data available in the cloud. Most of these systems are recent and there 
+is a lack of documentation on best practices
+and performance reports of web applications using these systems. 
+
+2) At the other end of the spectrum: several research works on resource 
+provisioning, proposing more sophisticated techniques based on
+queuing models, prediction and workload analysis. However most of these
+research techniques are tested with synthetic (or partially synthetic)
+benchmarks and it is difficult to estimate how they would perform
+for a real-world application; also not all of them are compatible
+with the current cloud environments.
+
+Our goal is to bridge the gap between the state-of the art research in
+resource provisioning and the real-world web application deployments.
+In order to achieve this goal:
+
+\begin{itemize}
+\item we built a Platform-as-a-Service system that can be readily used
+on top of some of today's most popular clouds (Amazon EC2, OpenNebula)
+\item we integrated and adapted in our system some resource  provisioning 
+mechanisms developed in previous research from our group [Jiang]
+\item we tested our system with a Wikipedia deployment and access
+traces  
+\end{itemize}   
+
+{\em \textbf{Guillaume's version:}
+  \begin{enumerate}
+  \item The cloud is a great place to run Web application. In
+    particular it opens the door to resource provisioning, since
+    computing resources are available on-demand.
+  \item There are lots of research papers dedicated to sophisticated
+    techniques to handle resource provisioning. However, if we look at
+    real deployments we see that they rely on extremely simple
+    techniques, and completely ignore the results from academic
+    research on the topic.
+  \item There can be two explanations for this discrepancy: (i) the
+    gains of using sophisticated techniques are too low for anyone to
+    bother; (ii) implementing these techniques is a difficult
+    exercise, which is why real cloud systems rely on simpler
+    techniques.
+  \item This paper tries to identify the real cause. We do this by
+    implementing a sophisticated provisioning system in realistic
+    conditions, and reporting on (i) how hard implementation was; and
+    (ii) potential gains from using the better technique as compared
+    to a simple strawman.
+  \end{enumerate}
+}
