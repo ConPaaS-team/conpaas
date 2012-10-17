@@ -116,7 +116,7 @@ EOF
 
 %(mngr_start_script)s""" % tmpl_values
 
-def __get_config(service_id, user_id):
+def __get_config(service_id, user_id, service_type=""):
     """Add manager configuration"""
     config_parser = common.config
 
@@ -132,6 +132,8 @@ def __get_config(service_id, user_id):
     config_parser.set("manager", "FE_CA_URL", 
         config_parser.get('director', 'DIRECTOR_URL') + "/ca")
 
+    config_parser.set("manager", "TYPE", service_type)
+
     return config_parser
 
 def __stop_reservation_timer(controller):
@@ -140,7 +142,7 @@ def __stop_reservation_timer(controller):
 
 def start(service_name, service_id, user_id):
     """Start a manager for the given service_name, service_id and user_id"""
-    config_parser = __get_config(str(service_id), str(user_id))
+    config_parser = __get_config(str(service_id), str(user_id), service_name)
     # Create a new controller
     controller = ManagerController(config_parser)
     # Create a context file for the specific service
