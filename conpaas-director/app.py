@@ -115,11 +115,6 @@ def get_user_certs():
 @app.route("/available_services", methods=['GET'])
 def available_services():
     """GET /available_services"""
-    return simplejson.dumps(manager_services.keys())
-
-@app.route("/available_services", methods=['GET'])
-def available_services():
-    """GET /available_services"""
     return simplejson.dumps(valid_services)
 
 @app.route("/start/<servicetype>", methods=['POST'])
