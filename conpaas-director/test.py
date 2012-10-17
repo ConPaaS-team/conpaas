@@ -3,7 +3,6 @@ import unittest
 import simplejson
 
 import app
-import actions
 
 class Common(unittest.TestCase):
 
