@@ -114,4 +114,7 @@ class DummyCloud(Cloud):
         """
         if self.connected == False:
             raise Exception('Not connected to cloud')
-        return self.driver.destroy_node(node)
+
+        # destroy_node does not work properly in libcloud's dummy
+        # driver. Just return True.
+        return True
