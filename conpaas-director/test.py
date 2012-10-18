@@ -1,13 +1,33 @@
+import os
 import urllib
 import unittest
 import simplejson
+
+import common
+
+# Config values for unit testing
+common.config = common.ConfigParser()
+
+common.config.add_section("conpaas")
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+common.config.set("conpaas", "ROOT_DIR", 
+    os.path.join(BASE_DIR, 'conpaas-services'))
+common.config.set("conpaas", "CERT_DIR", 
+    os.path.join(BASE_DIR, 'conpaas-frontend', 'conf', 'certs'))
+
+common.config.add_section("iaas")
+common.config.set("iaas", "DRIVER", "dummy")
+common.config.set("iaas", "USER", "dummy")
+
+common.config.add_section("director")
+common.config.set("director", "DATABASE_URI", "sqlite:///director-test.db")
+common.config.set("director", "DIRECTOR_URL", "")
 
 import app
 
 class Common(unittest.TestCase):
 
     def setUp(self):
-        app.app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///director-test.db"
         app.db.drop_all()
         app.db.create_all()
 
