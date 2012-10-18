@@ -91,14 +91,15 @@ class Controller(object):
         self.__partially_created_nodes = []
         self.__logger = create_logger(__name__)
 
-        self.service_type = config_parser.get('manager', 'TYPE')
-
         # TODO: for now, it receives only 1 cloud credentials - we will 
         # modify this in the near future
         drivername = config_parser.get('iaas', 'DRIVER').lower()
         self.__default_cloud = iaas.get_cloud_instance('iaas', \
                                                drivername,   \
 					       config_parser)
+
+        # Setting VM role
+        self.role = 'agent'
 
     #===========================================================================#
     #                create_nodes(self, count, contextFile, test_agent)         #
@@ -138,9 +139,11 @@ class Controller(object):
                 if iteration == 1:
                     request_start = time.time()
                 
+                service_type = self.__config_parser.get("manager", 'TYPE')
+
                 # eg: conpaas-agent-php-u34-s316
-                name = "conpaas-agent-%s-u%s-s%s" % (
-                    self.service_type, self.__fe_user_id, self.__fe_service_id)
+                name = "conpaas-%s-%s-u%s-s%s" % (self.role, service_type,
+                    self.__fe_user_id, self.__fe_service_id)
 
                 poll = self.__default_cloud.new_instances(count - len(ready), name)
                 self.__partially_created_nodes += poll

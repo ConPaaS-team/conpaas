@@ -9,6 +9,10 @@ from conpaas.core.misc import file_get_contents
 
 class ManagerController(Controller):
 
+    def __init__(self, config_parser, **kwargs):
+        Controller.__init__(self, config_parser, **kwargs)
+        self.role = "manager"
+
     def _get_certificate(self, email, cn, org):
         config_parser = self._Controller__config_parser
 
