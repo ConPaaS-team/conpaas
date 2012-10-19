@@ -222,6 +222,9 @@ class SeleniumManager(object):
 
         count = count_or_err
 
+        if count > len(self.nodes) - 1:
+            return HttpErrorResponse("ERROR: Cannot remove so many nodes")
+
         self.state = self.S_ADAPTING
         Thread(target=self._do_remove_nodes, args=[count]).start()
 
