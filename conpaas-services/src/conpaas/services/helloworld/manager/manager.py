@@ -1,10 +1,10 @@
-from threading import Thread, Lock, Timer, Event
+from threading import Thread
 
 from conpaas.core.expose import expose
 from conpaas.core.controller import Controller
-from conpaas.core.http import HttpJsonResponse, HttpErrorResponse,\
-                         HttpFileDownloadResponse, HttpRequest,\
-                         FileUploadField, HttpError, _http_post
+
+from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse
+
 from conpaas.core.log import create_logger
 from conpaas.services.helloworld.agent import client
 
