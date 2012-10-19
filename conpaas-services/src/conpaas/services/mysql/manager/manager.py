@@ -348,9 +348,9 @@ class MySQLManager(object):
             self.logger.debug('Service not runnning')
             return HttpErrorResponse('ERROR: Service not running')
         if not 'user' in kwargs:
-            return HttpErrorResponse('ERROR: Required argument \'user\'doesn\'t exist')
+            return HttpErrorResponse('ERROR: Required argument \'user\' doesn\'t exist')
         if not 'password' in kwargs:
-            return HttpErrorResponse('ERROR: Required argument \'password\'doesn\'t exist')
+            return HttpErrorResponse('ERROR: Required argument \'password\' doesn\'t exist')
 
         # Get the master
         masters = self.config.getMySQLmasters()
