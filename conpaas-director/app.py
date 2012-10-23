@@ -146,7 +146,14 @@ def start(servicetype):
     db.session.add(s)
     # flush() is needed to get auto-incremented sid
     db.session.flush()
-    s.manager, s.vmid = cloud.start(servicetype, s.sid, user.uid)
+
+    try:
+        s.manager, s.vmid = cloud.start(servicetype, s.sid, user.uid)
+    except Exception, err:
+        db.session.rollback()
+        return build_response(jsonify({ 'error': True, 
+                                        'msg': str(err) }))
+
     db.session.commit()
     return build_response(jsonify(s.to_dict()))
 
