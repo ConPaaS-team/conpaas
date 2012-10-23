@@ -332,11 +332,10 @@ fi
 
 # Try to ping the provided hostname. Certainly not a bullet-proof way to check
 # whether the hostname makes sense, but better than nothing.
-ping -c1 -W1 "$hostname" > /dev/null 2>&1
-
-if [ "$?" != 0 ]
+if ! ping -c1 -W1 "$hostname" > /dev/null 2>&1
 then
-    echo "WARNING: Unable to ping $hostname. It has to be reachable from ConPaaS instances."
+    echo "ERROR: Unable to ping $hostname. It has to be reachable from ConPaaS instances."
+    exit 1
 fi
 
 sed -i s/'const CONPAAS_HOST.*'/"const CONPAAS_HOST = \'$hostname\';"/ $DESTDIR/config.php
