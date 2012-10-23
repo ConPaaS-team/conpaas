@@ -14,10 +14,10 @@ On Debian/Ubuntu systems it can be installed by means of
     apt-get install python-virtualenv 
 
 You will also need a bunch of other packages:
-    apt-get install python-dev libcurl4-openssl-dev swig
+    apt-get install python-dev libcurl4-openssl-dev swig python-m2crypto
 
 From within the directory where this README resides
-    virtualenv --no-site-packages .
+    virtualenv --system-site-packages .
     source bin/activate
     pip install -r requirements.txt
 

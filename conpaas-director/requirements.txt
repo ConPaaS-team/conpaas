@@ -2,4 +2,3 @@ flask-sqlalchemy
 simplejson
 pycurl
 pyopenssl
-m2crypto
