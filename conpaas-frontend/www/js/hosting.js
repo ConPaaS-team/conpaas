@@ -113,8 +113,77 @@ conpaas.ui = (function (this_module) {
         $('#cds_subscribe').click(that, that.onCdsSubscribe);
         $('#cds_unsubscribe').click(that, that.onCdsUnsubscribe);
         $('#submitPubKey').click(that, that.onSubmitPubKey);        
+        $('#mountVolume').click(this, this.onMountVolume);
+        $('#umountVolume').click(this, this.onUmountVolume);
+    },
+    showCreateVolStatus: function (type, message) {
+        var otherType = (type === 'positive') ? 'error' : 'positive';
+        $('#VolumeStat').removeClass(otherType).addClass(type)
+            .html(message)
+            .show();
+        setTimeout(function () {
+            $('#VolumeStat').fadeOut();
+        }, 3000);
     },
     // handlers
+    onMountVolume: function (event){
+        var page = event.data,
+            volume = $('#volume').val(),
+            path = $('#path').val();
+
+		if(volume.length == 0){
+			page.showCreateVolStatus('error','There is no volume name');	
+			return;
+		}
+
+		if(path.length == 0){
+			page.showCreateVolStatus('error','There is no path');	
+			return;
+		}
+		//send the request
+		$('#createVolume').attr('disabled','disabled');
+        page.server.req('ajax/mountVolume.php', {
+            sid: page.service.sid,
+            volume: volume,
+            path :path
+        }, 'post', function (response) {
+            // successful
+            page.showCreateVolStatus('positive', 'The Volume was successfully mounted');
+            $('#mountVolume').removeAttr('disabled');
+            $('#volume').val('');
+            $('.selectHint, .msgbox').hide();
+        }, function (response) {
+            // error
+            page.showCreateVolStatus('error', 'Volume was not mounted');
+            $('#mountVolume').removeAttr('disabled');
+        });
+    },
+    onUmountVolume: function (event){
+        var page = event.data,
+            path = $('#path').val();
+
+
+		if(path.length == 0){
+			page.showCreateVolStatus('error','There is no path');	
+			return;
+		}
+		//send the request
+		$('#umountVolume').attr('disabled','disabled');
+        page.server.req('ajax/umountVolume.php', {
+            sid: page.service.sid,
+            path :path
+        }, 'post', function (response) {
+            // successful
+            page.showCreateVolStatus('positive', 'The Volume was successfully unmounted');
+            $('#umountVolume').removeAttr('disabled');
+            $('#volume').val('');
+            $('.selectHint, .msgbox').hide();
+        }, function (response) {
+            // error
+            page.showCreateVolStatus('error', 'Volume was not unmounted');
+            $('#umountVolume').removeAttr('disabled');
+        });
+    },
     onActivateVersion: function (event) {
         var page = event.data,
             versionId = $(event.target).attr('name');

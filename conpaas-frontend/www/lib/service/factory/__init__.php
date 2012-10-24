@@ -75,6 +75,9 @@ class ServiceFactory {
 			case 'hadoop':
 				require_module('service/hadoop');
 				return new HadoopService($service_data, $manager);
+			case 'xtreemfs':
+				require_module('service/xtreemfs');
+				return new XtreemFSService($service_data, $manager);
 			case 'selenium':
 				require_module('service/selenium');
 				return new SeleniumService($service_data, $manager);

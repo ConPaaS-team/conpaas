@@ -36,41 +36,29 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-class PageFactory {
+require_once('../__init__.php');
+require_module('service');
+require_module('service/factory');
 
-	public static function create($service) {
-		$type = $service->getType();
-
-		switch ($type) {
-			case 'php':
-				require_module('ui/page/hosting');
-				return new PhpPage($service);
-			case 'java':
-				require_module('ui/page/hosting');
-				return new JavaPage($service);
-			case 'mysql':
-				require_module('ui/page/mysql');
-				return new MysqlPage($service);
-			case 'taskfarm':
-				require_module('ui/page/taskfarm');
-				return new TaskFarmPage($service);
-			case 'scalaris':
-				require_module('ui/page/scalaris');
-				return new ScalarisPage($service);
-			case 'hadoop':
-				require_module('ui/page/hadoop');
-				return new HadoopPage($service);
-			case 'xtreemfs':
-				require_module('ui/page/xtreemfs');
-				return new XtreemFSPage($service);
-			case 'selenium':
-				require_module('ui/page/selenium');
-				return new SeleniumPage($service);
-			case 'cds':
-				require_module('ui/page/cds');
-				return new CDSPage($service);
-			default:
-				throw new Exception('Unknown service type');
-		}
+try {
+	if (!isset($_SESSION['uid'])) {
+		throw new Exception('User not logged in');
 	}
+
+	$sid = $_POST['sid'];
+	$service_data = ServiceData::getServiceById($sid);
+	$service = ServiceFactory::create($service_data);
+
+	if($service->getUID() !== $_SESSION['uid']) {
+	    throw new Exception('Not allowed');
+	}
+
+    $volume = $_POST['volume'];
+    $path = $_POST['path'];
+	$response = $service->mountVolume($volume,$path);
+	echo $response;
+} catch (Exception $e) {
+	echo json_encode(array('error' => $e->getMessage()));
 }
+
+?>

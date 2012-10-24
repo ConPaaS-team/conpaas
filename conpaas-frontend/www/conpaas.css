@@ -721,7 +721,9 @@ input.button {
 .mysql-access .name {
 	width: 100px;
 }
-
+.xtreemfs-volume .name {
+	width: 100px;
+}
 .form-section .form-header {
 	margin-bottom: 10px;
 }

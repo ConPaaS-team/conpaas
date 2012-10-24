@@ -58,7 +58,10 @@ class Cluster {
 			'masters' => 'blue',
 			'scalaris' => 'blue',
 			'slaves' => 'orange',
-			'workers' => 'orange'
+			'workers' => 'orange',
+			'dir' => 'purple',
+			'mrc' => 'blue',
+			'osd' => 'orange'
 		);
 		return $roles[$this->role];
 	}

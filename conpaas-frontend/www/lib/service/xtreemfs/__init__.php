@@ -36,41 +36,62 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-class PageFactory {
+require_module('cloud');
+require_module('service');
+require_module('ui/instance/xtreemfs');
 
-	public static function create($service) {
-		$type = $service->getType();
+class XtreemFSService extends Service {
 
-		switch ($type) {
-			case 'php':
-				require_module('ui/page/hosting');
-				return new PhpPage($service);
-			case 'java':
-				require_module('ui/page/hosting');
-				return new JavaPage($service);
-			case 'mysql':
-				require_module('ui/page/mysql');
-				return new MysqlPage($service);
-			case 'taskfarm':
-				require_module('ui/page/taskfarm');
-				return new TaskFarmPage($service);
-			case 'scalaris':
-				require_module('ui/page/scalaris');
-				return new ScalarisPage($service);
-			case 'hadoop':
-				require_module('ui/page/hadoop');
-				return new HadoopPage($service);
-			case 'xtreemfs':
-				require_module('ui/page/xtreemfs');
-				return new XtreemFSPage($service);
-			case 'selenium':
-				require_module('ui/page/selenium');
-				return new SeleniumPage($service);
-			case 'cds':
-				require_module('ui/page/cds');
-				return new CDSPage($service);
-			default:
-				throw new Exception('Unknown service type');
-		}
+	public function __construct($data, $cloud) {
+		parent::__construct($data, $cloud);
 	}
+
+	public function hasDedicatedManager() {
+		return true;
+	}
+
+	public function sendConfiguration($params){
+		return '{}';
+	}
+
+	public function fetchHighLevelMonitoringInfo() {
+		return false;
+	}
+
+	public function getInstanceRoles() {
+		return array('dir', 'mrc','osd');
+	}
+
+	public function fetchStateLog() {
+		return array();
+	}
+
+	public function needsPolling() {
+		return parent::needsPolling() || $this->state == self::STATE_INIT;
+	}
+
+	public function createInstanceUI($node) {
+		$info = $this->getNodeInfo($node);
+		return new XtreemFSInstance($info);
+	}
+
+	public function createVolume($volumeName,$owner) {
+		$resp = $this->managerRequest('post','createVolume',array(
+                'volumeName' => $volumeName,
+                'owner' => $owner));
+		return $resp;
+	}
+	public function deleteVolume($volumeName) {
+		$resp = $this->managerRequest('post','deleteVolume',array(
+				'volumeName' => $volumeName));
+		return $resp;
+	}
+
+ 	public function viewVolumes() {
+ 		$json = $this->managerRequest('get', 'viewVolumes', array());
+ 		$volumes = json_decode($json, true);
+ 		return $volumes['result']['volumes'];
+ 	}
 }
+
+?>
