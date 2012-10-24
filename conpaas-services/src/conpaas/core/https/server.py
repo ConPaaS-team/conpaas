@@ -140,16 +140,19 @@ class ConpaasSecureServer(HTTPSServer):
         # Instantiate the requested service class
         service_type = config_parser.get(role, 'TYPE')
         try:
-            module = __import__(services[service_type]['module'], \
+            module = __import__(services[service_type]['module'], 
                                 globals(), locals(), ['*'])
         except ImportError:
-            raise Exception('Could not import the module containing the service class')
+            raise Exception('Could not import module containing service class "%(module)s"' % 
+                services[service_type])
 
         # Get the appropriate class for this service
+        service_class = services[service_type]['class']
         try:
-            instance_class = getattr(module, services[service_type]['class'])
+            instance_class = getattr(module, service_class)
         except AttributeError:
-            raise Exception('Could not get the service class')
+            raise Exception('Could not get service class %s from module %s' % (
+                service_class, module))
 
         # Create an instance of the service class
         self.instance = instance_class(config_parser, **kwargs)
