@@ -297,6 +297,29 @@ class ServicePage extends Page {
 		.'</div>';
 	}
 
+    public function renderStartupScriptSection() {
+		return
+        '<div class="form-section">'
+        .'<div class="form-header">'
+            .'<div class="title">Startup script</div>'
+            .'<div class="clear"></div>'
+        .'</div>'
+		.'<div class="actionsbar">'
+           .'<textarea id="startupscript" cols="50" rows="5" name="startupscript"></textarea><br />'
+           .'<div class="additionalStartup">'
+           .'<img class="loading invisible" '
+               .' src="images/icon_loading.gif" />'
+                                .'<i class="positive invisible">Submitted successfully</i>'
+           .'<i class="error invisible"></i>'
+           .'</div>'
+           .'<div class="clear"></div>'
+           .'<div class="hint">'
+           .'Paste your startup script'
+           .'</div>'
+           .'<button id="submitStartupScript">Submit script</button>'
+		.'</div></div>';
+    }
+
 	public function renderInstancesSection() {
 		if ($this->service->getNodesCount() == 0) {
 			return '<div class="box infobox">No instances are running</div>';

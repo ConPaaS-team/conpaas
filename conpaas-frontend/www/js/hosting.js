@@ -113,6 +113,7 @@ conpaas.ui = (function (this_module) {
         $('#cds_subscribe').click(that, that.onCdsSubscribe);
         $('#cds_unsubscribe').click(that, that.onCdsUnsubscribe);
         $('#submitPubKey').click(that, that.onSubmitPubKey);        
+        $('#submitStartupScript').click(that, that.onSubmitStartupScript);        
         $('#mountVolume').click(this, this.onMountVolume);
         $('#umountVolume').click(this, this.onUmountVolume);
     },
@@ -199,6 +200,32 @@ conpaas.ui = (function (this_module) {
             page.freezeInput(false);
         });
     },
+    uploadTextArea: function (page, url, params, additionalClass) {
+        page.freezeInput(true);
+        $(additionalClass + ' .loading').toggleClass('invisible');
+
+        page.server.req(url, params,
+                'post', function (response) {
+                    page.freezeInput(false);
+                    if (response.error) {
+                        $(additionalClass + ' .error').html(response.error);
+                        $(additionalClass + ' .error').show();
+                        return false;
+                    }
+
+                    $(additionalClass + ' .loading').toggleClass('invisible');
+                    $(additionalClass + ' .positive').show();
+
+                    setTimeout(function () {
+                        $(additionalClass + ' .positive').fadeOut();
+                    }, 1000);
+
+                }, function () {
+                    page.freezeInput(false);
+                    $(additionalClass + ' .loading').toggleClass('invisible');
+                }
+        );
+    }, 
     onSubmitPubKey: function (event) {
         var page = event.data;
         var pubkey = $('#pubkey').val();
@@ -212,30 +239,16 @@ conpaas.ui = (function (this_module) {
             return false;
         }
 
-        page.freezeInput(true);
-        $('.additional .loading').toggleClass('invisible');
+        page.uploadTextArea(page, 'ajax/uploadSshPubKey.php', { sid: page.service.sid, sshkey: pubkey }, '.additional');
+    },
+    onSubmitStartupScript: function (event) {
+        var page = event.data;
+        var contents = $('#startupscript').val();
 
-        page.server.req('ajax/uploadSshPubKey.php', { sid: page.service.sid, sshkey: pubkey },
-                'post', function (response) {
-                    page.freezeInput(false);
-                    if (response.error) {
-                        $('.additional .error').html(response.error);
-                        $('.additional .error').show();
-                        return false;
-                    }
+        $('.additional .error').html("");
+        $('.additional .error').hide();
 
-                    $('.additional .loading').toggleClass('invisible');
-                    $('.additional .positive').show();
-
-                    setTimeout(function () {
-                        $('.additional .positive').fadeOut();
-                    }, 1000);
-
-                }, function () {
-                    page.freezeInput(false);
-                    $('.additional .loading').toggleClass('invisible');
-                }
-        );
+        page.uploadTextArea(page, 'ajax/uploadStartupScript.php', { sid: page.service.sid, script: contents }, '.additionalStartup');
     },
     onSaveConfig: function (event) {
         var page = event.data,
@@ -305,6 +318,7 @@ $(document).ready(function () {
         page,
         sid = GET_PARAMS['sid'],
         server = new conpaas.http.Xhr();
+
     server.req('ajax/getService.php', {sid: sid}, 'get', function (data) {
         service = new conpaas.model.Service(data.sid, data.state,
                 data.instanceRoles, data.reachable);
@@ -320,4 +334,20 @@ $(document).ready(function () {
         // error
         window.location = 'index.php';
     })
+
+    // load startup script
+    server.req('ajax/getStartupScript.php', {sid: sid}, 'get', 
+        function (data) {
+            data = JSON.parse(data);
+
+            if (data.error) {
+                $('#startupscript').val("# Write your startup script here!");
+            }
+            else {
+                $('#startupscript').val(data.result);
+            }
+        },
+        // error
+        function () {}
+    );
 });

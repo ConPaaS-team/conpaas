@@ -385,7 +385,7 @@ class Controller(object):
       # Get key and a certificate from CA
       agent_certs = self._get_certificate()
 
-      ## Concatenate the files
+      # Concatenate the files
       context_file = cloud_script + '\n\n'  \
                      + 'cat <<EOF > /tmp/cert.pem\n' \
                      + agent_certs['cert'] + '\n' + 'EOF\n\n' \
@@ -397,6 +397,14 @@ class Controller(object):
                      + 'cat <<EOF > $ROOT_DIR/config.cfg\n' \
                      + agent_cfg + '\n' + 'EOF\n\n' \
                      + agent_start + '\n'
+
+      # Get user-provided startup script's absolute path
+      basedir = self.__config_parser.get('manager', 'CONPAAS_HOME')
+      startup_script = os.path.join(basedir, 'startup.sh')
+
+      # Append user-provided startup script (if any)
+      if os.path.isfile(startup_script):
+          context_file += open(startup_script).read() + '\n'
 
       return context_file
 

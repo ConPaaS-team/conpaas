@@ -719,3 +719,78 @@ class BasicWebserversManager(object):
     if 'nodes_additional' in pac: nodes += pac['nodes_additional']
     ret += [str(nodes)]
     return ret
+
+  def upload_script(self, kwargs, filename):
+    """Write the file uploaded in kwargs['script'] to filesystem. 
+
+    Return the script absoulte path on success, HttpErrorResponse on
+    failure.
+    """
+    self.logger.debug("upload_script: called with filename=%s" % filename)
+
+    # Check if the required argument 'script' is present
+    if 'script' not in kwargs:
+      return HttpErrorResponse(ManagerException(
+        ManagerException.E_ARGS_MISSING, 'script').message)
+
+    script = kwargs.pop('script')
+
+    # Check if any trailing parameter has been submitted
+    if len(kwargs) != 0:
+      return HttpErrorResponse(ManagerException(
+        ManagerException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
+
+    # Script has to be a FileUploadField
+    if not isinstance(script, FileUploadField):
+      return HttpErrorResponse(ManagerException(
+        ManagerException.E_ARGS_INVALID, detail='script should be a file').message)
+
+    basedir  = self.config_parser.get('manager', 'CONPAAS_HOME') 
+    fullpath = os.path.join(basedir, filename)
+
+    # Write the uploaded script to filesystem 
+    open(fullpath, 'w').write(script.file.read())
+
+    self.logger.debug("upload_script: script uploaded successfully to '%s'" 
+        % fullpath)
+
+    # Return the script absolute path
+    return fullpath
+
+  @expose('UPLOAD')
+  def upload_startup_script(self, kwargs):
+    ret = self.upload_script(kwargs, 'startup.sh')
+
+    if type(ret) is HttpErrorResponse:
+      # Something went wrong. Return the error
+      return ret
+
+    # Rebuild context script
+    self.controller.generate_context("web")
+
+    # All is good. Return the filename of the uploaded script
+    return HttpJsonResponse({ 'filename': ret })
+
+  @expose('GET')
+  def get_startup_script(self, kwargs):
+    """Return contents of the currently defined startup script, if any"""
+    basedir  = self.config_parser.get('manager', 'CONPAAS_HOME') 
+    fullpath = os.path.join(basedir, 'startup.sh')
+
+    try:
+      return HttpJsonResponse(open(fullpath).read())
+    except IOError:
+      return HttpErrorResponse('No startup script')
+
+  @expose('UPLOAD')
+  def upload_adhoc_script(self, kwargs):
+    # TODO
+    # pop all the arguments besides 'script' from kwargs.
+    ret = self.upload_script(kwargs, 'adhoc.sh')
+
+    if type(ret) is HttpErrorResponse:
+        # Something went wrong. Return the error
+        return ret
+
+    # TODO
+    # All is good. Run the script on the specified subset of machines

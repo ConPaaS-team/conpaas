@@ -197,7 +197,7 @@ class HostingPage extends ServicePage {
 				.'<div id="versionsWrapper">'
 					.$this->renderCodeVersions()
 				.'</div>'
-			.'</div>';
+			.'</div>'.$this->renderStartupScriptSection();
 	}
 
 }
