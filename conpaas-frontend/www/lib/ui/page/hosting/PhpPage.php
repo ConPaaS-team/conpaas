@@ -146,6 +146,21 @@ class PhpPage extends HostingPage {
 		return $html;
 	}
 
+	private function getCurrentDisableFunctions() {
+		$conf = $this->service->getConfiguration();
+		if ($conf === null || !isset($conf->phpconf->disable_functions)) {
+			// default value
+			return 'disk_free_space, diskfreespace, dl, exec, fsockopen, highlight_file, ini_alter, ini_restore, mail, openlog, parse_ini_file, passthru, phpinfo, popen, proc_close, proc_get_status, proc_nice, proc_open, proc_terminate, set_time_limit, shell_exec, show_source, symlink, system';
+		}
+		return $conf->phpconf->disable_functions;
+	}
+
+	public function renderDisableFunctionsField() {
+        $value = $this->getCurrentDisableFunctions();
+        $html = '<input type="text" size="50" id="conf-disablefunctions" value="'.$value.'" />';
+        return $html;
+    }
+
 	public function renderSettingsSection() {
 		return
 		'<div class="form-section">'
@@ -164,6 +179,8 @@ class PhpPage extends HostingPage {
 					$this->renderUploadMaxSizeOptions())
 				.$this->renderSettingsRow('Maximum size of POST data',
 					$this->renderPostMaxSizeOptions())
+				.$this->renderSettingsRow('Disabled PHP functions',
+					$this->renderDisableFunctionsField())
 				.'<tr><td class="description"></td>'
 					.'<td class="input actions">'
 					.'<input id="saveconf" type="button" disabled="disabled" '

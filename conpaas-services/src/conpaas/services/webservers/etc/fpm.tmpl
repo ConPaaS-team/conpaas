@@ -18,7 +18,6 @@ pm.max_requests = $max_requests
 php_admin_value[allow_url_fopen] = "Off"
 php_admin_value[allow_url_include] = "Off"
 php_admin_value[enable_dl] = "Off"
-php_admin_value[disable_functions] = "disk_free_space, diskfreespace, dl, exec, fsockopen, highlight_file, ini_alter, ini_restore, mail, openlog, parse_ini_file, passthru, phpinfo, popen, proc_close, proc_get_status, proc_nice, proc_open, proc_terminate, set_time_limit, shell_exec, show_source, symlink, system"
 
 #for $property in $properties
 php_admin_value[$property] = $properties[$property]

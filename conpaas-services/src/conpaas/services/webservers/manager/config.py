@@ -87,6 +87,7 @@ class PHPINIConfiguration(object):
               'display_errors': 'Off',
               'upload_max_filesize': '2M',
               'post_max_size': '4M',
+              'disable_functions': 'disk_free_space, diskfreespace, dl, exec, fsockopen, highlight_file, ini_alter, ini_restore, mail, openlog, parse_ini_file, passthru, phpinfo, popen, proc_close, proc_get_status, proc_nice, proc_open, proc_terminate, set_time_limit, shell_exec, show_source, symlink, system',
               }
   ## Do not use $ to match end of string because it matches the end of the
   ## string or just before the newline at the end of the string.
@@ -97,6 +98,7 @@ class PHPINIConfiguration(object):
               'display_errors': '^On|Off\Z',
               'upload_max_filesize': '^\d+[KkMmGg]?\Z',
               'post_max_size': '^\d+[KkMmGg]?\Z',
+              'disable_functions': '^[\w_, ]+\Z',
               }
   def __init__(self):
     self.conf = {}

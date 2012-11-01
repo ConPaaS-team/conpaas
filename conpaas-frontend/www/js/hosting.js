@@ -109,6 +109,9 @@ conpaas.ui = (function (this_module) {
         $('#conf-maxexec, #conf-memlim, #conf-uploadmaxsize, #conf-postmaxsize').change(function() {
             $('#saveconf').removeAttr('disabled');
         });
+        $('#conf-disablefunctions').focus(function() {
+            $('#saveconf').removeAttr('disabled');
+        });
         $('#saveconf').click(that, that.onSaveConfig);
         $('#cds_subscribe').click(that, that.onCdsSubscribe);
         $('#cds_unsubscribe').click(that, that.onCdsUnsubscribe);
@@ -257,6 +260,7 @@ conpaas.ui = (function (this_module) {
                 memory_limit: $('#conf-memlim').val(),
                 upload_max_filesize: $('#conf-uploadmaxsize').val(),
                 post_max_size: $('#conf-postmaxsize').val(),
+                disable_functions: $('#conf-disablefunctions').val(),
             }};
         $(event.target).attr('disabled', 'disabled');
         page.updateConfiguration(params, function () {
