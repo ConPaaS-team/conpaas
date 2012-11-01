@@ -68,6 +68,7 @@ VAR_TMP = None
 VAR_CACHE = None
 VAR_RUN = None
 ETC = None
+MY_IP = None
 
 def init(config_parser):
   global NGINX_CMD, PHP_FPM, TOMCAT_INSTANCE_CREATE, TOMCAT_STARTUP
@@ -75,11 +76,12 @@ def init(config_parser):
   PHP_FPM = config_parser.get('php', 'PHP_FPM')
   TOMCAT_INSTANCE_CREATE = config_parser.get('tomcat', 'TOMCAT_INSTANCE_CREATE')
   TOMCAT_STARTUP = config_parser.get('tomcat', 'TOMCAT_STARTUP')
-  global VAR_TMP, VAR_CACHE, VAR_RUN, ETC
+  global VAR_TMP, VAR_CACHE, VAR_RUN, ETC, MY_IP
   VAR_TMP = config_parser.get('agent', 'VAR_TMP')
   VAR_CACHE = config_parser.get('agent', 'VAR_CACHE')
   VAR_RUN = config_parser.get('agent', 'VAR_RUN')
   ETC = config_parser.get('agent', 'ETC')
+  MY_IP = config_parser.get('agent', 'MY_IP')
 
 
 class Nginx:
@@ -215,6 +217,7 @@ class NginxProxy(Nginx):
                                'pid_file'         : self.pid_file,
                                'doc_root'         : join(VAR_CACHE, 'www'),
                                'code_version'     : self.codeversion,
+                               'proxy_ip'         : MY_IP,
                                'web_list'         : self.web_list,
                                'fpm_list'         : self.fpm_list,
                                'tomcat_list'      : self.tomcat_list,

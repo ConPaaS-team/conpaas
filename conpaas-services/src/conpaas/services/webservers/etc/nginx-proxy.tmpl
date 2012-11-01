@@ -87,8 +87,11 @@ sub {
   #end if
   
   server {
+    server_name $proxy_ip;
     listen  $port default;
     root    $doc_root/$code_version;
+    client_max_body_size 5000M;
+
     location / {
 
       try_files \$uri \$uri/ /index.php?q=\$request_uri;
