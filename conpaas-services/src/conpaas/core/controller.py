@@ -395,8 +395,7 @@ class Controller(object):
                      + agent_certs['ca_cert'] + '\n' + 'EOF\n\n' \
                      + agent_setup + '\n\n' \
                      + 'cat <<EOF > $ROOT_DIR/config.cfg\n' \
-                     + agent_cfg + '\n' + 'EOF\n\n' \
-                     + agent_start + '\n'
+                     + agent_cfg + '\n' + 'EOF\n\n' 
 
       # Get user-provided startup script's absolute path
       basedir = self.__config_parser.get('manager', 'CONPAAS_HOME')
@@ -405,6 +404,9 @@ class Controller(object):
       # Append user-provided startup script (if any)
       if os.path.isfile(startup_script):
           context_file += open(startup_script).read() + '\n'
+
+      # Finally, the agent startup script
+      context_file += agent_start + '\n'
 
       return context_file
 
