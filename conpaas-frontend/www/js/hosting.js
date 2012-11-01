@@ -106,7 +106,7 @@ conpaas.ui = (function (this_module) {
             $('.deployactions').toggleClass('invisible');
         });
         // configuration handlers
-        $('#conf-maxexec, #conf-memlim').change(function() {
+        $('#conf-maxexec, #conf-memlim, #conf-uploadmaxsize, #conf-postmaxsize').change(function() {
             $('#saveconf').removeAttr('disabled');
         });
         $('#saveconf').click(that, that.onSaveConfig);
@@ -254,7 +254,9 @@ conpaas.ui = (function (this_module) {
         var page = event.data,
             params = {phpconf: {
                 max_execution_time: $('#conf-maxexec').val(),
-                memory_limit: $('#conf-memlim').val()
+                memory_limit: $('#conf-memlim').val(),
+                upload_max_filesize: $('#conf-uploadmaxsize').val(),
+                post_max_size: $('#conf-postmaxsize').val(),
             }};
         $(event.target).attr('disabled', 'disabled');
         page.updateConfiguration(params, function () {

@@ -86,6 +86,7 @@ class PHPINIConfiguration(object):
               'log_errors': 'Off',
               'display_errors': 'Off',
               'upload_max_filesize': '2M',
+              'post_max_size': '4M',
               }
   ## Do not use $ to match end of string because it matches the end of the
   ## string or just before the newline at the end of the string.
@@ -95,6 +96,7 @@ class PHPINIConfiguration(object):
               'log_errors': '^On|Off\Z',
               'display_errors': '^On|Off\Z',
               'upload_max_filesize': '^\d+[KkMmGg]?\Z',
+              'post_max_size': '^\d+[KkMmGg]?\Z',
               }
   def __init__(self):
     self.conf = {}

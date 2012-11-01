@@ -64,7 +64,7 @@ class PhpPage extends HostingPage {
 	}
 
 	public function renderExecTimeOptions() {
-		static $options = array(30, 60, 90);
+		static $options = array(30, 60, 120, 180, 240, 300);
 		$selected = $this->getCurrentExecLimit();
 		$html = '<select id="conf-maxexec">';
 		foreach ($options as $option) {
@@ -100,6 +100,52 @@ class PhpPage extends HostingPage {
 		return $html;
 	}
 
+	private function getCurrentUploadMaxSize() {
+		$conf = $this->service->getConfiguration();
+		if ($conf === null || !isset($conf->phpconf->upload_max_filesize)) {
+			// default value
+			return '2M';
+		}
+		return $conf->phpconf->upload_max_filesize;
+	}
+
+	public function renderUploadMaxSizeOptions() {
+		static $options = array('2M', '16M', '256M', '1024M', '4096M');
+		$selected = $this->getCurrentUploadMaxSize();
+		$html = '<select id="conf-uploadmaxsize">';
+		foreach ($options as $option) {
+			$selectedField = $selected == $option ?
+				'selected="selected"' : '';
+			$html .= '<option value="'.$option.'" '.$selectedField.'>'
+				.$option.'</option>';
+		}
+		$html .= '</select>';
+		return $html;
+	}
+
+	private function getCurrentPostMaxSize() {
+		$conf = $this->service->getConfiguration();
+		if ($conf === null || !isset($conf->phpconf->post_max_size)) {
+			// default value
+			return '4M';
+		}
+		return $conf->phpconf->post_max_size;
+	}
+
+	public function renderPostMaxSizeOptions() {
+		static $options = array('4M', '20M', '300M', '1200M', '4192M');
+		$selected = $this->getCurrentPostMaxSize();
+		$html = '<select id="conf-postmaxsize">';
+		foreach ($options as $option) {
+			$selectedField = $selected == $option ?
+				'selected="selected"' : '';
+			$html .= '<option value="'.$option.'" '.$selectedField.'>'
+				.$option.'</option>';
+		}
+		$html .= '</select>';
+		return $html;
+	}
+
 	public function renderSettingsSection() {
 		return
 		'<div class="form-section">'
@@ -108,12 +154,16 @@ class PhpPage extends HostingPage {
 				.'<div class="clear"></div>'
 			.'</div>'
 			.'<table class="form settings-form">'
-				.$this->renderSettingsRow('Software Version ',
+				.$this->renderSettingsRow('Software Version',
 					$this->renderSwVersionInput())
 				.$this->renderSettingsRow('Maximum script execution time',
 					$this->renderExecTimeOptions())
 				.$this->renderSettingsRow('Memory limit',
 					$this->renderMemLimitOptions())
+				.$this->renderSettingsRow('Maximum allowed size for uploaded files',
+					$this->renderUploadMaxSizeOptions())
+				.$this->renderSettingsRow('Maximum size of POST data',
+					$this->renderPostMaxSizeOptions())
 				.'<tr><td class="description"></td>'
 					.'<td class="input actions">'
 					.'<input id="saveconf" type="button" disabled="disabled" '
