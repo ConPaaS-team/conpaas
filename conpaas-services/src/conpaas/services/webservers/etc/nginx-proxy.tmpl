@@ -90,9 +90,15 @@ sub {
     server_name $proxy_ip;
     listen  $port default;
     root    $doc_root/$code_version;
-    client_max_body_size 5000M;
+    client_max_body_size 0; ## disabled
+
+    ## User-specified configuration for the server stanza. We pretend this is a
+    ## regular expression so that nginx starts properly even if the file is missing
+    include /var/cache/cpsagent/nginx-us[e]r-server.conf;
 
     location / {
+      ## User-specified configuration for the root location
+      include /var/cache/cpsagent/nginx-use[r]-rootloc.conf;
 
       try_files \$uri \$uri/ /index.php?q=\$request_uri;
 
