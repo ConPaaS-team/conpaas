@@ -6,7 +6,7 @@ cp -a conpaas-services/bin cps-tools
 cat <<EOF > cps-tools/README
 To use the cps-tools (on debian/ubuntu):
 
-   $ apt-get install python python-pycurl
+   $ sudo apt-get install python python-pycurl python-m2crypto
    $ export PYTHONPATH=/path/to/cps-tools
    $ export CONPAAS_CERTS_DIR=/path/to/conpaas/certs
    $ /path/to/cps-tools/cpsclient.xxx http://ip:port command
