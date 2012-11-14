@@ -1,4 +1,4 @@
 flask-sqlalchemy
-simplejson
-pycurl
-pyopenssl
+apache-libcloud
+python-memcached
+http://www.linux.it/~ema/conpaas/conpaaslib-1.1.0.tar.gz
