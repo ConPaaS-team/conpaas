@@ -1,4 +1,3 @@
 flask-sqlalchemy
-apache-libcloud
-python-memcached
+apache-libcloud==0.8.0
 http://www.linux.it/~ema/conpaas/conpaaslib-1.1.0.tar.gz

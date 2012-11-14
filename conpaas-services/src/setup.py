@@ -18,5 +18,4 @@ setup(name='conpaaslib',
       download_url='http://www.conpaas.eu/download/',
       license='BSD',
       packages=find_packages(exclude=["*taskfarm"]),
-      install_requires=[ 'simplejson', 'pycurl', 'pyopenssl' ],
-      zipfile=None)
+      install_requires=[ 'simplejson', 'pycurl', 'pyopenssl' ])

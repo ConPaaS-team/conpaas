@@ -107,7 +107,8 @@ class OpenNebulaCloud(Cloud):
                              secret = self.passwd,   \
                              secure = (parsed.scheme == 'https'), \
                              host = parsed.hostname,              \
-                             port = parsed.port)
+                             port = parsed.port, 
+                             api_version = '2.2')
       self.connected = True
 
     # set the context template (i.e. without replacing anythong in it)
@@ -199,8 +200,15 @@ class OpenNebulaCloud(Cloud):
         kwargs['image'] = NodeImage(self.img_id, '', None)
         kwargs['disk_target'] = self.disk_target
 
-        # 'NIC'
-        kwargs['networks'] = self.net_id
+        # 'NIC': str(network.id) is how libcloud gets the network ID. Let's
+        # create an object just like that and pass it in the 'networks' kwarg 
+        class OneNetwork(object): 
+            def __str__(self):
+                return str(self.id)
+        network = OneNetwork()
+        network.id = self.net_id
+        network.address = None
+        kwargs['networks'] = network
 
         # 'CONTEXT'
         context = {}
