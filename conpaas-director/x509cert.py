@@ -3,30 +3,8 @@ import random
 
 from OpenSSL import crypto
 
-import common
-common.extend_path()
-
 from conpaas.core.misc import file_get_contents
-
-def gen_rsa_keypair():
-    pkey = crypto.PKey()
-    pkey.generate_key(crypto.TYPE_RSA, 2048)
-    return pkey
-    
-def create_x509_req(req_key, uid, sid, org, email, cn, role):
-    req = crypto.X509Req()
-    subj = req.get_subject()
-
-    subj.O = org
-    subj.CN = cn
-    subj.emailAddress = email
-    subj.userId = uid
-    subj.serviceLocator = sid
-    subj.role = role
-
-    req.set_pubkey(req_key)
-    req.sign(req_key, "md5")
-    return req
+from conpaas.core.https import x509
 
 def create_x509_cert(cert_dir, x509_req):
     # Load the CA cert
@@ -67,10 +45,10 @@ def generate_certificate(cert_dir, uid, sid, role, email, cn, org):
     ca_cert = file_get_contents(os.path.join(cert_dir, "ca_cert.pem"))
 
     # Generate keypair
-    req_key  = gen_rsa_keypair()
+    req_key  = x509.gen_rsa_keypair()
 
     # Generate certificate request
-    x509_req = create_x509_req(req_key, uid, sid, org, email, cn, role)
+    x509_req = x509.create_x509_req(req_key, uid, sid, org, email, cn, role)
 
     # Sign the request
     certificate = create_x509_cert(cert_dir, x509_req)

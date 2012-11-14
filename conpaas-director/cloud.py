@@ -2,7 +2,6 @@ import os
 
 import x509cert
 import common
-common.extend_path()
 
 from conpaas.core.controller import Controller
 from conpaas.core.misc import file_get_contents
@@ -28,7 +27,7 @@ class ManagerController(Controller):
         file for managers rather than for agents."""
         config_parser = self._Controller__config_parser
 
-        conpaas_home = config_parser.get('conpaas', 'ROOT_DIR')
+        conpaas_home = config_parser.get('conpaas', 'CONF_DIR')
 
         cloud_scripts_dir = os.path.join(conpaas_home, 'scripts', 'cloud')
         mngr_scripts_dir  = os.path.join(conpaas_home, 'scripts', 'manager')

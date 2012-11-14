@@ -10,7 +10,7 @@ common.config = common.ConfigParser()
 
 common.config.add_section("conpaas")
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-common.config.set("conpaas", "ROOT_DIR", 
+common.config.set("conpaas", "CONF_DIR", 
     os.path.join(BASE_DIR, 'conpaas-services'))
 common.config.set("conpaas", "CERT_DIR", 
     os.path.join(BASE_DIR, 'conpaas-frontend', 'conf', 'certs'))

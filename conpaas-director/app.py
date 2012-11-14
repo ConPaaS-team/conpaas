@@ -11,8 +11,6 @@ from StringIO import StringIO
 from OpenSSL import crypto
 
 import common
-# Add ConPaaS src to PYTHONPATH
-common.extend_path()
 import cloud
 import x509cert
 
