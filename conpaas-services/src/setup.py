@@ -1,19 +1,15 @@
 #!/usr/bin/env python
 
 import os
-from setuptools import setup
-
-# find the packages we want to include
-wanted_packages = [ 
-    elem[0].replace('/', '.') for elem in os.walk('conpaas') 
-        if "__init__.py" in elem[2] 
-]
+from setuptools import setup, find_packages
+from setuptools.command import sdist
+del sdist.finders[:]
 
 long_description = """
 ConPaaS: an integrated runtime environment for elastic Cloud applications 
 =========================================================================
 """
-setup(name='conpaas',
+setup(name='conpaaslib',
       version='1.1.0',
       description='ConPaaS: an integrated runtime environment for elastic Cloud applications',
       author='Emanuele Rocca',
@@ -21,4 +17,6 @@ setup(name='conpaas',
       url='http://www.conpaas.eu/',
       download_url='http://www.conpaas.eu/download/',
       license='BSD',
-      packages=wanted_packages)
+      packages=find_packages(exclude=["*taskfarm"]),
+      install_requires=[ 'simplejson', 'pycurl', 'pyopenssl' ],
+      zipfile=None)
