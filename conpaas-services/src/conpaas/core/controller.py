@@ -422,18 +422,19 @@ class Controller(object):
                 self.__fe_service_id,
                 'ConPaaS',
                 'info@conpaas.eu', 'ConPaaS', 'agent')
+        x509_req_as_pem = https.x509.x509_req_as_pem(x509_req)
         _, cert =  https.client.https_post(parsed_url.hostname,
                                            parsed_url.port or 443,
                                            parsed_url.path,
                                            files = [('csr',
                                                      'csr.pem',
-                                                     x509_req.as_pem())])
+                                                     x509_req_as_pem)])
         cert_dir = self.__config_parser.get('manager', 'CERT_DIR')
         ca_cert_file = open(os.path.join(cert_dir, 'ca_cert.pem'), 'r')
         ca_cert = ca_cert_file.read()
 
         certs = {'ca_cert':ca_cert,
-                 'key':req_key.as_pem(cipher=None),
+                 'key':https.x509.key_as_pem(req_key),
                  'cert':cert}
         
         return certs

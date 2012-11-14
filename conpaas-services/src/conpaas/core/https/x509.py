@@ -1,5 +1,5 @@
 #!/usr/bin/python
-'''
+"""
 Copyright (c) 2010-2012, Contrail consortium.
 All rights reserved.
 
@@ -34,36 +34,16 @@ WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
 OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
-
-
-Created on June, 2012
-
-@author aaasz
-@file
-
-'''
-
-""" 
-    Management of X.509 certificates
-
-    It uses the python-m2crypto library o create X509 certificate
-    requests which will be sent to the CA. 
-
-    It also uses the python-openssl library to parse certificates.
-   
-    TODO: rewrite all using the python-openssl library
 """
 
+"""Management of X.509 certificates using pyOpenSSL"""
 
-
-import M2Crypto
 from OpenSSL import crypto
 
 def gen_rsa_keypair():
-    key_pair = M2Crypto.RSA.gen_key(2048, 65537)
-    key = M2Crypto.EVP.PKey(md='sha1')
-    key.assign_rsa(key_pair)
-    return key
+    pkey = crypto.PKey()
+    pkey.generate_key(crypto.TYPE_RSA, 2048)
+    return pkey
 
 def create_x509_req(pub_key, userid, serviceid, org, email, cn, role):
     """
@@ -72,27 +52,24 @@ def create_x509_req(pub_key, userid, serviceid, org, email, cn, role):
         user <<userid>>, encoded in the field CN from the
         Subject area.
     """
-    def _add_field(key, value):
-        req_name.add_entry_by_txt(field=key,
-                                  type=M2Crypto.ASN1.MBSTRING_ASC,
-                                  entry=value,
-                                  len=-1, loc=-1, set=0)
-
-    x509_req = M2Crypto.X509.Request()
-    req_name = M2Crypto.X509.X509_Name()
-
-    _add_field('O', org)
-    _add_field('CN', cn)
-    _add_field('emailAddress', email)
-    _add_field('userId', userid)
-    _add_field('serviceLocator', serviceid)
-    _add_field('role', role)
-
-    x509_req.set_subject_name(req_name)
-    x509_req.set_pubkey(pkey=pub_key)
-    x509_req.sign(pub_key, md='sha1' )
+    req = crypto.X509Req()
+    subj = req.get_subject()
+    subj.O = org
+    subj.CN = cn
+    subj.emailAddress = email
+    subj.userId = userid
+    subj.serviceLocator = serviceid
+    subj.role = role
     
-    return x509_req
+    req.set_pubkey(pub_key)
+    req.sign(pub_key, 'sha1')
+    return req
+
+def x509_req_as_pem(x509_req):
+    return crypto.dump_certificate_request(crypto.FILETYPE_PEM, x509_req)
+
+def key_as_pem(key):
+    return crypto.dump_privatekey(crypto.FILETYPE_PEM, key)
 
 def get_x509_dn_field(cert, field):
     """
@@ -105,15 +82,16 @@ def get_x509_dn_field(cert, field):
     """
     x509_cert = crypto.load_certificate(crypto.FILETYPE_PEM, cert)
     components = x509_cert.get_subject().get_components()
+
     for (key, value) in components:
         if key == field:
             return value
-    return None
 
+    return None
 
 if __name__ == '__main__':
     req_key = gen_rsa_keypair()
     x509_req = create_x509_req(req_key, '3', '101',
                                'ConPaaS', 'info@conpaas.eu',
                                'ConPaaS', 'agent')
-    print x509_req.as_text()
+    print x509_req_as_pem(x509_req)
