@@ -1,10 +1,35 @@
-Make an overview of the base ConPaaS system, without details on  
-provisioning.
+
+
+ConPaaS is an open-source runtime environment for hosting applications in Cloud infrastructures.
+Within the Cloud computing paradigm, ConPaaS belongs to the platform-as-a-service family, 
+in which a variety of systems aim to simplify the deployment of applications in the Cloud. Using ConPaaS,  developers can now focus their attention on application-specific concerns rather than making their applications more suitable for the cloud. 
+
+\subsection{Architecture}
+
+In ConPaaS, an application is conceived as a composition of one or more elastic and distributed components, called \emph{services}. Each service is dedicated to host a particular type of functionality of an application. At the moment, ConPaaS supports six different types of services: two web application hosting services respectively specialized for hosting PHP and JSP applications; a MySQL database service; a NoSQL database service built around the Scalarix key-value store; a MapReduce service; and a TaskFarming service for high-performance batch processing.  
+
+These services are built based on an architecture composed of two main building blocks: agents and managers.  
 
 \begin{itemize}
-\item the ConPaaS manager and agents
-\item Ganglia integration
-\item the provisioning / profiling manager
+\item \textbf{Agent}: A service is composed of one or several agents VM's which host the needed work units to provide a specific functionality. As an example, the PhP web hosting service needs at least three agents: one http proxy, one web server and one FPM-PhP server.  
+
+\item \textbf{Manager}: For each service, there is only one manager VM. The manager is in charge of executing all management requests, centralizing governance and performance monitoring data, and controlling the allocation of resources assigned to one service. The actual application traffic is not addressed to the manager. Requests from end users willing to access the application must be directed directly to the agents hosting the application.
+
 \end{itemize}
 
-Possibly make a diagram with all these components.
+\subsection{Hosting Elastic Applications}
+
+The main features that distinguish ConPaaS from other PaaS systems are its approach for autonomous application scaling and its interoperability with a wide variety of private and public IaaS clouds. In particular to provide such autonomous scaling capabilities, ConPaaS includes a monitoring data analysis mechanism  and a resource provisioning algorithm.
+
+Since most IaaS does not implement any sophisticated monitoring capabilities, ConPaaS incorporates a scalable distributed monitoring engine which is based on the Ganglia~\cite{} monitoring system. Ganglia consists of a server component (gmetad) that aggregates monitoring statistics from various VM's, and a reporting agent (gmond) which runs inside each VM. By default, Ganglia monitors only system-level metrics such as disk, CPU, memory and network usage. Unfortunately, these metrics often do not provide enough information about system performance due to the heterogeneity of the applications. As a consequence, in ConPaaS, we enhanced ganglia to also monitor service workloads by enhancing the reporting agent to track service-specific logs at runtime, and report statistics over a reporting period of 5 minutes. Hence, the PhP web hosting service includes new ganglia metrics that report statistics about the request rate and response time for proxy, web and FPM-PhP servers respectively.
+
+Once the monitoring data is collected from the agents VM's, the resource provisioning  algorithm decides to lunch scaling operations based on this data. Unlike of implementing traditional trigger-based provisioning systems that scale applications independently of its architecture. In ConPaaS, we designed a performance control model for multi-tier applications. Our model takes into account the fact that VM instances may have different roles in an application, which improves the effectiveness of the scaling decisions. Indeed, this allows to rapidly detect performance bottlenecks in applications, and thereby to minimize the resource consumption.
+
+% Instead of implementing simple performance-based triggers which provision each tier individually based on %its own performance, we designed a performance control model for the entire application. 
+
+\fixme{Do you want to mention profiling in this section?}
+
+%Ganglia stores monitored statistics in a custom roundrobin database (RRD); our monitoring engine can track %resource usage and application workload statistics by periodically querying this database and determining %whether any user-specified thresholds have been exceeded (e.g., thresholds on SLA violations, request %drops, or resource utilization). 
+
+ 
+

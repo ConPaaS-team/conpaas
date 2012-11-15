@@ -1,38 +1,22 @@
 
-{\bf B. Urgaonkar et al., Agile Dynamic provisioning of Multi-Tier Internet Applications:}
-They use predictive and reactive provisioning. They propose a queuing model
-for multi-tier applications, but I don't think it's very accurate (they use
-a G/G/1 queue, and don't take into account processor sharing at all. At
-the end there is a paragraph to address multi-threaded servers, probably
-added at the request of a reviewer; but it doesn't match with what's 
-in the previous paragraphs). For testing they use Rubis and Rubbos. To generate
-workload for Rubis they use some processed access traces from a real-world site.
-The interesting part: they did have flash crowds in their traces. 
+There is a wide literature on issues related to dynamic resource provisioning for cloud web applications. Different approaches present solutions based on queuing models~\cite{urgaonkar_agile_2008}, feedback loops techniques~\cite{gong_gray-box_2010}, mathematical models~\cite{muppala_regression-based_2012} or even approaches using neural networks techniques~\cite{islam_empirical_2012}. However, most of these models require a deep understanding in mathematics or machine learning techniques which are not easily interpreted by non specialists. Besides the traffic in web applications is shaped by a combination of different factors such as diurnal and seasonal cycles, sociological and psychological, that follows an irregular pattern. It makes extremely challenging the design and development of realistic and accurate dynamic provisioning mechanisms. 
 
-{\bf Z. Whang et al., AppRAISE:}
-Similarly to the previous paper, they use predictive and reactive provisioning.
-But they work at the hardware level, adjusting the CPU capacity allocated to
-VMs. They also use a queuing model for this. For testing they use Rubis,
-but with processed traces from a real-world application.
+These well-known drawbacks force to IaaS like Amazon EC2 and Windows Azure~\cite{azure}, or PaaS like RightScale~\cite{right-scale} and OpenShift~\cite{openshift},  to design simple threshold rule-based auto-scaling systems, instead of relying on approaches from academic research. Unfortunately, these scaling systems are naive, wasteful in terms of resource consumption and cost savings, and an easy target for flash crowds.
 
-[Homogeneous experiments] [No real traces]
+% Workloads follow irregular patterns including “ﬂash crowds".
 
-{\bf H. Zhang et al., Resilient Workload Manager:} 
-This paper splits the workload in ``base workload'' and ``tresspassing'' (flash crowd)
-workload. These workloads are served by different groups of servers. They attempt to 
-divide the data items into popular and less popular, and place them in the right
-group of servers. It's not clear how they do the actual provisioning.
+% It is slow to workload changes and not eﬀective at handling complex load
+%patterns experienced in practice. Besides, over peak load reactive dynamic provisioning typically does no more than overprovisioning over one computing resource, while %the provisioning over other resources including storage and networking is not explicitly addressed or optimized.
 
-[Heterogeneous experiments] [Real Traces] [No profiling]
+In the following, we present some of the most relevant and realistic academic approaches that proposed dynamic resource provisioning mechanisms for multi-tier applications. 
 
-{\bf N. Kaviani et al., Profiling-as-a-Service:}
-The aim of this paper is to provide an application profiling service. To do
-this, they substitute at runtime a regular VM from the application with
-a VM that has the same application, but with profiling instrumentation.
-They don't have much results and also not much details about how the
-profiling is done.
+%As we mentioned, offline and online profiling are promising techniques when handling unpredictable and temporal burstly workloads in web applications.  
 
-[Homogeneous experiments] [Use of profiling techniques] [No Real traces]
+In ~\cite{urgaonkar_agile_2008, urgaonkar_cataclysm:_2008}, the authors designed and implemented a predictive and reactive provisioning mechanism. They used a queuing model  G/G/1 to decide the server pool size to be provisioned, and an admission control mechanism to face extreme workload variations. Offline prolifing techniques were employed to gather information about the resource requirements of the incoming requests for each tier, and thereby to selectively admit/reject requests for the lightweight files.  An evaluation using real-traces on a homogeneous infrastructures shows the benefits of this approach when handling flash crowds. Unfortunately, its admission control mechanism incurs into sporadic SLA violations ( if the server utilization exceed a pre-defined threshold) reducing the QoS of the service, and therefore affecting user experience. Similarly to the previous work, \cite{wang_appraise:_2009} extended queuing models and transaction mix models to design a predictive and reactive provisioning system. To model the application performance, they integrated proactive control and feedback control methods that dynamically adjusted the CPU capacity allocated to servers. This work only considered SLA constraints at the hardware level, while others constraints at the application level such as response time and request rate were not taken into consideration. Besides, an evaluation of CPU variations on a homogeneous infrastructure, when processing traces from a non real-world application, lack arguments to valid its approach.
 
-{\bf http://www.aschroder.com/2012/01/using-aws-auto-scaling-with-an-elastic-load-balancer-cluster-on-ec2/ }
-A blog post with advice on setting up AWS auto-scaling.
+%control and dynamic provisioning components in addition to the load balancing algorithm. It applies admission control to make sure ﬂash crowd requests
+%will not overload the provisioned server pool by dropping requests, and uses queuing-model based dynamic provisioning technology.
+
+Regarding the management of flash crowds~\cite{zhang_resilient_2009}, a proactive application workload manager was designed to separate the user requests between two groups of servers:  one  named  'base workload'  referred to the smaller and smoother variations in the workload; and the other 'tresspassing' referred to the temporal burstly workloads caused by flash crowds. To do this, the authors attempt to divide the data items into popular and less popular, and place them in the right group of servers. Even tough a realistic evaluation was conducted on Amazon EC2 utilizing real traces (Yahoo video streaming), authors do not explain in details how the dynamic resource provisioning is done. Recently, in  \cite{kaviani_profiling-as--service:_2011}, online profiling techniques have been utilized for managing the tradeofff between performance overload, and cost savings for dynamic resource provisioning. The authors replicate at runtime a regular server hosting an application, with a new server with profiling instrumentation. Their experimental results show how profiling techniques can be included in a resource provisioning system, without causing important response time delays or throughput alterations in comparison with non-profiling provisioning. As we mentioned in Section~\ref{}, profiling techniques can report more benefits than  performance degradations or expenses.
+
+

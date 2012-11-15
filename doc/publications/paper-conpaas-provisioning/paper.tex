@@ -7,6 +7,8 @@
 \usepackage{multicol}
 \usepackage[usenames,dvipsnames,table]{xcolor}
 
+\usepackage{boxedminipage}
+
 % \newcommand{\commentary}[2]{{\bf {\sc #1:} \emph{#2}}}
 % \newcommand{\guillaume}[1]{\commentary{guillaume}{#1}}
 % \newcommand{\corina}[1]{\commentary{corina}{#1}}
@@ -18,6 +20,15 @@
 \renewcommand{\textfraction}{0.1}
 \renewcommand{\floatpagefraction}{0.8}
 \setcounter{topnumber}{1}
+
+% the fixme command
+\newcommand{\fixme}[1]
+{
+  \noindent
+  \begin{boxedminipage}{\linewidth}
+    \textsl{{\bf FIXME: #1}}
+  \end{boxedminipage}
+}
 
 \begin{document}
 
@@ -39,42 +50,42 @@ Web Applications in the Cloud
 Implementing Automatic Scaling for Cloud Web Applications
 ;
 
-\section*{Introduction}
+\section{Introduction}
 
 \input{Introduction}
 
-\section*{Related work}
-
-\input{relatedWorks}
-
-\section*{ConPaaS overview}
+\section{ConPaaS overview}
 
 \input{conpaasOverview}
 
-\section*{The Wikipedia workload}
+\section{The Wikipedia workload \label{wikipedia}}
 
 \input{wikibench}
 
-\section*{Basic resource provisioning}
+\section{Resource provisioning methods}
 
 \input{res_provisioning}
 
-\section*{Experimental Evaluation}
+\section{Experimental evaluation}
 
 \input{experiments}
 
-\section*{Conclusion}
+\section{Related studies}
+
+\input{relatedWorks}
+
+\section{Conclusion}
 
 \input{conclusion}
 
 
-\section*{Acknowledgments}
+\section{Acknowledgments}
 
 This work is partially funded by the FP7 Programme of the European
 Commission in the context of the Contrail project under Grant
 Agreement FP7-ICT-257438.
 
-Probably also mention ERRIC here.
+\fixme{Probably also mention ERRIC here.}
 
 
 \bibliographystyle{plain}
