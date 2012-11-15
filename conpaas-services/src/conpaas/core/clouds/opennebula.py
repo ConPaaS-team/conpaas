@@ -103,15 +103,17 @@ class OpenNebulaCloud(Cloud):
     def _connect(self):
       parsed = urlparse.urlparse(self.url)
       ONDriver = get_driver(Provider.OPENNEBULA)
-      self.driver = ONDriver(self.user,            \
-                             secret = self.passwd,   \
-                             secure = (parsed.scheme == 'https'), \
-                             host = parsed.hostname,              \
-                             port = parsed.port, 
-                             api_version = '2.2')
+
+      self.driver = ONDriver(self.user, 
+                             secret=self.passwd, 
+                             secure=(parsed.scheme == 'https'), 
+                             host=parsed.hostname, 
+                             port=parsed.port, 
+                             api_version='2.2')
+
       self.connected = True
 
-    # set the context template (i.e. without replacing anythong in it)
+    # set the context template (i.e. without replacing anything in it)
     def set_context_template(self, cx):
         self.cx_template = cx
         self.cx = cx.encode('hex')
