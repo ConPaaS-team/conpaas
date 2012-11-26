@@ -1,66 +1,71 @@
-Why is automatic scaling in the cloud important/useful? (give a real-world example)
-\fixme{Cloud provide an infinite pool of resources.}
+%Why is automatic scaling in the cloud important/useful? (give a real-world example)
 
-Current possibilities for users who want to run web applications in the
-cloud: 
 
-1) Systems currently available in clouds: most of them define triggers for 
-adding and removing VMs from the application, based on the monitoring 
-data available in the cloud. Most of these systems are recent and there 
-is a lack of documentation on best practices
-and performance reports of web applications using these systems. 
+%Current possibilities for users who want to run web applications in the
+%cloud: 
 
-2) At the other end of the spectrum: several research works on resource 
-provisioning, proposing more sophisticated techniques based on
-queuing models, prediction and workload analysis. However most of these
-research techniques are tested with synthetic (or partially synthetic)
-benchmarks and it is difficult to estimate how they would perform
-for a real-world application; also not all of them are compatible
-with the current cloud environments.
+%1) Systems currently available in clouds: most of them define triggers for 
+%adding and removing VMs from the application, based on the monitoring 
+%data available in the cloud. Most of these systems are recent and there 
+%is a lack of documentation on best practices
+%and performance reports of web applications using these systems. 
 
-Our goal is to bridge the gap between the state-of the art research in
-resource provisioning and the real-world web application deployments.
-In order to achieve this goal:
+%2) At the other end of the spectrum: several research works on resource 
+%provisioning, proposing more sophisticated techniques based on
+%queuing models, prediction and workload analysis. However most of these
+%research techniques are tested with synthetic (or partially synthetic)
+%benchmarks and it is difficult to estimate how they would perform
+%for a real-world application; also not all of them are compatible
+%with the current cloud environments.
 
-\begin{itemize}
-\item we built a Platform-as-a-Service system that can be readily used
-on top of some of today's most popular clouds (Amazon EC2, OpenNebula)
-\item we integrated and adapted in our system some resource  provisioning 
-mechanisms developed in previous research from our group [Jiang]
-\item we tested our system with a Wikipedia deployment and access
-traces  
-\end{itemize}   
+%Our goal is to bridge the gap between the state-of the art research in
+%resource provisioning and the real-world web application deployments.
+%In order to achieve this goal:
 
-{\em \textbf{Guillaume's version:}
-  \begin{enumerate}
-  \item The cloud is a great place to run Web application. In
-    particular it opens the door to resource provisioning, since
-    computing resources are available on-demand.
-  \item There are lots of research papers dedicated to sophisticated
-    techniques to handle resource provisioning. However, if we look at
-    real deployments we see that they rely on extremely simple
-    techniques, and completely ignore the results from academic
-    research on the topic.
-  \item There can be two explanations for this discrepancy: (i) the
-    gains of using sophisticated techniques are too low for anyone to
-    bother; (ii) implementing these techniques is a difficult
-    exercise, which is why real cloud systems rely on simpler
-    techniques.
-  \item This paper tries to identify the real cause. We do this by
-    implementing a sophisticated provisioning system in realistic
-    conditions, and reporting on (i) how hard implementation was; and
-    (ii) potential gains from using the better technique as compared
-    to a simple strawman.
-  \end{enumerate}
-}
+%\begin{itemize}
+%\item we built a Platform-as-a-Service system that can be readily used
+%on top of some of today's most popular clouds (Amazon EC2, OpenNebula)
+%\item we integrated and adapted in our system some resource  provisioning 
+%mechanisms developed in previous research from our group [Jiang]
+%\item we tested our system with a Wikipedia deployment and access
+%traces  
+%\end{itemize}   
 
-With the rise of cloud computing, more and more applications started to be deployed over clouds.
+%{\em \textbf{Guillaume's version:}
+ % \begin{enumerate}
+ % \item The cloud is a great place to run Web application. In
+  %  particular it opens the door to resource provisioning, since
+   % computing resources are available on-demand.
+ % \item There are lots of research papers dedicated to sophisticated
+  %  techniques to handle resource provisioning. However, if we look at
+  %  real deployments we see that they rely on extremely simple
+  %  techniques, and completely ignore the results from academic
+  %  research on the topic.
+ % \item There can be two explanations for this discrepancy: (i) the
+ %   gains of using sophisticated techniques are too low for anyone to
+ %   bother; (ii) implementing these techniques is a difficult
+  %  exercise, which is why real cloud systems rely on simpler
+  %  techniques.
+ % \item This paper tries to identify the real cause. We do this by
+ %   implementing a sophisticated provisioning system in realistic
+   % conditions, and reporting on (i) how hard implementation was; and
+  %  (ii) potential gains from using the better technique as compared
+  %  to a simple strawman.
+ % \end{enumerate}
+% }
 
-Over the last few years, we have witnessed numerous debates on blogs, conferences and media on whether to use the well-known paradigm called \emph{grid computing} or adopt the recent one called \emph{cloud computing}.  paradigm when a distributed computing paradigm, passing from the paradigm called grid computing till one more recent called cloud computing.
+%With the rise of cloud computing, more and more applications started to be deployed over clouds.
+% infinite pool of resources
 
- One
-key properties of cloud computing is \emph{elasticity}, \emph{i.e.}, the
-possibility for cloud users, to dynamically adapt the quantity of resources at
-his disposal at runtime. 
 
-Over the last few years, 
+Over the last few years, we have witnessed numerous debates on blogs, conferences and media on whether to use \emph{grid computing} or \emph{cloud computing}.  Even though some of the early promises of grid computing, sound the same as the promises of the cloud, cloud efforts were focused on applications which will be long-running on the infrastructure. As a result, today's most well-known enterprises use cloud infrastructures as a tool on which deploy their applications. Similarly, one key properties of the clouds is \emph{elasticity}, \emph{i.e.}, the possibility for cloud users, to dynamically adapt the quantity of resources at his disposal at runtime.  Unfortunately, this notion of infinite resource availability has a financial cost, as cloud users have to pay for the resources being used from moment to moment.  
+
+Therefore it seems crucial to choose the best cloud provisioning offers in order to minimize the resource consumption, and thereby the running costs while assuring several performance requirements for our applications. Nowadays, there are lots of research papers dedicated to sophisticated techniques on dynamic resource provisioning. However, if we look at real deployments we see that cloud providers rely on extremely simple techniques, and completely ignore the results from academic research on the topic. Two reasons can be the explanations for this discrepancy: \emph{(i)} the gains of using sophisticated provisioning strategies are too low for anyone to bother; \emph{(ii)}  implementing these techniques is a difficult exercise, which is why real cloud systems rely on simpler techniques.
+
+This paper tries to identify the real cause. We do this by implementing a sophisticated provisioning system in realistic conditions, and reporting on \emph{(i)} how hard implementation was; and \emph{(ii)} potential gains from using the better technique as compared to a simple strawman. To achieve this, we designed and implemented these resource provisioning strategies on ConPaaS, an open source platform-as-a-service environment for hosting cloud applications~\cite{conpaasIC}. For the sake of comparison and discussion, we deployed the Wikipedia services and used real access traces to validate our technique, opening doors to real implementation of slightly sophisticated auto-scaling systems.
+
+\fixme{Are we gonna include the three strategies?}
+\fixme{Do you have any preference about terminology: strategy, method, algorithm or technique}
+
+Section~\ref{conpaas} introduces the ConPaaS runtime environment. Section~\ref{wikipedia} describes the application and its realistic benchmark to validate our system. Section~\ref{provisioning} focus on the different resource provisioning strategies implemented in ConPaaS. Section~\ref{experiments} details the experimental campaign and its results. Section~\ref{studies} discusses related works. Section~\ref{conclu} draws a conclusion.
+

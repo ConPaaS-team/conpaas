@@ -2,7 +2,7 @@ In this section, we describe the different provisioning methods implemented in C
 
 
 
-\subsection{Naive resource provisioning}
+\subsection{Naive provisioning}
 
 The existing infrastructures offer provisioning mechanism that adjust the amount of resources depending on the load of the currently allocated resources. Within this group of provisioning mechanisms, we include the simple trigger-based systems that define threshold rules to increase and decrease the computational power of an application in order to guarantee several performance requirements. As an example, the Auto Scaling system offered by Amazon EC2~\cite{amazonEC2} scales out an application whenever its CPU usage in the last 10min exceeds a specific threshold (Amazon recommends values from 70\%).  This rules-based method is currently used in mature cloud platforms such as RightScale~\cite{right-scale} or OpenShift~\cite{openshift}. In ConPaaS, we also decided to offer a trigger-based provisioning mechanism, called "naive provisioning", that monitors CPU usage and response time thresholds. 
 
@@ -25,7 +25,8 @@ Even though these type of mechanisms are simple and widely used in cloud platfor
 
 %These constraints are too generic, as other application-specific constraints are not considered. 
 
-\item VMs are heterogeneous in performance, and thereby their throughput vary depending of its hardware configuration (instance's types).
+%\item VMs are heterogeneous in performance, and thereby their throughput vary depending of its hardware configuration (instance's types). 
+\item The performance of virtual instances provided by current Clouds is largely heterogeneous, even when requesting the exact same type of instance each time \cite{ec2Performance}. 
 
 % The provisioning mechanism omit the heterogeneity of the VMs associated to host an application. 
 
@@ -50,7 +51,7 @@ Based on these factors, we believe trigger-based provisioning mechanisms can be 
 %provisioning.  
 
 
-\subsection{History-aware resource provisioning}
+\subsection{History-aware provisioning}
 Based on our previous knowledge from naive provisioning, we designed and implemented a more predictive and dynamic algorithm to handle temporal bursty workload. To achieve that, our algorithm relies on three simple techniques: weight-values for SLA constraints, flexible thresholds and  estimation of the workload trend. 
 
 %In order to handle temporal bursty workload, we designed and implemented a predictive and reactive algorithm by relying on
@@ -67,9 +68,9 @@ Using the history-aware algorithm we now collect application-specific metrics fo
 %In particular, the profiling techniques appears as a solution to tackle this problems of heterogeneity.
 
 
-\section*{Profiling-based resource provisioning}
+\section*{Profiling-based provisioning}
 
-The heterogeneity of cloud platforms, and therefore, of their VMs affect to the accuracy of the provisioning decisions. VMs with better hardware configuration can sustain higher workload intensities. Based on that, we decided to use profiling techniques as a promisingly solution to this heterogeneity problem,  as we pointed out in ~\cite{jiangThesis}. 
+The heterogeneity of cloud platforms, and therefore, of their VMs affect to the accuracy of the provisioning decisions. VMs with better hardware configuration can sustain higher workload intensities. Based on that, each time ConPaaS requests a new VM from the Cloud, it must measure the individual performance profile of this particular VM instance before being able to decide what is the most efficient use of this resource. To do that, ConPaaS uses profiling techniques which represent a promisingly solution to this heterogeneity problem,  as we pointed out in ~\cite{jiangThesis}. 
 
 \noindent There are two types of performance profiling: offline and online.
 
@@ -83,9 +84,9 @@ The heterogeneity of cloud platforms, and therefore, of their VMs affect to the 
 As illustrated on Figure~\ref{model}, we believe most existing problems in resource provisioning can be solved by combining the history-aware provisioning algorithm (referred as scaling on the Figure~\ref{model}) in conjunction with these two profiling techniques. The resulting provisioning system scales out/back an application utilizing all the benefits of heterogeneous cloud infrastructures in a predictive and dynamic manner.
 
 
-\fixme{unlike in some synthetic benchmarks, in Wikipedia there are large variations
-in the complexity of the articles; so the PHP processing time is more difficult 
-to predict}
+%\fixme{unlike in some synthetic benchmarks, in Wikipedia there are large variations
+%in the complexity of the articles; so the PHP processing time is more difficult 
+% to predict}
 
 \begin{figure}
 \begin{center}
