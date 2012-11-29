@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import os
 from setuptools import setup, find_packages
 from setuptools.command import sdist
 del sdist.finders[:]
@@ -9,7 +8,7 @@ long_description = """
 ConPaaS: an integrated runtime environment for elastic Cloud applications 
 =========================================================================
 """
-setup(name='conpaaslib',
+setup(name='cpslib',
       version='1.1.0',
       description='ConPaaS: an integrated runtime environment for elastic Cloud applications',
       author='Emanuele Rocca',
