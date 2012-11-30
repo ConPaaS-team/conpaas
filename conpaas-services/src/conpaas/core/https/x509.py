@@ -62,6 +62,17 @@ def create_x509_req(pub_key, **name):
     req.sign(pub_key, 'sha1')
     return req
 
+def create_cert(req, issuer_cert, issuer_key, serial, not_before, not_after):
+    cert = crypto.X509()
+    cert.set_serial_number(serial)
+    cert.gmtime_adj_notBefore(not_before)
+    cert.gmtime_adj_notAfter(not_after)
+    cert.set_issuer(issuer_cert.get_subject())
+    cert.set_subject(req.get_subject())
+    cert.set_pubkey(req.get_pubkey())
+    cert.sign(issuer_key, 'sha1')
+    return cert
+
 def x509_req_as_pem(x509_req):
     return crypto.dump_certificate_request(crypto.FILETYPE_PEM, x509_req)
 
