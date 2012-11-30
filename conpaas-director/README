@@ -19,11 +19,21 @@ Restart apache.
 
 Usage
 -----
-New services can easily be started via curl:
-    curl --cacert ca_cert.pem -d "username=user&password=pass" https://director.example.org/start/php
+To use the director you need to install the ConPaaS command line clients.
 
-Stopped:
-    curl --cacert ca_cert.pem -d "username=user&password=pass" https://director.example.org/stop/1
+# FIXME: use www.conpaas.eu/dl rather than my website.
 
-And listed:
-    curl --cacert ca_cert.pem "https://director.example.org/list?username=user&password=pass"
+$ sudo easy_install http://www.linux.it/~ema/conpaas/cpsclient-1.1.0.tar.gz
+
+That command should bring in all the required dependencies. The client
+can then be used by regular users. Usage output can be displayed by
+running:
+
+$ cpsclient.py help
+
+To install the CLI clients as non-root users you need virtualenv:
+
+$ virtualenv test # create the virtualenv
+$ cd test
+$ source bin/activate # activate it
+$ easy_install http://www.linux.it/~ema/conpaas/cpsclient-1.1.0.tar.gz
