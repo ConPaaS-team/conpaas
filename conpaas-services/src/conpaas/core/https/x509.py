@@ -45,7 +45,7 @@ def gen_rsa_keypair():
     pkey.generate_key(crypto.TYPE_RSA, 2048)
     return pkey
 
-def create_x509_req(pub_key, userid, serviceid, org, email, cn, role):
+def create_x509_req(pub_key, **name):
     """
         Creates an x509 CSR. We only need to certify that the owner
         of this certificate is allowed to access the machines of
@@ -54,12 +54,9 @@ def create_x509_req(pub_key, userid, serviceid, org, email, cn, role):
     """
     req = crypto.X509Req()
     subj = req.get_subject()
-    subj.O = org
-    subj.CN = cn
-    subj.emailAddress = email
-    subj.userId = userid
-    subj.serviceLocator = serviceid
-    subj.role = role
+
+    for key, value in name.items():
+        setattr(subj, key, value)
     
     req.set_pubkey(pub_key)
     req.sign(pub_key, 'sha1')
@@ -91,7 +88,7 @@ def get_x509_dn_field(cert, field):
 
 if __name__ == '__main__':
     req_key = gen_rsa_keypair()
-    x509_req = create_x509_req(req_key, '3', '101',
-                               'ConPaaS', 'info@conpaas.eu',
-                               'ConPaaS', 'agent')
+    x509_req = create_x509_req(req_key, userId='3', serviceLocator='101',
+                               O='ConPaaS', emailAddress='info@conpaas.eu',
+                               CN='ConPaaS', role='agent')
     print x509_req_as_pem(x509_req)

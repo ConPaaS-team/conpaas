@@ -417,11 +417,17 @@ class Controller(object):
         parsed_url = urlparse.urlparse(self.__fe_caUrl)
 
         req_key = https.x509.gen_rsa_keypair()
-        x509_req = https.x509.create_x509_req(req_key,
-                self.__fe_user_id,
-                self.__fe_service_id,
-                'ConPaaS',
-                'info@conpaas.eu', 'ConPaaS', 'agent')
+
+        x509_req = https.x509.create_x509_req(
+            req_key,
+            userId=self.__fe_user_id, 
+            serviceLocator=self.__fe_service_id, 
+            O='ConPaaS',
+            emailAddress='info@conpaas.eu', 
+            CN='ConPaaS', 
+            role='agent'
+        )
+
         x509_req_as_pem = https.x509.x509_req_as_pem(x509_req)
         _, cert =  https.client.https_post(parsed_url.hostname,
                                            parsed_url.port or 443,
