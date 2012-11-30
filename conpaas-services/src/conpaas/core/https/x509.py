@@ -76,6 +76,9 @@ def create_cert(req, issuer_cert, issuer_key, serial, not_before, not_after):
 def x509_req_as_pem(x509_req):
     return crypto.dump_certificate_request(crypto.FILETYPE_PEM, x509_req)
 
+def cert_as_pem(cert):
+    return crypto.dump_certificate(crypto.FILETYPE_PEM, cert)
+
 def key_as_pem(key):
     return crypto.dump_privatekey(crypto.FILETYPE_PEM, key)
 
