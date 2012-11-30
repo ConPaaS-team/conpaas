@@ -1,10 +1,10 @@
 import os
 
-import x509cert
-import common
-
 from conpaas.core.controller import Controller
 from conpaas.core.misc import file_get_contents
+
+from cpsdirector import x509cert
+from cpsdirector import common
 
 class ManagerController(Controller):
 

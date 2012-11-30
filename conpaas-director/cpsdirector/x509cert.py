@@ -15,40 +15,33 @@ def create_x509_cert(cert_dir, x509_req):
     key = crypto.load_privatekey(crypto.FILETYPE_PEM, 
         file_get_contents(os.path.join(cert_dir, "ca_key.pem")))
 
-    # Create new certificate
-    newcert = crypto.X509()
-
     # Generate serial number
     serial = random.randint(1, 2048)
-    newcert.set_serial_number(serial)
-    
+
     # Valid for one year starting from now 
-    newcert.gmtime_adj_notAfter(60 * 60 * 24 * 365)
-    newcert.gmtime_adj_notBefore(0)
+    not_before = 0
+    not_after  = 60 * 60 * 24 * 365
 
-    # Issuer, subject and public key
-    newcert.set_issuer(ca_cert.get_subject())
-    newcert.set_subject(x509_req.get_subject())
-    newcert.set_pubkey(x509_req.get_pubkey())
-
-    # Sign
-    newcert.sign(key, "md5")
+    newcert = x509.create_cert(x509_req, 
+        ca_cert, key, serial, not_before, not_after)
 
     return crypto.dump_certificate(crypto.FILETYPE_PEM, newcert)
 
-def generate_certificate(cert_dir, uid, sid, role, email, cn, org):
+def generate_certificate(cert_dir, uid, sid, role, email, cn, org, ca_cert=None):
     """Generates a new x509 certificate for a manager from scratch.
 
     Creates a key, a request and then the certificate."""
 
     # Get CA cert
-    ca_cert = file_get_contents(os.path.join(cert_dir, "ca_cert.pem"))
+    if ca_cert is None:
+        ca_cert = file_get_contents(os.path.join(cert_dir, "ca_cert.pem"))
 
     # Generate keypair
     req_key  = x509.gen_rsa_keypair()
 
     # Generate certificate request
-    x509_req = x509.create_x509_req(req_key, uid, sid, org, email, cn, role)
+    x509_req = x509.create_x509_req(req_key, userId=uid, serviceLocator=sid, 
+        O=org, emailAddress=email, CN=cn, role=role)
 
     # Sign the request
     certificate = create_x509_cert(cert_dir, x509_req)

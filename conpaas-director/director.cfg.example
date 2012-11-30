@@ -1,8 +1,8 @@
 [conpaas]
 # Path to ConPaaS conf dir
-CONF_DIR = /etc/conpaas
+CONF_DIR = /etc/cpsdirector
 # Path to certificates
-CERT_DIR = /var/tmp/certs
+CERT_DIR = /etc/cpsdirector/certs
 
 [iaas]
 # Config for Amazon EC2 
@@ -40,8 +40,8 @@ CERT_DIR = /var/tmp/certs
 # XMLRPC = 
 
 [director]
-DATABASE_URI = sqlite:///director.db
+DEBUG = true
+DATABASE_URI = sqlite:////etc/cpsdirector/director.db
 # This is where ConPaaS.tar.gz is expected to be found, as well as the
 # decrement credit callback. conpaas-director provides both functionalities:
 # put the public IP address of the machine running the director here.
-DIRECTOR_URL = https://your.host.name

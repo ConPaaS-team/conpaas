@@ -3,7 +3,7 @@ import urllib
 import unittest
 import simplejson
 
-import common
+from cpsdirector import common
 
 # Config values for unit testing
 common.config = common.ConfigParser()
@@ -23,7 +23,7 @@ common.config.add_section("director")
 common.config.set("director", "DATABASE_URI", "sqlite:///director-test.db")
 common.config.set("director", "DIRECTOR_URL", "")
 
-import app
+from cpsdirector import app
 
 class Common(unittest.TestCase):
 

@@ -1,0 +1,4 @@
+include director.cfg.example
+include director.wsgi
+include ConPaaS.tar.gz
+recursive-include conpaas *

@@ -10,12 +10,12 @@ from datetime import datetime
 from StringIO import StringIO
 from OpenSSL import crypto
 
-import common
-import cloud
-import x509cert
-
 from conpaas.core import https
 from conpaas.core.services import manager_services
+
+from cpsdirector import common
+from cpsdirector import cloud
+from cpsdirector import x509cert
 
 # Manually add task farming to the list of valid services
 valid_services = manager_services.keys() + [ 'taskfarm', ]
@@ -218,7 +218,7 @@ def download():
 
     Returns ConPaaS tarball.
     """
-    return helpers.send_from_directory(os.path.dirname(__file__), 
+    return helpers.send_from_directory(common.config.get('conpaas', 'CONF_DIR'), 
         "ConPaaS.tar.gz")
 
 @app.route("/ca/get_cert.php", methods=['POST'])
