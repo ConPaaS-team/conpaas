@@ -4,6 +4,9 @@ In this section, we describe the different provisioning methods implemented in C
 
 \subsection{Naive provisioning}
 
+\corina{Maybe we should find another name instead of ``naive'',
+for example ``simple'' or ``basic''?}
+
 The existing infrastructures offer provisioning mechanism that adjust the amount of resources depending on the load of the currently allocated resources. Within this group of provisioning mechanisms, we include the simple trigger-based systems that define threshold rules to increase and decrease the computational power of an application in order to guarantee several performance requirements. As an example, the Auto Scaling system offered by Amazon EC2~\cite{amazonEC2} scales out an application whenever its CPU usage in the last 10min exceeds a specific threshold (Amazon recommends values from 70\%).  This rules-based method is currently used in mature cloud platforms such as RightScale~\cite{right-scale} or OpenShift~\cite{openshift}. In ConPaaS, we also decided to offer a trigger-based provisioning mechanism, called "naive provisioning", that monitors CPU usage and response time thresholds. 
 
 % , expressed in the form of a Service Level Agreement
@@ -34,6 +37,8 @@ Even though these type of mechanisms are simple and widely used in cloud platfor
 
 Based on these factors, we believe trigger-based provisioning mechanisms can be improved without drastically increasing its complexity. A solution seems to be the utilization of techniques that handle web application workload, while its implementation remains a simple exercise. In the following we present two algorithms that aims at solving these drawbacks by relying on more predictive and dynamic methods.
 
+\corina{What do you mean by ``its implementation remains a simple exercise''?}
+
 % to dynamically adjust the computational power to irregular workload pattern of web applications.
 
 
@@ -63,12 +68,23 @@ Considering web applications, our method associate weight-values in an ascending
 
 \textbf{Workload's trend estimation:} Nowadays, there is a wide literature on mathematical models that try to predict future alterations in web application's workload. However, most models fail due to the irregular pattern of the web traffic, or its complexity to be utilized in real auto scaling systems. As a result, we decided to analyze the system performance behavior during an interval of time, thus avoiding flash crowds and slashdot effects. An exhaustive analysis of the monitoring data during a small interval of time (approx. during the last 20min) provides enough information to deduct the workload's trend, and thereby to classify the type of workload alteration as constant or temporal. Obviously, only constant variations may trigger scaling actions to avoid fluctuations in the system performance, as we will detail in Section~\ref{experiments}.
 
+\corina{Are you sure that the mathematical models from the existing literature fail?
+The fact that the traffic is irregular makes it difficult to provide accurate
+predictions, but trend detection does not aim to make accurate predictions, so I
+think those models should still work.} 
+
 Using the history-aware algorithm we now collect application-specific metrics for our measurements, evaluate the evolution of the application workload avoiding an excessive reactive behavior, and handle threshold values that helps to predict possible SLA violations. Unfortunately, the heterogeneous nature of the VMs requires more dynamic provisioning algorithms. 
 
 %In particular, the profiling techniques appears as a solution to tackle this problems of heterogeneity.
 
 
 \section*{Profiling-based provisioning}
+
+\corina{This section describes the profiling methods, which 
+were not really used in the experiments that we show in the paper.
+We should probably describe instead the method that we
+actually used, which is dynamically adjusting the load
+balancing weights based on the monitoring data (without profiling).}
 
 The heterogeneity of cloud platforms, and therefore, of their VMs affect to the accuracy of the provisioning decisions. VMs with better hardware configuration can sustain higher workload intensities. Based on that, each time ConPaaS requests a new VM from the Cloud, it must measure the individual performance profile of this particular VM instance before being able to decide what is the most efficient use of this resource. To do that, ConPaaS uses profiling techniques which represent a promisingly solution to this heterogeneity problem,  as we pointed out in ~\cite{jiangThesis}. 
 

@@ -8,7 +8,10 @@ in which a variety of systems aim to simplify the deployment of applications in 
 
 In ConPaaS, an application is conceived as a composition of one or more elastic and distributed components, called \emph{services}. Each service is dedicated to host a particular type of functionality of an application. At the moment, ConPaaS supports six different types of services: two web application hosting services respectively specialized for hosting PHP and JSP applications; a MySQL database service; a NoSQL database service built around the Scalarix key-value store; a MapReduce service; and a TaskFarming service for high-performance batch processing.  
 
-These services are built based on an architecture composed of two main building blocks: agents and managers.  
+These services are built based on an architecture composed of two main building blocks: agents and managers.
+
+\corina{Maybe include here one of the diagrams that we have, 
+that show the architecture of ConPaaS?}  
 
 \begin{itemize}
 \item \textbf{Agent}: A service is composed of one or several agents VMs which host the needed components to provide the service-specific functionality. As an example, the PhP web hosting service needs at least three agents: one http proxy, one web server and one PhP server.  
@@ -16,6 +19,9 @@ These services are built based on an architecture composed of two main building 
 \item \textbf{Manager}: For each service, there is only one manager VM. The manager is in charge of executing all management requests, centralizing governance and performance monitoring data, and controlling the allocation of resources assigned to one service. The actual application traffic is not addressed to the manager. Requests from end users willing to access the application must be directed directly to the agents hosting the application.
 
 \end{itemize}
+
+\corina{We should point out that the agents can be on a single VM 
+(for small applications) or on multiple VMs (for larger applications).}
 
 \subsection{Hosting Elastic Applications}
 
@@ -28,6 +34,8 @@ Unlike of implementing traditional trigger-based provisioning systems that scale
 % Instead of implementing simple performance-based triggers which provision each tier individually based on %its own performance, we designed a performance control model for the entire application. 
 
 \fixme{Do you want to mention profiling in this section?}
+\corina{I don't think so, since we didn't even really use profiling 
+in the experiments that we show here.}
 
 %Ganglia stores monitored statistics in a custom roundrobin database (RRD); our monitoring engine can track %resource usage and application workload statistics by periodically querying this database and determining %whether any user-specified thresholds have been exceeded (e.g., thresholds on SLA violations, request %drops, or resource utilization). 
 

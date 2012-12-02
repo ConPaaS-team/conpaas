@@ -58,14 +58,27 @@
 % infinite pool of resources
 
 
-Over the last few years, we have witnessed numerous debates on blogs, conferences and media on whether to use \emph{grid computing} or \emph{cloud computing}.  Even though some of the early promises of grid computing, sound the same as the promises of the cloud, cloud efforts were focused on applications which will be long-running on the infrastructure. As a result, today's most well-known enterprises use cloud infrastructures as a tool on which deploy their applications. Similarly, one key properties of the clouds is \emph{elasticity}, \emph{i.e.}, the possibility for cloud users, to dynamically adapt the quantity of resources at his disposal at runtime.  Unfortunately, this notion of infinite resource availability has a financial cost, as cloud users have to pay for the resources being used from moment to moment.  
+Over the last few years, we have witnessed numerous debates on blogs, conferences and media on whether to use \emph{grid computing} or \emph{cloud computing}.  Even though some of the early promises of grid computing, sound the same as the promises of the cloud, cloud efforts were focused on applications which will be long-running on the infrastructure. As a result, today's most well-known enterprises use cloud infrastructures as a tool on which deploy their applications. Similarly, one key properties of the clouds is \emph{elasticity}, \emph{i.e.}, the possibility for cloud users, to dynamically adapt the quantity of resources at his disposal at runtime.  Unfortunately, this notion of infinite resource availability has a financial cost, as cloud users have to pay for the resources being used from moment to moment.
+
+\corina{Not sure if we should bring grid computing into discussion, 
+the readers might not be familiar with it (and I think we should aim
+to shorten the paper).}
 
 Therefore it seems crucial to choose the best cloud provisioning offers in order to minimize the resource consumption, and thereby the running costs while assuring several performance requirements for our applications. Nowadays, there are lots of research papers dedicated to sophisticated techniques on dynamic resource provisioning. However, if we look at real deployments we see that cloud providers rely on extremely simple techniques, and completely ignore the results from academic research on the topic. Two reasons can be the explanations for this discrepancy: \emph{(i)} the gains of using sophisticated provisioning strategies are too low for anyone to bother; \emph{(ii)}  implementing these techniques is a difficult exercise, which is why real cloud systems rely on simpler techniques.
+
+\corina{I think the statement ``completely ignore the results from academic research'' 
+is a bit too bold. I would say something like the real deployments tend to use
+very simple strategies rather than the sophisticated techniques proposed
+by researchers.}
 
 This paper tries to identify the real cause. We do this by implementing a sophisticated provisioning system in realistic conditions, and reporting on \emph{(i)} how hard implementation was; and \emph{(ii)} potential gains from using the better technique as compared to a simple strawman. To achieve this, we designed and implemented these resource provisioning strategies on ConPaaS, an open source platform-as-a-service environment for hosting cloud applications~\cite{conpaasIC}. For the sake of comparison and discussion, we deployed the Wikipedia services and used real access traces to validate our technique, opening doors to real implementation of slightly sophisticated auto-scaling systems.
 
 \fixme{Are we gonna include the three strategies?}
+\corina{Maybe not; we could just make a summary phrase out of that (e.g.
+we used more sophisticated methods based on trend detection, dynamic weight adjustment
+for load balancing etc.). }
 \fixme{Do you have any preference about terminology: strategy, method, algorithm or technique}
+\corina{I think these terms can be used interchangeably, I don't have a preference.}
 
 Section~\ref{conpaas} introduces the ConPaaS runtime environment. Section~\ref{wikipedia} describes the application and its realistic benchmark to validate our system. Section~\ref{provisioning} focus on the different resource provisioning strategies implemented in ConPaaS. Section~\ref{experiments} details the experimental campaign and its results. Section~\ref{studies} discusses related works. Section~\ref{conclu} draws a conclusion.
 
