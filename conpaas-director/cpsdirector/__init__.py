@@ -64,6 +64,35 @@ def build_response(data):
     response.headers['Access-Control-Allow-Origin'] = '*'
     return response
 
+@app.route("/new_user", methods=['POST'])
+def new_user():
+    values = {}
+    required_fields = ( 'username', 'fname', 'lname', 'email', 
+                        'affiliation', 'password', 'credit' )
+
+    # check for presence of mandatory fields
+    for field in required_fields:
+        values[field] = request.values.get(field)
+
+        if not values[field]:
+            return build_response(jsonify({ 
+                'error': True, 'msg': '%s is a required field' % field }))
+
+    # check if the provided username already exists
+    if User.query.filter_by(username=values['username']).first():
+        return build_response(jsonify({ 
+            'error': True, 
+            'msg': 'Username "%s" already taken' % values['username'] }))
+
+    try:
+        user = create_user(**values)
+        # successful creation
+        return build_response(simplejson.dumps(user.to_dict()))
+    except Exception:
+        # something went wrong
+        return build_response(jsonify({ 
+            'error': True, 'msg': 'Unknown error upon user creation' }))
+
 @app.route("/login", methods=['POST'])
 def login():
     user = auth_user(request.values.get('username', ''), 
@@ -74,16 +103,9 @@ def login():
         return build_response(simplejson.dumps(False))
 
     # Authentication succeeded, return user data
-    user_data = {
-        'uid': user.uid, 'username': user.username, 
-        'fname': user.fname, 'lname': user.lname,
-        'email': user.email, 'affiliation': user.affiliation,
-        'password': user.password, 'credit': user.credit, 
-        'created': user.created.isoformat(),
-    }
-    return build_response(simplejson.dumps(user_data))
+    return build_response(simplejson.dumps(user.to_dict()))
 
-@app.route("/getcerts", methods=['GET'])
+@app.route("/getcerts", methods=['POST','GET'])
 def get_user_certs():
     user = auth_user(request.values.get('username', ''), 
         request.values.get('password', ''))
@@ -187,9 +209,9 @@ def stop(serviceid):
 
     return build_response(simplejson.dumps(False))
 
-@app.route("/list", methods=['GET'])
+@app.route("/list", methods=['POST', 'GET'])
 def list_services():
-    """GET /list
+    """POST /list
 
     List running ConPaaS services if the user is authenticated. Return False
     otherwise.
@@ -297,6 +319,15 @@ class User(db.Model):
 
         for key, val in kwargs.items():
             setattr(self, key, val)
+
+    def to_dict(self):
+        return  {
+            'uid': self.uid, 'username': self.username, 
+            'fname': self.fname, 'lname': self.lname,
+            'email': self.email, 'affiliation': self.affiliation,
+            'password': self.password, 'credit': self.credit, 
+            'created': self.created.isoformat(),
+        }
 
 class Service(db.Model):
     sid = db.Column(db.Integer, primary_key=True, 
