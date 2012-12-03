@@ -165,7 +165,7 @@ class BaseClient(object):
 
     def service_dict(self, service_id):
         """Return service's data as a dictionary"""
-        services = self.callapi("list", False, {})
+        services = self.callapi("list", True, {})
 
         for service in services:
             if str(service['sid']) == str(service_id):
@@ -191,7 +191,7 @@ class BaseClient(object):
         print res['log']
 
     def getcerts(self):
-        res = self.callapi("getcerts", False, {})
+        res = self.callapi("getcerts", True, {})
 
         zipdata = zipfile.ZipFile(StringIO.StringIO(res))
         zipdata.extractall(path=self.confdir)
@@ -261,7 +261,7 @@ class BaseClient(object):
 
     def check_service_id(self, sid):
         # Getting info on this service
-        services = self.callapi("list", False, {})
+        services = self.callapi("list", True, {})
         service_exists = [ 
             service for service in services if service['sid'] == sid ]
 
@@ -305,7 +305,7 @@ class BaseClient(object):
     def list(self):
         """Call the 'list' method on the director and print the results
         nicely"""
-        services = self.callapi("list", False, {})
+        services = self.callapi("list", True, {})
         if services:
             print self.prettytable(( 'type', 'sid', 'vmid', 
                                      'name', 'manager' ), services)
