@@ -73,7 +73,15 @@ def login():
         # Authentication failed
         return build_response(simplejson.dumps(False))
 
-    return build_response(simplejson.dumps(True))
+    # Authentication succeeded, return user data
+    user_data = {
+        'uid': user.uid, 'username': user.username, 
+        'fname': user.fname, 'lname': user.lname,
+        'email': user.email, 'affiliation': user.affiliation,
+        'password': user.password, 'credit': user.credit, 
+        'created': user.created.isoformat(),
+    }
+    return build_response(simplejson.dumps(user_data))
 
 @app.route("/getcerts", methods=['GET'])
 def get_user_certs():
