@@ -133,8 +133,22 @@ GATEWAY=""
 # The DNS server that VMs should use to resolve DNS names (an IP address)
 NAMESERVER=""
 
-# The virtual machines OS architecture (eg: "x86_64")
+# The virtual machines' virtualization type (e.g. "kvm" or "xen")
+# The virtualization software used in the cloud. 
+# Currently supported options: "xen", "kvm"
+#VIRTUALIZATION_TYPE = "kvm"
+VIRTUALIZATION_TYPE=""
+
+# The virtual machines' OS architecture (eg: "x86_64")
 OS_ARCH=""
+
+# The virtual machines' OS bootloader
+# This parameter is used only for Xen and should indicate the path to the 
+# pygrub bootloader.
+# (corresponds to the OpenNebula "BOOTLOADER" parameter from the VM template)
+# For KVM it can be left empty.
+#OS_BOOTLOADER = "/usr/lib/xen-default/bin/pygrub"
+OS_BOOTLOADER=""
 
 # The device that will be mounted as root on the VM. Most often it
 # is "sda" or "hda" for KVM, and "xvda2" for Xen.
@@ -154,7 +168,6 @@ CONTEXT_TARGET="sr0"
 # The TaskFarming service uses XMLRPC to talk to Opennebula. This is the url to
 # the server (Ex. http://dns.name.or.ip:2633/RPC2)
 XMLRPC=""
-
 
 ###########################################################################
 # DON'T CHANGE ANYTHING BELOW THIS LINE UNLESS YOU KNOW WHAT YOU'RE DOING #
@@ -389,7 +402,9 @@ then
     echo "url = \"$URL\"" >> $CONFDIR/opennebula.ini
     echo "gateway = \"$GATEWAY\"" >> $CONFDIR/opennebula.ini
     echo "nameserver = \"$NAMESERVER\"" >> $CONFDIR/opennebula.ini
+    echo "virtualization_type = \"$VIRTUALIZATION_TYPE\"" >> $CONFDIR/opennebula.ini
     echo "os_arch = \"$OS_ARCH\"" >> $CONFDIR/opennebula.ini
+    echo "os_bootloader = \"$OS_BOOTLOADER\"" >> $CONFDIR/opennebula.ini
     echo "os_root = \"$OS_ROOT\"" >> $CONFDIR/opennebula.ini
     echo "disk_target = \"$DISK_TARGET\"" >> $CONFDIR/opennebula.ini
     echo "context_target = \"$CONTEXT_TARGET\"" >> $CONFDIR/opennebula.ini
