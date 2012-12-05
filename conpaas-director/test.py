@@ -3,36 +3,18 @@ import urllib
 import unittest
 import simplejson
 
-from cpsdirector import common
+os.environ['DIRECTOR_TESTING'] = "true"
 
-# Config values for unit testing
-common.config = common.ConfigParser()
-
-common.config.add_section("conpaas")
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-common.config.set("conpaas", "CONF_DIR", 
-    os.path.join(BASE_DIR, 'conpaas-services'))
-common.config.set("conpaas", "CERT_DIR", 
-    os.path.join(BASE_DIR, 'conpaas-frontend', 'conf', 'certs'))
-
-common.config.add_section("iaas")
-common.config.set("iaas", "DRIVER", "dummy")
-common.config.set("iaas", "USER", "dummy")
-
-common.config.add_section("director")
-common.config.set("director", "DATABASE_URI", "sqlite:///director-test.db")
-common.config.set("director", "DIRECTOR_URL", "")
-
-from cpsdirector import app
+import cpsdirector 
 
 class Common(unittest.TestCase):
 
     def setUp(self):
-        app.db.drop_all()
-        app.db.create_all()
+        cpsdirector.db.drop_all()
+        cpsdirector.db.create_all()
 
     def create_user(self):
-        return app.create_user("ema", "Emanuele", "Rocca", "ema@linux.it", 
+        return cpsdirector.create_user("ema", "Emanuele", "Rocca", "ema@linux.it", 
             "VU University Amsterdam", "properpass", 120)
 
 class DbTest(Common):
@@ -40,18 +22,18 @@ class DbTest(Common):
     def test_create_user(self):
         self.create_user()
 
-        self.assertFalse(app.auth_user("ema", "wrongpass"))
-        self.assert_(app.auth_user("ema", "properpass") is not None)
-        self.assertFalse(app.auth_user("wronguname", "properpass"))
+        self.assertFalse(cpsdirector.auth_user("ema", "wrongpass"))
+        self.assert_(cpsdirector.auth_user("ema", "properpass") is not None)
+        self.assertFalse(cpsdirector.auth_user("wronguname", "properpass"))
 
     def test_create_service(self):
         self.create_user()
 
-        user = app.auth_user("ema", "properpass")
-        service = app.Service(name="New selenium service", type="selenium", 
+        user = cpsdirector.auth_user("ema", "properpass")
+        service = cpsdirector.Service(name="New selenium service", type="selenium", 
             user=user)
-        app.db.session.add(service)
-        app.db.session.commit()
+        cpsdirector.db.session.add(service)
+        cpsdirector.db.session.commit()
 
         # Testing service->user backref
         self.assertEquals(120, service.user.credit)
@@ -61,28 +43,28 @@ class DbTest(Common):
         user.credit -= 10
 
         if user.credit > -1:
-            app.db.session.commit()
+            cpsdirector.db.session.commit()
         else:
-            app.db.session.rollback()
+            cpsdirector.db.session.rollback()
 
-        user = app.auth_user("ema", "properpass")
+        user = cpsdirector.auth_user("ema", "properpass")
         self.assertEquals(110, user.credit)
 
         user.credit -= 5000
 
         if user.credit > -1:
-            app.db.session.commit()
+            cpsdirector.db.session.commit()
         else:
-            app.db.session.rollback()
+            cpsdirector.db.session.rollback()
 
-        user = app.auth_user("ema", "properpass")
+        user = cpsdirector.auth_user("ema", "properpass")
         self.assertEquals(110, user.credit)
 
 class DirectorTest(Common):
     
     def setUp(self):
         Common.setUp(self)
-        self.app = app.app.test_client()          
+        self.app = cpsdirector.app.test_client()          
 
     def test_404_on_root(self):
         response = self.app.get("/")
@@ -195,7 +177,7 @@ class DirectorTest(Common):
         response = self.app.post('/callback/decrementUserCredit.php', data=data)
         self.assertEquals({ 'error': True }, simplejson.loads(response.data))
 
-        user = app.auth_user("ema", "properpass")
+        user = cpsdirector.auth_user("ema", "properpass")
         self.assertEquals(120, user.credit)
 
         # Right sid and enough credit
@@ -203,7 +185,7 @@ class DirectorTest(Common):
         response = self.app.post('/callback/decrementUserCredit.php', data=data)
         self.assertEquals({ 'error': False }, simplejson.loads(response.data))
 
-        user = app.auth_user("ema", "properpass")
+        user = cpsdirector.auth_user("ema", "properpass")
         self.assertEquals(119, user.credit)
 
 if __name__ == "__main__":

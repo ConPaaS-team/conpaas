@@ -26,7 +26,6 @@ app.config['SQLALCHEMY_DATABASE_URI'] = common.config.get(
 db = SQLAlchemy(app)
 
 if common.config.has_option('director', 'DEBUG'):
-    print "Debug mode on"
     app.debug = True
 
 def create_user(username, fname, lname, email, affiliation, password, credit):

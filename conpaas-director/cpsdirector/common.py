@@ -11,6 +11,16 @@ CONFFILE = "/etc/cpsdirector/director.cfg"
 config = ConfigParser()
 config.read(CONFFILE)
 
+# Config values for unit testing
+if os.getenv('DIRECTOR_TESTING'):
+    # dummy cloud
+    config.set("iaas", "DRIVER", "dummy")
+    config.set("iaas", "USER", "dummy")
+
+    # separate database
+    config.set("director", "DATABASE_URI", "sqlite:///director-test.db")
+    config.set("director", "DIRECTOR_URL", "")
+
 def rlinput(prompt, prefill=''):
     readline.set_startup_hook(lambda: readline.insert_text(prefill))
     try: 
