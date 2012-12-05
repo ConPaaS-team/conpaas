@@ -105,6 +105,11 @@ public abstract class Master {
 				//if(!ws.isFinished()) {
 					c.terminateNode(ws.getIbisIdentifier(), myIbis);
 					noWorkerTerminatedNow ++;
+					try {
+						Thread.sleep(500);
+					} catch (Exception E) {
+						E.printStackTrace();
+					}
 				//}
 			}
 		}

@@ -14,7 +14,7 @@ public interface BatsServiceApi {
      * @param inputFile Bag of Tasks file description
      * @return
      */
-    public MethodReport start_sampling(String filesLocation, String inputFile);
+    public MethodReport start_sampling(String filesLocation, String inputFile); //, long availableBudget);
 
     public MethodReport start_execution(long schedulesFileTimeStamp, int scheduleNo);
 

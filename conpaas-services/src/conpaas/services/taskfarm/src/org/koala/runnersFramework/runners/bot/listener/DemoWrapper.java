@@ -186,6 +186,7 @@ class DemoWrapper  {
 
 			schedList = new ArrayList<SamplingResult>();
 			List<String> sched = new ArrayList<String>();
+			// List<String> sched2 = new ArrayList<String>();
 
 			// Meaningful schedules to be used later in the DEMO version.
 
@@ -204,9 +205,24 @@ class DemoWrapper  {
 					+ (int) (normalRateATU * 1.1));
 			sched.add("\t" + 4 + "\t" + (int) (normalRateCost * 0.8) + "\t"
 					+ (int) (normalRateATU * 2));
-
-			SamplingResult sr = new SamplingResult("1873477324884", sched);
+// Bert: Changed number to a real/useful time 
+			SamplingResult sr = new SamplingResult(""+this.samplingFinishTime, sched);
 			schedList.add(sr);
+// Bert: prepare for a second Sampling for same bag
+			/*			
+			sched2.add("\t" + 0 + "\t" + (int) (normalRateCost * 2.1) + "\t"
+					+ (int) (normalRateATU * 0.6));
+			sched2.add("\t" + 1 + "\t" + (int) (normalRateCost * 1.6) + "\t"
+					+ (int) (normalRateATU * 0.7));
+			sched2.add("\t" + 2 + "\t" + normalRateCost + "\t" + normalRateATU
+					+ "\t");
+			sched2.add("\t" + 3 + "\t" + (int) (normalRateCost * 1.2) + "\t"
+					+ (int) (normalRateATU * 0.9));
+			sched2.add("\t" + 4 + "\t" + (int) (normalRateCost * 0.9) + "\t"
+					+ (int) (normalRateATU * 1.9));
+			SamplingResult sr2 = new SamplingResult(""+(this.samplingFinishTime-48*3600), sched2);
+			schedList.add(sr2);
+*/			
 			samplingReturned = true;
 		}
 		return schedList;

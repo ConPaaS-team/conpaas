@@ -261,20 +261,25 @@ public class OpenNebulaOcaCluster extends Cluster {
     @Override
     public void terminateNode(IbisIdentifier node, Ibis myIbis)
             throws IOException {
-        /*
 		// XXX Another deletion method which can be used when self-VM
 		// Deletion causes OpenNebula to crash.
+    	try {
     	System.err.println("Deleting with ID: " + Integer.parseInt(map.get(node.location())));
     	VirtualMachine vm = new VirtualMachine(Integer.parseInt(map.get(node.location())), oneClient);
         OneResponse oneResponse = vm.finalizeVM();
         map.remove(node.location());
         if (oneResponse.isError()) {
-            System.err.println("Failed to finalize VM:\n"
+            System.err.println(this.getClass() + ": Failed to finalize VM:\n"
                     + oneResponse.getMessage());
         } else {
             System.err.println("All went fine...");
         }
-		*/
-        myIbis.registry().signal("die", node);
+    	}
+     	catch(Exception E)
+    	{
+    		E.printStackTrace();
+    	}
+		
+       // myIbis.registry().signal("die", node);
     }
 }

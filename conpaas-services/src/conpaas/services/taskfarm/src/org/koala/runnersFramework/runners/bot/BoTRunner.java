@@ -77,6 +77,7 @@ public class BoTRunner implements Serializable {
     HashMap<String, Cluster> Clusters;
     private int masterImpl;
     public int jobsDone = 0;
+    public int jobsRemainingAfterSampling = 0;
     public int maxCostATU = 0;
     public int minCostATU = 0;
     public boolean firstTimeAllStatsReady = false;
@@ -166,6 +167,30 @@ public class BoTRunner implements Serializable {
         this.masterImpl = masterImpl;
     }
 
+    public void calculateSampleSize()
+    {
+    	double zeta_sq = this.zeta * this.zeta;
+    	this.noSampleJobs = (int) Math.ceil(this.tasks.size() * zeta_sq
+				/ (zeta_sq + 2 * (this.tasks.size() - 1) * this.delta * this.delta));
+    }
+    
+    public boolean isBagBigEnoughForReplication()
+    {
+    	calculateSampleSize();
+    	return this.noReplicatedJobs < this.noSampleJobs;
+    }
+    
+    public boolean isBagBigEnoughForSampling()
+    {
+		Collection<Cluster> clusters = this.Clusters.values();		
+
+		if(this.noSampleJobs*this.Clusters.size() > 0.5 * this.tasks.size())
+		{
+			return false;
+		}
+		return true;
+    }
+    
     private String deadline2ResTime() {
 
         String dd, hh, mm;
@@ -198,7 +223,7 @@ public class BoTRunner implements Serializable {
                 master = new SampleFreeMaster(this);
             }
 
-            System.out.println("Master instantied as: " + master.getClass().getName());
+            System.out.println("Master instantiated as: " + master.getClass().getName());
         } catch (Exception ex) {
             Logger.getLogger(BoTRunner.class.getName()).log(Level.SEVERE, null, ex);
             throw new RuntimeException(ex.getMessage());
@@ -474,7 +499,7 @@ public class BoTRunner implements Serializable {
 
         masterType = args.length < 1 ? 5 : Integer.parseInt(args[0]);
         deadline = args.length < 2 ? 24 : Long.parseLong(args[1]);
-        budget = args.length < 3 ? 400 : Long.parseLong(args[2]);
+        budget = args.length < 3 ? 0*400 : Long.parseLong(args[2]); //Bert
         size = args.length < 4 ? 1000 : Integer.parseInt(args[3]); // required for control tests.
         schedulesFile = args.length < 5 ? "SchedulesDump/schedules.ser" : args[4];
 
@@ -485,8 +510,9 @@ public class BoTRunner implements Serializable {
     }
 
     public int terminate() throws IOException {
-
-        return master.terminateAllWorkers();
-
+    	if(master != null)
+    		return master.terminateAllWorkers();
+    	else
+    		return 0;
     }
 }

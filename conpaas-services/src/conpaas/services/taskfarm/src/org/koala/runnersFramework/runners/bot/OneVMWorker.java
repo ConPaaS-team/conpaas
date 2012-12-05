@@ -24,7 +24,13 @@ public class OneVMWorker extends VMWorker {
         System.out.println("Command received...");
         try {
             OneVMWorker vmWorker = new OneVMWorker(args[0], args[1], args[2], args[3]);
-            vmWorker.oneSelfShutdown();
+            if (1.0 != Math.sqrt(2.0)) { // avoid a "dead code" message
+                System.out.println("About to oneSelfShutdown...");
+                vmWorker.oneSelfShutdown();
+                System.out.println("Successfully oneSelfShutdown...");
+            } else {
+                System.out.println(vmWorker.getClass() + ": Ready to be shutdown from the outside...");
+            }
         } catch (Exception ex) {
             Logger.getLogger(VMWorker.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -58,7 +64,7 @@ public class OneVMWorker extends VMWorker {
             VirtualMachine vm = new VirtualMachine(vmId, oneClient);
             OneResponse oneResponse = vm.finalizeVM();
             if (oneResponse.isError()) {
-                System.err.println("Failed to finalize VM:\n"
+                System.err.println(this.getClass() + ": Failed to finalize VM:\n"
                         + oneResponse.getMessage());
             } else {
                 System.err.println("All went fine...");

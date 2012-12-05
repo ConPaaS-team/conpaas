@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
+import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -24,7 +25,7 @@ import org.koala.runnersFramework.runners.bot.BoTRunner;
 import org.koala.runnersFramework.runners.bot.Executor;
 import org.koala.runnersFramework.runners.bot.Schedule;
 
-public class BatsServiceApiImpl implements BatsServiceApi {
+public class BatsServiceApiImpl implements BatsServiceApi, UncaughtExceptionHandler {
 
     private final String schedulesFolderString;
     private final File schedulesFolder;
@@ -49,6 +50,9 @@ public class BatsServiceApiImpl implements BatsServiceApi {
      * TaskFarm manager and the director is secured.
      */
     private static Boolean executeCommands = false;
+    
+    private String threadExceptionString = "";
+    private Boolean threadExceptionHappened = false;
     
     public static long longestATU = 0;
     private int command_nr = 0;
@@ -77,13 +81,42 @@ public class BatsServiceApiImpl implements BatsServiceApi {
         serviceState.moneySpentSampling = 0;
     }
    
+    
+	@Override
+	public void uncaughtException(Thread t, Throwable e) {
+		threadExceptionHappened = true;
+		threadExceptionString = String.format("Sampling failed because of:\n%s\n",
+                e.getLocalizedMessage());
+	}
+    
     @Override
     public MethodReport start_sampling(String filesLocationUrl, String inputFile) {
         
     	if (serviceState.mode.equals(State.MODE_DEMO)) {
-            return demo.start_sampling(inputFile);
-        }
+    		return demo.start_sampling(inputFile);
+    	}
 
+    	try {
+    		serviceBoT = new BoTRunner(5, 0, 60, 24, 400,
+    				inputFile, ""); //clusterConfFile is set to default value.
+
+    		if(!(serviceBoT.isBagBigEnoughForReplication() && 
+    				serviceBoT.isBagBigEnoughForSampling()))
+    		{
+    			System.err.println("Error: BoT is too small");
+    			return new MethodReportError("BoT is too small");
+    		}
+
+    		BoTRunner.schedulesFile = schedulesFolderString + File.separator
+    		+ System.currentTimeMillis();
+    		
+    		BoTRunner.filesLocationUrl = filesLocationUrl;
+    	}
+    	catch (Exception Ex)
+    	{
+    		return new MethodReportError(Ex.getLocalizedMessage());
+    	}
+    	
         try {
             synchronized (lock) {
                 if (State.ADAPTING.equals(serviceState.state)) {
@@ -91,17 +124,7 @@ public class BatsServiceApiImpl implements BatsServiceApi {
                 }
                 serviceState.state = State.ADAPTING;
             }
-
-            serviceBoT = new BoTRunner(5, 0, 60, 24, 400,
-                    inputFile, ""); //clusterConfFile is set to default value.
-
-            BoTRunner.schedulesFile = schedulesFolderString + File.separator
-                    + System.currentTimeMillis();
-//            old code:
-//            BoTRunner.schedulesFile = schedulesFile;
-
-            BoTRunner.filesLocationUrl = filesLocationUrl;
-
+            
             Thread thread = new Thread() {
 
                 @Override
@@ -112,11 +135,13 @@ public class BatsServiceApiImpl implements BatsServiceApi {
                         exceptionsLogger.log(Level.SEVERE,
                                 "Sampling failed because of:\n{0}\n",
                                 ex.getLocalizedMessage());
+                        synchronized (lock) {
+                            serviceState.state = org.koala.runnersFramework.runners.bot.listener.State.RUNNING;
+                        }
                     }
                     synchronized (lock) {
                         serviceState.state = org.koala.runnersFramework.runners.bot.listener.State.RUNNING;
                     }
-
                 }
             };
 
@@ -124,9 +149,9 @@ public class BatsServiceApiImpl implements BatsServiceApi {
             thread.start();
         } catch (Exception ex) {
             synchronized (lock) {
-                serviceState.state = State.RUNNING;
-                return new MethodReportError(ex.getLocalizedMessage());
+                serviceState.state = State.RUNNING;   
             }
+            return new MethodReportError(ex.getLocalizedMessage());
         }
         return new MethodReportSuccess("Sampling started.");
     }
@@ -202,12 +227,13 @@ public class BatsServiceApiImpl implements BatsServiceApi {
             }
 
             List<Schedule> schedules = null;
+            BoTRunner bot = null;
             try {
                 FileInputStream fis = new FileInputStream(file);
                 ObjectInputStream ois = new ObjectInputStream(fis);
 
-                // read the BoT, but no need to store it
-                ois.readObject();
+                // read the (remainder) BoT, if empty, schedules are all 0,0,0
+                bot = (BoTRunner) ois.readObject();
                 schedules = (List<Schedule>) ois.readObject();
 
                 ois.close();
@@ -227,13 +253,14 @@ public class BatsServiceApiImpl implements BatsServiceApi {
              * Schedule format: budget cost atus
              */
             List<String> schedulesString = new ArrayList<String>(schedules.size());
-            for (int i = 0; i < schedules.size(); i++) {
-                schedulesString.add(schedules.get(i).toString());
+            if (bot.jobsRemainingAfterSampling > 0) {
+            	for (int i = 0; i < schedules.size(); i++) {
+            		schedulesString.add(schedules.get(i).toString());
+            	}
             }
 
             list.add(new SamplingResult(file.getName(), schedulesString));
         }
-
         if (list.isEmpty()) {
 //            return new MethodReportError("No schedules files available.");
 //            Claudiu asked for this method not to return an error, but an empty non-error message.
@@ -537,4 +564,5 @@ public class BatsServiceApiImpl implements BatsServiceApi {
         
 		return new MethodReportSuccess();
 	}
+
 }

@@ -61,6 +61,7 @@ public class SamplingPhaseMaster extends Master {
 		
 		if(bot.noSampleJobs < bot.noReplicatedJobs) {
 			System.out.println("Bag too small!");
+			shutdownIbis();
 			throw new RuntimeException("Bag too small!");
 		}
 
@@ -78,6 +79,8 @@ public class SamplingPhaseMaster extends Master {
 
 		if(bot.noSampleJobs*bot.Clusters.size() > 0.5 * totalNumberTasks)
 		{
+			System.out.println("Size of the BoT too small for the number of clusters");
+			shutdownIbis();
 			throw new RuntimeException("Size of the BoT too small for the number of clusters");
 		}
 
@@ -179,6 +182,8 @@ public class SamplingPhaseMaster extends Master {
 		HashMap<String, WorkerStats> thisCluster = workers.get(clusterName);
 		if(thisCluster == null)
 		{
+			System.out.println("Cannot find the cluster with alias " + clusterName);
+			shutdownIbis();
 			throw new RuntimeException("Cannot find the cluster with alias " + clusterName);
 		}
 		WorkerStats reacquiredMachine = thisCluster.get(node);
@@ -303,6 +308,7 @@ public class SamplingPhaseMaster extends Master {
 						}
 					}
 				} else {
+					System.out.println("Time is up");
 					return sayGB(from);
 				}
 			}
@@ -375,6 +381,7 @@ public class SamplingPhaseMaster extends Master {
 				} else if (received instanceof JobResult) {
 					nextJob = handleJobResult((JobResult) received, from);
 				} else {
+					shutdownIbis();
 					throw new RuntimeException("received "
                                                         + "an object which is not JobRequest or JobResult:" + received);
 				}
@@ -550,6 +557,7 @@ public class SamplingPhaseMaster extends Master {
 		System.out.println("\tB\tC\tM");
 
 		int jobsLeft = bot.tasks.size();
+		// if jobsLeft == 0 BoT completed in Sampling Phase
 		double makespanBmin = Math.ceil((jobsLeft*mostProfitable.Ti)/bot.timeUnit);
 		double Bmin = makespanBmin*mostProfitable.costUnit;
 
@@ -779,15 +787,7 @@ public class SamplingPhaseMaster extends Master {
 
 		timer.cancel();
 
-		try {
-			masterRP.close();
-			System.out.println("Hurray! I shut down masterRP!!!");
-			myIbis.end();
-			System.out.println("Hurray! I shut down ibis!!!");
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		shutdownIbis();
 
 		updateFEMaxATU();
 		
@@ -795,6 +795,7 @@ public class SamplingPhaseMaster extends Master {
 		System.out.println("Finished tasks: " + bot.finishedTasks.size());
 		System.out.println("Replicated tasks: " + this.replicatedTasks.size());
 		System.out.println("Remaining tasks: " + bot.tasks.size());
+		bot.jobsRemainingAfterSampling = bot.tasks.size();
 		dumpSchedules();
 		System.out.println("Shuting down...");
 
@@ -876,6 +877,7 @@ public class SamplingPhaseMaster extends Master {
             fos.close();
             System.out.println("Schedules and BoT dumped to file: " + fileName);
         } catch (IOException ex) {
+        	shutdownIbis();
             throw new RuntimeException("Failed to save to file the computed schedules.\n" + ex);
         }
 	}
@@ -968,5 +970,18 @@ public class SamplingPhaseMaster extends Master {
 
 	public long getSampleMakespan() {
 		return sampleMakespan;
+	}
+	
+	public void shutdownIbis()
+	{
+		try {
+			masterRP.close();
+			System.out.println("Hurray! I shut down masterRP!!!");
+			myIbis.end();
+			System.out.println("Hurray! I shut down ibis!!!");
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}	
 	}
 }
