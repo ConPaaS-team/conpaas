@@ -82,7 +82,7 @@ class TaskFarmPage extends ServicePage {
   				.'<td class="input">'
 				.'<input id="botFile" type="file" name="botFile" />'
   				.'</td>'
-  				.'<td class="info">File containing the tasks for be run</td>'
+  				.'<td class="info">File containing the tasks to be run</td>'
   			.'</tr>'
   			.'<tr>'
   				.'<td class="description">URL</td>'
