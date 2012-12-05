@@ -144,7 +144,9 @@ def __stop_reservation_timer(controller):
         reservation_timer.stop()
 
 def start(service_name, service_id, user_id):
-    """Start a manager for the given service_name, service_id and user_id"""
+    """Start a manager for the given service_name, service_id and user_id.
+    
+    Return (node_ip, node_id, cloud_name)."""
     config_parser = __get_config(str(service_id), str(user_id), service_name)
     # Create a new controller
     controller = ManagerController(config_parser)
@@ -161,7 +163,7 @@ def start(service_name, service_id, user_id):
     # Stop the reservation timer or the call will not return
     __stop_reservation_timer(controller)
 
-    return node.ip, node.id
+    return node.ip, node.id, config_parser.get('iaas', 'DRIVER')
 
 def stop(vmid):
     config_parser = __get_config(vmid, "")

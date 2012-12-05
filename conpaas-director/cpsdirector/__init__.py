@@ -176,7 +176,7 @@ def start(servicetype):
     db.session.flush()
 
     try:
-        s.manager, s.vmid = cloud.start(servicetype, s.sid, user.uid)
+        s.manager, s.vmid, s.cloud = cloud.start(servicetype, s.sid, user.uid)
     except Exception, err:
         db.session.rollback()
         return build_response(jsonify({ 'error': True, 
@@ -338,6 +338,7 @@ class Service(db.Model):
     created = db.Column(db.DateTime)
     manager = db.Column(db.String(512))
     vmid = db.Column(db.String(256))
+    cloud = db.Column(db.String(128))
 
     user_id = db.Column(db.Integer, db.ForeignKey('user.uid'))
     user = db.relationship('User', backref=db.backref('services', 
