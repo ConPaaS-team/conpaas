@@ -111,11 +111,14 @@ conpaas.ui = (function (this_module) {
                 function () {
             var selectedSampling,
                 scheduleIndex;
-            selectedSampling = that.samplingResults[$('#samplings').attr(
-                'selectedIndex')];
-            scheduleIndex = that.chart.getSelection()[0].row;
-            $('#scheduleDetails').html(
+	    // next condition is crucial to select and deselect schedules and keep JS running
+	    if ( that.chart.getSelection().length > 0 ) { 
+		selectedSampling = that.samplingResults[$('#samplings').attr(
+		    'selectedIndex')];
+		scheduleIndex = that.chart.getSelection()[0].row;
+		$('#scheduleDetails').html(
                     selectedSampling.schedules[scheduleIndex]);
+	    }
         });
         this.chart.draw(data, options);
     },
