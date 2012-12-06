@@ -53,6 +53,14 @@ conpaas.ui = (function (this_module) {
         this.progressBar = new conpaas.ui.ProgressBar('progressbar');
     },
     /* methods */{
+    freezeInputSE: function (freeze) {
+        var buttonsSelector = '#startExec';
+        if (freeze) {
+            $(buttonsSelector).attr('disabled', 'disabled');
+        } else {
+            $(buttonsSelector).removeAttr('disabled');
+        }
+    },
     freezeInput: function (freeze) {
         var buttonsSelector = '#startSample, #startExec, #enableReal, #enableDemo';
         if (freeze) {
@@ -87,11 +95,14 @@ conpaas.ui = (function (this_module) {
     drawChart: function (schedules) {
         var data = new google.visualization.DataTable(),
             options,
+	    counter,
             that = this;
         data.addColumn('number', 'Execution Time');
         data.addColumn('number', 'Cost');
+	counter = 0;
         schedules.forEach(function (schedule) {
             data.addRow([schedule.time, schedule.cost]);
+	    counter++;
         });
         options = {
             width: 400, height: 240,
@@ -120,7 +131,14 @@ conpaas.ui = (function (this_module) {
                     selectedSampling.schedules[scheduleIndex]);
 	    }
         });
-        this.chart.draw(data, options);
+	$('#scheduleDetails').empty();
+	if (counter > 0) {
+		this.chart.draw(data, options);
+		$('#scheduleDetails').append("Please click on the graph to select an execution");
+	} else {
+		$('#scheduleDetails').append("All tasks were completed during Sampling Phase");
+		that.freezeInputSE(true);
+	}
     },
     attachHandlers: function () {
         var that = this;
@@ -129,6 +147,7 @@ conpaas.ui = (function (this_module) {
         // ajaxify the file form
         $('#fileForm').ajaxForm({
             dataType: 'json',
+	    // Submitted successfully
             success: function(response) {
                 $('.additional .loading').toggleClass('invisible');
                 $('.additional .positive').show();
@@ -141,6 +160,7 @@ conpaas.ui = (function (this_module) {
                 that.freezeInput(true);
                 that.pollAndUpdate();
             },
+	    // Error on submission
             error: function(response) {
                 that.poller.stop();
                 // show the error
