@@ -43,7 +43,7 @@ if (!isset($_SESSION['uid'])) {
 	throw new Exception('User not logged in');
 }
 
-$uinfo = UserData::getUserById($_SESSION['uid']);
+$uinfo = UserData::getUserByName($_SESSION['username']);
 
 echo json_encode(array(
                     'credit' => $uinfo['credit']));

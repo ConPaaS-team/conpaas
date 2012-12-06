@@ -41,18 +41,10 @@ require_module('cloud');
 class ServiceFactory {
 
 	public static function createManager($service_data) {
-		switch ($service_data['cloud']) {
-			case 'ec2':
-				return new EC2Manager($service_data);
-			case 'opennebula':
-				return new OpenNebulaManager($service_data);
-			default:
-				throw new Exception('Unknown cloud provider');
-		}
+		return new Manager($service_data);
 	}
 
 	public static function create($service_data) {
-		$cloud = $service_data['cloud'];
 		$type = $service_data['type'];
 		$manager = self::createManager($service_data);
 

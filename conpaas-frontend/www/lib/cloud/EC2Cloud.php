@@ -1,6 +1,6 @@
 <?php
 
-require_module('aws-sdk');
+//require_module('aws-sdk');
 require_module('logging');
 
 class EC2Cloud extends Cloud {

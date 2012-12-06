@@ -55,7 +55,7 @@ class Logging {
 		$logFilename = $conf['logfile'];
 		if (strpos($logFilename, '%u') !== false && isset($_SESSION['uid'])) {
 			$uid = $_SESSION['uid'];
-			$user = UserData::getUserById($uid);
+			$user = UserData::getUserByName($_SESSION['username']);
 			if ($user !== false) {
 				$username = $user['username'];
 				$logFilename = str_replace('%u', $username, $logFilename);

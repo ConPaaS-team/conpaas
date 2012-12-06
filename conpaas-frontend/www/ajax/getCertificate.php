@@ -37,56 +37,16 @@
  */
 
 require_once('../__init__.php');
-require_module('db');
-require_module('ca');
-require_module('logging');
-require_module('service');
-
-function get_user_info($uid) {
-	$query = sprintf("SELECT * FROM users WHERE uid='%s' LIMIT 1",
-		mysql_escape_string($uid));
-	$res = mysql_query($query, DB::getConn());
-	if ($res === false) {
-		throw new DBException(DB::getConn());
-	}
-	$entries = DB::fetchAssocAll($res);
-	if (count($entries) != 1) {
-		throw new Exception('User does not exist');
-	}
-	return $entries[0];
-}
+require_module('https');
 
 if (!isset($_SESSION['uid'])) {
 	throw new Exception('User not logged in');
 }
 
-$uid = $_SESSION['uid'];
-
-$user_info = get_user_info($uid);
-
-// Generate the request
-$cert =  generate_certificate($uid, '0', 'user',
-			$user_info['email'],
-			$user_info['fname'].' '.$user_info['lname'],
-			$user_info['affiliation']);
-
-$path = tempnam(sys_get_temp_dir(), 'conpaas_cert.zip.');
-
-$zip = new ZipArchive;
-$res = $zip->open($path, ZipArchive::CREATE);
-if ($res === TRUE) {
-	$zip->addFromString('cert.pem', $cert['cert']);
-	$zip->addFromString('key.pem', $cert['key']);
-	$zip->addFromString('ca_cert.pem', $cert['ca_cert']);
-	$zip->close();
-} else {
-	throw new Exception('Could not create archive');
-}
+$res = HTTPS::post(Conf::DIRECTOR . '/getcerts', 
+    array('username' => $_SESSION['username'], 'password' => $_SESSION['password']));
 
 header("Content-type: application/zip");
 header('Content-Disposition:attachment;filename="' . 'certs.zip' . '"');
-print file_get_contents($path);
-
-unlink($path);
-
+print ($res);
 ?>

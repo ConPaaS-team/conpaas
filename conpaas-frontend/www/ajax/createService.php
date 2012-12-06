@@ -58,29 +58,26 @@ try {
 
 	$type = $_POST['type'];
 
-	$default_name = 'New Service';
-	$cloud = $_POST['cloud'];
-	$uid = $_SESSION['uid'];
+	$res = json_decode(HTTPS::post(Conf::DIRECTOR . '/start/' . $type, 
+	    array('username' => $_SESSION['username'], 'password' => $_SESSION['password'])));
 
-    if (UserData::updateUserCredit($uid, -1) === false) {
-	  	throw new Exception("Not enough credit");
+    if (!$res) {
+        throw new Exception('User not logged in');
     }
-	$sid = ServiceData::createService($default_name, $type, $cloud, $uid,
-		Service::STATE_PREINIT);
+
+    /* error creating new service */
+    if (property_exists($res, 'msg')) {
+        throw new Exception($res->msg);
+    }
+
 	// HACK: keep a must_reset_password flag for the MySQL service
 	// we should keep this information in the service's manager state
 	if ($type == 'mysql') {
-		$_SESSION['must_reset_passwd_for_'.$sid] = true;
+		$_SESSION['must_reset_passwd_for_'.$res->sid] = true;
 	}
-	/* start the instance */
-	$service_data = ServiceData::getServiceById($sid);
-	$service = ServiceFactory::create($service_data);
-	$vmid = $service->getManagerInstance()->run();
-	ServiceData::updateVmid($sid, $vmid);
-	ServiceData::updateName($sid, 'New '.$service->getTypeName().' Service');
 
 	echo json_encode(array(
-		'sid' => $sid,
+		'sid' => $res->sid,
 		'create' => 1,
 	));
 } catch (Exception $e) {

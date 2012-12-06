@@ -38,7 +38,7 @@
 
 require_module('logging');
 require_module('db');
-require_module('aws-sdk');
+//require_module('aws-sdk');
 
 class EC2Manager extends Manager {
 

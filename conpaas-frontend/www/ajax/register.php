@@ -80,6 +80,8 @@ try {
 	UserData::createUser($_POST['username'], $_POST['email'], $_POST['fname'],
 		$_POST['lname'], $_POST['affiliation'], $_POST['password'],
 	    $conf['initial_credit']);
+	$_SESSION['username'] = $_POST['username'];
+	$_SESSION['password'] = $_POST['password'];
 	$user->loadByName($_POST['username']);
 	$user->establishSession();
 	$mailsent = $user->sendWelcomeEmail();

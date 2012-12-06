@@ -9,18 +9,14 @@ In short:
 - All files located in the "www" directory must be made available in a
   PHP-enabled Web server.
 
-- All files located in the "conf" directory must be made available
-  *out* of the Web server directory. For example one may want to store
-  them in /etc/conpaas/ or a similar path. These files must be filled
-  in with configuration details of the local ConPaaS installation.
+- The file conf/main.ini should be copied in a directory outside of the web
+  server directory. Such a directory must contain your Director's certificates
+  under a subdirectory called "certs".
 
-- You must edit the file __init__.php in the www directory such that
-  it points to the location of the configuration files.
-
-- You must download the AWS SDK for PHP from 
-  http://aws.amazon.com/sdkforphp/ and expand it in the "www/lib/aws-sdk" 
-  directory (the "www/lib/aws-sdk" directory is already in place,
-  and "sdk.class.php" must be in the same directory as __init__.php file).
+- A file called config.php should be created. Please refer to
+  config-example.php for a detailed explaination of all the configuration
+  options. Note that config.php must contain the CONPAAS_CONF_DIR option,
+  pointing to the directory mentioned in the previous step.
 
 Guillaume Pierre
 gpierre@cs.vu.nl

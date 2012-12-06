@@ -62,7 +62,7 @@ class Page {
 			}
 			return;
 		}
-		$uinfo = UserData::getUserById($this->uid);
+		$uinfo = UserData::getUserByName($_SESSION['username']);
 		if ($uinfo === false) {
 			unset($_SESSION['uid']);
 			self::redirect('login.php');

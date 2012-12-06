@@ -36,92 +36,41 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-require_module('db');
+require_module('https');
 require_module('logging');
 
 class UserData {
     public static function createUser($username, $email, $fname, $lname,
     		$affiliation, $passwd, $credit) {
-        $query = sprintf("INSERT INTO users (username, email, fname, lname, affiliation, passwd, credit, created) ".
-    		"VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', now())",
-    		mysql_escape_string($username),
-    		mysql_escape_string($email),
-    		mysql_escape_string($fname),
-    		mysql_escape_string($lname),
-    		mysql_escape_string($affiliation),
-    		mysql_escape_string(md5($passwd)),
-    		mysql_escape_string($credit));
-    	$res = mysql_query($query, DB::getConn());
-    	if ($res === false) {
-    		throw new DBException(DB::getConn());
-    	}
-    	$uid = mysql_insert_id(DB::getConn());
-    	return $uid;
+
+        $data = array(
+            'username'    => $username, 
+            'email'       => $email,
+            'fname'       => $fname,
+            'lname'       => $lname,
+            'affiliation' => $affiliation,
+            'password'    => $passwd,
+            'credit'      => $credit);
+
+        $res = json_decode(HTTPS::post(Conf::DIRECTOR . '/new_user', $data));
+
+        if (property_exists($res, 'msg')) {
+            throw new Exception($res->msg);
+        }
+
+    	return $res->uid;
     }
 
 	public static function getUserByName($username) {
-		$query = sprintf("SELECT * FROM users WHERE username='%s'", mysql_escape_string($username));
-		$res = mysql_query($query, DB::getConn());
-		if ($res === false) {
-			throw new DBException(DB::getConn());
-		}
-		$entries = DB::fetchAssocAll($res);
-		if (count($entries) != 1) {
-			return false;
-		}
-		return $entries[0];
-	}
-
-	public static function getUserById($uid) {
-		$query = sprintf("SELECT * FROM users WHERE uid='%s'", mysql_escape_string($uid));
-		$res = mysql_query($query, DB::getConn());
-		if ($res === false) {
-			throw new DBException(DB::getConn());
-		}
-		$entries = DB::fetchAssocAll($res);
-		if (count($entries) != 1) {
-			return false;
-		}
-		return $entries[0];
-	}
-
-	public static function updateUserCredit($uid, $increment) {
-	    try{
-	      $conn = DB::getConn();
-            if(mysql_query('BEGIN', $conn) === false) {
-              throw new DBException($conn);
-            }
-            $query = sprintf("UPDATE users SET credit=credit+('%s') WHERE uid='%s'",
-                mysql_escape_string($increment),
-                mysql_escape_string($uid));
-            $res = mysql_query($query, $conn);
-            if ($res === false) {
-                throw new DBException($conn);
-            }
-            if($increment < 0) {
-                $query = sprintf("SELECT credit FROM users WHERE uid='%s'", $uid);
-                $res = mysql_query($query, $conn);
-                if ($res === false) {
-                    throw new DBException($conn);
-                }
-        	    $entries = DB::fetchAssocAll($res);
-        		if (count($entries) != 1) {
-        			throw new DBException($conn);
-        		}
-                if ($entries[0]['credit'] < 0) {
-                  mysql_query("ROLLBACK");
-                  return false;
-                }
-            }
-            if(mysql_query("COMMIT") === false) {
-                throw new DBException($conn);
-            }
-            return true;
-        } catch (DBException $e) {
-            mysql_query('ROLLBACK', $conn);
-            throw $e;
-        }
+       $res = HTTPS::post(Conf::DIRECTOR . '/login', array('username' => $username, 'password' => $_SESSION['password']));
+       $user = json_decode($res);
+       if ($user) {
+           return array('uid' => $user->uid, 
+                        'username' => $user->username,
+                        'passwd' => $user->password, 
+                        'credit' => $user->credit);
+       }
+       return false;
 	}
 }
-
 ?>

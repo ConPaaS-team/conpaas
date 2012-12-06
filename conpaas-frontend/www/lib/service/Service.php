@@ -99,16 +99,13 @@ class Service {
 			$state = $this->fetchState();
 			if ($state !== null && isset($state['result'])) {
 				$this->reachable = true;
-				if (array_key_exists('state', $state['result'])) {
-					$remote_state = $state['result']['state'];
-					$this->stable = self::stateIsStable($remote_state);
-					if ($this->state != $remote_state) {
-						dlog('[State inconsistency] Remote: '.$remote_state.
-							', Local: '.$this->state);
-						ServiceData::updateState($this->sid, $remote_state);
-						$this->state = $remote_state;
-					}
-				}
+                if (array_key_exists('state', $state['result'])) {
+                       $remote_state = $state['result']['state'];
+                       $this->stable = self::stateIsStable($remote_state);
+                       if ($this->state != $remote_state) {
+                           $this->state = $remote_state;
+                       }
+               }
 			}
 		} catch (ManagerException $e) {
 			dlog($this->manager.': '.$e->getMessage());
@@ -125,18 +122,27 @@ class Service {
 		if ($this->state != self::STATE_INIT) {
 			return;
 		}
+        /*
 		$init_time = time() - strtotime($this->creation_date);
 		if ($init_time > Conf::FAILOUT_TIME) {
 			dlog('Switching '.$this->sid.' to ERROR state');
 			ServiceData::updateState($this->sid, 'ERROR');
 			$this->state = 'ERROR';
-		}
+		}*/
 	}
 
 	public function __construct($data, $manager_instance) {
 		foreach ($data as $key => $value) {
 			$this->$key = $value;
 		}
+
+        if ($this->type === 'taskfarm') {
+            $this->manager = 'http://'.$this->manager;
+        }
+        else {
+            $this->manager = 'https://'.$this->manager;
+        }
+
 		$this->manager_instance = $manager_instance;
 		$this->pingManager();
 		if (!$this->reachable && $this->state == self::STATE_INIT) {
@@ -323,7 +329,6 @@ class Service {
  	 */
  	public function terminateService() {
  		$this->manager_instance->terminate();
-		ServiceData::deleteService($this->sid);
  	}
 
  	public function getAccessLocation() {

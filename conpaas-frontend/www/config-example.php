@@ -1,4 +1,7 @@
 <?php
+// The URL of your ConPaaS director installation
+const DIRECTOR_URL = 'https://director.yourdomain.com';
+
 // The CONPAAS_CONF_DIR variable to point to the directory containing your
 // frontend's configuration files.
 const CONPAAS_CONF_DIR = '/etc/conpaas';

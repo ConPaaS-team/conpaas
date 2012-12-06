@@ -52,6 +52,7 @@ class Manager {
 		$this->sid = $data['sid'];
 		$this->uid = $data['uid'];
 		$this->vmid = $data['vmid'];
+		$this->ipaddr = $data['manager'];
 	}
 
 	public function getID() {
@@ -62,90 +63,16 @@ class Manager {
 		return $this->resolveAddress($this->vmid);
 	}
 
- 
-	public function createContextFile($cloud) {
-		$type = $this->service_type;
-		$root_dir = Conf::CONF_DIR;
-		$cloud_scripts_dir = $root_dir.'/scripts/cloud';
-		$cloud_cfg_dir = $root_dir.'/config/cloud';
-		$mngr_cfg_dir = $root_dir.'/config/manager/';
-		$mngr_scripts_dir = $root_dir.'/scripts/manager/';
-
-		$frontend = Conf::getFrontendURL();
-
-		// Get contextualization script for the cloud
-		$cloud_script = file_get_contents($cloud_scripts_dir.'/'.$cloud);
-		if ($cloud_script === false) {
-			throw new Exception('Could not read the contextualization script '
-				.'for the cloud: '.$cloud_scripts_dir.'/'.$cloud);
-		}
-
-		// Get manager setup file
-		$mngr_setup = file_get_contents($mngr_scripts_dir.'/manager-setup');
-		if ($mngr_setup === false) {
-			throw new Exception('Could not read the manager setup file: '.
-				$mngr_scripts_dir.'/manager-setup');
-		}
-		$mngr_setup = str_replace(array('%FRONTEND_URL%'),
-			array($frontend),
-			$mngr_setup);
-
-		// Get cloud config file (could be multiple clouds - TODO)
-		$cloud_cfg = file_get_contents($cloud_cfg_dir.'/'.$cloud.'.cfg');
-		// TODO: support multiple clouds
-		if ($cloud_cfg === false) {
-			throw new Exception('Could not read cloud config file: '
-				.$cloud_cfg_dir.'/'.$cloud.'.cfg');
-		}
-
-		// Get manager config file - add to the default one the one specific
-		// to the service if it exists
-		$mngr_cfg = file_get_contents($mngr_cfg_dir.'/default-manager.cfg');
-		if (file_exists($mngr_cfg_dir.'/'.$type.'-manager.cfg')) {
-			$mngr_cfg .= "\n".file_get_contents($mngr_cfg_dir.'/'.$type
-				.'-manager.cfg');
-		}
-		if ($mngr_cfg  === false) {
-			throw new Exception('Could not read manager config file');
-		}
-		$mngr_cfg = str_replace(array('%FRONTEND_URL%', '%CONPAAS_SERVICE_ID%',
-                                      '%CONPAAS_SERVICE_TYPE%',
-                                      '%CONPAAS_USER_ID%'),
-                                array($frontend, $this->sid,
-                                      $type,
-                                      $this->uid),
-			                    $mngr_cfg);
-
-		if (file_exists($mngr_scripts_dir.'/'.$type.'-manager-start')) {
-			$mngr_start_script = file_get_contents($mngr_scripts_dir.'/'.$type
-				.'-manager-start');
-		} else {
-			$mngr_start_script = file_get_contents($mngr_scripts_dir
-				.'/default-manager-start');
-		}
-		if ($mngr_start_script  === false) {
-			throw new Exception('Could not read manager start script');
-		}
-
-		// Generate certificate for the master
-		$mgr_certs = generate_certificate($this->uid, $this->sid,
-                                          'manager', 'info@conpaas.eu',
-                                          'ConPaaS', 'Contrail');
-
-		// Concatenate these
-		$user_data = $cloud_script."\n\n"
-			."cat <<EOF > /tmp/ca_cert.pem"."\n"
-			.$mgr_certs['ca_cert']."\n". "EOF"."\n\n"
-			."cat <<EOF > /tmp/key.pem"."\n"
-			.$mgr_certs['key']."\n". "EOF"."\n\n"
-			."cat <<EOF > /tmp/cert.pem"."\n"
-			.$mgr_certs['cert']."\n". "EOF"."\n\n"
-			.$mngr_setup."\n\n"
-			."cat <<EOF > \$ROOT_DIR/config.cfg"."\n"
-			.$cloud_cfg."\n"
-			.$mngr_cfg."\n". "EOF"."\n\n"
-			.$mngr_start_script."\n";
-
-		return $user_data;
+	public function resolveAddress($vmid) {
+        return $this->ipaddr;
 	}
+ 
+	public function terminate() {
+        $res = HTTPS::post(Conf::DIRECTOR . '/stop/' . $this->sid, 
+            array('username' => $_SESSION['username'], 'password' => $_SESSION['password']));
+
+        if (!json_decode($res)) {
+            throw new Exception('Error terminating service '. $this->sid);
+        }
+    }
 }

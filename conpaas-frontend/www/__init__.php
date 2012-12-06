@@ -45,6 +45,7 @@ require_once('config.php');
 class Conf {
 	const CONF_DIR = CONPAAS_CONF_DIR;
 	const HOST = CONPAAS_HOST;
+	const DIRECTOR = DIRECTOR_URL;
 
 	/*
 	 * time, in seconds, elapsed since the creation of a service, after which
