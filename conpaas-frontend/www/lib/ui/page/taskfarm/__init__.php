@@ -146,7 +146,7 @@ class TaskFarmPage extends ServicePage {
 				.'</td>'
 				.'<td>'
 					.'<div id="scheduleDetails">'
-						.'please click on the graph to select an execution'
+						.'loading Schedule Details, please wait ...'
 					.'</div>'
 				.'</td>'
 			.'</tr>'
