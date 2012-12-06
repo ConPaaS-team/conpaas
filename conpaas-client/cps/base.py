@@ -240,7 +240,7 @@ class BaseClient(object):
                 return self.credentials()
 
     def available_services(self):
-        return self.callapi('available_services', False, {})
+        return self.callapi('available_services', True, {})
 
     def available(self):
         for service in self.available_services():
@@ -260,18 +260,14 @@ class BaseClient(object):
             print "Startup script uploaded correctly."
 
     def check_service_id(self, sid):
-        # Getting info on this service
-        services = self.callapi("list", True, {})
-        service_exists = [ 
-            service for service in services if service['sid'] == sid ]
+        # get requested service data
+        for service in self.callapi("list", True, {}):
+            if service['sid'] == sid:
+                # return service type
+                return service['type'].lower()
 
-        if not service_exists:
-            print "E: cannot find service %s" % sid
-            sys.exit(1)
-
-        res = self.callmanager(sid, "get_service_info", False, {})
-
-        return res['type'].lower()
+        print "E: cannot find service %s" % sid
+        sys.exit(1)
 
     def prettytable(self, print_order, rows):
         maxlens = {}

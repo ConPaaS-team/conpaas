@@ -139,7 +139,7 @@ def get_user_certs():
     return helpers.send_file(zipdata, mimetype="application/zip",
         as_attachment=True, attachment_filename='certs.zip')
 
-@app.route("/available_services", methods=['GET'])
+@app.route("/available_services", methods=['GET','POST'])
 def available_services():
     """GET /available_services"""
     return simplejson.dumps(valid_services)
