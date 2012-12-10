@@ -164,9 +164,27 @@ fixme{workload mix makes more difficult to predict the workload}
 \subsection{Workload mix-aware provisioning}
 
 
-The heterogeneity of cloud platforms, and therefore, of their VMs affect to the accuracy of the provisioning decisions. VMs with better hardware configuration can sustain higher workload intensities. In addition, the mixture of static/dynamic requests included into the workload of web applications makes more difficult to distribute these requests across multiple backend servers. Most of existing web load-balancer systems provide simple methods which do not consider the workload mix. Hence, methods such as\emph{round-robin} distributes the requests according to the servers with respect of its server weight; and the \emph{least connections} method which distributes requests to the server with the least connections. Unfortunately, these load-distribution methods are not so accurate when having a large diversity in the complexity of the requests. 
+%The heterogeneity of cloud platforms, and therefore, of their VMs affect to the accuracy of the provisioning decisions. VMs with better hardware configuration can sustain higher workload intensities. In addition, the mixture of static/dynamic requests included into the workload of web applications makes more difficult to distribute these requests across multiple backend servers. Most of existing web load-balancer systems provide simple methods which do not consider the workload mix. Hence, methods such as\emph{round-robin} distributes the requests according to the servers with respect of its server weight; and the \emph{least connections} method which distributes requests to the server with the least connections. Unfortunately, these load-distribution methods are not so accurate when having a large diversity in the complexity of the requests. 
 
-As a solution, the workload mix-aware algorithm proposes to use a dynamic-weight load balancing method in conjunction with the weighted-metric feedback algorithm. By using this dynamic load-balancing mechanism, each backend server has a weight value which is dynamically adjusted based on its monitoring data, and thereby based on its own performance behavior. This mechanism allows to distribute requests across the servers taken into consideration the current workload intensity and the server throughput, which vary depending of its hardware configuration. As illustrated in Algorithm~\ref{mix_prov}, this algorithm assigns the same weight to each backend servers at the beginning of the process, and progressively adjusts their weights  (every $\sim$ 15min) depending on the monitoring data collected from each backend. By doing so, the load-balancing takes into account the complexity of the served requests and inherently the server throughput improving the distribution.
+%As a solution, the workload mix-aware algorithm proposes to use a dynamic-weight load balancing method in conjunction with the weighted-metric feedback algorithm. By using this dynamic load-balancing mechanism, each backend server has a weight value which is dynamically adjusted based on its monitoring data, and thereby based on its own performance behavior. This mechanism allows to distribute requests across the servers taken into consideration the current workload intensity and the server throughput, which vary depending of its hardware configuration. As illustrated in Algorithm~\ref{mix_prov}, this algorithm assigns the same weight to each backend servers at the beginning of the process, and progressively adjusts their weights  (every $\sim$ 15min) depending on the monitoring data collected from each backend. By doing so, the load-balancing takes into account the complexity of the served requests and inherently the server throughput improving the distribution.
+
+Another problem that we need to consider is the heterogeneity of cloud platforms.
+Different virtual machines from the same cloud might have different performance
+characteristics, even when their specifications from the cloud vendor are the same.
+This problem can be addressed through various load balancing techniques, like
+assigning weights to the backend servers or taking into account the current number
+of connections that each server handles. Furthermore, the performance behavior
+of the virtual servers can also change in time, either due to changes in
+the application's usage patterns, or due to changes related to the hosting
+of the virtual servers (e.g., VM migration).
+
+In order to address these issues in ConPaaS we implemented a weighted load balancing
+system in which the weights of the servers are periodically re-adjusted
+automatically, based on the monitoring data. As illustrated in 
+Algorithm~\ref{mix_prov}, this method assigns the same weight to each 
+backend server at the beginning of the process. The weights are then periodically
+adjusted (every $\sim$ 15min) depending on the average response time
+of each server during this time interval.
 
 
 \begin{algorithm}
