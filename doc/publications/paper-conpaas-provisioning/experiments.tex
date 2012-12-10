@@ -1,11 +1,8 @@
-In this section we conducted our experiments on a public cloud like Amazon EC2~\cite{amazonEC2} and on a private cloud like DAS-4 (the Distributed ASCI Supercomputer 4)~\cite{das4}. DAS-4 is the Dutch Computational Infrastructure, a six-cluster wide-area distributed system designed with research purposes.  We compare the degree of SLA fulfillment and resource consumption for each one of the provisioning algorithms included in ConPaaS.
+In this section we conducted our experiments on a heterogeneous infrastructure like Amazon EC2~\cite{amazonEC2} and on a homogeneous infrastructure like DAS-4 (the Distributed ASCI Supercomputer 4)~\cite{das4}. DAS-4 is the Dutch Computational Infrastructure, a six-cluster wide-area distributed system designed with research purposes.  We compare the degree of SLA fulfillment and resource consumption for each one of the provisioning algorithms included in ConPaaS.
 
 Note that, since DAS-4 is a homogeneous infrastructure, the profiling techniques were only evaluated on a heterogeneous platform like Amazon EC2. 
 
-\fixme{Public cloud or Homogeneous infrastructure ??} 
-\corina{I would call it homogeneous infrastructure. The fact 
-that the cloud is public or not doesn't have any influence on
-our experiments (and I would say EC2 is also a public cloud).} 
+
 \fixme{Include all the assumptions ??} 
 \corina{I guess only the important ones (but what kind
 of assumptions were you thinking about?}
@@ -20,7 +17,7 @@ To provide the Wikipedia services, an initial configuration was composed of 4 VM
 
 Thus, the provisioning system will scale out and back the number of VMs hosting FPM-PhP agents to guarantee the SLO (Service Level Objective). Initially, we fixed two SLOs one of 700ms (milliseconds) at the service's side and another of 1500ms at the client's side. Our measurements shows the behavior of the Wikipedia services during 24h under a workload generated from real access traces. Note that, our experiments only focus on the average of PhP response time and the resource consumption of our algorithms. The response time of static file requests is not evaluated due to the lightweight nature of the static files employed by Wikipedia articles. 
 
-\subsection{Public Cloud}
+\subsection{Homogeneous Infrastructure}
 
 Our experiments on DAS4 relies on OpenNebula as Infrastructure-as-a-service (IaaS). To deploy the Wikipedia services, we used small instances for the PhP service (manager and agents) and a medium instance for the MySQL service (agent). OpenNebula's small instances provision VMs equipped with 1 CPU of 2Ghz, and 1GiB of memory, while medium instances are equipped with 4 CPU's of 2Ghz, and 4GB of memory.
 
@@ -67,7 +64,7 @@ Both algorithms are best-effort regarding the SLA fulfillment, and thereby tempo
 
 
 
-\subsection{Private Cloud}
+\subsection{Heterogeneous Infrastructure}
 
 Our experiments on EC2 used small instances for the PhP service (manager and agents) and  a medium instance for the MySQL service (agent). EC2 small instances provision VMs equipped with 1 EC2 CPU, and 1.7GiB of memory, while medium instances are equipped with 2 EC2 CPU's, and 3.75GiB of memory.
 
@@ -132,4 +129,5 @@ However, in these experiments, the flexible threshold ranges were pre-defined be
 
 %\fixme{offline profiling techniques have to be included.}
 
-
+\fixme{We used the same statistically-chose performance threshold for both infrastructures.}
+\fixme{Aggressive provisioning also increases the chances of degraded application performance due to the accompanying increase in violation of performance thresholds.}

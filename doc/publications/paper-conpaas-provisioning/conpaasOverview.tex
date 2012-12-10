@@ -1,14 +1,22 @@
 
 
-ConPaaS is an open-source runtime environment for hosting applications in Cloud infrastructures.
+ConPaaS is an open-source runtime environment for hosting applications in Cloud infrastructures~\cite{conpaasIC}.
 Within the Cloud computing paradigm, ConPaaS belongs to the platform-as-a-service family, 
-in which a variety of systems aim to simplify the deployment of applications in the Cloud. Using ConPaaS,  developers can now focus their attention on application-specific concerns rather than making their applications more suitable for the cloud. 
+in which a variety of systems aim to simplify the deployment of applications in the Cloud. Using ConPaaS,  developers can now focus their attention on application-specific concerns rather than making their applications suitable for the cloud. 
 
 \subsection{Architecture}
 
-In ConPaaS, an application is conceived as a composition of one or more elastic and distributed components, called \emph{services}. Each service is dedicated to host a particular type of functionality of an application. At the moment, ConPaaS supports six different types of services: two web application hosting services respectively specialized for hosting PHP and JSP applications; a MySQL database service; a NoSQL database service built around the Scalarix key-value store; a MapReduce service; and a TaskFarming service for high-performance batch processing.  
+In ConPaaS, an application is designed as a composition of one or more elastic and distributed components, called \emph{services}. Each service is dedicated to host a particular type of functionality of an application. At the moment, ConPaaS supports six different types of services: two web application hosting services respectively specialized for hosting PHP and JSP applications; a MySQL database service; a NoSQL database service built around the Scalarix key-value store; a MapReduce service; and a TaskFarming service for high-performance batch processing.  
 
 These services are built based on an architecture composed of two main building blocks: agents and managers.
+
+\begin{figure*}[Ht]
+\begin{center}
+\includegraphics[width=0.6\textwidth, height=6.2cm]{./images/conpaasSystemArch}
+\end{center}
+\caption{ConPaaS system architecture}
+\label{arch}
+\end{figure*}
 
 \corina{Maybe include here one of the diagrams that we have, 
 that show the architecture of ConPaaS?}  
@@ -27,15 +35,12 @@ that show the architecture of ConPaaS?}
 
 The main features that distinguish ConPaaS from other PaaS systems are its approach for autonomous application scaling and its interoperability with a wide variety of private and public IaaS clouds. In particular to provide such autonomous scaling capabilities, ConPaaS includes a monitoring data analysis mechanism  and a resource provisioning system.
 
-Since most IaaS does not implement any sophisticated monitoring capabilities, ConPaaS incorporates a scalable distributed monitoring engine which is based on the Ganglia~\cite{ganglia} monitoring system. Ganglia consists of a server component (gmetad) that aggregates monitoring statistics from various VMs, and a reporting agent (gmond) which runs inside each VM. By default, Ganglia monitors only system-level metrics such as disk, CPU, memory and network usage. Unfortunately, these metrics often do not provide enough information about system performance due to the heterogeneity of the applications. As a consequence, in ConPaaS, we enhanced ganglia to also monitor service workloads by enhancing the reporting agent to track service-specific logs at runtime, and report statistics over a reporting period of 5 minutes. For instance, the PhP web hosting service includes new ganglia metrics that report statistics about the response time and request rate for static and non/static user requests, respectively. Once the monitoring data is collected from the agents VMs, the resource provisioning  algorithm decides whether to trigger scaling operations based on this data. 
+ConPaaS incorporates a scalable distributed monitoring engine which is based on the Ganglia~\cite{ganglia} monitoring system. Ganglia consists of a server component (gmetad) that aggregates monitoring statistics from various VMs, and a reporting agent (gmond) which runs inside each VM. By default, Ganglia monitors only system-level metrics such as disk, CPU, memory and network usage. Unfortunately, these metrics often do not provide enough information about system performance due to the heterogeneity of the applications. As a consequence, in ConPaaS, we enhanced ganglia to also monitor service workloads by enhancing the reporting agent to track service-specific logs at runtime, and report statistics over a reporting period of 5 minutes. For instance, the PhP web hosting service includes new ganglia metrics that report statistics about the response time and request rate for static and non/static user requests, respectively. Once the monitoring data is collected from the agents VMs, the resource provisioning  algorithm decides whether to trigger scaling operations based on this data. 
 
 Unlike of implementing traditional trigger-based provisioning systems that scale services independently of whether they are part of an application. In ConPaaS, we designed a performance control model for multi-service applications. Our model takes into consideration the fact that services may have different roles in an application, so that services collaborate to guarantee several performance requirements. It improves the effectiveness and accuracy of the scaling decisions. Indeed, this allows to rapidly detect performance bottlenecks in applications, and thereby to minimize the resource consumption.
 
 % Instead of implementing simple performance-based triggers which provision each tier individually based on %its own performance, we designed a performance control model for the entire application. 
 
-\fixme{Do you want to mention profiling in this section?}
-\corina{I don't think so, since we didn't even really use profiling 
-in the experiments that we show here.}
 
 %Ganglia stores monitored statistics in a custom roundrobin database (RRD); our monitoring engine can track %resource usage and application workload statistics by periodically querying this database and determining %whether any user-specified thresholds have been exceeded (e.g., thresholds on SLA violations, request %drops, or resource utilization). 
 
