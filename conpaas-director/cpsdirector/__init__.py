@@ -49,8 +49,9 @@ def create_user(username, fname, lname, email, affiliation, password, credit):
     try:
         db.session.commit()
         return user
-    except Exception:
+    except Exception, err:
         db.session.rollback()
+        raise err
 
 def auth_user(username, password):
     """Return a User object if the specified (username, password) combination
