@@ -89,6 +89,12 @@ def new_user():
             'error': True, 
             'msg': 'Username "%s" already taken' % values['username'] }))
 
+    # check if the provided email already exists
+    if User.query.filter_by(email=values['email']).first():
+        return build_response(jsonify({ 
+            'error': True, 
+            'msg': 'E-mail "%s" already registered' % values['email'] }))
+
     try:
         user = create_user(**values)
         # successful creation
