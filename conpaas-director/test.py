@@ -1,5 +1,8 @@
+# -*- coding: utf-8 -*-
+
 import os
 import urllib
+import hashlib
 import unittest
 import simplejson
 
@@ -187,6 +190,50 @@ class DirectorTest(Common):
 
         user = cpsdirector.auth_user("ema", "properpass")
         self.assertEquals(119, user.credit)
+
+    def test_proper_login(self):
+        self.create_user()
+
+        data = { 'username': 'ema', 'password': 'properpass' }
+        response = self.app.post('/login', data=data)
+        self.assertEquals(200, response.status_code)
+
+        user = simplejson.loads(response.data)
+        self.assertEquals("VU University Amsterdam", user['affiliation'])
+
+    def test_login_unicode_encode_error(self):
+        self.create_user()
+
+        data = { 'username': 'ema', 'password': 'pré' }
+        response = self.app.post('/login', data=data)
+        self.assertEquals(200, response.status_code)
+
+        # the user does not exist, we expect /login to return false
+        retval = simplejson.loads(response.data)
+        self.failIf(retval)
+
+    def __test_new_user(self, data):
+        response = self.app.post('/new_user', data=data)
+        self.assertEquals(200, response.status_code)
+
+        user = simplejson.loads(response.data)
+        self.assertEquals(None, user.get('msg'))
+
+        # /new_user returns the hashed password
+        data['password'] = hashlib.md5(data['password']).hexdigest()
+
+        for key, value in data.items():
+            self.assertEquals(user[key], data[key])
+
+    def test_new_user(self):
+        data = { 'username': 'ema', 'fname': 'Emanuele', 'lname': 'Rocca', 'email': 'ema@linux.it',
+            'affiliation': 'VU University Amsterdam', 'password': 'properpass', 'credit': 120 }
+        self.__test_new_user(data)
+
+    def test_new_user_unicode_encode_error(self):
+        data = { 'username': 'emà', 'fname': 'Emanuelé', 'lname': 'Roccà', 'email': 'ema@linux.it',
+            'affiliation': 'VU University Amsterdàm', 'password': 'properpàss', 'credit': 120 }
+        self.__test_new_user(data)
 
 if __name__ == "__main__":
     unittest.main()

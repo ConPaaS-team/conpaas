@@ -1,8 +1,13 @@
+# -*- coding: utf-8 -*-
+
 from flask import Flask, jsonify, helpers, request, make_response
 from flask.ext.sqlalchemy import SQLAlchemy
 
 import os
 import sys
+reload(sys)
+sys.setdefaultencoding('utf-8')
+
 import hashlib
 import zipfile
 import simplejson
@@ -87,10 +92,10 @@ def new_user():
         user = create_user(**values)
         # successful creation
         return build_response(simplejson.dumps(user.to_dict()))
-    except Exception:
+    except Exception, err:
         # something went wrong
         return build_response(jsonify({ 
-            'error': True, 'msg': 'Unknown error upon user creation' }))
+            'error': True, 'msg': 'Error upon user creation: %s' % err }))
 
 @app.route("/login", methods=['POST'])
 def login():
