@@ -70,6 +70,13 @@ conf = """
 
 conf += """
         WSGIApplicationGroup %{GLOBAL}
+        WSGIPassApacheRequest On
+
+        SSLRequireSSL
+        SSLVerifyClient optional
+        SSLVerifyDepth 2
+        SSLOptions +StdEnvVars +ExportCertData
+
         Order deny,allow
         Allow from all
     </Directory>
