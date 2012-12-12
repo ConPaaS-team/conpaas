@@ -37,24 +37,7 @@ class BaseClient(object):
     def read_conf_value(self, key):
         return open(os.path.join(self.confdir, key)).read()
 
-    def callapi(self, method, post, data):
-        """Call the director API.
-
-        'method': a string representing the API method name.
-        'post': boolean value. True for POST method, false for GET.
-        'data': a dictionary representing the data to be sent to the director.
-
-        callapi loads the director JSON response and returns it as a Python
-        object. If the returned data can not be decoded it is returned as it is.
-        """
-        try:
-            endpoint = self.read_conf_value("target")
-            username = self.read_conf_value("username")
-            password = self.read_conf_value("password")
-        except IOError:
-            self.credentials()
-            return self.callapi(method, post, data)
-
+    def __callapi_creds(self, method, post, data, endpoint, username='', password=''):
         url = "%s/%s" % (endpoint, method)
         data['username'] = username
         data['password'] = password
@@ -76,6 +59,26 @@ class BaseClient(object):
             return res
         except simplejson.decoder.JSONDecodeError:
             return rawdata
+
+    def callapi(self, method, post, data):
+        """Call the director API.
+
+        'method': a string representing the API method name.
+        'post': boolean value. True for POST method, false for GET.
+        'data': a dictionary representing the data to be sent to the director.
+
+        callapi loads the director JSON response and returns it as a Python
+        object. If the returned data can not be decoded it is returned as it is.
+        """
+        try:
+            endpoint = self.read_conf_value("target")
+            username = self.read_conf_value("username")
+            password = self.read_conf_value("password")
+        except IOError:
+            self.credentials()
+            return self.callapi(method, post, data)
+
+        return self.__callapi_creds(method, post, data, endpoint, username, password)
 
     def callmanager(self, service_id, method, post, data, files=[]):
         """Call the manager API.
@@ -214,6 +217,21 @@ class BaseClient(object):
 
             if url.scheme != "https":
                 print wrong_url
+                continue
+
+            # Check if a ConPaaS director is listening at the provided URL
+            try:
+                available_services = self.__callapi_creds(
+                    method='available_services', 
+                    post=False, 
+                    data={}, 
+                    endpoint=target_url)
+
+                # If this yields True we can be reasonably sure that the
+                # provided URL is correct
+                assert type(available_services) is list 
+            except Exception:
+                print "E: No ConPaaS Director at the provider URL\n"
                 continue
 
             # Valid URL
