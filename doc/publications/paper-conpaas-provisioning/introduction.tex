@@ -58,55 +58,17 @@
 % infinite pool of resources
 
 
-Over the last few years, we have witnessed numerous debates on blogs, conferences and media on whether to use \emph{grid computing} or \emph{cloud computing}.  Even though some of the early promises of grid computing, sound the same as the promises of the cloud, cloud efforts were focused on applications which will be long-running on the infrastructure. As a result, today's most well-known enterprises use cloud infrastructures as a tool on which deploy their applications. Similarly, one key properties of the clouds is \emph{elasticity}, \emph{i.e.}, the possibility for cloud users, to dynamically adapt the quantity of resources at his disposal at runtime.  Unfortunately, this notion of infinite resource availability has a financial cost, as cloud users have to pay for the resources being used from moment to moment.
+Over the last few years, we have witnessed numerous debates on blogs, conferences and media on whether to use \emph{grid computing} or \emph{cloud computing}.  Even though some of the early promises of grid computing, sound the same as the promises of the cloud, cloud efforts were focused on applications which will be long-running on the infrastructure. As a result, today's research scientists and most well-known enterprises use cloud infrastructures as a tool on which deploy their data/computation-intensive applications. Thus, one key properties of the clouds is \emph{elasticity}, \emph{i.e.}, the possibility for cloud users, to dynamically adapt the quantity of resources at his disposal at runtime.  Unfortunately, this notion of infinite resource availability has a financial cost, as cloud users have to pay for the resources being used from moment to moment.
 
 \corina{Not sure if we should bring grid computing into discussion, 
 the readers might not be familiar with it (and I think we should aim
 to shorten the paper).}
 
-Therefore it seems crucial to choose the best cloud provisioning offers in order to minimize the resource consumption, and thereby the running costs while assuring several performance requirements for our applications. Nowadays, there are lots of research papers dedicated to sophisticated techniques on dynamic resource provisioning. However, if we look at real deployments we see that cloud providers rely on extremely simple techniques, and completely ignore the results from academic research on the topic. Two reasons can be the explanations for this discrepancy: \emph{(i)} the gains of using sophisticated provisioning strategies are too low for anyone to bother; \emph{(ii)}  implementing these techniques is a difficult exercise, which is why real cloud systems rely on simpler techniques.
-
-y match allocated capacity to such
-observed workload changes. While long-term variations can be
-handled by manually allocating server capacity to an application,
-short-term ﬂuctuations require an ability to dynamically provision
-capacity to react to workload changes in an agile and timely manner. Recently a number of dynamic capacity provisioning techniques have been proposed in the literature [24, 25, 26, 6]. Most
-of these techniques track or predict changes in the workload [24,
-25] and then provision sufﬁcient capacity to handle this expected
-volume of requests.
-
-\corina{I think the statement ``completely ignore the results from academic research'' 
-is a bit too bold. I would say something like the real deployments tend to use
-very simple strategies rather than the sophisticated techniques proposed
-by researchers.}
-
-This paper tries to identify the real cause. We do this by implementing a sophisticated provisioning system in realistic conditions, and reporting on \emph{(i)} how hard implementation was; and \emph{(ii)} potential gains from using the better technique as compared to a simple strawman. To achieve this, we designed and implemented these resource provisioning strategies on ConPaaS, an open source platform-as-a-service environment for hosting cloud applications~\cite{conpaasIC}. For the sake of comparison and discussion, we deployed the Mediawiki application and used real access traces to validate our technique, opening doors to real implementation of slightly sophisticated auto-scaling systems.
+Therefore it seems crucial to choose the best cloud provisioning offers in order to minimize the resource consumption, and thereby the running costs while assuring several performance requirements for our applications. Resource provisioning systems seem to be the solution by dynamically adjusting the server capacity to react to workload variations in timely and an efficient manner. Nowadays, there are lots of research papers dedicated to sophisticated techniques on dynamic resource provisioning. However, if we look at real deployments we see that cloud providers rely on extremely simple techniques rather than using sophisticated techniques, such as those proposed by academic research on the topic. Three reasons can be the explanations for this discrepancy: \emph{(i)} the gains of using sophisticated provisioning strategies are too low for anyone to bother; \emph{(ii)}  implementing these techniques is a difficult exercise, which is why real cloud systems rely on simpler techniques; and \emph{(iii)} academic approaches mostly focus on unrealistic evaluations using simple applications and artificial workloads~\cite{do_profiling_2011, islam_empirical_2012, wang_appraise:_2009}. By using real production applications, new limitations could be detected and solved in the provisioning systems due to the peculiarity and heterogeneity of real workloads. Indeed, these workloads have several interesting properties such as a variable amount of request volumes, a large diversity of request mix and different execution times between requests, which increase the difficulties to make scaling decisions.
 
 
-, we argue that provisioning server capacity based on
-the expected volume of requests may not be sufﬁcient to accurately
-capture the service demands of a web application. In particular
-it has been observed that in real production applications ranging
-from enterprise applications to large e-commerce sites, workload
-is higly variable and the request mix exhibits nonstationarity [22,
-26]. C
-
-Workload ﬂuctuations seen by Internet applications can be caused
-by changes in the volume of incoming requests or by changes in
-their mix; frequently, workload ﬂuctuations are accompanied by
-both types of changes. It is clear that a signiﬁcant change in the
-request volume requires changes in the provisioned capacity—for
-example, if the request rate doubles, the application needs twice
-as much server capacity. A change in the workload mix (i.e., the
-relative frequencies of different request types) is a more subtle phenomenon that has an equally important impact on capacity provisioning; however, the impact of such non-stationary workloads has
-not been adequately addressed in the research literature. We argue
-why the workload mix matters using two illustrative examples
-
-\corina{Maybe not; we could just make a summary phrase out of that (e.g.
-we used more sophisticated methods based on trend detection, dynamic weight adjustment
-for load balancing etc.). }
+This paper aims to identify the real cause of why cloud providers use simpler provisioning techniques. We do this by implementing a provisioning system in realistic conditions, and reporting on \emph{(i)} how hard implementation was; and \emph{(ii)} potential gains from using the better technique as compared to a simple strawman. To achieve this, we designed and implemented a resource provisioning technique on ConPaaS, an open source platform-as-a-service environment for hosting cloud applications~\cite{conpaasIC}, based on a predictive and robust model. The resulting technique used different levels of thresholds to predict future performance degradations, workload trend detection methods to avoid flash crowds effects and dynamic load-balancing algorithms to handle the workload-mix. For the sake of comparison and discussion, we deployed the MediaWiki application and used real access traces to validate our technique, opening doors to real implementation of promising auto-scaling systems.
 
 
-
-Section~\ref{conpaas} introduces the ConPaaS runtime environment. Section~\ref{wikipedia} describes the application and its realistic benchmark to validate our system. Section~\ref{provisioning} focus on the different resource provisioning strategies implemented in ConPaaS. Section~\ref{experiments} details the experimental campaign and its results. Section~\ref{studies} discusses related works. Section~\ref{conclu} draws a conclusion.
+Section~\ref{conpaas} introduces the ConPaaS runtime environment. Section~\ref{wikipedia} describes the MediaWiki application, its realistic benchmark, and the peculiarities of the Wikipedia workload-mix utilized to validate our system. Section~\ref{provisioning} focus on the different resource provisioning techniques implemented in ConPaaS. Section~\ref{experiments} details the experimental campaign and its results. Section~\ref{studies} discusses related works. Section~\ref{conclu} draws a conclusion.
 
