@@ -26,32 +26,32 @@ class Common(unittest.TestCase):
         cpsdirector.db.drop_all()
         cpsdirector.db.create_all()
 
-    def create_user(self):
-        return cpsdirector.create_user(TEST_USER_DATA['username'], 
-                                       TEST_USER_DATA['fname'],
-                                       TEST_USER_DATA['lname'],
-                                       TEST_USER_DATA['email'],
-                                       TEST_USER_DATA['affiliation'],
-                                       TEST_USER_DATA['password'],
-                                       TEST_USER_DATA['credit'])
+    def create_user(self, data=TEST_USER_DATA):
+        return cpsdirector.create_user(data['username'], 
+                                       data['fname'],
+                                       data['lname'],
+                                       data['email'],
+                                       data['affiliation'],
+                                       data['password'],
+                                       data['credit'])
 
 class DbTest(Common):
 
     def test_create_user(self):
         self.create_user()
 
-        self.assertFalse(cpsdirector.auth_user(TEST_USER_DATA['username'], 
+        self.assertFalse(cpsdirector.get_user(TEST_USER_DATA['username'], 
             "wrongpass"))
 
-        self.assert_(cpsdirector.auth_user(TEST_USER_DATA['username'], 
+        self.assert_(cpsdirector.get_user(TEST_USER_DATA['username'], 
             TEST_USER_DATA['password']) is not None)
 
-        self.assertFalse(cpsdirector.auth_user("wronguname", TEST_USER_DATA['password']))
+        self.assertFalse(cpsdirector.get_user("wronguname", TEST_USER_DATA['password']))
 
     def test_create_service(self):
         self.create_user()
 
-        user = cpsdirector.auth_user(TEST_USER_DATA['username'], TEST_USER_DATA['password'])
+        user = cpsdirector.get_user(TEST_USER_DATA['username'], TEST_USER_DATA['password'])
         service = cpsdirector.Service(name="New selenium service", type="selenium", 
             user=user)
         cpsdirector.db.session.add(service)
@@ -69,7 +69,7 @@ class DbTest(Common):
         else:
             cpsdirector.db.session.rollback()
 
-        user = cpsdirector.auth_user(TEST_USER_DATA['username'], TEST_USER_DATA['password'])
+        user = cpsdirector.get_user(TEST_USER_DATA['username'], TEST_USER_DATA['password'])
         self.assertEquals(110, user.credit)
 
         user.credit -= 5000
@@ -79,7 +79,7 @@ class DbTest(Common):
         else:
             cpsdirector.db.session.rollback()
 
-        user = cpsdirector.auth_user(TEST_USER_DATA['username'], TEST_USER_DATA['password'])
+        user = cpsdirector.get_user(TEST_USER_DATA['username'], TEST_USER_DATA['password'])
         self.assertEquals(110, user.credit)
 
 class DirectorTest(Common):
@@ -112,11 +112,21 @@ class DirectorTest(Common):
         response = self.app.post('/callback/decrementUserCredit.php')
         self.assertEquals(200, response.status_code)
 
-    def test_false_start(self):
+    def test_false_start_wrong_credentials(self):
         data = { 'username': "wronguser", 'password': TEST_USER_DATA['password'] }
 
         response = self.app.post('/start/php', data=data)
         self.assertEquals(False, simplejson.loads(response.data))
+
+    def test_false_start_wrong_servicetype(self):
+        self.create_user()
+
+        data = { 'username': TEST_USER_DATA['username'], 
+                 'password': TEST_USER_DATA['password'] }
+        
+        response = self.app.post('/start/wrong', data=data)
+        ret = simplejson.loads(response.data)
+        self.assertEquals('Unknown service type: wrong', ret['msg'])
 
     def test_proper_start(self):
         self.create_user()
@@ -157,7 +167,43 @@ class DirectorTest(Common):
 
         # Now /stop/1 should return True
         response = self.app.post('/stop/1', data=data)
-        self.assertEquals(True, simplejson.loads(response.data))
+        self.failUnless(simplejson.loads(response.data))
+
+    def test_stop_wrong_user(self):
+        # create default user
+        self.create_user()
+
+        # create a service
+        data = { 'username': TEST_USER_DATA['username'], 
+                 'password': TEST_USER_DATA['password'] }
+        response = self.app.post('/start/php', data=data)
+        servicedict = simplejson.loads(response.data)
+        self.assertEquals(1, servicedict['sid'])
+
+        # create another user
+        other_user = {
+            'username': 'testuser_other',
+            'fname': 'TestName',
+            'lname': 'TestSurname',
+            'email': 'test_other@example.org',
+            'affiliation': 'Test Institution',
+            'password': 'properpass',
+            'credit': 120
+        }
+        self.create_user(other_user)
+
+        # we expect false now that the newly created user tries to stop the
+        # service she does not own
+        response = self.app.post('/stop/1', data={ 
+            'username': other_user['username'], 
+            'password': other_user['password'] })
+        self.failIf(simplejson.loads(response.data))
+
+        # whereas the owner should be able to stop the service
+        data = { 'username': TEST_USER_DATA['username'], 
+                 'password': TEST_USER_DATA['password'] }
+        response = self.app.post('/stop/1', data=data)
+        self.failUnless(simplejson.loads(response.data))
 
     def test_list(self):
         self.create_user()
@@ -192,14 +238,16 @@ class DirectorTest(Common):
         # No sid and decrement
         data = {}
         response = self.app.post('/callback/decrementUserCredit.php', data=data)
-        self.assertEquals({ 'error': True }, simplejson.loads(response.data))
+        expected = { 'error': True, 'msg': 'Service -1 does not exist'}
+
+        self.assertEquals(expected, simplejson.loads(response.data))
             
         # Right sid but not enough credit
         data = { 'sid': 1, 'decrement': 10000 }
         response = self.app.post('/callback/decrementUserCredit.php', data=data)
         self.assertEquals({ 'error': True }, simplejson.loads(response.data))
 
-        user = cpsdirector.auth_user(TEST_USER_DATA['username'], TEST_USER_DATA['password'])
+        user = cpsdirector.get_user(TEST_USER_DATA['username'], TEST_USER_DATA['password'])
         self.assertEquals(120, user.credit)
 
         # Right sid and enough credit
@@ -207,7 +255,7 @@ class DirectorTest(Common):
         response = self.app.post('/callback/decrementUserCredit.php', data=data)
         self.assertEquals({ 'error': False }, simplejson.loads(response.data))
 
-        user = cpsdirector.auth_user(TEST_USER_DATA['username'], TEST_USER_DATA['password'])
+        user = cpsdirector.get_user(TEST_USER_DATA['username'], TEST_USER_DATA['password'])
         self.assertEquals(119, user.credit)
 
     def test_proper_login(self):
@@ -230,6 +278,16 @@ class DirectorTest(Common):
         # the user does not exist, we expect /login to return false
         retval = simplejson.loads(response.data)
         self.failIf(retval)
+
+    def test_getcerts(self):
+        self.create_user()
+
+        data = { 'username': TEST_USER_DATA['username'], 
+                 'password': TEST_USER_DATA['password'] }
+
+        response = self.app.post('/getcerts', data=data)
+        self.assertEquals(200, response.status_code)
+        self.assertEquals("application/zip", response.mimetype)
 
     def __test_new_user(self, data):
         response = self.app.post('/new_user', data=data)
@@ -293,6 +351,22 @@ class DirectorTest(Common):
 
         user = simplejson.loads(response.data)
         self.assertEquals('E-mail "%s" already registered' % data['email'], user.get('msg'))
+
+    def test_new_user_missing_field(self):
+        data = {
+            'fname': 'Firstname',
+            'lname': 'Lastname',
+            'email': TEST_USER_DATA['email'], 
+            'affiliation': 'whatever',
+            'password': TEST_USER_DATA['password'], 
+            'credit': 50 
+        }
+
+        response = self.app.post('/new_user', data=data)
+        self.assertEquals(200, response.status_code)
+
+        user = simplejson.loads(response.data)
+        self.assertEquals('username is a required field', user.get('msg')) 
 
 if __name__ == "__main__":
     unittest.main()
