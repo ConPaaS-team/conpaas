@@ -209,9 +209,9 @@ Initialize load-balancing weights for the backend servers\;
 \While{auto-scaling is ON}{
 Collect monitoring data of each metric, \emph{data}\;
 
-\uIf{ data$_i$ $>=$ pred\_thr$_i$}{
+\uIf{ avg(data$_i$) $>=$ pred\_thr$_i$}{
 	Increment chances of \emph{scaling\_out} using \emph{w$_i$}, \emph{s\_out}\;
-}\ElseIf{ data$_i$ $<$ pred\_thr$_i$}{
+}\ElseIf{ avg(data$_i$) $<$ pred\_thr$_i$}{
 	Increment chances of \emph{scaling\_in} using $w_i$, \emph{s\_in}\;
 }
 \BlankLine
@@ -221,10 +221,10 @@ Estimate historical workload trends (last $\sim$20min), \emph{td}\;
 \hspace{3mm}	- If trend is decreasing then \emph{td} = 0\;		
 \BlankLine
 \While{ no recent scaling operation}{
-\uIf{ data$_i$ $>=$ reac\_thr$_i$ \textbf{and}  $td$ = 1 \textbf{and} \emph{s\_out} $>=$ \emph{s\_in}}{
+\uIf{ avg(data$_i$) $>=$ reac\_thr$_i$ \textbf{and}  $td$ = 1 \textbf{and} \emph{s\_out} $>=$ \emph{s\_in}}{
 	ADD resources\;
 }
-\ElseIf{ data$_i$ $<$ reac\_thr$_i$ \textbf{and} \emph{td} = 0 \textbf{and} s\_out $<$ s\_in }{
+\ElseIf{ avg(data$_i$) $<$ reac\_thr$_i$ \textbf{and} \emph{td} = 0 \textbf{and} s\_out $<$ s\_in }{
 	REMOVE resources\;
 }
 }
