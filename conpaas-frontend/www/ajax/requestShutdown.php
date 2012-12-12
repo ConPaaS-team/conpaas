@@ -52,7 +52,7 @@ try {
 	}
 	$response = $service->requestShutdown();
 	$obj = json_decode($response, true);
-	echo json_encode($response['result']);
+	echo json_encode($obj['result']);
 } catch (Exception $e) {
 	echo json_encode(array(
 		'error' => $e->getMessage(),
