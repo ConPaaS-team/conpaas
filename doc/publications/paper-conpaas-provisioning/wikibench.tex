@@ -13,6 +13,11 @@ Even though we use a 10\% of the real traces, they are very heterogeneous in ter
 
 Similarly, as shown in Figure~\ref{workload} and Figure~\ref{phpRespTimeDispersion}, there is not any correlation between the PhP request volumes and their response times. More precisely in Figure~\ref{phpRespTimeDispersion}, the highest response time values obtained in the interval of time 600min. match up with a drop in the request rate during the same interval in Figure~\ref{workload}. Therefore, any provisioning technique that makes decisions based on the request rate can incur errors by under- or over-provisioning an application, which drastically reduces the efficiency of the scaling actions. 
 
+\corina{Are you sure the results from Figures 3 and 4 are relevant? In
+figure 3, the response time might be higher for a lower request rate
+because there are fewer backend VMs provisioned when the request rate
+is low?}
+
 \fixme{ OTHER POSSIBILITY: More precisely in Figure~\ref{reqRate}, the highest response time values obtained during the trace execution, match up with low levels of requests rate. Therefore, ...  }
 
 % Similarly, the intensity of the resulting traffic could also be modified ranging from very low up to the 
