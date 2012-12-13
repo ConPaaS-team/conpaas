@@ -169,8 +169,8 @@ class PhpPage extends HostingPage {
 				.'<div class="clear"></div>'
 			.'</div>'
 			.'<table class="form settings-form">'
-				.$this->renderSettingsRow('Software Version',
-					$this->renderSwVersionInput())
+				//.$this->renderSettingsRow('Software Version',
+				//	$this->renderSwVersionInput())
 				.$this->renderSettingsRow('Maximum script execution time',
 					$this->renderExecTimeOptions())
 				.$this->renderSettingsRow('Memory limit',

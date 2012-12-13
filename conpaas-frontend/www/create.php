@@ -129,6 +129,7 @@ $page = new Page();
   			<tr>
   				<td>&nbsp;</td>
   			</tr>
+            <!--
   			<tr>
   				<td class="description">cloud provider</td>
   				<td class="input">
@@ -155,6 +156,7 @@ $page = new Page();
                                         ?>
   				</td>
   			</tr>
+            -->
   		</table>
   		<div class="createWrap">
 			<a id="create" class="button" href="javascript: void(0);">
