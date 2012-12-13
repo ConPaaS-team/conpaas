@@ -85,6 +85,18 @@ def login_required(fn):
 
     return decorated_view
 
+def get_service(user_id, service_id):
+    service = Service.query.filter_by(sid=service_id).first()
+    if not service:
+        log('Service %s does not exist' % service_id)
+        return 
+
+    if service.user_id != user_id:
+        log('Service %s is not owned by user %s' % (service_id, user_id))
+        return 
+
+    return service
+
 class cert_required(object):
 
     def __init__(self, role):
@@ -132,7 +144,8 @@ class cert_required(object):
                     return make_response(error_msg, 401)
 
                 # check if the service is actually owned by the user
-                if g.user.services.filter_by(sid=service_locator).count() != 1:
+                g.service = get_service(uid, service_locator)
+                if not g.service:
                     return build_response(simplejson.dumps(False))
 
                 log('cert_required: valid certificate (user %s, service %s)' % (uid, service_locator))
@@ -273,6 +286,24 @@ def start(servicetype):
     log('%s (id=%s) created properly' % (s.name, s.sid))
     return build_response(jsonify(s.to_dict()))
 
+@app.route("/rename/<int:serviceid>", methods=['POST'])
+@cert_required(role='user')
+def rename(serviceid):
+    log('User %s attempting to rename service %s' % (g.user.uid, serviceid))
+
+    service = get_service(g.user.uid, serviceid)
+    if not service:
+        return make_response(simplejson.dumps(False))
+
+    newname = request.values.get('name')
+    if not newname:
+        log('"name" is a required argument')
+        return build_response(simplejson.dumps(False))
+
+    service.name = newname    
+    db.session.commit()
+    return simplejson.dumps(True)
+
 @app.route("/stop/<int:serviceid>", methods=['POST'])
 @cert_required(role='user')
 def stop(serviceid):
@@ -285,18 +316,13 @@ def stop(serviceid):
     """
     log('User %s attempting to stop service %s' % (g.user.uid, serviceid))
 
-    s = Service.query.filter_by(sid=serviceid).first()
-    if not s:
-        log('Service %s does not exist' % serviceid)
-        return build_response(simplejson.dumps(False))
-
-    if s not in g.user.services:
-        log('Service %s is not owned by user %s' % (serviceid, g.user.uid))
+    service = get_service(g.user.uid, serviceid)
+    if not service:
         return build_response(simplejson.dumps(False))
 
     # If a service with id 'serviceid' exists and user is the owner
-    cloud.stop(s.vmid)
-    db.session.delete(s)
+    cloud.stop(service.vmid)
+    db.session.delete(service)
     db.session.commit()
     log('Service %s stopped properly' % serviceid)
     return build_response(simplejson.dumps(True))
@@ -348,20 +374,18 @@ def credit():
 
     log('Decrement user credit: sid=%s, decrement=%s' % (service_id, decrement))
 
-    s = Service.query.filter_by(sid=service_id).first()
-    
     # Decrement user's credit
-    s.user.credit -= decrement
+    g.service.user.credit -= decrement
 
-    if s.user.credit > -1:
+    if g.service.user.credit > -1:
         # User has enough credit
         db.session.commit()
-        log('New credit for user %s: %s' % (s.user.uid, s.user.credit))
+        log('New credit for user %s: %s' % (g.service.user.uid, g.service.user.credit))
         return jsonify({ 'error': False })
 
     # User does not have enough credit
     db.session.rollback()
-    log('User %s does not have enough credit' % s.user.uid)
+    log('User %s does not have enough credit' % g.service.user.uid)
     return jsonify({ 'error': True })
 
 class User(db.Model):

@@ -112,6 +112,10 @@ class DirectorTest(Common):
         response = self.app.post('/callback/decrementUserCredit.php', data={ 'uid': 1 })
         self.assertEquals(200, response.status_code)
 
+    def test_200_on_rename(self):
+        response = self.app.post('/rename/1', data={ 'uid': 1 })
+        self.assertEquals(200, response.status_code)
+
     def test_false_start_wrong_credentials(self):
         # Here the credentials are wrong because no user in the DB has uid 1
         response = self.app.post('/start/php', data={ 'uid': 1 })
@@ -138,6 +142,24 @@ class DirectorTest(Common):
         # Values returned by libcloud's dummy driver
         self.assertEquals('3', servicedict['vmid'])
         self.assertEquals('127.0.0.3', servicedict['manager'])
+
+    def test_proper_rename(self):
+        # create user and service
+        self.create_user()
+        response = self.app.post('/start/php', data={ 'uid': 1 })
+        servicedict = simplejson.loads(response.data)
+        self.assertEquals("New php service", servicedict['name'])
+
+        # rename service
+        response = self.app.post('/rename/1', data={ 'uid': 1, 'name': 'Test' })
+        self.failUnless(simplejson.loads(response.data))
+
+        # check new name
+        list_url = '/list?' + urllib.urlencode({ 'uid': 1 })
+        response = self.app.get(list_url)
+            
+        renamed_service = simplejson.loads(response.data)[0]
+        self.assertEquals('Test', renamed_service['name'])
 
     def test_false_stop(self):
         self.create_user()
