@@ -9,9 +9,9 @@ In short:
 - All files located in the "www" directory must be made available in a
   PHP-enabled Web server.
 
-- The file conf/main.ini should be copied in a directory outside of the web
-  server directory. Such a directory must contain your Director's certificates
-  under a subdirectory called "certs".
+- The files conf/main.ini and conf/welcome.txt should be copied in a directory
+  outside of the web server directory. Such a directory must contain your
+  Director's certificates under a subdirectory called "certs".
 
 - A file called config.php should be created. Please refer to
   config-example.php for a detailed explaination of all the configuration

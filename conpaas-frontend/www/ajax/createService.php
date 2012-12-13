@@ -59,7 +59,7 @@ try {
 	$type = $_POST['type'];
 
 	$res = json_decode(HTTPS::post(Conf::DIRECTOR . '/start/' . $type, 
-	    array('username' => $_SESSION['username'], 'password' => $_SESSION['password'])));
+	    array(), false, $_SESSION['uid']));
 
     if (!$res) {
         throw new Exception('User not logged in');

@@ -93,15 +93,15 @@ class DirectorTest(Common):
         self.assertEquals(404, response.status_code)
 
     def test_200_on_start(self):
-        response = self.app.post('/start/php')
+        response = self.app.post('/start/php', data={ 'uid': 1 })
         self.assertEquals(200, response.status_code)
 
     def test_200_on_stop(self):
-        response = self.app.post('/stop/1')
+        response = self.app.post('/stop/1', data={ 'uid': 1 })
         self.assertEquals(200, response.status_code)
 
     def test_200_on_list(self):
-        response = self.app.get('/list')
+        response = self.app.get('/list?uid=1')
         self.assertEquals(200, response.status_code)
 
     def test_200_on_download_conpaas(self):
@@ -109,31 +109,24 @@ class DirectorTest(Common):
         self.assertEquals(200, response.status_code)
 
     def test_200_on_credit(self):
-        response = self.app.post('/callback/decrementUserCredit.php')
+        response = self.app.post('/callback/decrementUserCredit.php', data={ 'uid': 1 })
         self.assertEquals(200, response.status_code)
 
     def test_false_start_wrong_credentials(self):
-        data = { 'username': "wronguser", 'password': TEST_USER_DATA['password'] }
-
-        response = self.app.post('/start/php', data=data)
+        # Here the credentials are wrong because no user in the DB has uid 1
+        response = self.app.post('/start/php', data={ 'uid': 1 })
         self.assertEquals(False, simplejson.loads(response.data))
 
     def test_false_start_wrong_servicetype(self):
         self.create_user()
-
-        data = { 'username': TEST_USER_DATA['username'], 
-                 'password': TEST_USER_DATA['password'] }
-        
-        response = self.app.post('/start/wrong', data=data)
+        response = self.app.post('/start/wrong', data={ 'uid': 1 })
         ret = simplejson.loads(response.data)
         self.assertEquals('Unknown service type: wrong', ret['msg'])
 
     def test_proper_start(self):
         self.create_user()
 
-        data = { 'username': TEST_USER_DATA['username'], 'password': TEST_USER_DATA['password'] }
-        
-        response = self.app.post('/start/php', data=data)
+        response = self.app.post('/start/php', data={ 'uid': 1 })
         servicedict = simplejson.loads(response.data)
     
         self.assertEquals("New php service", servicedict['name'])
@@ -147,14 +140,13 @@ class DirectorTest(Common):
         self.assertEquals('127.0.0.3', servicedict['manager'])
 
     def test_false_stop(self):
-        data = { 'username': "wronguser", 'password': TEST_USER_DATA['password'] }
-
-        response = self.app.post('/stop/1', data=data)
+        self.create_user()
+        response = self.app.post('/stop/1', data={ 'uid': 1 })
         self.assertEquals(False, simplejson.loads(response.data))
 
     def test_proper_stop(self):
         self.create_user()
-        data = { 'username': TEST_USER_DATA['username'], 'password': TEST_USER_DATA['password'] }
+        data = { 'uid': 1 }
 
         # No service with id 1
         response = self.app.post('/stop/1', data=data)
@@ -174,8 +166,7 @@ class DirectorTest(Common):
         self.create_user()
 
         # create a service
-        data = { 'username': TEST_USER_DATA['username'], 
-                 'password': TEST_USER_DATA['password'] }
+        data = { 'uid': 1, } 
         response = self.app.post('/start/php', data=data)
         servicedict = simplejson.loads(response.data)
         self.assertEquals(1, servicedict['sid'])
@@ -194,21 +185,17 @@ class DirectorTest(Common):
 
         # we expect false now that the newly created user tries to stop the
         # service she does not own
-        response = self.app.post('/stop/1', data={ 
-            'username': other_user['username'], 
-            'password': other_user['password'] })
+        response = self.app.post('/stop/1', data={ 'uid': 2 })
         self.failIf(simplejson.loads(response.data))
 
         # whereas the owner should be able to stop the service
-        data = { 'username': TEST_USER_DATA['username'], 
-                 'password': TEST_USER_DATA['password'] }
-        response = self.app.post('/stop/1', data=data)
+        response = self.app.post('/stop/1', data={ 'uid': 1 })
         self.failUnless(simplejson.loads(response.data))
 
     def test_list(self):
         self.create_user()
 
-        data = { 'username': TEST_USER_DATA['username'], 'password': TEST_USER_DATA['password'] }
+        data = { 'uid': 1 }
         list_url = '/list?' + urllib.urlencode(data)
 
         # No available service
@@ -228,7 +215,7 @@ class DirectorTest(Common):
 
     def test_credit(self):
         self.create_user()
-        data = { 'username': TEST_USER_DATA['username'], 'password': TEST_USER_DATA['password'] }
+        data = { 'uid': 1 }
 
         # Let's create a service
         response = self.app.post('/start/php', data=data)
@@ -236,14 +223,13 @@ class DirectorTest(Common):
         self.assertEquals(1, servicedict['sid'])
 
         # No sid and decrement
-        data = {}
+        data = { 'uid': 1, 'sid': -1 }
         response = self.app.post('/callback/decrementUserCredit.php', data=data)
-        expected = { 'error': True, 'msg': 'Service -1 does not exist'}
-
+        expected = False
         self.assertEquals(expected, simplejson.loads(response.data))
             
         # Right sid but not enough credit
-        data = { 'sid': 1, 'decrement': 10000 }
+        data = { 'sid': 1, 'decrement': 10000, 'uid': 1 }
         response = self.app.post('/callback/decrementUserCredit.php', data=data)
         self.assertEquals({ 'error': True }, simplejson.loads(response.data))
 
@@ -251,7 +237,7 @@ class DirectorTest(Common):
         self.assertEquals(120, user.credit)
 
         # Right sid and enough credit
-        data = { 'sid': 1, 'decrement': 1 }
+        data = { 'sid': 1, 'decrement': 1, 'uid': 1 }
         response = self.app.post('/callback/decrementUserCredit.php', data=data)
         self.assertEquals({ 'error': False }, simplejson.loads(response.data))
 

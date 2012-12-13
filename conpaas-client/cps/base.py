@@ -5,6 +5,7 @@ import socket
 import zipfile
 import urllib
 import urllib2
+import httplib
 import getpass
 import urlparse
 import StringIO
@@ -43,11 +44,15 @@ class BaseClient(object):
         data['password'] = password
         data = urllib.urlencode(data)
 
+        opener = urllib2.build_opener(HTTPSClientAuthHandler(
+            os.path.join(self.confdir, 'key.pem'),
+            os.path.join(self.confdir, 'cert.pem')))
+
         if post:
-            res = urllib2.urlopen(url, data)
+            res = opener.open(url, data)
         else:
             url += "?" + data
-            res = urllib2.urlopen(url)
+            res = opener.open(url)
 
         rawdata = res.read()
 
@@ -406,3 +411,15 @@ class BaseClient(object):
             return getattr(client, command)(sid)
 
         client.main(sys.argv)
+
+class HTTPSClientAuthHandler(urllib2.HTTPSHandler):
+    def __init__(self, key, cert):
+        urllib2.HTTPSHandler.__init__(self)
+        self.key = key
+        self.cert = cert
+
+    def https_open(self, req):
+        return self.do_open(self.getConnection, req)
+
+    def getConnection(self, host, timeout=300):
+        return httplib.HTTPSConnection(host, key_file=self.key, cert_file=self.cert)

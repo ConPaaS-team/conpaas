@@ -62,15 +62,51 @@ class UserData {
     }
 
 	public static function getUserByName($username) {
-       $res = HTTPS::post(Conf::DIRECTOR . '/login', array('username' => $username, 'password' => $_SESSION['password']));
+       $res = HTTPS::post(Conf::DIRECTOR . '/login', array('username' => $username, 
+           'password' => $_SESSION['password']));
+
        $user = json_decode($res);
-       if ($user) {
-           return array('uid' => $user->uid, 
-                        'username' => $user->username,
-                        'passwd' => $user->password, 
-                        'credit' => $user->credit);
+
+       if (!$user) {
+           /* Authentication failed */
+           return false;
        }
-       return false;
+
+       $user_array = array('uid' => $user->uid, 
+                           'username' => $user->username,
+                           'passwd' => $user->password, 
+                           'credit' => $user->credit);
+
+       $uid = $user->uid;
+
+       $cert_file = sys_get_temp_dir(). "/$uid/cert.pem";
+
+       if (is_file($cert_file)) {
+           return $user_array;
+       }
+
+       /* Get and save user certificates zip file */
+       $res = HTTPS::post(Conf::DIRECTOR . '/getcerts',
+           array('username' => $username, 'password' => $_SESSION['password']));
+
+       $zip_filename = sys_get_temp_dir() . "/conpaas_cert_$uid.zip";
+       file_put_contents($zip_filename, $res);
+
+       /* extract user's certificate */
+       $zip = new ZipArchive;
+       if ($zip->open($zip_filename) === TRUE) {
+           /* create dest dir */
+           $destdir = sys_get_temp_dir(). "/$uid";
+           if (!is_dir($destdir)) {
+               mkdir($destdir, 0777, true);
+           }
+
+           /* extract certs */
+           $zip->extractTo($destdir);
+           $zip->close();
+       }
+
+       return $user_array;
 	}
 }
 ?>

@@ -69,7 +69,7 @@ class Manager {
  
 	public function terminate() {
         $res = HTTPS::post(Conf::DIRECTOR . '/stop/' . $this->sid, 
-            array('username' => $_SESSION['username'], 'password' => $_SESSION['password']));
+            array(), false, $this->uid);
 
         if (!json_decode($res)) {
             throw new Exception('Error terminating service '. $this->sid);

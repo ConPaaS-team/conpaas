@@ -47,11 +47,20 @@ class HTTPS {
 	);
 
 	public static function req($url, $http_method, array $data, $ping=false,
-		$rpc=true) {
+		$rpc=true, $uid=null) {
 
-		$cert    =       Conf::CONF_DIR."/certs/cert.pem"; 
-		$key     =       Conf::CONF_DIR."/certs/key.pem";
-		$ca_cert =       Conf::CONF_DIR."/certs/ca_cert.pem";
+        if ($uid == null) {
+            /* Act as the frontend */
+            $cert    =       Conf::CONF_DIR."/certs/cert.pem"; 
+            $key     =       Conf::CONF_DIR."/certs/key.pem";
+            $ca_cert =       Conf::CONF_DIR."/certs/ca_cert.pem";
+        }
+        else {
+            /* Act as user */
+            $cert    =       sys_get_temp_dir(). "/$uid/cert.pem"; 
+            $key     =       sys_get_temp_dir(). "/$uid/key.pem"; 
+            $ca_cert =       Conf::CONF_DIR."/certs/ca_cert.pem";
+        }
 
 		$opts = self::$CURL_OPTS;
 		if ($rpc) {
@@ -97,12 +106,12 @@ class HTTPS {
 		return $result;
 	}
 
-	public static function get($url, $ping=false) {
-		return HTTPS::req($url, 'get', array(), $ping, false);
+	public static function get($url, $ping=false, $uid=null) {
+		return HTTPS::req($url, 'get', array(), $ping, false, $uid);
 	}
 
-	public static function post($url, $data, $ping=false) {
-		return HTTPS::req($url, 'post', $data, $ping, false);
+	public static function post($url, $data, $ping=false, $uid=null) {
+		return HTTPS::req($url, 'post', $data, $ping, false, $uid);
 	}
 
 	public static function jsonrpc($url, $http_method, $rpc_method, $params,

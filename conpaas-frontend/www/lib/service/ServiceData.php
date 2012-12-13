@@ -63,8 +63,7 @@ class ServiceData {
     }
 
 	public static function getServicesByUser($uid) {
-       $res = HTTPS::post(Conf::DIRECTOR . '/list', array('username' => $_SESSION['username'], 
-           'password' => $_SESSION['password']));
+       $res = HTTPS::post(Conf::DIRECTOR . '/list', array(), false, $uid);
 
        $services = array();
        foreach(json_decode($res) as $service) {

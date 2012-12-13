@@ -74,6 +74,7 @@ def login_required(fn):
         username = request.values.get('username', '')
         password = request.values.get('password', '')
 
+        # Getting user data from DB
         g.user = get_user(username, password)
         if g.user:
             # user authenticated
@@ -84,23 +85,62 @@ def login_required(fn):
 
     return decorated_view
 
-def cert_required(fn):
-    @wraps(fn)
-    def decorated_view(*args, **kwargs):
-        if os.environ.get('DIRECTOR_TESTING'):
-            # No SSL certificate check if we are testing
+class cert_required(object):
+
+    def __init__(self, role):
+        self.role = role
+
+    def __call__(self, fn):
+        @wraps(fn)
+        def decorated(*args, **kwargs):
+            log('%s: cert_required(role=%s)' % (fn.__name__, self.role))
+
+            g.cert = {}
+
+            if os.environ.get('DIRECTOR_TESTING'):
+                # No SSL certificate check if we are testing. Trust what the client
+                # is sending.
+                g.cert['UID'] = request.values.get('uid')
+                g.cert['role'] = request.values.get('role')
+                g.cert['serviceLocator'] = request.values.get('sid')
+            else:
+                cert = request.environ['SSL_CLIENT_CERT']
+                for key in 'serviceLocator', 'UID', 'role':
+                    g.cert[key] = https.x509.get_x509_dn_field(cert, key)
+
+            try:
+                uid = int(g.cert['UID'])
+            except (AttributeError, ValueError):
+                error_msg = 'cert_required: client certificate does NOT provide UID'
+                log(error_msg)
+                return make_response(error_msg, 401)
+
+            # Getting user data from DB
+            g.user = User.query.get(g.cert['UID'])
+            if not g.user:
+                # authentication failed
+                return build_response(simplejson.dumps(False))
+
+            if self.role == 'manager':
+                # manager cert required
+                try:
+                    service_locator = int(g.cert['serviceLocator'])
+                except (AttributeError, ValueError):
+                    error_msg = 'cert_required: client certificate does NOT provide serviceLocator'
+                    log(error_msg)
+                    # Return HTTP_UNAUTHORIZED
+                    return make_response(error_msg, 401)
+
+                # check if the service is actually owned by the user
+                if g.user.services.filter_by(sid=service_locator).count() != 1:
+                    return build_response(simplejson.dumps(False))
+
+                log('cert_required: valid certificate (user %s, service %s)' % (uid, service_locator))
+            else:
+                log('cert_required: valid certificate (user %s)' % uid)
+
             return fn(*args, **kwargs)
-
-        msg = 'cert_required: '
-        cert = request.environ['SSL_CLIENT_CERT']
-        g.cert = {}
-        for key in 'serviceLocator', 'UID', 'role':
-            g.cert[key] = https.x509.get_x509_dn_field(cert, key)
-            msg += '%s=%s ' % (key, g.cert[key])
-
-        log(msg)
-        return fn(*args, **kwargs)
-    return decorated_view
+        return decorated
 
 @app.route("/new_user", methods=['POST'])
 def new_user():
@@ -123,7 +163,7 @@ def new_user():
 
     # check if the provided username already exists
     if User.query.filter_by(username=values['username']).first():
-        log('User %s exists already' % values['username'])
+        log('User %s already exists' % values['username'])
 
         return build_response(jsonify({ 
             'error': True, 
@@ -151,6 +191,7 @@ def new_user():
 @app.route("/login", methods=['POST'])
 @login_required
 def login():
+    log('Successful login for user %s' % g.user.username)
     # return user data
     return build_response(simplejson.dumps(g.user.to_dict()))
 
@@ -191,7 +232,7 @@ def available_services():
     return simplejson.dumps(valid_services)
 
 @app.route("/start/<servicetype>", methods=['POST'])
-@login_required
+@cert_required(role='user')
 def start(servicetype):
     """eg: POST /start/php
 
@@ -233,7 +274,7 @@ def start(servicetype):
     return build_response(jsonify(s.to_dict()))
 
 @app.route("/stop/<int:serviceid>", methods=['POST'])
-@login_required
+@cert_required(role='user')
 def stop(serviceid):
     """eg: POST /stop/3
 
@@ -261,7 +302,7 @@ def stop(serviceid):
     return build_response(simplejson.dumps(True))
 
 @app.route("/list", methods=['POST', 'GET'])
-@login_required
+@cert_required(role='user')
 def list_services():
     """POST /list
 
@@ -282,9 +323,8 @@ def download():
         "ConPaaS.tar.gz")
 
 @app.route("/ca/get_cert.php", methods=['POST'])
-@cert_required 
+@cert_required(role='manager')
 def get_manager_cert():
-    #XXX if g.cert['role'] != 'manager':
     log('Certificate request from manager %s (user %s)' % (
         g.cert['serviceLocator'], g.cert['UID']))
 
@@ -294,7 +334,7 @@ def get_manager_cert():
         common.config.get('conpaas', 'CERT_DIR'), csr)
 
 @app.route("/callback/decrementUserCredit.php", methods=['POST'])
-@cert_required
+@cert_required(role='manager')
 def credit():
     """POST /callback/decrementUserCredit.php
 
@@ -308,41 +348,8 @@ def credit():
 
     log('Decrement user credit: sid=%s, decrement=%s' % (service_id, decrement))
 
-    if os.environ.get('DIRECTOR_TESTING'):
-        # no certificate when testing. assume all is good.
-        service_locator = service_id
-    else:
-        try:
-            service_locator = int(g.cert['serviceLocator'])
-            uid = int(g.cert['UID']) 
-        except (AttributeError, ValueError):
-            error_msg = 'Missing client certificate providing serviceLocator and UID'
-            log(error_msg)
-            # Return HTTP_UNAUTHORIZED
-            return make_response(error_msg, 401)
-
-    if service_id != service_locator:
-        error_msg = 'service_id != serviceLocator (%s != %s)' % (
-            service_id, service_locator)
-        log(error_msg)
-        return make_response(error_msg, 401)
-
     s = Service.query.filter_by(sid=service_id).first()
-    if not s:
-        # The given service does not exist
-        error_msg = "Service %s does not exist" % service_id
-        log(error_msg)
-        return jsonify({ 'error': True, 'msg': error_msg })
     
-    if os.environ.get('DIRECTOR_TESTING'):
-        # no certificate when testing. assume all is good.
-        uid = s.user.uid
-
-    if s.user.uid != uid:
-        error_msg = 'service.uid != UID (%s != %s)' % (s.user.uid, uid)
-        log(error_msg)
-        return make_response(error_msg, 401)
-
     # Decrement user's credit
     s.user.credit -= decrement
 
