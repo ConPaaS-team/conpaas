@@ -171,6 +171,14 @@ class BaseClient(object):
         else:
             print "failed."
 
+    def rename(self, service_id, newname):
+        print "Renaming service... "
+
+        if self.callapi("rename/%s" % service_id, True, { 'name': newname }):
+            print "done."
+        else:
+            print "failed."
+
     def service_dict(self, service_id):
         """Return service's data as a dictionary"""
         services = self.callapi("list", True, {})
@@ -345,6 +353,7 @@ class BaseClient(object):
         print "    logs              serviceid           # get service logs"
         print "    stop              serviceid           # stop the specified service"
         print "    terminate         serviceid           # delete the specified service"
+        print "    rename            serviceid newname   # rename the specified service"
         print "    startup_script    serviceid filename  # upload a startup script"
         print "    usage             serviceid           # show service-specific options"
     
@@ -396,6 +405,13 @@ class BaseClient(object):
                 open(argv[3])
                 return self.upload_startup_script(sid, argv[3])
             except (IndexError, IOError):
+                self.usage(argv[0])
+                sys.exit(0)
+
+        if command == "rename":
+            try:
+                return self.rename(sid, argv[3])
+            except IndexError:
                 self.usage(argv[0])
                 sys.exit(0)
 
