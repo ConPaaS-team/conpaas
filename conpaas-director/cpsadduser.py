@@ -5,13 +5,14 @@
 import sys
 import getpass
 
+import sqlalchemy
+
 from cpsdirector import db, common, create_user
 
 if __name__ == "__main__":
     db.create_all()
     try:
         email, username, password = sys.argv[1:]
-        create_user(username, "", "", email, "", password, 120)
 
     except ValueError:
         print "\nAdd new ConPaaS user"
@@ -19,13 +20,17 @@ if __name__ == "__main__":
         username = common.rlinput('Username: ')
         pprompt = lambda: (getpass.getpass(), getpass.getpass('Retype password: '))
 
-        p1, p2 = pprompt()
+        password, p2 = pprompt()
 
-        while p1 != p2:
+        while password != p2:
             print('Passwords do not match. Try again')
-            p1, p2 = pprompt()
+            password, p2 = pprompt()
 
-        create_user(username, "", "", email, "", p1, 120)
+
+    try:
+        create_user(username, "", "", email, "", password, 120)
+    except sqlalchemy.exc.IntegrityError:
+        print "User %s already present" % username
 
     common.chown(common.config.get('director',
         'DATABASE_URI').replace('sqlite:///', ''), 'www-data', 'www-data')
