@@ -20,13 +20,13 @@ ConPaaS services are built based on an architecture composed of two main buildin
 
 
 \begin{itemize}
-\item \textbf{Agent}: A service is composed of one or several agents VMs which host the needed components to provide the service-specific functionality. Based on the performance requirements or the application workload, the number of agents VMs hosting these components can grow/shrink on demand. Thus, as an example, the PhP web hosting service can initially employ one agent VM (containing one load-balancer, one web server and one PhP server), and progressively grows using multiple agents VMs, as illustrated by Figure~\ref{arch}. 
+\item \textbf{Agent}: A service is composed of one or several agents VMs which host the needed components to provide the service-specific functionality. Based on the performance requirements or the application workload, the number of agents VMs hosting these components can grow/shrink on demand. Thus, as an example, the PhP web hosting service initially utilizes one agent VM (containing one load-balancer, one web server and one PhP server), and progressively grows using multiple agents VMs, as illustrated by Figure~\ref{arch}. 
 
 \item \textbf{Manager}: For each service, there is only one manager VM. The manager is in charge of executing all management requests, centralizing governance and performance monitoring data, and controlling the allocation of resources assigned to one service. 
 
 \end{itemize}
 
-In ConPaaS, there are two types of traffic: application and management. The application traffic based on requests from end users willing to access the application is addressed to the agents hosting such application.  On the other hand, the management traffic is directed from the service administrators to their service managers, and from those to the agents.  Service administrators can manage their services using a graphical front-end or a command-line tool.  
+On the other hand, in ConPaaS, there are two types of traffic: application and management. The application traffic is based on requests from end users willing to access the application, so that is addressed to the agents hosting such application.  On the other hand, the management traffic is directed from the service administrators to their service managers, and from those to the agents.  Service administrators can manage their services using a graphical front-end or a command-line tool.  
 
 \subsection{Hosting Elastic Applications}
 
