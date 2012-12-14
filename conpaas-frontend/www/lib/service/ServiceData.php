@@ -95,15 +95,13 @@ class ServiceData {
 	}
 
 	public static function updateName($sid, $name) {
-		$query = sprintf("UPDATE services SET name='%s' WHERE sid=%d",
-			mysql_escape_string($name),
-			mysql_escape_string($sid));
-		$res = mysql_query($query, DB::getConn());
-		if ($res === false) {
-			throw new DBException(DB::getConn());
+        $res = HTTPS::post(Conf::DIRECTOR . '/rename/'.$sid, 
+            array('name' => $name), false, $_SESSION['uid']);
+
+		if (json_decode($res) !== true) {
+			throw new Exception('Cannot rename service');
 		}
 	}
-
 
 	public static function updateManagerAddress($sid, $manager, $new_state) {
     }
