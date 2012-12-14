@@ -17,9 +17,6 @@ install:
 	$(PYTHON) setup.py install 
 	cpsconf.py
 	cpsadduser.py
-	a2enmod ssl
-	a2ensite conpaas-director
-	service apache2 reload
 
 clean:
 	$(PYTHON) setup.py clean

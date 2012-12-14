@@ -5,7 +5,7 @@
 \title{ConPaaS -- User Guide\htmlonly{ [\xml{a href="userguide.pdf"}pdf\xml{/a}]}}
 \htmltitle{ConPaaS -- User Guide}
 \author{Ismail El Helw \and Guillaume Pierre \and Emanuele Rocca}
-\date{ConPaaS-1.0.1}
+\date{ConPaaS-1.1.0}
 
 
 \begin{document}
@@ -43,7 +43,7 @@ fully elastic: one can dynamically increase or decrease its processing
 capacity by requesting it to reconfigure itself with a different
 number of virtual machines.
 
-ConPaaS currently contains seven services: 
+ConPaaS currently contains eight services: 
 
 \begin{itemize}
 \item \textbf{Two Web hosting services} respectively specialized for
@@ -54,7 +54,9 @@ ConPaaS currently contains seven services:
 \item \textbf{MapReduce service} providing the well-known
   high-performance computation framework;
 \item \textbf{TaskFarming service} high-performance batch processing;
-\item \textbf{Selenium service} for functional testing of web applications.
+\item \textbf{Selenium service} for functional testing of web applications;
+\item \textbf{XtreemFS service} offering a distributed and replicated file
+  system.
 \end{itemize}
 
 ConPaaS applications can be composed of any number of services. For
@@ -130,60 +132,55 @@ Command-line interfaces allow one to control services without using
 the graphical interface. The command-line interfaces also offer
 additional functionality for advanced usage of the services.
 
-Each service can be controlled using its own command-line tool:
+The command line tools, called \texttt{cpsclient}, can be installed as follows:
 
-\begin{itemize}
-\item The two Web hosting services are controlled using \texttt{cpsclient.web}
-\item The MySQL service is controlled using \texttt{cpsclient.mysql}
-\item The Scalarix service is controlled using \texttt{cpsclient.scalarix}
-\item The MapReduce service is controlled using \texttt{cpsclient.mapreduce}
-\item The Selenium service is controlled using \texttt{cpsclient.selenium}
-\end{itemize}
-
-The command line tools can be downloaded from
-\url{http://www.conpaas.eu/dl/cps-tools-1.0.1.tar.gz}. In order to use them you
-first need to obtain a copy of your SSL certificates from the ConPaaS dashboard
-and extract it on your machine. Please refer to the README file coming with
-cps-tools for more information.
-
-To use these tools you must first set the PYTHONPATH variable to
-contain the full path name of the ``src'' subdirectory within the
-ConPaaS directory:
 \begin{verbatim}
-$ export PYTHONPATH=/path/to/conpaas/src
+$ sudo easy_install http://www.conpaas.eu/dl/cpsclient-1.1.0.tar.gz
 \end{verbatim}
-% $
 
-The \texttt{cpsclient.*} tools always take the URL of the service
-manager as its first argument. This URL is provided by the front-end.
+\texttt{cpsclient} can also be installed in a Python virtual environment if
+\texttt{virtualenv} is available on the machine you are using. This method of
+installing the CLI tools can be used in case you do not have root privileges.
+
+\begin{verbatim}
+$ virtualenv conpaas # create the 'conpaas' virtualenv
+$ cd conpaas
+$ source bin/activate # activate it
+$ easy_install http://www.conpaas.eu/dl/cpsclient-1.1.0.tar.gz
+\end{verbatim}
 
 \vspace{1em}
 
 \begin{description}
 \item[List all options of the command-line tool.]~
 \begin{verbatim}
-$ ./cpsclient.servicename help
+$ cpsclient.py help 
 \end{verbatim}
 %$
 
-\item[Start the service.]~
+\item[Create a service.]~
 \begin{verbatim}
-$ ./cpsclient.servicename http://x-x-x-x/ startup
+$ cpsclient.py create php
 \end{verbatim}
 %$
 
-\item[Stop the service.]~
+\item[List available services.]~
 \begin{verbatim}
-$ ./cpsclient.servicename http://x-x-x-x/ shutdown
+$ cpsclient.py list
 \end{verbatim}
 %$
+
+\item[List service-specific options.]~
+\begin{verbatim}
+# in this example the id of our service is 1
+$ cpsclient.py usage 1 
+\end{verbatim}
 
 \item[Scale the service up and down.]~
 \begin{verbatim}
-$ ./cpsclient.servicename http://x-x-x-x/ add_nodes -h
-$ ./cpsclient.servicename http://x-x-x-x/ remove_nodes -h
-$ ./cpsclient.web http://x-x-x-x/ add_nodes -w 1 -b 1
-$ ./cpsclient.web http://x-x-x-x/ remove_nodes -w 1 -b 1
+$ cpsclient.py usage 1
+$ cpsclient.py add_nodes 1 1 1 0 
+$ cpsclient.py remove_nodes 1 1 1 0 
 \end{verbatim}
 
 \end{description}
@@ -206,10 +203,10 @@ your services.
 
 \section{Tutorial: hosting WordPress in ConPaaS}
 
-This short tutorial illustrates the way to use ConPaaS to install and
-host WordPress (\url{http://www.wordpress.org}), a well-known third-party Web
-application. WordPress is implemented in PHP using a MySQL database so
-we will need a PHP and a MySQL service in ConPaaS.
+This short tutorial illustrates the way to use ConPaaS to install and host
+WordPress (\url{http://www.wordpress.org}), a well-known third-party Web
+application. WordPress is implemented in PHP using a MySQL database so we will
+need a PHP and a MySQL service in ConPaaS.
 
 \begin{enumerate}
 \item Open the ConPaaS front-end in your Web browser and log in. If
@@ -274,20 +271,25 @@ Note that the frontend only allows uploading archives smaller than a
 certain size. To upload large archives, you must use the command-line
 tools or Git.
 
-The following example illustrates how to upload an archive with the
-\texttt{cpsclient.web} command line tool:
+The following example illustrates how to upload an archive to the service with
+id 1 using the \texttt{cpsclient.py} command line tool:
 \begin{verbatim}
-$ ./cpsclient.web http://x-x-x-x/ upload_code_version path/to/archive.zip
+$ cpsclient.py upload_code 1 path/to/archive.zip
 \end{verbatim}
 
-To enable Git-based code uploads you first need to upload your SSH public key
-from the frontend by choosing the ``checking out repository'' option in the
-``Code management'' section of your PHP service. Once the key is uploaded the
-frontend will show the \texttt{git} command to be executed in order to obtain
-a copy of the repository. The repository itself can then be used as usual. A new
-version of your application can be uploaded with \texttt{git push}.
+To enable Git-based code uploads you first need to upload your SSH public key.
+This can be done either using the command line tool:
 
-For example:
+\begin{verbatim}
+$ cpsclient.py upload_key serviceid filename
+\end{verbatim}
+
+An SSH public key can also be uploaded using the ConPaaS frontend by choosing
+the ``checking out repository'' option in the ``Code management'' section of
+your PHP service. Once the key is uploaded the frontend will show the
+\texttt{git} command to be executed in order to obtain a copy of the
+repository. The repository itself can then be used as usual. A new version of
+your application can be uploaded with \texttt{git push}.
 
 \begin{verbatim}
 user@host:~/code$ git add index.php
@@ -325,8 +327,7 @@ for production, when you do not want to reveal internal information to
 external users. While developing an application it is however useful
 to let PHP display erors.
 \begin{verbatim}
-$ ./cpsclient.web http://x-x-x-x/ update_php_configuration \
-  -p "display_errors=On" 
+$ cpsclient.py toggle_debug serviceid
 \end{verbatim}
 %$
 
@@ -349,9 +350,9 @@ certain size.  To upload large archives, you must use the command-line
 tools or Git.
 
 The following example illustrates how to upload an archive with the
-\texttt{cpsclient.web} command line tool:
+\texttt{cpsclient.py} command line tool:
 \begin{verbatim}
-$ ./cpsclient.web http://x-x-x-x/ upload_code_version path/to/archive.war
+$ cpsclient.py upload_code serviceid archivename
 \end{verbatim}
 
 To upload new versions of your application via Git, please refer to

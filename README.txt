@@ -25,10 +25,14 @@ to submit a manifest file describing the structure of their
 application and its performance requirements.
 
 ConPaaS currently contains:
-
-- A Web frontend that can be installed within or outside the
+ 
+- A web frontend that can be installed within or outside the
   Cloud. This is the website that developers can use to create, delete
   and manage applications in ConPaaS.
+
+- A web service called ConPaaS Director which provides a RESTful API
+  to ConPaaS. The web frontend and the command line client use this
+  web service as their backend.
 
 - One service dedicated to hosting static Web content as well as Web
   applications written in PHP or Java.
@@ -42,6 +46,8 @@ ConPaaS currently contains:
 - One service dedicated to Task Farming.
 
 - One service dedicated to functional testing of web applications.
+
+- One service dedicated to XtreemFS volumes.
 
 - More services are currently being developed. They will be released
   as soon as they are reasonably well tested and integrated with the

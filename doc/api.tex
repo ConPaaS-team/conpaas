@@ -5,7 +5,7 @@
 \title{ConPaaS -- API documentation\htmlonly{ [\xml{a href="api.pdf"}pdf\xml{/a}]}}
 \htmltitle{ConPaaS -- API documentation}
 \author{Emanuele Rocca}
-\date{ConPaaS-1.0.1}
+\date{ConPaaS-1.1.0}
 
 \begin{document}
 
@@ -24,9 +24,9 @@ managers are responsible, among other things, for starting up and shutting down
 ConPaaS agents, which in turn provide the functionality offered by a specific
 service.
 
-It is possible to create and administer ConPaaS services through an HTTP/JSON
-Application Programing Interface exposed by a web service called ConPaaS
-Director. 
+ConPaaS services are created and administered exclusively through an HTTP /
+JSON Application Programing Interface exposed by a web service called ConPaaS
+Director. This document provides a description of such an API.
 
 \pagebreak 
 
@@ -35,6 +35,34 @@ Let us list the ConPaaS API methods, together with a brief description of their
 behavior.
 
 \begin{verbatim}
+POST /new_user
+
+    Create a new ConPaaS user. The method expects the following parameters:
+
+    'username', 'fname', 'lname', 'email', 'affiliation', 'password', 'credit'
+    
+    A dictionary of user values is returned upon successful user creation.
+    The following dictionary is returned on failure:
+
+    {
+     'error': True,
+     'msg': 'An explainatory error message' 
+    }
+
+POST /login
+
+    Authenticates the given user. The following parameters are expected:
+    'username', 'password'
+
+    A dictionary of user values is returned upon successful authentication.
+    False is returned otherwise.
+
+POST /get_user_certs
+
+    Create and send SSL certificates for the given user. 'username' and
+    'password' are the expected parameters. A zip archive containing the SSL
+    certificates is returned on success, False otherwise.
+    
 GET /available_services
 
     Return a list of available service types. For example: 
@@ -45,7 +73,9 @@ POST /start/<servicetype>
     Return a dictionary with service data (manager's vmid and IP address,
     service name and ID) in case of correct service creation. False is returned
     otherwise. Only service types returned by the 'available_services' method
-    described above are allowed.
+    described above are allowed. 
+
+    This method requires the client to present a valid SSL certificate.
 
 POST /stop/<serviceid>
 
@@ -53,16 +83,19 @@ POST /stop/<serviceid>
     otherwise. <serviceid> has to be an integer representing the service id of a
     running service.
 
+    This method requires the client to present a valid SSL certificate.
+
+POST /rename/<serviceid>
+
+    Rename the given service. The new name 'name' is the only required
+    argument. Return true on successful renaming, false otherwise.
+
 GET  /list
 
     List running ConPaaS services. Return data as a list of dictionaries
     (associative arrays).
 
-GET|POST /manager
-
-    Proxy GET/POST requests to the manager responsible for the given service id
-    (the sid parameter). This method allows to call any method made available by
-    managers through the director.
+    This method requires the client to present a valid SSL certificate.
 
 GET  /download/ConPaaS.tar.gz
 
@@ -70,21 +103,32 @@ GET  /download/ConPaaS.tar.gz
 
 POST /callback/decrementUserCredit.php
     
-    Used by ConPaaS services. Decrement user credit and check if it is enough.
-    Return a dictionary with the 'error' attribute set to false if the user had
-    enough credit, true otherwise.
+    Used by ConPaaS services. 'sid' and 'decrement' are the required parameters.
+
+    Decrement user credit and check if it is enough.  Return a dictionary with
+    the 'error' attribute set to false if the user had enough credit, true
+    otherwise.
+
+    This method requires the client to present a valid SSL certificate of type
+    'manager'. The 'serviceLocator' field in the supplied certificate has to match
+    the 'sid'.
+
+POST /ca/get_cert.php
+
+    Used by ConPaaS services. The only required argument is a file called 'csr'
+    holding a certificate signing request. A certificate is returned.
+
+    This method requires the client to present a valid SSL certificate of type
+    'manager'..
 \end{verbatim}
 
-The first four methods, namely \textbf{start}, \textbf{stop}, \textbf{list} and
-\textbf{manager} are of interest for developers wishing to control a ConPaaS
-installation from their programs. They all require two additional parameters:
-\textbf{username} and \textbf{password}. The remaining methods are, conversely,
-only used internally by ConPaaS services and they do not require any additional
-parameter. 
+The first three methods, namely \textbf{new\_user}, \textbf{login} and
+\textbf{get\_user\_certs} do not need a client SSL certificate to be called.
 
-One of the above mentioned methods is worth a particular mention: the
-\textbf{manager} method can be used to access any method available on the
-manager responsible for a specific service. For example, a developer might want
-to use the manager method to get the logs of running service, or add and remove
-agents. 
+\textbf{available\_services}, \textbf{start}, \textbf{stop}, \textbf{rename}
+and \textbf{list} all need a valid user certificate in order to be called.
+
+The last two methods are used by ConPaaS managers to decrement users' credit
+and create agent certificates. They both need a valid manager certificate to be
+called.
 \end{document}

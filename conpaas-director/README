@@ -15,7 +15,18 @@ Run "make install" as root.
 
 Provide your cloud credentials in /etc/cpsdirector/director.cfg.
 
-Restart apache.
+The installation procedure will create an Apache configuration file for the
+Director. Please make sure it matches with your desired setup:
+/etc/apache2/sites-available/conpaas-director
+
+Make sure ssl is enabled:
+$ sudo a2enmod ssl
+
+Enable the conpaas-director config:
+$ sudo a2ensite conpaas-director
+
+Restart apache:
+$ sudo service apache2 reload
 
 Usage
 -----

@@ -19,3 +19,5 @@ The main ConPaaS developers are:
 - TaskFarming service: Ana-Maria Oprescu, Kaveh Razavi, Maricel Mihalcea.
 
 - Selenium service: Emanuele Rocca.
+
+- XtreemFS service: Matthias Noack.
