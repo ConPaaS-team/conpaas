@@ -2,12 +2,32 @@ In this section, we describe the different provisioning techniques implemented i
 
 
 
-\subsection{Load-based provisioning}
+%\subsection{Load-based provisioning}
+\subsection{Trigger-based provisioning}
 
+\corina{I edited the following paragraphs to reflect the fact
+that Amazon and other clouds don't really provide the provisioning
+algorithms, they just provide means to implement them
+(i.e. the cloud users need to write the provisioning rules
+themselves). Also, I saw that now EC2 also provides support
+for the users to have custom monitoring metrics.}
 
-The existing infrastructures offer provisioning mechanisms that adjust the amount of resources based on the load of the currently allocated resources. Within this group of provisioning mechanisms, we include the simple trigger-based systems that define threshold rules to increase and decrease the computational power of an application in order to guarantee several performance requirements. As an example, the Auto Scaling system offered by Amazon EC2~\cite{amazonEC2} scales out an application whenever its CPU usage in the last 10min exceeds a specific threshold (Amazon recommends to establish an upper bound of 70\%).  This rules-based technique is currently used in mature cloud platforms such as RightScale~\cite{right-scale} or OpenShift~\cite{openshift}. 
+The existing cloud infrastructures provide means to implement
+provisioning mechanisms that adjust the amount of allocated 
+resources based on a number of standard monitoring parameters. 
+These are simple trigger-based systems that define threshold 
+rules to increase or decrease the amount of computational resources
+when certain conditions are met. As an example, the Auto Scaling 
+system offered by Amazon EC2~\cite{amazonEC2} can be used to define 
+rules for scaling out or back an application based on monitoring
+parameters like CPU utilization, network traffic volume etc. 
+This trigger-based technique is currently used in well-known 
+cloud platforms such as RightScale~\cite{right-scale} or OpenShift~\cite{openshift}. 
 
-For the sake of comparison, we decided to design and implement a trigger-based provisioning mechanism in ConPaaS, called "load-based provisioning". This algorithm monitors CPU usage and response time metrics, and dynamically adjusts the computational power of an application by analyzing whether the monitoring data exceed their thresholds~\footnote{Every metric has a threshold range (max,min).}, as illustrated in Algorithm~\ref{loadBased_prov}. Obviously, the lower and upper bound of each threshold are pre-defined by the user before execution.
+For the sake of comparison, we decided to design and implement a 
+trigger-based provisioning mechanism in ConPaaS. This algorithm 
+monitors CPU usage and application response time metrics, and 
+dynamically adjusts the computational power allocated to an application by analyzing whether the monitoring data exceed their thresholds~\footnote{Every metric has a threshold range (max,min).}, as illustrated in Algorithm~\ref{loadBased_prov}. Obviously, the lower and upper bound of each threshold are pre-defined by the user before execution.
 
 \begin{algorithm}
 {\scriptsize
@@ -23,13 +43,15 @@ For the sake of comparison, we decided to design and implement a trigger-based p
 Collect monitoring data of each metric, \emph{data}\;
 \BlankLine
 \If{ no recent scaling operation}{
-\uIf{ avg(data$_i$) $>=$ \emph{thr}$_i$  }{
+\uIf{ avg(data$_i$) $>=$ \emph{threshold\_min}$_i$  }{
 ADD resources\;
 }
-\ElseIf{ avg(data$_i$) $<$ \emph{thr}$_i$  }{
+\ElseIf{ avg(data$_i$) $<$ \emph{threshold\_max}$_i$  }{
 REMOVE resources\;
 } 
-}\Else{ Sleep during 5minutes \;}
+%}\Else{ Sleep during 5minutes \;}
+} 
+Sleep for 5 minutes \; 
 }
 }
 \caption{Load-based}
@@ -39,33 +61,56 @@ REMOVE resources\;
 % , expressed in the form of a Service Level Agreement
 
 
-\subsubsection{Problematic of this algorithm}
+%\subsubsection{Problematic of this algorithm}
+%subsubsection{Drawbacks of this algorithm}
 
 Even though these type of mechanisms are simple and widely used in cloud platforms, they are excessively reactive and not so precise when provisioning web applications due to several factors: 
 
 %regarding the decision making process
+\corina{I removed the item about services as black boxes, because now
+Amazon provides support for custom parameters; and also because we also
+implemented the trigger-based algorithm with custom parameters (request
+rate, response time) so our implementation doesn't see the service
+as a black-box either.}
 
 \begin{itemize}
-\item  \textbf{Workload mix and web traffic:} In web applications, the system performance behavior fluctuates following an irregular pattern caused by the traffic and its workload mix, which increase the complexity to predict future fluctuations. 
+\item  \textbf{Workload heterogeneity:} In some web applications, the 
+system performance behavior fluctuates following an irregular pattern 
+caused by the heterogeneity of the workload mix, which makes it
+difficult to predict the system's behaviour. 
 
 %Obviously, a reactive algorithm can be seen a good choice for resource provisioning, however. The system %performance of an application change in time if the type of workload changes.
 
-\item \textbf{Reactiveness:} An excessively reactive system can affect the system performance when handling flash crowds or slashdot effects. A high frequency of scaling operations can provokes sharp and sudden fluctuations that affect the performance instead of improving it, as well as increases the infrastructure cost. So, it is particularly difficult to decide when to scale out or back an application. 
+\item \textbf{Reactiveness:} An excessively reactive algorithm can affect 
+the system's stability, by causing frequent fluctuations in the number
+of allocated resources; this has negative effects on the performance, 
+as well as increases the infrastructure cost. 
 
-\item \textbf{Services as black boxes:} Services are handled as black boxes, the definition of threshold rules often only covers system-level metrics such as response time and CPU usage. Therefore, when provisioning web applications, metrics such as request rate of static/dynamic files may be also taken into consideration to improve the accuracy of the decisions.
+%\item \textbf{Services as black boxes:} Services are handled as black boxes, the definition of threshold rules often only covers system-level metrics such as response time and CPU usage. Therefore, when provisioning web applications, metrics such as request rate of static/dynamic files may be also taken into consideration to improve the accuracy of the decisions.
 
 % when handling web traffic.
 
 %These constraints are too generic, as other application-specific constraints are not considered. 
 
 %\item VMs are heterogeneous in performance, and thereby their throughput vary depending of its hardware configuration (instance's types). 
-\item  \textbf{Heterogeneity:} The performance of virtual instances provided by current clouds is largely heterogeneous, even when requesting the exact same type of instance each time, as stated in~\cite{ec2Performance}. 
+\item  \textbf{Resources heterogeneity:} The performance of virtual instances 
+provided by current clouds is largely heterogeneous, even among
+instances of the same type, as shown in~\cite{ec2Performance}.
+Simple trigger-based provisioning systems do not take this heterogeneity
+into account, thus providing less efficient resource allocation. 
 
 % The provisioning mechanism omit the heterogeneity of the VMs associated to host an application. 
 
 \end{itemize}
 
-Based on these factors, we believe trigger-based provisioning mechanisms can be optimized without drastically increasing its complexity. A solution seems to be the utilization of techniques that handle web traffic and workload mix without being excessively reactive. Moreover, the implementation of these techniques have to remain a simple exercise to facilitate its integration in existing auto-scaling systems. In the following we present two techniques that aims at solving the aforementioned drawbacks by relying on predictive and more accurate methods.
+Based on these factors, we believe trigger-based provisioning mechanisms can 
+be improved without drastically increasing their complexity. A possible 
+solution is the utilization of techniques that handle workload and resource
+heterogeneity without being excessively reactive. Moreover, the implementation 
+of these techniques should remain simple to facilitate their integration in 
+existing auto-scaling systems. In the following we present two techniques 
+that aims at solving the aforementioned drawbacks by relying on predictive 
+and more accurate methods.
 
 % to dynamically adjust the computational power to irregular workload pattern of web applications.
 
