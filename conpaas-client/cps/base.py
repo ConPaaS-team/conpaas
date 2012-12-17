@@ -1,4 +1,5 @@
 import os
+import ssl
 import sys
 import time
 import socket
@@ -38,15 +39,18 @@ class BaseClient(object):
     def read_conf_value(self, key):
         return open(os.path.join(self.confdir, key)).read()
 
-    def __callapi_creds(self, method, post, data, endpoint, username='', password=''):
+    def __callapi_creds(self, method, post, data, endpoint, username='', password='', use_certs=True):
         url = "%s/%s" % (endpoint, method)
         data['username'] = username
         data['password'] = password
         data = urllib.urlencode(data)
 
-        opener = urllib2.build_opener(HTTPSClientAuthHandler(
-            os.path.join(self.confdir, 'key.pem'),
-            os.path.join(self.confdir, 'cert.pem')))
+        if use_certs:
+            opener = urllib2.build_opener(HTTPSClientAuthHandler(
+                os.path.join(self.confdir, 'key.pem'),
+                os.path.join(self.confdir, 'cert.pem')))
+        else:
+            opener = urllib2.build_opener(urllib2.HTTPSHandler())
 
         if post:
             res = opener.open(url, data)
@@ -65,7 +69,7 @@ class BaseClient(object):
         except simplejson.decoder.JSONDecodeError:
             return rawdata
 
-    def callapi(self, method, post, data):
+    def callapi(self, method, post, data, use_certs=True):
         """Call the director API.
 
         'method': a string representing the API method name.
@@ -81,9 +85,13 @@ class BaseClient(object):
             password = self.read_conf_value("password")
         except IOError:
             self.credentials()
-            return self.callapi(method, post, data)
+            return self.callapi(method, post, data, use_certs)
 
-        return self.__callapi_creds(method, post, data, endpoint, username, password)
+        try:
+            return self.__callapi_creds(method, post, data, endpoint, username, password, use_certs)
+        except (ssl.SSLError, urllib2.URLError):
+            print "E: Cannot perform the requested action.\nTry updating your client certificates with %s credentials" % sys.argv[0]
+            sys.exit(1)
 
     def callmanager(self, service_id, method, post, data, files=[]):
         """Call the manager API.
@@ -207,7 +215,7 @@ class BaseClient(object):
         print res['log']
 
     def getcerts(self):
-        res = self.callapi("getcerts", True, {})
+        res = self.callapi("getcerts", True, {}, use_certs=False)
 
         zipdata = zipfile.ZipFile(StringIO.StringIO(res))
         zipdata.extractall(path=self.confdir)
@@ -238,13 +246,15 @@ class BaseClient(object):
                     method='available_services', 
                     post=False, 
                     data={}, 
-                    endpoint=target_url)
+                    endpoint=target_url, 
+                    use_certs=False)
 
                 # If this yields True we can be reasonably sure that the
                 # provided URL is correct
                 assert type(available_services) is list 
-            except Exception:
+            except Exception, err:
                 print "E: No ConPaaS Director at the provider URL\n"
+                #raise err
                 continue
 
             # Valid URL
@@ -260,15 +270,12 @@ class BaseClient(object):
             password = getpass.getpass('Enter your password: ')
             self.write_conf_to_file('password', password)
 
-            try:
-                if self.callapi('login', True, {}):
-                    print "Authentication succeeded\n"
-                    self.getcerts()
-                    return
-                print "Authentication failure\n"
-            except (socket.error, urllib2.URLError):
-                print wrong_url
-                return self.credentials()
+            if self.callapi('login', True, {}, use_certs=False):
+                print "Authentication succeeded\n"
+                self.getcerts()
+                return
+
+            print "Authentication failure\n"
 
     def available_services(self):
         return self.callapi('available_services', True, {})
