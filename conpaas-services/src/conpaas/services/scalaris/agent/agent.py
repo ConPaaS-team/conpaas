@@ -81,7 +81,7 @@ class ScalarisAgent():
     def get_service_info(self, kwargs):
       self.logger.info('called get_service_info')
       try:
-          res = scalarisclient.get_service_info('localhost', 8000)
+          res = scalaris.get_service_info('localhost', 8000)
           return HttpJsonResponse(res)
       except HttpError as e:
           self.logger.info('exception in get_service_info: %s', e)
