@@ -7,7 +7,7 @@ ConPaaS: an integrated runtime environment for elastic Cloud applications
 =========================================================================
 """
 setup(name='cpsclient',
-      version='1.1.0',
+      version='1.1.0-rc1',
       description='ConPaaS command line client',
       author='Emanuele Rocca',
       author_email='ema@linux.it',
@@ -17,4 +17,4 @@ setup(name='cpsclient',
       packages=['cps',],
       scripts=['cpsclient.py'],
       install_requires=['cpslib'],
-      dependency_links=[ 'http://www.linux.it/~ema/conpaas/cpslib-1.1.0.tar.gz', ],)
+      dependency_links=[ 'http://www.linux.it/~ema/conpaas/cpslib-1.1.0-rc1.tar.gz', ],)

@@ -9,7 +9,7 @@ ConPaaS: an integrated runtime environment for elastic Cloud applications
 =========================================================================
 """
 setup(name='cpslib',
-      version='1.1.0',
+      version='1.1.0-rc1',
       description='ConPaaS: an integrated runtime environment for elastic Cloud applications',
       author='Emanuele Rocca',
       author_email='ema@linux.it',

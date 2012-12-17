@@ -16,7 +16,7 @@ ConPaaS: an integrated runtime environment for elastic Cloud applications
 =========================================================================
 """
 setup(name='cpsdirector',
-      version='1.1.0',
+      version='1.1.0-rc1',
       description='ConPaaS director',
       author='Emanuele Rocca',
       author_email='ema@linux.it',
@@ -30,7 +30,7 @@ setup(name='cpsdirector',
       data_files=[ ( CONFDIR, [ 'director.cfg.example', 'ConPaaS.tar.gz' ] ), ],
       scripts=[ 'cpsadduser.py', 'director.wsgi', 'cpsconf.py' ],
       install_requires=[ 'cpslib', 'flask-sqlalchemy', 'apache-libcloud==0.8.0' ],
-      dependency_links=[ 'http://www.linux.it/~ema/conpaas/cpslib-1.1.0.tar.gz', ],)
+      dependency_links=[ 'http://www.linux.it/~ema/conpaas/cpslib-1.1.0-rc1.tar.gz', ],)
 
 if __name__ == "__main__" and sys.argv[1] == "install":
     # overwrite /etc/cpsdirector/{config,scripts}
