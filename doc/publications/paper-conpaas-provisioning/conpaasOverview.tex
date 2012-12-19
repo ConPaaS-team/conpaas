@@ -4,7 +4,7 @@ ConPaaS is an open-source runtime environment for hosting applications in Cloud 
 Within the Cloud computing paradigm, ConPaaS belongs to the platform-as-a-service family, 
 in which a variety of systems aim to simplify the deployment of applications in the Cloud. Using ConPaaS,  developers can now focus their attention on application-specific concerns rather than making their applications suitable for the cloud. 
 
-\subsection{Architecture}
+\subsection*{Architecture}
 
 In ConPaaS, an application is designed as a composition of one or more elastic and distributed components, called \emph{services}. Each service is dedicated to host a particular type of functionality of an application. At the moment, ConPaaS supports six different types of services: two web application hosting services respectively specialized for hosting PHP and JSP applications; a MySQL database service; a NoSQL database service built around the Scalarix key-value store; a MapReduce service; and a TaskFarming service for high-performance batch processing.  Figure~\ref{arch} shows ConPaaS hosting an application composed of a PhP service and a MySQL service, that could represents the architecture of any today's web application.
 
@@ -28,7 +28,7 @@ ConPaaS services are built based on an architecture composed of two main buildin
 
 On the other hand, in ConPaaS, there are two types of traffic: application and management. The application traffic is based on requests from end users willing to access the application, so that is addressed to the agents hosting such application.  On the other hand, the management traffic is directed from the service administrators to their service managers, and from those to the agents.  Service administrators can manage their services using a graphical front-end or a command-line tool.  
 
-\subsection{Hosting Elastic Applications}
+\subsection*{Hosting Elastic Applications}
 
 The main features that distinguish ConPaaS from other PaaS systems are its approach for autonomous application scaling and its interoperability with a wide variety of private and public IaaS clouds. In particular to provide such autonomous scaling capabilities, ConPaaS includes a monitoring data analysis mechanism  and a resource provisioning system.
 

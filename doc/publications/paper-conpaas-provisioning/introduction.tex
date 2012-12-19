@@ -58,13 +58,49 @@
 % infinite pool of resources
 
 
-Over the last few years, we have witnessed numerous debates on blogs, conferences and media on whether to use \emph{grid computing} or \emph{cloud computing}.  Even though some of the early promises of grid computing, sound the same as the promises of the cloud, cloud efforts were focused on applications which will be long-running on the infrastructure. As a result, today's research scientists and most well-known enterprises use cloud infrastructures as a tool on which deploy their data/computation-intensive applications. Thus, one key properties of the clouds is \emph{elasticity}, \emph{i.e.}, the possibility for cloud users, to dynamically adapt the quantity of resources at his disposal at runtime.  Unfortunately, this notion of infinite resource availability has a financial cost, as cloud users have to pay for the resources being used from moment to moment.
+\lettrine{O}{ne of} the major innovations provided by Cloud computing
+platforms is their pay-per-use model where applications can request
+and release resources at any time according totheir needs --- and pay
+only for the resources they actually used. This business model is
+particularly favorable for application domains where workloads vary
+widely over time, such as the domain of Web applications.
 
-\corina{Not sure if we should bring grid computing into discussion, 
-the readers might not be familiar with it (and I think we should aim
-to shorten the paper).}
+However, provisioning the right quantities of resources for a Web
+application is not a simple task. Web applications are usually
+composed of multiple types of components such as load balancers, Web
+servers, application servers and database servers. Complex performance
+behavior of these components make it difficult to find the optimal
+resource allocation, even when the application workload is perfectly
+stable. The magnitude of the problem is further increased by the fact
+that Web application workloads are often very unstable and hard to
+predict. In the case of a sudden load increase there is a necessary
+tradeoff between reacting as early as possible to minimize the
+duration when the application underperforms because of insufficient
+processing capacity, and a slower approach to avoid situations where
+the load has already decreased when the new resources become
+available.
 
-Therefore it seems crucial to choose the best cloud provisioning offers in order to minimize the resource consumption, and thereby the running costs while assuring several performance requirements for our applications. Resource provisioning systems seem to be the solution by dynamically adjusting the server capacity to react to workload variations in timely and an efficient manner. Nowadays, there are lots of research papers dedicated to sophisticated techniques on dynamic resource provisioning. However, if we look at real deployments we see that cloud providers rely on extremely simple techniques rather than using sophisticated techniques, such as those proposed by academic research on the topic. Three reasons can be the explanations for this discrepancy: \emph{(i)} the gains of using sophisticated provisioning strategies are too low for anyone to bother; \emph{(ii)}  implementing these techniques is a difficult exercise, which is why real cloud systems rely on simpler techniques; and \emph{(iii)} academic approaches mostly focus on unrealistic evaluations using simple applications and artificial workloads~\cite{do_profiling_2011, islam_empirical_2012, wang_appraise:_2009}. By using real production applications, new limitations could be detected and solved in the provisioning systems due to the peculiarity and heterogeneity of real workloads. Indeed, these workloads have several interesting properties such as a variable amount of request volumes, a large diversity of request mix and different execution times between requests, which increase the difficulties to make scaling decisions.
+Faced with this difficult scientific challenge, the academic community
+has proposed a wide range of sophisticated resource provisioning
+algorithms~\cite{xxx,yyy,zzz}. However, we observe a wide discrepancy
+between these academic propositions and the very simple techniques
+actually used by the cloud industry where provisioning decisions are
+usually triggered by lower/upper thresholds on resource
+utilization. We postulate three possible reasons why sophisticated
+techniques have not been more widely deployed: \emph{(i)} the gains of
+using sophisticated provisioning strategies are too low for anyone to
+bother; \emph{(ii)} implementing these techniques is a difficult
+exercise, which is why real cloud systems rely on simpler techniques;
+and \emph{(iii)} academic approaches mostly focus on unrealistic
+evaluations using simple applications and artificial
+workloads~\cite{do_profiling_2011, islam_empirical_2012,
+wang_appraise:_2009}. % By using real production applications, new
+% limitations could be detected and solved in the provisioning systems
+% due to the peculiarity and heterogeneity of real workloads. Indeed,
+% these workloads have several interesting properties such as a variable
+% amount of request volumes, a large diversity of request mix and
+% different execution times between requests, which increase the
+% difficulties to make scaling decisions.
 
 
 This paper aims to identify the real cause of why cloud providers use simpler provisioning techniques. We do this by implementing a provisioning system in realistic conditions, and reporting on \emph{(i)} how hard implementation was; and \emph{(ii)} potential gains from using the better technique as compared to a simple strawman. To achieve this, we designed and implemented a resource provisioning technique on ConPaaS, an open source platform-as-a-service environment for hosting cloud applications~\cite{conpaasIC}, based on a predictive and robust model. The resulting technique used different levels of thresholds to predict future performance degradations, workload trend detection methods to avoid flash crowds effects and dynamic load-balancing algorithms to handle the workload-mix. For the sake of comparison and discussion, we deployed the MediaWiki application and used real access traces to validate our technique, opening doors to real implementation of promising auto-scaling systems.

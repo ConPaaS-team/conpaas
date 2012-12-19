@@ -5,7 +5,7 @@
 MASTER = paper
 
 # Source files
-SOURCES = paper.tex
+SOURCES = $(wildcard graphs/*.tex)
 #GRAPHS = $(wildcard graphs/*.ps)
 FIGURES = $(wildcard figs/*.eps figs/*.pdf)
 REFS = $(wildcard *.bib)
@@ -122,3 +122,4 @@ spell:
 
 count: pdf
 	pdftotext $(MASTER).pdf - | wc 
+

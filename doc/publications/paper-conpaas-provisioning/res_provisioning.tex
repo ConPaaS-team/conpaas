@@ -3,7 +3,7 @@ In this section, we describe the different provisioning techniques implemented i
 
 
 %\subsection{Load-based provisioning}
-\subsection{Trigger-based provisioning}
+\subsection*{Trigger-based provisioning}
 
 \corina{I edited the following paragraphs to reflect the fact
 that Amazon and other clouds don't really provide the provisioning
@@ -135,7 +135,7 @@ and more accurate methods.
 %provisioning.  
 
 
-\subsection{Feedback provisioning}
+\subsection*{Feedback provisioning}
 
 
 Based on our previous knowledge from load-based provisioning, we designed and implemented an algorithm which improves the accuracy of our scaling actions when hosting web applications. To achieve that, our algorithm relies on three simple mechanisms: the definition of weights to each metric included in the performance requirements, the use of flexible thresholds and the estimation of the workload trend. 
@@ -213,12 +213,12 @@ Estimate historical workload trends (last $\sim$30min), \emph{td}\;
 
 Anyway, the use of these three mechanisms must follow an order when making scaling decisions, as illustrated in Algorithm~\ref{history_prov}. Initially, the user has to specify the thresholds ranges and give a weight to each metric. Next the flexible thresholds are defined based on Amazon recommendations and statistically-chose performance measures~\footnote{These performance values are obtained from previous executions of the same application using similar hardware configurations.}. Once the monitoring data is collected from the agents, the decision making process can start. Firstly, these data is analyzed to verify if it exceeds the predictive threshold ranges (denoted by \emph{p\_thr}), if so the probability of triggering scaling actions increases proportionally in function of the metric's weight. In order to keep track of workload variations, this algorithm stores in a queue (denoted by \emph{q}) the most recent system performance values, and analyzed them  to estimate the workload trend (denoted by \emph{td}). Finally, to trigger any scaling action, a serie of conditions have to be satisfied: (i) no previous scaling actions have been taken over the last 15min; (ii) the recent monitoring data have to exceed the reactive threshold ranges; (iii) the workload trend has to follow a constant pattern (increasing/decreasing); and (iv) the result of predictive thresholds evaluation has to match up with that obtained in (ii). 
 
-\subsubsection{Problematic of this algorithm}
+\paragraph{Problematic of this algorithm}
 
 Although the combination of these techniques improves the accuracy of our measurements, and avoids to present an excessive reactive behavior. The heterogeneous nature of the VM instances and the workload require more flexible provisioning algorithms, as we pointed out in ~\cite{jiangThesis}. . 
 
 %\subsection{Workload mix-aware provisioning}
-\subsection{Dynamic load balancing weights}
+\subsection*{Dynamic load balancing weights}
 
 %The heterogeneity of cloud platforms, and therefore, of their VMs affect to the accuracy of the provisioning decisions. VMs with better hardware configuration can sustain higher workload intensities. In addition, the mixture of static/dynamic requests included into the workload of web applications makes more difficult to distribute these requests across multiple backend servers. Most of existing web load-balancer systems provide simple methods which do not consider the workload mix. Hence, methods such as\emph{round-robin} distributes the requests according to the servers with respect of its server weight; and the \emph{least connections} method which distributes requests to the server with the least connections. Unfortunately, these load-distribution methods are not so accurate when having a large diversity in the complexity of the requests. 
 
