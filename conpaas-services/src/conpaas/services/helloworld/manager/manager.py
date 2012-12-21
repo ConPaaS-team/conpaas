@@ -2,13 +2,14 @@ from threading import Thread
 
 from conpaas.core.expose import expose
 from conpaas.core.controller import Controller
+from conpaas.core.manager import BaseManager
 
 from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse
 
 from conpaas.core.log import create_logger
 from conpaas.services.helloworld.agent import client
 
-class HelloWorldManager(object):
+class HelloWorldManager(BaseManager):
 
     # Manager states - Used by the frontend
     S_INIT = 'INIT'         # manager initialized but not yet started
@@ -24,12 +25,9 @@ class HelloWorldManager(object):
                  config_parser, # config file
                  **kwargs):     # anything you can't send in config_parser
                                 # (hopefully the new service won't need anything extra)
-        self.config_parser = config_parser
-        self.logger = create_logger(__name__)
-        self.logfile = config_parser.get('manager', 'LOG_FILE')
+        BaseManager.__init__(self, config_parser)
         self.nodes = []
         # Setup the clouds' controller
-        self.controller = Controller(config_parser)
         self.controller.generate_context('helloworld')
         self.state = self.S_INIT
 
@@ -141,20 +139,3 @@ class HelloWorldManager(object):
         return HttpJsonResponse({
             'helloworld': [ node.id for node in self.nodes ],
             })
-
-    @expose('GET')
-    def getLog(self, kwargs):
-        if len(kwargs) != 0:
-            return HttpErrorResponse('ERROR: Arguments unexpected')
-        try:
-            fd = open(self.logfile)
-            ret = ''
-            s = fd.read()
-            while s != '':
-              ret += s
-              s = fd.read()
-              if s != '':
-                  ret += s
-            return HttpJsonResponse({'log': ret})
-        except:
-            return HttpErrorResponse('Failed to read log')

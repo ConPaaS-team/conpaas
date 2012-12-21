@@ -14,7 +14,7 @@ that the following conditions are met:
     conditions and the following disclaimer in the
     documentation and/or other materials provided
     with the distribution.
- 3. Neither the name of the <ORGANIZATION> nor the
+ 3. Neither the name of the Contrail consortium nor the
     names of its contributors may be used to endorse
     or promote products derived from this software 
     without specific prior written permission.
@@ -63,14 +63,14 @@ from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse, \
 from conpaas.core.log import create_logger
 from conpaas.core.expose import expose
 from conpaas.core.controller import Controller
+from conpaas.core.manager import BaseManager
 
 from conpaas.services.mysql.agent import client
 from conpaas.services.mysql.manager.config import Configuration, \
-                              ManagerException,\
                               E_ARGS_UNEXPECTED, ServiceNode, E_UNKNOWN, \
                               E_ARGS_MISSING, E_STATE_ERROR, E_ARGS_INVALID
 
-class MySQLManager(object):
+class MySQLManager(BaseManager):
     """
     Initializes :py:attr:`config` using Config and sets :py:attr:`state` to :py:attr:`S_INIT`
 
@@ -90,14 +90,12 @@ class MySQLManager(object):
     S_ERROR = 'ERROR'
 
     def __init__(self, conf, **kwargs):        
-        self.logger = create_logger(__name__)
+        BaseManager.__init__(self, conf)
+
         self.logger.debug("Entering MySQLServerManager initialization")
-        self.controller = Controller(conf)
         self.controller.generate_context('mysql')
         clouds = self.controller.get_clouds()
         self.controller.config_cloud(clouds[0], { "mem" : "512", "cpu" : "1" })
-        
-        self.logfile = conf.get('manager', 'LOG_FILE')
         self.state = self.S_INIT
         self.config = Configuration(conf)         
         self.logger.debug("Leaving MySQLServer initialization")
@@ -399,21 +397,3 @@ class MySQLManager(object):
             self.state = self.S_ERROR
             return
         return HttpJsonResponse()
-
-    @expose('GET')
-    def getLog(self, kwargs):
-          if len(kwargs) != 0:
-              return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
-          try:
-              fd = open(self.logfile)
-              ret = ''
-              s = fd.read()
-              while s != '':
-                  ret += s
-                  s = fd.read()
-                  if s != '':
-                       ret += s
-              return HttpJsonResponse({'log': ret})
-          except:
-              return HttpErrorResponse('Failed to read log')
-

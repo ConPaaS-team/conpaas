@@ -66,28 +66,6 @@ E_STRINGS = [
   'Service in wrong state'
 ]
 
-class ManagerException(Exception):
-    """Gets information about exception and formats appropriate message.
-
-    :param code: Exception code.
-    :type code: str.
-    :param args: additional exception arguments
-    :type code: str.
-    :param kwargs: dict
-    :type code: str.
-    :returns:
-    :raises:
-
-    """
-
-    def __init__(self, code, *args, **kwargs):
-        self.code = code
-        self.args = args
-        if 'detail' in kwargs:
-            self.message = '%s DETAIL:%s' % ( (E_STRINGS[code] % args), str(kwargs['detail']) )
-        else:
-            self.message = E_STRINGS[code] % args
-
 '''
 Holds information on service nodes.
 '''

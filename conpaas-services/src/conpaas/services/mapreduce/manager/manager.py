@@ -14,7 +14,7 @@ that the following conditions are met:
     conditions and the following disclaimer in the
     documentation and/or other materials provided
     with the distribution.
- 3. Neither the name of the <ORGANIZATION> nor the
+ 3. Neither the name of the Contrail consortium nor the
     names of its contributors may be used to endorse
     or promote products derived from this software 
     without specific prior written permission.
@@ -44,12 +44,13 @@ from threading import Thread, Lock, Timer, Event
 
 from conpaas.core.expose import expose
 from conpaas.core.controller import Controller
+from conpaas.core.manager import BaseManager
 from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse, \
                                       HttpError
 from conpaas.core.log import create_logger
 from conpaas.services.mapreduce.agent import client
 
-class MapReduceManager(object):
+class MapReduceManager(BaseManager):
 
     # Manager states - Used by the frontend
     S_INIT = 'INIT'         # manager initialized but not yet started
@@ -65,13 +66,11 @@ class MapReduceManager(object):
                  config_parser, # config file
                  **kwargs):     # anything you can't send in config_parser
                                 # (hopefully the new service won't need anything extra)
-        self.config_parser = config_parser
-        self.logger = create_logger(__name__)
-        self.logfile = config_parser.get('manager', 'LOG_FILE')
+        BaseManager.__init__(self, config_parser)
+
         self.state = self.S_INIT
         self.nodes = []
         # Setup the clouds' controller
-        self.controller = Controller(config_parser)
         self.controller.generate_context('mapreduce')
         clouds = self.controller.get_clouds()
         self.controller.config_cloud(clouds[0], { "mem" : "1024", "cpu" : "1" })
@@ -233,21 +232,3 @@ class MapReduceManager(object):
             self.controller.delete_nodes([self.nodes.pop(1)])
         self.state = self.S_RUNNING
         return HttpJsonResponse()
-
-    @expose('GET')
-    def getLog(self, kwargs):
-        self.logger.info('called get_log')
-        if len(kwargs) != 0:
-            return HttpErrorResponse('ERROR: Arguments unexpected')
-        try:
-            fd = open(self.logfile)
-            ret = ''
-            s = fd.read()
-            while s != '':
-              ret += s
-              s = fd.read()
-              if s != '':
-                  ret += s
-            return HttpJsonResponse({'log': ret})
-        except:
-            return HttpErrorResponse('Failed to read log')

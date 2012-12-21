@@ -39,13 +39,14 @@ from threading import Thread
 
 from conpaas.core.expose import expose
 from conpaas.core.controller import Controller
+from conpaas.core.manager import BaseManager
 
 from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse
                           
 from conpaas.core.log import create_logger
 from conpaas.services.selenium.agent import client
 
-class SeleniumManager(object):
+class SeleniumManager(BaseManager):
     """Manager class with the following exposed methods:
 
     startup() -- POST
@@ -55,7 +56,6 @@ class SeleniumManager(object):
     list_nodes() -- GET
     get_service_info() -- GET
     get_node_info(serviceNodeId) -- GET
-    getLog() -- GET
     """
     # Manager states 
     S_INIT = 'INIT'         # manager initialized but not yet started
@@ -85,13 +85,11 @@ class SeleniumManager(object):
 
         'config_parser' represents the manager config file. 
         **kwargs holds anything that can't be sent in config_parser."""
-        self.config_parser = config_parser
-        self.logger = create_logger(__name__)
-        self.logfile = config_parser.get('manager', 'LOG_FILE')
+        BaseManager.__init__(self, config_parser)
+
         self.nodes = []
 
         # Setup the clouds' controller
-        self.controller = Controller(config_parser)
         self.controller.generate_context('selenium')
 
         self.state = self.S_INIT
@@ -297,19 +295,3 @@ class SeleniumManager(object):
                 'is_hub': self.__is_hub(serviceNode)
             }
         })
-
-    @expose('GET')
-    def getLog(self, kwargs):
-        """Return logfile"""
-        try:
-            fd = open(self.logfile)
-            ret = ''
-            s = fd.read()
-            while s != '':
-                ret += s
-                s = fd.read()
-                if s != '':
-                    ret += s
-            return HttpJsonResponse({ 'log': ret })
-        except:
-            return HttpErrorResponse('Failed to read log')

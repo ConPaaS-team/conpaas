@@ -44,12 +44,13 @@ from threading import Thread, Lock, Timer, Event
 
 from conpaas.core.expose import expose
 from conpaas.core.controller import Controller
+from conpaas.core.manager import BaseManager
 from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse, \
                                       HttpError
 from conpaas.core.log import create_logger
 from conpaas.services.scalaris.agent import client
 
-class ScalarisManager(object):
+class ScalarisManager(BaseManager):
 
     # Manager states - Used by the frontend
     S_INIT = 'INIT'         # manager initialized but not yet started
@@ -65,14 +66,11 @@ class ScalarisManager(object):
                  config_parser, # config file
                  **kwargs):     # anything you can't send in config_parser
                                 # (hopefully the new service won't need anything extra)
-        self.config_parser = config_parser
-        self.logger = create_logger(__name__)
-        self.logfile = config_parser.get('manager', 'LOG_FILE')
+        BaseManager.__init__(self, config_parser)
         self.state = self.S_INIT
         self.nodes = []
         self.context = {'FIRST': 'true', 'MGMT_SERVER': '', 'KNOWN_HOSTS': ''}
         # Setup the clouds' controller
-        self.controller = Controller(config_parser)
         self.controller.generate_context('scalaris')
 
     @expose('POST')
@@ -262,21 +260,3 @@ class ScalarisManager(object):
                 self.controller.delete_nodes([node])
             self.state = self.S_RUNNING
             return HttpJsonResponse()
-
-    @expose('GET')
-    def getLog(self, kwargs):
-        self.logger.info('called get_log')
-        if len(kwargs) != 0:
-            return HttpErrorResponse('ERROR: Arguments unexpected')
-        try:
-            fd = open(self.logfile)
-            ret = ''
-            s = fd.read()
-            while s != '':
-              ret += s
-              s = fd.read()
-              if s != '':
-                  ret += s
-            return HttpJsonResponse({'log': ret})
-        except:
-            return HttpErrorResponse('Failed to read log')

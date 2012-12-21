@@ -14,7 +14,7 @@ that the following conditions are met:
     conditions and the following disclaimer in the
     documentation and/or other materials provided
     with the distribution.
- 3. Neither the name of the <ORGANIZATION> nor the
+ 3. Neither the name of the Contrail consortium nor the
     names of its contributors may be used to endorse
     or promote products derived from this software 
     without specific prior written permission.
@@ -72,46 +72,12 @@ from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse,\
                          HttpFileDownloadResponse, FileUploadField
 from conpaas.core.expose import expose
 from conpaas.core.controller import Controller
+from conpaas.core.manager import BaseManager
+from conpaas.core.manager import ManagerException
 
 from conpaas.core import git
 
-class ManagerException(Exception):
-
-    E_CONFIG_READ_FAILED = 0
-    E_CONFIG_COMMIT_FAILED = 1
-    E_ARGS_INVALID = 2
-    E_ARGS_UNEXPECTED = 3
-    E_ARGS_MISSING = 4
-    E_IAAS_REQUEST_FAILED = 5
-    E_STATE_ERROR = 6
-    E_CODE_VERSION_ERROR = 7
-    E_NOT_ENOUGH_CREDIT = 8
-    E_UNKNOWN = 9
-
-    E_STRINGS = [
-      'Failed to read configuration',
-      'Failed to commit configuration',
-      'Invalid arguments',
-      'Unexpected arguments %s', # 1 param (a list)
-      'Missing argument "%s"', # 1 param
-      'Failed to request resources from IAAS',
-      'Cannot perform requested operation in current state',
-      'No code version selected',
-      'Not enough credits',
-      'Unknown error',
-    ]
-
-    def __init__(self, code, *args, **kwargs):
-      self.code = code
-      self.args = args
-      if 'detail' in kwargs:
-        self.message = '%s DETAIL:%s' \
-                       % ( (self.E_STRINGS[code] % args), str(kwargs['detail']))
-      else:
-        self.message = self.E_STRINGS[code] % args
-
-
-class BasicWebserversManager(object):
+class BasicWebserversManager(BaseManager):
   # memcache keys
   CONFIG = 'config'
   DEPLOYMENT_STATE = 'deployment_state'
@@ -125,8 +91,8 @@ class BasicWebserversManager(object):
   S_ERROR = 'ERROR'
   
   def __init__(self, config_parser):
-    self.logger = create_logger(__name__)  
-    self.controller = Controller(config_parser)
+    BaseManager.__init__(self, config_parser)
+
     self.controller.generate_context('web')
     self.memcache = memcache.Client([config_parser.get('manager', 'MEMCACHE_ADDR')])
 
@@ -134,9 +100,7 @@ class BasicWebserversManager(object):
     config.memcache = self.memcache
 
     self.code_repo = config_parser.get('manager', 'CODE_REPO') 
-    self.logfile = config_parser.get('manager', 'LOG_FILE')
     self.state_log = []
-    self.config_parser = config_parser
      
   def _state_get(self):
     return self.memcache.get(self.DEPLOYMENT_STATE)
@@ -685,23 +649,6 @@ class BasicWebserversManager(object):
 
     self._configuration_set(config)
     return HttpJsonResponse({ 'codeVersionId': codeVersionId })
-  
-  @expose('GET')
-  def getLog(self, kwargs):
-    if len(kwargs) != 0:
-      return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
-    try:
-      fd = open(self.logfile)
-      ret = ''
-      s = fd.read()
-      while s != '':
-        ret += s
-        s = fd.read()
-      if s != '':
-        ret += s
-      return HttpJsonResponse({'log': ret})
-    except:
-      return HttpErrorResponse('Failed to read log')
   
   @expose('GET')
   def get_service_history(self, kwargs):

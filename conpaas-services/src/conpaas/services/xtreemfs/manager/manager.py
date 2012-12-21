@@ -14,7 +14,7 @@ that the following conditions are met:
     conditions and the following disclaimer in the
     documentation and/or other materials provided
     with the distribution.
- 3. Neither the name of the <ORGANIZATION> nor the
+ 3. Neither the name of the Contrail consortium nor the
     names of its contributors may be used to endorse
     or promote products derived from this software 
     without specific prior written permission.
@@ -43,6 +43,10 @@ from threading import Thread
 
 from conpaas.core.expose import expose
 from conpaas.core.controller import Controller
+
+from conpaas.core.manager import BaseManager
+from conpaas.core.manager import ManagerException
+
 from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse
                          
 from conpaas.core.log import create_logger
@@ -54,45 +58,7 @@ def invalid_arg(msg):
     return HttpErrorResponse(ManagerException(
         ManagerException.E_ARGS_INVALID, detail=msg).message)
 
-class ManagerException(Exception):
-
-    E_CONFIG_READ_FAILED = 0
-    E_CONFIG_COMMIT_FAILED = 1
-    E_ARGS_INVALID = 2
-    E_ARGS_UNEXPECTED = 3
-    E_ARGS_MISSING = 4
-    E_IAAS_REQUEST_FAILED = 5
-    E_STATE_ERROR = 6
-    E_CODE_VERSION_ERROR = 7
-    E_NOT_ENOUGH_CREDIT = 8
-    E_UNKNOWN = 9
-
-    E_STRINGS = [
-      'Failed to read configuration',
-      'Failed to commit configuration',
-      'Invalid arguments',
-      'Unexpected arguments %s', # 1 param (a list)
-      'Missing argument "%s"', # 1 param
-      'Failed to request resources from IAAS',
-      'Cannot perform requested operation in current state',
-      'No code version selected',
-      'Not enough credits',
-      'Unknown error',
-    ]
-
-    def __init__(self, code, *args, **kwargs):
-        self.code = code
-        self.args = args
-        if 'detail' in kwargs:
-            self.message = '%s DETAIL:%s' % ( 
-                (self.E_STRINGS[code] % args), kwargs['detail'])
-        else:
-            self.message = self.E_STRINGS[code] % args
-
-
-
-class XtreemFSManager(object):
-
+class XtreemFSManager(BaseManager):
     
     # Manager states - Used by the frontend
     S_INIT = 'INIT'         # manager initialized but not yet started
@@ -108,9 +74,8 @@ class XtreemFSManager(object):
                  config_parser, # config file
                  **kwargs):     # anything you can't send in config_parser
 
-        self.config_parser = config_parser
-        self.logger = create_logger(__name__)
-        self.logfile = config_parser.get('manager', 'LOG_FILE')
+        BaseManager.__init__(self, config_parser)
+
         self.nodes = []         
         self.osdNodes = []   
         self.mrcNodes = []
@@ -120,7 +85,6 @@ class XtreemFSManager(object):
         self.mrcCount = 0
         self.osdCount = 0
         # Setup the clouds' controller
-        self.controller = Controller(config_parser)
         self.controller.generate_context('xtreemfs')
         self.state = self.S_INIT
 
@@ -203,6 +167,7 @@ class XtreemFSManager(object):
 
         self.logger.info('XtreemFS service was started up')    
         self.state = self.S_RUNNING
+
     @expose('POST')
     def shutdown(self, kwargs):
         self.state = self.S_EPILOGUE
@@ -583,13 +548,3 @@ class XtreemFSManager(object):
             return HttpErrorResponse("The volume list cannot be accessed")
 
         return HttpJsonResponse({ 'volumes': stdout })
-
-    @expose('GET')
-    def getLog(self, kwargs):
-        if len(kwargs) != 0:
-            return HttpErrorResponse('ERROR: Arguments unexpected')
-
-        try:
-            return HttpJsonResponse({ 'log': open(self.logfile).read() })
-        except:
-            return HttpErrorResponse('Failed to read log')
