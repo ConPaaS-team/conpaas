@@ -314,13 +314,14 @@ After having uncompressed it you should:
 \begin{itemize}
 \item Install the libapache2-mod-php5 and php5-curl Debian packages
 \item Copy all the files contained in the \textbf{www} directory underneath your web server document root
-\item Copy \textbf{conf/main.ini} and \textbf{conf/welcome.txt} in a directory
-  outside of the web server directory. Such a directory must contain your
-  Director's certificates under a subdirectory called \textbf{certs}.
-\item Create a config.php file. Please refer to
-  config-example.php for a detailed explaination of all the configuration
-  options. Note that config.php must contain the CONPAAS\_CONF\_DIR option,
-  pointing to the directory mentioned in the previous step.
+\item Copy \textbf{conf/main.ini} and \textbf{conf/welcome.txt} in your ConPaaS
+  Director configuration folder (/etc/cpsdirector). Modify those files to suit
+  your needs
+\item Create a config.php file in the web server directory where you have chosen to install the
+  frontend. Please refer to config-example.php for a detailed explaination of
+  all the configuration options. Note that config.php must contain the
+  CONPAAS\_CONF\_DIR option, pointing to the directory mentioned in the previous
+  step
 \end{itemize}
 
 At this point, your front-end should be working!

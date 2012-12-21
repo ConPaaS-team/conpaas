@@ -4,7 +4,7 @@ const DIRECTOR_URL = 'https://director.yourdomain.com';
 
 // The CONPAAS_CONF_DIR variable to point to the directory containing your
 // frontend's configuration files.
-const CONPAAS_CONF_DIR = '/etc/conpaas';
+const CONPAAS_CONF_DIR = '/etc/cpsdirector';
 
 // The HOST variable to contain the DNS name under  which your front-end will
 // be accessible
