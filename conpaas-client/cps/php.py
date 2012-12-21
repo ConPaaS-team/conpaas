@@ -41,6 +41,8 @@ class Client(WebClient):
         print "    toggle_debug      serviceid           # enable/disable debug mode" 
 
     def main(self, argv):
+        WebClient.main(self, argv)
+
         command = argv[1]
 
         if command == 'toggle_debug':
