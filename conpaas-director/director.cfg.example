@@ -5,38 +5,166 @@ CONF_DIR = /etc/cpsdirector
 CERT_DIR = /etc/cpsdirector/certs
 
 [iaas]
-# Config for Amazon EC2 
+##############
+# Amazon EC2 # 
+##############
+
+# Uncomment the following directives and set them to the appropriate values if
+# you want to use ConPaaS on Amazon EC2. If you want to use OpenNebula, skip
+# this part and fill in the directives for OpenNebula, which you can find
+# further down in this file.
+
+# Uncomment the following line to use ConPaaS on Amazon EC2:
 # DRIVER = ec2
+
+# USER should be set to your EC2 user name. Beware: this is not the
+# email address you normally use to login at the AWS management console. 
+# An EC2 user name is a long opaque string. It can be found at
+# https://portal.aws.amazon.com/gp/aws/securityCredentials#access_credentials
+# under the name "Access key ID"
+
 # USER = 
+
+# PASSWORD should be set to the corresponding password.
+# Again, this is a long opaque string. You can find it next to your
+# Access Key ID by clicking "Show Secret Access Key".
+
 # PASSWORD = 
+
+# This variable contains the created security group from the Web hosting
+# service. Your security groups can be found under "NETWORK & SECURITY" on
+# https://console.aws.amazon.com/ec2/.
+# Please make sure that the security group you specify here exists in the
+# region you want to use.
+
 # SECURITY_GROUP_NAME = 
+
+# This variable contains the Key Pair name  to be used.  Your keypairs can be
+# found under "NETWORK & SECURITY" on https://console.aws.amazon.com/ec2/
+# Please make sure that the keypair you specify here exists in the region you
+# want to use.
+
 # KEY_NAME = 
-# IMAGE_ID = ami-4055db70
-# SIZE_ID = t1.micro
+
+# Amazon EC2 region. 
+# 
+# Valid values are:
+#
+# - ec2.us-west-2.amazonaws.com # United States West (Oregon)
+# - ec2.us-east-1.amazonaws.com # United States East (Northern Virginia) 
+# - ec2.eu-west-1.amazonaws.com # Europe West (Ireland)
+
 # REGION = ec2.us-west-2.amazonaws.com
 
-# Config for OpenNebula
-# DRIVER = opennebula
-# USER = 
-# PASSWORD =
-# URL =
-# IMAGE_ID = 
-# INST_TYPE = small
-# NET_ID = 
-# NET_GATEWAY = 
-# NET_NAMESERVER =
-# OS_ARCH =
-# OS_ROOT = sda
-# DISK_TARGET = sda
-# CONTEXT_TARGET = sr0
+# This variable contains the identifier of the ConPaaS Amazon Machine Image.
+# 
+# Please set this value according to the region you want to use (see
+# REGION). 
+#
+# ConPaaS official AMI ids are: 
+#
+# - ami-4055db70 United States West (Oregon)
+# - ami-4b249322 United States East (Northern Virginia)
+# - ami-db0a0baf Europe West (Ireland)
 
-# Task farming service
+# IMAGE_ID = ami-4055db70 
+
+# This variable contains the type of EC2 instances to use. A good value to use
+# inexpensive, low-performance instances is "t1.micro".
+
+# SIZE_ID = t1.micro
+
+########################
+# Task farming service #
+########################
 # PORT = 8889
+
+# A unique name used in the service to specify different clouds. 
+# For Amazon EC2, 'ec2' is a good value. 
+# For OpenNebula, use the OCCI server hostname.
 # HOSTNAME = 
+
+# The accountable time unit. Different clouds charge at different
+# frequencies (e.g. Amazon charges per hour = 60 minutes)
 # TIMEUNIT = 60
+
+# The price per TIMEUNIT of this specific machine type on this cloud
 # COSTUNIT = 1
+
+# The maximum number of VMs that the system is allowed to allocate from this
+# cloud
 # MAXNODES = 20
 # SPEEDFACTOR = 1
+
+##############
+# OpenNebula #
+##############
+
+# DRIVER = opennebula
+
+# The image ID (an integer). You can list the registered OpenNebula images with
+# command "oneimage list" command.
+
+# IMAGE_ID = 
+
+# OCCI defines 3 standard instance types: small medium and large. This variable
+# should choose one of these.
+
+# INST_TYPE = small
+
+# Your OpenNebula user name.
+
+# USER = 
+
+# Your OpenNebula password.
+
+# PASSWORD =
+
+# The URL of the OCCI interface at OpenNebula. Note: ConPaaS currently supports
+# only the default OCCI implementation that comes together with OpenNebula. It
+# does not yet support the full OCCI-0.2 and later versions.
+
+# URL =
+
+# The network ID (an integer). You can list the registered OpenNebula networks
+# with the "onevnet list" command.
+
+# NET_ID = 
+
+# The network gateway through which new VMs can route their traffic in
+# OpenNebula (an IP address).
+
+# NET_GATEWAY = 
+
+# The DNS server that VMs should use to resolve DNS names (an IP address).
+
+# NET_NAMESERVER =
+
+# The virtual machines' OS architecture (eg: "x86_64").
+
+# OS_ARCH =
+
+# The device that will be mounted as root on the VM. Most often it
+# is "sda" or "hda".
+# (corrseponds to the OpenNebula "ROOT" parameter from the VM template)
+
+# OS_ROOT = sda
+
+# The device on which the VM image disk is mapped. 
+
+# DISK_TARGET = sda
+
+# The device associated with the CD-ROM on the virtual machine. This
+# will be used for contextualization in OpenNebula. Most often it is
+# "sr0".
+# (corresponds to the OpenNebula "TARGET" parameter from the "CONTEXT" 
+# section of the VM template).
+
+# CONTEXT_TARGET = sr0
+
+# The TaskFarming service uses XMLRPC to talk to Opennebula. This is the url to
+# the server (Ex. http://dns.name.or.ip:2633/RPC2)
+
 # XMLRPC = 
 
 [director]
