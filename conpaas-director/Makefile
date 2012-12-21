@@ -16,7 +16,6 @@ source:
 install:
 	$(PYTHON) setup.py install 
 	cpsconf.py
-	cpsadduser.py
 
 clean:
 	$(PYTHON) setup.py clean
