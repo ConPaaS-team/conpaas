@@ -1,3 +1,0 @@
-Use the certificates in this folder only for testing. These should be replaced
-with newly generated ones (see scripts/generate-certs.php for a way to generate
-these certificates).
