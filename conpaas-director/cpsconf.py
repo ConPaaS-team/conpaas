@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from cpsdirector import common
+from cpsdirector import common, db
 
 from conpaas.core.https import x509
 
@@ -99,3 +99,5 @@ conffile = open(common.CONFFILE).read()
 if 'DIRECTOR_URL' not in conffile:
     # append DIRECTOR_URL
     open(common.CONFFILE, 'a').write("\nDIRECTOR_URL = https://" + hostname)
+
+db.create_all()
