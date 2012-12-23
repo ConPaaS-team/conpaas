@@ -26,7 +26,7 @@ Enable the conpaas-director config:
 $ sudo a2ensite conpaas-director
 
 Restart apache:
-$ sudo service apache2 reload
+$ sudo service apache2 restart
 
 Usage
 -----
