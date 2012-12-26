@@ -137,12 +137,26 @@ and more accurate methods.
 
 \subsection*{Feedback provisioning}
 
+\corina{Generic suggestion about this section: I think we should give
+some better motivation/intuition about the 3 techniques presented
+in this section. Ideally it would have been to have separate experimental 
+results with each technique used just on its own, and see how much 
+improvement each technique brings. But since we don't have that,
+maybe you could just give some more explanations/intuition based
+on what you saw in the experiments, of why each technique works?}
 
 Based on our previous knowledge from load-based provisioning, we designed and implemented an algorithm which improves the accuracy of our scaling actions when hosting web applications. To achieve that, our algorithm relies on three simple mechanisms: the definition of weights to each metric included in the performance requirements, the use of flexible thresholds and the estimation of the workload trend. 
 
 %In order to handle temporal bursty workload, we designed and implemented a predictive and reactive algorithm by relying on
 \vspace{2mm}
 
+\corina{I think the focus of this paragraph should not be to explain 
+why we use multiple metrics instead of one (because the naive algorithm
+also uses multiple metrics) but why there are weights assigned to the
+metrics. Does this bring better performance/accuracy? Also another
+possible advantage of weights is that it can make the algorithm
+more generic -- e.g. we can use another set of metrics for other
+applications and let the user configure the weights.}
 \textbf{Weighted metrics:} Traditional algorithms would scale out and back whenever a system-level metric exceeds its beforehand defined threshold range. Nevertheless,  through the definition of weight values to application and system metrics, our algorithm takes into consideration its weight when making scaling decisions. More precisely, when hosting web applications, our algorithm associates weights in an ascending order to the following metrics: request rate, CPU usage and response time. Accordingly the response time has a higher weight than the request rate, since higher values in the response time rapidly indicate the existence of a performance degradation in a web application. As detailed in Section~\ref{wikipedia}, scaling decisions only make based on the request rate can incur errors by under- or over-provisioning  a web application, due to the large diversity in the complexity of the requests~\cite{singh_autonomic_2010}.
 
 %High values in the request rate cannot always indicate that an application is becoming overloaded, due to the large diversity in the complexity of the requests.
@@ -193,7 +207,12 @@ Estimate historical workload trends (last $\sim$30min), \emph{td}\;
 \label{history_prov}
 \end{algorithm}
 
-
+\corina{I think here there should be explained better the usage and
+intuition behind s\_in and s\_out. They are used as extra conditions
+for scaling out and back, but I'm not sure I understand exactly when
+they play a role: if the response time exceeds the reactive threshold,
+in what situations can the extra condition with s\_in and s\_out prevent
+scaling out? Also, are s\_in and s\_out ever reset or decremented?}
 \textbf{Flexible thresholds:} This algorithm uses two levels of threshold ranges for each metric: \emph{predictive} and \emph{reactive}. As shown on Figure~\ref{flexibleThresholds}, there are two "head rooms" between the SLO (Service Level Objective) threshold (performance requirements pre-defined by the user) and the flexible thresholds.  First, the head-room $H_1$ is between the predictive threshold and the reactive thresholds, and is intended to alert of possible workload alterations in advance.  Thereby, when the system performance exceeds the predictive ranges, there is an increment in the chances of scaling actions will be triggered to tackle future SLO violations. The second head-room $H_2$ comprises between the SLO and reactive thresholds is used to trigger scaling actions. Performance values exceeding the reactive threshold launch scaling operations if other conditions are also satisfied. As an example of flexible thresholds for the CPU-usage, we established a predictive range comprised between 30\% and 70\% , and a reactive comprised between 20\% and 80\%.  
 
 \begin{figure}
@@ -204,6 +223,14 @@ Estimate historical workload trends (last $\sim$30min), \emph{td}\;
 \label{flexibleThresholds}
 \end{figure}
 
+\corina{Are the terms ``constant'' and ``temporal'' alteration normally
+used in trend estimation, or are they terms that you defined yourself?
+In the second case I think we should mention something like ``we define constant alteration as...''.  
+And about flash crowds: from what I know, flash crowds last usually longer
+(in the order of hours) and we do want the system to provision extra
+resources in such a case. So if there is a spike of high workload that
+lasts for 10-15 minutes, I don't think we should call it a flash crowd --
+maybe just spike or fluctuation or something like this.}
 \textbf{Workload's trend estimation:} Nowadays, there is a wide literature on mathematical models that try to predict future alterations in web application's workload. However, the workload mix and network traffic of web applications make more difficult to provide accurate predictions using these models. Besides, the complexity of these models sometimes prevent its integration into real auto scaling systems. To design a robust and simple provisioning system, we decided to use a feedback mechanism that analyzes the behavior of the system performance during an interval of time. An exhaustive analysis of the monitoring data during a small interval of time (approx. during the last 30min) provides enough information to detect the workload's trend, and thereby to classify the type of workload alteration as \emph{constant} or \emph{temporal}. Obviously, only \emph{constant} variations may trigger scaling actions to avoid frequent fluctuations in the system performance caused by short and sudden \emph{temporal} variations (flash crowds), as we will detail in Section~\ref{experiments}. Note that, the workload trend estimation is not the trigger of this algorithm, but one more mechanism in it. So, it could be also calculated by using mathematical model such linear regression, kernel canonical correlation, and so on.
 
 %In order to take scaling decisiong using the feedback algorithm we now collect application-specific metrics for our measurements, evaluate the %evolution of the application workload avoiding an excessive reactive behavior, and handle threshold values that helps to predict possible SLA violations. 
