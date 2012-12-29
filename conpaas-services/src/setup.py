@@ -1,12 +1,10 @@
 #!/usr/bin/env python
 
-import os
-
 from setuptools import setup, find_packages
 from setuptools.command import sdist
 del sdist.finders[:]
 
-CPSVERSION = os.getenv('CPSVERSION')
+CPSVERSION = '1.1.0-rc2'
 
 long_description = """
 ConPaaS: an integrated runtime environment for elastic Cloud applications 

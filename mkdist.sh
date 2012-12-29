@@ -6,7 +6,7 @@ then
     exit 1
 fi
 
-export CPSVERSION="$1"
+CPSVERSION="$1"
 
 # prepare director's contents
 rm -rf conpaas-director/conpaas
@@ -24,6 +24,7 @@ mv conpaas-services/ConPaaS.tar.gz conpaas-director
 for d in "conpaas-client" "conpaas-services/src"
 do
     cd $d 
+    sed -i s/'^CPSVERSION =.*'/"CPSVERSION = \'$CPSVERSION\'"/ setup.py
     python setup.py clean > /dev/null
     python setup.py sdist > /dev/null 2>&1
     python setup.py clean > /dev/null
@@ -31,7 +32,9 @@ do
 done
 
 # build cpsdirector
-cd conpaas-director && make source > /dev/null
+cd conpaas-director 
+sed -i s/'^CPSVERSION =.*'/"CPSVERSION = \'$CPSVERSION\'"/ setup.py
+make source > /dev/null
 cd ..
 
 # build cpsfrontend
