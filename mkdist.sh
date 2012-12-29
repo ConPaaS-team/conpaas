@@ -34,6 +34,12 @@ done
 cd conpaas-director && make source > /dev/null
 cd ..
 
+# build cpsfrontend
+cp -a conpaas-frontend cpsfrontend-$CPSVERSION
+find cpsfrontend-$CPSVERSION -type d -name .svn | xargs rm -rf
+tar cfz cpsfrontend-$CPSVERSION.tar.gz cpsfrontend-$CPSVERSION
+rm -rf cpsfrontend-$CPSVERSION
+
 for f in `find conpaas-{client,director,services/src}/dist -type f -name \*.tar.gz` 
 do 
     mv $f . 
