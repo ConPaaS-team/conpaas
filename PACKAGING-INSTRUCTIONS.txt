@@ -1,9 +1,10 @@
-To create a tarball for this svn copy, run the mkpackage.sh script inside this directory (trunk).
+To create a tarball for this svn copy, run the mkdist.sh script inside this
+directory (trunk).
 
-This script requires one argument, i.e. the name of the release.
+This script requires one argument, i.e. the release number.
 
 Example:
   
-   ./mkpackage.sh ConPaaS-1.0.0-rc1
+   ./mkdist.sh 1.1.0-rc1
 
-   You will obtain the archive ConPaaS-1.0.0-rc1.tar.gz inside this directory 
+You will obtain the ConPaaS tarballs inside this directory 
