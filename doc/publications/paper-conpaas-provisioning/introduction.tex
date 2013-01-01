@@ -60,7 +60,7 @@
 
 \lettrine{O}{ne of} the major innovations provided by Cloud computing
 platforms is their pay-per-use model where applications can request
-and release resources at any time according totheir needs --- and pay
+and release resources at any time according to their needs --- and pay
 only for the resources they actually used. This business model is
 particularly favorable for application domains where workloads vary
 widely over time, such as the domain of Web applications.
@@ -82,14 +82,22 @@ available.
 
 Faced with this difficult scientific challenge, the academic community
 has proposed a wide range of sophisticated resource provisioning
-algorithms~\cite{xxx,yyy,zzz}. However, we observe a wide discrepancy
-between these academic propositions and the very simple techniques
-actually used by the cloud industry where provisioning decisions are
-usually triggered by lower/upper thresholds on resource
-utilization. We postulate three possible reasons why sophisticated
+algorithms~\cite{xxx,yyy,zzz}. 
+%However, we observe a wide discrepancy
+%between these academic propositions and the very simple techniques
+%actually used by the cloud industry where provisioning decisions are
+%usually triggered by lower/upper thresholds on resource
+%utilization. 
+However, we observe a discrepancy between these academic propositions
+and the simple mechanisms that are currently available to  
+cloud customers. These mechanisms are usually based on defining 
+lower or upper thresholds on resource utilization, and reaching one of the
+thresholds will trigger a resource provisioning action. 
+
+We postulate three possible reasons why sophisticated
 techniques have not been more widely deployed: \emph{(i)} the gains of
-using sophisticated provisioning strategies are too low for anyone to
-bother; \emph{(ii)} implementing these techniques is a difficult
+using sophisticated provisioning strategies are too low to be worth
+the effort; \emph{(ii)} implementing these techniques is a difficult
 exercise, which is why real cloud systems rely on simpler techniques;
 and \emph{(iii)} academic approaches mostly focus on unrealistic
 evaluations using simple applications and artificial
@@ -102,9 +110,30 @@ wang_appraise:_2009}. % By using real production applications, new
 % different execution times between requests, which increase the
 % difficulties to make scaling decisions.
 
+\corina{I reformulated this because I think it is better to be more
+constructive and state that we not only look for the cause, but
+we also try to see if there is a solution; also, it could be that
+more than one of these 3 possible causes are real}
+This paper aims to investigate which of these possible causes 
+are the real problems, and to find whether it is possible to
+implement an automatic scaling algorithm which provides better 
+results than the simple ones without being too complex.
+%This paper aims to identify the real cause of why cloud providers use simpler provisioning techniques.
+We do this by implementing a provisioning system in realistic 
+conditions, and reporting on \emph{(i)} how hard implementation 
+was; and \emph{(ii)} potential gains from using this  technique 
+compared to the simple solution. To achieve this, we designed 
+and implemented a resource provisioning technique in ConPaaS, 
+an open source platform-as-a-service environment for hosting 
+cloud applications~\cite{conpaasIC}. Our technique uses several
+levels of thresholds to predict future performance degradations, 
+workload trend detection to better handle traffic spikes
+and dynamic load balancing weights to handle resources heterogeneity. 
+To test our system in realistic settings, we deployed a copy of 
+Wikipedia and replayed a fraction of the real access traces to
+its official web site.
+%For the sake of comparison and discussion, we deployed the MediaWiki application and used real access traces to validate our technique, opening doors to real implementation of promising auto-scaling systems.
 
-This paper aims to identify the real cause of why cloud providers use simpler provisioning techniques. We do this by implementing a provisioning system in realistic conditions, and reporting on \emph{(i)} how hard implementation was; and \emph{(ii)} potential gains from using the better technique as compared to a simple strawman. To achieve this, we designed and implemented a resource provisioning technique on ConPaaS, an open source platform-as-a-service environment for hosting cloud applications~\cite{conpaasIC}, based on a predictive and robust model. The resulting technique used different levels of thresholds to predict future performance degradations, workload trend detection methods to avoid flash crowds effects and dynamic load-balancing algorithms to handle the workload-mix. For the sake of comparison and discussion, we deployed the MediaWiki application and used real access traces to validate our technique, opening doors to real implementation of promising auto-scaling systems.
 
-
-Section~\ref{conpaas} introduces the ConPaaS runtime environment. Section~\ref{wikipedia} describes the MediaWiki application, its realistic benchmark, and the peculiarities of the Wikipedia workload-mix utilized to validate our system. Section~\ref{provisioning} focus on the different resource provisioning techniques implemented in ConPaaS. Section~\ref{experiments} details the experimental campaign and its results. Section~\ref{studies} discusses related works. Section~\ref{conclu} draws a conclusion.
+%Section~\ref{conpaas} introduces the ConPaaS runtime environment. Section~\ref{wikipedia} describes the MediaWiki application, its realistic benchmark, and the peculiarities of the Wikipedia workload-mix utilized to validate our system. Section~\ref{provisioning} focus on the different resource provisioning techniques implemented in ConPaaS. Section~\ref{experiments} details the experimental campaign and its results. Section~\ref{studies} discusses related works. Section~\ref{conclu} draws a conclusion.
 
