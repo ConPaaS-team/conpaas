@@ -54,11 +54,13 @@ wsgi_exec = find_executable('director.wsgi')
 conf_values = { 
     'hostname': hostname,
     'wsgi':     wsgi_exec,
-    'wsgidir':  os.path.dirname(wsgi_exec)
+    'wsgidir':  os.path.dirname(wsgi_exec),
+    'port':     5555
 }
 
 conf = """
-<VirtualHost *>
+Listen %(port)s
+<VirtualHost *:%(port)s>
     ServerName %(hostname)s
 
     WSGIDaemonProcess director user=www-data group=www-data threads=5
@@ -98,6 +100,6 @@ open('/etc/apache2/sites-available/conpaas-director', 'w').write(conf)
 conffile = open(common.CONFFILE).read()
 if 'DIRECTOR_URL' not in conffile:
     # append DIRECTOR_URL
-    open(common.CONFFILE, 'a').write("\nDIRECTOR_URL = https://" + hostname)
+    open(common.CONFFILE, 'a').write("\nDIRECTOR_URL = https://%s:%s" % (hostname, conf_values['port']))
 
 db.create_all()
