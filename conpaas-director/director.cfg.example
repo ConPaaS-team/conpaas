@@ -82,7 +82,7 @@ CERT_DIR = /etc/cpsdirector/certs
 # A unique name used in the service to specify different clouds. 
 # For Amazon EC2, 'ec2' is a good value. 
 # For OpenNebula, use the OCCI server hostname.
-# HOSTNAME = 
+# CLOUDNAME = 
 
 # The accountable time unit. Different clouds charge at different
 # frequencies (e.g. Amazon charges per hour = 60 minutes)

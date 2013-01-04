@@ -216,7 +216,7 @@ if __name__ == '__main__':
 
   dict = {
     # a unique name used in the service to specify different clouds
-    'hostname': config_get_default(config_parser, 'iaas', 'HOSTNAME', hostname),
+    'hostname': config_get_default(config_parser, 'iaas', 'CLOUDNAME', hostname),
 
     # the accountable time unit. Different clouds charge at different
     # frequencies (e.g. Amazon charges per hour = 60 minutes)
