@@ -268,10 +268,11 @@ section describes the process of setting up a ConPaaS director on a Debian (or
 Ubuntu) system.
 
 \begin{enumerate}
-\item Install the following packages: build-essential, python-setuptools
-  python-dev, libapache2-mod-wsgi, and libcurl4-openssl-dev
+\item Install the required packages: 
+
+\texttt{apt-get install build-essential python-setuptools python-dev libapache2-mod-wsgi libcurl4-openssl-dev}
 \item Download \url{http://www.conpaas.eu/dl/cpsdirector-1.1.0.tar.gz} and uncompress it
-\item Run make install as root
+\item Run "\texttt{make install}" as root
 \item Edit /etc/cpsdirector/director.cfg providing your cloud configuration
 \end{enumerate}
 
@@ -279,7 +280,8 @@ The installation process will create the Apache configuration for the ConPaaS
 director in /etc/apache2/sites-available/conpaas-director. Please inspect this
 file and modify it according to your needs.
 
-Then, run the following commands to enable the newly created configuration:
+Then, run the following commands as root to enable the newly created
+configuration:
 
 \begin{verbatim}
 a2enmod ssl
