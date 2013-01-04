@@ -100,6 +100,9 @@ CERT_DIR = /etc/cpsdirector/certs
 # OpenNebula #
 ##############
 
+# Uncomment the following directives and set them to the appropriate values if
+# you want to use ConPaaS on OpenNebula. 
+
 # DRIVER = opennebula
 
 # The image ID (an integer). You can list the registered OpenNebula images with
