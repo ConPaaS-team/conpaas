@@ -20,9 +20,9 @@
 \label{sec:overview}
 
 \xlink{ConPaaS}{http://www.conpaas.eu} is composed of two parts: a web service,
-called \textbf{cpsdirector}, and a web front-end. The web service implements a
-restful API which is used by the ConPaaS command line tools and by the web
-front-end.
+called \textbf{cpsdirector}, and a web front-end called \textbf{cpsfrontend}.
+The web service implements a restful API which is used by the ConPaaS command
+line tools and by the web front-end.
 
 Both the director and the front-end can run inside or outside the cloud.
 ConPaaS services are designed to run either in an OpenNebula cloud
@@ -42,6 +42,89 @@ Section~\ref{sec:oneimage} describes how to create a ConPaaS image for OpenNebul
 \item Install the ConPaaS front-end and configure it to use your ConPaaS
   director as explained in Section~\ref{sec:frontend}.
 \end{enumerate}
+
+\section{Install and configure the ConPaaS Director}
+\label{sec:director}
+
+The ConPaaS Director is a web service that allows users to manage their ConPaaS
+services. Users can create, configure and terminate services through it. This
+section describes the process of setting up a ConPaaS director on a Debian (or
+Ubuntu) system.
+
+\begin{enumerate}
+\item Install the required packages: 
+
+\texttt{apt-get install build-essential python-setuptools python-dev libapache2-mod-wsgi libcurl4-openssl-dev}
+\item Download \url{http://www.conpaas.eu/dl/cpsdirector-1.1.0.tar.gz} and uncompress it
+\item Run "\texttt{make install}" as root
+\item Edit \texttt{/etc/cpsdirector/director.cfg} providing your cloud
+ configuration. Among other things, you will have to choose an Amazon Machine
+ Image (AMI) in case you want to use ConPaaS on Amazon EC2, or an OpenNebula
+ image if you want to use ConPaaS on OpenNebula. Section~\ref{sec:ec2image}
+ explains how to use the Amazon Machine Images provided by the ConPaaS team, as
+ well as how to make your own images if you wish to do so. A description of how
+ to create an OpenNebula image suitable for ConPaaS is available in
+ Section~\ref{sec:oneimage}.
+\end{enumerate}
+
+The installation process will create an Apache VirtualHost for the ConPaaS
+director in \texttt{/etc/apache2/sites-available/conpaas-director}. There should
+be no need for you to modify such a file, unless its defaults conflict with your
+Apache configuration.
+
+Run the following commands as root to start your ConPaaS director for the first
+time:
+
+\begin{verbatim}
+a2enmod ssl
+a2ensite conpaas-director
+service apache2 restart
+\end{verbatim}
+
+If you experience any problems with the previously mentioned commands, it might
+be that the default VirtualHost created by the ConPaaS director installation
+process conflicts with your Apache configuration. The Apache Virtual Host
+documentation might be useful to fix those issues:
+\url{http://httpd.apache.org/docs/2.2/vhosts/}.
+
+\subsection{Important note on SSL certificates}
+ConPaaS uses SSL certificates in order to secure the communication between you
+and the director, but also to ensure that only authorized parties such as
+yourself and the various component of ConPaaS can interact with the system.
+
+It is therefore crucial that the SSL certificate of your director contains the
+proper information. In particular, the commonName field of the certificate
+should carry the public hostname of your frontend server. The installation
+procedure takes care of setting up such a field. However, should your director
+hostname change, please ensure you run the following commands:
+
+\begin{verbatim}
+sudo cpsconf.py
+sudo service apache2 restart
+\end{verbatim}
+
+\section{Setup the ConPaaS Frontend}
+\label{sec:frontend}
+
+The ConPaaS Frontend can be downloaded from
+\url{http://www.conpaas.eu/dl/cpsfrontend-1.1.0.tar.gz}.
+
+After having uncompressed it you should:
+
+\begin{itemize}
+\item Install the \texttt{libapache2-mod-php5} and \texttt{php5-curl} Debian packages
+\item Copy all the files contained in the \texttt{www} directory underneath your web server document root
+\item Copy \texttt{conf/main.ini} and \texttt{conf/welcome.txt} in your ConPaaS
+  Director configuration folder (\texttt{/etc/cpsdirector}). Modify those files to suit
+  your needs
+\item Create a \texttt{config.php} file in the web server directory where you have chosen to install the
+  frontend. Please refer to \texttt{config-example.php} for a detailed explaination of
+  all the configuration options. Note that \texttt{config.php} must contain the
+  \texttt{CONPAAS\_CONF\_DIR} option, pointing to the directory mentioned in the previous
+  step
+\end{itemize}
+
+At this point, your front-end should be working!
 
 \section{Using ConPaaS on Amazon EC2}
 \label{sec:ec2image}
@@ -259,116 +342,47 @@ OpenNebula cluster.
 
 \end{enumerate}
 
-\section{Install and configure the ConPaaS Director}
-\label{sec:director}
-
-The ConPaaS Director is a web service that allows users to manage their ConPaaS
-services. Users can create, configure and terminate services through it. This
-section describes the process of setting up a ConPaaS director on a Debian (or
-Ubuntu) system.
-
-\begin{enumerate}
-\item Install the required packages: 
-
-\texttt{apt-get install build-essential python-setuptools python-dev libapache2-mod-wsgi libcurl4-openssl-dev}
-\item Download \url{http://www.conpaas.eu/dl/cpsdirector-1.1.0.tar.gz} and uncompress it
-\item Run "\texttt{make install}" as root
-\item Edit /etc/cpsdirector/director.cfg providing your cloud configuration
-\end{enumerate}
-
-The installation process will create the Apache configuration for the ConPaaS
-director in /etc/apache2/sites-available/conpaas-director. Please inspect this
-file and modify it according to your needs.
-
-Then, run the following commands as root to enable the newly created
-configuration:
-
-\begin{verbatim}
-a2enmod ssl
-a2ensite conpaas-director
-service apache2 restart
-\end{verbatim}
-
-\subsection{Important note on SSL certificates}
-ConPaaS uses SSL certificates in order to secure the communication between you
-and the director, but also to ensure that only authorized parties such as
-yourself and the various component of ConPaaS can interact with the system.
-
-It is therefore crucial that the SSL certificate of your director contains the
-proper information. In particular, the commonName field of the certificate
-should carry the public hostname of your frontend server. The installation
-procedure takes care of setting up such a field. However, should your director
-hostname change, please ensure you run the following commands:
-
-\begin{verbatim}
-sudo cpsconf.py
-sudo service apache2 restart
-\end{verbatim}
-
-\section{Setup ConPaaS's Frontend}
-\label{sec:frontend}
-
-The ConPaaS Frontend can be downloaded from
-\url{http://www.conpaas.eu/dl/cpsfrontend-1.1.0.tar.gz}.
-
-After having uncompressed it you should:
-
-\begin{itemize}
-\item Install the libapache2-mod-php5 and php5-curl Debian packages
-\item Copy all the files contained in the \textbf{www} directory underneath your web server document root
-\item Copy \textbf{conf/main.ini} and \textbf{conf/welcome.txt} in your ConPaaS
-  Director configuration folder (/etc/cpsdirector). Modify those files to suit
-  your needs
-\item Create a config.php file in the web server directory where you have chosen to install the
-  frontend. Please refer to config-example.php for a detailed explaination of
-  all the configuration options. Note that config.php must contain the
-  CONPAAS\_CONF\_DIR option, pointing to the directory mentioned in the previous
-  step
-\end{itemize}
-
-At this point, your front-end should be working!
-
 \section{Miscellaneous}
 \label{sec:misc}
 
 \subsection{The credit system}
 
 The frontend is designed to maintain accounting of resources used by
-each user. When a new user is created, (s)he receives a number of
+each user. When a new user is created, she receives a number of
 credits as specified in the ``main.ini'' configuration file. Later on,
 one credit is subtracted each time a VM is executed for (a fraction
 of) one hour. The administrator can change the number of credits by
 directly editing the frontend's database. 
 
-\subsection{Application sandboxing}
-
-The default ConPaaS configuration creates strong sandboxing so that
-applications cannot open sockets, access the file system, execute
-commands, etc. This makes the platform relatively secure against
-malicious applications. On the other hand, it strongly restricts the
-actions that ConPaaS applications can do. To reduce these security
-measures to a more usable level, you need to edit two files:
-
-\begin{itemize}
-\item To change restrictions applied to PHP applications, edit file
-  \verb+web-servers/etc/fpm.tmpl+ to change the list of
-  \verb+disable\_functions+. Do not forget to recreate a file
-  \verb+ConPaaSWeb.tar.gz+ out of the entire \verb+web-servers+
-  directory, and to copy it at the URL specified in file
-  \verb+frontend/conf/manager-user-data+.
-\item To change restrictions applied to Java applications, edit file
-  ``web-servers/etc/tomcat-catalina.policy''. Do not forget to
-  recreate a file ConPaaSWeb.tar.gz out of the entire ``web-servers''
-  directory, and to copy it at the URL specified in file
-  ``frontend/conf/manager-user-data''.
-\end{itemize}
+%\subsection{Application sandboxing}
+%
+%The default ConPaaS configuration creates strong sandboxing so that
+%applications cannot open sockets, access the file system, execute
+%commands, etc. This makes the platform relatively secure against
+%malicious applications. On the other hand, it strongly restricts the
+%actions that ConPaaS applications can do. To reduce these security
+%measures to a more usable level, you need to edit two files:
+%
+%\begin{itemize}
+%\item To change restrictions applied to PHP applications, edit file
+%  \verb+web-servers/etc/fpm.tmpl+ to change the list of
+%  \verb+disable_functions+. Do not forget to recreate a file
+%  \verb+ConPaaSWeb.tar.gz+ out of the entire \verb+web-servers+
+%  directory, and to copy it at the URL specified in file
+%  \verb+frontend/conf/manager-user-data+.
+%\item To change restrictions applied to Java applications, edit file
+%  ``web-servers/etc/tomcat-catalina.policy''. Do not forget to
+%  recreate a file ConPaaSWeb.tar.gz out of the entire ``web-servers''
+%  directory, and to copy it at the URL specified in file
+%  ``frontend/conf/manager-user-data''.
+%\end{itemize}
 
 \section{About this document}
 \label{sec:about}
 
 
 \begin{verbatim}
-Copyright (c) 2010-2012, Contrail consortium.
+Copyright (c) 2010-2013, Contrail consortium.
 All rights reserved.
 
 Redistribution and use in source and binary forms, 
