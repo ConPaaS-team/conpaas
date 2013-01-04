@@ -28,7 +28,7 @@ if __name__ == "__main__":
 
 
     try:
-        create_user(username, "", "", email, "", password, 120)
+        create_user(username, "", "", email, "", password, 50)
     except sqlalchemy.exc.IntegrityError:
         print "User %s already present" % username
 
