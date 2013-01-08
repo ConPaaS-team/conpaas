@@ -208,7 +208,8 @@ cat <<EOF > $ROOT_DIR/boot/grub/device.map
 (hd0,1) $LOOP_DEV_P
 EOF
 
-#chroot $ROOT_DIR grub-mkconfig -o /boot/grub/grub.cfg
+chroot $ROOT_DIR grub-mkconfig -o /boot/grub/grub.cfg
+
 cecho "Writing /boot/grub/grub.cfg"
 cat <<EOF > $ROOT_DIR/boot/grub/grub.cfg
 set default=0
