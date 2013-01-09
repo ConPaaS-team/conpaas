@@ -172,11 +172,11 @@ in the left-side menu. Search the public AMIs for a Debian Squeeze EBS AMI and
 start an instance of it. If you are going to use micro-instances then the AMI
 with ID \verb+ami-e0e11289+ in the US East zone could be a good choice.
 
-\item Upload the \textit{conpaas-services/scripts/create\_vm/ec2-setup-new-vm-image.sh} script to the instance:
+\item Upload the \textit{conpaas/scripts/create\_vm/ec2-setup-new-vm-image.sh} script to the instance:
   \begin{verbatim}
     chmod 0400 yourpublickey.pem
     scp -i yourpublickey.pem \
-      conpaas-services/scripts/create_vm/ec2-setup-new-vm-image.sh \
+      conpaas/scripts/create_vm/ec2-setup-new-vm-image.sh \
       root@instancename.com:
   \end{verbatim}
 
@@ -231,7 +231,7 @@ OpenNebula to run ConPaaS. You can skip this section if you plan to
 deploy ConPaaS over Amazon Web Services.
 
 To create an image for OpenNebula you can execute the script\\
-\textit{conpaas-services/scripts/create\_vm/opennebula-create-new-vm-image.sh}
+\textit{conpaas/scripts/create\_vm/opennebula-create-new-vm-image.sh}
 in any 64-bit Debian or Ubuntu machine. Please note that you will need to have
 root privileges on such a system. In case you do not have root access to a
 Debian or Ubuntu machine please consider installing a virtual machine using
@@ -250,7 +250,7 @@ the cloud.
   sudo apt-get install grub2
   \end{verbatim}
 \item Edit the
-  \textit{conpaas-services/scripts/create\_vm/opennebula-create-new-vm-image.sh} script
+  \textit{conpaas/scripts/create\_vm/opennebula-create-new-vm-image.sh} script
   if necessary: there are two sections in the script that you might need
   to customize with parameters that are specific to your system. These
   sections are marked by comment lines containing the text "TO CUSTOMIZE:".
