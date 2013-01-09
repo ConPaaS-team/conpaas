@@ -68,19 +68,15 @@ function install_deb() {
         nginx tomcat6-user memcached \
         make gcc g++ erlang ant libxslt1-dev yaws subversion git \
         xvfb xinit unzip
-  update-rc.d -f memcached remove
-  update-rc.d -f nginx remove
-  /etc/init.d/memcached stop
-  /etc/init.d/nginx stop
-  update-rc.d -f yaws remove
-  /etc/init.d/yaws stop
+  update-rc.d memcached disable
+  update-rc.d nginx disable
+  update-rc.d yaws disable
 
   # pre-accept sun-java6 licence
   echo "debconf shared/accepted-sun-dlj-v1-1 boolean true" | debconf-set-selections
   DEBIAN_FRONTEND=noninteractive apt-get -y --force-yes --no-install-recommends --no-upgrade \
         install mysql-server sun-java6-jdk
-  update-rc.d -f mysql remove
-  /etc/init.d/mysql stop
+  update-rc.d mysql disable
 
   # add dotdeb repo for php fpm
   echo "deb http://packages.dotdeb.org stable all" >> /etc/apt/sources.list
@@ -90,7 +86,7 @@ function install_deb() {
               php5-mcrypt php5-mysql php5-odbc \
               php5-pgsql php5-sqlite php5-sybase php5-xmlrpc php5-xsl \
               php5-adodb php5-memcache php5-gd
-  update-rc.d -f php5-fpm remove
+  update-rc.d php5-fpm disable
 
   # remove dotdeb repo
   sed --in-place 's%deb http://packages.dotdeb.org stable all%%' /etc/apt/sources.list
@@ -140,12 +136,12 @@ function install_deb() {
     hadoop-0.20-secondarynamenode hadoop-0.20-jobtracker  \
     hadoop-0.20-tasktracker hadoop-pig hue-common  hue-filebrowser \
     hue-jobbrowser hue-jobsub hue-plugins hue-server dnsutils
-  update-rc.d -f hadoop-0.20-namenode remove
-  update-rc.d -f hadoop-0.20-datanode remove
-  update-rc.d -f hadoop-0.20-secondarynamenode remove
-  update-rc.d -f hadoop-0.20-jobtracker remove
-  update-rc.d -f hadoop-0.20-tasktracker remove
-  update-rc.d -f hue remove
+  update-rc.d hadoop-0.20-namenode disable
+  update-rc.d hadoop-0.20-datanode disable
+  update-rc.d hadoop-0.20-secondarynamenode disable
+  update-rc.d hadoop-0.20-jobtracker disable
+  update-rc.d hadoop-0.20-tasktracker disable
+  update-rc.d hue disable
   # create a default config dir
   mkdir -p /etc/hadoop-0.20/conf.contrail
   update-alternatives --install /etc/hadoop-0.20/conf hadoop-0.20-conf /etc/hadoop-0.20/conf.contrail 99
@@ -157,7 +153,7 @@ function install_deb() {
   wget -O - http://download.opensuse.org/repositories/home:/scalaris/Debian_6.0/Release.key 2>/dev/null | apt-key add -
   apt-get -f -y update
   apt-get -f -y --no-install-recommends --no-upgrade install scalaris screen
-  update-rc.d -f scalaris remove
+  update-rc.d scalaris disable
   # remove scalaris repo
   sed --in-place 's%deb http://download.opensuse.org/repositories/home:/scalaris/Debian_6.0 /%%' /etc/apt/sources.list
 
@@ -166,9 +162,9 @@ function install_deb() {
   wget -O - http://download.opensuse.org/repositories/home:/xtreemfs:/unstable/Debian_6.0/Release.key 2>/dev/null | apt-key add -
   apt-get -f -y update
   apt-get -f -y --no-install-recommends --no-upgrade install xtreemfs-server xtreemfs-client
-  update-rc.d -f xtreemfs-osd remove
-  update-rc.d -f xtreemfs-mrc remove
-  update-rc.d -f xtreemfs-dir remove
+  update-rc.d xtreemfs-osd disable
+  update-rc.d xtreemfs-mrc disable
+  update-rc.d xtreemfs-dir disable
   # remove xtreemfs repo
   sed --in-place 's%deb http://download.opensuse.org/repositories/home:/xtreemfs:/unstable/Debian_6.0 /%%' /etc/apt/sources.list
   apt-get -f -y update
