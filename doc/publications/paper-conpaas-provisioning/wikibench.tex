@@ -1,8 +1,21 @@
-To evaluate the behavior and accuracy of ConPaaS when hosting web applications, we prepared a realistic and complex enough scenario to assess any PaaS. In particular, we deployed the Wikipedia web application called MediaWiki~\cite{mediawiki}, and used a web hosting benchmark called WikiBench~\cite{wikibench}. 
+%To evaluate the behavior and accuracy of ConPaaS when hosting web applications, we prepared a realistic and complex enough scenario to assess any PaaS. In particular, we deployed the Wikipedia web application called MediaWiki~\cite{mediawiki}, and used a web hosting benchmark called WikiBench~\cite{wikibench}. 
 
+To evaluate the resource provisioning algorithms implemented in ConPaaS,
+we prepared a realistic testing scenario: we used a copy of Wikipedia as
+the web application, and replayed a fraction of the access traces to
+Wikipedia's official web site.  
 %In this section, we describe our scenario in detail.
 
-The architecture of the Wikipedia website uses a http-proxy, a http-web server, a database and one or more PhP servers. To deploy the Wikipedia services on ConPaaS, we composed two different services: the PHP web hosting and MySQL service. In the MySQL service, we installed a complete copy of English Wikipedia database which contains about 30GB in Wikipedia articles. In the PhP service, an initial configuration was composed of one Nginx http-proxy, one Apache server, and one or more PhP (FastCGI Process Manager) servers. Each PhP server hosts the MediaWiki application which is the main component of this system. 
+Wikipedia uses MediaWiki~\cite{mediawiki}, a PHP-based wiki software 
+package.
+%The architecture of the Wikipedia website uses a http-proxy, a http-web server, a database and one or more PhP servers. 
+To deploy the Wikipedia services on ConPaaS, we composed two different services: the PHP web hosting and MySQL service. In the MySQL service, we installed a complete copy of the English Wikipedia database from 2008, which contains about 30GB in Wikipedia articles.
+In the PHP service, the configuration was composed of one load balancer,
+one static web server and one or more PHP servers. ConPaaS uses nginx
+as static web server and also as load balancer (the HttpProxy module
+of nginx). The PHP requests are handled through PHP-FPM (PHP FastCGI
+Process Manager).
+%In the PhP service, an initial configuration was composed of one Nginx http-proxy, one Apache server, and one or more PhP (FastCGI Process Manager) servers. Each PhP server hosts the MediaWiki application which is the main component of this system. 
 
 
 %\subsection*{Characteristics of its workload}
