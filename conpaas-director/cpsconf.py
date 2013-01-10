@@ -119,3 +119,6 @@ if 'DIRECTOR_URL' not in conffile:
     open(common.CONFFILE, 'a').write("\nDIRECTOR_URL = https://%s:%s" % (hostname, conf_values['port']))
 
 db.create_all()
+
+confdir = common.config.get('conpaas', 'CONF_DIR')
+common.chown(os.path.join(confdir, 'director.db'), 'www-data', 'www-data')
