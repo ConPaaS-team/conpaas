@@ -5,6 +5,8 @@ from cpsdirector import common, db
 from conpaas.core.https import x509
 
 import os
+import sys
+import random
 import platform
 
 from distutils.spawn import find_executable
@@ -22,8 +24,16 @@ open(os.path.join(CERT_DIR, 'ca_key.pem'), 'w').write(x509.key_as_pem(cakey))
 req = x509.create_x509_req(cakey, CN='CA', emailAddress='info@conpaas.eu', 
     O='ConPaaS')
 
+five_years = 60 * 60 * 24 * 365 * 5
+
 # create ca certificate, valid for five years
-cacert = x509.create_cert(req, req, cakey, 1, 0, 60 * 60 * 24 * 365 * 5)
+cacert = x509.create_cert(
+    req=req, 
+    issuer_cert=req, 
+    issuer_key=cakey, 
+    serial=random.randint(1, sys.maxint), 
+    not_before=0, 
+    not_after=five_years)
 
 # save ca_cert.pem to filesystem
 open(os.path.join(CERT_DIR, 'ca_cert.pem'), 'w').write(
@@ -40,7 +50,13 @@ req = x509.create_x509_req(dkey, CN=hostname, emailAddress='info@conpaas.eu',
     O='ConPaaS', role='frontend')
 
 # create director certificate
-dcert = x509.create_cert(req, cacert, cakey, 1, 0, 60 * 60 * 24 * 365 * 5)
+dcert = x509.create_cert(
+    req=req, 
+    issuer_cert=cacert, 
+    issuer_key=cakey, 
+    serial=random.randint(1, sys.maxint), 
+    not_before=0, 
+    not_after=five_years)
 
 # save cert.pem to filesystem
 open(os.path.join(CERT_DIR, 'cert.pem'), 'w').write(x509.cert_as_pem(dcert))
