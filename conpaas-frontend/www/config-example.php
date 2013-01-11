@@ -1,6 +1,7 @@
 <?php
-// The URL of your ConPaaS director installation
-const DIRECTOR_URL = 'https://director.yourdomain.com';
+// The URL of your ConPaaS director installation. Do not forget to include the
+// port number (5555 by default)
+const DIRECTOR_URL = 'https://director.yourdomain.com:5555';
 
 // The CONPAAS_CONF_DIR variable to point to the directory containing your
 // frontend's configuration files.
