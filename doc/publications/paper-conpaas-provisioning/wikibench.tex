@@ -20,20 +20,45 @@ Process Manager).
 
 %\subsection*{Characteristics of its workload}
 
-In order to benchmark ConPaaS when hosting the Wikipedia services, we used the WikiBench research tool which generates realistic benchmarks with adaptable traffic properties. WikiBench has a number of advantages compared to the existing benchmark tools for web applications. First of all, Wikibench traces add a high degree of realism, since it is entirely based on the Wikipedia software and data. Indeed, the benchmark workloads are generated based on real access traces from the WikiMedia Foundation. These traces contain detailed  traffic logs of requests made to Wikipedia by its users. As an example, in Figure~\ref{workload}, we show the workload of one trace, as the number of PhP requests per minute during approximately one day.  In this paper, we focus on the behavior of PhP requests which makes particularly difficult to predict their execution times using auto-scaling sytems. 
+%In order to benchmark ConPaaS when hosting the Wikipedia services, we used the WikiBench research tool which generates realistic benchmarks with adaptable traffic properties. WikiBench has a number of advantages compared to the existing benchmark tools for web applications. First of all, Wikibench traces add a high degree of realism, since it is entirely based on the Wikipedia software and data. Indeed, the benchmark workloads are generated based on real access traces from the WikiMedia Foundation. These traces contain detailed  traffic logs of requests made to Wikipedia by its users. As an example, in Figure~\ref{workload}, we show the workload of one trace, as the number of PhP requests per minute during approximately one day.  In this paper, we focus on the behavior of PhP requests which makes particularly difficult to predict their execution times using auto-scaling sytems. 
+
+In order to benchmark ConPaaS when hosting the Wikipedia services, we
+used Wikibench~\cite{wikibench}, a tool developed by our group for 
+benchmarking Wikipedia servers. Wikibench replays Wikipedia access
+traces or smaller samples of the traces, providing various sampling
+mechanisms. We used anonymized Wikipedia access traces, which are 
+published by the WikiMedia foundation, and for our experiments we
+replayed a sample of 10\% from the traces. The traces contain two 
+types of requests: requests for static pages or files, and dynamic
+PHP requests. The static requests are executed much faster in comparison
+with the dynamic requests, so in this paper we will discuss mostly
+the dynamic requests, which pose more performance problems.  
 
 %Since the original Wikipedia traces can reach peaks of 50000 or 60000 reqs./secs, WikiBench uses the original 10\% sample of these traces which can generate a workload up to about 5000 reqs./secs.
 
-Even though we use the original 10\% sample of these traces, they are very heterogeneous in terms of workload-mix. To illustrate this heterogeneity, in Figure~\ref{phpRespTimeDispersion}, we present the distribution of the response time values for the PhP requests during the execution of the trace shown in Figure~\ref{workload}. A first observation shows an irregular dispersion of the response time values in two levels: (i) a long-term level on which the values vary along the trace execution without following any clear pattern; and (ii) a short-term level on which the response times widely diverge under short period of time such as one minute. There are two reasons for this dispersion: (i) PhP pages often require database queries; (ii) PhP pages need third-party static files. These issues limits the utilization of provisioning techniques which scale applications only based on current response values. Note that, to obtain response values totally independent of any scaling decisions, we utilized static provisioning to execute this trace. 
+\corina{I wouldn't say the traces are heterogeneous in terms of workload mix.
+Usually workload mix refers to different types of requests -- e.g. log in,
+read article, update article etc. In our case it's most of the time the same
+type of request (read an article) but with articles of various complexity.}
+%Even though we use the original 10\% sample of these traces, they are very heterogeneous in terms of workload-mix. To illustrate this heterogeneity, in Figure~\ref{phpRespTimeDispersion}, we present the distribution of the response time values for the PhP requests during the execution of the trace shown in Figure~\ref{workload}. A first observation shows an irregular dispersion of the response time values in two levels: (i) a long-term level on which the values vary along the trace execution without following any clear pattern; and (ii) a short-term level on which the response times widely diverge under short period of time such as one minute. There are two reasons for this dispersion: (i) PhP pages often require database queries; (ii) PhP pages need third-party static files. These issues limits the utilization of provisioning techniques which scale applications only based on current response values. Note that, to obtain response values totally independent of any scaling decisions, we utelementsilized static provisioning to execute this trace. 
+
+As an example, in Figure~\ref{workload}, we show the PHP workload 
+sampled from one trace, as the number of PHP requests per minute 
+during approximately one day. One aspect that we noticed about the 
+workload is that the requests are very heterogeneous in complexity.
+To illustrate this heterogeneity, in Figure~\ref{phpRespTimeDispersion}
+we present the distribution of the response time values for the PHP 
+requests during the execution of the trace shown in Figure~\ref{workload}.
+The results were obtained using a fixed number of 3 (?) PHP servers,
+and show an irregular dispersion of the response time. The main reason
+for this dispersion is that the Wikipedia articles vary a lot in complexity,
+requiring different amounts of information and of items that
+need to be retrieved from the database. 
+
 
 Similarly, as depicted by Figure~\ref{workload} and Figure~\ref{phpRespTimeDispersion}, there is not any correlation between the PhP request volumes and their response times. More precisely in Figure~\ref{phpRespTimeDispersion}, the highest response time values obtained in the interval of time 600min. match up with a drop in the request rate during the same interval in Figure~\ref{workload}. Therefore, any provisioning technique that makes decisions based on the request rate can incur errors by under- or over-provisioning an application, which can reduces the efficiency of the scaling actions. 
 
-%\corina{Are you sure the results from Figures 3 and 4 are relevant? In
-%figure 3, the response time might be higher for a lower request rate
-%because there are fewer backend VMs provisioned when the request rate
-%is low?}
 
-%\hector{Note that, static provisioning was utilized to execute this trace in order to get response values totally independent of any scaling %decisions. I executed this experiments using 4VMs for the backends so it was over-provisioned. 
 %I got the expected behavior different response time values independently of the req rate at each time. }
 
 %\fixme{ OTHER POSSIBILITY: More precisely in Figure~\ref{reqRate}, the highest response time values obtained during the trace execution, %match up with low levels of requests rate. Therefore, ...  }
