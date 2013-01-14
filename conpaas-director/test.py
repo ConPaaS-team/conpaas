@@ -256,7 +256,7 @@ class DirectorTest(Common):
         self.assertEquals({ 'error': True }, simplejson.loads(response.data))
 
         user = cpsdirector.get_user(TEST_USER_DATA['username'], TEST_USER_DATA['password'])
-        self.assertEquals(120, user.credit)
+        self.assertEquals(119, user.credit)
 
         # Right sid and enough credit
         data = { 'sid': 1, 'decrement': 1, 'uid': 1 }
@@ -264,7 +264,7 @@ class DirectorTest(Common):
         self.assertEquals({ 'error': False }, simplejson.loads(response.data))
 
         user = cpsdirector.get_user(TEST_USER_DATA['username'], TEST_USER_DATA['password'])
-        self.assertEquals(119, user.credit)
+        self.assertEquals(118, user.credit)
 
     def test_proper_login(self):
         self.create_user()

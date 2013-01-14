@@ -13,11 +13,9 @@ class ManagerController(Controller):
         self.role = "manager"
 
     def _get_certificate(self, email, cn, org):
-        config_parser = self._Controller__config_parser
-
-        user_id = config_parser.get("manager", "FE_USER_ID")
-        service_id = config_parser.get("manager", "FE_SERVICE_ID")
-        cert_dir = config_parser.get('conpaas', 'CERT_DIR')
+        user_id = self.config_parser.get("manager", "FE_USER_ID")
+        service_id = self.config_parser.get("manager", "FE_SERVICE_ID")
+        cert_dir = self.config_parser.get('conpaas', 'CERT_DIR')
 
         return x509cert.generate_certificate(cert_dir, user_id, service_id, 
                                              "manager", email, cn, org)
@@ -25,15 +23,13 @@ class ManagerController(Controller):
     def _get_context_file(self, service_name, cloud):
         """Override default _get_context_file. Here we generate the context
         file for managers rather than for agents."""
-        config_parser = self._Controller__config_parser
-
-        conpaas_home = config_parser.get('conpaas', 'CONF_DIR')
+        conpaas_home = self.config_parser.get('conpaas', 'CONF_DIR')
 
         cloud_scripts_dir = os.path.join(conpaas_home, 'scripts', 'cloud')
         mngr_scripts_dir  = os.path.join(conpaas_home, 'scripts', 'manager')
         mngr_cfg_dir      = os.path.join(conpaas_home, 'config', 'manager')
 
-        frontend = config_parser.get('director', 'DIRECTOR_URL')
+        frontend = self.config_parser.get('director', 'DIRECTOR_URL')
 
         # Values to be passed to the context file template
         tmpl_values = {}
@@ -51,7 +47,7 @@ class ManagerController(Controller):
 
         # Get cloud config values from director.cfg
         tmpl_values['cloud_cfg'] = "[iaas]\n"
-        for key, value in config_parser.items("iaas"):
+        for key, value in self.config_parser.items("iaas"):
             tmpl_values['cloud_cfg'] += key.upper() + " = " + value + "\n"
 
         # Get manager config file 
@@ -69,9 +65,9 @@ class ManagerController(Controller):
         mngr_cfg = mngr_cfg.replace('%FRONTEND_URL%', frontend)
         mngr_cfg = mngr_cfg.replace('%CONPAAS_SERVICE_TYPE%', service_name)
         mngr_cfg = mngr_cfg.replace('%CONPAAS_SERVICE_ID%', 
-            config_parser.get("manager", "FE_SERVICE_ID"))
+            self.config_parser.get("manager", "FE_SERVICE_ID"))
         mngr_cfg = mngr_cfg.replace('%CONPAAS_USER_ID%', 
-            config_parser.get("manager", "FE_USER_ID"))
+            self.config_parser.get("manager", "FE_USER_ID"))
         tmpl_values['mngr_cfg'] = mngr_cfg
 
         # Add default manager startup script
@@ -119,6 +115,21 @@ EOF
 
 %(mngr_start_script)s""" % tmpl_values
 
+    def deduct_credit(self, value):
+        import cpsdirector 
+
+        uid = self.config_parser.get("manager", "FE_USER_ID")
+
+        user = cpsdirector.User.query.filter_by(uid=uid).one()
+        user.credit -= value
+
+        if user.credit > -1:
+            cpsdirector.db.session.commit()
+            return True
+
+        cpsdirector.db.session.rollback()
+        return False
+
 def __get_config(service_id, user_id, service_type=""):
     """Add manager configuration"""
     config_parser = common.config
@@ -153,10 +164,6 @@ def start(service_name, service_id, user_id):
     # Create a context file for the specific service
     controller.generate_context(service_name)
 
-    # Only useful for testing purposes if the director is not running on a
-    # public IP
-    controller._Controller__deduct_credit = lambda x: True
-
     # FIXME: test_manager(ip, port) not implemented yet. Just return True.
     node = controller.create_nodes(1, lambda ip, port: True, None)[0]
 
@@ -179,4 +186,3 @@ def stop(vmid):
     cloud.kill_instance(n)
 
     __stop_reservation_timer(controller)
-

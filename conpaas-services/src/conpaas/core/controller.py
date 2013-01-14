@@ -86,7 +86,7 @@ class Controller(object):
         self.__reservation_map['manager'].start()
         self.__force_terminate_lock = Lock()
         
-        self.__config_parser = config_parser
+        self.config_parser = config_parser
         self.__created_nodes = []
         self.__partially_created_nodes = []
         self.__logger = create_logger(__name__)
@@ -127,7 +127,7 @@ class Controller(object):
         ready = []
         iteration = 0
 
-        if not self.__deduct_credit(count):
+        if not self.deduct_credit(count):
             raise Exception('Could not add nodes. Not enough credits.')
       
         while len(ready) < count:
@@ -139,7 +139,7 @@ class Controller(object):
                 if iteration == 1:
                     request_start = time.time()
                 
-                service_type = self.__config_parser.get("manager", 'TYPE')
+                service_type = self.config_parser.get("manager", 'TYPE')
 
                 # eg: conpaas-agent-php-u34-s316
                 name = "conpaas-%s-%s-u%s-s%s" % (self.role, service_type,
@@ -344,13 +344,13 @@ class Controller(object):
       return (done, [])
 
     def _get_context_file(self, service_name, cloud):
-      conpaas_home = self.__config_parser.get('manager', 'CONPAAS_HOME')
+      conpaas_home = self.config_parser.get('manager', 'CONPAAS_HOME')
       cloud_scripts_dir = conpaas_home + '/scripts/cloud'
       agent_cfg_dir = conpaas_home + '/config/agent'
       agent_scripts_dir = conpaas_home + '/scripts/agent'
 
-      bootstrap = self.__config_parser.get('manager', 'BOOTSTRAP')
-      manager_ip = self.__config_parser.get('manager', 'MY_IP')
+      bootstrap = self.config_parser.get('manager', 'BOOTSTRAP')
+      manager_ip = self.config_parser.get('manager', 'MY_IP')
 
       # Get contextualization script for the corresponding cloud
       cloud_script_file = open(cloud_scripts_dir + '/' + cloud, 'r')
@@ -398,7 +398,7 @@ class Controller(object):
                      + agent_cfg + '\n' + 'EOF\n\n' 
 
       # Get user-provided startup script's absolute path
-      basedir = self.__config_parser.get('manager', 'CONPAAS_HOME')
+      basedir = self.config_parser.get('manager', 'CONPAAS_HOME')
       startup_script = os.path.join(basedir, 'startup.sh')
 
       # Append user-provided startup script (if any)
@@ -435,7 +435,7 @@ class Controller(object):
                                            files = [('csr',
                                                      'csr.pem',
                                                      x509_req_as_pem)])
-        cert_dir = self.__config_parser.get('manager', 'CERT_DIR')
+        cert_dir = self.config_parser.get('manager', 'CERT_DIR')
         ca_cert_file = open(os.path.join(cert_dir, 'ca_cert.pem'), 'r')
         ca_cert = ca_cert_file.read()
 
@@ -470,7 +470,7 @@ class Controller(object):
         except:
           self.__logger.exception('Failed to terminate service')
   
-    def __deduct_credit(self, value):
+    def deduct_credit(self, value):
       try:
         parsed_url = urlparse.urlparse(self.__fe_creditUrl)
         _, body = https.client.https_post(parsed_url.hostname, parsed_url.port or 443,
@@ -483,7 +483,7 @@ class Controller(object):
         return False
   
     def __deduct_and_check_credit(self, value):
-      if not self.__deduct_credit(value):
+      if not self.deduct_credit(value):
         self.__force_terminate_service()
 
 
