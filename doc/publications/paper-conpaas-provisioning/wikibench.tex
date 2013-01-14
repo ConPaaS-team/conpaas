@@ -36,10 +36,6 @@ the dynamic requests, which pose more performance problems.
 
 %Since the original Wikipedia traces can reach peaks of 50000 or 60000 reqs./secs, WikiBench uses the original 10\% sample of these traces which can generate a workload up to about 5000 reqs./secs.
 
-\corina{I wouldn't say the traces are heterogeneous in terms of workload mix.
-Usually workload mix refers to different types of requests -- e.g. log in,
-read article, update article etc. In our case it's most of the time the same
-type of request (read an article) but with articles of various complexity.}
 %Even though we use the original 10\% sample of these traces, they are very heterogeneous in terms of workload-mix. To illustrate this heterogeneity, in Figure~\ref{phpRespTimeDispersion}, we present the distribution of the response time values for the PhP requests during the execution of the trace shown in Figure~\ref{workload}. A first observation shows an irregular dispersion of the response time values in two levels: (i) a long-term level on which the values vary along the trace execution without following any clear pattern; and (ii) a short-term level on which the response times widely diverge under short period of time such as one minute. There are two reasons for this dispersion: (i) PhP pages often require database queries; (ii) PhP pages need third-party static files. These issues limits the utilization of provisioning techniques which scale applications only based on current response values. Note that, to obtain response values totally independent of any scaling decisions, we utelementsilized static provisioning to execute this trace. 
 
 As an example, in Figure~\ref{workload}, we show the PHP workload 
@@ -49,7 +45,7 @@ workload is that the requests are very heterogeneous in complexity.
 To illustrate this heterogeneity, in Figure~\ref{phpRespTimeDispersion}
 we present the distribution of the response time values for the PHP 
 requests during the execution of the trace shown in Figure~\ref{workload}.
-The results were obtained using a fixed number of 3 (?) PHP servers,
+The results were obtained using a fixed number of 5 PHP servers,
 and show an irregular dispersion of the response time. The main reason
 for this dispersion is that the Wikipedia articles vary a lot in complexity,
 requiring different amounts of information and of items that
