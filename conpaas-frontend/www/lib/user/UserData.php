@@ -61,7 +61,7 @@ class UserData {
     	return $res->uid;
     }
 
-	public static function getUserByName($username) {
+	public static function getUserByName($username, $refresh_certs=false) {
        $res = HTTPS::post(Conf::DIRECTOR . '/login', array('username' => $username, 
            'password' => $_SESSION['password']));
 
@@ -81,7 +81,7 @@ class UserData {
 
        $cert_file = sys_get_temp_dir(). "/$uid/cert.pem";
 
-       if (is_file($cert_file)) {
+       if (is_file($cert_file) && !$refresh_certs) {
            return $user_array;
        }
 

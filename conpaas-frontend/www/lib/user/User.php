@@ -86,7 +86,7 @@ class User {
         $_SESSION['username'] = $username;
         $_SESSION['password'] = $password;
 
-		$uinfo = UserData::getUserByName($username);
+		$uinfo = UserData::getUserByName($username, true);
 		if ($uinfo === false) {
 			return false;
 		}
