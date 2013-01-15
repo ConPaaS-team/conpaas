@@ -70,7 +70,7 @@ foreach (array('botFile') as $file) {
 $params = array_merge($_POST, $paths);
 try {
 	$params['method'] = 'start_sampling';
-	$json_response = HTTP::post($service->getManager(), $params);
+	$json_response = HTTP::post($service->getManager() . ':' . $service->getManagerPort(), $params);
 	$response = json_decode($json_response, true);
 	if (array_key_exists('result', $response)) {
 		$response = $response['result'];
