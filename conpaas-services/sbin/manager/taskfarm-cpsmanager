@@ -181,7 +181,7 @@ if __name__ == '__main__':
   bats_home =join(config_parser.get('manager', 'CONPAAS_HOME'),
                 'src/conpaas/services/taskfarm')
 
-  if config_parser.get('iaas', 'DRIVER') == 'OPENNEBULA':
+  if config_parser.get('iaas', 'DRIVER').upper() == 'OPENNEBULA':
     # For Opennebula: create one_auth file; set env variables
     cmd = "mkdir " + bats_home + '/.one'
     bash(cmd)
@@ -207,7 +207,7 @@ if __name__ == '__main__':
   f = open(path, "w")
 
   # Generate default hostname (cloud-unique identifier)
-  if config_parser.get('iaas', 'DRIVER') == 'OPENNEBULA':
+  if config_parser.get('iaas', 'DRIVER').upper() == 'OPENNEBULA':
       # Use the hostname part of OpenNebula's URL
       hostname = urlparse(config_parser.get('iaas', 'URL')).hostname
   else:
@@ -232,7 +232,7 @@ if __name__ == '__main__':
     'port': config_get_default(config_parser, 'iaas', 'PORT', '8999')
 	  }
 
-  if config_parser.get('iaas', 'DRIVER') == 'OPENNEBULA':
+  if config_parser.get('iaas', 'DRIVER').upper() == 'OPENNEBULA':
     dict['classname'] = 'org.koala.runnersFramework.runners.bot.OpenNebulaOcaCluster'
     dict['networkid'] = config_parser.get('iaas', 'NET_ID')
     dict['nameserver'] = config_parser.get('iaas', 'NET_NAMESERVER')
@@ -241,7 +241,7 @@ if __name__ == '__main__':
     dict['disktarget'] = config_parser.get('iaas', 'DISK_TARGET')
     dict['contexttarget'] = config_parser.get('iaas', 'CONTEXT_TARGET')
     dict['osarch'] = config_parser.get('iaas', 'OS_ARCH')
-  elif config_parser.get('iaas', 'DRIVER') == 'EC2': 
+  elif config_parser.get('iaas', 'DRIVER').upper() == 'EC2': 
     dict['classname'] = 'org.koala.runnersFramework.runners.bot.EC2ClusterAmazonAPI'
     dict['alias'] = 'ec2'
     dict['image'] = config_parser.get('iaas', 'IMAGE_ID')
@@ -258,10 +258,10 @@ if __name__ == '__main__':
   """
   agent_context = get_agent_context_file(config_parser, options)
   agent_context_file = bats_home + '/agent_init.sh'
-  if config_parser.get('iaas', 'DRIVER') == 'OPENNEBULA':
+  if config_parser.get('iaas', 'DRIVER').upper() == 'OPENNEBULA':
     agent_context = agent_context.encode('hex')
     environ['HEX_FILE'] = agent_context_file
-  elif config_parser.get('iaas', 'DRIVER') == 'EC2': 
+  elif config_parser.get('iaas', 'DRIVER').upper() == 'EC2': 
     environ['EC2_WORKER_INIT_SH'] = agent_context_file 
 
   f = open(agent_context_file, 'w')
