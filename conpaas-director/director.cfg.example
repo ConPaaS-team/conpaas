@@ -77,7 +77,7 @@ CERT_DIR = /etc/cpsdirector/certs
 ########################
 # Task farming service #
 ########################
-# PORT = 8889
+# PORT = 8999
 
 # A unique name used in the service to specify different clouds. 
 # For Amazon EC2, 'ec2' is a good value. 
