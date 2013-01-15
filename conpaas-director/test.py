@@ -109,11 +109,17 @@ class DirectorTest(Common):
         self.assertEquals(200, response.status_code)
 
     def test_200_on_credit(self):
-        response = self.app.post('/callback/decrementUserCredit.php', data={ 'uid': 1, 'sid': 1, 'role': 'manager' })
+        response = self.app.post('/callback/decrementUserCredit.php', 
+            data={ 'uid': 1, 'sid': 1, 'role': 'manager' })
         self.assertEquals(200, response.status_code)
 
     def test_200_on_rename(self):
         response = self.app.post('/rename/1', data={ 'uid': 1 })
+        self.assertEquals(200, response.status_code)
+
+    def test_200_on_terminate(self):
+        response = self.app.post('/callback/terminateService.php', 
+            data={ 'uid': 1, 'sid': 1, 'role': 'manager' })
         self.assertEquals(200, response.status_code)
 
     def test_false_start_wrong_credentials(self):
@@ -276,6 +282,18 @@ class DirectorTest(Common):
 
         user = cpsdirector.get_user(TEST_USER_DATA['username'], TEST_USER_DATA['password'])
         self.assertEquals(0, user.credit)
+
+    def test_terminate_service(self):
+        service = self.__new_service()
+
+        data = { 
+            'sid': service['sid'], 
+            'uid': service['user_id'], 
+            'role': 'manager' 
+        }
+
+        response = self.app.post('/callback/terminateService.php', data=data)
+        self.assertEquals({ 'error': False }, simplejson.loads(response.data))
 
     def test_proper_login(self):
         self.create_user()

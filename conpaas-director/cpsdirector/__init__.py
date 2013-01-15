@@ -325,9 +325,9 @@ def __stop(serviceid):
 @app.route("/callback/terminateService.php", methods=['POST'])
 @cert_required(role='manager')
 def terminate():
-    serviceid = int(request.values.get('sid', -1))
-
-    if __stop(serviceid):
+    """Terminate the service whose id matches the one provided in the manager
+    certificate."""
+    if __stop(g.service.sid):
         return jsonify({ 'error': False })
 
     return jsonify({ 'error': True })
