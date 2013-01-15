@@ -19,7 +19,14 @@ do
 	test -s $iplServerOutput
 done
 
-address=$(grep "^Ibis server running on" $iplServerOutput | awk '{print $5}')
+address=""
+
+while [ -z "$address" ]
+do
+    sleep 1
+    address=$(grep "^Ibis server running on" $iplServerOutput | awk '{print $5}')
+done
+
 poolname="master_pool"
 
 java -cp $BATS_HOME_LIB/*:$BATS_HOME/:$IPL_HOME/lib/* \
