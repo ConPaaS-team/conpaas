@@ -109,7 +109,7 @@ class DirectorTest(Common):
         self.assertEquals(200, response.status_code)
 
     def test_200_on_credit(self):
-        response = self.app.post('/callback/decrementUserCredit.php', data={ 'uid': 1 })
+        response = self.app.post('/callback/decrementUserCredit.php', data={ 'uid': 1, 'sid': 1, 'role': 'manager' })
         self.assertEquals(200, response.status_code)
 
     def test_200_on_rename(self):
@@ -235,36 +235,47 @@ class DirectorTest(Common):
         self.assertEquals(1, len(result))
         self.assertEquals('New php service', result[0]['name'])
 
-    def test_credit(self):
-        self.create_user()
-        data = { 'uid': 1 }
+    def __new_service(self):
+        user = self.create_user()
+        data = { 'uid': user.uid }
 
-        # Let's create a service
         response = self.app.post('/start/php', data=data)
-        servicedict = simplejson.loads(response.data)
-        self.assertEquals(1, servicedict['sid'])
+        return simplejson.loads(response.data)
 
-        # No sid and decrement
-        data = { 'uid': 1, 'sid': -1 }
+    def test_credit_no_sid_and_decrement(self):
+        service = self.__new_service()
+
+        data = { 'uid': service['user_id'], 'sid': -1, 'role': 'manager' }
         response = self.app.post('/callback/decrementUserCredit.php', data=data)
         expected = False
         self.assertEquals(expected, simplejson.loads(response.data))
             
-        # Right sid but not enough credit
-        data = { 'sid': 1, 'decrement': 10000, 'uid': 1 }
+    def test_credit_right_sid_enough_credit(self):
+        service = self.__new_service()
+
+        data = { 'sid': 1, 'decrement': 119, 'uid': 1, 'role': 'manager' }
+        response = self.app.post('/callback/decrementUserCredit.php', data=data)
+        self.assertEquals({ 'error': False }, simplejson.loads(response.data))
+
+        # User's credit should be 0
+        user = cpsdirector.get_user(TEST_USER_DATA['username'], TEST_USER_DATA['password'])
+        self.assertEquals(0, user.credit)
+
+    def test_credit_right_sid_not_enough_credit(self):
+        service = self.__new_service()
+
+        # Setting user's credit to 0
+        user = cpsdirector.get_user(TEST_USER_DATA['username'], TEST_USER_DATA['password'])
+        user.credit = 0
+        cpsdirector.db.session.commit()
+
+        # Right sid and not enough credit
+        data = { 'sid': 1, 'decrement': 1, 'uid': 1, 'role': 'manager' }
         response = self.app.post('/callback/decrementUserCredit.php', data=data)
         self.assertEquals({ 'error': True }, simplejson.loads(response.data))
 
         user = cpsdirector.get_user(TEST_USER_DATA['username'], TEST_USER_DATA['password'])
-        self.assertEquals(119, user.credit)
-
-        # Right sid and enough credit
-        data = { 'sid': 1, 'decrement': 1, 'uid': 1 }
-        response = self.app.post('/callback/decrementUserCredit.php', data=data)
-        self.assertEquals({ 'error': False }, simplejson.loads(response.data))
-
-        user = cpsdirector.get_user(TEST_USER_DATA['username'], TEST_USER_DATA['password'])
-        self.assertEquals(118, user.credit)
+        self.assertEquals(0, user.credit)
 
     def test_proper_login(self):
         self.create_user()
