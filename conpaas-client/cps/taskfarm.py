@@ -58,7 +58,8 @@ class Client(BaseClient):
         BaseClient.create(self, service_type, initial_state='RUNNING')
 
     def start(self, service_id):
-        print "XXX: do we have to startup?"
+        # TaskFarm does not have to be started
+        pass
 
     def upload_bag_of_tasks(self, service_id, filename, xtreemfs_location):
         """eg: upload_bag_of_tasks(service_id=1, 
@@ -81,6 +82,11 @@ class Client(BaseClient):
             
         print "total tasks:", res['noTotalTasks']
         print "completed tasks:", res['noCompletedTasks']
+
+    def logs(self, service_id):
+        """The getLog method is called get_log in TaskFarm"""
+        res = self.callmanager(service_id, "get_log", False, {})
+        print res['message']
 
     def usage(self, cmdname):
         BaseClient.usage(self, cmdname)
@@ -110,4 +116,9 @@ class Client(BaseClient):
                 sys.exit(0)
 
             res = self.upload_bag_of_tasks(sid, filename, xtreemfs_location)
-            print res['result']['message']
+            if 'error' in res['result']:
+                print res['result']['error']
+            elif 'message' in res['result']:
+                print res['result']['message']
+            else:
+                print res
