@@ -2,6 +2,7 @@
 
 from flask import Flask, jsonify, helpers, request, make_response, g
 from flask.ext.sqlalchemy import SQLAlchemy
+from sqlalchemy.exc import InvalidRequestError
 
 import os
 import sys
@@ -122,13 +123,13 @@ class cert_required(object):
 
             try:
                 uid = int(g.cert['UID'])
-            except (AttributeError, ValueError):
+            except (AttributeError, ValueError, TypeError):
                 error_msg = 'cert_required: client certificate does NOT provide UID'
                 log(error_msg)
                 return make_response(error_msg, 401)
 
             # Getting user data from DB
-            g.user = User.query.get(g.cert['UID'])
+            g.user = User.query.get(uid)
             if not g.user:
                 # authentication failed
                 return build_response(simplejson.dumps(False))
@@ -197,7 +198,7 @@ def new_user():
         return build_response(simplejson.dumps(user.to_dict()))
     except Exception, err:
         # something went wrong
-        error_msg = 'Error upon user creation: %s' % err
+        error_msg = 'Error upon user creation: %s -> %s' % (type(err), err)
         log(error_msg)
         return build_response(jsonify({ 'error': True, 'msg': error_msg }))
 
@@ -276,8 +277,13 @@ def start(servicetype):
         s.manager, s.vmid, s.cloud = cloud.start(servicetype, s.sid, 
                                                  g.user.uid)
     except Exception, err:
-        db.session.rollback()
-        error_msg = 'Error upon service creation: %s' % err
+        try:
+            db.session.delete(s)
+            db.session.commit()
+        except InvalidRequestError:
+            db.session.rollback()
+
+        error_msg = 'Error upon service creation: %s %s' % (type(err), err)
         log(error_msg)
         return build_response(jsonify({ 'error': True, 'msg': error_msg }))
 
@@ -304,6 +310,28 @@ def rename(serviceid):
     db.session.commit()
     return simplejson.dumps(True)
 
+def __stop(serviceid):
+    service = Service.query.filter_by(sid=serviceid).first()
+
+    if not service:
+        return False
+
+    cloud.stop(service.vmid)
+    db.session.delete(service)
+    db.session.commit()
+    log('Service %s stopped properly' % serviceid)
+    return True
+
+@app.route("/callback/terminateService.php", methods=['POST'])
+@cert_required(role='manager')
+def terminate():
+    serviceid = int(request.values.get('sid', -1))
+
+    if __stop(serviceid):
+        return jsonify({ 'error': False })
+
+    return jsonify({ 'error': True })
+
 @app.route("/stop/<int:serviceid>", methods=['POST'])
 @cert_required(role='user')
 def stop(serviceid):
@@ -321,10 +349,7 @@ def stop(serviceid):
         return build_response(simplejson.dumps(False))
 
     # If a service with id 'serviceid' exists and user is the owner
-    cloud.stop(service.vmid)
-    db.session.delete(service)
-    db.session.commit()
-    log('Service %s stopped properly' % serviceid)
+    __stop(serviceid)
     return build_response(simplejson.dumps(True))
 
 @app.route("/list", methods=['POST', 'GET'])
