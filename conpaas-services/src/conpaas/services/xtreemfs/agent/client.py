@@ -44,7 +44,7 @@ from conpaas.core import https
 import httplib, json
 
 class AgentException(Exception):
-		pass
+  pass
 
 def _check(response):
   code, body = response
@@ -70,18 +70,18 @@ def createMRC(host,port,dir_serviceHost):
   params = {
     'dir_serviceHost':dir_serviceHost            
   }
-  return _check(https.client.jsonrpc_post(host, port, '/', method,params=params))
+  return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
 
 def createDIR(host, port):
   method = 'createDIR'
   return _check(https.client.jsonrpc_post(host, port, '/', method))
 
-def createOSD(host, port,dir_serviceHost):
+def createOSD(host, port, dir_serviceHost):
   method = 'createOSD'
   params = {
       'dir_serviceHost':dir_serviceHost
   }
-  return _check(https.client.jsonrpc_post(host, port, '/', method,params=params))
+  return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
 
 def stopOSD(host, port):
   method = 'stopOSD'

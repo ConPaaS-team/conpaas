@@ -76,14 +76,17 @@ class XtreemFSManager(BaseManager):
 
         BaseManager.__init__(self, config_parser)
 
-        self.nodes = []         
-        self.osdNodes = []   
-        self.mrcNodes = []
-        self.dirNodes = []    
+        # node lists
+        self.nodes = []    # all nodes         
+        self.osdNodes = [] # only the OSD nodes  
+        self.mrcNodes = [] # onle the MRC nodes
+        self.dirNodes = [] # only the DIR nodes   
 
+        # node counters
         self.dirCount = 0
         self.mrcCount = 0
         self.osdCount = 0
+
         # Setup the clouds' controller
         self.controller.generate_context('xtreemfs')
         self.state = self.S_INIT
@@ -144,22 +147,39 @@ class XtreemFSManager(BaseManager):
         ''' Starts up the service. The firstnodes will contain all services
         '''
         try:
+            # NOTE: The following service structure is enforce:
+            #       - the first node contains a DIR, MRC and OSD,
+            #         those services can not be removed
+            #       - added DIR, MRC and OSD services will all run
+            #         on exclusive nodes
+            #       - all explicitly added services can be removed
+            #
+            # TODO: Currently, only OSDs can be removed, which might
+            #       result in data loss depending on the replication
+            #       policy. Removing a node in ConPaaS is the same to
+            #       XtreemFS as node failure.
+
+            # create 1 node
             node_instances = self.controller.create_nodes(1, \
                                            client.check_agent_process, 5555)
-
-            self.logger.info('Created 1 node with DIR, MRC and OSD services')
+          
+            # use this node for DIR, MRC and OSD
             self.nodes += node_instances
             self.dirNodes += node_instances
-            self.osdNodes += node_instances
             self.mrcNodes += node_instances
+            self.osdNodes += node_instances
             
-            self._start_dir(node_instances)
-            self._start_osd(node_instances)
-            self._start_mrc(node_instances)
-            #at the startup the DIR node will have all the services
+            # start DIR, MRC, OSD
+            self._start_dir(self.dirNodes)
+            self._start_mrc(self.mrcNodes)
+            self._start_osd(self.osdNodes)
+
+            # at the startup the DIR node will have all the services
             self.dirCount = 1
-            self.mrcCount = 0
-            self.osdCount = 0
+            self.mrcCount = 1
+            self.osdCount = 1
+
+            self.logger.info('Created 1 node with DIR, MRC and OSD services')
         except:
             self.logger.exception('do_startup: Failed to request a new node')
             self.state = self.S_STOPPED
@@ -177,10 +197,10 @@ class XtreemFSManager(BaseManager):
     def _do_shutdown(self):
         self.controller.delete_nodes(self.nodes)
         self.nodes = []
-        self.osdNodes = []   
+        self.dirNodes = []          
         self.mrcNodes = []
-        self.dirNodes = []   	   
-	
+        self.osdNodes = []   
+    
         self.dirCount = 0
         self.mrcCount = 0
         self.osdCount = 0
@@ -196,46 +216,39 @@ class XtreemFSManager(BaseManager):
 
         nr_dir = 0
         nr_mrc = 0 
+        nr_osd = 0
         
         # Adding DIR Nodes
         if 'dir' in kwargs:
-
             if not isinstance(kwargs['dir'], int):
                 return invalid_arg('Expected an integer value for "dir"')
-
             nr_dir = int(kwargs.pop('dir'))    
-
             if nr_dir < 0: 
-                return invalid_arg(
-                    'Expected a positive integer value for "dir"')
+                return invalid_arg('Expected a positive integer value for "dir"')
 
         # Adding MRC Nodes
         if 'mrc' in kwargs:
-
             if not isinstance(kwargs['mrc'], int):
                 return invalid_arg('Expected an integer value for "mrc"')
-
             nr_mrc = int(kwargs.pop('mrc'))
-
             if nr_mrc < 0: 
-                return invalid_arg(
-                    'Expected a positive integer value for "mrc"')
+                return invalid_arg('Expected a positive integer value for "mrc"')
 
+        # TODO: 'osd' is no longer required, when adding other servives is supported
         if not 'osd' in kwargs:
             return HttpErrorResponse('ERROR: Required argument doesn\'t exist')
-
         if not isinstance(kwargs['osd'], int):
-            return HttpErrorResponse(
-                'ERROR: Expected an integer value for "osd"')
+            return HttpErrorResponse('ERROR: Expected an integer value for "osd"')
 
-        osd = int(kwargs.pop('osd'))
-        if osd < 0: 
+        nr_osd = int(kwargs.pop('osd'))
+        if nr_osd < 0: 
             return invalid_arg('Expected a positive integer value for "nr osd"')
 
         self.state = self.S_ADAPTING
-        Thread(target=self._do_add_nodes, args=[nr_dir, nr_mrc, osd]).start()
+        Thread(target=self._do_add_nodes, args=[nr_dir, nr_mrc, nr_osd]).start()
         return HttpJsonResponse()
     
+    # TODO: currently not used
     def KillOsd(self, nodes):
         for node in nodes:
             client.stopOSD(node.ip, 5555)
@@ -244,6 +257,7 @@ class XtreemFSManager(BaseManager):
     def _do_add_nodes(self, nr_dir, nr_mrc, nr_osd):
         totalNodes = nr_dir + nr_mrc + nr_osd
 
+        # try to create totalNodes new nodes
         try:
             node_instances = self.controller.create_nodes(totalNodes, 
                 client.check_agent_process, 5555)      
@@ -253,51 +267,45 @@ class XtreemFSManager(BaseManager):
             return
 
         self.nodes += node_instances 
-        self.dirNodes += node_instances[:nr_dir]
-        dirNodes = node_instances[:nr_dir]
 
-        self.mrcNodes += node_instances[nr_dir:nr_mrc+nr_dir]
-        mrcNodes = node_instances[nr_dir:nr_mrc+nr_dir]
+        dirNodesAdded = node_instances[:nr_dir]
+        self.dirNodes += dirNodesAdded
 
-        self.osdNodes += node_instances[nr_mrc+nr_dir:]
-        osdNodes = node_instances[nr_mrc+nr_dir:] 
+        mrcNodesAdded = node_instances[nr_dir:nr_mrc+nr_dir]
+        self.mrcNodes += mrcNodesAdded
+
+        osdNodesAdded = node_instances[nr_mrc+nr_dir:] 
+        self.osdNodes += osdNodesAdded
 
 
-        KilledOsdNodes = []
+        # TODO: maybe re-enable when OSD-removal moves data to another node before shutting down the service.
+        #KilledOsdNodes = []
         # The first node will contain the OSD service so it will be removed
         # from there
-        if nr_osd > 0 and self.osdCount == 0:
-            KilledOsdNodes.append(self.dirNodes[0])
-        self.KillOsd(KilledOsdNodes)
+        #if nr_osd > 0 and self.osdCount == 0:
+        #    KilledOsdNodes.append(self.dirNodes[0])
+        #self.KillOsd(KilledOsdNodes)
           
         # Startup DIR agents
-        # The DIR node is the first node from the list. It is the only one
-        for node in dirNodes:
+        for node in dirNodesAdded:
             client.startup(node.ip, 5555)
             data = client.createDIR(node.ip, 5555)
             self.logger.info('Received %s from %s', data, node.id)
             self.dirCount += 1
 
         # Startup MRC agents
-        for node in mrcNodes:
+        for node in mrcNodesAdded:
             client.startup(node.ip, 5555)
             data = client.createMRC(node.ip, 5555, self.dirNodes[0].ip)
             self.logger.info('Received %s from %s', data, node.id)
             self.mrcCount += 1
 
         # Startup OSD agents
-        for node in osdNodes:
+        for node in osdNodesAdded:
             client.startup(node.ip, 5555)
             data = client.createOSD(node.ip, 5555, self.dirNodes[0].ip)
             self.logger.info('Received %s from %s', data, node.id)         
             self.osdCount += 1
-
-        KilledOsdNodes = []
-        # The first node will contain the osd service so it will be removed
-        # from there
-        if nr_osd > 0 and self.osdCount == 0:
-            KilledOsdNodes.append(self.dirNodes[0])
-        self.KillOsd(KilledOsdNodes)
 
         self.state = self.S_RUNNING
         return HttpJsonResponse()
@@ -350,89 +358,83 @@ class XtreemFSManager(BaseManager):
             return HttpErrorResponse('ERROR: Wrong state to remove_nodes')
 
         nr_dir = 0
-        nr_mrc = 0 
+        nr_mrc = 0
+        nr_osd = 0
             
         # Removing DIR Nodes
         if 'dir' in kwargs:
-
             if not isinstance(kwargs['dir'], int):
                 return invalid_arg('Expected an integer value for "dir"')
-
             nr_dir = int(kwargs.pop('dir'))    
-
             if nr_dir < 0: 
-                return invalid_arg(
-                    'Expected a positive integer value for "dir"')
-
-            if nr_dir > self.dirCount:
+                return invalid_arg('Expected a positive integer value for "dir"')
+            if nr_dir > self.dirCount - 1: # we need at least 1 DIR
                 return invalid_arg('Cannot remove_nodes that many DIR nodes')
      
         # Removing MRC nodes
         if 'mrc' in kwargs:
-
             if not isinstance(kwargs['mrc'], int):
                 return invalid_arg('Expected an integer value for "mrc"')
-
             nr_mrc = int(kwargs.pop('mrc'))
-
             if nr_mrc < 0: 
-                return invalid_arg(
-                    'Expected a positive integer value for "mrc"')
-
-            if nr_mrc > self.mrcCount:
+                return invalid_arg('Expected a positive integer value for "mrc"')
+            if nr_mrc > self.mrcCount - 1: # we need at least 1 MRC
                 return invalid_arg('Cannot remove_nodes that many MRC nodes')
 
+        # TODO: 'osd' is no longer required, when removing other services is supported
         if not 'osd' in kwargs:
             return HttpErrorResponse('ERROR: Required argument doesn\'t exist')
-
         if not isinstance(kwargs['osd'], int):
             return HttpErrorResponse(
                 'ERROR: Expected an integer value for "osd"')
 
-        osd = int(kwargs.pop('osd'))
-        if osd < 0: 
+        nr_osd = int(kwargs.pop('osd'))
+        if nr_osd < 0: 
             return invalid_arg('Expected a positive integer value for "osd"')
-
-        if osd > self.osdCount:
+        if nr_osd > self.osdCount - 1: # we need at least 1 OSD
             return invalid_arg('Cannot remove_nodes that many OSD nodes')
 
         self.state = self.S_ADAPTING
-
-        Thread(target=self._do_remove_nodes, 
-            args=[nr_dir, nr_mrc, osd]).start()
-
+        Thread(target=self._do_remove_nodes, args=[nr_dir, nr_mrc, nr_osd]).start()
         return HttpJsonResponse()
 
     def _do_remove_nodes(self, nr_dir, nr_mrc, nr_osd):
         
-        if nr_osd > 0:
-            for _ in range(0, nr_osd):
-                node = self.osdNodes.pop(0)
-                self.controller.delete_nodes([node])
-                self.nodes.remove(node)
-            self.osdCount -= nr_osd
-
-        if nr_mrc > 0:
-            for _ in range(0, nr_mrc):
-                node = self.mrcNodes.pop(0)
-                self.controller.delete_nodes([node])
-                self.nodes.remove(node)
-            self.mrcCount -= nr_mrc
+        # NOTE: the logically unremovable first node which contains all
+        #       services is ignored by using 1 instead of 0 in:
+        #   for _ in range(1, nr_[dir|mrc|osd]):
+        #        node = self.[dir|mrc|osd]Nodes.pop(1)
 
         if nr_dir > 0:
             for _ in range(0, nr_dir):
-                node = self.dirNodes.pop(0)
+                node = self.dirNodes.pop(1)
                 self.controller.delete_nodes([node])
                 self.nodes.remove(node)
             self.dirCount -= nr_osd
 
+        if nr_mrc > 0:
+            for _ in range(0, nr_mrc):
+                node = self.mrcNodes.pop(1)
+                self.controller.delete_nodes([node])
+                self.nodes.remove(node)
+            self.mrcCount -= nr_mrc
+
+        if nr_osd > 0:
+            for _ in range(0, nr_osd):
+                node = self.osdNodes.pop(1)
+                self._stop_osd([node])
+                self.controller.delete_nodes([node])
+                self.nodes.remove(node)
+            self.osdCount -= nr_osd
+
         self.state = self.S_RUNNING
 
+        # TODO: maybe re-enable when OSD-removal moves data to another node before shutting down the service.
         # if there are no more OSD nodes we need to start OSD service on the
         # DIR node
-        if self.osdCount == 0:
-            self.osdNodes.append(self.dirNodes[0])
-            self._start_osd(self.dirNodes)
+        #if self.osdCount == 0:
+        #    self.osdNodes.append(self.dirNodes[0])
+        #    self._start_osd(self.dirNodes)
 
         return HttpJsonResponse()
 
