@@ -30,15 +30,13 @@ cloud platforms such as RightScale~\cite{right-scale} or OpenShift~\cite{openshi
 For the sake of comparison, we decided to design and implement a 
 trigger-based provisioning mechanism in ConPaaS. This technique 
 monitors CPU usage and application response time metrics, and 
-dynamically adjusts the computational power allocated to an application by analyzing whether the monitoring data exceed their thresholds~\footnote{Every metric has a threshold range (max,min).}, as illustrated in Algorithm~\ref{loadBased_prov}. Obviously, the lower and upper bound of each threshold are pre-defined by the user before execution.
+dynamically adjusts the computational power allocated to an application by analyzing whether the monitoring data exceed their thresholds~\footnote{Every metric has a threshold with an upper and lower bound respectively (max,min).}, as illustrated in Algorithm~\ref{loadBased_prov}. Obviously, the lower and upper bound of each threshold are pre-defined by the user before execution.
 
 \begin{algorithm}
 {\scriptsize
 \SetAlgoLined
 \SetInd{0mm}{2mm}
-\KwData{\\
-\hspace{3mm} System-level metrics (CPU, Resp. time)\\
-\hspace{6mm} - Pre-defined metric threshold ranges, \emph{thr}
+\KwData{ Pre-defined metric threshold ranges, \emph{SLO\_threshold}
 }
 \KwResult{Scaling decisions}
 \BlankLine
@@ -46,10 +44,10 @@ dynamically adjusts the computational power allocated to an application by analy
 Collect monitoring data of each metric, \emph{data}\;
 \BlankLine
 \If{ no recent scaling operation}{
-\uIf{ avg(data$_i$) $>=$ \emph{threshold\_min}$_i$  }{
+\uIf{ avg(data$_i$) $>=$ \emph{SLO\_threshold\_min}$_i$  }{
 ADD resources\;
 }
-\ElseIf{ avg(data$_i$) $<$ \emph{threshold\_max}$_i$  }{
+\ElseIf{ avg(data$_i$) $<$ \emph{SLO\_threshold\_max}$_i$  }{
 REMOVE resources\;
 } 
 %}\Else{ Sleep during 5minutes \;}
@@ -80,7 +78,7 @@ Even though these type of mechanisms are simple and widely used in cloud platfor
 \begin{itemize}
 \item  \textbf{Workload heterogeneity:} In some web applications, the 
 system performance behavior fluctuates following an irregular pattern 
-caused by the heterogeneity of the workload mix, which makes it
+caused by the heterogeneity of the workload, which makes it
 difficult to predict the system's behaviour. 
 
 %Obviously, a reactive algorithm can be seen a good choice for resource provisioning, however. The system %performance of an application change in time if the type of workload changes.
@@ -135,32 +133,29 @@ and more accurate methods.
 
 \subsection*{Feedback provisioning}
 
-\corina{Generic suggestion about this section: I think we should give
-some better motivation/intuition about the 3 techniques presented
-in this section. Ideally it would have been to have separate experimental 
-results with each technique used just on its own, and see how much 
-improvement each technique brings. But since we don't have that,
-maybe you could just give some more explanations/intuition based
-on what you saw in the experiments, of why each technique works?}
+%\corina{Generic suggestion about this section: I think we should give
+%some better motivation/intuition about the 3 techniques presented
+%in this section. Ideally it would have been to have separate experimental 
+%results with each technique used just on its own, and see how much 
+%improvement each technique brings. But since we don't have that,
+%maybe you could just give some more explanations/intuition based
+%on what you saw in the experiments, of why each technique works?}
 
-\hector{You mean to completely change the Section 3 and 4. I don't know if this will delay a lot the publication of this article. }
+%\hector{You mean to completely change the Section 3 and 4. I don't know if this will delay a lot the publication of this article. }
 
-Based on our previous knowledge from load-based provisioning, we designed and implemented an algorithm which improves the accuracy of our scaling actions when hosting web applications. To achieve that, our algorithm relies on three simple mechanisms: the definition of weights to each metric included in the performance requirements, the use of flexible thresholds and the estimation of the workload trend. 
+%Based on our previous knowledge from load-based provisioning, we designed and implemented an algorithm which improves the accuracy of our scaling actions %when hosting web applications. To achieve that, our algorithm relies on three simple mechanisms: the definition of weights to each metric included in the %performance requirements, the use of flexible thresholds and the estimation of the workload trend. 
+
+In order to tackle the workload heterogeneity and reactiveness of trigger-based techniques, we designed and implemented an algorithm that relies on three simple mechanisms: the definition of weights to each metric included in the performance requirements, the use of flexible thresholds and the estimation of the workload trend. 
 
 %In order to handle temporal bursty workload, we designed and implemented a predictive and reactive algorithm by relying on
 \vspace{2mm}
 
-\corina{I think the focus of this paragraph should not be to explain 
-why we use multiple metrics instead of one (because the naive algorithm
-also uses multiple metrics) but why there are weights assigned to the
-metrics. Does this bring better performance/accuracy? Also another
-possible advantage of weights is that it can make the algorithm
-more generic -- e.g. we can use another set of metrics for other
-applications and let the user configure the weights.}
-
 %Traditional algorithms would scale out and back whenever a system-level metric exceeds its beforehand defined threshold range. 
 
-\textbf{Weighted metrics:}  Through the definition of weight values to application and system metrics, our algorithm takes into consideration its weight when making scaling decisions. This mechanism allows to improve the accuracy of our decisions, as some metrics can rapidly alert of the existence of any degradation before than others. As an example, when hosting web applications, our algorithm associates weights in an ascending order to the following metrics: request rate, CPU usage and response time. Accordingly the response time has a higher weight than the request rate, since higher values in the response time rapidly indicate the existence of a performance degradation in a web application. 
+\textbf{Weighted metrics:}  Through the definition of weight values to application and system metrics, our scaling decisions can adapt to the expected type of workload produced by an application. This mechanism allows to determine the weight of a metric based on its efficiency to rapidly alert of the existence of any degradation. As an example, when hosting the MediaWiki application, our algorithm associates weights in an ascending order to the following metrics: request rate, CPU usage and response time. Accordingly the response time has a higher weight than the request rate, since higher values in the response time rapidly indicate the existence of a performance degradation, due to the large diversity in the complexity of the requests. In addition, the set of metric-weight pairs could also be configured by the user, as it varies depending of the application.
+
+
+%algorithm takes into consideration its weight when making scaling decisions. This mechanism allows to define metric-weight pairs based on the expected type of %workload produced by an application, thus improving the accuracy of our decisions. Hence, the definition of weights determine the efficiency of a metric to rapidly %alert of the existence of any degradation before than others. Similarly, the set of metric-weight pairs could also be configured by the user, as it varies depending of %the application. As an example, when hosting the MediaWiki application, our algorithm associates weights in an ascending order to the following metrics: request %rate, CPU usage and response time. Accordingly the response time has a higher weight than the request rate, since higher values in the response time rapidly %indicate the existence of a performance degradation. 
 
 %As detailed in Section~\ref{wikipedia}, scaling decisions only make based on the request rate can incur errors by under- or over-provisioning  a web application, %due to the large diversity in the complexity of the requests~\cite{singh_autonomic_2010}.
 
@@ -171,43 +166,37 @@ applications and let the user configure the weights.}
 {\scriptsize
 \SetAlgoLined
 \SetInd{0mm}{2mm}
-\KwData{\\
-\hspace{3mm} System and App-level metrics\\
-\hspace{6mm} - Pre-defined metric threshold ranges, \emph{threshold}\\
-\hspace{3mm} Define the weight of each metric, \emph{w}
+\KwData{ Pre-defined metric threshold ranges, \emph{SLO\_threshold}\\
+\hspace{9mm} Define the weight of each metric, \emph{w}
 }
 \KwResult{Scaling decisions}
 \BlankLine
 Create a queue to store historical workload, \emph{q}\;
-Establish flexible thresholds from \emph{threshold} ranges\;
-\hspace{3mm}	- Scalings operations could be triggered, \emph{pred\_thr}\;
-\hspace{3mm}	- Scalings operations must be triggered, \emph{reac\_thr}\; 
+Establish flexible thresholds: \emph{pred\_thr} and \emph{reac\_thr} \;
 \BlankLine
 \While{auto-scaling is ON}{
 Collect monitoring data of each metric, \emph{data}\;
 
-\uIf{ avg(data$_i$) $>=$ pred\_thr$_i$}{
+\uIf{ avg(data$_i$) $>=$ pred\_thr\_max$_i$}{
 	Increment chances of \emph{scaling\_out} using \emph{w$_i$}, \emph{s\_out}\;
-}\ElseIf{ avg(data$_i$) $<$ pred\_thr$_i$}{
-	Increment chances of \emph{scaling\_in} using $w_i$, \emph{s\_in}\;
+}\ElseIf{ avg(data$_i$) $<$ pred\_thr\_min$_i$}{
+	Increment chances of \emph{scaling\_back} using $w_i$, \emph{s\_bck}\;
 \Else{
-Decrease the values of \emph{s\_in} or \emph{s\_out}\;
+Decrease the values of \emph{s\_bck} or \emph{s\_out}\;
 }}
 \BlankLine
 Add to \emph{q} the most recent workload value\;
 Estimate historical workload trends (last $\sim$30min), \emph{td}\;
-\hspace{3mm}	- If trend is increasing then \emph{td} = 1\;
-\hspace{3mm}	- If trend is decreasing then \emph{td} = 0\;	
-\hspace{3mm}	- Undetermined \emph{td} = -1\;	
+\hspace{3mm}	- Increasing, \emph{td} = 1 / Decreasing, \emph{td} = 0\;	
 \BlankLine
 \If{ no recent scaling operation}{
-\uIf{ avg(data$_i$) $>=$ reac\_thr$_i$ \textbf{and}  $td$ = 1 \textbf{and} \emph{s\_out} $>$ \emph{s\_in}}{
+\uIf{ avg(data$_i$) $>=$ reac\_thr\_max$_i$ \textbf{and}  $td$ = 1 \textbf{and} \emph{s\_out} $>$ \emph{s\_bck}}{
 	ADD resources\;
 }
-\ElseIf{ avg(data$_i$) $<$ reac\_thr$_i$ \textbf{and} \emph{td} = 0 \textbf{and} s\_out $<$ s\_in }{
+\ElseIf{ avg(data$_i$) $<$ reac\_thr\_min$_i$ \textbf{and} \emph{td} = 0 \textbf{and} s\_out $<$ s\_bck }{
 	REMOVE resources\;
 }
-Reset \emph{s\_in} and\emph{s\_out}\;
+Reset \emph{s\_bck} and\emph{s\_out}\;
 }\Else{ Sleep during 5 minutes\;}
 }
 }
@@ -215,14 +204,19 @@ Reset \emph{s\_in} and\emph{s\_out}\;
 \label{history_prov}
 \end{algorithm}
 
-\corina{I think here there should be explained better the usage and
-intuition behind s\_in and s\_out. They are used as extra conditions
-for scaling out and back, but I'm not sure I understand exactly when
-they play a role: if the response time exceeds the reactive threshold,
-in what situations can the extra condition with s\_in and s\_out prevent
-scaling out? Also, are s\_in and s\_out ever reset or decremented?}
+%\corina{I think here there should be explained better the usage and
+%intuition behind s\_in and s\_out. They are used as extra conditions
+%for scaling out and back, but I'm not sure I understand exactly when
+%they play a role: if the response time exceeds the reactive threshold,
+%in what situations can the extra condition with s\_in and s\_out prevent
+%scaling out? Also, are s\_in and s\_out ever reset or decremented?}
 
-\textbf{Flexible thresholds:} This algorithm uses two levels of threshold ranges for each metric: \emph{predictive} and \emph{reactive}. As shown on Figure~\ref{flexibleThresholds}, there are two "head rooms" between the SLO (Service Level Objective) threshold (performance requirements pre-defined by the user) and the flexible thresholds.  First, the head-room $H_1$ is between the predictive threshold and the reactive thresholds, and is intended to alert of possible workload alterations in advance. Thereby, when the system performance exceeds the predictive ranges, there is an increment in the chances of scaling actions will be triggered to tackle future SLO violations. Otherwise, there is a decrease of the scaling chances. In Algorithm~\ref{flexibleThresholds}, the variables \emph{s\_in} and \emph{s\_out} represents the scaling changes.  Note that, the values of \emph{s\_in} and \emph{s\_out} are calculated based on the metric's weight. The second head-room $H_2$ comprises between the SLO and reactive thresholds is used to trigger scaling actions. Performance values exceeding the reactive threshold launch scaling operations if other conditions are also satisfied. As an example of flexible thresholds for the CPU-usage, we established a predictive range comprised between 30\% and 70\% , and a reactive comprised between 20\% and 80\%.  
+\textbf{Workload's trend estimation:} Nowadays, there is a wide literature on mathematical models that try to predict future alterations in web application's workload. However, the workload heterogeneity and network traffic of web applications make more difficult to provide accurate predictions using these models. Besides, the complexity of these models sometimes prevent its integration into real auto scaling systems. To design a robust and simple provisioning system, we decided to use a feedback mechanism that analyzes the behavior of the system performance during an interval of time. An exhaustive analysis of the monitoring data during a small interval of time (approx. during the last 30min) provides enough information to detect the workload's trend, and thereby to classify the type of workload alteration as \emph{constant} or \emph{temporal}. Obviously, only \emph{constant} variations may trigger scaling actions to avoid frequent fluctuations in the system performance caused by short and sudden \emph{temporal} variations (traffic spikes), as we will detail in our evaluation. Note that, the workload trend estimation could be also calculated by using mathematical model such linear regression, kernel canonical correlation, and so on.
+
+\textbf{Flexible thresholds:} The use of flexible thresholds reduces the reactiveness of our algorithm, as it allows to analyze the progress of performance fluctuations. This algorithm uses two levels of threshold ranges for each metric: \emph{predictive} and \emph{reactive}. As shown on Figure~\ref{flexibleThresholds}, there are two "head rooms" between the SLO (Service Level Objective) threshold (performance requirements pre-defined by the user) and the flexible thresholds.  First, the head-room $H_1$ is between the predictive threshold and the reactive thresholds, and is intended to alert of possible workload alterations in advance. Thereby, when the system performance exceeds the predictive ranges, there is an increment in the chances of scaling actions will be triggered to tackle future SLO violations, as denoted by  \emph{s\_in} and \emph{s\_out} in Algorithm~\ref{flexibleThresholds}. Otherwise, there is a decrease of the scaling chances. Note that, \emph{s\_in} and \emph{s\_out} are calculated based on the metric's weight. The second head-room $H_2$ comprises between the SLO and reactive thresholds is used to trigger scaling actions if the workload presents a \emph{constant} variation. 
+
+
+%As an example of flexible thresholds for the CPU-usage, we established a predictive range comprised between 30\% and 70\% , and a reactive comprised between 20\% and 80\%.  
 
 \begin{figure}
 \begin{center}
@@ -232,26 +226,25 @@ scaling out? Also, are s\_in and s\_out ever reset or decremented?}
 \label{flexibleThresholds}
 \end{figure}
 
-\corina{Are the terms ``constant'' and ``temporal'' alteration normally
-used in trend estimation, or are they terms that you defined yourself?
-In the second case I think we should mention something like ``we define constant alteration as...''.  
-And about flash crowds: from what I know, flash crowds last usually longer
-(in the order of hours) and we do want the system to provision extra
-resources in such a case. So if there is a spike of high workload that
-lasts for 10-15 minutes, I don't think we should call it a flash crowd --
-maybe just spike or fluctuation or something like this.}
-\textbf{Workload's trend estimation:} Nowadays, there is a wide literature on mathematical models that try to predict future alterations in web application's workload. However, the workload mix and network traffic of web applications make more difficult to provide accurate predictions using these models. Besides, the complexity of these models sometimes prevent its integration into real auto scaling systems. To design a robust and simple provisioning system, we decided to use a feedback mechanism that analyzes the behavior of the system performance during an interval of time. An exhaustive analysis of the monitoring data during a small interval of time (approx. during the last 30min) provides enough information to detect the workload's trend, and thereby to classify the type of workload alteration as \emph{constant} or \emph{temporal}. Obviously, only \emph{constant} variations may trigger scaling actions to avoid frequent fluctuations in the system performance caused by short and sudden \emph{temporal} variations (traffic spikes), as we will detail in Section~\ref{experiments}. Note that, the workload trend estimation is not the trigger of this algorithm, but one more mechanism in it. So, it could be also calculated by using mathematical model such linear regression, kernel canonical correlation, and so on.
+%\corina{Are the terms ``constant'' and ``temporal'' alteration normally
+%used in trend estimation, or are they terms that you defined yourself?
+%In the second case I think we should mention something like ``we define constant alteration as...''.  
+%And about flash crowds: from what I know, flash crowds last usually longer
+%(in the order of hours) and we do want the system to provision extra
+%resources in such a case. So if there is a spike of high workload that
+%lasts for 10-15 minutes, I don't think we should call it a flash crowd --
+%maybe just spike or fluctuation or something like this.}
 
 %In order to take scaling decisiong using the feedback algorithm we now collect application-specific metrics for our measurements, evaluate the %evolution of the application workload avoiding an excessive reactive behavior, and handle threshold values that helps to predict possible SLA violations. 
 
 %In particular, the profiling techniques appears as a solution to tackle this problems of heterogeneity.
 \vspace{3mm}
 
-Anyway, the use of these three mechanisms must follow an order when making scaling decisions, as illustrated in Algorithm~\ref{history_prov}. Initially, the user has to specify the thresholds ranges and give a weight to each metric. Next the flexible thresholds are defined based on Amazon recommendations and statistically-chose performance measures~\footnote{These performance values are obtained from previous executions of the same application using similar hardware configurations.}. Once the monitoring data is collected from the agents, the decision making process can start. Firstly, these data is analyzed to verify if it exceeds the predictive threshold ranges (denoted by \emph{p\_thr}), if so the probability of triggering scaling actions increases proportionally in function of the metric's weight. In order to keep track of workload variations, this algorithm stores in a queue (denoted by \emph{q}) the most recent system performance values, and analyzed them  to estimate the workload trend (denoted by \emph{td}). Finally, to trigger any scaling action, a serie of conditions have to be satisfied: (i) no previous scaling actions have been taken over the last 15min; (ii) the recent monitoring data have to exceed the predictive and reactive threshold ranges; (iii) the workload trend has to follow a constant pattern (increasing/decreasing). 
+Anyway, the use of these three mechanisms must follow an order, as illustrated in Algorithm~\ref{history_prov}. Initially, the user has to specify the thresholds ranges and give a weight to each metric. Next the flexible thresholds are defined based on Amazon recommendations and statistically-chose performance measures~\footnote{These performance values are obtained from previous executions of the same application using similar hardware configurations.}. Once the monitoring data is collected from the agents, the decision making process can start. Firstly, these data is analyzed to verify if it exceeds the predictive threshold ranges (denoted by \emph{pred\_thr}), if so the probability of triggering scaling actions increases proportionally in function of the metric's weight. In order to keep track of workload variations, this algorithm stores in a queue (denoted by \emph{q}) the most recent system performance values, and analyzed them  to estimate the workload trend (denoted by \emph{td}). Finally, to trigger any scaling action, a serie of conditions have to be satisfied: (i) no previous scaling actions have been taken over the last 15min; (ii) the recent monitoring data have to exceed the predictive and reactive threshold ranges; (iii) the workload trend has to follow a constant pattern (increasing/decreasing). 
 
 %\paragraph{Problematic of this algorithm}
 
-Although the combination of these techniques improves the accuracy of our measurements, and avoids to present an excessive reactive behavior. The heterogeneous nature of the VM instances and the workload require more flexible provisioning algorithms, as we pointed out in ~\cite{jiangThesis}. 
+Although the combination of these techniques improves the accuracy of our measurements, and avoids to present an excessive reactive behavior. The heterogeneous nature of the VM instances requires more flexible provisioning algorithms, as we pointed out in ~\cite{jiangThesis}. 
 
 %\subsection{Workload mix-aware provisioning}
 \subsection*{Dynamic load balancing weights}
@@ -283,43 +276,38 @@ average response times of the servers during this time interval.
 {\scriptsize
 \SetAlgoLined
 \SetInd{0mm}{2mm}
-\KwData{\\
-\hspace{3mm} System and App-level metrics\\
-\hspace{6mm} - Pre-defined metric threshold ranges, \emph{threshold}\\
-\hspace{3mm} Define the weight of each metric, \emph{w}
+\KwData{ Pre-defined metric threshold ranges, \emph{SLO\_threshold}\\
+\hspace{9mm} Define the weight of each metric, \emph{w}
 }
 \KwResult{Scaling decisions}
 \BlankLine
 Create a queue to store historical workload, \emph{q}\;
-Establish flexible thresholds from \emph{threshold} ranges\;
-\hspace{3mm}	- Scalings operations could be triggered, \emph{pred\_thr}\;
-\hspace{3mm}	- Scalings operations must be triggered, \emph{reac\_thr}\; 
+Establish flexible thresholds: \emph{pred\_thr} and \emph{reac\_thr}\; 
 Initialize load-balancing weights for the backend servers\;
 \BlankLine
 \While{auto-scaling is ON}{
 Collect monitoring data of each metric, \emph{data}\;
 
-\uIf{ avg(data$_i$) $>=$ pred\_thr$_i$}{
+\uIf{ avg(data$_i$) $>=$ pred\_thr\_max$_i$}{
 	Increment chances of \emph{scaling\_out} using \emph{w$_i$}, \emph{s\_out}\;
-}\ElseIf{ avg(data$_i$) $<$ pred\_thr$_i$}{
-	Increment chances of \emph{scaling\_in} using $w_i$, \emph{s\_in}\;
+}\ElseIf{ avg(data$_i$) $<$ pred\_thr\_min$_i$}{
+	Increment chances of \emph{scaling\_back} using $w_i$, \emph{s\_bck}\;
 \Else{
-Decrease the values of \emph{s\_in} or \emph{s\_out}\;
+Decrease the values of \emph{s\_bck} or \emph{s\_out}\;
 }}
 \BlankLine
 Add to \emph{q} the most recent workload value\;
 Estimate historical workload trends (last $\sim$20min), \emph{td}\;
-\hspace{3mm}	- If trend is increasing then \emph{td} = 1\;
-\hspace{3mm}	- If trend is decreasing then \emph{td} = 0\;		
+\hspace{3mm}	- Increasing, \emph{td} = 1 / Decreasing, \emph{td} = 0\;		
 \BlankLine
 \If{ no recent scaling operation}{
-\uIf{ avg(data$_i$) $>=$ reac\_thr$_i$ \textbf{and}  $td$ = 1 \textbf{and} \emph{s\_out} $>=$ \emph{s\_in}}{
+\uIf{ avg(data$_i$) $>=$ reac\_thr\_max$_i$ \textbf{and}  $td$ = 1 \textbf{and} \emph{s\_out} $>=$ \emph{s\_bck}}{
 	ADD resources\;
 }
-\ElseIf{ avg(data$_i$) $<$ reac\_thr$_i$ \textbf{and} \emph{td} = 0 \textbf{and} s\_out $<$ s\_in }{
+\ElseIf{ avg(data$_i$) $<$ reac\_thr\_min$_i$ \textbf{and} \emph{td} = 0 \textbf{and} s\_out $<$ s\_bck }{
 	REMOVE resources\;
 }
-Reset \emph{s\_in} and\emph{s\_out}\;
+Reset \emph{s\_bck} and\emph{s\_out}\;
 }\Else{ Sleep during 5 minutes\;}
 \BlankLine
 Adjust load-balancing weights based on the workload ($\sim$15min)\;
