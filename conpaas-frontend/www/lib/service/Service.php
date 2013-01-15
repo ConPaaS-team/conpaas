@@ -404,20 +404,7 @@ class Service {
 	 */
 	public function checkManagerInstance() {
 		$manager_addr = $this->manager_instance->getHostAddress();
-		if ($manager_addr !== false) {
-			$manager_url = $manager_addr;
-			if (strpos($manager_addr, 'https://') !== 0) {
-				$manager_url = 'https://'.$manager_addr
-					.':'.$this->getManagerPort();
-			}
-			if ($manager_url != $this->manager) {
-				ServiceData::updateManagerAddress($this->sid, $manager_url,
-					Service::STATE_INIT);
-				dlog('Service '.$this->sid.' updated manager to '.$manager_url);
-				return true;
-			}
-		}
-		return false;
+		return $manager_addr !== false;
 	}
 
 	public function getInstanceRoles() {

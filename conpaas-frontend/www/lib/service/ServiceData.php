@@ -103,9 +103,6 @@ class ServiceData {
 		}
 	}
 
-	public static function updateManagerAddress($sid, $manager, $new_state) {
-    }
-
 	public static function updateState($sid, $state) {
 	}
 

@@ -58,38 +58,12 @@ class TaskFarmService extends Service {
 	 */
 	protected function managerRequest($http_method, $method, array $params,
 			$ping=false) {
-		$json = HTTP::jsonrpc($this->manager, $http_method, $method, $params,
-			$ping);
+		$json = HTTP::jsonrpc($this->manager . ':' . $this->getManagerPort(), 
+            $http_method, $method, $params, $ping);
 		$this->decodeResponse($json, $method);
 		return $json;
 	}
 	
-	/* 
-	 * Temporary:
-	 *
-	 * Overrode this function to send HTTP requests,
-	 * not HTTPS
-	 *
-	 */
-	
-	public function checkManagerInstance() {
-		$manager_addr = $this->manager_instance->getHostAddress();
-		if ($manager_addr !== false) {
-			$manager_url = $manager_addr;
-			if (strpos($manager_addr, 'http://') !== 0) {
-				$manager_url = 'http://'.$manager_addr
-					.':'.$this->getManagerPort();
-			}
-			if ($manager_url != $this->manager) {
-				dlog('Service '.$this->sid.' updated manager to '.$manager_url);
-				ServiceData::updateManagerAddress($this->sid, $manager_url,
-					Service::STATE_INIT);
-				return true;
-			}
-		}
-		return false;
-	}
-
 	/* 
 	 * Temporary:
 	 *
