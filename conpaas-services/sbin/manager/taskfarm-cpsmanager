@@ -229,7 +229,7 @@ if __name__ == '__main__':
     # this cloud
     'maxnodes': config_get_default(config_parser, 'iaas', 'MAXNODES', '20'),
     'speedfactor': config_get_default(config_parser, 'iaas', 'SPEEDFACTOR', '1'),
-    'port': config_get_default(config_parser, 'iaas', 'PORT', '8889')
+    'port': config_get_default(config_parser, 'iaas', 'PORT', '8999')
 	  }
 
   if config_parser.get('iaas', 'DRIVER') == 'OPENNEBULA':
