@@ -12,13 +12,13 @@ Our goal is to evaluate the behavior of the provisioning algorithms, when scalin
 \begin{itemize}
 \item  Response times from static requests were not analyzed due to its lightweight nature. 
 
-\item The algorithms collect the monitoring data through Ganglia over a reporting period of 5 minutes.
+\item The monitoring data is collected over a reporting period of 5 minutes.
 
-\item Since DAS-4 is a homogeneous infrastructure, the dynamic load-balancing weights provisioning technique was only evaluated on a heterogeneous platform like Amazon EC2. The benefits behind of this algorithm can only be appreciated when running on a heterogeneous environment, that provides VMs with different hardware configurations. 
+\item Since DAS-4 is a homogeneous infrastructure, the dynamic load-balancing weights provisioning technique was only evaluated on a heterogeneous platform like Amazon EC2. The benefits behind of this algorithm can only be appreciated in environments with VMs providing different hardware configurations. 
 
 \item These experiments used the same statistically-chose performance threshold for both infrastructures. In the future, these threshold values might be defined based on the type of VM provisioned. 
 
-\item A minimum interval of 15 minutes has been established between scaling actions. 
+\item A minimum interval of 15 minutes has been established between scaling actions to avoid excessive oscillations. 
 \end{itemize}
 \subsection*{Homogeneous Infrastructure}
 
