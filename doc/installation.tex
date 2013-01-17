@@ -105,6 +105,17 @@ sudo cpsconf.py
 sudo service apache2 restart
 \end{verbatim}
 
+\subsection{Access the Director database}
+The ConPaaS Director uses a sqlite database to store information about
+registered users and running services. It is not normally necessary for ConPaaS
+administrators to directly access such a database. However, should the need
+arise, it is possible to inspect and modify the database as follows:
+
+\begin{verbatim}
+sudo apt-get install sqlite3
+sudo sqlite3 /etc/cpsdirector/director.db
+\end{verbatim}
+
 \section{Setup the ConPaaS Frontend}
 \label{sec:frontend}
 
