@@ -126,6 +126,23 @@ After having uncompressed it you should:
   step
 \end{itemize}
 
+Enable SSL if you want to use your frontend via https, for example by issuing
+the following commands:
+
+\begin{verbatim}
+a2enmod ssl
+a2ensite default-ssl
+\end{verbatim}
+
+Details about the SSL certificate you want to use have to be specified in
+\texttt{/etc/apache2/sites-available/default-ssl}.
+
+As a last step, restart your Apache web server:
+
+\begin{verbatim}
+service apache2 restart
+\end{verbatim}
+
 At this point, your front-end should be working!
 
 \section{Using ConPaaS on Amazon EC2}
