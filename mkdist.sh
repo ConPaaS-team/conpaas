@@ -8,6 +8,12 @@ fi
 
 CPSVERSION="$1"
 
+# make documentation
+cd doc 
+make clean installation.pdf userguide.pdf > /dev/null
+cp {installation,userguide}.pdf ../conpaas-director
+cd ..
+
 # prepare director's contents
 rm -rf conpaas-director/conpaas
 mkdir -p conpaas-director/conpaas

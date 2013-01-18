@@ -1,4 +1,6 @@
 include director.cfg.example
 include director.wsgi
 include ConPaaS.tar.gz
+include installation.pdf
+include userguide.pdf
 recursive-include conpaas *
