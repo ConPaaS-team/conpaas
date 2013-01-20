@@ -27,10 +27,10 @@ parameters like CPU utilization, network traffic volume etc.
 This trigger-based technique is currently used in well-known 
 cloud platforms such as RightScale~\cite{right-scale} or OpenShift~\cite{openshift}. 
 
-For the sake of comparison, we decided to design and implement a 
+For the sake of comparison, we designed and implemented a 
 trigger-based provisioning mechanism in ConPaaS. This technique 
 monitors CPU usage and application response time metrics, and 
-dynamically adjusts the computational power allocated to an application by analyzing whether the monitoring data exceed their thresholds~\footnote{Every metric has a threshold with an upper and lower bound respectively (max,min).}, as illustrated in Algorithm~\ref{loadBased_prov}. Obviously, the lower and upper bound of each threshold are pre-defined by the user before execution.
+dynamically adjusts the computational power allocated to an application by analyzing whether the monitoring data exceed their thresholds~\footnote{Every metric has an upper and a lower threshold respectively (threshold\_max, threshold\_min).}, as illustrated in Algorithm~\ref{triggerBased_prov}. The lower and upper thresholds are pre-defined by the user before execution.
 
 \begin{algorithm} 
 {\scriptsize
@@ -41,13 +41,13 @@ dynamically adjusts the computational power allocated to an application by analy
 \KwResult{Scaling decisions}
 \BlankLine
 \While{auto-scaling is ON}{
-Collect monitoring data of each metric, \emph{data}\;
+Collect monitoring data of each metric, \emph{data$_i$}\;
 \BlankLine
 \If{ no recent scaling operation}{
-\uIf{ avg(data$_i$) $>=$ \emph{SLO\_threshold\_min}$_i$  }{
+\uIf{ avg(data$_i$) $>=$ \emph{SLO\_threshold\_min}$_i$ for all metrics }{
 ADD resources\;
 }
-\ElseIf{ avg(data$_i$) $<$ \emph{SLO\_threshold\_max}$_i$  }{
+\ElseIf{ avg(data$_i$) $<$ \emph{SLO\_threshold\_max}$_i$ for all metrics }{
 REMOVE resources\;
 } 
 %}\Else{ Sleep during 5minutes \;}
@@ -55,8 +55,8 @@ REMOVE resources\;
 Sleep for 5 minutes \; 
 }
 }
-\caption{Load-based}
-\label{loadBased_prov}
+\caption{Trigger-based}
+\label{triggerBased_prov}
 \end{algorithm}
 
 % , expressed in the form of a Service Level Agreement
@@ -65,7 +65,7 @@ Sleep for 5 minutes \;
 %\subsubsection{Problematic of this algorithm}
 %subsubsection{Drawbacks of this algorithm}
 
-Even though these type of mechanisms are simple and widely used in cloud platforms, they are excessively reactive and not so precise when provisioning web applications due to several factors: 
+Even though these type of mechanisms are simple and widely used in cloud platforms, they are excessively reactive and not so precise when provisioning web applications due to the following factors: 
 
 %regarding the decision making process
 %\corina{I removed the item about services as black boxes, because now
@@ -76,17 +76,19 @@ Even though these type of mechanisms are simple and widely used in cloud platfor
 
 
 \begin{itemize}
-\item  \textbf{Workload heterogeneity:} In some web applications, the 
-system performance behavior fluctuates following an irregular pattern 
-caused by the heterogeneity of the workload, which makes it
-difficult to predict the system's behaviour. 
+\item  \textbf{Workload heterogeneity:} For some web sites, the 
+workload fluctuates following an irregular pattern, with occasional
+short traffic spikes. An excessively reactive algorithm cannot handle
+these situations well, and will cause frequent fluctuations in the number
+of allocated resources; this has negative effects on the stability and
+performance of the system, as well as increases the infrastructure cost. 
 
 %Obviously, a reactive algorithm can be seen a good choice for resource provisioning, however. The system %performance of an application change in time if the type of workload changes.
 
-\item \textbf{Reactiveness:} An excessively reactive algorithm can affect 
-the system's stability, by causing frequent fluctuations in the number
-of allocated resources; this has negative effects on the performance, 
-as well as increases the infrastructure cost. 
+%\item \textbf{Reactiveness:} An excessively reactive algorithm can affect 
+%the system's stability, by causing frequent fluctuations in the number
+%of allocated resources; this has negative effects on the performance, 
+%as well as increases the infrastructure cost. 
 
 %\item \textbf{Services as black boxes:} Services are handled as black boxes, the definition of threshold rules often only covers system-level metrics such as response time and CPU usage. Therefore, when provisioning web applications, metrics such as request rate of static/dynamic files may be also taken into consideration to improve the accuracy of the decisions.
 
@@ -111,7 +113,7 @@ solution is the utilization of techniques that handle workload and resource
 heterogeneity without being excessively reactive. Moreover, the implementation 
 of these techniques should remain simple to facilitate their integration in 
 existing auto-scaling systems. In the following we present two techniques 
-that aims at solving the aforementioned drawbacks by relying on predictive 
+that aim at solving the aforementioned drawbacks by relying on predictive 
 and more accurate methods.
 
 % to dynamically adjust the computational power to irregular workload pattern of web applications.
@@ -211,13 +213,13 @@ Reset \emph{s\_bck} and\emph{s\_out}\;
 %in what situations can the extra condition with s\_in and s\_out prevent
 %scaling out? Also, are s\_in and s\_out ever reset or decremented?}
 
-\textbf{Workload's trend estimation:} Nowadays, there is a wide literature on mathematical models that try to predict future alterations in web application's workload. However, the workload heterogeneity and network traffic of web applications make more difficult to provide accurate predictions using these models. Besides, the complexity of these models sometimes prevent its integration into real auto scaling systems. To design a robust and simple provisioning system, we decided to use a feedback mechanism that analyzes the behavior of the system performance during an interval of time. An exhaustive analysis of the monitoring data during a small interval of time (approx. during the last 30min) provides enough information to detect the workload's trend, and thereby to classify the type of workload alteration as \emph{constant} or \emph{temporal} (Algorithm~\ref{history_prov} lines \ref{alg:esti1}-\ref{alg:esti2}). Obviously, only \emph{constant} variations may trigger scaling actions to avoid frequent fluctuations in the system performance caused by short and sudden \emph{temporal} variations (traffic spikes). This mechanism is also adaptable, as linear regression, kernel canonical correlation or even any other mathematical model can be utilized to calculate the workload trend estimation.
+\textbf{Workload's trend estimation:} Nowadays, there is a wide literature on mathematical models that try to predict future alterations in web application's workload. However, the workload heterogeneity and network traffic of web applications make more difficult to provide accurate predictions using these models. Besides, the complexity of these models sometimes prevent its integration into real auto scaling systems. To design a robust and simple provisioning system, we decided to use a feedback mechanism that analyzes the behavior of the system performance during a short interval of time. An analysis of the monitoring data during an interval of time of approx. 30min provides enough information to detect the workload's current trend, and thereby to classify the type of workload alteration as \emph{constant} or \emph{temporal} (Algorithm~\ref{history_prov} lines \ref{alg:esti1}-\ref{alg:esti2}). Only \emph{constant} variations may trigger scaling actions to avoid frequent fluctuations in the system performance caused by short and sudden \emph{temporal} variations (traffic spikes). This mechanism is also adaptable, as any other mathematical model (e.g. linear regression or kernel canonical correlation) can be utilized to calculate the workload trend estimation.
 
 %\textbf{Two-level thresholds:} The use of flexible thresholds reduces the reactiveness of our algorithm, as it allows to analyze the progress of performance %fluctuations. This algorithm uses two levels of threshold ranges for each metric: \emph{predictive} and \emph{reactive}. As shown on %Figure~\ref{flexibleThresholds}, there are two "head rooms" between the SLO (Service Level Objective) threshold (performance requirements pre-defined by the %user) and the flexible thresholds.  First, the head-room $H_1$ is between the predictive threshold and the reactive thresholds, and is intended to alert of possible %workload alterations in advance. Thereby, when the system performance exceeds the predictive ranges, there is an increment in the chances of scaling actions will %be triggered to tackle future SLO violations, as denoted by  \emph{s\_in} and \emph{s\_out} in Algorithm~\ref{flexibleThresholds}. Otherwise, there is a decrease of %the scaling chances. Note that, \emph{s\_in} and \emph{s\_out} are calculated based on the metric's weight. The second head-room $H_2$ comprises between the %SLO and reactive thresholds is used to trigger scaling actions if the workload presents a \emph{constant} variation. 
 
 \textbf{Two-level thresholds:} Initially, the users define a fixed threshold range based on the performance requirements of its application, denoted by SLO thresholds (Service Level Objective) in Figure~\ref{flexibleThresholds}. However, these upper and lower bounds only indicate when a SLO violation occurs. Thus, to prevent SLO violations in advance, additional boundaries have to be defined. This mechanism establishes two levels of threshold ranges for each metric based on the bounds defined in the SLO. In Figure~\ref{flexibleThresholds}, these two extra thresholds called \emph{predictive} and \emph{reactive}, both with upper and lower bounds, create two "head-rooms" between the SLO threshold and them. The predictive head-room $H_1$ is intended to alert of possible workload alterations when a metric exceeds its predictive bounds, thus increasing proportionally to its weight the chances to trigger scaling actions (denoted by \emph{s\_bck} and \emph{s\_out}  in Algorithm~\ref{history_prov} lines \ref{alg:thr1}-\ref{alg:thr2}). Otherwise, the scaling chances will drop in the same proportion (Line \ref{alg:thr3}). The reactive head-room $H_2$ is used to trigger scaling actions if the workload presents a \emph{constant} variation (Lines \ref{alg:thr4}-\ref{alg:thr5}). This mechanism in conjunction with the workload trend estimation allow to better analyze the evolution of performance fluctuations, and as a consequence improves the accuracy of our decisions. In the future, these two-levels of thresholds could be adjusted depending on the hardware configuration of each provisioned VM.  
 
-To sum up, the feedback algorithm triggers a scaling action when a serie of conditions are satisfied: (i) no previous scaling actions have been taken over the last 15min; (ii) the recent monitoring data have to exceed the predictive and reactive threshold ranges; (iii) the workload trend has to follow a constant pattern (increasing/decreasing). Although the combination of these techniques improves the accuracy of our measurements, the heterogeneous nature of the VM instances requires more flexible provisioning algorithms, as we pointed out in ~\cite{jiangThesis}. 
+To sum up, the feedback algorithm triggers a scaling action when a serie of conditions are satisfied: (i) no previous scaling actions have been taken over the last 15min; (ii) the recent monitoring data have to exceed the predictive and reactive threshold ranges; (iii) the workload trend has to follow a constant pattern (increasing/decreasing). Although the combination of these techniques improves the accuracy of our measurements, the heterogeneous nature of the VM instances requires more flexible provisioning algorithms, as pointed out in ~\cite{jiangThesis}. 
 
 %As an example of flexible thresholds for the CPU-usage, we established a predictive range comprised between 30\% and 70\% , and a reactive comprised between 20\% and 80\%.  
 
@@ -255,23 +257,28 @@ To sum up, the feedback algorithm triggers a scaling action when a serie of cond
 
 Another problem that we need to consider is the heterogeneity of cloud platforms.
 Different virtual machines from the same cloud might have different performance
-characteristics, even when their specifications from the cloud vendor are the same.
-This problem can be addressed through various load balancing techniques, like
-assigning weights to the backend servers or taking into account the current number
-of connections that each server handles. Furthermore, the performance behavior
-of the virtual servers can also change in time, either due to changes in
-the application's usage patterns, or due to changes related to the hosting
-of the virtual servers (e.g., VM migration).
+characteristics, even when their specifications from the cloud vendor are 
+the same~\cite{ec2Performance}. This issue can be addressed through various 
+load balancing techniques, like assigning weights to the backend servers or 
+taking into account the current number of connections that each server 
+handles. Furthermore, the performance behavior of the virtual servers may 
+also fluctuate, either due to changes in the application's usage 
+patterns, or due to changes related to the hosting of the virtual servers 
+(e.g., VM migration).
 
-In order to address these issues in ConPaaS we implemented a weighted load balancing
-system in which the weights of the servers are periodically re-adjusted
-automatically, based on the monitoring data. As illustrated in 
-Algorithm~\ref{mix_prov}, this method assigns the same weight to each 
-backend server at the beginning of the process. The weights are then periodically
-adjusted (every $\sim$ 15min) proportionally with the difference among the
-average response times of the servers during this time interval.
+In order to address these issues in ConPaaS we implemented a weighted 
+load balancing system in which the weights of the servers are 
+periodically re-adjusted automatically, based on the monitoring data.  
+This method assigns the same weight to each backend server at the 
+beginning of the process. The weights are then periodically
+adjusted (in our experiments, every $\sim$ 15min) proportionally 
+with the difference among the average response times of the servers 
+during this time interval. By adding this technique to the feedback-based
+algorithm, we noticed a performance improvement when running the
+benchmarks.
 
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{comment}
 \begin{algorithm}
 {\scriptsize
 \SetAlgoLined
@@ -316,7 +323,9 @@ Adjust load-balancing weights based on the workload ($\sim$15min)\;
 \caption{Dynamic load-balancing weights}
 \label{mix_prov}
 \end{algorithm}
+\end{comment}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %\fixme{unlike in some synthetic benchmarks, in Wikipedia there are large variations
 %in the complexity of the articles; so the PHP processing time is more difficult 
