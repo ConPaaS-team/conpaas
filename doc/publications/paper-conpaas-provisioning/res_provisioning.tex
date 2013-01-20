@@ -44,7 +44,7 @@ dynamically adjusts the computational power allocated to an application by analy
 Collect monitoring data of each metric, \emph{data$_i$}\;
 \BlankLine
 \If{ no recent scaling operation}{
-\uIf{ avg(data$_i$) $>=$ \emph{SLO\_threshold\_min}$_i$ for all metrics }{
+\uIf{ avg(data$_i$) $>=$ \emph{SLO\_threshold\_min}$_i$ for at least one metric }{
 ADD resources\;
 }
 \ElseIf{ avg(data$_i$) $<$ \emph{SLO\_threshold\_max}$_i$ for all metrics }{
