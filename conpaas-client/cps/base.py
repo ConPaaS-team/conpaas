@@ -390,6 +390,9 @@ class BaseClient(object):
                     if service_type == 'taskfarm':
                         from cps.taskfarm import Client
                         return Client().create(service_type)
+
+                    # normal service creation
+                    return getattr(self, command)(service_type)
                 except IndexError:
                     self.usage(argv[0])
                     sys.exit(0)
