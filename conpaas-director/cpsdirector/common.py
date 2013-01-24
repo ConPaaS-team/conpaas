@@ -6,7 +6,10 @@ from grp import getgrnam
 
 from ConfigParser import ConfigParser
 
-CONFFILE = "/etc/cpsdirector/director.cfg"
+CONFFILE = os.getenv('DIRECTOR_CFG')
+
+if not CONFFILE:
+    CONFFILE = "/etc/cpsdirector/director.cfg"
 
 config = ConfigParser()
 config.read(CONFFILE)
