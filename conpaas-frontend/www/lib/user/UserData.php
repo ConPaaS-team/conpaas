@@ -75,7 +75,11 @@ class UserData {
        $user_array = array('uid' => $user->uid, 
                            'username' => $user->username,
                            'passwd' => $user->password, 
-                           'credit' => $user->credit);
+                           'credit' => $user->credit,
+                           'fname' => $user->fname,
+                           'lname' => $user->lname,
+                           'email' => $user->email,
+                           'affiliation' => $user->affiliation);
 
        $uid = $user->uid;
 
