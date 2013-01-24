@@ -386,8 +386,10 @@ class BaseClient(object):
                     if service_type not in self.available_services():
                         raise IndexError
 
-                    # Create the service and leave
-                    return self.create(service_type)
+                    module = getattr(__import__('cps.' + service_type), service_type)
+                    client = module.Client()
+                    # Create the service and leave (if the client does not have a specific create method, the generic create is taken automagically)
+                    return client.create(service_type)
                 except IndexError:
                     self.usage(argv[0])
                     sys.exit(0)
