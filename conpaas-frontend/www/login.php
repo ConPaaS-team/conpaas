@@ -71,7 +71,7 @@ $page = new LoginPage();
 				<li> it monitors its own performance
 				<li> it can increase or decrease its processing capacity by dynamically <br />(de-)provisioning instances of itself in the cloud </li>
 			</ul>
-			<em>Copyright &copy;2011-2012 Contrail consortium.<br>All rights reserved.</em>
+			<em>Copyright &copy;2011-2013 Contrail consortium.<br>All rights reserved.</em>
 			</p>
 		</td>
 		<td class="formwrap">
