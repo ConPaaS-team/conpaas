@@ -1,8 +1,17 @@
-In this section we conducted our experiments on a heterogeneous infrastructure like Amazon EC2~\cite{amazonEC2}, and on a homogeneous infrastructure like DAS-4 (the Distributed ASCI Supercomputer 4)~\cite{das4}. In our experiment campaign, we compared the degree of SLO enforcement and resource consumption for each provisioning algorithm implemented in ConPaaS. 
+To compare the provisioning algorithms described above, we ran experiments
+on two infrastructures: a homogeneous one (the DAS-4, a multi-cluster system
+hosted by universities in The Netherlands~\cite{das4}) and a heterogeneous
+one (the Amazon EC2 cloud~\cite{amazonEC2}). The goal of our experiments
+was to compare the algorithms by how well they fulfill the SLOs and by
+the amount of resources they allocate.
+
+%In this section we conducted our experiments on a heterogeneous infrastructure like Amazon EC2~\cite{amazonEC2}, and on a homogeneous infrastructure like DAS-4 (the Distributed ASCI Supercomputer 4)~\cite{das4}. In our experiment campaign, we compared the degree of SLO enforcement and resource consumption for each provisioning algorithm implemented in ConPaaS. 
 
 %DAS-4 is the Dutch Computational Infrastructure, a six-cluster wide-area distributed system designed with research purposes
 
-\textbf{Testbed configuration:}  As a realistic and representative scenario, we deployed MediaWiki application using 	ConPaaS on both infrastructures, and we ran the Wikibench tools utilizing a Wikipedia real access trace during 24hours. Consequently, our goal is to evaluate the behavior of the provisioning algorithms, when scaling out and back the number of VMs hosting PhP servers to guarantee several performance requirements, referred to as SLO.  Accordingly, some assumptions were made:
+\textbf{Testbed configuration:}  As a representative scenario, we deployed the MediaWiki application using ConPaaS on both infrastructures, and we ran the Wikibench tools with a 10\% sample of a real Wikipedia access trace for 24hours. 
+%Consequently, our goal is to evaluate the behavior of the provisioning algorithms, when scaling out and back the number of VMs hosting PhP servers to guarantee several performance requirements, referred to as SLO.  Accordingly, some assumptions were made:
+We configured the experiments as follows: 
 
 \begin{itemize}
 %\item  Response times from static requests were not analyzed due to its lightweight nature. 
@@ -12,9 +21,9 @@ In this section we conducted our experiments on a heterogeneous infrastructure l
 \item We fixed a SLO of 700 milliseconds at the service's side (denoted by a red Line on Figures~\ref{naiveDas4},\ref{historyDas4},\ref{naiveEC2},\ref{historyEC2}).
 
 
-\item The dynamic load-balancing weights provisioning technique was only evaluated on a heterogeneous platform like Amazon EC2. The benefits behind of this algorithm can only be appreciated in environments with VMs providing different hardware configurations. 
+\item The dynamic load-balancing weights provisioning technique was only evaluated on the heterogeneous platform, Amazon EC2. This algorithm brings improvements to the feedback algorithm only in environments where VMs may have different hardware configurations. 
 
-\item The algorithms used the same statistically-chose performance threshold ranges. 
+\item The algorithms used the same statistically-chosen performance threshold ranges. 
 
 %\item A minimum interval of 15 minutes has been established between scaling actions to avoid excessive oscillations. 
 \end{itemize}
@@ -24,10 +33,10 @@ In this section we conducted our experiments on a heterogeneous infrastructure l
 
 \subsection*{Homogeneous Infrastructure}
 
-Our experiments on DAS4 relies on OpenNebula as IaaS~\cite{sotomayor_virtual_2009}. To deploy the Wikipedia services, we used small instances for the PhP service (manager and agents) and a medium instance for the MySQL service (agent). OpenNebula's small instances provision VMs equipped with 1 CPU of 2Ghz, and 1GiB of memory, while medium instances are equipped with 4 CPU's of 2Ghz, and 4GiB of memory.
+Our experiments on DAS-4 rely on OpenNebula as IaaS~\cite{sotomayor_virtual_2009}. To deploy the Wikipedia services, we used small instances for the PHP service (manager and agents) and a medium instance for the MySQL service (agent). In DAS-4, OpenNebula's small instances provision VMs equipped with 1 CPU of 2Ghz, and 1GiB of memory, while medium instances are equipped with 4 CPU's of 2Ghz, and 4GiB of memory.
 
 \paragraph{SLO enforcement.}
-Figure~\ref{naiveDas4} and Figure~\ref{historyDas4} depict the degree of SLO fulfillment of the trigger-based and feedback algorithms, indicating the average of response times obtained during the execution of the Wikipedia workload trace. As illustrated on Figure~\ref{naiveDas4}, the results show how the trigger-based provisioning algorithm presents an important amount of SLO violations (between the yellow and red Lines), which are generated due to its excessive reactive behavior. As we mentioned, this algorithm is an easy target to traffic spikes, as it tends to add or remove VMs to handle sharp and sudden variations in the workload, thus producing these SLO violations. In contrast on Figure~\ref{historyDas4}, the system performance (\emph{i.e.,} response time) do not fluctuate greatly showing a more stable behavior during the whole experiment. As a result, there is a drop of the 31.72\% in the amount of SLO violations in comparison with the trigger-based algorithm. 
+Figure~\ref{naiveDas4} and Figure~\ref{historyDas4} represent the degree of SLO fulfillment of the trigger-based and feedback algorithms, indicating the average of response times obtained during the execution of the Wikipedia workload trace. The results from Figure~\ref{naiveDas4} show that the trigger-based provisioning algorithm provokes an important amount of SLO violations at certain moments in time, due to its excessively reactive behavior. As we mentioned, this algorithm fails easily during traffic spikes, as adds or removes VMs without evaluating the workload trend. The feedback algorithm, as shown on Figure~\ref{historyDas4}, handles the traffic spikes better and can achieve fewer SLO violations; specifically, there were 31.72\% less SLO violations in comparison with the trigger-based algorithm. 
 
 
 \begin{figure}
@@ -42,7 +51,7 @@ Figure~\ref{naiveDas4} and Figure~\ref{historyDas4} depict the degree of SLO ful
 
 \paragraph{Resource consumption.}
 
-To better understand the behavior of both algorithms, we may also focus on the resource consumption illustrated on Figure~\ref{resComDas4}. Firstly, the excessive reactive behavior of the trigger-based algorithm is again illustrated at the interval \emph{t=350min} and \emph{t=820min}, where two scaling operations under-provision the system during a short period of time. These provisioning decisions provoked fluctuations in the system performance that incremented the financial cost, as well as throughput alterations under the same intervals of time, as depicted on Figure~\ref{naiveDas4}. When using the feedback algorithm, the system makes provisioning decisions by analyzing workload's trend during a considerable interval of time. Hence, scaling actions are only triggered when having \emph{constant} alterations in the workload, thereby providing a more efficient resource usage. Indeed, the workload alterations depicted on Figure~\ref{workload}, perfectly match with the provisioning decisions made by the feedback algorithm on Figure~\ref{resComDas4}.
+To better understand the behavior of both algorithms, we shall also focus on the resource consumption illustrated on Figure~\ref{resComDas4}. The excessively reactive behavior of the trigger-based algorithm can be noticed in the time intervals around \emph{t=350min} and \emph{t=820min}, where two scaling operations under-provision the system during a short period of time. These provisioning decisions provoked the SLO violations that are visible in Figure~\ref{naiveDas4}in the same intervals of time. Besides affecting the system's stability, such short fluctuations in the number of provisioned resource also raise the cost of hosting the application since more VM instantiations will be triggered. When using the feedback algorithm, the system makes provisioning decisions by analyzing workload's trend during a considerable interval of time. Scaling actions are only triggered when having \emph{constant} alterations in the workload, thereby providing a more efficient resource usage. Indeed, we can see that the provisioning decisions made by the feedback algorithm on Figure~\ref{resComDas4} match well with the workload alterations depicted on Figure~\ref{workload}.
 
 \begin{figure}
 \begin{center}
@@ -64,13 +73,13 @@ To better understand the behavior of both algorithms, we may also focus on the r
 
 \paragraph{Discussion.}
 
-Using the trigger-based provisioning algorithm, the system performance fluctuates greatly following a pattern similar to the web traffic, that increases the amount of SLO violations. The reactive behavior of this algorithm triggers scaling actions that affect to the system performance instead of improving it, and as a consequence, it is also wasteful in terms of resource consumption. Unlike feedback algorithm offers an efficient resource usage and a constant performance behavior while meeting the application's SLO. 
+%Using the trigger-based provisioning algorithm, the system performance fluctuates greatly following a pattern similar to the web traffic, that increases the amount of SLO violations. The reactive behavior of this algorithm triggers scaling actions that affect to the system performance instead of improving it, and as a consequence, it is also wasteful in terms of resource consumption. Unlike feedback algorithm offers an efficient resource usage and a constant performance behavior while meeting the application's SLO. 
 
 %Therefore this algorithm finds the trade-off between accuracy and cost savings.
 
 %Both algorithms are best-effort regarding the SLO fulfillment, and thereby temporal alterations of the workload (with a short duration of 5min approx.) cannot be handled. The heterogeneity of the PhP-requests including images and requiring multiple Db queries, as well as the startup time of VMs (2-5min), are in part responsible of these SLO violations. 
 
-Both algorithms are best-effort regarding the SLO fulfillment, and thereby temporal alterations of the workload (with a short duration of 5min approx.) cannot be handled. The heterogeneity of the complexity of the PhP requests, as well as the startup time of VMs (2-5min), are in part responsible of these SLO violations.
+Both algorithms are best-effort regarding the SLO fulfillment, and thus they do not handle well short alterations of the workload (with duration in the range of minutes). The heterogeneity of the PHP requests, as well as the startup time of VMs (2-5min), are in part responsible of these SLO violations.
 
 %It avoid to under-provisioning in two occasions  while decreases the number of SLA violation. However, the naive alg. is vulnerable to temporal bursty workload variations (10 min), an increment of SLA violated is caused by under-provisioning operations in conjunction with workload variations. 
 
@@ -78,12 +87,12 @@ Both algorithms are best-effort regarding the SLO fulfillment, and thereby tempo
 
 \subsection*{Heterogeneous Infrastructure}
 
-Our experiments on EC2 used small instances for the PhP service (manager and agents) and  a medium instance for the MySQL service (agent). EC2 small instances provision VMs equipped with 1 EC2 CPU, and 1.7GiB of memory, while medium instances are equipped with 2 EC2 CPU's, and 3.75GiB of memory.
+Our experiments on EC2 used small instances for the PHP service (manager and agents) and  a medium instance for the MySQL service (agent). EC2 small instances provision VMs equipped with 1 EC2 CPU, and 1.7GiB of memory, while medium instances are equipped with 2 EC2 CPU's, and 3.75GiB of memory.
 
 %In the following, we analyze the behavior of our algorithms when making provisioning decisions on a heterogeneous infrastructure.
 
 \paragraph{SLO enforcement.}
-Figure~\ref{naiveEC2}, Figure~\ref{historyEC2} and Figure~\ref{historyWeightEC2} show the system performance of the trigger-based, feedback and dynamic load-balancing weights algorithms, respectively. As depicted on Figure~\ref{naiveEC2}, the performance fluctuates greatly following an unstable pattern when using the trigger-based algorithm. More precisely, two of the three workload peaks caused at \emph{t=300min} and \emph{t=820min}, are explained by looking at the variations on the Wikipedia workload described on Figure~\ref{workload}. However, there is a third peak between \emph{t=400min} and \emph{t=500min} that corresponds to the interval of time on which the workload trace experiences a significant drop in the request volumes. During this period of time, the workload causes sudden and sharp performance variations that explains this behavior, as a side effect associated to very frequent scaling actions. As a result, there is a degradation of the SLO fulfillment. 
+Figure~\ref{naiveEC2}, Figure~\ref{historyEC2} and Figure~\ref{historyWeightEC2} show the system performance of the trigger-based, feedback and dynamic load-balancing weights algorithms, respectively. As depicted on Figure~\ref{naiveEC2}, the performance of the trigger-based algorithm is even more unstable than in the case of the homogeneous infrastructure. More precisely, two of the three peaks in response time, at \emph{t=300min} and \emph{t=820min}, can explained by the variations in the Wikipedia workload shown in Figure~\ref{workload}. However, there is a third peak between \emph{t=400min} and \emph{t=500min} that corresponds to the interval of time on which the workload trace experiences a significant drop in the request volumes. During this period of time, the algorithm attempts to scale down the system but this causes oscillations in the number of allocated resources.  
 
 On the other hand, Figure~\ref{historyEC2} and Figure~\ref{historyWeightEC2} show as the feedback and dynamic load-balancing weight algorithm behave similarly. Even though both algorithms are best-effort, there is an important reduction in the number of SLO violations during the trace execution. In particular, the feedback algorithm reduces the SLO violations in a  41.3\%, while the dynamic load-balancing weights algorithm does it in a 47.6\%. Like on DAS-4, the feedback algorithm presents a stable performance pattern without having sudden and bursty workload alterations. Besides, as shown on Figure~\ref{historyWeightEC2}, the dynamic load-balancing weights algorithm algorithm has a similar behavior to the feedback algorithm in terms of system performance, however. This algorithm improves the SLO enforcement in a 6.3\% in comparison with feedback at the client's side. 
 
