@@ -270,6 +270,12 @@ update-rc.d php5-fpm disable
 # remove dotdeb repo
 sed --in-place 's%deb http://packages.dotdeb.org stable all%%' /etc/apt/sources.list
 apt-get -f -y update
+
+echo "deb http://www.grid-appliance.org/files/packages/deb/ stable contrib" >> /etc/apt/sources.list
+wget -O - http://www.grid-appliance.org/files/packages/deb/repo.key | apt-key add -
+apt-get update
+apt-get -f -y install ipop
+
 # remove cached .debs from /var/cache/apt/archives to save disk space
 apt-get clean
 
