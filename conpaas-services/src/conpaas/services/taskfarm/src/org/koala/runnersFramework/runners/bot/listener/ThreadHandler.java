@@ -33,6 +33,13 @@ class ThreadHandler extends Thread {
 			// XXX Dirty fix to eliminate the need to handle Content-Length correctly 
 			socket.setSoTimeout(1000);
 			
+			// even dirtier: wait a little, before reading the socket
+			try {
+				Thread.sleep(500);
+			} catch (Exception E) {
+				E.printStackTrace();
+			}
+
 			InputStream ips = socket.getInputStream();
 			ops = socket.getOutputStream();
 
@@ -85,7 +92,7 @@ class ThreadHandler extends Thread {
 			jsonRpcServer.handle(baipsContent, ops);
 		} catch (Exception ex) {
 			System.err.println("Caught exception:\n" + ex);
-			System.err.println("Request was:\n" + header + "\n" + jsonString);
+                        System.err.println("Request was:\n<header>" + header + "</header>\n<jsonString>" + jsonString  + "</jonString>");
 		}
 	}
 
