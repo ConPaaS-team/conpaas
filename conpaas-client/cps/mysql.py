@@ -5,14 +5,17 @@ from cps.base import BaseClient
 
 class Client(BaseClient):
 
-    def set_password(self, service_id):
-        pprompt = lambda: (getpass.getpass(), getpass.getpass('Retype password: '))
+    def set_password(self, service_id, password=None):
+        if password:
+            p1 = password
+        else:
+            pprompt = lambda: (getpass.getpass(), getpass.getpass('Retype password: '))
 
-        p1, p2 = pprompt()
-
-        while p1 != p2:
-            print('Passwords do not match. Try again')
             p1, p2 = pprompt()
+
+            while p1 != p2:
+                print('Passwords do not match. Try again')
+                p1, p2 = pprompt()
 
         data = { 'user': 'mysqldb', 'password': p1 }
         res = self.callmanager(service_id, "set_password", True, data)
@@ -38,7 +41,7 @@ class Client(BaseClient):
 
     def usage(self, cmdname):
         BaseClient.usage(self, cmdname)
-        print "    set_password      serviceid"
+        print "    set_password      serviceid password"
         print "    add_nodes         serviceid count"
         print "    remove_nodes      serviceid count"
 
@@ -53,7 +56,12 @@ class Client(BaseClient):
                 sys.exit(0)
                 
             self.check_service_id(sid)
-            getattr(self, command)(sid)
+
+            try:
+                password = argv[3]
+                getattr(self, command)(sid, password)
+            except IndexError:
+                getattr(self, command)(sid)
 
         if command in ( 'add_nodes', 'remove_nodes' ):
             try:
