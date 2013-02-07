@@ -152,20 +152,37 @@ Furthermore, the use of a dynamic load-balancing algorithm provided a more effic
 %{\scriptsize
 %\begin{table}
 %\begin{center}
- %   \begin{tabular}{ | l | c | c |}
- %   \hline
- %  \textbf{Algorithm}   & \textbf{DAS4} & \textbf{EC2}   \\ \hline
- %   Load-based & 3808 &  30357    \\ \hline
- %   Feedback &	2601 & 17856 \\ \hline
+  %  \begin{tabular}{ | l | c | c |}
+  %  \hline
+  % \textbf{Algorithm}   & \textbf{DAS4} & \textbf{EC2}   \\ \hline
+  %  Trigger-based & 3808 &  30357    \\ \hline
+  %  Feedback &	2601 & 17856 \\ \hline
  %   Dynamic load-balancing   & -- & 15931\\ \hline
 %\textbf{Num. of requests}  & 384501 & 438430  \\ \hline
- %   \hline
+  %  \hline
 	
-  %  \end{tabular}
+ %   \end{tabular}
 %\end{center}
 %\caption{SLO violations at the client's side (1500ms).}
 %\end{table}
 %}
+
+\begin{table*}
+  {\scriptsize 
+\begin{center}
+    \begin{tabular}{  | c | c | c | c | c | c | c | c | c |}
+    \hline
+    \multicolumn{3}{|c|}{ \textbf{Trigger}  } & \multicolumn{3}{|c|}{ \textbf{Feedback} }&  \multicolumn{3}{c|}{ \textbf{Load-balancing}  }   \\ \hline 
+ \textbf{SLO Violations}& \textbf{Decisions} & \textbf{Cost} & \textbf{SLO Violations} & \textbf{Decisions} & \textbf{Cost} & \textbf{SLO Violations} & \textbf{Decisions} & \textbf{Cost} \\ \hline
+  6.92\% & 14 & 7.5 &  4.07\%  & 8 & 7.7 &  3.63\% & 8 & 7.7  \\ \hline
+  13.7 \% & 28 & 7.86 &  3.96\%  & 8 & 8.4 &  4.07\% & 8 & 8.32  \\ \hline
+ \end{tabular}
+\end{center}
+\vspace{-5mm}
+\caption{Analysis of results on EC2}
+}
+\end{table*}
+
 
 
 \subsection*{Discussion}
