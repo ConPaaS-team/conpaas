@@ -37,17 +37,12 @@ POSSIBILITY OF SUCH DAMAGE.
 
 import os
 import tempfile
-from subprocess import Popen, PIPE
+
+from conpaas.core.misc import run_cmd
 
 GIT_HOME           = "/home/git"
 AUTH_KEYS_FILENAME = os.path.join(GIT_HOME, ".ssh", "authorized_keys")
 DEFAULT_CODE_REPO  = os.path.join(GIT_HOME, "code")
-
-def __runcmd(cmd, directory):
-  pipe = Popen(cmd, shell=True, cwd=directory, stdout=PIPE, stderr=PIPE)
-  out, error = pipe.communicate()
-  pipe.wait()
-  return out, error
 
 def __filter_authorized_keys(keys):
   return [ k for k in keys if k and not k.startswith('#') ]
@@ -86,7 +81,7 @@ def remove_authorized_keys(keys):
   
 def git_push(repo, destination_ip):
   cmd = 'git push git@%s:%s master' % (destination_ip, DEFAULT_CODE_REPO)
-  return __runcmd(cmd, repo)
+  return run_cmd(cmd, repo)
 
 def git_create_tmp_repo():
   """Create a temporary git repository with a pseudo-random name. 
@@ -95,12 +90,12 @@ def git_create_tmp_repo():
   This function is useful for automated testing purposes."""
   repo_path = tempfile.mkdtemp()
   cmd = 'git init %s' % repo_path
-  __runcmd(cmd, repo_path)
+  run_cmd(cmd, repo_path)
 
   cmd = 'git add %s' % tempfile.mkstemp(dir=repo_path)[1]
-  __runcmd(cmd, repo_path)
+  run_cmd(cmd, repo_path)
 
-  __runcmd('git commit -am "Initial commit"', repo_path)
+  run_cmd('git commit -am "Initial commit"', repo_path)
   return repo_path
 
 def git_code_version(repo):
@@ -113,13 +108,13 @@ def git_code_version(repo):
 
   """
   cmd = 'git log -1 --pretty=oneline --format="%h"'
-  return __runcmd(cmd, repo)[0].rstrip()
+  return run_cmd(cmd, repo)[0].rstrip()
 
 def git_last_description(repo):
   """Return a string containing the subject line of the last commit performed
   in the specified repository."""
   cmd = 'git log -1 --pretty=oneline --format="%s"'
-  return __runcmd(cmd, repo)[0].rstrip()
+  return run_cmd(cmd, repo)[0].rstrip()
 
 def git_enable_revision(target_dir, repo, rev):
   """This function clones a local git repository into target_dir/rev.
@@ -140,7 +135,7 @@ def git_enable_revision(target_dir, repo, rev):
   """
   dest_dir = os.path.join(target_dir, rev)
 
-  __runcmd(cmd='git clone %s %s' % (repo, rev), directory=target_dir)
-  __runcmd(cmd='git checkout %s' % rev, directory=dest_dir)
+  run_cmd(cmd='git clone %s %s' % (repo, rev), directory=target_dir)
+  run_cmd(cmd='git checkout %s' % rev, directory=dest_dir)
 
   return dest_dir

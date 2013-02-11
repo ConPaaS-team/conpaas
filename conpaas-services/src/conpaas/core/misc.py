@@ -42,6 +42,7 @@ Created on Feb 8, 2011
 
 import zipfile, tarfile, socket, fcntl, struct
 
+from subprocess import Popen, PIPE
 
 def file_get_contents(filepath):
   f = open(filepath, 'r')
@@ -120,3 +121,9 @@ def get_ip_address(ifname):
       0x8915,  # SIOCGIFADDR
       struct.pack('256s', ifname[:15])
   )[20:24])
+
+def run_cmd(cmd, directory):
+  pipe = Popen(cmd, shell=True, cwd=directory, stdout=PIPE, stderr=PIPE)
+  out, error = pipe.communicate()
+  pipe.wait()
+  return out, error
