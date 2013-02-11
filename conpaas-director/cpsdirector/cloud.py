@@ -6,6 +6,8 @@ from conpaas.core.misc import file_get_contents
 from cpsdirector import x509cert
 from cpsdirector import common
 
+from sqlalchemy.orm.exc import NoResultFound
+
 class ManagerController(Controller):
 
     def __init__(self, config_parser, **kwargs):
@@ -120,7 +122,11 @@ EOF
 
         uid = self.config_parser.get("manager", "FE_USER_ID")
 
-        user = cpsdirector.User.query.filter_by(uid=uid).one()
+        try:
+            user = cpsdirector.User.query.filter_by(uid=uid).one()
+        except NoResultFound:
+            return False
+
         user.credit -= value
 
         if user.credit > -1:
