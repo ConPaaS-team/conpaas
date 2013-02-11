@@ -106,8 +106,6 @@ class cert_required(object):
     def __call__(self, fn):
         @wraps(fn)
         def decorated(*args, **kwargs):
-            log('%s: cert_required(role=%s)' % (fn.__name__, self.role))
-
             g.cert = {}
 
             if os.environ.get('DIRECTOR_TESTING'):
@@ -150,8 +148,6 @@ class cert_required(object):
                     return build_response(simplejson.dumps(False))
 
                 log('cert_required: valid certificate (user %s, service %s)' % (uid, service_locator))
-            else:
-                log('cert_required: valid certificate (user %s)' % uid)
 
             return fn(*args, **kwargs)
         return decorated
