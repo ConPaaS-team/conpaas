@@ -72,7 +72,7 @@ class XtreemFSAgent(BaseAgent):
         self.MRC = role.MRC
         self.OSD = role.OSD
         
-    def _create(self,post_params,class_file,pClass):
+    def _create(self, post_params, class_file, pClass):
         if exists(class_file):
             return HttpErrorResponse(AgentException(
                 AgentException.E_CONFIG_EXISTS).message)
@@ -97,7 +97,8 @@ class XtreemFSAgent(BaseAgent):
                 pickle.dump(p, fd)
                 fd.close()
             except Exception as e:
-                ex = AgentException(AgentException.E_CONFIG_COMMIT_FAILED, detail=e)
+                ex = AgentException(AgentException.E_CONFIG_COMMIT_FAILED, 
+                    detail=e)
                 self.logger.exception(ex.message)
                 return HttpErrorResponse(ex.message)
             else:
@@ -129,38 +130,38 @@ class XtreemFSAgent(BaseAgent):
 
 
     @expose('POST')
-    def createMRC(self,kwargs):
+    def createMRC(self, kwargs):
         try: 
             kwargs = self._MRC_get_params(kwargs)     
         except AgentException as e:
             return HttpErrorResponse(e.message)
         else:
             with self.mrc_lock:
-                return self._create(kwargs,self.mrc_file,self.MRC)
+                return self._create(kwargs, self.mrc_file, self.MRC)
 
     @expose('POST')
-    def createDIR(self,kwargs):
+    def createDIR(self, kwargs):
         with self.dir_lock:
-            return self._create(kwargs,self.dir_file,self.DIR)
+            return self._create(kwargs, self.dir_file, self.DIR)
     
 
     @expose('POST')
-    def createOSD(self,kwargs):
+    def createOSD(self, kwargs):
         try:
             kwargs = self._OSD_get_params(kwargs)
         except AgentException as e:
             return HttpErrorResponse(e.message)
         else:
             with self.osd_lock:
-                return self._create(kwargs,self.osd_file,self.OSD)
+                return self._create(kwargs, self.osd_file, self.OSD)
 
     @expose('POST')
-    def stopOSD(self,kwargs):
+    def stopOSD(self, kwargs):
         """Kill the OSD service"""
         with self.osd_lock:
-            return self._stop(kwargs,self.osd_file,self.OSD)       
+            return self._stop(kwargs, self.osd_file, self.OSD)       
 
-    def _MRC_get_params(self,kwargs):
+    def _MRC_get_params(self, kwargs):
         ret = {}
         if 'dir_serviceHost' not in kwargs:
             raise AgentException(
@@ -168,7 +169,7 @@ class XtreemFSAgent(BaseAgent):
         ret['dir_serviceHost'] = kwargs.pop('dir_serviceHost')
         return ret
  
-    def _OSD_get_params(self,kwargs):
+    def _OSD_get_params(self, kwargs):
         ret = {}
         if 'dir_serviceHost' not in kwargs:
             raise AgentException(
