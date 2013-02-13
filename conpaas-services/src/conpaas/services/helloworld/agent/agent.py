@@ -2,24 +2,15 @@ from conpaas.core.expose import expose
 
 from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse
 
-from conpaas.core.log import create_logger
+from conpaas.core.agent import BaseAgent
 
-class HelloWorldAgent():
+class HelloWorldAgent(BaseAgent):
     def __init__(self,
                  config_parser, # config file
                  **kwargs):     # anything you can't send in config_parser 
                                 # (hopefully the new service won't need anything extra)
-
-      self.logger = create_logger(__name__)
-      self.state = 'INIT' 
+      BaseAgent.__init__(self, config_parser)
       self.gen_string = config_parser.get('agent', 'STRING_TO_GENERATE')
-
-    @expose('GET')
-    def check_agent_process(self, kwargs):
-      """Check if agent process started - just return an empty response"""
-      if len(kwargs) != 0:
-        return HttpErrorResponse('ERROR: Arguments unexpected')
-      return HttpJsonResponse()
 
     @expose('POST')
     def startup(self, kwargs):

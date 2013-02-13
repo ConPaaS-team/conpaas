@@ -47,7 +47,7 @@ class BaseAgent(object):
     check_agent_process() -- GET
     """
 
-    def __init__(self, config_parser, **kwargs):
+    def __init__(self, config_parser):
         self.logger = create_logger(__name__)    
         self.state = 'INIT'
 
