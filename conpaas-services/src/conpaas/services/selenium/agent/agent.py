@@ -1,5 +1,5 @@
 """
-Copyright (c) 2010-2012, Contrail consortium.
+Copyright (c) 2010-2013, Contrail consortium.
 All rights reserved.
 
 Redistribution and use in source and binary forms, 
@@ -39,9 +39,9 @@ from subprocess import Popen
 
 from conpaas.core.expose import expose
 from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse
-from conpaas.core.log import create_logger
+from conpaas.core.agent import BaseAgent
 
-class SeleniumAgent():
+class SeleniumAgent(BaseAgent):
     """Agent class with the following exposed methods:
 
     check_agent_process() -- GET
@@ -52,24 +52,16 @@ class SeleniumAgent():
         """Initialize Selenium Agent.
   
         'config_parser' represents the agent config file.
-        **kwargs holds anything that can't be sent in config_parser."""
-        self.logger = create_logger(__name__)
-        self.state = 'INIT' 
-  
+        **kwargs holds anything that can't be sent in config_parser.
+        """
+        BaseAgent.__init__(self, config_parser)
+
         # Path to the Selenium JAR file
         self.selenium_dir = config_parser.get('agent', 'CONPAAS_HOME')
   
         # The following two variables have the same value on the Hub
         self.my_ip_address = None
         self.hub_ip_address = None
-
-    @expose('GET')
-    def check_agent_process(self, kwargs):
-        """Check if agent process started - just return an empty response"""
-        if len(kwargs) != 0:
-            return HttpErrorResponse('ERROR: Arguments unexpected')
-
-        return HttpJsonResponse()
 
     @expose('POST')
     def create_hub(self, kwargs):
