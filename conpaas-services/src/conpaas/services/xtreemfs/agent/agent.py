@@ -1,5 +1,5 @@
 '''
-Copyright (c) 2010-2012, Contrail consortium.
+Copyright (c) 2010-2013, Contrail consortium.
 All rights reserved.
 
 Redistribution and use in source and binary forms, 
@@ -14,7 +14,7 @@ that the following conditions are met:
     conditions and the following disclaimer in the
     documentation and/or other materials provided
     with the distribution.
- 3. Neither the name of the <ORGANIZATION> nor the
+ 3. Neither the name of the Contrail consortium nor the
     names of its contributors may be used to endorse
     or promote products derived from this software 
     without specific prior written permission.
@@ -41,53 +41,21 @@ Created May, 2012
 '''
 from os.path import exists, join
 from os import remove
+
 from conpaas.core.expose import expose
-from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse,\
-                         HttpFileDownloadResponse, HttpRequest,\
-                         FileUploadField, HttpError
+from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse
 from conpaas.services.xtreemfs.agent import role    
+from conpaas.core.agent import BaseAgent, AgentException
+
 from threading import Lock
-from conpaas.core.log import create_logger
 import pickle
 
-class AgentException(Exception):
-
-    E_CONFIG_NOT_EXIST = 0
-    E_CONFIG_EXISTS = 1
-    E_CONFIG_READ_FAILED = 2
-    E_CONFIG_CORRUPT = 3
-    E_CONFIG_COMMIT_FAILED = 4
-    E_ARGS_INVALID = 5
-    E_ARGS_UNEXPECTED = 6
-    E_ARGS_MISSING = 7
-    E_UNKNOWN = 8
-
-    E_STRINGS = [
-      'No configuration exists',
-      'Configuration already exists',
-      'Failed to read configuration state of %s from %s', # 2 params
-      'Configuration is corrupted',
-      'Failed to commit configuration',
-      'Invalid arguments',
-      'Unexpected arguments %s', # 1 param (a list)
-      'Missing argument "%s"', # 1 param
-      'Unknown error',
-    ]
-    def __init__(self, code, *args, **kwargs):
-      self.code = code
-      self.args = args
-      if 'detail' in kwargs:
-        self.message = '%s DETAIL:%s' % ( (E_STRINGS[code] % args), str(kwargs['detail']) )
-      else:
-        self.message = E_STRINGS[code] % args
-
-
-class XtreemFSAgent():
+class XtreemFSAgent(BaseAgent):
     def __init__(self,
                  config_parser, # config file
                  **kwargs):     # anything you can't send in config_parser 
                                 # (hopefully the new service won't need anything extra)
-
+        BaseAgent.__init__(self, config_parser)
         role.init(config_parser)
         self.gen_string = config_parser.get('agent','STRING_TO_GENERATE')
         
@@ -104,10 +72,10 @@ class XtreemFSAgent():
         self.MRC = role.MRC
         self.OSD = role.OSD
         
-        self.logger = create_logger(__name__)
     def _create(self,post_params,class_file,pClass):
         if exists(class_file):
-            return HttpErrorResponse(AgentException(E_CONFIG_EXISTS).message)
+            return HttpErrorResponse(AgentException(
+                AgentException.E_CONFIG_EXISTS).message)
         try:
             if type(post_params) != dict:
                 raise TypeError()
@@ -115,11 +83,11 @@ class XtreemFSAgent():
             p = pClass(**post_params)
             self.logger.debug('Created class')
         except (ValueError, TypeError) as e:
-            ex = AgentException(E_ARGS_INVALID, detail=str(e))
+            ex = AgentException(AgentException.E_ARGS_INVALID, detail=str(e))
             self.logger.exception(e)
             return HttpErrorResponse(ex.message)
         except Exception as e:
-            ex = AgentException(E_UNKNOWN, detail=e)
+            ex = AgentException(AgentException.E_UNKNOWN, detail=e)
             self.logger.exception(e)
             return HttpErrorResponse(ex.message)
         else:
@@ -129,7 +97,7 @@ class XtreemFSAgent():
                 pickle.dump(p, fd)
                 fd.close()
             except Exception as e:
-                ex = AgentException(E_CONFIG_COMMIT_FAILED, detail=e)
+                ex = AgentException(AgentException.E_CONFIG_COMMIT_FAILED, detail=e)
                 self.logger.exception(ex.message)
                 return HttpErrorResponse(ex.message)
             else:
@@ -138,7 +106,8 @@ class XtreemFSAgent():
 
     def _stop(self, get_params, class_file, pClass):
         if not exists(class_file):
-            return HttpErrorResponse(AgentException(E_CONFIG_NOT_EXIST).message)
+            return HttpErrorResponse(AgentException(
+                AgentException.E_CONFIG_NOT_EXIST).message)
         try:
             try:
                 fd = open(class_file, 'r')
@@ -146,14 +115,15 @@ class XtreemFSAgent():
                 self.logger.debug('dump file %s loaded' %class_file)
                 fd.close()
             except Exception as e:
-                ex = AgentException(E_CONFIG_READ_FAILED, detail=e)
+                ex = AgentException(
+                    AgentException.E_CONFIG_READ_FAILED, detail=e)
                 self.logger.exception(ex.message)
                 return HttpErrorResponse(ex.message)
             p.stop()
             remove(class_file)
             return HttpJsonResponse()
         except Exception as e:
-            ex = AgentException(E_UNKNOWN, detail=e)
+            ex = AgentException(AgentException.E_UNKNOWN, detail=e)
             self.logger.exception(e)
             return HttpErrorResponse(ex.message)
 
@@ -193,23 +163,18 @@ class XtreemFSAgent():
     def _MRC_get_params(self,kwargs):
         ret = {}
         if 'dir_serviceHost' not in kwargs:
-            raise AgentException(E_ARGS_MISSING,'dir service host')
+            raise AgentException(
+                AgentException.E_ARGS_MISSING, 'dir service host')
         ret['dir_serviceHost'] = kwargs.pop('dir_serviceHost')
         return ret
  
     def _OSD_get_params(self,kwargs):
         ret = {}
         if 'dir_serviceHost' not in kwargs:
-            raise AgentException(E_ARGS_MISSING,'dir service host')
+            raise AgentException(
+                AgentException.E_ARGS_MISSING, 'dir service host')
         ret['dir_serviceHost'] = kwargs.pop('dir_serviceHost')
         return ret    
-
-    @expose('GET')
-    def check_agent_process(self, kwargs):
-        """Check if agent process started - just return an empty response"""
-        if len(kwargs) != 0:
-            return HttpErrorResponse('ERROR: Arguments unexpected')
-        return HttpJsonResponse()
 
     @expose('POST')
     def startup(self, kwargs):
