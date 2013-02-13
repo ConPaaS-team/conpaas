@@ -1,5 +1,5 @@
 '''
-Copyright (c) 2010-2012, Contrail consortium.
+Copyright (c) 2010-2013, Contrail consortium.
 All rights reserved.
 
 Redistribution and use in source and binary forms, 
@@ -14,7 +14,7 @@ that the following conditions are met:
     conditions and the following disclaimer in the
     documentation and/or other materials provided
     with the distribution.
- 3. Neither the name of the <ORGANIZATION> nor the
+ 3. Neither the name of the Contrail consortium nor the
     names of its contributors may be used to endorse
     or promote products derived from this software 
     without specific prior written permission.
@@ -40,12 +40,11 @@ Created February, 2012
 
 '''
 
-
 from threading import Thread, Lock, Timer, Event
 from conpaas.core.expose import expose
 from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse, \
                                       HttpError
-from conpaas.core.log import create_logger
+from conpaas.core.agent import BaseAgent
 from Cheetah.Template import Template
 
 import os
@@ -55,25 +54,15 @@ from os.path import join
 
 ETC='/etc/hadoop/conf/'
 
-class MapReduceAgent():
+class MapReduceAgent(BaseAgent):
     def __init__(self,
                  config_parser, # config file
                  **kwargs):     # anything you can't send in config_parser
                                 # (hopefully the new service won't need anything extra)
-
-      self.logger = create_logger(__name__)
-      self.state = 'INIT'
+      BaseAgent.__init__(self, config_parser)
       self.first_node = config_parser.get('agent', 'FIRST_NODE')
       self.mgmt_server = config_parser.get('agent', 'MGMT_SERVER')
       self.logger.info("Init done: first_node=%s, mgmt_server=%s", self.first_node, self.mgmt_server)
-
-    @expose('GET')
-    def check_agent_process(self, kwargs):
-      """Check if agent process started - just return an empty response"""
-      self.logger.info('called check_agent_process')
-      if len(kwargs) != 0:
-        return HttpErrorResponse('ERROR: Arguments unexpected')
-      return HttpJsonResponse()
 
     @expose('POST')
     def startup(self, kwargs):
