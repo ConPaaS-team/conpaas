@@ -268,7 +268,7 @@ class ServicePage extends Page {
     	'<div class="pageheader">'
     		.'<div class="info">'
     			.'<img class="stype" '
-    				.' src="images/'.$this->getTypeImage().'" />'
+    				.' src="images/'.$this->getTypeImage().'" height="32" />'
     			.$this->renderName()
     		.'</div>'
 			.$this->renderRightMenu()

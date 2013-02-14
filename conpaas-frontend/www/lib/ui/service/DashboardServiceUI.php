@@ -60,7 +60,7 @@ class DashboardServiceUI {
 	private function renderImage() {
 		return
 			'<div class="icon">'
-				.'<img src="images/'.$this->service->getType().'.png"/>'
+				.'<img src="images/'.$this->service->getType().'.png" height="64" />'
 			.'</div>';
 	}
 
