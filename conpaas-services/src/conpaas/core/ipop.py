@@ -43,18 +43,38 @@ from conpaas.core.misc import run_cmd
 
 IPOP_CONF_DIR = "/opt/ipop/etc/"
 
-def configure_ipop(tmpl_dir, namespace, ip_address, netmask, ip_base, udp_port=0):
-    """Create or re-write the configuration files required by IPOP"""
+def configure_ipop(tmpl_dir, namespace, ip_base, netmask, 
+                   ip_address=None, udp_port=0):
+    """Create or re-write the configuration files required by IPOP.
+
+    By omitting ip_address, the resulting IPOP configuration will be DHCP
+    based. By omitting udp_port, a random port will be chosen.
+    """
     wanted_params = {
         'bootstrap.config': (),
         'node.config': ( 'udp_port', ),
         'ipop.config': ( 'namespace', ),
-        'ipop.vpn.config': ( 'ip_address', 'netmask', ),
+        'ipop.vpn.config': ( 'ip_address', 'netmask', 'dhcp', 
+                             'static', 'use_ipop_hostname' ),
         'dhcp.config': ( 'ip_base', 'netmask', 'namespace', ),
     }
     procedure_args = locals()
 
+    if ip_address is None:
+        # we use DHCP
+        procedure_args['ip_address'] = ''
+        procedure_args['dhcp'] = ''
+        procedure_args['static'] = ''
+        procedure_args['use_ipop_hostname'] = ''
+    else:
+        # static address
+        procedure_args['dhcp'] = 'false'
+        procedure_args['static'] = 'true'
+        procedure_args['use_ipop_hostname'] = 'true'
+        
     for filename in wanted_params.keys():
+        # Create config file 'filename' starting from its template and
+        # replacing the required values
         template_file = os.path.join(tmpl_dir, filename + '.tmpl')
         values = {}
         for param in wanted_params[filename]:
@@ -80,11 +100,8 @@ def get_ip_address():
 
 if __name__ == "__main__":
     configure_ipop("/home/ema/dev/conpaas/conpaas-services/config/ipop", 
-                   "ipop-test", "192.168.12.42", "255.255.255.0", "192.168.12.0")
+                   "ipop-test", "192.168.12.0", "255.255.255.0")
 
     res = restart_ipop()
     print res[0]
     print res[1]
-
-    ip = get_ip_address()
-    print ip, type(ip)
