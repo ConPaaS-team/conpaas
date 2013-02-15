@@ -222,7 +222,7 @@ class BasicWebserversManager(BaseManager):
     try:
       self._adapting_set_count(len(serviceNodeKwargs))
       node_instances = self.controller.create_nodes(len(serviceNodeKwargs),
-                                                    client.checkAgentState, 5555)
+                                                    client.check_agent_process, 5555)
     except:
       self.logger.exception('do_startup: Failed to request new nodes. Needed %d' % (len(serviceNodeKwargs)))
       self._state_set(self.S_STOPPED, msg='Failed to request new nodes')
@@ -328,7 +328,7 @@ class BasicWebserversManager(BaseManager):
     try:
       self._adapting_set_count(len(proxyNodesNew) + len(webNodesNew) + len(backendNodesNew))
       node_instances = self.controller.create_nodes(len(proxyNodesNew) + len(webNodesNew) + len(backendNodesNew),
-                                                    client.checkAgentState, 5555)
+                                                    client.check_agent_process, 5555)
     except:
       self.logger.exception('do_add_nodes: Failed to request new nodes. Needed %d' % (len(proxyNodesNew + webNodesNew + backendNodesNew)))
       self._state_set(self.S_RUNNING, msg='Failed to request new nodes. Reverting to old configuration')

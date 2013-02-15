@@ -120,8 +120,8 @@ def getPHPState(host, port):
   method = 'getPHPState'
   return _check(https.client.jsonrpc_get(host, port, '/', method))
 
-def checkAgentState(host, port):
-  method = 'checkAgentState'
+def check_agent_process(host, port):
+  method = 'check_agent_process'
   return _check(https.client.jsonrpc_get(host, port, '/', method))
 
 def createPHP(host, port, php_port, scalaris, php_conf):

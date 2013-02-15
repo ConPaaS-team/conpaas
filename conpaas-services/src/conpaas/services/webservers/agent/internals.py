@@ -335,14 +335,6 @@ class WebServersAgent(BaseAgent):
       with self.php_lock:
         return self._get(kwargs, self.php_file, role.PHPProcessManager)
 
-    @expose('GET')
-    def checkAgentState(self, kwargs):
-      """Check if agent is running - just return an empty response"""
-      if len(kwargs) != 0:
-        return HttpErrorResponse(AgentException(
-            AgentException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
-      return HttpJsonResponse()
-
     @expose('POST')
     def createPHP(self, kwargs):
       """Create the PHPProcessManager"""

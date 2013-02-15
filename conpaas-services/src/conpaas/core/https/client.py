@@ -437,7 +437,7 @@ if __name__ == "__main__":
     #print r.status
     #print r.reason
     #print r.read()
-    #r = jsonrpc_get('192.168.122.149', 5555, '/', 'checkAgentState')
+    #r = jsonrpc_get('192.168.122.149', 5555, '/', 'check_agent_process')
     #print r
     #r = jsonrpc_post('testbed2.conpaas.eu', 9999, '/','method')
     #print r
