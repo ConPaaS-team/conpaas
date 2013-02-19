@@ -1,4 +1,4 @@
-import os
+import os.path
 
 from conpaas.core.controller import Controller
 from conpaas.core.misc import file_get_contents
@@ -6,7 +6,6 @@ from conpaas.core.misc import file_get_contents
 from cpsdirector import x509cert
 from cpsdirector import common
 
-from sqlalchemy.orm.exc import NoResultFound
 
 class ManagerController(Controller):
 
@@ -19,7 +18,7 @@ class ManagerController(Controller):
         service_id = self.config_parser.get("manager", "FE_SERVICE_ID")
         cert_dir = self.config_parser.get('conpaas', 'CERT_DIR')
 
-        return x509cert.generate_certificate(cert_dir, user_id, service_id, 
+        return x509cert.generate_certificate(cert_dir, user_id, service_id,
                                              "manager", email, cn, org)
 
     def _get_context_file(self, service_name, cloud):
@@ -28,8 +27,8 @@ class ManagerController(Controller):
         conpaas_home = self.config_parser.get('conpaas', 'CONF_DIR')
 
         cloud_scripts_dir = os.path.join(conpaas_home, 'scripts', 'cloud')
-        mngr_scripts_dir  = os.path.join(conpaas_home, 'scripts', 'manager')
-        mngr_cfg_dir      = os.path.join(conpaas_home, 'config', 'manager')
+        mngr_scripts_dir = os.path.join(conpaas_home, 'scripts', 'manager')
+        mngr_cfg_dir = os.path.join(conpaas_home, 'config', 'manager')
 
         frontend = self.config_parser.get('director', 'DIRECTOR_URL')
 
@@ -42,23 +41,23 @@ class ManagerController(Controller):
 
         # Get manager setup file
         mngr_setup = file_get_contents(
-            os.path.join(mngr_scripts_dir,'manager-setup'))
+            os.path.join(mngr_scripts_dir, 'manager-setup'))
 
-        tmpl_values['mngr_setup'] = mngr_setup.replace('%FRONTEND_URL%', 
-            frontend)
+        tmpl_values['mngr_setup'] = mngr_setup.replace('%FRONTEND_URL%',
+                                                       frontend)
 
         # Get cloud config values from director.cfg
         tmpl_values['cloud_cfg'] = "[iaas]\n"
         for key, value in self.config_parser.items("iaas"):
             tmpl_values['cloud_cfg'] += key.upper() + " = " + value + "\n"
 
-        # Get manager config file 
+        # Get manager config file
         mngr_cfg = file_get_contents(
             os.path.join(mngr_cfg_dir, 'default-manager.cfg'))
 
         # Add service-specific config file (if any)
-        mngr_service_cfg = os.path.join(mngr_cfg_dir, 
-            service_name + '-manager.cfg')
+        mngr_service_cfg = os.path.join(mngr_cfg_dir,
+                                        service_name + '-manager.cfg')
 
         if os.path.isfile(mngr_service_cfg):
             mngr_cfg += file_get_contents(mngr_service_cfg)
@@ -66,10 +65,12 @@ class ManagerController(Controller):
         # Modify manager config file setting the required variables
         mngr_cfg = mngr_cfg.replace('%FRONTEND_URL%', frontend)
         mngr_cfg = mngr_cfg.replace('%CONPAAS_SERVICE_TYPE%', service_name)
-        mngr_cfg = mngr_cfg.replace('%CONPAAS_SERVICE_ID%', 
-            self.config_parser.get("manager", "FE_SERVICE_ID"))
-        mngr_cfg = mngr_cfg.replace('%CONPAAS_USER_ID%', 
-            self.config_parser.get("manager", "FE_USER_ID"))
+        mngr_cfg = mngr_cfg.replace('%CONPAAS_SERVICE_ID%',
+                                    self.config_parser.get("manager",
+                                                           "FE_SERVICE_ID"))
+        mngr_cfg = mngr_cfg.replace('%CONPAAS_USER_ID%',
+                                    self.config_parser.get("manager",
+                                                           "FE_USER_ID"))
         tmpl_values['mngr_cfg'] = mngr_cfg
 
         # Add default manager startup script
@@ -85,12 +86,12 @@ class ManagerController(Controller):
                 mngr_startup_scriptname)
 
         # Get key and a certificate from CA
-        mngr_certs = self._get_certificate(email="info@conpaas.eu", 
-                                           cn="ConPaaS", 
+        mngr_certs = self._get_certificate(email="info@conpaas.eu",
+                                           cn="ConPaaS",
                                            org="Contrail")
 
-        tmpl_values['mngr_certs_cert']    = mngr_certs['cert']
-        tmpl_values['mngr_certs_key']     = mngr_certs['key']
+        tmpl_values['mngr_certs_cert'] = mngr_certs['cert']
+        tmpl_values['mngr_certs_key'] = mngr_certs['key']
         tmpl_values['mngr_certs_ca_cert'] = mngr_certs['ca_cert']
 
         # Concatenate the files
@@ -118,15 +119,11 @@ EOF
 %(mngr_start_script)s""" % tmpl_values
 
     def deduct_credit(self, value):
-        import cpsdirector 
+        import cpsdirector
 
         uid = self.config_parser.get("manager", "FE_USER_ID")
 
-        try:
-            user = cpsdirector.User.query.filter_by(uid=uid).one()
-        except NoResultFound:
-            return False
-
+        user = cpsdirector.User.query.filter_by(uid=uid).one()
         user.credit -= value
 
         if user.credit > -1:
@@ -136,33 +133,39 @@ EOF
         cpsdirector.db.session.rollback()
         return False
 
+
 def __get_config(service_id, user_id, service_type=""):
     """Add manager configuration"""
-    config_parser = common.config
+    config_parser = common.config_parser
 
     if not config_parser.has_section("manager"):
         config_parser.add_section("manager")
 
     config_parser.set("manager", "FE_SERVICE_ID", service_id)
     config_parser.set("manager", "FE_USER_ID", user_id)
-    config_parser.set("manager", "FE_CREDIT_URL", 
-        config_parser.get('director', 'DIRECTOR_URL') + "/credit")
-    config_parser.set("manager", "FE_TERMINATE_URL", 
-        config_parser.get('director', 'DIRECTOR_URL') + "/terminate")
-    config_parser.set("manager", "FE_CA_URL", 
-        config_parser.get('director', 'DIRECTOR_URL') + "/ca")
+    config_parser.set("manager", "FE_CREDIT_URL",
+                      config_parser.get('director',
+                                        'DIRECTOR_URL') + "/credit")
+    config_parser.set("manager", "FE_TERMINATE_URL",
+                      config_parser.get('director',
+                                        'DIRECTOR_URL') + "/terminate")
+    config_parser.set("manager", "FE_CA_URL",
+                      config_parser.get('director',
+                                        'DIRECTOR_URL') + "/ca")
 
     config_parser.set("manager", "TYPE", service_type)
 
     return config_parser
 
+
 def __stop_reservation_timer(controller):
     for reservation_timer in controller._Controller__reservation_map.values():
         reservation_timer.stop()
 
+
 def start(service_name, service_id, user_id):
     """Start a manager for the given service_name, service_id and user_id.
-    
+
     Return (node_ip, node_id, cloud_name)."""
     config_parser = __get_config(str(service_id), str(user_id), service_name)
     # Create a new controller
@@ -178,15 +181,17 @@ def start(service_name, service_id, user_id):
 
     return node.ip, node.id, config_parser.get('iaas', 'DRIVER')
 
+
 def stop(vmid):
     config_parser = __get_config(vmid, "")
     # Create a new controller
     controller = ManagerController(config_parser)
-    
+
     cloud = controller._Controller__default_cloud
     cloud._connect()
-    
-    class Node: pass
+
+    class Node:
+        pass
     n = Node()
     n.id = vmid
     cloud.kill_instance(n)

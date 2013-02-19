@@ -40,16 +40,14 @@ Created February, 2012
 
 '''
 
-from threading import Thread, Lock, Timer, Event
+
+from threading import Thread
 from conpaas.core.expose import expose
-from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse, \
-                                      HttpError
-from conpaas.core.agent import BaseAgent
+from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse
+from conpaas.core.log import create_logger
 from Cheetah.Template import Template
 
-import os
 import subprocess
-import commands
 from os.path import join
 
 ETC='/etc/hadoop/conf/'

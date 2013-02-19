@@ -25,34 +25,37 @@ from cpsdirector import cloud
 from cpsdirector import x509cert
 
 # Manually add task farming to the list of valid services
-valid_services = manager_services.keys() + [ 'taskfarm', ]
+valid_services = manager_services.keys() + ['taskfarm', ]
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = common.config.get(
+app.config['SQLALCHEMY_DATABASE_URI'] = common.config_parser.get(
     'director', 'DATABASE_URI')
 db = SQLAlchemy(app)
 
-if common.config.has_option('director', 'DEBUG'):
+if common.config_parser.has_option('director', 'DEBUG'):
     app.debug = True
+
 
 def log(msg):
     print >> request.environ['wsgi.errors'], msg
 
+
 def get_user(username, password):
     """Return a User object if the specified (username, password) combination
     is valid."""
-    return User.query.filter_by(username=username, 
+    return User.query.filter_by(username=username,
         password=hashlib.md5(password).hexdigest()).first()
+
 
 def create_user(username, fname, lname, email, affiliation, password, credit):
     """Create a new user with the given attributes. Return a new User object
     in case of successful creation. None otherwise."""
-    user = User(username=username, 
-                fname=fname, 
-                lname=lname, 
-                email=email, 
-                affiliation=affiliation, 
-                password=hashlib.md5(password).hexdigest(), 
+    user = User(username=username,
+                fname=fname,
+                lname=lname,
+                email=email,
+                affiliation=affiliation,
+                password=hashlib.md5(password).hexdigest(),
                 credit=credit)
 
     db.session.add(user)
@@ -210,7 +213,7 @@ def login():
 def get_user_certs():
     # Creates new certificates for this user
     certs = x509cert.generate_certificate(
-        cert_dir=common.config.get('conpaas', 'CERT_DIR'),
+        cert_dir=common.config_parser.get('conpaas', 'CERT_DIR'),
         uid=str(g.user.uid),
         sid='0',
         role='user',
@@ -366,7 +369,7 @@ def download():
 
     Returns ConPaaS tarball.
     """
-    return helpers.send_from_directory(common.config.get('conpaas', 'CONF_DIR'), 
+    return helpers.send_from_directory(common.config_parser.get('conpaas', 'CONF_DIR'), 
         "ConPaaS.tar.gz")
 
 @app.route("/ca/get_cert.php", methods=['POST'])
@@ -378,7 +381,7 @@ def get_manager_cert():
     csr = crypto.load_certificate_request(crypto.FILETYPE_PEM, 
         request.files['csr'].read())
     return x509cert.create_x509_cert(
-        common.config.get('conpaas', 'CERT_DIR'), csr)
+        common.config_parser.get('conpaas', 'CERT_DIR'), csr)
 
 @app.route("/callback/decrementUserCredit.php", methods=['POST'])
 @cert_required(role='manager')

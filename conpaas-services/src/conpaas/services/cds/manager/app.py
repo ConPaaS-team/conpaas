@@ -1,5 +1,5 @@
-
 import os
+
 
 def read_apps(apps_dir):
     apps = {}

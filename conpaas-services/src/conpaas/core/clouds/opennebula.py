@@ -2,7 +2,7 @@
 Copyright (c) 2010-2012, Contrail consortium.
 All rights reserved.
 
-Redistribution and use in source and binary forms, 
+Redistribution and use in source and binary forms,
 with or without modification, are permitted provided
 that the following conditions are met:
 
@@ -10,13 +10,13 @@ that the following conditions are met:
     above copyright notice, this list of conditions
     and the following disclaimer.
  2. Redistributions in binary form must reproduce
-    the above copyright notice, this list of 
+    the above copyright notice, this list of
     conditions and the following disclaimer in the
     documentation and/or other materials provided
     with the distribution.
  3. Neither the name of the Contrail consortium nor the
     names of its contributors may be used to endorse
-    or promote products derived from this software 
+    or promote products derived from this software
     without specific prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
@@ -25,54 +25,41 @@ INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
 MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
 DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
 CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
-BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
 INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
 WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
 OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
-
-
-Created on Jan 21, 2011
-
-@author: ielhelw, aaasz
 '''
 
-import urlparse 
-from string import Template
+import urlparse
 
-from libcloud.compute.types import Provider, NodeState
+from libcloud.compute.types import Provider
 from libcloud.compute.providers import get_driver
 from libcloud.compute.base import NodeImage
 
 from .base import Cloud
-from conpaas.core.node import ServiceNode
+
 
 class OpenNebulaCloud(Cloud):
 
     def __init__(self, cloud_name, iaas_config):
         Cloud.__init__(self, cloud_name)
-      
-        self.connected = False
-        self.cx_template = None
- 
-        # required parameters to describe this cloud
-        cloud_params = ['URL', 'USER', 'PASSWORD', \
-                        'IMAGE_ID', 'INST_TYPE',   \
-                        'NET_ID', 'NET_GATEWAY',   \
-                        'NET_NAMESERVER',
-			'OS_ARCH',
-			'OS_ROOT',
-			'DISK_TARGET',
-			'CONTEXT_TARGET']
 
-        for field in cloud_params:
-            if not iaas_config.has_option(cloud_name, field)\
-            or iaas_config.get(cloud_name, field) == '':
-                raise Exception('Missing opennebula config param %s for %s' % \
-                                                          (field, cloud_name))
+        # required parameters to describe this cloud
+        cloud_params = ['URL', 'USER', 'PASSWORD',
+                        'IMAGE_ID', 'INST_TYPE',
+                        'NET_ID', 'NET_GATEWAY',
+                        'NET_NAMESERVER',
+                        'OS_ARCH',
+                        'OS_ROOT',
+                        'DISK_TARGET',
+                        'CONTEXT_TARGET']
+
+        self._check_cloud_params(iaas_config, cloud_params)
 
         def _get(param):
             return iaas_config.get(cloud_name, param)
@@ -81,9 +68,6 @@ class OpenNebulaCloud(Cloud):
         self.user = _get('USER')
         self.passwd = _get('PASSWORD')
         self.img_id = _get('IMAGE_ID')
-        #self.inst_types = _get('INST_TYPE')
-        # choose the first inst_type by default
-        #self.inst_type = self.inst_types[0]
         self.inst_type = _get('INST_TYPE')
         self.net_id = _get('NET_ID')
         self.net_gw = _get('NET_GATEWAY')
@@ -97,35 +81,31 @@ class OpenNebulaCloud(Cloud):
         self.mem = None
 
     def get_cloud_type(self):
-      return 'opennebula'
- 
-    # connect to opennebula cloud 
+        return 'opennebula'
+
     def _connect(self):
-      parsed = urlparse.urlparse(self.url)
-      ONDriver = get_driver(Provider.OPENNEBULA)
+        """connect to opennebula cloud"""
+        parsed = urlparse.urlparse(self.url)
+        ONDriver = get_driver(Provider.OPENNEBULA)
 
-      self.driver = ONDriver(self.user, 
-                             secret=self.passwd, 
-                             secure=(parsed.scheme == 'https'), 
-                             host=parsed.hostname, 
-                             port=parsed.port, 
-                             api_version='2.2')
+        self.driver = ONDriver(self.user,
+                               secret=self.passwd,
+                               secure=(parsed.scheme == 'https'),
+                               host=parsed.hostname,
+                               port=parsed.port,
+                               api_version='2.2')
 
-      self.connected = True
+        self.connected = True
 
-    # set the context template (i.e. without replacing anything in it)
     def set_context_template(self, cx):
         self.cx_template = cx
         self.cx = cx.encode('hex')
 
-    def get_context_template(self):
-        return self.cx_template
-
-    # set some VM specific parameters (TODO: what else?)
     def config(self, config_params={}, context=None):
         '''Sets some configuration parameters (Overrides the default ones).
 
-           @keyword    inst_type:   Id of the node type of this driver (optional)
+           @keyword    inst_type:   (optional)
+                                    Id of the node type of this driver
            @type       inst_type:   int
 
            @keyword    cpu:   Number of cpus for the VM. (optional)
@@ -138,32 +118,20 @@ class OpenNebulaCloud(Cloud):
 
         '''
 
-        if 'inst_type' in config_params:  
+        if 'inst_type' in config_params:
             self.inst_type = config_params['inst_type']
 
-        if 'cpu' in config_params:  
+        if 'cpu' in config_params:
             self.cpu = config_params['cpu']
 
-        if 'mem' in config_params:  
+        if 'mem' in config_params:
             self.mem = config_params['mem']
 
-        if context != None:
+        if context is not None:
             self.cx = context.encode('hex')
 
     def list_vms(self):
-        nodes = self.driver.list_nodes()
-        vms = {}
-        for i in nodes:
-            if i.public_ips:
-                ip = i.public_ips[0].address
-            else:
-                ip = ''   
-            vms[i.id] = {'id': i.id,
-                         'state': i.state,
-                         'name': i.name,
-                         'ip': ip,
-                         'private_ip': ip}
-        return vms
+        return Cloud.list_vms(self, False)
 
     def list_instace_types(self):
         return self.inst_types
@@ -172,26 +140,26 @@ class OpenNebulaCloud(Cloud):
         '''Asks the provider for new instances.
 
            @param    count:   Id of the node type of this driver (optional)
-       
+
         '''
-        if self.connected == False:
-            self._connect() 
+        if self.connected is False:
+            self._connect()
 
         kwargs = {}
-    
+
         # 'NAME'
         kwargs['name'] = name
 
         # 'INSTANCE_TYPE'
-        kwargs['size'] = [ i for i in self.driver.list_sizes() \
-                                 if i.name == self.inst_type ][0]
+        kwargs['size'] = [i for i in self.driver.list_sizes()
+                          if i.name == self.inst_type][0]
 
         # 'CPU'
-        if self.cpu != None:
+        if self.cpu is not None:
             kwargs['cpu'] = self.cpu
 
         # 'MEM'
-        if self.mem != None:
+        if self.mem is not None:
             kwargs['mem'] = self.mem
 
         # 'OS'
@@ -203,8 +171,8 @@ class OpenNebulaCloud(Cloud):
         kwargs['disk_target'] = self.disk_target
 
         # 'NIC': str(network.id) is how libcloud gets the network ID. Let's
-        # create an object just like that and pass it in the 'networks' kwarg 
-        class OneNetwork(object): 
+        # create an object just like that and pass it in the 'networks' kwarg
+        class OneNetwork(object):
             def __str__(self):
                 return str(self.id)
         network = OneNetwork()
@@ -221,23 +189,6 @@ class OpenNebulaCloud(Cloud):
         context['USERDATA'] = self.cx
         context['TARGET'] = self.context_target
         kwargs['context'] = context
- 
-        nodes = []
-        for _ in range(count):
-            node = self.driver.create_node(**kwargs)
-            if node.public_ips:
-                ip = node.public_ips[0].address
-            else:
-                ip = ''   
-            nodes.append(ServiceNode(node.id, ip, ip, self.cloud_name))
-        return nodes
 
-    def kill_instance(self, node):
-        '''Kill a VM instance.
-
-           @param node: A ServiceNode instance, where node.id is the
-                        vm_id
-        '''
-        if self.connected == False:
-            raise Exception('Not connected to cloud')
-        return self.driver.destroy_node(node)
+        return [self._create_service_nodes(self.driver.
+                create_node(**kwargs), False) for _ in range(count)]

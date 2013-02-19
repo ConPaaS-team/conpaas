@@ -43,6 +43,21 @@ SECURITY_GROUP_NAME = contrail
 # the same value as field "keypair" from configuration file aws.ini.
 KEY_NAME = conpaas
 
+# Amazon EC2 region.
+#
+# Valid values are:
+#
+# - ec2.us-west-2.amazonaws.com # United States West (Oregon)
+# - ec2.us-east-1.amazonaws.com # United States East (Northern Virginia) 
+# - ec2.eu-west-1.amazonaws.com # Europe West (Ireland)
+
+REGION = ec2.us-west-2.amazonaws.com
+
+# This variable contains the identifier of the ConPaaS Amazon Machine Image.
+# 
+# Please set this value according to the region you want to use (see
+# REGION). 
+
 ####################################################################
 # The following values are only needed by the Task Farming service #
 ####################################################################

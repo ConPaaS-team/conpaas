@@ -11,18 +11,18 @@ CONFFILE = os.getenv('DIRECTOR_CFG')
 if not CONFFILE:
     CONFFILE = "/etc/cpsdirector/director.cfg"
 
-config = ConfigParser()
-config.read(CONFFILE)
+config_parser = ConfigParser()
+config_parser.read(CONFFILE)
 
 # Config values for unit testing
 if os.getenv('DIRECTOR_TESTING'):
     # dummy cloud
-    config.set("iaas", "DRIVER", "dummy")
-    config.set("iaas", "USER", "dummy")
+    config_parser.set("iaas", "DRIVER", "dummy")
+    config_parser.set("iaas", "USER", "dummy")
 
     # separate database
-    config.set("director", "DATABASE_URI", "sqlite:///director-test.db")
-    config.set("director", "DIRECTOR_URL", "")
+    config_parser.set("director", "DATABASE_URI", "sqlite:///director-test.db")
+    config_parser.set("director", "DIRECTOR_URL", "")
 
 def rlinput(prompt, prefill=''):
     readline.set_startup_hook(lambda: readline.insert_text(prefill))

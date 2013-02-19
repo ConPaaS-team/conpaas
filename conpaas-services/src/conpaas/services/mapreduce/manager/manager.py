@@ -40,14 +40,12 @@ Created February, 2012
 
 '''
 
-from threading import Thread, Lock, Timer, Event
+from threading import Thread
 
 from conpaas.core.expose import expose
-from conpaas.core.controller import Controller
-from conpaas.core.manager import BaseManager
+from conpaas.core.manager import BaseManager, ManagerException
 from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse, \
                                       HttpError
-from conpaas.core.log import create_logger
 from conpaas.services.mapreduce.agent import client
 
 class MapReduceManager(BaseManager):
@@ -82,11 +80,11 @@ class MapReduceManager(BaseManager):
         self.logger.debug("Entering HadoopManager startup")
         if len(kwargs) != 0:
             return HttpErrorResponse(ManagerException \
-                                      (E_ARGS_UNEXPECTED, \
+                                      (ManagerException.E_ARGS_UNEXPECTED, \
                                        kwargs.keys()).message)
 
         if self.state != self.S_INIT and self.state != self.S_STOPPED:
-            return HttpErrorResponse(ManagerException(E_STATE_ERROR).message)
+            return HttpErrorResponse(ManagerException(ManagerException.E_STATE_ERROR).message)
         self.state = self.S_PROLOGUE
         Thread(target=self._do_startup, args=[]).start()
         return HttpJsonResponse({'state': self.S_PROLOGUE})
