@@ -75,6 +75,9 @@ class Controller(object):
         self.__fe_caUrl = config_parser.get('manager',
                                             'FE_CA_URL')
 
+        # Set the CA URL as IPOP's base namespace
+        self.__ipop_base_namespace = self.__fe_caUrl
+
         # For crediting system
         self.__reservation_logger = create_logger('ReservationTimer')
         self.__reservation_map = {'manager': ReservationTimer(['manager'],
@@ -378,11 +381,12 @@ class Controller(object):
         # Get agent config file - add to the default one the one specific
         # to the service if it exists
         default_agent_cfg_file = open(agent_cfg_dir + '/default-agent.cfg')
-        agent_cfg = Template(default_agent_cfg_file.read()).\
-            safe_substitute(AGENT_TYPE=service_name,
-                            MANAGER_IP=manager_ip,
-                            CONPAAS_USER_ID=self.__fe_user_id,
-                            CONPAAS_SERVICE_ID=self.__fe_service_id)
+        agent_cfg = Template(default_agent_cfg_file.read()).safe_substitute(
+            AGENT_TYPE=service_name,
+            MANAGER_IP=manager_ip,
+            CONPAAS_USER_ID=self.__fe_user_id,
+            CONPAAS_SERVICE_ID=self.__fe_service_id,
+            IPOP_BASE_NAMESPACE=self.__ipop_base_namespace)
 
         if os.path.isfile(agent_cfg_dir + '/' + service_name + '-agent.cfg'):
             agent_cfg_file = open(agent_cfg_dir +

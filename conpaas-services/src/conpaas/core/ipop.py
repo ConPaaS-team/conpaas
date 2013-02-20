@@ -36,6 +36,7 @@ POSSIBILITY OF SUCH DAMAGE.
 """ 
 
 import os
+import urlparse
 
 from Cheetah.Template import Template
 
@@ -43,8 +44,23 @@ from conpaas.core.misc import run_cmd
 
 IPOP_CONF_DIR = "/opt/ipop/etc/"
 
-def configure_ipop(tmpl_dir, namespace, ip_base, netmask, 
-                   ip_address=None, udp_port=0):
+def get_ipop_namespace(config_parser):
+    if config_parser.has_section('manager'):
+        user_id = config_parser.get('manager', 'FE_USER_ID')
+        base_namespace = config_parser.get('manager', 'IPOP_BASE_NAMESPACE')
+
+    else:
+        user_id = config_parser.get('agent', 'USER_ID')
+        base_namespace = config_parser.get('agent', 'IPOP_BASE_NAMESPACE')
+
+    base_namespace = urlparse.urlparse(base_namespace).netloc
+    return "conpaas-%s-%s" % (base_namespace, user_id)
+
+def configure_ipop(tmpl_dir, namespace, 
+                   ip_base="192.168.0.0", 
+                   netmask="255.255.255.0", 
+                   ip_address=None, 
+                   udp_port=0):
     """Create or re-write the configuration files required by IPOP.
 
     By omitting ip_address, the resulting IPOP configuration will be DHCP
@@ -97,6 +113,19 @@ def get_ip_address():
     """
     ip_cmd = "ip -f inet addr show dev tapipop | grep inet | awk '{ print $2 }'"
     return run_cmd(ip_cmd, '/')[0].rstrip('\n')
+
+def configure_conpaas_node(config_parser):
+    if config_parser.has_section('manager'):
+        conpaas_home = config_parser.get('manager', 'CONPAAS_HOME')
+    else:
+        conpaas_home = config_parser.get('agent', 'CONPAAS_HOME')
+
+    ipop_tmpl_dir = os.path.join(conpaas_home, 'config', 'ipop')
+    
+    ipop_namespace = get_ipop_namespace(config_parser)
+
+    configure_ipop(ipop_tmpl_dir, ipop_namespace)
+    restart_ipop()       
 
 if __name__ == "__main__":
     configure_ipop("/home/ema/dev/conpaas/conpaas-services/config/ipop", 

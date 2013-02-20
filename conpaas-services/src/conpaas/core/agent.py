@@ -38,6 +38,8 @@ POSSIBILITY OF SUCH DAMAGE.
 from conpaas.core.expose import expose
 from conpaas.core.log import create_logger
 
+from conpaas.core import ipop
+
 from conpaas.core.https.server import HttpJsonResponse
 from conpaas.core.https.server import HttpErrorResponse
                           
@@ -57,6 +59,9 @@ class BaseAgent(object):
 
         self.logger.info("'%s' agent started (uid=%s, sid=%s)" % (
             service_type, user_id, service_id))
+
+        # IPOP setup
+        ipop.configure_conpaas_node(config_parser)
     
     @expose('GET')
     def check_agent_process(self, kwargs):

@@ -12,6 +12,12 @@ ec2_get_metadata() {
         echo "$VALUE"
 }
 
+# Set cloud-provided DNS servers in /etc/dhcp/dhclient.conf
+for dns_server in `awk '/nameserver/ { print $2 }' /etc/resolv.conf` 
+do 
+    echo "prepend domain-name-servers $dns_server;" >> /etc/dhcp/dhclient.conf
+done
+
 IP_PUBLIC=$(ec2_get_metadata public-ipv4)
 PRIVATE_IP=$(ec2_get_metadata local-ipv4)
 PUBLIC_HOSTNAME=$(ec2_get_metadata public-hostname)
