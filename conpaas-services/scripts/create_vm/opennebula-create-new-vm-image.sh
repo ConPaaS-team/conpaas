@@ -58,8 +58,23 @@ DEBIAN_MIRROR=http://ftp.nl.debian.org/debian
 
 # The architecture and kernel version for the OS that will be installed (please make
 # sure to modify the kernel version name accordingly if you modify the architecture).
-ARCH=i386
-KERNEL_VERSION=2.6.32-5-686
+ARCH=amd64
+KERNEL_VERSION=2.6.32-5-amd64
+
+# Services that will be installed:
+PHP_SERVICE=true
+MYSQL_SERVICE=true
+CONDOR_SERVICE=true
+IPOP_SERVICE=true
+GIT_SERVICE=true
+SELENIUM_SERVICE=true
+HADOOP_SERVICE=true
+SCALARIS_SERVICE=true
+XTREEMFS_SERVICE=true
+CDS_SERVICE=true
+
+# override above values with those found in config file, if present 
+[ -f services_config.cfg ] && . services_config.cfg
 
 #########################
 export LC_ALL=C
@@ -71,6 +86,15 @@ function cecho() {
   echo -e "\033[0m"
 }
 
+# Set up message on purpose before root permission check
+cecho "Setting up for these services:"
+for i in PHP MYSQL CONDOR IPOP GIT SELENIUM HADOOP SCALARIS XTREEMFS CDS
+do
+	name=`echo $i`_SERVICE
+	eval serv=\${$name}
+	$serv && cecho "-" "$i"
+done
+
 if [ `id -u` -ne 0 ]; then
   cecho 'need root permissions for this script';
   exit 1;
@@ -81,11 +105,11 @@ function cleanup() {
     # Set errormsg if something went wrong
     [ $? -ne 0 ] && errormsg="Script terminated with errors"
 
-    for mpoint in /dev /proc /
+    for mpoint in /dev/pts /dev /proc /
     do
       mpoint="${ROOT_DIR?:not set}${mpoint}"
 
-      # Only attempt to umount $ROOT_DIR{/dev,/proc,/} if necessary
+      # Only attempt to umount $ROOT_DIR{/dev/pts,/dev,/proc,/} if necessary
       if [ -d $mpoint ]
       then
         cecho "Umounting $mpoint"
@@ -183,8 +207,10 @@ EOF
 
 sed -i '1i 127.0.0.1  conpaas' $ROOT_DIR/etc/hosts
 
-cecho "Mounting /dev and /proc in chroot"
+# mount /dev/pts to avoid error message: Can not write log, openpty() failed (/dev/pts not mounted?) 
+cecho "Mounting /dev, /dev/pts and /proc in chroot"
 mount -obind /dev $ROOT_DIR/dev
+mount -obind /dev/pts $ROOT_DIR/dev/pts
 mount -t proc proc $ROOT_DIR/proc
 
 cecho "Setting keyboard layout"
@@ -235,6 +261,13 @@ chmod 755 $ROOT_DIR/usr/sbin/policy-rc.d
 # Generate a script that will install the dependencies in the system. 
 cat <<EOF > $ROOT_DIR/conpaas_install
 #!/bin/bash
+# Function for displaying highlighted messages.
+function cecho() {
+  echo -en "\033[1m"
+  echo -n "#" \$@
+  echo -e "\033[0m"
+}
+
 # set root passwd
 echo "root:contrail" | chpasswd
 
@@ -257,6 +290,23 @@ update-rc.d nginx disable
 update-rc.d yaws disable
 update-rc.d mysql disable
 
+# create directory structure
+echo > /var/log/cpsagent.log
+mkdir /etc/cpsagent/
+mkdir /var/tmp/cpsagent/
+mkdir /var/run/cpsagent/
+mkdir /var/cache/cpsagent/
+echo > /var/log/cpsmanager.log
+mkdir /etc/cpsmanager/
+mkdir /var/tmp/cpsmanager/
+mkdir /var/run/cpsmanager/
+mkdir /var/cache/cpsmanager/
+
+EOF
+
+!($PHP_SERVICE || $MYSQL_SERVICE) && echo 'cecho "===== Skipped PHP & MYSQL ====="' >> $ROOT_DIR/conpaas_install
+($PHP_SERVICE || $MYSQL_SERVICE) && cat <<EOF >> $ROOT_DIR/conpaas_install
+cecho "===== add dotdeb repo for php fpm ====="
 # add dotdeb repo for php fpm
 echo "deb http://packages.dotdeb.org stable all" >> /etc/apt/sources.list
 wget -O - http://www.dotdeb.org/dotdeb.gpg 2>/dev/null | apt-key add -
@@ -271,6 +321,41 @@ update-rc.d php5-fpm disable
 sed --in-place 's%deb http://packages.dotdeb.org stable all%%' /etc/apt/sources.list
 apt-get -f -y update
 
+# remove cached .debs from /var/cache/apt/archives to save disk space
+apt-get clean
+EOF
+
+$CONDOR_SERVICE || echo 'cecho "===== Skipped CONDOR ====="' >> $ROOT_DIR/conpaas_install
+$CONDOR_SERVICE && cat <<EOF >> $ROOT_DIR/conpaas_install
+cecho "===== install HTCondor package ====="
+mkdir -p /var/lib/condor
+chown condor /var/lib/condor
+chgrp condor /var/lib/condor
+chmod 766 /var/lib/condor
+# avoid warning: W: GPG error: http://mozilla.debian.net squeeze-backports Release: The following signatures couldn't be verified because the public key is not available: NO_PUBKEY 85A3D26506C4AE2A 
+#apt-get install debian-keyring
+wget -O - -q http://mozilla.debian.net/archive.asc | apt-key add -
+# avoid warning: W: GPG error: http://dl.google.com stable Release: The following signatures couldn't be verified because the public key is not available: NO_PUBKEY A040830F7FAC5991 
+wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
+
+# If things go wrong, you may want to read  http://research.cs.wisc.edu/htcondor/debian/
+# 
+echo "deb http://research.cs.wisc.edu/htcondor/debian/stable/ $DEBIAN_DIST contrib" >> /etc/apt/sources.list
+apt-get update
+apt-get -f -y --force-yes install condor
+echo ===== check if HTCondor is running =====
+ps -ef | grep condor
+echo ===== stop condor =====
+/etc/init.d/condor stop
+echo ===== 
+
+# remove cached .debs from /var/cache/apt/archives to save disk space
+apt-get clean
+EOF
+
+$IPOP_SERVICE || echo 'cecho "===== Skipped IPOP ====="' >> $ROOT_DIR/conpaas_install
+$IPOP_SERVICE && cat <<EOF >> $ROOT_DIR/conpaas_install
+cecho "===== install IPOP package ====="
 echo "deb http://www.grid-appliance.org/files/packages/deb/ stable contrib" >> /etc/apt/sources.list
 wget -O - http://www.grid-appliance.org/files/packages/deb/repo.key | apt-key add -
 apt-get update
@@ -279,18 +364,11 @@ apt-get -f -y install ipop
 # remove cached .debs from /var/cache/apt/archives to save disk space
 apt-get clean
 
-# create directory structure
-echo > /var/log/cpsagent.log
-mkdir /etc/cpsagent/
-mkdir /var/tmp/cpsagent/
-mkdir /var/run/cpsagent/
-mkdir /var/cache/cpsagent/
-echo > /var/log/cpsmanager.log
-mkdir /etc/cpsmanager/
-mkdir /var/tmp/cpsmanager/
-mkdir /var/run/cpsmanager/
-mkdir /var/cache/cpsmanager/
+EOF
 
+$GIT_SERVICE || echo 'cecho "===== Skipped GIT ====="' >> $ROOT_DIR/conpaas_install
+$GIT_SERVICE && cat <<EOF >> $ROOT_DIR/conpaas_install
+cecho "===== install GIT ====="
 # add git user
 useradd git --shell /usr/bin/git-shell --create-home -k /dev/null
 # create ~git/.ssh and authorized_keys
@@ -306,6 +384,11 @@ cat ~root/.ssh/id_rsa.pub > ~git/.ssh/authorized_keys
 # fix repository permissions
 chown -R git:git ~git/code
 
+EOF
+
+$SELENIUM_SERVICE || echo 'cecho "===== Skipped SELENIUM ====="' >> $ROOT_DIR/conpaas_install
+$SELENIUM_SERVICE && cat <<EOF >> $ROOT_DIR/conpaas_install
+cecho "===== install SELENIUM ====="
 # recent versions of iceweasel and chrome
 echo "deb http://backports.debian.org/debian-backports squeeze-backports main" >> /etc/apt/sources.list
 echo "deb http://mozilla.debian.net/ squeeze-backports iceweasel-esr" >> /etc/apt/sources.list
@@ -315,6 +398,11 @@ apt-get -f -y update
 apt-get -f -y --force-yes install -t squeeze-backports iceweasel
 apt-get -f -y --force-yes install google-chrome-beta
 
+EOF
+
+$HADOOP_SERVICE || echo 'cecho "===== Skipped HADOOP ====="' >> $ROOT_DIR/conpaas_install
+$HADOOP_SERVICE && cat <<EOF >> $ROOT_DIR/conpaas_install
+cecho "===== install cloudera repo for hadoop ====="
 # add cloudera repo for hadoop
 echo "deb http://archive.cloudera.com/debian $DEBIAN_DIST-cdh3 contrib" >> /etc/apt/sources.list
 wget -O - http://archive.cloudera.com/debian/archive.key 2>/dev/null | apt-key add -
@@ -338,6 +426,11 @@ sed --in-place "s%deb http://archive.cloudera.com/debian $DEBIAN_DIST-cdh3 contr
 apt-get -f -y update
 
 
+EOF
+
+$SCALARIS_SERVICE || echo 'cecho "===== Skipped SCALARIS ====="' >> $ROOT_DIR/conpaas_install
+$SCALARIS_SERVICE && cat <<EOF >> $ROOT_DIR/conpaas_install
+cecho "===== install scalaris repo ====="
 # add scalaris repo
 echo "deb http://download.opensuse.org/repositories/home:/scalaris/Debian_6.0 /" >> /etc/apt/sources.list
 wget -O - http://download.opensuse.org/repositories/home:/scalaris/Debian_6.0/Release.key 2>/dev/null | apt-key add -
@@ -348,7 +441,11 @@ update-rc.d scalaris disable
 sed --in-place 's%deb http://download.opensuse.org/repositories/home:/scalaris/Debian_6.0 /%%' /etc/apt/sources.list
 apt-get -f -y update
 
+EOF
 
+$XTREEMFS_SERVICE || echo 'cecho "===== Skipped XTREEMFS ====="' >> $ROOT_DIR/conpaas_install
+$XTREEMFS_SERVICE && cat <<EOF >> $ROOT_DIR/conpaas_install
+cecho "===== install xtreemfs repo ====="
 # add xtreemfs repo
 echo "deb http://download.opensuse.org/repositories/home:/xtreemfs:/unstable/Debian_6.0 /" >> /etc/apt/sources.list
 wget -O - http://download.opensuse.org/repositories/home:/xtreemfs:/unstable/Debian_6.0/Release.key 2>/dev/null | apt-key add -
@@ -361,6 +458,11 @@ update-rc.d xtreemfs-dir disable
 sed --in-place 's%deb http://download.opensuse.org/repositories/home:/xtreemfs:/unstable/Debian_6.0 /%%' /etc/apt/sources.list
 apt-get -f -y update
 
+EOF
+
+$CDS_SERVICE || echo 'cecho "===== Skipped CDS ====="' >> $ROOT_DIR/conpaas_install
+$CDS_SERVICE && cat <<EOF >> $ROOT_DIR/conpaas_install
+cecho "===== install latest nginx (1.2.2) and other packages required by CDS ====="
 # install latest nginx (1.2.2) and other packages required by CDS
 DEBIAN_FRONTEND=noninteractive apt-get -y --force-yes --no-install-recommends --no-upgrade \
     install libpcre3-dev libssl-dev libgeoip-dev libperl-dev
@@ -373,7 +475,9 @@ make install
 cd ..
 rm -rf nginx-1.2.2*
 
+EOF
 
+cat <<EOF >> $ROOT_DIR/conpaas_install
 apt-get -f -y clean
 exit 0
 EOF
