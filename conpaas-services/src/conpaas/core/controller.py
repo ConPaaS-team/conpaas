@@ -158,7 +158,10 @@ class Controller(object):
                        self.__fe_user_id, self.__fe_service_id)
 
                 poll = cloud.new_instances(count - len(ready), name)
-                self.__partially_created_nodes += poll
+                try:
+                    self.__partially_created_nodes += poll
+                except TypeError:
+                    self.__partially_created_nodes.append(poll)
             except Exception as e:
                 self.__logger.exception(
                     '[_create_nodes]: Failed to request new nodes')
@@ -167,10 +170,10 @@ class Controller(object):
                 raise e
             finally:
                 self.__force_terminate_lock.release()
-            poll, failed = self.__wait_for_nodes(poll, test_agent, port)
+            poll, failed = self.__wait_for_nodes(
+                    self.__partially_created_nodes, test_agent, port)
             ready += poll
             poll = []
-            assert failed
             if failed:
                 self.__logger.debug('[_create_nodes]: %d nodes '
                                     'failed to startup properly: %s'
@@ -347,8 +350,10 @@ class Controller(object):
                                     % len(no_ip_nodes))
                 refreshed_list = cloud.list_vms()
                 for node in no_ip_nodes:
-                    node.ip = refreshed_list[node.id]['ip']
-                    node.private_ip = refreshed_list[node.id]['private_ip']
+                    for refreshed_node in refreshed_list:
+                        if refreshed_node.id == node.id:
+                            node.ip = refreshed_node.ip
+                            node.private_ip = refreshed_node.private_ip
 
         self.__logger.debug('[_wait_for_nodes]: All nodes are ready %s'
                             % str(done))
