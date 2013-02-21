@@ -275,7 +275,7 @@ class Controller(object):
             @return The list of cloud objects
 
         """
-        return [self.__default_cloud].extend(self.available_clouds)
+        return [self.__default_cloud] + self.available_clouds
 
     #=========================================================================#
     #               config_cloud(self, cloud, config_params)                  #
