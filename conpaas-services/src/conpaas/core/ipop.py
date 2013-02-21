@@ -98,6 +98,8 @@ def configure_ipop(tmpl_dir, namespace,
 
         template_contents = Template(open(template_file).read(), values)
 
+        if not os.path.exists(IPOP_CONF_DIR):
+            os.makedirs(IPOP_CONF_DIR)
         dest_file = os.path.join(IPOP_CONF_DIR, filename)
         open(dest_file, 'w').write(str(template_contents))
 
