@@ -176,3 +176,5 @@ DATABASE_URI = sqlite:////etc/cpsdirector/director.db
 # This is where ConPaaS.tar.gz is expected to be found, as well as the
 # decrement credit callback. conpaas-director provides both functionalities:
 # put the public IP address of the machine running the director here.
+#DIRECTOR_URL = https://director.example.org:5555
+
