@@ -148,6 +148,13 @@ class Cloud:
                 private_ip = ''
         else:
             private_ip = ip
+
+        if hasattr(ip, 'address'):
+            ip = ip.address
+
+        if hasattr(private_ip, 'address'):
+            private_ip = private_ip.address
+
         return ip, private_ip
 
     def kill_instance(self, node):
