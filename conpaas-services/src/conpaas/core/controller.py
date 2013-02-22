@@ -45,6 +45,7 @@ from threading import Thread, Lock, Event
 import os.path
 import time
 import json
+import socket
 import urlparse
 from string import Template
 from conpaas.core.log import create_logger
@@ -326,10 +327,12 @@ class Controller(object):
                 up = True
                 try:
                     if node.ip != '' and node.private_ip != '':
+                        self.__logger.debug('[__wait_for_nodes]: test_agent(%s, %s)' % (node.ip, port))
                         test_agent(node.ip, port)
                     else:
                         up = False
-                except:
+                except socket.error, err:
+                    self.__logger.debug('[__wait_for_nodes]: %s' % err)
                     up = False
                 if up:
                     # On this node the agent started fine.
