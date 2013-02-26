@@ -443,7 +443,7 @@ class XtreemFSManager(BaseManager):
     def createMRC(self, kwargs):
         if self.state != self.S_RUNNING:
             return HttpErrorResponse('ERROR: Wrong state to create MRC service')
-        # Just get_helloworld from all the agents
+        # Just createMRC from all the agents
         for node in self.nodes:
             data = client.createMRC(node.ip, 5555, self.dirNodes[0].ip)
             self.logger.info('Received %s from %s', data, node.id)
@@ -455,7 +455,7 @@ class XtreemFSManager(BaseManager):
     def createDIR(self, kwargs):
         if self.state != self.S_RUNNING:
             return HttpErrorResponse('ERROR: Wrong state to create DIR service')
-        # Just get_helloworld from all the agents
+        # Just createDIR from all the agents
         for node in self.nodes:
             data = client.createDIR(node.ip, 5555)
             self.logger.info('Received %s from %s', data, node.id)
@@ -467,7 +467,7 @@ class XtreemFSManager(BaseManager):
     def createOSD(self, kwargs):
         if self.state != self.S_RUNNING:
             return HttpErrorResponse('ERROR: Wrong state to create OSD service')
-        # Just get_helloworld from all the agents
+        # Just createOSD from all the agents
         for node in self.nodes:
             data = client.createOSD(node.ip, 5555, self.dirNodes[0].ip)
             self.logger.info('Received %s from %s', data, node.id)
