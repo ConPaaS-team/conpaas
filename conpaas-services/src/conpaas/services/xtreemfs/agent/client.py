@@ -61,10 +61,6 @@ def startup(host, port):
   method = 'startup'
   return _check(https.client.jsonrpc_post(host, port, '/', method))
 
-def get_helloworld(host, port):
-  method = 'createMRC'
-  return _check(https.client.jsonrpc_get(host, port, '/', method))
-
 def createMRC(host,port,dir_serviceHost):
   method = 'createMRC'
   params = {

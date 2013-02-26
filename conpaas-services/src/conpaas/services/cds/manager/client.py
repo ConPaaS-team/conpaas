@@ -12,10 +12,6 @@ def get_service_info(host, port):
   method = 'get_service_info'
   return _check(_jsonrpc_get(host, port, '/', method))
 
-def get_helloworld(host, port):
-  method = 'get_helloworld'
-  return _check(_jsonrpc_get(host, port, '/', method))
-
 def startup(host, port):
   method = 'startup'
   return _check(_jsonrpc_post(host, port, '/', method))

@@ -183,9 +183,3 @@ class XtreemFSAgent(BaseAgent):
         self.logger.info('Agent started up')
         return HttpJsonResponse()
 
-    @expose('GET')
-    def get_helloworld(self, kwargs):
-        if self.state != 'RUNNING':
-            return HttpErrorResponse('ERROR: Wrong state to get_helloworld')
-        return HttpJsonResponse({'result':self.gen_string})
-

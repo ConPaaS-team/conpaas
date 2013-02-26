@@ -8,7 +8,6 @@ from conpaas.core.http import HttpJsonResponse, HttpErrorResponse,\
                          HttpFileDownloadResponse, HttpRequest,\
                          FileUploadField, HttpError, _http_post
 from conpaas.core.log import create_logger
-from conpaas.services.helloworld.agent import client
 import conpaas.core.file
 import app
 from edge import NetworkSnapshot
