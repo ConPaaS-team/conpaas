@@ -1,4 +1,3 @@
-<?php
 /*
  * Copyright (c) 2010-2012, Contrail consortium.
  * All rights reserved.
@@ -36,45 +35,24 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-require_module('ui/page');
-
-class HadoopPage extends ServicePage {
-
-	public function __construct(Service $service) {
-		parent::__construct($service);
-		$this->addJS('js/hadoop.js');
-	}
-
-	protected function renderRightMenu() {
-		$links = LinkUI('manager log',
-			'viewlog.php?sid='.$this->service->getSID())
-			->setExternal(true);
-		if ($this->service->isRunning()) {
-			$master_addr = $this->service->getAccessLocation();
-			$links .= ' &middot; '
-				.LinkUI('namenode', $master_addr.':50070')
-					->setExternal(true)
-				.' &middot; '
-				.LinkUI('job tracker', $master_addr.':50030')
-					->setExternal(true)
-				.' &middot; '
-				.LinkUI('HUE', $master_addr.':8088')
-					->setExternal(true);
-		}
-		return '<div class="rightmenu">'.$links.'</div>';
-	}
-
-	protected function renderInstanceActions() {
-		return EditableTag()
-			->setColor('purple')
-			->setID('workers')
-			->setValue('0')
-			->setText('Hadoop DataNode & TaskTracker');
-	}
-
-	public function renderContent() {
-		return $this->renderInstancesSection();
-	}
-}
-
-?>
+$(document).ready(function () {
+    var service,
+        page,
+        sid = GET_PARAMS['sid'],
+        server = new conpaas.http.Xhr();
+    server.req('ajax/getService.php', {sid: sid}, 'get', function (data) {
+        service = new conpaas.model.Service(data.sid, data.state,
+                data.instanceRoles, data.reachable);
+        page = new conpaas.ui.ServicePage(server, service);
+        page.attachHandlers();
+        if (page.service.needsPolling()) {
+            page.freezeInput(true);
+            page.pollState(function () {
+                window.location.reload();
+            });
+        }
+    }, function () {
+        // error
+        window.location = 'index.php';
+    })
+});
