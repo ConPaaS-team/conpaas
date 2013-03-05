@@ -225,7 +225,7 @@ class BaseClient(object):
         #    print os.path.join(self.confdir, name)
 
     def credentials(self):
-        wrong_url = "E: Invalid target URL. Try with something like https://conpaas.example.com:443\n"
+        wrong_url = "E: Invalid target URL. Try with something like https://conpaas.example.com:5555\n"
 
         # Loop till  we get a valid URL
         while True:
