@@ -20,4 +20,9 @@ const CONPAAS_HOST = 'conpaas.yourdomain.com';
 // [2] https://www.google.com/recaptcha/admin/create
 const CAPTCHA_PRIVATE_KEY = 'YOUR_DOMAIN_CAPTCHA_PRIVATE_KEY';
 const CAPTCHA_PUBLIC_KEY = 'YOUR_DOMAIN_CAPTCHA_PUBLIC_KEY';
+
+// These parameters are used to indicate which cloud types are supported.
+// If removed you wil get loads of error messages in /var/log/apache2/error.log
+const enable_opennebula = "yes";
+const enable_ec2 = "yes";
 ?>
