@@ -42,8 +42,8 @@ require_module('ui/instance/xtreemfs');
 
 class XtreemFSService extends Service {
 
-	public function __construct($data, $cloud) {
-		parent::__construct($data, $cloud);
+	public function __construct($data, $manager) {
+		parent::__construct($data, $manager);
 	}
 
 	public function hasDedicatedManager() {

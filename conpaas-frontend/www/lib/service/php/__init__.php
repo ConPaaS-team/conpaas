@@ -46,8 +46,8 @@ class PHPService extends Service {
 	protected $conf = null;
 	protected $cds = null;
 
-	public function __construct($data, $cloud) {
-		parent::__construct($data, $cloud);
+	public function __construct($data, $manager) {
+		parent::__construct($data, $manager);
 		if ($this->isCdnEnabled()) {
 			$cds_data = ServiceData::getCdsByAddress($this->conf->cdn);
 			$this->cds = ServiceFactory::create($cds_data);

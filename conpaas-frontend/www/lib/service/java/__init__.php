@@ -41,8 +41,8 @@ require_module('ui/instance/java');
 
 class JavaService extends Service {
 
-	public function __construct($data, $cloud) {
-		parent::__construct($data, $cloud);
+	public function __construct($data, $manager) {
+		parent::__construct($data, $manager);
 	}
 
 	public function hasDedicatedManager() {
