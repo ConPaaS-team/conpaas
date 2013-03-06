@@ -43,6 +43,20 @@ class WebClient(BaseClient):
         else:
             print "Code version %(codeVersionId)s uploaded" % res
 
+    def download_code(self, service_id, version):
+        params = { 'codeVersionId': version }
+
+        res = self.callmanager(service_id, "download_code_version", 
+            False, params)
+
+        if 'error' in res:
+            print res['error']
+
+        else:
+            destfile = os.path.join(os.getenv('TMPDIR', '/tmp'), version) + '.tar.gz'
+            open(destfile, 'w').write(res)
+            print destfile, 'written'
+
     def usage(self, cmdname):
         BaseClient.usage(self, cmdname)
         print "    add_nodes         serviceid b w p     # add    b backend, w web and p proxy nodes"
@@ -51,6 +65,7 @@ class WebClient(BaseClient):
         print "    upload_key        serviceid filename  # upload an SSH key"
         print "    list_uploads      serviceid           # list uploaded code versions"
         print "    upload_code       serviceid filename  # upload a new code version"
+        print "    download_code     serviceid version   # download a specific code version"
         # implemented in {php,java}.py
         print "    enable_code       serviceid version   # set a specific code version active" 
 
@@ -59,7 +74,8 @@ class WebClient(BaseClient):
 
         # Check serviceid for all the commands requiring one
         if command in ( 'add_nodes', 'remove_nodes', 'list_keys', 
-            'upload_key', 'list_uploads', 'upload_code', 'enable_code' ):
+                        'upload_key', 'list_uploads', 'upload_code',
+                        'enable_code', 'download_code' ):
             try:
                 sid = int(argv[2])
             except (IndexError, ValueError):
@@ -98,15 +114,17 @@ class WebClient(BaseClient):
             data = [ add_cur(el) for el in res['codeVersions'] ]
             print self.prettytable(( 'current', 'codeVersionId', 'filename', 'description' ), data)
 
-        if command == 'enable_code':
-            # implemented in the subclass
+        if command in ( 'enable_code', 'download_code' ):
             try:
                 code_version = argv[3]
+                if not code_version.startswith('code-'):
+                    print "E: Please provide a valid version id"
+                    raise IndexError()
             except IndexError:
                 self.usage(argv[0])
                 sys.exit(0)
 
-            self.enable_code(sid, code_version)
+            getattr(self, command)(sid, code_version)
     
         if command in ( 'add_nodes', 'remove_nodes' ):
             try:

@@ -118,7 +118,12 @@ class BaseClient(object):
             res = https.client.jsonrpc_get(service['manager'], 443, '/', method, data)
 
         if res[0] == 200:
-            data = simplejson.loads(res[1])
+            try:
+                data = simplejson.loads(res[1])
+            except simplejson.decoder.JSONDecodeError:
+                # Not JSON, simply return what we got
+                return res[1]
+
             return data.get('result', data)
 
         raise Exception, "Call to method %s on %s failed: %s.\nParams = %s" % (
