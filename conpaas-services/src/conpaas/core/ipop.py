@@ -41,6 +41,7 @@ import urlparse
 from Cheetah.Template import Template
 
 from conpaas.core.misc import run_cmd
+from conpaas.core.log import create_logger
 
 IPOP_CONF_DIR = "/opt/ipop/etc/"
 
@@ -56,10 +57,7 @@ def get_ipop_namespace(config_parser):
     base_namespace = urlparse.urlparse(base_namespace).netloc
     return "conpaas-%s-%s" % (base_namespace, user_id)
 
-def configure_ipop(tmpl_dir, namespace, 
-                   ip_base="192.168.0.0", 
-                   netmask="255.255.255.0", 
-                   ip_address=None, 
+def configure_ipop(tmpl_dir, namespace, ip_base, netmask, ip_address=None, 
                    udp_port=0):
     """Create or re-write the configuration files required by IPOP.
 
@@ -74,7 +72,15 @@ def configure_ipop(tmpl_dir, namespace,
                              'static', 'use_ipop_hostname' ),
         'dhcp.config': ( 'ip_base', 'netmask', 'namespace', ),
     }
-    procedure_args = locals()
+        
+    procedure_args = {
+        'tmpl_dir': tmpl_dir,
+        'namespace': namespace,
+        'ip_base': ip_base,
+        'netmask': netmask,
+        'ip_address': ip_address,
+        'udp_port': udp_port
+    }
 
     if ip_address is None:
         # we use DHCP
@@ -98,8 +104,6 @@ def configure_ipop(tmpl_dir, namespace,
 
         template_contents = Template(open(template_file).read(), values)
 
-        if not os.path.exists(IPOP_CONF_DIR):
-            os.makedirs(IPOP_CONF_DIR)
         dest_file = os.path.join(IPOP_CONF_DIR, filename)
         open(dest_file, 'w').write(str(template_contents))
 
@@ -117,22 +121,42 @@ def get_ip_address():
     return run_cmd(ip_cmd, '/')[0].rstrip('\n')
 
 def configure_conpaas_node(config_parser):
+    logger = create_logger(__name__)
+    ip_base = None
+    netmask = None
+
     if config_parser.has_section('manager'):
-        conpaas_home = config_parser.get('manager', 'CONPAAS_HOME')
+        section_name = 'manager'
     else:
-        conpaas_home = config_parser.get('agent', 'CONPAAS_HOME')
+        section_name = 'agent'
+
+    # Start IPOP only if the user wants to do so
+    if config_parser.has_option(section_name, 'IPOP_BASE_IP'):
+        ip_base = config_parser.get(section_name, 'IPOP_BASE_IP')
+
+    if config_parser.has_option(section_name, 'IPOP_NETMASK'):
+        netmask = config_parser.get(section_name, 'IPOP_NETMASK')
+
+    if not ip_base or not netmask:
+        # IPOP_BASE_IP and IPOP_NETMASK are called VPN_BASE_NETWORK and
+        # VPN_NETMASK in the director config file
+        logger.info(
+            'NOT starting IPOP: VPN_BASE_NETWORK or VPN_NETMASK not found')
+        return
+
+    # Stop here if IPOP is not installed
+    if not os.path.isdir(IPOP_CONF_DIR):
+        logger.error('NOT starting IPOP: it does not seem to be installed')
+        return
+
+    conpaas_home = config_parser.get(section_name, 'CONPAAS_HOME')
 
     ipop_tmpl_dir = os.path.join(conpaas_home, 'config', 'ipop')
     
     ipop_namespace = get_ipop_namespace(config_parser)
 
-    configure_ipop(ipop_tmpl_dir, ipop_namespace)
+    logger.info('Starting IPOP. namespace=%s ip_base=%s netmask=%s' % (
+        ipop_namespace, ip_base, netmask))
+
+    configure_ipop(ipop_tmpl_dir, ipop_namespace, ip_base, netmask)
     restart_ipop()       
-
-if __name__ == "__main__":
-    configure_ipop("/home/ema/dev/conpaas/conpaas-services/config/ipop", 
-                   "ipop-test", "192.168.12.0", "255.255.255.0")
-
-    res = restart_ipop()
-    print res[0]
-    print res[1]

@@ -79,6 +79,16 @@ class Controller(object):
         # Set the CA URL as IPOP's base namespace
         self.__ipop_base_namespace = self.__fe_caUrl
 
+        if config_parser.has_option('manager', 'IPOP_BASE_IP'):
+            self.__ipop_base_ip = config_parser.get('manager', 'IPOP_BASE_IP')
+        else:
+            self.__ipop_base_ip = None
+
+        if config_parser.has_option('manager', 'IPOP_NETMASK'):
+            self.__ipop_netmask = config_parser.get('manager', 'IPOP_NETMASK')
+        else:
+            self.__ipop_netmask = None
+
         # For crediting system
         self.__reservation_logger = create_logger('ReservationTimer')
         self.__reservation_map = {'manager': ReservationTimer(['manager'],
@@ -395,6 +405,13 @@ class Controller(object):
             CONPAAS_USER_ID=self.__fe_user_id,
             CONPAAS_SERVICE_ID=self.__fe_service_id,
             IPOP_BASE_NAMESPACE=self.__ipop_base_namespace)
+
+        # Add IPOP_BASE_IP and IPOP_NETMASK if necessary
+        if self.__ipop_base_ip:
+            agent_cfg += '\nIPOP_BASE_IP = %s' % self.__ipop_base_ip
+
+        if self.__ipop_netmask:
+            agent_cfg += '\nIPOP_NETMASK = %s' % self.__ipop_netmask
 
         if os.path.isfile(agent_cfg_dir + '/' + service_name + '-agent.cfg'):
             agent_cfg_file = open(agent_cfg_dir +

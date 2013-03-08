@@ -71,6 +71,15 @@ class ManagerController(Controller):
         mngr_cfg = mngr_cfg.replace('%CONPAAS_USER_ID%',
                                     self.config_parser.get("manager",
                                                            "FE_USER_ID"))
+
+        # Check if we want to use IPOP. If so, add IPOP directives to manager
+        # config file
+        if self.config_parser.has_option('conpaas', 'VPN_BASE_NETWORK'):
+            mngr_cfg += '\nIPOP_BASE_IP = %s' % self.config_parser.get('conpaas', 'VPN_BASE_NETWORK')
+
+        if self.config_parser.has_option('conpaas', 'VPN_NETMASK'):
+            mngr_cfg += '\nIPOP_NETMASK = %s' % self.config_parser.get('conpaas', 'VPN_NETMASK')
+
         tmpl_values['mngr_cfg'] = mngr_cfg
 
         # Add default manager startup script

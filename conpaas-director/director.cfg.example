@@ -4,6 +4,11 @@ CONF_DIR = /etc/cpsdirector
 # Path to certificates
 CERT_DIR = /etc/cpsdirector/certs
 
+# Uncomment the following directives in case you want to use per-application
+# Virtual Private Networks
+# VPN_BASE_NETWORK = 172.16.0.0
+# VPN_NETMASK = 255.240.0.0
+
 [iaas]
 ##############
 # Amazon EC2 #
