@@ -72,6 +72,7 @@ HADOOP_SERVICE=true
 SCALARIS_SERVICE=true
 XTREEMFS_SERVICE=true
 CDS_SERVICE=true
+# BLUE_PRINT_INSERT_SERVICE		do not remove this line: it is a placeholder for installing new services
 
 # override above values with those found in config file, if present 
 [ -f services_config.cfg ] && . services_config.cfg
@@ -88,7 +89,7 @@ function cecho() {
 
 # Set up message on purpose before root permission check
 cecho "Setting up for these services:"
-for i in PHP MYSQL CONDOR IPOP GIT SELENIUM HADOOP SCALARIS XTREEMFS CDS
+for i in PHP MYSQL CONDOR IPOP GIT SELENIUM HADOOP SCALARIS XTREEMFS CDS # BLUE_PRINT_FOR	 do not remove this comment: it is a placeholder for installing new services
 do
 	name=`echo $i`_SERVICE
 	eval serv=\${$name}
@@ -476,6 +477,8 @@ cd ..
 rm -rf nginx-1.2.2*
 
 EOF
+
+# BLUE_PRINT_INSERT_SOFTWARE		do not remove this line: it is a placeholder for installing new services
 
 cat <<EOF >> $ROOT_DIR/conpaas_install
 apt-get -f -y clean

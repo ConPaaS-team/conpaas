@@ -126,6 +126,8 @@ $page = new Page();
 	   			<td class="radio"><input type="radio" name="type" value="taskfarm" /> task farm</td>
 	   			<td class="info"> Service for running bags of tasks </td>
 	   		</tr>
+<!--	BLUE_PRINT_INSERT	do not remove this line: it is a placeholder for installing new services -->
+
   			<tr>
   				<td>&nbsp;</td>
   			</tr>
