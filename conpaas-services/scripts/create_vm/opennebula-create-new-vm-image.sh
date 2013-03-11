@@ -72,6 +72,7 @@ HADOOP_SERVICE=true
 SCALARIS_SERVICE=true
 XTREEMFS_SERVICE=true
 CDS_SERVICE=true
+HTCONDOR_SERVICE=true
 # BLUE_PRINT_INSERT_SERVICE		do not remove this line: it is a placeholder for installing new services
 
 # override above values with those found in config file, if present 
@@ -89,7 +90,7 @@ function cecho() {
 
 # Set up message on purpose before root permission check
 cecho "Setting up for these services:"
-for i in PHP MYSQL CONDOR IPOP GIT SELENIUM HADOOP SCALARIS XTREEMFS CDS # BLUE_PRINT_FOR	 do not remove this comment: it is a placeholder for installing new services
+for i in PHP MYSQL CONDOR IPOP GIT SELENIUM HADOOP SCALARIS XTREEMFS CDS HTCONDOR # BLUE_PRINT_FOR	 do not remove this comment: it is a placeholder for installing new services
 do
 	name=`echo $i`_SERVICE
 	eval serv=\${$name}
@@ -475,6 +476,13 @@ make
 make install
 cd ..
 rm -rf nginx-1.2.2*
+
+EOF
+
+$HTCONDOR_SERVICE || echo 'cecho "===== Skipped HTCONDOR ====="' >> $ROOT_DIR/conpaas_install
+$HTCONDOR_SERVICE && cat <<EOF >> $ROOT_DIR/conpaas_install
+cecho "===== install packages required by HTCondor ====="
+# you may want to add the software needed for your new HTCondor service here
 
 EOF
 
