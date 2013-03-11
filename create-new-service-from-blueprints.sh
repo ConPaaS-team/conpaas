@@ -32,7 +32,7 @@ echo ===== adjusting =====
 for i in $FILES
 do
 echo == $i
-# svn revert $i
+svn revert $i
 B=`basename $i`
 case $B in
 	select-services.sh)
@@ -73,8 +73,8 @@ case $B in
 	__init__.php)
 		sed -i '
 /BLUE_PRINT_INSERT/i\
-			case '"'$BP_lc_name'"':
-				require_module('"'service/$BP_lc_name'"');
+			case '"'$BP_lc_name'"':\
+				require_module('"'service/$BP_lc_name'"');\
 				return new '"$BP_mc_name"'Service($service_data, $manager);
 		' $i
 	;;
