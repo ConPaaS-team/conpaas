@@ -52,13 +52,17 @@ class DbTest(Common):
         self.create_user()
 
         user = cpsdirector.get_user(TEST_USER_DATA['username'], TEST_USER_DATA['password'])
-        service = cpsdirector.Service(name="New selenium service", type="selenium", 
-            user=user)
+        app = cpsdirector.get_default_app(user.uid)
+        service = cpsdirector.Service(name="New selenium service", type="selenium",
+                                      user=user, application=app)
         cpsdirector.db.session.add(service)
         cpsdirector.db.session.commit()
 
         # Testing service->user backref
         self.assertEquals(120, service.user.credit)
+
+        # Test application->name backref
+        self.assertEquals("New Application", service.application.name)
 
     def test_decrement_user_credit(self):
         user = self.create_user()
@@ -83,10 +87,10 @@ class DbTest(Common):
         self.assertEquals(110, user.credit)
 
 class DirectorTest(Common):
-    
+
     def setUp(self):
         Common.setUp(self)
-        self.app = cpsdirector.app.test_client()          
+        self.app = cpsdirector.app.test_client()
 
     def test_404_on_root(self):
         response = self.app.get("/")

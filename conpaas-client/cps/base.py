@@ -139,8 +139,22 @@ class BaseClient(object):
             except (socket.error, urllib2.URLError):
                 time.sleep(2)
 
-    def create(self, service_type, initial_state='INIT'):
-        res = self.callapi("start/" + service_type, True, {})
+    def createapp(self, app_name):
+        print "Creating new application... "
+
+        if self.callapi("createapp", True, { 'name': app_name }):
+            print "done."
+        else:
+            print "failed."
+
+        sys.stdout.flush()
+
+    def create(self, service_type, application_id=None, initial_state='INIT'):
+        data = {}
+        if application_id is not None:
+            data['appid'] = application_id
+
+        res = self.callapi("start/" + service_type, True, data)
         sid = res['sid']
 
         print "Creating new manager on " + res['manager'] + "... ",
@@ -341,12 +355,35 @@ class BaseClient(object):
 
         return output
 
-    def list(self):
+    def deleteapp(self, app_id):
+        print "Deleting application... "
+        sys.stdout.flush()
+
+        res = self.callapi("delete/%s" % app_id, True, {})
+        if res:
+            print "done."
+        else:
+            print "failed."
+
+    def listapp(self):
+        """Call the 'listapp' method on the director and print the results
+        nicely"""
+        apps = self.callapi("listapp", True, {})
+        if apps:
+            print self.prettytable(( 'aid', 'name' ), apps)
+        else:
+            print "No existing applications"
+
+    def list(self, appid):
         """Call the 'list' method on the director and print the results
         nicely"""
-        services = self.callapi("list", True, {})
+        if appid == 0:
+            services = self.callapi("list", True, {})
+        else:
+            services = self.callapi("list/%s" % appid, True, {})
+
         if services:
-            print self.prettytable(( 'type', 'sid', 'vmid', 
+            print self.prettytable(( 'type', 'sid', 'application_id', 'vmid', 
                                      'name', 'manager' ), services)
         else:
             print "No running services"
@@ -357,9 +394,12 @@ class BaseClient(object):
         print "COMMAND is one of the following"
         print
         print "    credentials                           # set your ConPaaS credentials"
-        print "    list                                  # list running services" 
-        print "    available                             # list supported services" 
-        print "    create            servicetype         # create a new service"
+        print "    listapp                               # list all applications"
+        print "    available                             # list supported services"
+        print "    list              [appid]             # list running services under an application"
+        print "    deleteapp         appid               # delete an application"
+        print "    createapp         appname             # create a new application"
+        print "    create            servicetype [appid] # create a new service [inside a specific application]"
         print "    start             serviceid           # startup the specified service"
         print "    info              serviceid           # get service details"
         print "    logs              serviceid           # get service logs"
@@ -368,7 +408,7 @@ class BaseClient(object):
         print "    rename            serviceid newname   # rename the specified service"
         print "    startup_script    serviceid filename  # upload a startup script"
         print "    usage             serviceid           # show service-specific options"
-    
+
     def main(self, argv):
         """What to do when invoked from the command line. Clients should extend
         this and add any client-specific argument. argv is sys.argv"""
@@ -380,9 +420,10 @@ class BaseClient(object):
             self.usage(argv[0])
             sys.exit(0)
 
-        # Service-generic commands
-        if command in ( "list", "credentials", "available", "create" ):
-            
+        # Service and appplication generic commands
+        if command in ( "listapp", "createapp", "list", "credentials",
+                        "available", "create", "deleteapp" ):
+
             if command == "create":
                 try:
                     # Create wants a service type. Check if we got one, and if
@@ -391,16 +432,35 @@ class BaseClient(object):
                     if service_type not in self.available_services():
                         raise IndexError
 
+                    try:
+                        appid = argv[3]
+                        # TODO Check if the application is valid
+                    except IndexError:
+                        appid = None
+
                     # taskfarm-specific service creation
                     if service_type == 'taskfarm':
                         from cps.taskfarm import Client
-                        return Client().create(service_type)
+                        return Client().create(service_type, appid)
 
                     # normal service creation
-                    return getattr(self, command)(service_type)
+                    return getattr(self, command)(service_type, appid)
                 except IndexError:
                     self.usage(argv[0])
                     sys.exit(0)
+
+            if command == "createapp":
+                appname = argv[2]
+                return getattr(self, command)(appname)
+            if command == "deleteapp":
+                appid = argv[2]
+                return getattr(self, command)(appid)
+            if command == "list":
+                if len(sys.argv) == 2:
+                    appid = 0
+                else:
+                    appid = argv[2]
+                return getattr(self, command)(appid)
 
             # We need no params, just call the method and leave
             return getattr(self, command)()

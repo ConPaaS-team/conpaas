@@ -50,7 +50,7 @@ def get_user(username, password):
 def create_user(username, fname, lname, email, affiliation, password, credit):
     """Create a new user with the given attributes. Return a new User object
     in case of successful creation. None otherwise."""
-    user = User(username=username,
+    new_user = User(username=username,
                 fname=fname,
                 lname=lname,
                 email=email,
@@ -58,11 +58,14 @@ def create_user(username, fname, lname, email, affiliation, password, credit):
                 password=hashlib.md5(password).hexdigest(),
                 credit=credit)
 
-    db.session.add(user)
+    app = Application(user=new_user)
+
+    db.session.add(new_user)
+    db.session.add(app)
 
     try:
         db.session.commit()
-        return user
+        return new_user
     except Exception, err:
         db.session.rollback()
         raise err
@@ -88,6 +91,22 @@ def login_required(fn):
         return build_response(simplejson.dumps(False))
 
     return decorated_view
+
+def get_app(user_id, app_id):
+    app = Application.query.filter_by(aid=app_id).first()
+    if not app:
+        log('Application %s does not exist' % app_id)
+        return
+
+    if app.user_id != user_id:
+        log('Application %s is not owned by user %s' % (app_id, user_id))
+        return
+
+    return app
+
+def get_default_app(user_id):
+    return Application.query.filter_by(user_id=user_id).order_by(
+        Application.aid).first()
 
 def get_service(user_id, service_id):
     service = Service.query.filter_by(sid=service_id).first()
@@ -244,36 +263,71 @@ def available_services():
     """GET /available_services"""
     return simplejson.dumps(valid_services)
 
+@app.route("/createapp", methods=['POST'])
+@cert_required(role='user')
+def createapp():
+    app_name = request.values.get('name')
+    if not app_name:
+        log('"name" is a required argument')
+        return build_response(simplejson.dumps(False))
+
+    log('User %s creating a new application %s' % (g.user.username, app_name))
+
+    a = Application(name=app_name, user=g.user);
+
+    db.session.add(a)
+    # flush() is needed to get auto-incremented sid
+    db.session.flush()
+
+    db.session.commit()
+
+    log('Application %s created properly' % (a.aid))
+    return build_response(jsonify(a.to_dict()))
+
 @app.route("/start/<servicetype>", methods=['POST'])
 @cert_required(role='user')
 def start(servicetype):
     """eg: POST /start/php
 
-    POSTed values must contain username and password.
+    POSTed values might contain 'appid' to specify that the service to be
+    created has to belong to a specific application. If 'appid' is omitted, the
+    service will belong to the default application.
 
     Returns a dictionary with service data (manager's vmid and IP address,
     service name and ID) in case of successful authentication and correct
     service creation. False is returned otherwise.
     """
-    log('User %s creating a new %s service' % (g.user.username, servicetype))
+    appid = request.values.get('appid')
+
+    # Use default application id if no appid was specified
+    if not appid:
+        appid = get_default_app(g.user.uid).aid
+
+    log('User %s creating a new %s service inside application %s' % (
+	    g.user.username, servicetype, appid))
 
     # Check if we got a valid service type
     if servicetype not in valid_services:
         error_msg = 'Unknown service type: %s' % servicetype
         log(error_msg)
-        return build_response(jsonify({ 'error': True, 
+        return build_response(jsonify({ 'error': True,
                                         'msg': error_msg }))
 
+    app = get_app(g.user.uid, appid)
+    if not app:
+        return build_response(jsonify({ 'error': True,
+		                        'msg': "Application not found" }))
+
     # New service with default name, proper servicetype and user relationship
-    s = Service(name="New %s service" % servicetype, type=servicetype, 
-        user=g.user)
-                
+    s = Service(name="New %s service" % servicetype, type=servicetype,
+        user=g.user, application=app)
+
     db.session.add(s)
     # flush() is needed to get auto-incremented sid
     db.session.flush()
 
     try:
-        s.manager, s.vmid, s.cloud = cloud.start(servicetype, s.sid, 
+        s.manager, s.vmid, s.cloud = cloud.start(servicetype, s.sid,
                                                  g.user.uid)
     except Exception, err:
         try:
@@ -331,6 +385,32 @@ def terminate():
 
     return jsonify({ 'error': True })
 
+@app.route("/delete/<int:appid>", methods=['POST'])
+@cert_required(role='user')
+def delete(appid):
+    """eg: POST /delete/3
+
+    POSTed values must contain username and password.
+
+    Returns a boolean value. True in case of successful authentication and
+    proper service termination. False otherwise.
+    """
+    log('User %s attempting to delete application %s' % (g.user.uid, appid))
+
+    app = get_app(g.user.uid, appid);
+    if not app:
+        return build_response(simplejson.dumps(False))
+
+    # If an application with id 'appid' exists and user is the owner
+    for service in Service.query.filter_by(application_id=appid):
+        log('Stopping service %s' % service.sid)
+        __stop(service.sid)
+
+    db.session.delete(app)
+    db.session.commit()
+
+    return build_response(simplejson.dumps(True))
+
 @app.route("/stop/<int:serviceid>", methods=['POST'])
 @cert_required(role='user')
 def stop(serviceid):
@@ -351,16 +431,40 @@ def stop(serviceid):
     __stop(serviceid)
     return build_response(simplejson.dumps(True))
 
-@app.route("/list", methods=['POST', 'GET'])
+@app.route("/listapp", methods=['POST', 'GET'])
 @cert_required(role='user')
-def list_services():
-    """POST /list
+def list_applications():
+    """POST /listapp
 
-    List running ConPaaS services if the user is authenticated. Return False
+    List all the ConPaaS applications if the user is authenticated. Return False
     otherwise.
     """
-    return build_response(simplejson.dumps([ 
-        ser.to_dict() for ser in g.user.services.all() 
+    return build_response(simplejson.dumps([
+        app.to_dict() for app in g.user.applications.all()
+    ]))
+
+@app.route("/list", methods=['POST', 'GET'])
+@cert_required(role='user')
+def list_all_services():
+    """POST /list
+
+    List running ConPaaS services under a specific application if the user is
+    authenticated. Return False otherwise.
+    """
+    return build_response(simplejson.dumps([
+        ser.to_dict() for ser in g.user.services.all()
+    ]))
+
+@app.route("/list/<int:appid>", methods=['POST', 'GET'])
+@cert_required(role='user')
+def list_services(appid):
+    """POST /list/2
+
+    List running ConPaaS services under a specific application if the user is
+    authenticated. Return False otherwise.
+    """
+    return build_response(simplejson.dumps([
+        ser.to_dict() for ser in Service.query.filter_by(application_id=appid)
     ]))
 
 @app.route("/download/ConPaaS.tar.gz", methods=['GET'])
@@ -441,6 +545,27 @@ class User(db.Model):
             'created': self.created.isoformat(),
         }
 
+class Application(db.Model):
+    aid = db.Column(db.Integer, primary_key=True,
+                    autoincrement=True)
+    name = db.Column(db.String(256))
+
+    user_id = db.Column(db.Integer, db.ForeignKey('user.uid'))
+    user = db.relationship('User', backref=db.backref('applications',
+                           lazy="dynamic"))
+
+    def __init__(self, **kwargs):
+        # Default values
+        self.name = "New Application"
+
+        for key, val in kwargs.items():
+            setattr(self, key, val)
+
+    def to_dict(self):
+        return  {
+            'aid': self.aid, 'name': self.name,
+        }
+
 class Service(db.Model):
     sid = db.Column(db.Integer, primary_key=True, 
         autoincrement=True)
@@ -455,6 +580,14 @@ class Service(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.uid'))
     user = db.relationship('User', backref=db.backref('services', 
         lazy="dynamic"))
+
+    application_id = db.Column(db.Integer, db.ForeignKey('application.aid'))
+    application = db.relationship('Application', backref=db.backref('services',
+                                  lazy="dynamic"))
+
+    application_id = db.Column(db.Integer, db.ForeignKey('application.aid'))
+    application = db.relationship('Application', backref=db.backref('services',
+                                  lazy="dynamic"))
 
     def __init__(self, **kwargs):
         # Default values
