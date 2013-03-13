@@ -21,7 +21,7 @@ We configured the experiments as follows:
 \item We fixed a SLO of 700 milliseconds at the service's side (denoted by a red Line on Figures~\ref{naiveDas4},\ref{historyDas4},\ref{naiveEC2},\ref{historyEC2}).
 
 
-\item The dynamic load-balancing weights provisioning technique was only evaluated on the heterogeneous platform, Amazon EC2. This algorithm brings improvements to the feedback algorithm only in environments where VMs may have different hardware configurations. 
+\item The dynamic load-balancing weights provisioning technique was only evaluated on the heterogeneous platform Amazon EC, as it only brings improvements in environments where VMs may have different hardware configurations. 
 
 \item The algorithms used the same statistically-chosen performance threshold ranges. 
 
@@ -51,7 +51,7 @@ Figure~\ref{naiveDas4} and Figure~\ref{historyDas4} represent the degree of SLO 
 
 \paragraph{Resource consumption.}
 
-To better understand the behavior of both algorithms, we shall also focus on the resource consumption illustrated on Figure~\ref{resComDas4}. The excessively reactive behavior of the trigger-based algorithm can be noticed in the time intervals around \emph{t=350min} and \emph{t=820min}, where two scaling operations under-provision the system during a short period of time. These provisioning decisions provoked the SLO violations that are visible in Figure~\ref{naiveDas4}in the same intervals of time. Besides affecting the system's stability, such short fluctuations in the number of provisioned resource also raise the cost of hosting the application since more VM instantiations will be triggered. When using the feedback algorithm, the system makes provisioning decisions by analyzing the workload's trend. Scaling actions are only triggered when having \emph{constant} alterations in the workload, thereby providing a more efficient resource usage. We can see that the provisioning decisions made by the feedback algorithm on Figure~\ref{resComDas4} match well with the workload alterations depicted on Figure~\ref{workload}.
+To better understand the behavior of both algorithms, we shall also focus on the resource consumption illustrated on Figure~\ref{resComDas4}. The excessively reactive behavior of the trigger-based algorithm can be noticed in the time intervals around \emph{t=350min} and \emph{t=820min}, where two scaling operations under-provision the system during a short period of time. These provisioning decisions provoked the SLO violations that are visible in Figure~\ref{naiveDas4} in the same intervals of time. Besides affecting the system's stability, such short fluctuations in the number of provisioned resource also raise the cost of hosting the application since more VM instantiations will be triggered. When using the feedback algorithm, the system makes provisioning decisions by analyzing the workload's trend. Scaling actions are only triggered when having \emph{constant} alterations in the workload, thereby providing a more efficient resource usage. We can see that the provisioning decisions made by the feedback algorithm on Figure~\ref{resComDas4} match well with the workload alterations depicted on Figure~\ref{workload}.
 
 \begin{figure}
 \begin{center}
@@ -64,7 +64,7 @@ To better understand the behavior of both algorithms, we shall also focus on the
 
 \begin{figure}
 \begin{center}
-\includegraphics[width=0.49\textwidth, height=5cm]{./images/homogeneous/numMachinesComp}
+\includegraphics[width=0.49\textwidth, height=5cm]{./images/homogeneous/explain_DAS4_Provisioning}
 \end{center}
 \vspace{-5mm}
 \caption{Resource consumption on DAS4.}
@@ -101,7 +101,7 @@ with the feedback algorithm  we obtained 41.3\% less SLO violations than
 with the trigger-based algorithm, while the dynamic load balancing algorithm
 had 47.6\% less violations than the trigger-based one.
 
-%On the other hand, Figure~\ref{historyEC2} and Figure~\ref{historyWeightEC2} show as the feedback and dynamic load-balancing weight algorithm behave similarly. Even though both algorithms are best-effort, there is an important reduction in the number of SLO violations during the trace execution. In particular, the feedback algorithm reduces the SLO violations in a  41.3\%, while the dynamic load-balancing weights algorithm does it in a 47.6\%. Like on DAS-4, the feedback algorithm presents a stable performance pattern without having sudden and bursty workload alterations. Besides, as shown on Figure~\ref{historyWeightEC2}, the dynamic load-balancing weights algorithm algorithm has a similar behavior to the feedback algorithm in terms of system performance, however. This algorithm improves the SLO enforcement in a 6.3\% in comparison with feedback at the client's side. 
+%On the other hand, Figure~\ref{historyEC2} and Figure~\ref{historyWeightEC2} show as the feedback and dynamic load-balancing weight algorithm behave similarly. Even though both algorithms are best-effort, there is an important reduction in the number of SLO violations during the trace execution. In particular, the feedback algorithm reduces the SLO violations in a  41.1\%, while the dynamic load-balancing weights algorithm does it in a 47.6\%. Like on DAS-4, the feedback algorithm presents a stable performance pattern without having sudden and bursty workload alterations. Besides, as shown on Figure~\ref{historyWeightEC2}, the dynamic load-balancing weights algorithm algorithm has a similar behavior to the feedback algorithm in terms of system performance, however. This algorithm improves the SLO enforcement in a 6.3\% in comparison with feedback at the client's side. 
 
 %Therefore we demonstrate how the use of workload-mix and flexible load-balancing techniques, although intrusive, do not cause time delays or excessive throughput alterations. 
 
@@ -150,7 +150,7 @@ benefits of using trend estimations and two-level threshold ranges.
 
 \begin{figure}
 \begin{center}
-\includegraphics[width=0.49\textwidth, height=5cm]{./images/heterogeneous/numMachinesCompEC2}
+\includegraphics[width=0.49\textwidth, height=5cm]{./images/heterogeneous/explain_EC2_Provisioning}
 \end{center}
 \vspace{-5mm}
 \caption{Resource consumption on EC2.}
@@ -168,30 +168,34 @@ and an estimation of the cost of runnning the VMs in Amazon EC2.
 
 Firstly, we noticed performance differences between the two runs of the
 experiments, which are due to the fact that each experiment was run on
-a different set of VMs from EC2. The trigger-based alogrithm in particular
+a different set of VMs from EC2. The trigger-based algorithm in particular
 is quite sensitive to small changes in the VM characteristics: since it
-uses only one set of thresholds and no information about the workload
+only uses one set of thresholds and no information about the workload
 trend, it easily becomes unstable and may behave differently from one
 run to another.
 
 Secondly, both runs show significant differences between the trigger-based
 algorithm on one hand, and the feedback and dynamic load balancing on
-the other hand. The results show that using a few euristics as in the last
+the other hand. The results show that using a few heuristics as in the last
 two algorithms can help in improving the performance and stability
 of the system. We did not obtain however significant differences
 between the feedback and the dynamic load balancing algorithm. The last
 algorithm uses the additional technique of dynamically adjusting the
-load balancing weights, but the the VMs participating in the experiments 
+load balancing weights, but the VMs participating in the experiments 
 had relatively similar performance and adjusting their weights only
 made a small difference. On other infrastructures that are more heterogeneous
 than Amazon EC2, the dynamic load balancing technique may bring
 a greater performance improvement.  
 
-We also note that the cost of the trigger-based algorithm is slightly
-lower than the cost of the other two algorithms. This algorithm
-attempts more often to scale down the system, which explain the lower cost;
-but on the other hand, this leads to more SLO violations and more
-instability: many VM instances created and then shut down very soon. 
+%We also note that the cost of the trigger-based algorithm is slightly
+%lower than the cost of the other two algorithms. This algorithm
+%attempts more often to scale down the system, which explain the lower cost;
+%but on the other hand, this leads to more SLO violations and more
+%instability: many VM instances created and then shut down very soon. 
+
+We also note that there is not a remarkable difference in terms of infrastructure cost between the 
+different algorithms. Despite the frequent scaling actions launched by the trigger-based algorithm, its cost is slightly different than those required by others algorithms; but on the other hand, this algorithm leads to more SLO violations and more
+instability. An explaination comes from the frequent creation/removal of VM instances occurring during interval of time of 1h.
 
 %The experiments on EC2 leads to several conclusions. The use of the trigger-based algorithm shows again how aggressive provisioning increases the resource consumption and the chances of degraded application performance due to frequents scaling actions. These actions are triggered as an effect associated to the traffic and heterogeneity of the requests, when handling bursty workload conditions. On the other hand, the feedback and dynamic load-balancing algorithms constitute two robust provisioning models that offer an efficient resource consumption and keep stable the application performance during the trace execution. 
 
@@ -223,12 +227,13 @@ instability: many VM instances created and then shut down very soon.
     \hline
     \multicolumn{3}{|c|}{ \textbf{Trigger}  } & \multicolumn{3}{|c|}{ \textbf{Feedback} }&  \multicolumn{3}{c|}{ \textbf{Load-balancing}  }   \\ \hline 
  \textbf{SLO Violations}& \textbf{Decisions} & \textbf{Cost} & \textbf{SLO Violations} & \textbf{Decisions} & \textbf{Cost} & \textbf{SLO Violations} & \textbf{Decisions} & \textbf{Cost} \\ \hline
-  6.92\% & 14 & 7.5 &  4.07\%  & 8 & 7.7 &  3.63\% & 8 & 7.7  \\ \hline
-  13.7 \% & 28 & 7.86 &  3.96\%  & 8 & 8.4 &  4.07\% & 8 & 8.32  \\ \hline
+  6.92\% & 14 & 6.90 &  4.07\%  & 8 & 7.14 &  3.63\% & 8 & 7.14  \\ \hline
+  13.7 \% & 28 & 7.19 &  4.36\%  & 8 & 7.03 &  4.07\% & 8 & 6.95  \\ \hline
  \end{tabular}
 \end{center}
 \vspace{-5mm}
 \caption{Analysis of results on EC2}
+\label{summaryEC2}
 }
 \end{table*}
 
@@ -236,15 +241,15 @@ instability: many VM instances created and then shut down very soon.
 
 %\subsection*{Discussion}
 
-As a conclusion, we found from our experiments that a simple trigger-based
-provisioning mechanism does not handle workload variation well and
-in some situations causes instability, by changing the number of
+\lettrine{O}{ur} study demonstrated that tradditional trigger-based
+provisioning mechanisms do not handle workload variation well and
+in some situations cause instability, by changing the number of
 provisioned VMs often in short time intervals. This behaviour has a 
 negative effect on the application's response time, leading to violations
 of the SLO.
 
 By using a few techniques that are relatively easy to implement (like
-estimating the workload's trend for the last 30 minutes and using
+estimating the workload's trend for the last 30min monitoring data and using
 two levels of thresholds for the provisioning metrics) we showed that
 we can significantly reduce the number of SLO violations and
 obtain more stability. Although there is still room for improvement

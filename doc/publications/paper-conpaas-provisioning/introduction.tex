@@ -58,18 +58,21 @@
 % infinite pool of resources
 
 
-\lettrine{O}{ne of} the major innovations provided by Cloud computing
-platforms is their pay-per-use model where applications can request
-and release resources at any time according to their needs --- and pay
-only for the resources they actually used. This business model is
-particularly favorable for application domains where workloads vary
-widely over time, such as the domain of Web applications.
+%\lettrine{O}{ne of} the major innovations provided by Cloud computing
+%platforms is their pay-per-use model where applications can request
+%and release resources at any time according to their needs --- and pay
+%only for the resources they actually used. This business model is
+%particularly favorable for application domains where workloads vary
+%widely over time, such as the domain of Web applications.
 
-However, provisioning the right quantities of resources for a Web
+\lettrine{O}{ne of} the major innovations provided by Cloud computing
+platforms is their pay-per-use model where clients pay only for the resources they actually use. This business model is particularly favorable for application domains where workloads vary widely over time, such as the domain of Web applications. To make the model more attractive, applications can request and release resources at any time according to their needs (on demand model).
+
+However, provisioning the right volume of resources for a Web
 application is not a simple task. Web applications are usually
-composed of multiple types of components such as load balancers, Web
-servers, application servers and database servers. Complex performance
-behavior of these components make it difficult to find the optimal
+composed of multiple types of components such as Web
+servers, application servers, database servers and load balancers that distribute the incoming traffic across them. Complex performance
+behavior of these components makes it difficult to find the optimal
 resource allocation, even when the application workload is perfectly
 stable. The magnitude of the problem is further increased by the fact
 that Web application workloads are often very unstable and hard to
@@ -82,9 +85,9 @@ available.
 
 Faced with this difficult scientific challenge, the academic community
 has proposed a wide range of sophisticated resource provisioning
-algorithms~\cite{xxx,yyy,zzz}. 
+algorithms~\cite{muppala_regression-based_2012, urgaonkar_agile_2008,vasic_dejavu:_2012}. 
 %However, we observe a wide discrepancy
-%between these academic propositions and the very simple techniques
+%between these academic proposals and the very simple techniques
 %actually used by the cloud industry where provisioning decisions are
 %usually triggered by lower/upper thresholds on resource
 %utilization. 
@@ -97,12 +100,11 @@ thresholds will trigger a resource provisioning action.
 We postulate three possible reasons why sophisticated
 techniques have not been more widely deployed: \emph{(i)} the gains of
 using sophisticated provisioning strategies are too low to be worth
-the effort; \emph{(ii)} implementing these techniques is a difficult
+the effort; \emph{(ii)} implementing and evaluating these techniques is a difficult
 exercise, which is why real cloud systems rely on simpler techniques;
 and \emph{(iii)} academic approaches mostly focus on unrealistic
 evaluations using simple applications and artificial
-workloads~\cite{do_profiling_2011, islam_empirical_2012,
-wang_appraise:_2009}. % By using real production applications, new
+workloads~\cite{do_profiling_2011, islam_empirical_2012}. % By using real production applications, new
 % limitations could be detected and solved in the provisioning systems
 % due to the peculiarity and heterogeneity of real workloads. Indeed,
 % these workloads have several interesting properties such as a variable

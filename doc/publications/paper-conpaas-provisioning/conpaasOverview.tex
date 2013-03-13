@@ -2,18 +2,20 @@
 
 ConPaaS is an open-source runtime environment for hosting applications in Cloud infrastructures~\cite{conpaasIC}.
 Within the Cloud computing paradigm, ConPaaS belongs to the platform-as-a-service family, 
-in which a variety of systems aim to simplify the deployment of applications in the Cloud. Using ConPaaS,  developers can now focus their attention on application-specific concerns rather than making their applications suitable for the cloud. 
+in which a variety of systems aim to simplify the deployment of applications in the Cloud. 
+
+%Using ConPaaS,  developers can now focus their attention on application-specific concerns rather than making their applications suitable for the cloud. 
 
 \subsection*{Architecture}
 
-In ConPaaS, an application is designed as a composition of one or more elastic and distributed components, called \emph{services}. Each service is dedicated to host a particular type of functionality of an application. At the moment, ConPaaS supports six different types of services: two web application hosting services respectively specialized for hosting PHP and JSP applications; a MySQL database service; a NoSQL database service built around the Scalarix key-value store; a MapReduce service; and a TaskFarming service for high-performance batch processing.  
+In ConPaaS, an application is designed as a composition of one or more elastic and distributed \emph{services}. Each service is dedicated to host a particular type of functionality of an application. At the moment, ConPaaS supports six different types of services: two web application hosting services respectively specialized for hosting PHP and JSP applications; a MySQL database service; a NoSQL database service built around the Scalarix key-value store; a MapReduce service; and a TaskFarming service for high-performance batch processing.  
 %Figure~\ref{arch} shows ConPaaS hosting an application composed of a PhP service and a MySQL service, that could represents the architecture of any today's web application.
 
 The architecture of ConPaaS services comprises two main building blocks: agents and managers.
 
 \begin{figure*}[Ht]
 \begin{center}
-\includegraphics[width=0.6\textwidth, height=6.2cm]{./images/conpaasSystemArch}
+\includegraphics[width=0.6\textwidth, height=6.2cm]{./images/conpaasSystemArch_2}
 \end{center}
 \vspace{-5mm}
 \caption{ConPaaS system architecture.}
@@ -23,7 +25,7 @@ The architecture of ConPaaS services comprises two main building blocks: agents 
 
 \begin{itemize}
 \item \textbf{Agent}: The agent VMs (virtual machines) host the needed components to provide the service-specific functionality. Based on the performance requirements or the application workload, the number of agent VMs hosting these components can grow or shrink on demand. Thus, as an example, the minimal configuration of the PHP web hosting service consists of a single agent VM. If necessary,
-the service can progressively grow to multiple agent VMs hosting its components: load-balancer, web servers for static pages and/or PHP servers for dynamic pages. 
+the service can progressively grow to multiple agent VMs hosting its components: load balancer for distributing the incoming traffic, web servers for static pages and/or PHP servers for dynamic pages. 
 \item \textbf{Manager}: For each service, there is only one manager VM. The manager is in charge of centralizing monitoring data and controlling the allocation of resources assigned to the service. 
 \end{itemize}
 
@@ -35,16 +37,15 @@ deployed using two ConPaaS services: the PHP service and the MySQL service.
 
 \subsection*{Hosting Elastic Applications}
 
-The main features that distinguish ConPaaS from other PaaS systems are its approach for autonomous application scaling and its interoperability with several private and public IaaS clouds. To provide such autonomous scaling capabilities, ConPaaS includes a monitoring data analysis mechanism  and a resource provisioning system.
+The main features that distinguish ConPaaS from other PaaS systems are its approach for autonomous application scaling and its interoperability with several private and public IaaS clouds. To provide such autonomous scaling capabilities, ConPaaS includes a monitoring data analysis mechanism  and a resource provisioning system, as illustrated in Figure~\ref{arch}.
 
-%ConPaaS incorporates a scalable distributed monitoring engine which is based on the Ganglia~\cite{ganglia} monitoring system. Ganglia consists of a server component (gmetad) that aggregates monitoring statistics from various VMs, and a reporting agent (gmond) which runs inside each VM. By default, Ganglia monitors only system-level metrics such as disk, CPU, memory and network usage. Unfortunately, these metrics often do not provide enough information about system performance due to the heterogeneity of the applications. As a consequence, in ConPaaS, we enhanced ganglia to also monitor service workloads by enhancing the reporting agent to track service-specific logs at runtime, and report statistics over a reporting period of 5 minutes. For instance, the PhP web hosting service includes new ganglia metrics that report statistics about the response time and request rate for static and dynamic user requests, respectively. Once the monitoring data is collected from the agents VMs, the resource provisioning  algorithm decides whether to trigger scaling operations based on this data. 
+%ConPaaS incorporates a scalable distributed monitoring engine which is based on the Ganglia~\cite{ganglia} monitoring system. Ganglia consists of a server component (gmetad) that aggregates monitoring statistics from various VMs, and a reporting agent (gmond) which runs inside each VM. By default, Ganglia monitors only system-level metrics such as disk, CPU, memory and network usage. Unfortunately, these metrics often do not provide enough information about system performance due to the heterogeneity of the applications. As a consequence, in ConPaaS, we enhanced ganglia to also monitor service workloads by enhancing the reporting agent to track service-specific logs at runtime, and report statistics over a reporting period of 5 minutes. For instance, the PhP service includes new ganglia metrics that report statistics about the response time and request rate for static and dynamic user requests, respectively. Once the monitoring data is collected from the agents VMs, the resource provisioning  algorithm decides whether to trigger scaling operations based on this data. 
 
-For monitoring in ConPaas we used Ganglia~\cite{ganglia}, a scalable 
+For monitoring in ConPaaS we used Ganglia~\cite{ganglia}, a scalable 
 distributed monitoring system. The monitoring data is collected by
-the manager VM, which runs for this purpose a Ganglia meta daemon
-(gmetad). We implemented modules that extend Ganglia's standard
+the manager VM, which runs for this purpose a Ganglia meta-daemon. We implemented modules that extend Ganglia's standard
 set of monitoring metrics, by adding a number of service-specific
-metrics. For the PHP web hosting service, we added monitoring metrics
+metrics. In particular for the PHP service, we added monitoring metrics
 for measuring the request rate and response time both at the static web
 server and at the PHP server.
 
