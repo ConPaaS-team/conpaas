@@ -126,6 +126,18 @@ class DirectorTest(Common):
             data={ 'uid': 1, 'sid': 1, 'role': 'manager' })
         self.assertEquals(200, response.status_code)
 
+    def test_200_on_createapp(self):
+        response = self.app.post('/createapp', data={ 'uid': 1 })
+        self.assertEquals(200, response.status_code)
+
+    def test_200_on_deleteapp(self):
+        response = self.app.post('/delete/1', data={ 'uid': 1 })
+        self.assertEquals(200, response.status_code)
+
+    def test_200_on_listapp(self):
+        response = self.app.post('/listapp', data={ 'uid': 1 })
+        self.assertEquals(200, response.status_code)
+
     def test_false_start_wrong_credentials(self):
         # Here the credentials are wrong because no user in the DB has uid 1
         response = self.app.post('/start/php', data={ 'uid': 1 })
@@ -240,6 +252,31 @@ class DirectorTest(Common):
         self.assertEquals(1, servicedict['sid'])
 
         # Check if it's returned by /list
+        response = self.app.get(list_url)
+        result = simplejson.loads(response.data)
+        self.assertEquals(1, len(result))
+        self.assertEquals('New php service', result[0]['name'])
+
+    def test_listapp(self):
+        self.create_user()
+
+        datau = { 'uid': 1 }
+        list_url = '/list/1?' + urllib.urlencode(datau)
+
+        # No available service
+        response = self.app.get(list_url)
+        self.assertEquals([], simplejson.loads(response.data))
+
+        # Let's create a service
+        datas = {
+            'uid': 1,
+            'appid': 1
+        }
+        response = self.app.post('/start/php', data=datas)
+        servicedict = simplejson.loads(response.data)
+        self.assertEquals(1, servicedict['sid'])
+
+        # Check if it's returned by /list/1
         response = self.app.get(list_url)
         result = simplejson.loads(response.data)
         self.assertEquals(1, len(result))
@@ -408,6 +445,70 @@ class DirectorTest(Common):
 
         user = simplejson.loads(response.data)
         self.assertEquals('username is a required field', user.get('msg')) 
+
+    def test_new_application_arguments(self):
+        self.create_user()
+
+        data = {
+            'uid': 1
+        }
+
+        response = self.app.post('/createapp', data=data)
+        self.assertEquals(200, response.status_code)
+
+        self.assertEquals(False, simplejson.loads(response.data))
+
+    def test_new_application(self):
+        self.create_user()
+
+        data = {
+            'uid': 1,
+            'name': 'New Test Application'
+        }
+
+        response = self.app.post('/createapp', data=data)
+        self.assertEquals(200, response.status_code)
+
+        app = simplejson.loads(response.data)
+        self.assertEquals('New Test Application', app.get('name'))
+
+    def test_new_application_duplicate(self):
+        self.create_user()
+
+        data = {
+            'uid': 1,
+            'name': 'New Application'
+        }
+
+        response = self.app.post('/createapp', data=data)
+        self.assertEquals(200, response.status_code)
+
+        app = simplejson.loads(response.data)
+        self.assertEquals('Application name "%s" already taken' % data['name'], app.get('msg'))
+
+    def test_delete_application(self):
+        self.create_user()
+
+        data = {
+            'uid': 1
+        }
+
+        response = self.app.post('/delete/1', data=data)
+        self.assertEquals(200, response.status_code)
+
+        self.assertEquals(True, simplejson.loads(response.data))
+
+    def test_delete_application_not_exists(self):
+        self.create_user()
+
+        data = {
+            'uid': 1
+        }
+
+        response = self.app.post('/delete/2', data=data)
+        self.assertEquals(200, response.status_code)
+
+        self.assertEquals(False, simplejson.loads(response.data))
 
 if __name__ == "__main__":
     unittest.main()
