@@ -273,6 +273,14 @@ def createapp():
 
     log('User %s creating a new application %s' % (g.user.username, app_name))
 
+    # check if the application already exists
+    if Application.query.filter_by(name=app_name).first():
+        log('Application name %s already exists' % app_name)
+
+        return build_response(jsonify({
+            'error': True,
+            'msg': 'Application name "%s" already taken' % app_name }))
+
     a = Application(name=app_name, user=g.user);
 
     db.session.add(a)
