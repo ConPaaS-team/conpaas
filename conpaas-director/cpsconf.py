@@ -106,8 +106,6 @@ conf += """
 
     SSLCACertificateFile  /etc/cpsdirector/certs/ca_cert.pem
 
-    SSLInsecureRenegotiation on
-
     CustomLog ${APACHE_LOG_DIR}/director-access.log combined
     ErrorLog ${APACHE_LOG_DIR}/director-error.log
 </VirtualHost>
