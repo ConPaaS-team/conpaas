@@ -72,7 +72,7 @@ if __name__ == '__main__':
   config_vars = {
     'manager': ['TYPE', 'BOOTSTRAP', 'MEMCACHE_ADDR', 'LOG_FILE',
                 'ETC', 'VAR_TMP', 'VAR_CACHE', 'VAR_RUN', 'CODE_REPO',
-                'FE_CREDIT_URL', 'FE_TERMINATE_URL', 'FE_SERVICE_ID'],
+                'CREDIT_URL', 'TERMINATE_URL', 'SERVICE_ID'],
     'iaas': ['DRIVER'],
   }
   config_ok = True
@@ -92,8 +92,8 @@ if __name__ == '__main__':
   
   # Initialize the context for the client   
   https.client.conpaas_init_ssl_ctx(config_parser.get('manager', 'CERT_DIR'),
-                                    'manager', config_parser.get('manager', 'FE_USER_ID'),
-                                    config_parser.get('manager', 'FE_SERVICE_ID'))
+                                    'manager', config_parser.get('manager', 'USER_ID'),
+                                    config_parser.get('manager', 'SERVICE_ID'))
 
   # Start the manager server
   print options.address, options.port

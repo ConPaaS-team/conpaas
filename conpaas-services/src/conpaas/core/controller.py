@@ -64,17 +64,17 @@ class Controller(object):
     """
 
     def __init__(self, config_parser, **kwargs):
-        # Params for frontend callback
+        # Params for director callback
         self.__fe_creditUrl = config_parser.get('manager',
-                                                'FE_CREDIT_URL')
+                                                'CREDIT_URL')
         self.__fe_terminateUrl = config_parser.get('manager',
-                                                   'FE_TERMINATE_URL')
+                                                   'TERMINATE_URL')
         self.__fe_service_id = config_parser.get('manager',
-                                                 'FE_SERVICE_ID')
+                                                 'SERVICE_ID')
         self.__fe_user_id = config_parser.get('manager',
-                                              'FE_USER_ID')
+                                              'USER_ID')
         self.__fe_caUrl = config_parser.get('manager',
-                                            'FE_CA_URL')
+                                            'CA_URL')
 
         # Set the CA URL as IPOP's base namespace
         self.__ipop_base_namespace = self.__fe_caUrl

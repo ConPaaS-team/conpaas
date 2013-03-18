@@ -14,13 +14,13 @@ def controller(cloud):
     config_parser = conftest.config_parser(cloud.get_cloud_type())
     config_parser.add_section('manager')
     config_parser.set('manager', 'TYPE', 'helloworld')
-    config_parser.set('manager', 'FE_SERVICE_ID', '1')
-    config_parser.set('manager', 'FE_USER_ID', '123')
-    config_parser.set('manager', 'FE_CREDIT_URL',
+    config_parser.set('manager', 'SERVICE_ID', '1')
+    config_parser.set('manager', 'USER_ID', '123')
+    config_parser.set('manager', 'CREDIT_URL',
                       'https://localhost:5555/credit')
-    config_parser.set('manager', 'FE_TERMINATE_URL',
+    config_parser.set('manager', 'TERMINATE_URL',
                       'https://localhost:5555/terminate')
-    config_parser.set('manager', 'FE_CA_URL',
+    config_parser.set('manager', 'CA_URL',
                       'https://localhost:5555/ca')
     controller = Controller(config_parser)
     #we don't need timer for testing

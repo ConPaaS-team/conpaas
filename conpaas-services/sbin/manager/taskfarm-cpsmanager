@@ -156,7 +156,7 @@ if __name__ == '__main__':
   """
   config_vars = {
     'manager': ['TYPE', 'BOOTSTRAP', 'LOG_FILE',
-                'FE_CREDIT_URL', 'FE_TERMINATE_URL', 'FE_SERVICE_ID'],
+                'CREDIT_URL', 'TERMINATE_URL', 'SERVICE_ID'],
     'iaas': ['DRIVER'],
   }
   config_ok = True

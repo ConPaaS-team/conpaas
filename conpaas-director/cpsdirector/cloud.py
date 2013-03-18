@@ -14,8 +14,8 @@ class ManagerController(Controller):
         self.role = "manager"
 
     def _get_certificate(self, email, cn, org):
-        user_id = self.config_parser.get("manager", "FE_USER_ID")
-        service_id = self.config_parser.get("manager", "FE_SERVICE_ID")
+        user_id = self.config_parser.get("manager", "USER_ID")
+        service_id = self.config_parser.get("manager", "SERVICE_ID")
         cert_dir = self.config_parser.get('conpaas', 'CERT_DIR')
 
         return x509cert.generate_certificate(cert_dir, user_id, service_id,
@@ -67,10 +67,10 @@ class ManagerController(Controller):
         mngr_cfg = mngr_cfg.replace('%CONPAAS_SERVICE_TYPE%', service_name)
         mngr_cfg = mngr_cfg.replace('%CONPAAS_SERVICE_ID%',
                                     self.config_parser.get("manager",
-                                                           "FE_SERVICE_ID"))
+                                                           "SERVICE_ID"))
         mngr_cfg = mngr_cfg.replace('%CONPAAS_USER_ID%',
                                     self.config_parser.get("manager",
-                                                           "FE_USER_ID"))
+                                                           "USER_ID"))
 
         # Check if we want to use IPOP. If so, add IPOP directives to manager
         # config file
@@ -130,7 +130,7 @@ EOF
     def deduct_credit(self, value):
         import cpsdirector
 
-        uid = self.config_parser.get("manager", "FE_USER_ID")
+        uid = self.config_parser.get("manager", "USER_ID")
 
         user = cpsdirector.User.query.filter_by(uid=uid).one()
         user.credit -= value
@@ -150,15 +150,15 @@ def __get_config(service_id, user_id, service_type=""):
     if not config_parser.has_section("manager"):
         config_parser.add_section("manager")
 
-    config_parser.set("manager", "FE_SERVICE_ID", service_id)
-    config_parser.set("manager", "FE_USER_ID", user_id)
-    config_parser.set("manager", "FE_CREDIT_URL",
+    config_parser.set("manager", "SERVICE_ID", service_id)
+    config_parser.set("manager", "USER_ID", user_id)
+    config_parser.set("manager", "CREDIT_URL",
                       config_parser.get('director',
                                         'DIRECTOR_URL') + "/credit")
-    config_parser.set("manager", "FE_TERMINATE_URL",
+    config_parser.set("manager", "TERMINATE_URL",
                       config_parser.get('director',
                                         'DIRECTOR_URL') + "/terminate")
-    config_parser.set("manager", "FE_CA_URL",
+    config_parser.set("manager", "CA_URL",
                       config_parser.get('director',
                                         'DIRECTOR_URL') + "/ca")
 

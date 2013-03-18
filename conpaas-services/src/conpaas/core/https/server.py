@@ -237,13 +237,13 @@ class ConpaasSecureServer(HTTPSServer):
         if dict['role'] != 'user' and dict['role'] != 'manager':
             return False
 
-        uid = self.config_parser.get('manager', 'FE_USER_ID')
+        uid = self.config_parser.get('manager', 'USER_ID')
         if dict['UID'] != uid:
             return False
 
         # If request from manager, check the SID
         if dict['role'] == 'manager':
-            sid = self.config_parser.get('manager', 'FE_SERVICE_ID')
+            sid = self.config_parser.get('manager', 'SERVICE_ID')
             if dict['serviceLocator'] != sid:
                 return False
         
