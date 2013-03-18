@@ -4,9 +4,9 @@
 # copies the source code on the VM, unpacks it, and sets
 # the PYTHONPATH environment variable. 
 
-# Is filled in by the frontend
-FRONTEND=%FRONTEND_URL%
-SOURCE=$FRONTEND/download
+# Is filled in by the director
+DIRECTOR=%DIRECTOR_URL%
+SOURCE=$DIRECTOR/download
 ROOT_DIR=/root
 CPS_HOME=$ROOT_DIR/ConPaaS
 

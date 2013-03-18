@@ -30,7 +30,7 @@ class ManagerController(Controller):
         mngr_scripts_dir = os.path.join(conpaas_home, 'scripts', 'manager')
         mngr_cfg_dir = os.path.join(conpaas_home, 'config', 'manager')
 
-        frontend = self.config_parser.get('director', 'DIRECTOR_URL')
+        director = self.config_parser.get('director', 'DIRECTOR_URL')
 
         # Values to be passed to the context file template
         tmpl_values = {}
@@ -43,8 +43,8 @@ class ManagerController(Controller):
         mngr_setup = file_get_contents(
             os.path.join(mngr_scripts_dir, 'manager-setup'))
 
-        tmpl_values['mngr_setup'] = mngr_setup.replace('%FRONTEND_URL%',
-                                                       frontend)
+        tmpl_values['mngr_setup'] = mngr_setup.replace('%DIRECTOR_URL%',
+                                                       director)
 
         # Get cloud config values from director.cfg
         tmpl_values['cloud_cfg'] = "[iaas]\n"
@@ -63,7 +63,7 @@ class ManagerController(Controller):
             mngr_cfg += file_get_contents(mngr_service_cfg)
 
         # Modify manager config file setting the required variables
-        mngr_cfg = mngr_cfg.replace('%FRONTEND_URL%', frontend)
+        mngr_cfg = mngr_cfg.replace('%DIRECTOR_URL%', director)
         mngr_cfg = mngr_cfg.replace('%CONPAAS_SERVICE_TYPE%', service_name)
         mngr_cfg = mngr_cfg.replace('%CONPAAS_SERVICE_ID%',
                                     self.config_parser.get("manager",
