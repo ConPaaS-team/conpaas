@@ -65,12 +65,11 @@ class ManagerController(Controller):
         # Modify manager config file setting the required variables
         mngr_cfg = mngr_cfg.replace('%DIRECTOR_URL%', director)
         mngr_cfg = mngr_cfg.replace('%CONPAAS_SERVICE_TYPE%', service_name)
-        mngr_cfg = mngr_cfg.replace('%CONPAAS_SERVICE_ID%',
-                                    self.config_parser.get("manager",
-                                                           "SERVICE_ID"))
-        mngr_cfg = mngr_cfg.replace('%CONPAAS_USER_ID%',
-                                    self.config_parser.get("manager",
-                                                           "USER_ID"))
+
+        for option_name in 'SERVICE_ID', 'USER_ID', 'APP_ID':
+            mngr_cfg = mngr_cfg.replace('%CONPAAS_' + option_name + '%',
+                                        self.config_parser.get("manager",
+                                                               option_name))
 
         # Check if we want to use IPOP. If so, add IPOP directives to manager
         # config file
@@ -143,7 +142,7 @@ EOF
         return False
 
 
-def __get_config(service_id, user_id, service_type=""):
+def __get_config(service_id, user_id, app_id, service_type=""):
     """Add manager configuration"""
     config_parser = common.config_parser
 
@@ -152,6 +151,7 @@ def __get_config(service_id, user_id, service_type=""):
 
     config_parser.set("manager", "SERVICE_ID", service_id)
     config_parser.set("manager", "USER_ID", user_id)
+    config_parser.set("manager", "APP_ID", app_id)
     config_parser.set("manager", "CREDIT_URL",
                       config_parser.get('director',
                                         'DIRECTOR_URL') + "/credit")
@@ -172,11 +172,11 @@ def __stop_reservation_timer(controller):
         reservation_timer.stop()
 
 
-def start(service_name, service_id, user_id):
+def start(service_name, service_id, user_id, app_id):
     """Start a manager for the given service_name, service_id and user_id.
 
     Return (node_ip, node_id, cloud_name)."""
-    config_parser = __get_config(str(service_id), str(user_id), service_name)
+    config_parser = __get_config(str(service_id), str(user_id), str(app_id), service_name)
     # Create a new controller
     controller = ManagerController(config_parser)
     # Create a context file for the specific service
@@ -192,7 +192,7 @@ def start(service_name, service_id, user_id):
 
 
 def stop(vmid):
-    config_parser = __get_config(vmid, "")
+    config_parser = __get_config(vmid, "", "")
     # Create a new controller
     controller = ManagerController(config_parser)
 

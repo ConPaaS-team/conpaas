@@ -47,15 +47,15 @@ IPOP_CONF_DIR = "/opt/ipop/etc/"
 
 def get_ipop_namespace(config_parser):
     if config_parser.has_section('manager'):
-        user_id = config_parser.get('manager', 'FE_USER_ID')
+        app_id = config_parser.get('manager', 'APP_ID')
         base_namespace = config_parser.get('manager', 'IPOP_BASE_NAMESPACE')
 
     else:
-        user_id = config_parser.get('agent', 'USER_ID')
+        app_id = config_parser.get('agent', 'APP_ID')
         base_namespace = config_parser.get('agent', 'IPOP_BASE_NAMESPACE')
 
     base_namespace = urlparse.urlparse(base_namespace).netloc
-    return "conpaas-%s-%s" % (base_namespace, user_id)
+    return "conpaas-%s-%s" % (base_namespace, app_id)
 
 def configure_ipop(tmpl_dir, namespace, ip_base, netmask, ip_address=None, 
                    udp_port=0):

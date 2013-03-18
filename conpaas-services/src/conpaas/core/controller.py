@@ -65,19 +65,21 @@ class Controller(object):
 
     def __init__(self, config_parser, **kwargs):
         # Params for director callback
-        self.__fe_creditUrl = config_parser.get('manager',
+        self.__conpaas_creditUrl = config_parser.get('manager',
                                                 'CREDIT_URL')
-        self.__fe_terminateUrl = config_parser.get('manager',
+        self.__conpaas_terminateUrl = config_parser.get('manager',
                                                    'TERMINATE_URL')
-        self.__fe_service_id = config_parser.get('manager',
+        self.__conpaas_service_id = config_parser.get('manager',
                                                  'SERVICE_ID')
-        self.__fe_user_id = config_parser.get('manager',
+        self.__conpaas_user_id = config_parser.get('manager',
                                               'USER_ID')
-        self.__fe_caUrl = config_parser.get('manager',
+        self.__conpaas_app_id = config_parser.get('manager',
+                                              'APP_ID')
+        self.__conpaas_caUrl = config_parser.get('manager',
                                             'CA_URL')
 
         # Set the CA URL as IPOP's base namespace
-        self.__ipop_base_namespace = self.__fe_caUrl
+        self.__ipop_base_namespace = self.__conpaas_caUrl
 
         if config_parser.has_option('manager', 'IPOP_BASE_IP'):
             self.__ipop_base_ip = config_parser.get('manager', 'IPOP_BASE_IP')
@@ -166,7 +168,7 @@ class Controller(object):
 
                 # eg: conpaas-agent-php-u34-s316
                 name = "conpaas-%s-%s-u%s-s%s" % (self.role, service_type,
-                       self.__fe_user_id, self.__fe_service_id)
+                       self.__conpaas_user_id, self.__conpaas_service_id)
 
                 poll = cloud.new_instances(count - len(ready), name)
                 try:
@@ -402,8 +404,9 @@ class Controller(object):
         agent_cfg = Template(default_agent_cfg_file.read()).safe_substitute(
             AGENT_TYPE=service_name,
             MANAGER_IP=manager_ip,
-            CONPAAS_USER_ID=self.__fe_user_id,
-            CONPAAS_SERVICE_ID=self.__fe_service_id,
+            CONPAAS_USER_ID=self.__conpaas_user_id,
+            CONPAAS_SERVICE_ID=self.__conpaas_service_id,
+            CONPAAS_APP_ID=self.__conpaas_app_id,
             IPOP_BASE_NAMESPACE=self.__ipop_base_namespace)
 
         # Add IPOP_BASE_IP and IPOP_NETMASK if necessary
@@ -459,14 +462,14 @@ class Controller(object):
         '''
         Requests a certificate from the CA
         '''
-        parsed_url = urlparse.urlparse(self.__fe_caUrl)
+        parsed_url = urlparse.urlparse(self.__conpaas_caUrl)
 
         req_key = https.x509.gen_rsa_keypair()
 
         x509_req = https.x509.create_x509_req(
             req_key,
-            userId=self.__fe_user_id,
-            serviceLocator=self.__fe_service_id,
+            userId=self.__conpaas_user_id,
+            serviceLocator=self.__conpaas_service_id,
             O='ConPaaS',
             emailAddress='info@conpaas.eu',
             CN='ConPaaS',
@@ -504,12 +507,12 @@ class Controller(object):
         # notify front-end, attempt 10 times until successful
         for _ in range(10):
             try:
-                parsed_url = urlparse.urlparse(self.__fe_terminateUrl)
+                parsed_url = urlparse.urlparse(self.__conpaas_terminateUrl)
                 _, body = https.client.https_post(parsed_url.hostname,
                                                   parsed_url.port or 443,
                                                   parsed_url.path,
                                                   {'sid':
-                                                      self.__fe_service_id})
+                                                      self.__conpaas_service_id})
                 obj = json.loads(body)
                 if not obj['error']:
                     break
@@ -518,11 +521,11 @@ class Controller(object):
 
     def deduct_credit(self, value):
         try:
-            parsed_url = urlparse.urlparse(self.__fe_creditUrl)
+            parsed_url = urlparse.urlparse(self.__conpaas_creditUrl)
             _, body = https.client.https_post(parsed_url.hostname,
                                               parsed_url.port or 443,
                                               parsed_url.path,
-                                              {'sid': self.__fe_service_id,
+                                              {'sid': self.__conpaas_service_id,
                                                'decrement': value})
             obj = json.loads(body)
             return not obj['error']

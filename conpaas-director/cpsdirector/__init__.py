@@ -336,7 +336,7 @@ def start(servicetype):
 
     try:
         s.manager, s.vmid, s.cloud = cloud.start(servicetype, s.sid,
-                                                 g.user.uid)
+                                                 g.user.uid, appid)
     except Exception, err:
         try:
             db.session.delete(s)
