@@ -98,7 +98,9 @@ conpaas.ui = (function (this_module) {
             $('#password2').focus().select();
             return;
         }
-        if (!page.validateNonemptyFields(['recaptcha_response_field'])) {
+        // recaptcha_response_field is required only if captcha checks are
+        // enabled (ie: #recaptcha_image is defined)
+        if ($('#recaptcha_image').length && !page.validateNonemptyFields(['recaptcha_response_field'])) {
             return;
         }
         page.server.req('ajax/register.php', {

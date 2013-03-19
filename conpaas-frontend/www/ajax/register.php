@@ -47,25 +47,32 @@ try {
 		throw new Exception('you already have an user');
 	}
 	// check for missing fields first
-	$fields = array('username', 'password', 'email', 'fname', 'lname',
-		'affiliation', 'recaptcha_response', 'recaptcha_challenge');
+	$fields = array('username', 'password', 'email', 'fname', 'lname', 'affiliation');
+
+    if (defined('CAPTCHA_PUBLIC_KEY') && defined('CAPTCHA_PRIVATE_KEY')) {
+        // only require recaptcha fields if checks are enabled
+        $fields = array_merge($fields, array('recaptcha_response', 'recaptcha_challenge'));
+    }
+
 	foreach ($fields as $field) {
 		if (!isset($_POST[$field])) {
 			throw new Exception('missing field: '.$field);
 		}
 	}
-	// check recaptcha
-	$resp = recaptcha_check_answer(CAPTCHA_PRIVATE_KEY, $_SERVER['REMOTE_ADDR'],
-		$_POST['recaptcha_challenge'], $_POST['recaptcha_response']);
-	if (!$resp->is_valid) {
-		dlog('CAPTCHA error: '.$resp->error);
-		echo json_encode(array(
-			'registered' => 0,
-			'message' => 'reCAPTCHA was wrong',
-			'recaptcha' => 1
-		));
-		exit();
-	}
+	// check recaptcha (if necessary)
+    if (defined('CAPTCHA_PUBLIC_KEY') && defined('CAPTCHA_PRIVATE_KEY')) {
+        $resp = recaptcha_check_answer(CAPTCHA_PRIVATE_KEY, $_SERVER['REMOTE_ADDR'],
+            $_POST['recaptcha_challenge'], $_POST['recaptcha_response']);
+        if (!$resp->is_valid) {
+            dlog('CAPTCHA error: '.$resp->error);
+            echo json_encode(array(
+                'registered' => 0,
+                'message' => 'reCAPTCHA was wrong',
+                'recaptcha' => 1
+            ));
+            exit();
+        }
+    }
 	// check if the user already exists
 	$uinfo = UserData::getUserByName($_POST['username']);
 	if ($uinfo !== 	false) {

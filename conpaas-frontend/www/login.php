@@ -121,6 +121,11 @@ $page = new LoginPage();
                         <input type="text" id="affiliation" />
                     </td>
                 </tr>
+                <?php
+                /* Only enable captcha checks if the required configuration
+                 * options are provided */
+                if (defined('CAPTCHA_PUBLIC_KEY') && defined('CAPTCHA_PRIVATE_KEY')) {
+                 ?>
                 <script type="text/javascript">
                     var RecaptchaOptions = {
                         theme : 'white'
@@ -131,6 +136,9 @@ $page = new LoginPage();
                     <?php echo recaptcha_get_html(CAPTCHA_PUBLIC_KEY); ?>
                     </td>
                 </tr>
+                <?php
+                }
+                 ?>
                 <tr>
                     <td class="name">
                     <img class="loading invisible" src="images/icon_loading.gif" />
