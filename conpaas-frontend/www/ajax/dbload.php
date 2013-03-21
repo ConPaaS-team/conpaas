@@ -52,7 +52,34 @@ try {
 	    throw new Exception('Not allowed');
 	}
 
-	$response = $service->loadFile($_FILES['dbfile']['tmp_name']);
+	if (isset($_FILES['dbfile'])) {
+		$response = $service->loadFile($_FILES['dbfile']['tmp_name']);
+	} else if (isset($_POST['url'])) {
+		$name = basename($_POST['url']);
+
+		$path = '/tmp/'.$name;
+
+		$ch = curl_init();
+
+		curl_setopt($ch, CURLOPT_URL, $_POST['url']);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+		curl_setopt($ch, CURLOPT_HEADER, 0);
+
+		$out = curl_exec($ch);
+
+		curl_close($ch);
+
+		$fp = fopen($path, 'w');
+		fwrite($fp, $out);
+		fclose($fp);
+
+		$response = $service->loadFile($path);
+
+		unlink($path);
+	} else {
+		throw new Exception('File not specified');
+	}
+
 	echo json_encode($response);
 } catch (Exception $e) {
 	error_log($e->getTraceAsString());

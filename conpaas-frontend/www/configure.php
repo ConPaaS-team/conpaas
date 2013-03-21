@@ -35,7 +35,7 @@ $service = ServiceFactory::createInstance($service_data);
 $page = new ServicePage($service);
 
 if ($service->getUID() !== $page->getUID()) {
-    $page->redirect('index.php');
+    $page->redirect('services.php');
 }
 
 $state = $page->getState();
@@ -250,7 +250,7 @@ $(document).ready(function() {
 			url: 'services/terminateService.php?sid='+sid,
 			method: 'post',
 			success: function(response) {
-				window.location = 'index.php';
+				window.location = 'services.php';
 			},
 			status: 'terminating service...',
 			poll: false

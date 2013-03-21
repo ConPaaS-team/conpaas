@@ -315,6 +315,15 @@ conpaas.model = (function (this_module) {
         }
     });
 
+    /**
+     * conpaas.model.Application
+     */
+    this_module.Application = conpaas.new_constructor(
+    /* extends */Object,
+    /* constructor */function (aid) {
+        this.aid = aid;
+    });
+
     return this_module;
 }(conpaas.model || {}));
 

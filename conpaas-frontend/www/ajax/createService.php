@@ -56,10 +56,15 @@ try {
 		throw new Exception('User not logged in');
 	}
 
+	if (!isset($_SESSION['aid'])) {
+		throw new Exception('Application id is not set');
+	}
+
+	$appid = $_SESSION['aid'];
 	$type = $_POST['type'];
 
-	$res = json_decode(HTTPS::post(Conf::DIRECTOR . '/start/' . $type, 
-	    array(), false, $_SESSION['uid']));
+	$res = json_decode(HTTPS::post(Conf::DIRECTOR . '/start/' . $type,
+	    array( 'appid' => $appid ), false, $_SESSION['uid']));
 
     if (!$res) {
         throw new Exception('User not logged in');

@@ -62,8 +62,8 @@ class ServiceData {
     	return $sid;
     }
 
-	public static function getServicesByUser($uid) {
-       $res = HTTPS::post(Conf::DIRECTOR . '/list', array(), false, $uid);
+	public static function getServicesByUser($uid, $aid) {
+       $res = HTTPS::post(Conf::DIRECTOR . '/list/' . $aid, array(), false, $uid);
 
        $services = array();
        foreach(json_decode($res) as $service) {
@@ -76,7 +76,7 @@ class ServiceData {
 	}
 
 	public static function getServiceById($sid) {
-        $services = ServiceData::getServicesByUser($_SESSION['uid']);
+        $services = ServiceData::getServicesByUser($_SESSION['uid'], $_SESSION['aid']);
         foreach ($services as $service) {
             if ($service['sid'] == $sid) {
                 return $service;

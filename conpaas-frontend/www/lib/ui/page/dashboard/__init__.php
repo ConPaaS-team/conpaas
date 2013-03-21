@@ -43,7 +43,7 @@ class Dashboard extends Page {
 	public function __construct() {
 		parent::__construct();
 		$this->addJS('js/servicepage.js');
-		$this->addJS('js/index.js');
+		$this->addJS('js/services.js');
 	}
 
 	public function renderPageHeader() {
@@ -55,6 +55,9 @@ class Dashboard extends Page {
   				.'<a class="button" href="ajax/getCertificate.php">'
   					.' download certificate'
   				.'</a>'
+				.'<a class="button" href="manifest.php">'
+					.' upload manifest'
+				.'</a>'
   			.'</div>'
   			.'<div class="clear"></div>';
 	}

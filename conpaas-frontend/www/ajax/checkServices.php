@@ -47,8 +47,9 @@ try {
 		throw new Exception('User not logged in');
 	}
 	$uid = $_SESSION['uid'];
+	$aid = $_SESSION['aid'];
 
-	$services_data = ServiceData::getServicesByUser($uid);
+	$services_data = ServiceData::getServicesByUser($uid, $aid);
 	$servicesList = new ServicesListUI(array());
 	foreach ($services_data as $service_data) {
 		$service = ServiceFactory::create($service_data);

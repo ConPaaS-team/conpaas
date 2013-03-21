@@ -38,18 +38,16 @@
 
 require_once('__init__.php');
 require_module('logging');
-require_module('service');
-require_module('service/factory');
-require_module('ui/page/dashboard');
-require_module('ui/service');
+require_module('application');
+require_module('ui/page/apppage');
+require_module('ui/application');
 
-$page = new Dashboard();
-$services = ServiceData::getServicesByUser($page->getUID());
+$page = new Apppage();
 ?>
 <?php echo $page->renderDoctype(); ?>
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
-  	<?php echo $page->renderContentType(); ?>
+    <?php echo $page->renderContentType(); ?>
     <?php echo $page->renderTitle(); ?>
     <?php echo $page->renderIcon(); ?>
     <?php echo $page->renderHeaderCSS(); ?>

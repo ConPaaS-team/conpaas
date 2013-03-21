@@ -338,7 +338,7 @@ $(document).ready(function () {
         }
     }, function () {
         // error
-        window.location = 'index.php';
+        window.location = 'services.php';
     })
 
     // load startup script

@@ -206,7 +206,7 @@ conpaas.ui = (function (this_module) {
             return;
         }
         page.terminate(function (response) {
-            window.location = 'index.php';
+            window.location = 'services.php';
         });
     },
     onInstanceRoleClick: function (event) {
