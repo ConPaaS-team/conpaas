@@ -136,7 +136,7 @@ class OpenNebulaCloud(Cloud):
     def list_instace_types(self):
         return self.inst_types
 
-    def new_instances(self, count, name='conpaas'):
+    def new_instances(self, count, name='conpaas', inst_type=None):
         '''Asks the provider for new instances.
 
            @param    count:   Id of the node type of this driver (optional)
@@ -151,8 +151,11 @@ class OpenNebulaCloud(Cloud):
         kwargs['name'] = name
 
         # 'INSTANCE_TYPE'
-        kwargs['size'] = [i for i in self.driver.list_sizes()
-                          if i.name == self.inst_type][0]
+        if inst_type is None:
+            inst_type = self.inst_type
+
+        kwargs['size'] = [ 
+            i for i in self.driver.list_sizes() if i.name == inst_type ][0]
 
         # 'CPU'
         if self.cpu is not None:

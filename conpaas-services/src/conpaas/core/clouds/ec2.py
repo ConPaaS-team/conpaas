@@ -86,12 +86,15 @@ class EC2Cloud(Cloud):
         if context is not None:
             self.cx = context
 
-    def new_instances(self, count, name='conpaas'):
+    def new_instances(self, count, name='conpaas', inst_type=None):
         if self.connected is False:
             self._connect()
 
-        size = [i for i in self.driver.list_sizes()
-                if i.id == self.size_id][0]
+        if inst_type is None:
+            inst_type = self.size_id
+
+        size = [ i for i in self.driver.list_sizes() if i.id == inst_type ][0]
+
         img = NodeImage(self.img_id, '', None)
         kwargs = {'size': size,
                   'image': img,

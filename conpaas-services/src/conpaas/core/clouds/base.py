@@ -101,7 +101,7 @@ class Cloud:
         return [serviceNode for serviceNode in
                 self._create_service_nodes(self.driver.list_nodes())]
 
-    def new_instances(self, count, name='conpaas'):
+    def new_instances(self, count, name='conpaas', inst_type=None):
         raise NotImplementedError(
             'new_instances not implemented for this cloud driver')
 

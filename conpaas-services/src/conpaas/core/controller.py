@@ -125,7 +125,7 @@ class Controller(object):
     #=========================================================================#
     #               create_nodes(self, count, contextFile, test_agent)        #
     #=========================================================================#
-    def create_nodes(self, count, test_agent, port, cloud=None):
+    def create_nodes(self, count, test_agent, port, cloud=None, inst_type=None):
         """
         Creates the VMs associated with the list of nodes. It also tests
         if the agents started correctly.
@@ -156,9 +156,14 @@ class Controller(object):
 
         while len(ready) < count:
             iteration += 1
-            self.__logger.debug(
-                '[_create_nodes]: iteration %d: creating %d nodes'
-                % (iteration, count - len(ready)))
+            msg = '[_create_nodes]: iteration %d: creating %d nodes' % (
+                iteration, count - len(ready))
+
+            if inst_type:
+                msg += ' of type %s' % inst_type
+
+            self.__logger.debug(msg)
+
             try:
                 self.__force_terminate_lock.acquire()
                 if iteration == 1:
@@ -170,7 +175,7 @@ class Controller(object):
                 name = "conpaas-%s-%s-u%s-s%s" % (self.role, service_type,
                        self.__conpaas_user_id, self.__conpaas_service_id)
 
-                poll = cloud.new_instances(count - len(ready), name)
+                poll = cloud.new_instances(count - len(ready), name, inst_type)
                 try:
                     self.__partially_created_nodes += poll
                 except TypeError:
