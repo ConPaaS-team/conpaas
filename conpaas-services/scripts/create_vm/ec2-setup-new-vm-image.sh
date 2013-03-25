@@ -64,13 +64,15 @@ function install_deb() {
   # install packages
   apt-get -f -y install openssh-server \
         python python-pycurl python-cheetah python-openssl \
-        python-m2crypto python-mysqldb \
-        nginx tomcat6-user memcached \
+        python-m2crypto python-mysqldb python-netaddr \
+        nginx tomcat6-user memcached ganglia-monitor gmetad rrdtool \
         make gcc g++ erlang ant libxslt1-dev yaws subversion git \
         xvfb xinit unzip
   update-rc.d memcached disable
   update-rc.d nginx disable
   update-rc.d yaws disable
+  update-rc.d gmetad disable
+  update-rc.d ganglia-monitor disable
 
   # pre-accept sun-java6 licence
   echo "debconf shared/accepted-sun-dlj-v1-1 boolean true" | debconf-set-selections
@@ -161,7 +163,7 @@ function install_deb() {
   echo "deb http://download.opensuse.org/repositories/home:/xtreemfs:/unstable/Debian_6.0 /" >> /etc/apt/sources.list
   wget -O - http://download.opensuse.org/repositories/home:/xtreemfs:/unstable/Debian_6.0/Release.key 2>/dev/null | apt-key add -
   apt-get -f -y update
-  apt-get -f -y --no-install-recommends --no-upgrade install xtreemfs-server xtreemfs-client
+  apt-get -f -y --no-install-recommends --no-upgrade install xtreemfs-server xtreemfs-client xtreemfs-tools
   update-rc.d xtreemfs-osd disable
   update-rc.d xtreemfs-mrc disable
   update-rc.d xtreemfs-dir disable
