@@ -1,0 +1,41 @@
+modules {
+  module {
+    name = "nginx_proxy_mon"
+    language = "python"
+    param proxy_log {
+      value = "/var/cache/cpsagent/nginx-proxy-timed.log"
+    }
+    param monitor_interval {
+      value = 15
+    }
+  }
+}
+
+collection_group {
+  collect_every = 15
+  time_threshold = 90
+  metric {
+    name = "web_request_rate_lb"
+    title = "Load Balancer Web Request Rate"
+    value_threshold = 5.0
+  }
+
+  metric {
+    name = "web_response_time_lb"
+    title = "Load Balancer Web Response Time"
+    value_threshold = 5.0
+  }
+
+  metric {
+    name = "php_request_rate_lb"
+    title = "Load Balancer PHP Request Rate"
+    value_threshold = 5.0
+  }
+
+  metric {
+    name = "php_response_time_lb"
+    title = "Load Balancer PHP Response Time"
+    value_threshold = 5.0
+  }
+
+}
