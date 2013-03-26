@@ -42,8 +42,9 @@ from conpaas.core.controller import Controller
 from conpaas.core.https.server import HttpJsonResponse
 from conpaas.core.https.server import HttpErrorResponse
 from conpaas.core.https.server import FileUploadField
-from conpaas.core import ipop
 
+from conpaas.core import ipop
+from conpaas.core.ganglia import ManagerGanglia
 
 class BaseManager(object):
     """Manager class with the following exposed methods:
@@ -61,6 +62,17 @@ class BaseManager(object):
 
         # IPOP setup
         ipop.configure_conpaas_node(config_parser)
+
+        # Ganglia setup
+        ganglia = ManagerGanglia(config_parser)
+        ganglia.configure()
+
+        err = ganglia.start()
+
+        if err:
+            self.logger.exception(err)
+        else:
+            self.logger.info('Ganglia started successfully')
 
     @expose('GET')
     def getLog(self, kwargs):

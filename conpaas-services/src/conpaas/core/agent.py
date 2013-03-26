@@ -40,6 +40,8 @@ from conpaas.core.log import create_logger
 
 from conpaas.core import ipop
 
+from conpaas.core.ganglia import AgentGanglia
+
 from conpaas.core.https.server import HttpJsonResponse
 from conpaas.core.https.server import HttpErrorResponse
                           
@@ -63,6 +65,17 @@ class BaseAgent(object):
         # IPOP setup
         ipop.configure_conpaas_node(config_parser)
     
+        # Ganglia setup
+        ganglia = AgentGanglia(config_parser)
+        ganglia.configure()
+
+        err = ganglia.start()
+
+        if err:
+            self.logger.exception(err)
+        else:
+            self.logger.info('Ganglia started successfully')
+
     @expose('GET')
     def check_agent_process(self, kwargs):
         """Check if agent process started - just return an empty response"""

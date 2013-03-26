@@ -122,7 +122,7 @@ def get_ip_address(ifname):
       struct.pack('256s', ifname[:15])
   )[20:24])
 
-def run_cmd(cmd, directory):
+def run_cmd(cmd, directory='/'):
   pipe = Popen(cmd, shell=True, cwd=directory, stdout=PIPE, stderr=PIPE)
   out, error = pipe.communicate()
   pipe.wait()
