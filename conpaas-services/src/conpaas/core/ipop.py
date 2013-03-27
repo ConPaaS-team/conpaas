@@ -124,6 +124,7 @@ def configure_conpaas_node(config_parser):
     logger = create_logger(__name__)
     ip_base = None
     netmask = None
+    ip_address = None
 
     if config_parser.has_section('manager'):
         section_name = 'manager'
@@ -155,8 +156,17 @@ def configure_conpaas_node(config_parser):
     
     ipop_namespace = get_ipop_namespace(config_parser)
 
-    logger.info('Starting IPOP. namespace=%s ip_base=%s netmask=%s' % (
-        ipop_namespace, ip_base, netmask))
+    # See if a static IP address has been configured for us
+    if config_parser.has_option(section_name, 'IPOP_IP_ADDRESS'):
+        ip_address = config_parser.get(section_name, 'IPOP_IP_ADDRESS')
 
-    configure_ipop(ipop_tmpl_dir, ipop_namespace, ip_base, netmask)
+    msg = 'Starting IPOP. namespace=%s ip_base=%s netmask=%s' % (
+        ipop_namespace, ip_base, netmask)
+
+    if ip_address:
+        msg += ' ip_address = %s' % ip_address
+
+    logger.info(msg)
+
+    configure_ipop(ipop_tmpl_dir, ipop_namespace, ip_base, netmask, ip_address)
     restart_ipop()       

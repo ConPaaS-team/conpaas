@@ -5,9 +5,13 @@ CONF_DIR = /etc/cpsdirector
 CERT_DIR = /etc/cpsdirector/certs
 
 # Uncomment the following directives in case you want to use per-application
-# Virtual Private Networks
+# Virtual Private Networks. In the default config presented below, the maximum
+# number of services per application is 32 (2^5), with no more than 32767
+# agents each (2^(32-12-5)-1). 
+# 
 # VPN_BASE_NETWORK = 172.16.0.0
 # VPN_NETMASK = 255.240.0.0
+# VPN_SERVICE_BITS = 5 
 
 [iaas]
 ##############
