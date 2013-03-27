@@ -285,7 +285,7 @@ DEBIAN_FRONTEND=noninteractive apt-get -y --force-yes --no-install-recommends --
         python python-pycurl python-openssl python-m2crypto \
         python-mysqldb python-cheetah python-netaddr nginx \
         tomcat6-user memcached mysql-server \
-        ganglia-monitor gmetad rrdtool \
+        ganglia-monitor gmetad rrdtool logtail \
         make gcc g++ sun-java6-jdk erlang ant libxslt1-dev yaws subversion git \
         xvfb xinit unzip
 update-rc.d memcached disable

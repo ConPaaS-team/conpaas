@@ -65,7 +65,7 @@ function install_deb() {
   apt-get -f -y install openssh-server \
         python python-pycurl python-cheetah python-openssl \
         python-m2crypto python-mysqldb python-netaddr \
-        nginx tomcat6-user memcached ganglia-monitor gmetad rrdtool \
+        nginx tomcat6-user memcached ganglia-monitor gmetad rrdtool logtail \
         make gcc g++ erlang ant libxslt1-dev yaws subversion git \
         xvfb xinit unzip
   update-rc.d memcached disable
