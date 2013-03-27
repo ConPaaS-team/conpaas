@@ -50,6 +50,7 @@ class BaseGanglia(object):
     GANGLIA_ETC   = '/etc/ganglia'
     GANGLIA_CONFD = os.path.join(GANGLIA_ETC, 'conf.d')
     GMOND_CONF    = os.path.join(GANGLIA_ETC, 'gmond.conf')
+    GANGLIA_MODULES_DIR = '/usr/lib/ganglia/python_modules/'
 
     def __init__(self):
         """Set basic values"""
@@ -65,6 +66,7 @@ class BaseGanglia(object):
         """Create Ganglia configuration. Gmond is needed by managers and
         agents."""
         os.mkdir(self.GANGLIA_CONFD)
+        os.mkdir(self.GANGLIA_MODULES_DIR)
 
         # Copy modpython.conf
         src = os.path.join(self.cps_home, 'contrib', 'ganglia_modules', 
@@ -80,9 +82,26 @@ class BaseGanglia(object):
             'ganglia-gmond.tmpl')).read()
         open(self.GMOND_CONF, 'w').write(str(Template(src, values)))
         
+    def add_modules(self, modules):
+        """Install additional modules and restart ganglia-monitor"""
+        for module in modules:
+            # Copy conf files into ganglia conf.d
+            filename = os.path.join(self.cps_home, 'contrib', 
+                'ganglia_modules', module + '.pyconf') 
+
+            copy(filename, os.path.join(self.GANGLIA_CONFD, module + '.conf'))
+
+            # Copy python modules
+            filename = os.path.join(self.cps_home, 'contrib', 
+                'ganglia_modules', module + '.py') 
+            copy(filename, self.GANGLIA_MODULES_DIR)
+
+        # Restart ganglia-monitor
+        run_cmd('/etc/init.d/ganglia-monitor restart')
+
     def start(self):
         """Services startup"""
-        out, err = run_cmd('/etc/init.d/ganglia-monitor start')
+        _, err = run_cmd('/etc/init.d/ganglia-monitor start')
         if err:
             return 'Error starting ganglia-monitor: %s' % err
 
@@ -133,7 +152,7 @@ class ManagerGanglia(BaseGanglia):
                  '/usr/sbin/nginx -c /var/cache/cpsagent/nginx-manager.conf' )
 
         for cmd in cmds:
-            out, err = run_cmd(cmd)
+            _, err = run_cmd(cmd)
             if err:
                 return "Error executing '%s': %s" % (cmd, err)
 

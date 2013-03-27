@@ -5,7 +5,7 @@ import subprocess, threading;
 import time, os;
 import logging;
 
-web_proxy_log = '/var/cache/cpsagent/nginx_proxy_timed.log'
+web_proxy_log = '/var/cache/cpsagent/nginx-proxy-timed.log'
 dbg_log = '/tmp/nginx_proxy_dbg.log'
 logtail_interval = 15
 descriptors = []

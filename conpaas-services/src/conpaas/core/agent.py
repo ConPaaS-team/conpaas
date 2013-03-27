@@ -66,11 +66,10 @@ class BaseAgent(object):
         ipop.configure_conpaas_node(config_parser)
     
         # Ganglia setup
-        ganglia = AgentGanglia(config_parser)
-        ganglia.configure()
+        self.ganglia = AgentGanglia(config_parser)
+        self.ganglia.configure()
 
-        err = ganglia.start()
-
+        err = self.ganglia.start()
         if err:
             self.logger.exception(err)
         else:

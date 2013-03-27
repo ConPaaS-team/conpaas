@@ -5,7 +5,7 @@ import subprocess, threading;
 import time, os;
 import logging;
 
-web_static_log = '/var/cache/cpsagent/nginx_static_timed.log'
+web_static_log = '/var/cache/cpsagent/nginx-static-timed.log'
 dbg_log = '/tmp/nginx_dbg.log'
 logtail_interval = 15
 descriptors = []

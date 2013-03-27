@@ -168,6 +168,7 @@ class NginxStatic(Nginx):
     if self.state == S_INIT:
       self.config_file = join(VAR_CACHE, 'nginx-static.conf')
       self.access_log = join(VAR_CACHE, 'nginx-static-access.log')
+      self.timed_log = join(VAR_CACHE, 'nginx-static-timed.log')
       self.error_log = join(VAR_CACHE, 'nginx-static-error.log')
       self.pid_file = join(VAR_RUN, 'nginx-static.pid')
       self.user = 'www-data'
@@ -182,6 +183,7 @@ class NginxStatic(Nginx):
                          'port'         : self.port,
                          'error_log'    : self.error_log,
                          'access_log'   : self.access_log,
+                         'timed_log'    : self.timed_log,
                          'pid_file'     : self.pid_file,
                          'doc_root'     : join(VAR_CACHE, 'www'),
                          'code_versions': self.code_versions})
@@ -214,6 +216,7 @@ class NginxProxy(Nginx):
                                'port'             : self.port,
                                'error_log'        : self.error_log,
                                'access_log'       : self.access_log,
+                               'timed_log'        : self.timed_log,
                                'pid_file'         : self.pid_file,
                                'doc_root'         : join(VAR_CACHE, 'www'),
                                'code_version'     : self.codeversion,
@@ -237,6 +240,7 @@ class NginxProxy(Nginx):
     if self.state == S_INIT:
       self.config_file = join(VAR_CACHE, 'nginx-proxy.conf')
       self.access_log = join(VAR_CACHE, 'nginx-proxy-access.log')
+      self.timed_log = join(VAR_CACHE, 'nginx-proxy-timed.log')
       self.error_log = join(VAR_CACHE, 'nginx-proxy-error.log')
       self.pid_file = join(VAR_RUN, 'nginx-proxy.pid')
       self.user = 'www-data'
@@ -356,6 +360,7 @@ class PHPProcessManager:
       self.scalaris_config = join(VAR_CACHE, 'fpm-scalaris.conf')
       self.config_file = join(VAR_CACHE, 'fpm.conf')
       self.error_log = join(VAR_CACHE, 'fpm-error.log')
+      self.access_log = join(VAR_CACHE, 'fpm-access.log')
       self.pid_file = join(VAR_RUN, 'fpm.pid')
       self.user = 'www-data'
       self.group = 'www-data'
@@ -373,6 +378,7 @@ class PHPProcessManager:
                                'port':              port,
                                'user':              self.user,
                                'group':             self.group,
+                               'access_log':        self.access_log,
                                'max_children':      self.max_children,
                                'max_requests':      self.max_requests,
                                'servers_start':     self.servers_start,
