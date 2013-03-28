@@ -91,7 +91,8 @@ class NginxLogParser(threading.Thread):
 				php_request_rate_lb = n_php_requests / (end_time - start_time) 
 				self.last_access_time = end_time
 			else:
-				web_request_rate = 0
+				web_request_rate_lb = 0
+				php_request_rate_lb = 0
 
 			logger.debug("Start time: " + str(start_time) + ", end time: " + str(end_time) + "\n")
 			# response time in ms
