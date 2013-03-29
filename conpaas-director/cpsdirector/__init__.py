@@ -12,10 +12,13 @@ sys.setdefaultencoding('utf-8')
 import hashlib
 import zipfile
 import simplejson
+import ConfigParser
 from datetime import datetime
 from StringIO import StringIO
-from OpenSSL import crypto
 from functools import wraps
+
+from OpenSSL import crypto
+from netaddr import IPNetwork
 
 from conpaas.core import https
 from conpaas.core.services import manager_services
@@ -326,9 +329,12 @@ def start(servicetype):
         return build_response(jsonify({ 'error': True,
 		                        'msg': "Application not found" }))
 
+    # Do we have to assign a VPN subnet to this service?
+    vpn = app.get_available_vpn_subnet()
+
     # New service with default name, proper servicetype and user relationship
     s = Service(name="New %s service" % servicetype, type=servicetype,
-        user=g.user, application=app)
+        user=g.user, application=app, subnet=vpn)
 
     db.session.add(s)
     # flush() is needed to get auto-incremented sid
@@ -336,7 +342,7 @@ def start(servicetype):
 
     try:
         s.manager, s.vmid, s.cloud = cloud.start(servicetype, s.sid,
-                                                 g.user.uid, appid)
+                                                 g.user.uid, appid, vpn)
     except Exception, err:
         try:
             db.session.delete(s)
@@ -574,6 +580,28 @@ class Application(db.Model):
             'aid': self.aid, 'name': self.name,
         }
 
+    def get_available_vpn_subnet(self):
+        """Find an available VPN subnet for the next service to be created in
+        this application."""
+        try:
+            network = common.config_parser.get('conpaas', 'VPN_BASE_NETWORK')
+            netmask = common.config_parser.get('conpaas', 'VPN_NETMASK')
+            srvbits = common.config_parser.get('conpaas', 'VPN_SERVICE_BITS')
+        except ConfigParser.NoOptionError:
+            return
+            
+        # Split the given network into subnets. 
+        base_net = IPNetwork(network + '/' + netmask)
+        vpn_subnets = base_net.subnet(32 - base_net.prefixlen - int(srvbits))
+
+        assigned_networks = [ service.subnet for service in self.services ]
+
+        for candidate_network in vpn_subnets:
+            candidate_network = str(candidate_network)
+
+            if candidate_network not in assigned_networks:
+                return candidate_network
+
 class Service(db.Model):
     sid = db.Column(db.Integer, primary_key=True, 
         autoincrement=True)
@@ -584,6 +612,7 @@ class Service(db.Model):
     manager = db.Column(db.String(512))
     vmid = db.Column(db.String(256))
     cloud = db.Column(db.String(128))
+    subnet = db.Column(db.String(18))
 
     user_id = db.Column(db.Integer, db.ForeignKey('user.uid'))
     user = db.relationship('User', backref=db.backref('services', 

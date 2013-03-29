@@ -31,7 +31,7 @@ setup(name='cpsdirector',
       package_data={ 'cpsdirector': [ 'ConPaaS.tar.gz', ] },
       data_files=[ ( CONFDIR, [ 'director.cfg.example', 'ConPaaS.tar.gz' ] ), ],
       scripts=[ 'cpsadduser.py', 'director.wsgi', 'cpsconf.py' ],
-      install_requires=[ 'cpslib', 'flask-sqlalchemy', 'apache-libcloud==0.8.0' ],
+      install_requires=[ 'cpslib', 'flask-sqlalchemy', 'apache-libcloud==0.8.0', 'netaddr' ],
       dependency_links=[ 'http://www.conpaas.eu/dl/cpslib-%s.tar.gz' % CPSVERSION, ],)
 
 if __name__ == "__main__" and sys.argv[1] == "install":

@@ -142,7 +142,7 @@ EOF
         return False
 
 
-def __get_config(service_id, user_id, app_id, service_type=""):
+def __get_config(service_id, user_id, app_id, service_type="", vpn=None):
     """Add manager configuration"""
     config_parser = common.config_parser
 
@@ -164,6 +164,9 @@ def __get_config(service_id, user_id, app_id, service_type=""):
 
     config_parser.set("manager", "TYPE", service_type)
 
+    if vpn:
+        config_parser.set("manager", "IPOP_SUBNET", vpn)
+
     return config_parser
 
 
@@ -172,11 +175,11 @@ def __stop_reservation_timer(controller):
         reservation_timer.stop()
 
 
-def start(service_name, service_id, user_id, app_id):
+def start(service_name, service_id, user_id, app_id, vpn):
     """Start a manager for the given service_name, service_id and user_id.
 
     Return (node_ip, node_id, cloud_name)."""
-    config_parser = __get_config(str(service_id), str(user_id), str(app_id), service_name)
+    config_parser = __get_config(str(service_id), str(user_id), str(app_id), service_name, vpn)
     # Create a new controller
     controller = ManagerController(config_parser)
     # Create a context file for the specific service

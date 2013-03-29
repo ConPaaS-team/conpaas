@@ -149,21 +149,38 @@ class DirectorTest(Common):
         ret = simplejson.loads(response.data)
         self.assertEquals('Unknown service type: wrong', ret['msg'])
 
-    def test_proper_start(self):
-        self.create_user()
+    def test_proper_start(self, subnet=None, sid=1):
+        if not subnet:
+            self.create_user()
+
+            # We want to make sure VPN_SERVICE_BITS is not set
+            if cpsdirector.common.config_parser.has_option('conpaas', 'VPN_SERVICE_BITS'):
+                cpsdirector.common.config_parser.remove_option(
+                    'conpaas', 'VPN_SERVICE_BITS')
 
         response = self.app.post('/start/php', data={ 'uid': 1 })
         servicedict = simplejson.loads(response.data)
     
         self.assertEquals("New php service", servicedict['name'])
-        self.assertEquals(1, servicedict['sid'])
+        self.assertEquals(sid, servicedict['sid'])
         self.assertEquals('INIT', servicedict['state'])
         self.assertEquals('php', servicedict['type'])
         self.assertEquals(1, servicedict['user_id'])
+        self.assertEquals(subnet, servicedict['subnet'])
 
         # Values returned by libcloud's dummy driver
         self.assertEquals('3', servicedict['vmid'])
         self.assertEquals('127.0.0.3', servicedict['manager'])
+
+    def test_proper_start_vpn(self):
+        self.create_user()
+
+        cpsdirector.common.config_parser.set('conpaas', 'VPN_BASE_NETWORK', '172.16.0.0')
+        cpsdirector.common.config_parser.set('conpaas', 'VPN_NETMASK', '255.240.0.0')
+        cpsdirector.common.config_parser.set('conpaas', 'VPN_SERVICE_BITS', '6')
+    
+        self.test_proper_start(subnet='172.16.0.0/14', sid=1)
+        self.test_proper_start(subnet='172.20.0.0/14', sid=2)
 
     def test_proper_rename(self):
         # create user and service
