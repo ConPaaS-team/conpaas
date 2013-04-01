@@ -1,11 +1,12 @@
 import os.path
 
+from netaddr import IPNetwork
+
 from conpaas.core.controller import Controller
 from conpaas.core.misc import file_get_contents
 
 from cpsdirector import x509cert
 from cpsdirector import common
-
 
 class ManagerController(Controller):
 
@@ -73,11 +74,22 @@ class ManagerController(Controller):
 
         # Check if we want to use IPOP. If so, add IPOP directives to manager
         # config file
-        if self.config_parser.has_option('conpaas', 'VPN_BASE_NETWORK'):
-            mngr_cfg += '\nIPOP_BASE_IP = %s' % self.config_parser.get('conpaas', 'VPN_BASE_NETWORK')
+        if self.config_parser.has_option('manager', 'IPOP_SUBNET'):
+            ipop_subnet = self.config_parser.get('manager', 'IPOP_SUBNET')
+            mngr_cfg += '\nIPOP_SUBNET = %s' % ipop_subnet
 
-        if self.config_parser.has_option('conpaas', 'VPN_NETMASK'):
-            mngr_cfg += '\nIPOP_NETMASK = %s' % self.config_parser.get('conpaas', 'VPN_NETMASK')
+            ipop_network = IPNetwork(ipop_subnet).iter_hosts()
+
+            # Skip the first IP address. IPOP uses it for internal purposes
+            ipop_network.next()
+
+            mngr_cfg += '\nIPOP_IP_ADDRESS = %s' % ipop_network.next()
+
+            mngr_cfg += '\nIPOP_BASE_IP = %s' % self.config_parser.get(
+                'conpaas', 'VPN_BASE_NETWORK')
+
+            mngr_cfg += '\nIPOP_NETMASK = %s' % self.config_parser.get(
+                'conpaas', 'VPN_NETMASK')
 
         tmpl_values['mngr_cfg'] = mngr_cfg
 

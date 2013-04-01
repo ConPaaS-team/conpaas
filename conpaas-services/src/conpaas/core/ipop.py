@@ -47,15 +47,15 @@ IPOP_CONF_DIR = "/opt/ipop/etc/"
 
 def get_ipop_namespace(config_parser):
     if config_parser.has_section('manager'):
-        app_id = config_parser.get('manager', 'APP_ID')
-        base_namespace = config_parser.get('manager', 'IPOP_BASE_NAMESPACE')
-
+        section = 'manager'
     else:
-        app_id = config_parser.get('agent', 'APP_ID')
-        base_namespace = config_parser.get('agent', 'IPOP_BASE_NAMESPACE')
+        section = 'agent'
+
+    app_id = config_parser.get(section, 'APP_ID')
+    base_namespace = config_parser.get(section, 'IPOP_BASE_NAMESPACE')
 
     base_namespace = urlparse.urlparse(base_namespace).netloc
-    return "conpaas-%s-%s" % (base_namespace, app_id)
+    return "cps-%s-%s" % (base_namespace, app_id)
 
 def configure_ipop(tmpl_dir, namespace, ip_base, netmask, ip_address=None, 
                    udp_port=0):
@@ -121,52 +121,39 @@ def get_ip_address():
     return run_cmd(ip_cmd, '/')[0].rstrip('\n')
 
 def configure_conpaas_node(config_parser):
+    """IPOP will be configured on this node if IPOP_IP_ADDRESS has been
+    specified."""
     logger = create_logger(__name__)
-    ip_base = None
-    netmask = None
-    ip_address = None
 
     if config_parser.has_section('manager'):
-        section_name = 'manager'
+        section = 'manager'
     else:
-        section_name = 'agent'
+        section = 'agent'
 
-    # Start IPOP only if the user wants to do so
-    if config_parser.has_option(section_name, 'IPOP_BASE_IP'):
-        ip_base = config_parser.get(section_name, 'IPOP_BASE_IP')
-
-    if config_parser.has_option(section_name, 'IPOP_NETMASK'):
-        netmask = config_parser.get(section_name, 'IPOP_NETMASK')
-
-    if not ip_base or not netmask:
-        # IPOP_BASE_IP and IPOP_NETMASK are called VPN_BASE_NETWORK and
-        # VPN_NETMASK in the director config file
-        logger.info(
-            'NOT starting IPOP: VPN_BASE_NETWORK or VPN_NETMASK not found')
+    # If IPOP has to be used
+    if config_parser.has_option(section, 'IPOP_IP_ADDRESS'):
+        ip_address = config_parser.get(section, 'IPOP_IP_ADDRESS')
+    else:
+        logger.info('Not starting a VPN: IPOP_IP_ADDRESS not found')
         return
 
     # Stop here if IPOP is not installed
     if not os.path.isdir(IPOP_CONF_DIR):
-        logger.error('NOT starting IPOP: it does not seem to be installed')
+        logger.error('Not starting a VPN: ipop does not seem to be installed')
         return
 
-    conpaas_home = config_parser.get(section_name, 'CONPAAS_HOME')
+    conpaas_home = config_parser.get(section, 'CONPAAS_HOME')
 
     ipop_tmpl_dir = os.path.join(conpaas_home, 'config', 'ipop')
     
     ipop_namespace = get_ipop_namespace(config_parser)
+    ip_base = config_parser.get(section, 'IPOP_BASE_IP')
+    netmask = config_parser.get(section, 'IPOP_NETMASK')
 
-    # See if a static IP address has been configured for us
-    if config_parser.has_option(section_name, 'IPOP_IP_ADDRESS'):
-        ip_address = config_parser.get(section_name, 'IPOP_IP_ADDRESS')
-
-    msg = 'Starting IPOP. namespace=%s ip_base=%s netmask=%s' % (
-        ipop_namespace, ip_base, netmask)
-
-    if ip_address:
-        msg += ' ip_address = %s' % ip_address
+    msg = 'Starting IPOP. namespace=%s ip_base=%s netmask=%s ip_address=%s' % (
+        ipop_namespace, ip_base, netmask, ip_address)
 
     logger.info(msg)
 
     configure_ipop(ipop_tmpl_dir, ipop_namespace, ip_base, netmask, ip_address)
-    restart_ipop()       
+    restart_ipop()

@@ -42,16 +42,19 @@ Created on Feb 8, 2011
 '''
 
 from threading import Thread, Lock, Event
+
+from netaddr import IPNetwork
+
 import os.path
 import time
 import json
 import socket
 import urlparse
 from string import Template
+
 from conpaas.core.log import create_logger
 from conpaas.core import iaas
 from conpaas.core import https
-
 
 class Controller(object):
     """Implementation of the clouds controller. This class implements functions
@@ -82,14 +85,23 @@ class Controller(object):
         self.__ipop_base_namespace = self.__conpaas_caUrl
 
         if config_parser.has_option('manager', 'IPOP_BASE_IP'):
+            # Application-level network
             self.__ipop_base_ip = config_parser.get('manager', 'IPOP_BASE_IP')
         else:
             self.__ipop_base_ip = None
 
         if config_parser.has_option('manager', 'IPOP_NETMASK'):
+            # Application-level netmask
             self.__ipop_netmask = config_parser.get('manager', 'IPOP_NETMASK')
         else:
             self.__ipop_netmask = None
+
+        if config_parser.has_option('manager', 'IPOP_SUBNET'):
+            # Subnet assigned to this service by the director
+            self.__ipop_subnet = IPNetwork(
+                config_parser.get('manager', 'IPOP_SUBNET'))
+        else:
+            self.__ipop_subnet = None
 
         # For crediting system
         self.__reservation_logger = create_logger('ReservationTimer')
@@ -122,6 +134,30 @@ class Controller(object):
         # Setting VM role
         self.role = 'agent'
 
+    def get_available_ipop_address(self):
+        """Return an unassigned IP address in this manager's VPN subnet"""
+        # Network iterator
+        network = self.__ipop_subnet.iter_hosts()
+        
+        # Currently running hosts
+        running_hosts = [ str(node.ip) for node in self.__created_nodes ] 
+
+        self.__logger.debug("get_available_ipop_address: running nodes: %s" 
+            % running_hosts)
+
+        # The first address is used by IPOP internally
+        network.next()
+        # The second one is taken by manager 
+        network.next()
+
+        for host in network:
+            host = str(host)
+
+            if host not in running_hosts:
+                self.__logger.debug("get_available_ipop_address: returning %s" 
+                    % host)
+                return host
+
     #=========================================================================#
     #               create_nodes(self, count, contextFile, test_agent)        #
     #=========================================================================#
@@ -146,6 +182,7 @@ class Controller(object):
 
         """
         ready = []
+        poll = []
         iteration = 0
 
         if cloud is None:
@@ -175,7 +212,21 @@ class Controller(object):
                 name = "conpaas-%s-%s-u%s-s%s" % (self.role, service_type,
                        self.__conpaas_user_id, self.__conpaas_service_id)
 
-                poll = cloud.new_instances(count - len(ready), name, inst_type)
+                if self.__ipop_base_ip and self.__ipop_netmask:
+                    # If IPOP has to be used we need to update VMs
+                    # contextualization data for each new instance
+                    for _ in range(count - len(ready)):
+                        vpn_ip = self.get_available_ipop_address()
+                        self.update_context({ 'IPOP_IP_ADDRESS': vpn_ip })
+                        
+                        for newinst in cloud.new_instances(1, name, inst_type):
+                            newinst.ip = vpn_ip
+                            poll.append(newinst)
+
+                        self.__logger.debug("cloud.new_instances: %s" % poll)
+                else:
+                    poll = cloud.new_instances(count - len(ready), name, inst_type)
+
                 try:
                     self.__partially_created_nodes += poll
                 except TypeError:
@@ -400,8 +451,8 @@ class Controller(object):
 
         # Get agent setup file
         agent_setup_file = open(agent_scripts_dir + '/agent-setup', 'r')
-        agent_setup = Template(agent_setup_file.read()).\
-            safe_substitute(SOURCE=bootstrap)
+        agent_setup = Template(agent_setup_file.read()).safe_substitute(
+            SOURCE=bootstrap)
 
         # Get agent config file - add to the default one the one specific
         # to the service if it exists
@@ -414,12 +465,11 @@ class Controller(object):
             CONPAAS_APP_ID=self.__conpaas_app_id,
             IPOP_BASE_NAMESPACE=self.__ipop_base_namespace)
 
-        # Add IPOP_BASE_IP and IPOP_NETMASK if necessary
-        if self.__ipop_base_ip:
+        # Add IPOP_BASE_IP, IPOP_NETMASK and IPOP_IP_ADDRESS if necessary
+        if self.__ipop_base_ip and self.__ipop_netmask:
             agent_cfg += '\nIPOP_BASE_IP = %s' % self.__ipop_base_ip
-
-        if self.__ipop_netmask:
             agent_cfg += '\nIPOP_NETMASK = %s' % self.__ipop_netmask
+            agent_cfg += '\nIPOP_IP_ADDRESS = $IPOP_IP_ADDRESS'
 
         if os.path.isfile(agent_cfg_dir + '/' + service_name + '-agent.cfg'):
             agent_cfg_file = open(agent_cfg_dir +
