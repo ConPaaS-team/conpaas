@@ -36,50 +36,21 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-function CloudOption($cloud, $title) {
-	return new CloudOption($cloud, $title);
+function Radio($text) {
+    return new Radio($text);
 }
 
-class CloudOption {
+class Radio extends Button{
 
-	private $cloud;
-	private $title;
-	private $enabled = true;
-	private $selected = false;
+    public function __construct($text) {
+        parent::__construct($text);
+    }
 
-	public function __construct($cloud, $title) {
-		$this->cloud = $cloud;
-		$this->title = $title;
-	}
-
-	public function setEnabled($enabled) {
-		$this->enabled = $enabled;
-		return $this;
-	}
-
-	public function setSelected($selected) {
-		$this->selected = $selected;
-		return $this;
-	}
-
-	private function disabledMarker() {
-		if ($this->enabled) {
-			return '';
-		}
-		return ' disabled="disabled" ';
-	}
-
-	private function selectedMarker() {
-		if (!$this->selected) {
-			return '';
-		}
-		return ' selected="selected" ';
-	}
-
-	public function __toString() {
-		return '<option value="'.$this->cloud.'" '
-			.$this->disabledMarker().$this->selectedMarker().'>'
-			.$this->title.'</option>';
-	}
-
+    public function __toString() {
+        return
+            '<input id="'.$this->id.'" type="radio" '
+            .' title="'.$this->title.'"'.'name="'.$this->title.'"'
+            .' class="button '.$this->isVisible().'"'
+            .' value="'.$this->text.'" '.$this->disabledMarker().'/>'.$this->text;
+    }
 }
