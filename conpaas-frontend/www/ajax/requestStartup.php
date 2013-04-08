@@ -44,13 +44,14 @@ try {
 	if (!isset($_SESSION['uid'])) {
 		throw new Exception('User not logged in');
 	}
-	$sid = $_POST['sid'];
+    $sid = $_POST['sid'];
+    $cloud = $_POST['cloud'];
 	$service_data = ServiceData::getServiceById($sid);
 	$service = ServiceFactory::create($service_data);
 	if($service->getUID() !== $_SESSION['uid']) {
 	    throw new Exception('Not allowed');
 	}
-	$response = $service->requestStartup();
+	$response = $service->requestStartup(array('cloud' => $cloud));
 	$obj = json_decode($response, true);
 	echo json_encode($obj['result']);
 } catch (Exception $e) {

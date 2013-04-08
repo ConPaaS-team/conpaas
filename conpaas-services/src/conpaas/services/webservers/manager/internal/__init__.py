@@ -60,10 +60,9 @@ Created on Feb 8, 2011
   
 '''
 
-from threading import Thread, Lock, Timer, Event
-import memcache, tempfile, os, os.path, tarfile, time, stat, json, urlparse
+from threading import Thread
+import memcache, tempfile, os, os.path, time
 
-from conpaas.core.log import create_logger
 from conpaas.services.webservers.agent import client
 from conpaas.services.webservers.manager.config import WebServiceNode, CodeVersion
 from conpaas.services.webservers.misc import archive_open, archive_get_members, archive_close,\
@@ -71,7 +70,6 @@ from conpaas.services.webservers.misc import archive_open, archive_get_members, 
 from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse,\
                          HttpFileDownloadResponse, FileUploadField
 from conpaas.core.expose import expose
-from conpaas.core.controller import Controller
 from conpaas.core.manager import BaseManager
 from conpaas.core.manager import ManagerException
 
@@ -170,8 +168,6 @@ class BasicWebserversManager(BaseManager):
   @expose('POST')
   def startup(self, kwargs):
     
-    if len(kwargs) != 0:
-      return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
     config = self._configuration_get()
     
     dstate = self._state_get()
@@ -199,7 +195,7 @@ class BasicWebserversManager(BaseManager):
     #  return HttpErrorResponse(ManagerException(ManagerException.E_NOT_ENOUGH_CREDIT).message)
     
     self._state_set(self.S_PROLOGUE, msg='Starting up')
-    Thread(target=self.do_startup, args=[config, serviceNodeKwargs]).start()
+    Thread(target=self.do_startup, args=[config, serviceNodeKwargs, kwargs['cloud']]).start()
     return HttpJsonResponse({'state': self.S_PROLOGUE})
   
   @expose('POST')
@@ -216,13 +212,13 @@ class BasicWebserversManager(BaseManager):
     Thread(target=self.do_shutdown, args=[config]).start()
     return HttpJsonResponse({'state': self.S_EPILOGUE})
   
-  def do_startup(self, config, serviceNodeKwargs):
+  def do_startup(self, config, serviceNodeKwargs, cloud):
     self.logger.debug('do_startup: Going to request %d new nodes' % len(serviceNodeKwargs))
-    
+    cloud = self._init_cloud(cloud)
     try:
       self._adapting_set_count(len(serviceNodeKwargs))
       node_instances = self.controller.create_nodes(len(serviceNodeKwargs),
-                                                    client.check_agent_process, 5555)
+                                                    client.check_agent_process, 5555, cloud)
     except:
       self.logger.exception('do_startup: Failed to request new nodes. Needed %d' % (len(serviceNodeKwargs)))
       self._state_set(self.S_STOPPED, msg='Failed to request new nodes')
@@ -294,17 +290,15 @@ class BasicWebserversManager(BaseManager):
       if proxy < 0: return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_INVALID, detail='Expected a positive integer value for "proxy"').message)
     if (backend + web + proxy) < 1:
       return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_MISSING, ['backend', 'web', 'proxy'], detail='Need a positive value for at least one').message)
-    if len(kwargs) != 0:
-      return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
     
     if (proxy + config.proxy_count) > 1 and ( (web + config.web_count) == 0 or (backend + config.backend_count) == 0 ):
       return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_INVALID, detail='Cannot add more proxy servers without at least one "web" and one "backend"').message)
     
     self._state_set(self.S_ADAPTING, msg='Going to add proxy=%d, web=%d, backend=%d' % (proxy, web, backend))
-    Thread(target=self.do_add_nodes, args=[config, proxy, web, backend]).start()
+    Thread(target=self.do_add_nodes, args=[config, proxy, web, backend, kwargs['cloud']]).start()
     return HttpJsonResponse()
   
-  def do_add_nodes(self, config, proxy, web, backend):
+  def do_add_nodes(self, config, proxy, web, backend, cloud):
     webNodesNew = []
     proxyNodesNew = []
     backendNodesNew = []
@@ -312,6 +306,7 @@ class BasicWebserversManager(BaseManager):
     webNodesKill = []
     backendNodesKill = []
     
+    cloud = self._init_cloud(cloud)
     if backend > 0 and config.backend_count == 0:
       backendNodesKill.append(config.getBackendServiceNodes()[0])
     if web > 0 and config.web_count == 0:
@@ -328,7 +323,7 @@ class BasicWebserversManager(BaseManager):
     try:
       self._adapting_set_count(len(proxyNodesNew) + len(webNodesNew) + len(backendNodesNew))
       node_instances = self.controller.create_nodes(len(proxyNodesNew) + len(webNodesNew) + len(backendNodesNew),
-                                                    client.check_agent_process, 5555)
+                                                    client.check_agent_process, 5555, cloud)
     except:
       self.logger.exception('do_add_nodes: Failed to request new nodes. Needed %d' % (len(proxyNodesNew + webNodesNew + backendNodesNew)))
       self._state_set(self.S_RUNNING, msg='Failed to request new nodes. Reverting to old configuration')

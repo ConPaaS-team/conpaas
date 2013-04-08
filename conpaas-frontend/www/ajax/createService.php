@@ -48,9 +48,12 @@ try {
 		throw new Exception('Only calls with POST method accepted');
 	}
 
-	if (!array_key_exists('type', $_POST)) {
-		throw new Exception('Missing parameters');
+    if (!array_key_exists('type', $_POST)){
+		throw new Exception('Missing type parameter');
+	}else if (!array_key_exists('cloud', $_POST)){
+		throw new Exception('Missing cloud parameter');
 	}
+
 
 	if (!isset($_SESSION['uid'])) {
 		throw new Exception('User not logged in');
@@ -62,8 +65,9 @@ try {
 
 	$appid = $_SESSION['aid'];
 	$type = $_POST['type'];
+    $cloud= $_POST['cloud'];
 
-	$res = json_decode(HTTPS::post(Conf::DIRECTOR . '/start/' . $type,
+	$res = json_decode(HTTPS::post(Conf::DIRECTOR . '/start/' . $type. '/' . $cloud,
 	    array( 'appid' => $appid ), false, $_SESSION['uid']));
 
     if (!$res) {

@@ -38,12 +38,10 @@ POSSIBILITY OF SUCH DAMAGE.
 from threading import Thread
 
 from conpaas.core.expose import expose
-from conpaas.core.controller import Controller
 from conpaas.core.manager import BaseManager
 
 from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse
-                          
-from conpaas.core.log import create_logger
+
 from conpaas.services.selenium.agent import client
 
 class SeleniumManager(BaseManager):
@@ -107,20 +105,21 @@ class SeleniumManager(BaseManager):
             return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
 
         self.state = self.S_PROLOGUE
-        Thread(target=self._do_startup, args=[]).start()
+        Thread(target=self._do_startup, kwargs=kwargs).start()
 
         return HttpJsonResponse({ 'state': self.state })
 
-    def _do_startup(self):
+    def _do_startup(self, cloud):
         """Start up the service. The first node will be an agent running a
         Selenium Hub and a Selenium Node."""
 
+        startCloud = self._init_cloud(cloud)
         vals = { 'action': '_do_startup', 'count': 1 }
         self.logger.debug(self.ACTION_REQUESTING_NODES % vals)
 
         try:
             nodes = self.controller.create_nodes(1,
-                client.check_agent_process, self.AGENT_PORT)
+                client.check_agent_process, self.AGENT_PORT, startCloud)
 
             hub_node = nodes[0]
 
@@ -188,14 +187,15 @@ class SeleniumManager(BaseManager):
         count = count_or_err
 
         self.state = self.S_ADAPTING
-        Thread(target=self._do_add_nodes, args=[count]).start()
+        Thread(target=self._do_add_nodes, args=[count, kwargs['cloud']]).start()
 
         return HttpJsonResponse({ 'state': self.state })
 
-    def _do_add_nodes(self, count):
+    def _do_add_nodes(self, count, cloud):
+        startCloud = self._init_cloud(cloud)
         """Add 'count' Selenium Nodes to this deployment"""
         node_instances = self.controller.create_nodes(count, 
-            client.check_agent_process, self.AGENT_PORT)
+            client.check_agent_process, self.AGENT_PORT, startCloud)
 
         # Startup agents
         for node in node_instances:

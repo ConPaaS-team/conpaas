@@ -37,60 +37,20 @@
  */
 
 function InputButton($text) {
-	return new InputButton($text);
+    return new InputButton($text);
 }
 
-class InputButton {
+class InputButton extends Button {
 
-	protected $id = '';
-	protected $text;
-	protected $visible = true;
-	protected $disabled = false;
-	protected $title = '';
+    public function __construct($text) {
+        parent::__construct($text);
+    }
 
-	public function __construct($text) {
-		$this->text = $text;
-	}
-
-	public function setVisible($visible) {
-		$this->visible = $visible;
-		return $this;
-	}
-
-	public function setId($id) {
-		$this->id = $id;
-		return $this;
-	}
-
-	public function setDisabled($disabled) {
-		$this->disabled = $disabled;
-		return $this;
-	}
-
-	public function setTitle($title) {
-		$this->title = $title;
-		return $this;
-	}
-
-	private function invisibleClass() {
-		if ($this->visible) {
-			return '';
-		}
-		return 'invisible';
-	}
-
-	private function disabledMarker() {
-		if ($this->disabled) {
-			return ' disabled="disabled" ';
-		}
-		return '';
-	}
-
-	public function __toString() {
-		return
-			'<input id="'.$this->id.'" type="button" '
-			.' title="'.$this->title.'"'
-			.' class="button '.$this->invisibleClass().'"'
-			.' value="'.$this->text.'" '.$this->disabledMarker().'/>';
-	}
+    public function __toString() {
+        return
+            '<input id="'.$this->id.'" type="button" '
+            .' title="'.$this->title.'"'
+            .' class="button '.$this->isVisible().'"'
+            .' value="'.$this->text.'" '.$this->disabledMarker().'/>';
+    }
 }

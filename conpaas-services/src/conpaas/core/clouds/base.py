@@ -95,9 +95,11 @@ class Cloud:
         '''
         lists the service nodes in the cloud instances
 
-        @return vms: Dict{id,state,name,ip,private_ip}
+        @return vms: List[ServiceNode]
 
         '''
+        if self.connected is False:
+            self._connect()
         return [serviceNode for serviceNode in
                 self._create_service_nodes(self.driver.list_nodes())]
 
@@ -164,5 +166,5 @@ class Cloud:
                         vm_id
         '''
         if self.connected is False:
-            raise Exception('Not connected to cloud')
-        return self.driver.destroy_node(node)
+            self._connect()
+        return self.driver.destroy_node(node.as_libcloud_node())

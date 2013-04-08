@@ -117,19 +117,20 @@ class Controller(object):
         self.__partially_created_nodes = []
         self.__logger = create_logger(__name__)
 
-        self.available_clouds = []
+        self.__available_clouds = []
         self.__default_cloud = None
         if config_parser.has_option('iaas', 'DRIVER'):
             self.__default_cloud = iaas.get_cloud_instance(
                 'iaas',
                 config_parser.get('iaas', 'DRIVER').lower(),
                 config_parser)
+            self.__available_clouds.append(self.__default_cloud)
 
         if config_parser.has_option('iaas', 'CLOUDS'):
-            self.available_clouds = iaas.get_clouds(config_parser)
+            self.__available_clouds.extend(iaas.get_clouds(config_parser))
             # if there is no default cloud defined in 'iaas'
             if self.__default_cloud is None:
-                self.__default_cloud = self.available_clouds.pop(0)
+                self.__default_cloud = self.__available_clouds.pop(0)
 
         # Setting VM role
         self.role = 'agent'
@@ -234,20 +235,21 @@ class Controller(object):
             except Exception as e:
                 self.__logger.exception(
                     '[_create_nodes]: Failed to request new nodes')
-                self.__kill_nodes(ready)
+                self.delete_nodes(ready)
                 self.__partially_created_nodes = []
                 raise e
             finally:
                 self.__force_terminate_lock.release()
             poll, failed = self.__wait_for_nodes(
-                    self.__partially_created_nodes, test_agent, port)
+                self.__partially_created_nodes, test_agent, port)
             ready += poll
             poll = []
             if failed:
                 self.__logger.debug('[_create_nodes]: %d nodes '
                                     'failed to startup properly: %s'
                                     % (len(failed), str(failed)))
-                self.__kill_nodes(failed)
+                self.__partially_created_nodes = []
+                self.delete_nodes(failed)
         self.__force_terminate_lock.acquire()
         self.__created_nodes += ready
         self.__partially_created_nodes = []
@@ -276,7 +278,19 @@ class Controller(object):
                             - a node must be of type ServiceNode
                               or a class that extends ServiceNode
         """
-        self.__kill_nodes(nodes)
+        for node in nodes:
+            cloud = self.get_cloud_by_name(node.cloud_name)
+            self.__logger.debug('[delete_nodes]: killing ' + str(node.id))
+            try:
+            # node may not be in map if it failed to start
+                if node.id in self.__reservation_map:
+                    timer = self.__reservation_map.pop(node.id)
+                    if timer.remove_node(node.id) < 1:
+                        timer.stop()
+                cloud.kill_instance(node)
+            except:
+                self.__logger.exception('[delete_nodes]: '
+                                        'Failed to kill node %s', node.id)
 
     #=========================================================================#
     #                    list_vms(self, cloud=None)                           #
@@ -300,18 +314,22 @@ class Controller(object):
         """Generates the contextualization file for the default/given cloud.
 
             @param cloud (Optional) If specified, the context will be generated
-                         for it, otherwise it will be generated for the default
-                         cloud
+                         for it, otherwise it will be generated for all the
+                         available clouds
 
             @param service_name Used to know which config_files and scripts
                                 to select
         """
+        def __set_cloud_ctx(cloud):
+            contxt = self._get_context_file(service_name,
+                                            cloud.get_cloud_type())
+            cloud.set_context_template(contxt)
 
         if cloud is None:
-            cloud = self.__default_cloud
-
-        contxt = self._get_context_file(service_name, cloud.get_cloud_type())
-        cloud.set_context_template(contxt)
+            for cloud in self.__available_clouds:
+                __set_cloud_ctx(cloud)
+        else:
+            __set_cloud_ctx(cloud)
 
     #=========================================================================#
     #               update_context(self, replace, cloud)                      #
@@ -347,7 +365,20 @@ class Controller(object):
             @return The list of cloud objects
 
         """
-        return [self.__default_cloud] + self.available_clouds
+        return self.__available_clouds
+
+    #=========================================================================#
+    #               get_cloud_by_name(self)                                   #
+    #=========================================================================#
+    def get_cloud_by_name(self, cloud_name):
+        """
+            @param cloud_name
+
+            @return The cloud object which name is the same as @param name
+
+        """
+        return filter(lambda cloud: cloud.get_cloud_name() == cloud_name,
+                      self.__available_clouds)[0]
 
     #=========================================================================#
     #               config_cloud(self, cloud, config_params)                  #
@@ -363,28 +394,21 @@ class Controller(object):
         cloud.config(config_params)
 
     #=========================================================================#
+    #               config_clouds(self, config_params)                        #
+    #=========================================================================#
+    def config_clouds(self, config_params):
+        """Same as config_cloud but for all available clouds
 
-    def __kill_nodes(self, nodes, cloud=None):
-        if cloud is None:
-            cloud = self.__default_cloud
+            @param config_params A dictionary containing the configuration
+                                 parameters (are specific to the cloud)
+        """
+        for cloud in self.__available_clouds:
+            cloud.config(config_params)
 
-        for node in nodes:
-            self.__logger.debug('[_kill_nodes]: killing ' + str(node.id))
-            try:
-            # node may not be in map if it failed to start
-                if node.id in self.__reservation_map:
-                    timer = self.__reservation_map.pop(node.id)
-                    if timer.remove_node(node.id) < 1:
-                        timer.stop()
-                cloud.kill_instance(node)
-            except:
-                self.__logger.exception('[_kill_nodes]: '
-                                        'Failed to kill node %s', node.id)
+    #=========================================================================#
 
     def __wait_for_nodes(self, nodes, test_agent,
-                         port, poll_interval=10, cloud=None):
-        if cloud is None:
-            cloud = self.__default_cloud
+                         port, poll_interval=10):
 
         self.__logger.debug('[__wait_for_nodes]: going to start polling')
         done = []
@@ -395,7 +419,9 @@ class Controller(object):
                 up = True
                 try:
                     if node.ip != '' and node.private_ip != '':
-                        self.__logger.debug('[__wait_for_nodes]: test_agent(%s, %s)' % (node.ip, port))
+                        self.__logger.debug(
+                            '[__wait_for_nodes]: test_agent(%s, %s)'
+                            % (node.ip, port))
                         test_agent(node.ip, port)
                     else:
                         up = False
@@ -407,30 +433,31 @@ class Controller(object):
                     done.append(node)
             nodes = [i for i in nodes if i not in done]
             if len(nodes):
-                if poll_cycles * poll_interval > 180:
-                    # at least 3mins of sleeping + poll time
+                if poll_cycles * poll_interval > 300:
+                    # at least 5 mins of sleeping + poll time
                     return (done, nodes)
 
-            self.__logger.debug('[_wait_for_nodes]: waiting for %d nodes'
+            self.__logger.debug('[__wait_for_nodes]: waiting for %d nodes'
                                 % len(nodes))
             time.sleep(poll_interval)
             no_ip_nodes = [node for node in nodes
                            if node.ip == '' or node.private_ip == '']
             if no_ip_nodes:
-                self.__logger.debug('[_wait_for_nodes]: refreshing %d nodes'
+                self.__logger.debug('[__wait_for_nodes]: refreshing %d nodes'
                                     % len(no_ip_nodes))
-                refreshed_list = cloud.list_vms()
                 for node in no_ip_nodes:
+                    refreshed_list = self.list_vms(
+                        self.get_cloud_by_name(node.cloud_name))
                     for refreshed_node in refreshed_list:
                         if refreshed_node.id == node.id:
                             node.ip = refreshed_node.ip
                             node.private_ip = refreshed_node.private_ip
 
-        self.__logger.debug('[_wait_for_nodes]: All nodes are ready %s'
+        self.__logger.debug('[__wait_for_nodes]: All nodes are ready %s'
                             % str(done))
         return (done, [])
 
-    def _get_context_file(self, service_name, cloud):
+    def _get_context_file(self, service_name, cloud_type):
         '''
         the context file runs the scripts necessary on each node created
         it's installing all the necessary dependencies for the service
@@ -446,7 +473,7 @@ class Controller(object):
         manager_ip = self.config_parser.get('manager', 'MY_IP')
 
         # Get contextualization script for the corresponding cloud
-        cloud_script_file = open(cloud_scripts_dir + '/' + cloud, 'r')
+        cloud_script_file = open(cloud_scripts_dir + '/' + cloud_type, 'r')
         cloud_script = cloud_script_file.read()
 
         # Get agent setup file
@@ -554,10 +581,10 @@ class Controller(object):
         self.__logger.debug('OUT OF CREDIT, TERMINATING SERVICE')
 
         # kill all partially created nodes
-        self.__kill_nodes(self.__partially_created_nodes)
+        self.delete_nodes(self.__partially_created_nodes)
 
         # kill all created nodes
-        self.__kill_nodes(self.__created_nodes)
+        self.delete_nodes(self.__created_nodes)
 
         # notify front-end, attempt 10 times until successful
         for _ in range(10):

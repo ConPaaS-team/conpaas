@@ -93,6 +93,16 @@ class ServicePage extends Page {
 		$terminateButton = InputButton('terminate')
 			->setId('terminate');
 
+        $clouds = json_decode(HTTPS::get(Conf::DIRECTOR . '/available_clouds'));
+        $radios = '';
+        foreach($clouds as $cloud){
+            $radio = Radio($cloud);
+            $radio->setTitle("available_clouds");
+            $radios = $radios.$radio;
+        }
+        $cloudChoice = Tag();
+        $cloudChoice->setHTML($radios);
+
 		switch ($this->service->getState()) {
 			case Service::STATE_INIT:
 				$stopButton->setVisible(false);
@@ -111,7 +121,7 @@ class ServicePage extends Page {
 			$stopButton->setVisible(false);
 		}
 
-		return $startButton.' '.$stopButton.' '.$terminateButton;
+		return $startButton.' '.$stopButton.' '.$terminateButton.' '.$cloudChoice;
 	}
 
 	public function renderStateClass($state) {
@@ -178,11 +188,11 @@ class ServicePage extends Page {
 
 	private function renderCloud() {
 		static $cloud_providers = array(
-			'local' => 'local deployment',
-			'ec2' => 'Amazon EC2',
-			'opennebula' => 'OpenNebula',
-		);
-		return $cloud_providers[$this->service->getCloud()];
+			0 => 'local deployment',
+			1 => 'Amazon EC2',
+			2 => 'OpenNebula',
+        );
+		return $cloud_providers[$this->service->getCloudType()];
 	}
 
 	public function renderInstances() {
@@ -194,7 +204,7 @@ class ServicePage extends Page {
 		$html =
 			'<div class="brief">'.
 				$this->service->getNodesCount().' '.$instances_txt.' running '.
-				'on '.$this->renderCloud().
+				'on '.$this->renderCloud().' in '.$this->service->getCloudName().
 			'</div>'.
 			'<div id="instances">';
 

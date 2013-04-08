@@ -56,4 +56,5 @@ def get_clouds(iaas_config):
     return [get_cloud_instance(cloud_name,
                                iaas_config.get(cloud_name, 'DRIVER').lower(),
                                iaas_config)
-            for cloud_name in iaas_config.get('iaas', 'CLOUDS').split(',')]
+            for cloud_name in iaas_config.get('iaas', 'CLOUDS').split(',')
+            if iaas_config.has_section(cloud_name)]

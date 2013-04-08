@@ -63,3 +63,11 @@ class ServiceNode(object):
             return -1
         else:
             return 1
+
+    def as_libcloud_node(self):
+        class Node:
+            pass
+        n = Node()
+        n.id = self.id
+        n.ip = self.ip
+        return n

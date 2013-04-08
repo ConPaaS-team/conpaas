@@ -43,10 +43,9 @@ Created February, 2012
 
 from threading import Thread
 from conpaas.core.expose import expose
-from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse
-from conpaas.core.log import create_logger
+from conpaas.core.https.server import HttpJsonResponse
 from Cheetah.Template import Template
-
+from conpaas.core.agent import BaseAgent
 import subprocess
 from os.path import join
 

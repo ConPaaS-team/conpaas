@@ -22,6 +22,7 @@ def controller(cloud):
                       'https://localhost:5555/terminate')
     config_parser.set('manager', 'CA_URL',
                       'https://localhost:5555/ca')
+    config_parser.set('manager', 'APP_ID', '1')
     controller = Controller(config_parser)
     #we don't need timer for testing
     controller._Controller__reservation_map['manager'].stop()
@@ -51,4 +52,4 @@ def test_multiple_cloud_providers(controller):
     '''Testing if we can store multiple clouds'''
     if controller is not None:
         assert controller._Controller__default_cloud is not None
-        assert controller.available_clouds is not None
+        assert controller._Controller__available_clouds is not None

@@ -65,8 +65,10 @@ class BaseGanglia(object):
     def configure(self):
         """Create Ganglia configuration. Gmond is needed by managers and
         agents."""
-        os.mkdir(self.GANGLIA_CONFD)
-        os.mkdir(self.GANGLIA_MODULES_DIR)
+        if not os.path.isdir(self.GANGLIA_CONFD):
+            os.mkdir(self.GANGLIA_CONFD)
+        if not os.path.isdir(self.GANGLIA_MODULES_DIR):
+            os.mkdir(self.GANGLIA_MODULES_DIR)
 
         # Copy modpython.conf
         src = os.path.join(self.cps_home, 'contrib', 'ganglia_modules', 
@@ -127,7 +129,8 @@ class ManagerGanglia(BaseGanglia):
         open(self.GMETAD_CONF, 'w').write(str(tmpl))
 
         # Frontend configuration
-        os.mkdir('/var/www')
+        if not os.path.isdir('/var/www'):
+            os.mkdir('/var/www')
         run_cmd('cp -a /root/ConPaaS/contrib/ganglia_frontend/ganglia /var/www')
 
         copy(os.path.join(self.cps_home, 'contrib', 'ganglia_modules', 

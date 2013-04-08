@@ -42,14 +42,12 @@ Created May, 2012
 from threading import Thread
 
 from conpaas.core.expose import expose
-from conpaas.core.controller import Controller
 
 from conpaas.core.manager import BaseManager
 from conpaas.core.manager import ManagerException
 
 from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse
-                         
-from conpaas.core.log import create_logger
+
 from conpaas.services.xtreemfs.agent import client
 
 import subprocess
@@ -94,16 +92,13 @@ class XtreemFSManager(BaseManager):
     @expose('POST')
     def startup(self, kwargs):
         self.logger.debug("XtreemFSManager startup")
-        if len(kwargs) != 0:
-            return HttpErrorResponse(ManagerException(
-                ManagerException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
 
         if self.state != self.S_INIT and self.state != self.S_STOPPED:
             return HttpErrorResponse(ManagerException(
                 ManagerException.E_STATE_ERROR).message)
 
         self.state = self.S_PROLOGUE
-        Thread(target=self._do_startup, args=[]).start()
+        Thread(target=self._do_startup, kwargs=kwargs).start()
         return HttpJsonResponse({'state': self.S_PROLOGUE})
 
     
@@ -143,9 +138,10 @@ class XtreemFSManager(BaseManager):
                 self.state = self.S_ERROR
                 raise
 
-    def _do_startup(self):
+    def _do_startup(self, cloud):
         ''' Starts up the service. The firstnodes will contain all services
         '''
+        startCloud = self._init_cloud(cloud)
         try:
             # NOTE: The following service structure is enforce:
             #       - the first node contains a DIR, MRC and OSD,
@@ -160,8 +156,8 @@ class XtreemFSManager(BaseManager):
             #       XtreemFS as node failure.
 
             # create 1 node
-            node_instances = self.controller.create_nodes(1, \
-                                           client.check_agent_process, 5555)
+            node_instances = self.controller.create_nodes(1,
+                client.check_agent_process, 5555, startCloud)
           
             # use this node for DIR, MRC and OSD
             self.nodes += node_instances
@@ -245,7 +241,7 @@ class XtreemFSManager(BaseManager):
             return invalid_arg('Expected a positive integer value for "nr osd"')
 
         self.state = self.S_ADAPTING
-        Thread(target=self._do_add_nodes, args=[nr_dir, nr_mrc, nr_osd]).start()
+        Thread(target=self._do_add_nodes, args=[nr_dir, nr_mrc, nr_osd, kwargs['cloud']]).start()
         return HttpJsonResponse()
     
     # TODO: currently not used
@@ -254,13 +250,14 @@ class XtreemFSManager(BaseManager):
             client.stopOSD(node.ip, 5555)
             self.osdNodes.remove(node)
 
-    def _do_add_nodes(self, nr_dir, nr_mrc, nr_osd):
+    def _do_add_nodes(self, nr_dir, nr_mrc, nr_osd, cloud):
+        startCloud = self._init_cloud(cloud)
         totalNodes = nr_dir + nr_mrc + nr_osd
 
         # try to create totalNodes new nodes
         try:
             node_instances = self.controller.create_nodes(totalNodes, 
-                client.check_agent_process, 5555)      
+                client.check_agent_process, 5555, startCloud)      
         except:
             self.logger.exception('_do_add_nodes: Failed to request a new node')
             self.state = self.S_STOPPED

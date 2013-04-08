@@ -37,37 +37,42 @@
  */
 
 function Tag () {
-	return new Tag();
+    return new Tag();
 }
 
 class Tag {
 
-	protected $color = 'blue';
-	private $html = '';
+    protected $color = 'blue';
+    protected $visible = '';
+    private $html = '';
 
-	/**
-	 * posible colors are "blue", "purple" & "orange"
-	 * If you want to add more colors, edit main CSS file
-	 * @param string $color
-	 */
-	public function setColor($color) {
-		$this->color = $color;
-		return $this;
-	}
+    /**
+     * posible colors are "blue", "purple" & "orange"
+     * If you want to add more colors, edit main CSS file
+     * @param string $color
+     */
+    public function setColor($color) {
+        $this->color = $color;
+        return $this;
+    }
 
-	public function setHTML($html) {
-		$this->html = $html;
-		return $this;
-	}
+    public function setVisible($bool) {
+        $this->visible = $visible ? '' : ' invisible';
+    }
 
-	protected function renderContent() {
-		return $this->html;
-	}
+    public function setHTML($html) {
+        $this->html = $html;
+        return $this;
+    }
 
-	public function __toString() {
-		return
-			'<div class="tag '.$this->color.'">'
-				.$this->renderContent()
-			.'</div>';
-	}
+    protected function renderContent() {
+        return $this->html;
+    }
+
+    public function __toString() {
+        return
+            '<div class="tag '.$this->color.$this->visible.'">'
+                .$this->renderContent()
+            .'</div>';
+    }
 }

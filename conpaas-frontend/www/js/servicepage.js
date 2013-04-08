@@ -125,7 +125,9 @@ conpaas.ui = (function (this_module) {
                 onSuccess, onError);
     },
     start: function (onSuccess, onError) {
-        this.server.req('ajax/requestStartup.php', {sid: this.service.sid},
+        this.server.req('ajax/requestStartup.php',
+                {sid: this.service.sid,
+                 cloud: $('input[name=available_clouds]:checked').val()},
                 'post', onSuccess, onError);
     },
     stop: function (onSuccess, onError) {
@@ -134,6 +136,13 @@ conpaas.ui = (function (this_module) {
     },
     addNodes: function (params, onSuccess, onError) {
         params.sid = this.service.sid;
+        radio = $('input[name=available_clouds]:checked');
+        if (!radio.size()==1){
+           alert("For adding nodes a cloud must be selected");
+           page.freezeInput(false);
+           return;
+        }
+        params.cloud = radio.val();
         this.server.req('ajax/addServiceNodes.php', params, 'post',
                 onSuccess, onError);
     },

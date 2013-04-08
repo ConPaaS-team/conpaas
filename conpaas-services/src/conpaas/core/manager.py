@@ -146,6 +146,11 @@ class BaseManager(object):
         except IOError:
             return HttpErrorResponse('No startup script')
 
+    def _init_cloud(self, cloud):
+        if cloud == 'default':
+            cloud = 'iaas'
+        return self.controller.get_cloud_by_name(cloud)
+
 
 class ManagerException(Exception):
 

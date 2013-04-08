@@ -50,8 +50,19 @@ class Client(BaseClient):
                 self.usage(argv[0])
                 sys.exit(0)
 
-            # call the method
-            res = self.callmanager(sid, command, True, { 'count': count })
+            # call the methods
+            try:
+                if len(argv)==4:
+                    cloud = 'default'
+                else:
+                    cloud = argv[4]
+                if cloud not in self.available_clouds():
+                    raise IndexError
+            except IndexError:
+                print 'Cloud '+cloud+' not in '+ self.available_clouds()
+                sys.exit(0)
+            res = self.callmanager(sid, command, True, {'count': count,
+                'cloud': cloud})
             if 'error' in res:
                 print res['error']
             else:

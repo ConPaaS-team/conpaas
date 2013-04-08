@@ -149,12 +149,14 @@ class BaseClient(object):
 
         sys.stdout.flush()
 
-    def create(self, service_type, application_id=None, initial_state='INIT'):
+    def create(self, service_type, cloud = None, application_id=None, initial_state='INIT'):
         data = {}
         if application_id is not None:
             data['appid'] = application_id
-
-        res = self.callapi("start/" + service_type, True, data)
+        if cloud is None:
+            res = self.callapi("start/" + service_type, True, data)
+        else:
+            res = self.callapi("start/" + service_type + '/' + cloud, True, data)
         sid = res['sid']
 
         print "Creating new manager on " + res['manager'] + "... ",
@@ -165,8 +167,9 @@ class BaseClient(object):
         print "done."
         sys.stdout.flush()
 
-    def start(self, service_id):
-        res = self.callmanager(service_id, "startup", True, {})
+    def start(self, service_id, cloud = "default"):
+        data = {'cloud': cloud}
+        res = self.callmanager(service_id, "startup", True, data)
         if 'error' in res:
             print res['error']
         else:
@@ -297,11 +300,18 @@ class BaseClient(object):
             print "Authentication failure\n"
 
     def available_services(self):
-        return self.callapi('available_services', True, {})
+        return self.callapi('available_services', False, {})
 
-    def available(self):
-        for service in self.available_services():
-            print service
+    def available_clouds(self):
+        return self.callapi('available_clouds', False, {})
+
+    def available(self, types='services'):
+        if types == 'clouds':
+            for cloud in self.available_clouds():
+                print cloud
+        else:
+            for service in self.available_services():
+                print service
 
     def upload_startup_script(self, service_id, filename):
         contents = open(filename).read()
@@ -365,14 +375,17 @@ class BaseClient(object):
         else:
             print "failed."
 
-    def listapp(self):
+    def listapp(self, doPrint=True):
         """Call the 'listapp' method on the director and print the results
         nicely"""
         apps = self.callapi("listapp", True, {})
         if apps:
-            print self.prettytable(( 'aid', 'name' ), apps)
+            if doPrint:
+                print self.prettytable(( 'aid', 'name' ), apps)
+            return [app['aid'] for app in apps]
         else:
-            print "No existing applications"
+            if doPrint:
+                print "No existing applications"
 
     def list(self, appid):
         """Call the 'list' method on the director and print the results
@@ -395,12 +408,12 @@ class BaseClient(object):
         print
         print "    credentials                           # set your ConPaaS credentials"
         print "    listapp                               # list all applications"
-        print "    available                             # list supported services"
+        print "    available         'clouds'            # list supported services or available clouds if parameter specified"
         print "    list              [appid]             # list running services under an application"
         print "    deleteapp         appid               # delete an application"
         print "    createapp         appname             # create a new application"
         print "    create            servicetype [appid] # create a new service [inside a specific application]"
-        print "    start             serviceid           # startup the specified service"
+        print "    start             serviceid [cloud]   # startup the specified service on default or one of the available clouds"
         print "    info              serviceid           # get service details"
         print "    logs              serviceid           # get service logs"
         print "    stop              serviceid           # stop the specified service"
@@ -434,9 +447,21 @@ class BaseClient(object):
 
                     try:
                         appid = argv[3]
-                        # TODO Check if the application is valid
+                        if appid not in self.listapp(False):
+                            raise IndexError
                     except IndexError:
                         appid = None
+
+                    try:
+                        if appid is None:
+                            cloud = argv[3]
+                        else:
+                            cloud = argv[4]
+                        if cloud not in self.available_clouds():
+                            raise IndexError
+                    except IndexError:
+                        cloud = None
+
 
                     # taskfarm-specific service creation
                     if service_type == 'taskfarm':
@@ -444,7 +469,7 @@ class BaseClient(object):
                         return Client().create(service_type, appid)
 
                     # normal service creation
-                    return getattr(self, command)(service_type, appid)
+                    return getattr(self, command)(service_type, cloud, appid)
                 except IndexError:
                     self.usage(argv[0])
                     sys.exit(0)
@@ -461,6 +486,12 @@ class BaseClient(object):
                 else:
                     appid = argv[2]
                 return getattr(self, command)(appid)
+            if command == "available":
+                if len(sys.argv) == 2:
+                    cloud = ''
+                else:
+                    cloud = argv[2]
+                return getattr(self, command)(cloud)
 
             # We need no params, just call the method and leave
             return getattr(self, command)()
@@ -501,6 +532,12 @@ class BaseClient(object):
 
         if command in ( 'start', 'stop', 'terminate', 'info', 'logs', 'usage' ):
             # Call the method 
+            if command == "start":
+                if len(sys.argv) == 3:
+                    cloud = 'default'
+                else:
+                    cloud = argv[3]
+                return getattr(self, command)(sid, cloud)
             return getattr(client, command)(sid)
 
         client.main(sys.argv)

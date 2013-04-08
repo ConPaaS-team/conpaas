@@ -2,7 +2,7 @@
 Copyright (c) 2010-2012, Contrail consortium.
 All rights reserved.
 
-Redistribution and use in source and binary forms, 
+Redistribution and use in source and binary forms,
 with or without modification, are permitted provided
 that the following conditions are met:
 
@@ -10,13 +10,13 @@ that the following conditions are met:
     above copyright notice, this list of conditions
     and the following disclaimer.
  2. Redistributions in binary form must reproduce
-    the above copyright notice, this list of 
+    the above copyright notice, this list of
     conditions and the following disclaimer in the
     documentation and/or other materials provided
     with the distribution.
  3. Neither the name of the Contrail consortium nor the
     names of its contributors may be used to endorse
-    or promote products derived from this software 
+    or promote products derived from this software
     without specific prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
@@ -25,9 +25,9 @@ INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
 MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
 DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
 CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
-BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
 INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
 WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
@@ -41,7 +41,7 @@ Created on November, 2011
 
    This module contains internals of the ConPaaS MySQL Server. ConPaaS MySQL Server consists of several
    nodes with different roles
-     
+
      * Manager node
      * Agent node(s)
         * Master
@@ -49,33 +49,30 @@ Created on November, 2011
 
    :platform: Linux, Debian
    :synopsis: Internals of ConPaaS MySQL Servers.
-   :moduleauthor: Ales Cernivec <ales.cernivec@xlab.si> 
+   :moduleauthor: Ales Cernivec <ales.cernivec@xlab.si>
 
 '''
 
 from threading import Thread
-import os, time, tempfile
+import os, tempfile
 import string
 from random import choice
 
 from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse, \
-                         HttpFileDownloadResponse, FileUploadField
-from conpaas.core.log import create_logger
+                                      FileUploadField
 from conpaas.core.expose import expose
-from conpaas.core.controller import Controller
-from conpaas.core.manager import BaseManager
+from conpaas.core.manager import BaseManager, ManagerException
 
 from conpaas.services.mysql.agent import client
-from conpaas.services.mysql.manager.config import Configuration, \
-                              E_ARGS_UNEXPECTED, ServiceNode, E_UNKNOWN, \
-                              E_ARGS_MISSING, E_STATE_ERROR, E_ARGS_INVALID
+from conpaas.services.mysql.manager.config import Configuration, E_ARGS_INVALID, \
+                              E_ARGS_MISSING, E_STATE_ERROR, E_ARGS_UNEXPECTED
 
 class MySQLManager(BaseManager):
     """
     Initializes :py:attr:`config` using Config and sets :py:attr:`state` to :py:attr:`S_INIT`
 
     :param conf: Configuration file.
-    :type conf: str    
+    :type conf: str
     :type conf: boolean
 
     """
@@ -89,17 +86,16 @@ class MySQLManager(BaseManager):
     S_STOPPED = 'STOPPED'
     S_ERROR = 'ERROR'
 
-    def __init__(self, conf, **kwargs):        
+    def __init__(self, conf, **kwargs):
         BaseManager.__init__(self, conf)
 
         self.logger.debug("Entering MySQLServerManager initialization")
         self.controller.generate_context('mysql')
-        clouds = self.controller.get_clouds()
-        self.controller.config_cloud(clouds[0], { "mem" : "512", "cpu" : "1" })
+        self.controller.config_clouds({ "mem" : "512", "cpu" : "1" })
         self.state = self.S_INIT
-        self.config = Configuration(conf)         
+        self.config = Configuration(conf)
         self.logger.debug("Leaving MySQLServer initialization")
- 
+
         # The unique id that is used to start the master/slave
         self.id = 0
 
@@ -107,22 +103,19 @@ class MySQLManager(BaseManager):
     def startup(self, kwargs):
         ''' Starts the service - it will start and configure a MySQL master '''
         self.logger.debug("Entering MySQLServerManager startup")
-        if len(kwargs) != 0:
-            return HttpErrorResponse(ManagerException \
-                                      (E_ARGS_UNEXPECTED, \
-                                       kwargs.keys()).message)
 
         if self.state != self.S_INIT and self.state != self.S_STOPPED:
             return HttpErrorResponse(ManagerException(E_STATE_ERROR).message)
 
         self.state = self.S_PROLOGUE
-        Thread(target=self._do_startup, args=[]).start()
+        Thread(target=self._do_startup, kwargs=kwargs).start()
         return HttpJsonResponse({'state': self.S_PROLOGUE})
 
-    def _do_startup(self):
-        ''' Starts up the service. The first node will be the MYSQL master. 
+    def _do_startup(self, cloud):
+        ''' Starts up the service. The first node will be the MYSQL master.
             The next nodes will be slaves to this master. '''
 
+        startCloud = self._init_cloud(cloud)
         #TODO: Get any existing configuration (if the service was stopped and restarted)
         self.logger.debug('do_startup: Going to request one new node')
 
@@ -130,14 +123,16 @@ class MySQLManager(BaseManager):
         # TODO: send a username?
         self.root_pass = ''.join([choice(string.letters + string.digits) for i in range(10)])
         self.controller.update_context(dict(mysql_username='mysqldb', \
-			                    mysql_password=self.root_pass))
+                                mysql_password=self.root_pass),cloud=startCloud)
         try:
             node_instances = self.controller.create_nodes(1,
-                                                    client.check_agent_process, self.config.AGENT_PORT)
+                                                    client.check_agent_process,
+                                                    self.config.AGENT_PORT,
+                                                    startCloud)
             self._start_master(node_instances)
             self.config.addMySQLServiceNodes(nodes=node_instances, isMaster=True)
         except:
-            self.logger.exception('do_startup: Failed to request a new node')
+            self.logger.exception('do_startup: Failed to request a new node on cloud %s' % cloud)
             self.state = self.S_STOPPED
             return
         self.state = self.S_RUNNING
@@ -155,11 +150,11 @@ class MySQLManager(BaseManager):
     def _start_slave(self, nodes, master):
         slaves = {}
         for serviceNode in nodes:
-            slaves[str(self._get_server_id())] = {'ip':serviceNode.ip, 
-                                                  'port':self.config.AGENT_PORT} 
+            slaves[str(self._get_server_id())] = {'ip':serviceNode.ip,
+                                                  'port':self.config.AGENT_PORT}
         try:
             self.logger.debug('create_slave for master.ip  = %s' % master)
-            client.create_slave(master.ip, 
+            client.create_slave(master.ip,
                                 self.config.AGENT_PORT, slaves)
         except client.AgentException:
             self.logger.exception('Failed to start MySQL Slave at node %s' % str(serviceNode))
@@ -170,9 +165,9 @@ class MySQLManager(BaseManager):
     def list_nodes(self, kwargs):
         """
         HTTP GET method.
-        Uses :py:meth:`IaaSClient.listVMs()` to get list of 
-        all Service nodes. For each service node it gets it 
-        checks if it is in servers list. If some of them are missing 
+        Uses :py:meth:`IaaSClient.listVMs()` to get list of
+        all Service nodes. For each service node it gets it
+        checks if it is in servers list. If some of them are missing
         they are removed from the list. Returns list of all service nodes.
 
         :returns: HttpJsonResponse - JSON response with the list of services
@@ -198,7 +193,7 @@ class MySQLManager(BaseManager):
         :raises: ManagerException
 
         """
-        if 'serviceNodeId' not in kwargs: 
+        if 'serviceNodeId' not in kwargs:
             return HttpErrorResponse(ManagerException(E_ARGS_MISSING, 'serviceNodeId').message)
         serviceNodeId = kwargs.pop('serviceNodeId')
         if len(kwargs) != 0:
@@ -227,7 +222,7 @@ class MySQLManager(BaseManager):
         :returns: HttpJsonResponse - JSON response with details about the node.
         :raises: ManagerException
 
-        """ 
+        """
 
         if self.state != self.S_RUNNING:
             return HttpErrorResponse('ERROR: Wrong state to add_nodes')
@@ -237,19 +232,21 @@ class MySQLManager(BaseManager):
             return HttpErrorResponse('ERROR: Expected an integer value for "count"')
         count = int(kwargs.pop('slaves'))
         self.state = self.S_ADAPTING
-        Thread(target=self._do_add_nodes, args=[count]).start()
+        Thread(target=self._do_add_nodes, args=[count, kwargs['cloud']]).start()
         return HttpJsonResponse()
 
     # TODO: also specify the master for which to add slaves
-    def _do_add_nodes(self, count):
+    def _do_add_nodes(self, count, cloud):
         # Get the master
         masters = self.config.getMySQLmasters()
+        startCloud = self._init_cloud(cloud)
         # Configure the nodes as slaves
         #TODO: modify this when multiple masters
         try:
-            node_instances = self.controller.create_nodes(count, \
-                                           client.check_agent_process, self.config.AGENT_PORT)
-            for master in masters: 
+            node_instances = self.controller.create_nodes(count,
+                                           client.check_agent_process,
+                                           self.config.AGENT_PORT, startCloud)
+            for master in masters:
                 self._start_slave(node_instances, master)
             self.config.addMySQLServiceNodes(nodes=node_instances, isSlave=True)
         except:
@@ -267,7 +264,7 @@ class MySQLManager(BaseManager):
         ''' HTTP GET method. Placeholder for obtaining performance metrics.
 
         :param kwargs: Additional parameters.
-        :type kwargs: dict 
+        :type kwargs: dict
         :returns:  HttpJsonResponse -- returns metrics
 
         '''
@@ -298,9 +295,9 @@ class MySQLManager(BaseManager):
         return HttpJsonResponse()
 
     def _do_remove_nodes(self, count):
-	nodes = self.config.getMySQLslaves()[:count]
+        nodes = self.config.getMySQLslaves()[:count]
         self.controller.delete_nodes(nodes)
-	self.config.remove_nodes(nodes)
+        self.config.remove_nodes(nodes)
         self.state = self.S_RUNNING
         return HttpJsonResponse()
 
@@ -313,15 +310,15 @@ class MySQLManager(BaseManager):
     @expose('POST')
     def shutdown(self, kwargs):
         """
-        HTTP POST method. Shuts down the manager service. 
+        HTTP POST method. Shuts down the manager service.
 
         :returns: HttpJsonResponse - JSON response with details about the status of a manager node: . ManagerException if something went wrong.
         :raises: ManagerException
 
-        """ 
+        """
         if len(kwargs) != 0:
             return HttpErrorResponse(ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
-    
+
         if self.state != self.S_RUNNING:
             return HttpErrorResponse(ManagerException(E_STATE_ERROR).message)
 
@@ -355,7 +352,7 @@ class MySQLManager(BaseManager):
 
         #TODO: modify this when multiple masters
         try:
-            for master in masters: 
+            for master in masters:
                 client.set_password(master.ip, self.config.AGENT_PORT, kwargs['user'], kwargs['password'])
         except:
             self.logger.exception('set_password: Could not set password')
@@ -390,7 +387,7 @@ class MySQLManager(BaseManager):
         # TODO: modify this when multiple masters
         masters = self.config.getMySQLmasters()
         try:
-            for master in masters: 
+            for master in masters:
                 client.load_dump(master.ip, self.config.AGENT_PORT, filename)
         except:
             self.logger.exception('load_dump: could not upload mysqldump_file ')

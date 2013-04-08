@@ -304,7 +304,10 @@ class Service {
  			if (isset($params[$role])) {
  				$nodes[$role] = intval($params[$role]);
  			}
- 		}
+        }
+        if ($command == 'add_nodes') {
+            $nodes['cloud'] = $params['cloud'];
+        }
  		return $this->managerRequest('post', $command, $nodes);
  	}
 
@@ -320,8 +323,8 @@ class Service {
  		return $this->managerRequest('post', 'shutdown', array());
  	}
 
- 	public function requestStartup() {
- 		return $this->managerRequest('post', 'startup', array());
+ 	public function requestStartup($params) {
+ 		return $this->managerRequest('post', 'startup', $params);
  	}
 
  	/**
@@ -391,8 +394,12 @@ class Service {
 		return $this->uid;
 	}
 
-	public function getCloud() {
-	  return $this->cloud;
+    public function getCloudType() {
+        return (int) substr($this->cloud,0,1);
+    }
+
+	public function getCloudName() {
+	  return substr($this->cloud,1);
 	}
 
 	public function getManagerPort() {

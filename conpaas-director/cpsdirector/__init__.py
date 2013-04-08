@@ -24,13 +24,16 @@ from conpaas.core import https
 from conpaas.core.services import manager_services
 
 from cpsdirector import common
-from cpsdirector import cloud
+from cpsdirector import cloud as manager_controller
 from cpsdirector import x509cert
+
+import traceback
 
 # Manually add task farming to the list of valid services
 valid_services = manager_services.keys() + ['taskfarm', ]
 
 app = Flask(__name__)
+
 app.config['SQLALCHEMY_DATABASE_URI'] = common.config_parser.get(
     'director', 'DATABASE_URI')
 db = SQLAlchemy(app)
@@ -86,9 +89,10 @@ def login_required(fn):
 
         # Getting user data from DB
         g.user = get_user(username, password)
+
         if g.user:
             # user authenticated
-            return fn(*args, **kwargs)       
+            return fn(*args, **kwargs)
 
         # authentication failed
         return build_response(simplejson.dumps(False))
@@ -115,11 +119,11 @@ def get_service(user_id, service_id):
     service = Service.query.filter_by(sid=service_id).first()
     if not service:
         log('Service %s does not exist' % service_id)
-        return 
+        return
 
     if service.user_id != user_id:
         log('Service %s is not owned by user %s' % (service_id, user_id))
-        return 
+        return
 
     return service
 
@@ -180,7 +184,7 @@ class cert_required(object):
 @app.route("/new_user", methods=['POST'])
 def new_user():
     values = {}
-    required_fields = ( 'username', 'fname', 'lname', 'email', 
+    required_fields = ( 'username', 'fname', 'lname', 'email',
                         'affiliation', 'password', 'credit' )
 
     log('New user "%s <%s>" creation attempt' % (
@@ -193,23 +197,23 @@ def new_user():
         if not values[field]:
             log('Missing required field: %s' % field)
 
-            return build_response(jsonify({ 
+            return build_response(jsonify({
                 'error': True, 'msg': '%s is a required field' % field }))
 
     # check if the provided username already exists
     if User.query.filter_by(username=values['username']).first():
         log('User %s already exists' % values['username'])
 
-        return build_response(jsonify({ 
-            'error': True, 
+        return build_response(jsonify({
+            'error': True,
             'msg': 'Username "%s" already taken' % values['username'] }))
 
     # check if the provided email already exists
     if User.query.filter_by(email=values['email']).first():
         log('Duplicate email: %s' % values['email'])
 
-        return build_response(jsonify({ 
-            'error': True, 
+        return build_response(jsonify({
+            'error': True,
             'msg': 'E-mail "%s" already registered' % values['email'] }))
 
     try:
@@ -261,7 +265,7 @@ def get_user_certs():
     return helpers.send_file(zipdata, mimetype="application/zip",
         as_attachment=True, attachment_filename='certs.zip')
 
-@app.route("/available_services", methods=['GET','POST'])
+@app.route("/available_services", methods=['GET'])
 def available_services():
     """GET /available_services"""
     return simplejson.dumps(valid_services)
@@ -295,9 +299,20 @@ def createapp():
     log('Application %s created properly' % (a.aid))
     return build_response(jsonify(a.to_dict()))
 
+@app.route("/available_clouds", methods=['GET'])
+def available_clouds():
+    """GET /available_clouds"""
+    clouds = ['default']
+    if common.config_parser.has_option('iaas','CLOUDS'):
+        clouds.extend([cloud_name for cloud_name
+            in common.config_parser.get('iaas', 'CLOUDS').split(',')
+            if common.config_parser.has_section(cloud_name)])
+    return simplejson.dumps(clouds)
+
 @app.route("/start/<servicetype>", methods=['POST'])
+@app.route("/start/<servicetype>/<cloudname>", methods=['POST'])
 @cert_required(role='user')
-def start(servicetype):
+def start(servicetype, cloudname="default"):
     """eg: POST /start/php
 
     POSTed values might contain 'appid' to specify that the service to be
@@ -341,15 +356,18 @@ def start(servicetype):
     db.session.flush()
 
     try:
-        s.manager, s.vmid, s.cloud = cloud.start(servicetype, s.sid,
-                                                 g.user.uid, appid, vpn)
+        s.manager, s.vmid, s.cloud =\
+            manager_controller.start(servicetype, s.sid, g.user.uid,
+                                     cloudname, appid, vpn)
     except Exception, err:
         try:
             db.session.delete(s)
             db.session.commit()
         except InvalidRequestError:
             db.session.rollback()
-
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        lines = traceback.format_exception(exc_type, exc_value, exc_traceback)
+        log(''.join('!! ' + line for line in lines))
         error_msg = 'Error upon service creation: %s %s' % (type(err), err)
         log(error_msg)
         return build_response(jsonify({ 'error': True, 'msg': error_msg }))
@@ -373,20 +391,20 @@ def rename(serviceid):
         log('"name" is a required argument')
         return build_response(simplejson.dumps(False))
 
-    service.name = newname    
+    service.name = newname
     db.session.commit()
     return simplejson.dumps(True)
 
-def __stop(serviceid):
-    service = Service.query.filter_by(sid=serviceid).first()
+def __stop(service):
 
-    if not service:
-        return False
+    controller = manager_controller.ManagerController(service.type,
+            service.sid, g.user.uid, service.cloud, service.application_id,
+            service.subnet)
 
-    cloud.stop(service.vmid)
+    controller.stop(service.vmid)
     db.session.delete(service)
     db.session.commit()
-    log('Service %s stopped properly' % serviceid)
+    log('Service %s stopped properly' % service.sid)
     return True
 
 @app.route("/callback/terminateService.php", methods=['POST'])
@@ -394,7 +412,10 @@ def __stop(serviceid):
 def terminate():
     """Terminate the service whose id matches the one provided in the manager
     certificate."""
-    if __stop(g.service.sid):
+    log('User %s attempting to terminate service %s' % (g.user.uid,
+                                                        g.service.sid))
+
+    if __stop(g.service):
         return jsonify({ 'error': False })
 
     return jsonify({ 'error': True })
@@ -442,7 +463,7 @@ def stop(serviceid):
         return build_response(simplejson.dumps(False))
 
     # If a service with id 'serviceid' exists and user is the owner
-    __stop(serviceid)
+    __stop(service)
     return build_response(simplejson.dumps(True))
 
 @app.route("/listapp", methods=['POST', 'GET'])
@@ -487,7 +508,7 @@ def download():
 
     Returns ConPaaS tarball.
     """
-    return helpers.send_from_directory(common.config_parser.get('conpaas', 'CONF_DIR'), 
+    return helpers.send_from_directory(common.config_parser.get('conpaas', 'CONF_DIR'),
         "ConPaaS.tar.gz")
 
 @app.route("/ca/get_cert.php", methods=['POST'])
@@ -496,7 +517,7 @@ def get_manager_cert():
     log('Certificate request from manager %s (user %s)' % (
         g.cert['serviceLocator'], g.cert['UID']))
 
-    csr = crypto.load_certificate_request(crypto.FILETYPE_PEM, 
+    csr = crypto.load_certificate_request(crypto.FILETYPE_PEM,
         request.files['csr'].read())
     return x509cert.create_x509_cert(
         common.config_parser.get('conpaas', 'CERT_DIR'), csr)
@@ -531,7 +552,7 @@ def credit():
     return jsonify({ 'error': True })
 
 class User(db.Model):
-    uid = db.Column(db.Integer, primary_key=True, 
+    uid = db.Column(db.Integer, primary_key=True,
         autoincrement=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     fname = db.Column(db.String(256))
@@ -552,10 +573,10 @@ class User(db.Model):
 
     def to_dict(self):
         return  {
-            'uid': self.uid, 'username': self.username, 
+            'uid': self.uid, 'username': self.username,
             'fname': self.fname, 'lname': self.lname,
             'email': self.email, 'affiliation': self.affiliation,
-            'password': self.password, 'credit': self.credit, 
+            'password': self.password, 'credit': self.credit,
             'created': self.created.isoformat(),
         }
 
@@ -603,7 +624,7 @@ class Application(db.Model):
                 return candidate_network
 
 class Service(db.Model):
-    sid = db.Column(db.Integer, primary_key=True, 
+    sid = db.Column(db.Integer, primary_key=True,
         autoincrement=True)
     name = db.Column(db.String(256))
     type = db.Column(db.String(32))
@@ -615,12 +636,8 @@ class Service(db.Model):
     subnet = db.Column(db.String(18))
 
     user_id = db.Column(db.Integer, db.ForeignKey('user.uid'))
-    user = db.relationship('User', backref=db.backref('services', 
+    user = db.relationship('User', backref=db.backref('services',
         lazy="dynamic"))
-
-    application_id = db.Column(db.Integer, db.ForeignKey('application.aid'))
-    application = db.relationship('Application', backref=db.backref('services',
-                                  lazy="dynamic"))
 
     application_id = db.Column(db.Integer, db.ForeignKey('application.aid'))
     application = db.relationship('Application', backref=db.backref('services',

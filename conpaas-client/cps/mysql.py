@@ -42,7 +42,7 @@ class Client(BaseClient):
     def usage(self, cmdname):
         BaseClient.usage(self, cmdname)
         print "    set_password      serviceid password"
-        print "    add_nodes         serviceid count"
+        print "    add_nodes         serviceid count [cloud]"
         print "    remove_nodes      serviceid count"
 
     def main(self, argv):
@@ -79,7 +79,21 @@ class Client(BaseClient):
                 sys.exit(0)
 
             # call the method
-            res = self.callmanager(sid, command, True, { 'slaves': count })
+            if command == 'add_nodes':
+                try:
+                    if len(sys.argv) == 4:
+                        cloud = 'default'
+                    else:
+                        cloud = argv[4]
+                    if cloud not in self.available_clouds():
+                        raise IndexError
+                except IndexError:
+                    print 'Cloud name must be one of ' + self.available_clouds()
+                    sys.exit(0)
+                res = self.callmanager(sid, command, True, { 'slaves': count,
+                    'cloud': cloud})
+            else:
+                res = self.callmanager(sid, command, True, { 'slaves': count })
             if 'error' in res:
                 print res['error']
             else:

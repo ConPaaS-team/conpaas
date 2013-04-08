@@ -4,14 +4,26 @@ from netaddr import IPNetwork
 
 from conpaas.core.controller import Controller
 from conpaas.core.misc import file_get_contents
-
+from conpaas.core.log import create_logger
 from cpsdirector import x509cert
 from cpsdirector import common
+import cpsdirector
 
 class ManagerController(Controller):
 
-    def __init__(self, config_parser, **kwargs):
-        Controller.__init__(self, config_parser, **kwargs)
+    def __init__(self, service_name, service_id, user_id, cloud_name, app_id, vpn):
+        self.config_parser = self.__get_config(str(service_id), str(user_id),
+                                               str(app_id), service_name, vpn)
+
+        Controller.__init__(self, self.config_parser)
+        self.logger = create_logger(__name__)
+        self.service_name = service_name
+        self.service_id = service_id
+        self.user_id = user_id
+        if cloud_name[0].isdigit():
+            self.cloud_name = cloud_name[1:]
+        else:
+            self.cloud_name = cloud_name
         self.role = "manager"
 
     def _get_certificate(self, email, cn, org):
@@ -48,9 +60,21 @@ class ManagerController(Controller):
                                                        director)
 
         # Get cloud config values from director.cfg
-        tmpl_values['cloud_cfg'] = "[iaas]\n"
-        for key, value in self.config_parser.items("iaas"):
-            tmpl_values['cloud_cfg'] += key.upper() + " = " + value + "\n"
+        cloud_sections = ['iaas']
+        if self.config_parser.has_option('iaas', 'CLOUDS'):
+            cloud_sections.extend(
+                [cloud_name for cloud_name
+                 in self.config_parser.get('iaas', 'CLOUDS').split(',')
+                 if self.config_parser.has_section(cloud_name)])
+
+        def __extract_cloud_cfg(section_name):
+            tmpl_values['cloud_cfg'] += "["+section_name+"]\n"
+            for key, value in self.config_parser.items(section_name):
+                tmpl_values['cloud_cfg'] += key.upper() + " = " + value + "\n"
+
+        tmpl_values['cloud_cfg'] = ''
+        for section_name in cloud_sections:
+            __extract_cloud_cfg(section_name)
 
         # Get manager config file
         mngr_cfg = file_get_contents(
@@ -139,8 +163,6 @@ EOF
 %(mngr_start_script)s""" % tmpl_values
 
     def deduct_credit(self, value):
-        import cpsdirector
-
         uid = self.config_parser.get("manager", "USER_ID")
 
         user = cpsdirector.User.query.filter_by(uid=uid).one()
@@ -153,71 +175,81 @@ EOF
         cpsdirector.db.session.rollback()
         return False
 
+    def stop(self, vmid):
+        cpsdirector.log('Trying to stop service %s on cloud %s' % (vmid, self.cloud_name))
+        cloud = self.get_cloud_by_name(self.cloud_name)
+        if not cloud.connected:
+            cloud._connect()
+        vmids = filter(lambda node: node.id == vmid, cloud.list_vms())
+        if len(vmids) == 1:
+            cloud.kill_instance(vmids[0])
+        self._stop_reservation_timer()
 
-def __get_config(service_id, user_id, app_id, service_type="", vpn=None):
-    """Add manager configuration"""
-    config_parser = common.config_parser
+    def get_cloud_by_name(self,cloud_name):
+        return filter(lambda cloud: cloud.get_cloud_name() == cloud_name,
+                      self.get_clouds())[0]
 
-    if not config_parser.has_section("manager"):
-        config_parser.add_section("manager")
+    def __get_config(self, service_id, user_id, app_id, service_type="", vpn=None):
+        """Add manager configuration"""
+        config_parser = cpsdirector.common.config_parser
 
-    config_parser.set("manager", "SERVICE_ID", service_id)
-    config_parser.set("manager", "USER_ID", user_id)
-    config_parser.set("manager", "APP_ID", app_id)
-    config_parser.set("manager", "CREDIT_URL",
-                      config_parser.get('director',
-                                        'DIRECTOR_URL') + "/credit")
-    config_parser.set("manager", "TERMINATE_URL",
-                      config_parser.get('director',
-                                        'DIRECTOR_URL') + "/terminate")
-    config_parser.set("manager", "CA_URL",
-                      config_parser.get('director',
-                                        'DIRECTOR_URL') + "/ca")
+        if not config_parser.has_section("manager"):
+            config_parser.add_section("manager")
 
-    config_parser.set("manager", "TYPE", service_type)
+        config_parser.set("manager", "SERVICE_ID", service_id)
+        config_parser.set("manager", "USER_ID", user_id)
+        config_parser.set("manager", "APP_ID", app_id)
+        config_parser.set("manager", "CREDIT_URL",
+                        config_parser.get('director',
+                                            'DIRECTOR_URL') + "/credit")
+        config_parser.set("manager", "TERMINATE_URL",
+                        config_parser.get('director',
+                                            'DIRECTOR_URL') + "/terminate")
+        config_parser.set("manager", "CA_URL",
+                        config_parser.get('director',
+                                            'DIRECTOR_URL') + "/ca")
+        config_parser.set("manager", "TYPE", service_type)
 
-    if vpn:
-        config_parser.set("manager", "IPOP_SUBNET", vpn)
+        if vpn:
+            config_parser.set("manager", "IPOP_SUBNET", vpn)
 
-    return config_parser
-
-
-def __stop_reservation_timer(controller):
-    for reservation_timer in controller._Controller__reservation_map.values():
-        reservation_timer.stop()
+        return config_parser
 
 
-def start(service_name, service_id, user_id, app_id, vpn):
-    """Start a manager for the given service_name, service_id and user_id.
+    def _stop_reservation_timer(self):
+        for reservation_timer in self._Controller__reservation_map.values():
+            reservation_timer.stop()
+
+
+def start(service_name, service_id, user_id, cloud_name, app_id, vpn):
+    """Start a manager for the given service_name, service_id and user_id,
+       on cloud_name
 
     Return (node_ip, node_id, cloud_name)."""
-    config_parser = __get_config(str(service_id), str(user_id), str(app_id), service_name, vpn)
+
+    if (cloud_name == 'default'):
+        cloud_name = 'iaas'
+
     # Create a new controller
-    controller = ManagerController(config_parser)
+    controller = ManagerController(service_name, service_id, user_id,
+                                    cloud_name, app_id, vpn)
+
+    cloud = controller.get_cloud_by_name(cloud_name)
     # Create a context file for the specific service
-    controller.generate_context(service_name)
+    controller.generate_context(service_name, cloud)
 
     # FIXME: test_manager(ip, port) not implemented yet. Just return True.
-    node = controller.create_nodes(1, lambda ip, port: True, None)[0]
-
-    # Stop the reservation timer or the call will not return
-    __stop_reservation_timer(controller)
-
-    return node.ip, node.id, config_parser.get('iaas', 'DRIVER')
+    node = controller.create_nodes(1, lambda ip, port: True, None, cloud)[0]
 
 
-def stop(vmid):
-    config_parser = __get_config(vmid, "", "")
-    # Create a new controller
-    controller = ManagerController(config_parser)
+    controller._stop_reservation_timer()
 
-    cloud = controller._Controller__default_cloud
-    cloud._connect()
+    cloud_description = '0' #local
+    if cloud.get_cloud_type() == 'ec2':
+        cloud_description = '1'
+    elif cloud.get_cloud_type() == 'opennebula':
+        cloud_description = '2'
 
-    class Node:
-        pass
-    n = Node()
-    n.id = vmid
-    cloud.kill_instance(n)
+    cloud_description += cloud.get_cloud_name()
 
-    __stop_reservation_timer(controller)
+    return node.ip, node.id, cloud_description

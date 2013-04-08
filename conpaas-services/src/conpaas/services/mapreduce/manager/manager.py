@@ -70,35 +70,31 @@ class MapReduceManager(BaseManager):
         self.nodes = []
         # Setup the clouds' controller
         self.controller.generate_context('mapreduce')
-        clouds = self.controller.get_clouds()
-        self.controller.config_cloud(clouds[0], { "mem" : "1024", "cpu" : "1" })
+        self.controller.config_clouds({ "mem" : "1024", "cpu" : "1" })
 
     @expose('POST')
     def startup(self, kwargs):
         ''' Starts the service - it will start and configure the scalaris management server  '''
 
         self.logger.debug("Entering HadoopManager startup")
-        if len(kwargs) != 0:
-            return HttpErrorResponse(ManagerException \
-                                      (ManagerException.E_ARGS_UNEXPECTED, \
-                                       kwargs.keys()).message)
 
         if self.state != self.S_INIT and self.state != self.S_STOPPED:
             return HttpErrorResponse(ManagerException(ManagerException.E_STATE_ERROR).message)
         self.state = self.S_PROLOGUE
-        Thread(target=self._do_startup, args=[]).start()
+        Thread(target=self._do_startup, kwargs=kwargs).start()
         return HttpJsonResponse({'state': self.S_PROLOGUE})
 
-    def _do_startup(self):
+    def _do_startup(self, cloud):
         ''' Starts up the service. The first node will be the job 
             master as well as an hadoop worker.
         '''
+        startCloud = self._init_cloud(cloud)
         try:
           self.context = {'FIRST': 'true',
                           'MGMT_SERVER': ''}
-          self.controller.update_context(self.context)
-          instance = self.controller.create_nodes(1, \
-            client.check_agent_process, 5555)
+          self.controller.update_context(self.context, cloud = startCloud)
+          instance = self.controller.create_nodes(1,
+            client.check_agent_process, 5555, startCloud)
           self.nodes += instance
 
           self.logger.info('Created node: %s', instance[0])
@@ -108,7 +104,7 @@ class MapReduceManager(BaseManager):
           self.logger.info('Called startup: %s', instance[0])
           self.context = {'FIRST': 'false',
                           'MGMT_SERVER': instance[0].ip}
-          self.controller.update_context(self.context)
+          self.controller.update_context(self.context, cloud = startCloud)
         except:
           self.logger.exception('do_startup: Failed to request a new node')
           self.state = self.S_STOPPED
@@ -140,14 +136,15 @@ class MapReduceManager(BaseManager):
         if count < 1:
             return HttpErrorResponse('ERROR: Expected a positive integer value for "count"')
         self.state = self.S_ADAPTING
-        Thread(target=self._do_add_nodes, args=[count]).start()
+        Thread(target=self._do_add_nodes, args=[count, kwargs['cloud']]).start()
         return HttpJsonResponse()
 
-    def _do_add_nodes(self, count):
+    def _do_add_nodes(self, count, cloud):
+        startCloud = self._init_cloud(cloud)
         try:
             self.logger.info('Starting nodes: %d', count)
             node_instances = self.controller.create_nodes(count, \
-                                client.check_agent_process, 5555)
+                                client.check_agent_process, 5555, startCloud)
             self.logger.info('Create nodes: %s', node_instances)
             self.nodes += node_instances
             # Startup agents

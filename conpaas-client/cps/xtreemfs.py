@@ -65,6 +65,10 @@ class Client(BaseClient):
                 self.usage(argv[0])
                 sys.exit(0)
 
+            if len(argv) == 4:
+                params['cloud'] = 'default'
+            else:
+                params['cloud'] = argv[4]
             # call the method
             res = self.callmanager(sid, command, True, params)
             if 'error' in res:

@@ -59,7 +59,7 @@ class WebClient(BaseClient):
 
     def usage(self, cmdname):
         BaseClient.usage(self, cmdname)
-        print "    add_nodes         serviceid b w p     # add    b backend, w web and p proxy nodes"
+        print "    add_nodes         serviceid b w p [cloud]     # add    b backend, w web and p proxy nodes"
         print "    remove_nodes      serviceid b w p     # remove b backend, w web and p proxy nodes"
         print "    list_keys         serviceid           # list authorized SSH keys"
         print "    upload_key        serviceid filename  # upload an SSH key"
@@ -137,8 +137,14 @@ class WebClient(BaseClient):
                 self.usage(argv[0])
                 sys.exit(0)
 
+            if command == 'add_nodes':
+                if len(argv) == 6:
+                    params['cloud'] = 'default'
+                else:
+                    params['cloud'] = argv[6]
             # call the method
             res = self.callmanager(sid, command, True, params)
+
             if 'error' in res:
                 print res['error']
             else:
