@@ -126,8 +126,8 @@ $page = new Page();
 	   			<td class="radio"><input type="radio" name="type" value="taskfarm" /> task farm</td>
 	   			<td class="info"> Service for running bags of tasks </td>
 	   		</tr>
-			<tr>
-	   			<td class="description"> <img src="images/htcondor" height="32" /></td>
+			<tr class="service">
+	   			<td class="description"> <img src="images/htcondor.png" height="32" /></td>
 	   			<td class="radio"><input type="radio" name="type" value="htcondor" /> HTCondor </td>
 	   			<td class="info"> High Throughput Computing: Condor Pool Service </td>
 			</tr> 
