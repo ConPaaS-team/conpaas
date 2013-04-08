@@ -44,8 +44,8 @@ case $B in
 	create.php)
 		sed -i '
 /BLUE_PRINT_INSERT/i\
-			<tr>\
-	   			<td class="description"> <img src="images/'"$BP_lc_name"'" height="32" /></td>\
+			<tr class="service">\
+	   			<td class="description"> <img src="images/'"$BP_lc_name"'.png" height="32" /></td>\
 	   			<td class="radio"><input type="radio" name="type" value="'"$BP_lc_name"'" /> '"$BP_bp_name"' </td>\
 	   			<td class="info"> '"$BP_bp_desc"' </td>\
 			</tr> 
