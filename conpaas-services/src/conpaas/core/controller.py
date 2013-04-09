@@ -405,49 +405,63 @@ class Controller(object):
         for cloud in self.__available_clouds:
             cloud.config(config_params)
 
-    #=========================================================================#
+    def __check_node(self, node, test_agent, port):
+        """Return True if the given node has properly started an agent on the
+        given port"""
+        if node.ip == '' or node.private_ip == '':
+            return False
 
-    def __wait_for_nodes(self, nodes, test_agent,
-                         port, poll_interval=10):
+        try:
+            self.__logger.debug('[__check_node]: test_agent(%s, %s)' % (
+                node.ip, port))
 
+            test_agent(node.ip, port)
+            return True
+        except socket.error, err:
+            self.__logger.debug('[__check_node]: %s' % err)
+
+        return False
+
+    def __wait_for_nodes(self, nodes, test_agent, port, poll_interval=10):
         self.__logger.debug('[__wait_for_nodes]: going to start polling')
+
         done = []
         poll_cycles = 0
+
         while len(nodes) > 0:
             poll_cycles += 1
-            for node in nodes:
-                up = True
-                try:
-                    if node.ip != '' and node.private_ip != '':
-                        self.__logger.debug(
-                            '[__wait_for_nodes]: test_agent(%s, %s)'
-                            % (node.ip, port))
-                        test_agent(node.ip, port)
-                    else:
-                        up = False
-                except socket.error, err:
-                    self.__logger.debug('[__wait_for_nodes]: %s' % err)
-                    up = False
-                if up:
-                    # On this node the agent started fine.
-                    done.append(node)
-            nodes = [i for i in nodes if i not in done]
-            if len(nodes):
-                if poll_cycles * poll_interval > 300:
-                    # at least 5 mins of sleeping + poll time
-                    return (done, nodes)
 
-            self.__logger.debug('[__wait_for_nodes]: waiting for %d nodes'
-                                % len(nodes))
+            # Add to 'done' the nodes on which an agent has been started
+            # properly.
+            done.extend([ node for node in nodes 
+                if self.__check_node(node, test_agent, port) ])
+
+            # Put in 'nodes' only those who have not started yet.
+            nodes = [ node for node in nodes if node not in done ]
+
+            if len(nodes) == 0:
+                # All the nodes are ready.
+                break
+            elif poll_cycles * poll_interval > 300:
+                # We have waited for more than 5 mins of sleeping + poll time.
+                # Let's return whatever we have.
+                return (done, nodes)
+
+            self.__logger.debug('[__wait_for_nodes]: waiting %d secs for %d nodes'
+                                % (poll_interval, len(nodes)))
             time.sleep(poll_interval)
-            no_ip_nodes = [node for node in nodes
-                           if node.ip == '' or node.private_ip == '']
+
+            # Check if some nodes still do not have an IP address.
+            no_ip_nodes = [ node for node in nodes
+                           if node.ip == '' or node.private_ip == '' ]
             if no_ip_nodes:
                 self.__logger.debug('[__wait_for_nodes]: refreshing %d nodes'
                                     % len(no_ip_nodes))
+
                 for node in no_ip_nodes:
                     refreshed_list = self.list_vms(
                         self.get_cloud_by_name(node.cloud_name))
+
                     for refreshed_node in refreshed_list:
                         if refreshed_node.id == node.id:
                             node.ip = refreshed_node.ip
