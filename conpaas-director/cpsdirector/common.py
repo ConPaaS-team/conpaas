@@ -1,3 +1,5 @@
+from flask import request, make_response
+
 import os
 import readline
 
@@ -33,3 +35,11 @@ def rlinput(prompt, prefill=''):
 
 def chown(path, username, groupname):
     os.chown(path, getpwnam(username).pw_uid, getgrnam(groupname).gr_gid)
+
+def log(msg):
+    print >> request.environ['wsgi.errors'], msg
+
+def build_response(data):
+    response = make_response(data)
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return response

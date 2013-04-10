@@ -1,13 +1,19 @@
 import os.path
+import simplejson
 
 from netaddr import IPNetwork
 
 from conpaas.core.controller import Controller
 from conpaas.core.misc import file_get_contents
 from conpaas.core.log import create_logger
-from cpsdirector import x509cert
-from cpsdirector import common
-import cpsdirector
+
+from cpsdirector.x509cert import generate_certificate
+from cpsdirector.common import config_parser, log
+from cpsdirector.user import User
+from cpsdirector import db
+
+from flask import Blueprint
+cloud_page = Blueprint('cloud_page', __name__)
 
 class ManagerController(Controller):
 
@@ -31,8 +37,8 @@ class ManagerController(Controller):
         service_id = self.config_parser.get("manager", "SERVICE_ID")
         cert_dir = self.config_parser.get('conpaas', 'CERT_DIR')
 
-        return x509cert.generate_certificate(cert_dir, user_id, service_id,
-                                             "manager", email, cn, org)
+        return generate_certificate(cert_dir, user_id, service_id,
+                                    "manager", email, cn, org)
 
     def _get_context_file(self, service_name, cloud):
         """Override default _get_context_file. Here we generate the context
@@ -165,18 +171,18 @@ EOF
     def deduct_credit(self, value):
         uid = self.config_parser.get("manager", "USER_ID")
 
-        user = cpsdirector.User.query.filter_by(uid=uid).one()
+        user = User.query.filter_by(uid=uid).one()
         user.credit -= value
 
         if user.credit > -1:
-            cpsdirector.db.session.commit()
+            db.session.commit()
             return True
 
-        cpsdirector.db.session.rollback()
+        db.session.rollback()
         return False
 
     def stop(self, vmid):
-        cpsdirector.log('Trying to stop service %s on cloud %s' % (vmid, self.cloud_name))
+        log('Trying to stop service %s on cloud %s' % (vmid, self.cloud_name))
         cloud = self.get_cloud_by_name(self.cloud_name)
         if not cloud.connected:
             cloud._connect()
@@ -191,8 +197,6 @@ EOF
 
     def __get_config(self, service_id, user_id, app_id, service_type="", vpn=None):
         """Add manager configuration"""
-        config_parser = cpsdirector.common.config_parser
-
         if not config_parser.has_section("manager"):
             config_parser.add_section("manager")
 
@@ -253,3 +257,13 @@ def start(service_name, service_id, user_id, cloud_name, app_id, vpn):
     cloud_description += cloud.get_cloud_name()
 
     return node.ip, node.id, cloud_description
+
+@cloud_page.route("/available_clouds", methods=['GET'])
+def available_clouds():
+    """GET /available_clouds"""
+    clouds = ['default']
+    if config_parser.has_option('iaas','CLOUDS'):
+        clouds.extend([cloud_name for cloud_name
+            in config_parser.get('iaas', 'CLOUDS').split(',')
+            if config_parser.has_section(cloud_name)])
+    return simplejson.dumps(clouds)

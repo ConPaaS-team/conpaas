@@ -27,7 +27,7 @@ class Common(unittest.TestCase):
         cpsdirector.db.create_all()
 
     def create_user(self, data=TEST_USER_DATA):
-        return cpsdirector.create_user(data['username'], 
+        return cpsdirector.user.create_user(data['username'], 
                                        data['fname'],
                                        data['lname'],
                                        data['email'],
@@ -40,20 +40,20 @@ class DbTest(Common):
     def test_create_user(self):
         self.create_user()
 
-        self.assertFalse(cpsdirector.get_user(TEST_USER_DATA['username'], 
+        self.assertFalse(cpsdirector.user.get_user(TEST_USER_DATA['username'], 
             "wrongpass"))
 
-        self.assert_(cpsdirector.get_user(TEST_USER_DATA['username'], 
+        self.assert_(cpsdirector.user.get_user(TEST_USER_DATA['username'], 
             TEST_USER_DATA['password']) is not None)
 
-        self.assertFalse(cpsdirector.get_user("wronguname", TEST_USER_DATA['password']))
+        self.assertFalse(cpsdirector.user.get_user("wronguname", TEST_USER_DATA['password']))
 
     def test_create_service(self):
         self.create_user()
 
-        user = cpsdirector.get_user(TEST_USER_DATA['username'], TEST_USER_DATA['password'])
-        app = cpsdirector.get_default_app(user.uid)
-        service = cpsdirector.Service(name="New selenium service", type="selenium",
+        user = cpsdirector.user.get_user(TEST_USER_DATA['username'], TEST_USER_DATA['password'])
+        app = cpsdirector.application.get_default_app(user.uid)
+        service = cpsdirector.service.Service(name="New selenium service", type="selenium",
                                       user=user, application=app)
         cpsdirector.db.session.add(service)
         cpsdirector.db.session.commit()
@@ -73,7 +73,7 @@ class DbTest(Common):
         else:
             cpsdirector.db.session.rollback()
 
-        user = cpsdirector.get_user(TEST_USER_DATA['username'], TEST_USER_DATA['password'])
+        user = cpsdirector.user.get_user(TEST_USER_DATA['username'], TEST_USER_DATA['password'])
         self.assertEquals(110, user.credit)
 
         user.credit -= 5000
@@ -83,7 +83,7 @@ class DbTest(Common):
         else:
             cpsdirector.db.session.rollback()
 
-        user = cpsdirector.get_user(TEST_USER_DATA['username'], TEST_USER_DATA['password'])
+        user = cpsdirector.user.get_user(TEST_USER_DATA['username'], TEST_USER_DATA['password'])
         self.assertEquals(110, user.credit)
 
 class DirectorTest(Common):
@@ -322,14 +322,14 @@ class DirectorTest(Common):
         self.assertEquals({ 'error': False }, simplejson.loads(response.data))
 
         # User's credit should be 0
-        user = cpsdirector.get_user(TEST_USER_DATA['username'], TEST_USER_DATA['password'])
+        user = cpsdirector.user.get_user(TEST_USER_DATA['username'], TEST_USER_DATA['password'])
         self.assertEquals(0, user.credit)
 
     def test_credit_right_sid_not_enough_credit(self):
         service = self.__new_service()
 
         # Setting user's credit to 0
-        user = cpsdirector.get_user(TEST_USER_DATA['username'], TEST_USER_DATA['password'])
+        user = cpsdirector.user.get_user(TEST_USER_DATA['username'], TEST_USER_DATA['password'])
         user.credit = 0
         cpsdirector.db.session.commit()
 
@@ -338,7 +338,7 @@ class DirectorTest(Common):
         response = self.app.post('/callback/decrementUserCredit.php', data=data)
         self.assertEquals({ 'error': True }, simplejson.loads(response.data))
 
-        user = cpsdirector.get_user(TEST_USER_DATA['username'], TEST_USER_DATA['password'])
+        user = cpsdirector.user.get_user(TEST_USER_DATA['username'], TEST_USER_DATA['password'])
         self.assertEquals(0, user.credit)
 
     def test_terminate_service(self):
@@ -526,6 +526,11 @@ class DirectorTest(Common):
         self.assertEquals(200, response.status_code)
 
         self.assertEquals(False, simplejson.loads(response.data))
+
+    def test_list_available_clouds(self):
+        response = self.app.get('/available_clouds')
+        self.assertEquals(200, response.status_code)
+        self.assertEquals(["default"], simplejson.loads(response.data))
 
 if __name__ == "__main__":
     unittest.main()
