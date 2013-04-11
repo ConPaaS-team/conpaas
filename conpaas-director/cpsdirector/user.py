@@ -270,7 +270,8 @@ def credit():
     service_id = int(request.values.get('sid', -1))
     decrement  = int(request.values.get('decrement', 0))
 
-    log('Decrement user credit: sid=%s, decrement=%s' % (service_id, decrement))
+    log('Decrement user credit: sid=%s, old_credit=%s, decrement=%s' % (
+        service_id, g.service.user.credit, decrement))
 
     # Decrement user's credit
     g.service.user.credit -= decrement
