@@ -43,8 +43,6 @@ Created on Feb 8, 2011
 
 from threading import Thread, Lock, Event
 
-from netaddr import IPNetwork
-
 import os.path
 import time
 import json
@@ -97,6 +95,9 @@ class Controller(object):
             self.__ipop_netmask = None
 
         if config_parser.has_option('manager', 'IPOP_SUBNET'):
+            # Only import from netaddr if IPOP has to be started
+            from netaddr import IPNetwork
+
             # Subnet assigned to this service by the director
             self.__ipop_subnet = IPNetwork(
                 config_parser.get('manager', 'IPOP_SUBNET'))
