@@ -74,6 +74,8 @@ class EC2Cloud(Cloud):
             EC2Driver = get_driver(Provider.EC2_US_WEST_OREGON)
         elif self.ec2_region == "ec2.eu-west-1.amazonaws.com":
             EC2Driver = get_driver(Provider.EC2_EU_WEST)
+        else:
+            raise Exception('Unknown EC2 region: %s' % self.ec2_region)
 
         self.driver = EC2Driver(self.user,
                                 self.passwd)
