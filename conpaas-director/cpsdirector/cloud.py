@@ -191,9 +191,9 @@ EOF
             cloud.kill_instance(vmids[0])
         self._stop_reservation_timer()
 
-    def get_cloud_by_name(self,cloud_name):
-        return filter(lambda cloud: cloud.get_cloud_name() == cloud_name,
-                      self.get_clouds())[0]
+    def get_cloud_by_name(self, cloud_name):
+        return [ cloud for cloud in self.get_clouds() 
+            if cloud.get_cloud_name() == cloud_name ][0]
 
     def __get_config(self, service_id, user_id, app_id, service_type="", vpn=None):
         """Add manager configuration"""
