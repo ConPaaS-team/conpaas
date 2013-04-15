@@ -80,8 +80,9 @@ class WebServersAgent(BaseAgent):
       self.WebServer = role.NginxStatic
       self.HttpProxy = role.NginxProxy
 
-      self.ganglia.add_modules(( 'nginx_mon', 'nginx_proxy_mon', 
-        'php_fpm_mon' ))
+      if self.ganglia:
+        self.ganglia.add_modules(( 'nginx_mon', 'nginx_proxy_mon', 
+            'php_fpm_mon' ))
  
     def _get(self, get_params, class_file, pClass):
       if not exists(class_file):

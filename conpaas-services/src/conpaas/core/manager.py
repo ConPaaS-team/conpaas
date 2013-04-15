@@ -65,7 +65,12 @@ class BaseManager(object):
 
         # Ganglia setup
         ganglia = ManagerGanglia(config_parser)
-        ganglia.configure()
+
+        try:
+            ganglia.configure()
+        except Exception, err:
+            self.logger.exception('Error configuring Ganglia: %s' % err)
+            return
 
         err = ganglia.start()
 

@@ -67,11 +67,21 @@ class BaseAgent(object):
     
         # Ganglia setup
         self.ganglia = AgentGanglia(config_parser)
-        self.ganglia.configure()
+
+        try:
+            self.ganglia.configure()
+        except Exception, err:
+            self.logger.exception('Error configuring Ganglia: %s' % err)
+            # Something went wrong while configuring Ganglia. We do not want
+            # our agent to think it can be used
+            self.ganglia = None
+            return
 
         err = self.ganglia.start()
         if err:
             self.logger.exception(err)
+            # Same as above, our agent can not use Ganglia
+            self.ganglia = None
         else:
             self.logger.info('Ganglia started successfully')
 
