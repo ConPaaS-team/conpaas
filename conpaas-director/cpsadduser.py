@@ -7,7 +7,8 @@ import getpass
 
 import sqlalchemy
 
-from cpsdirector import db, common, create_user
+from cpsdirector import db, common
+from cpsdirector.user import create_user
 
 if __name__ == "__main__":
     db.create_all()
