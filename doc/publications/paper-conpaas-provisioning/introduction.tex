@@ -66,12 +66,18 @@
 %widely over time, such as the domain of Web applications.
 
 \lettrine{O}{ne of} the major innovations provided by Cloud computing
-platforms is their pay-per-use model where clients pay only for the resources they actually use. This business model is particularly favorable for application domains where workloads vary widely over time, such as the domain of Web applications. To make the model more attractive, applications can request and release resources at any time according to their needs (on demand model).
+platforms is their pay-per-use model where clients pay only for the
+resources they actually use. This business model is particularly
+favorable for application domains where workloads vary widely over
+time, such as the domain of Web application hosting. Web applications
+in the cloud can request and release resources at any time according
+to their needs.
 
 However, provisioning the right volume of resources for a Web
 application is not a simple task. Web applications are usually
-composed of multiple types of components such as Web
-servers, application servers, database servers and load balancers that distribute the incoming traffic across them. Complex performance
+composed of multiple types of components such as Web servers,
+application servers, database servers and load balancers that
+distribute the incoming traffic across them. Complex performance
 behavior of these components makes it difficult to find the optimal
 resource allocation, even when the application workload is perfectly
 stable. The magnitude of the problem is further increased by the fact
@@ -91,20 +97,22 @@ algorithms~\cite{muppala_regression-based_2012, urgaonkar_agile_2008,vasic_dejav
 %actually used by the cloud industry where provisioning decisions are
 %usually triggered by lower/upper thresholds on resource
 %utilization. 
-However, we observe a discrepancy between these academic propositions
-and the simple mechanisms that are currently available to  
-cloud customers. These mechanisms are usually based on defining 
-lower or upper thresholds on resource utilization, and reaching one of the
-thresholds will trigger a resource provisioning action. 
+However, we observe a wide discrepancy between these academic propositions
+and the simple mechanisms that are currently available to cloud
+customers. These mechanisms are usually based on defining lower or
+upper thresholds on resource utilization. Crossing one of the
+thresholds will trigger a pre-defined resource provisioning action
+such as adding or removing one machine.
 
-We postulate three possible reasons why sophisticated
-techniques have not been more widely deployed: \emph{(i)} the gains of
-using sophisticated provisioning strategies are too low to be worth
-the effort; \emph{(ii)} implementing and evaluating these techniques is a difficult
-exercise, which is why real cloud systems rely on simpler techniques;
-and \emph{(iii)} academic approaches mostly focus on unrealistic
-evaluations using simple applications and artificial
-workloads~\cite{do_profiling_2011, islam_empirical_2012}. % By using real production applications, new
+We postulate three possible reasons why sophisticated techniques have
+not been more widely deployed: \emph{(i)} the gains of using
+sophisticated provisioning strategies are too low to be worth the
+effort; \emph{(ii)} implementing and evaluating these techniques is a
+difficult exercise, which is why real cloud systems rely on simpler
+techniques; and \emph{(iii)} academic approaches mostly focus on
+unrealistic evaluations using simple applications and artificial
+workloads~\cite{do_profiling_2011, islam_empirical_2012}. % By using
+% real production applications, new
 % limitations could be detected and solved in the provisioning systems
 % due to the peculiarity and heterogeneity of real workloads. Indeed,
 % these workloads have several interesting properties such as a variable
@@ -120,7 +128,7 @@ results than the simple ones without being too complex.
 We do this by implementing a provisioning system in realistic 
 conditions, and reporting on \emph{(i)} how hard implementation 
 was; and \emph{(ii)} potential gains from using this  technique 
-compared to the simple solution. To achieve this, we designed 
+compared to the threshold-based solution. To achieve this, we designed 
 and implemented a resource provisioning technique in ConPaaS, 
 an open source platform-as-a-service environment for hosting 
 cloud applications~\cite{conpaasIC}. Our technique uses several

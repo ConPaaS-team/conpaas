@@ -2,64 +2,75 @@
 
 %1. The heterogenity of the requests of wikipedia and realistic scenario.
 
-There is a key-feature that distinguishes Wikipedia from most of the web benchmarking applications: its \emph{heterogeneity}. Wikipedia has an heterogeneous workload mix, in terms of requests complexity, that differs from the workload of some web benchmarking applications, which are more homogeneous and predictable. Thus we believe that the utilization of Wikipedia is a good choice for achieving a realistic testing scenario to evaluate the provisioning mechanisms implemented in ConPaaS. 
+Most academic resource provisioning systems are evaluated using
+synthetic applications and workloads such as TPC-W, RuBiS and
+RuBBoS. However, these traditional benchmarks do not exhibit features
+of real Web applications such as traffic unstability as well as
+heterogeneous and constantly-changing request mixes~\cite{benchlab}.
+
+Instead of basing our evaluations on unrealistic workloads, we used
+the WikiBench benchmark~\cite{wikibench}. This benchmark uses a full
+copy of Wikipedia as the web application, and replays a fraction of
+the actual Wikipedia's access traces. 
 
 
-%In this section, we describe our scenario in detail.
-
-
-
-% 2. Description of the deployment in ConPaaS
-
-Accordingly, we used a copy of Wikipedia as the web application, and replayed a fraction of the access traces from Wikipedia's official web site. Wikipedia uses MediaWiki~\cite{mediawiki}, a PHP-based wiki software package. 
+%Wikipedia uses
+%MediaWiki~\cite{mediawiki}, a PHP-based wiki software package.
 %The architecture of the Wikipedia website uses a http-proxy, a http-web server, a database and one or more PhP servers. 
-To deploy the Wikipedia services on ConPaaS, we composed two different services: the PHP web hosting and MySQL service. In the MySQL service, we installed a complete copy the database containing English Wikipedia articles from 2008, which has a size of approximately 30GB.
-In the PHP service, the configuration was composed of one load balancer,
-one static web server and one or more PHP servers. 
+Hosting a copy of Wikipedia in ConPaaS requires two different
+services: a PHP web hosting and a MySQL service. The MySQL service is
+loaded with a full copy of the English Wikipedia articles as of 2008,
+which has a size of approximately 30GB.  In the PHP service, the
+configuration was composed of one load balancer, one static web server
+and one or more PHP servers. We then use WikiBench to replay access
+traces from 2008~\cite{urdaneta2009}.
+
+
 
 %ConPaaS uses nginx as static web server and also as load balancer.% The PHP requests are handled through PHP FastCGI Process Manager.
 %In the PhP service, an initial configuration was composed of one Nginx http-proxy, one Apache server, and one or more PhP (FastCGI Process Manager) servers. Each PhP server hosts the MediaWiki application which is the main component of this system. 
 
 % 3. Presentation of the preeliminary experiment
 
-To evaluate our system we used Wikibench~\cite{wikibench}, a tool for benchmarking Wikipedia 
-servers developed by our group. Wikibench replays Wikipedia access
-traces or smaller samples of the traces, providing various sampling
-mechanisms. 
+%To evaluate our system we used Wikibench, a tool for
+%benchmarking Wikipedia servers developed by our group. Wikibench
+%replays Wikipedia access traces or smaller samples of the traces,
+%providing various sampling mechanisms.
 %We used anonymized Wikipedia access traces, which are published by the WikiMedia foundation, and for our experiments we replayed a sample of 10\% from the traces. 
-The traces contain two 
-types of requests: requests for static pages or files, and dynamic
-PHP requests. The first performance bottlenecks appear at the logic
-tier of the application (the execution of dynamic PHP requests), the static 
-requests being executed one order of magnitude faster than the dynamic 
-ones. Thus in this article we will focus mostly on the automatic
-scaling of the PHP tier.
+The trace contains requests for static pages as well as dynamic PHP
+requests. When replaying it, the most important performance bottleneck
+is the application logic of the application: PHP requests are
+processed an order of magnitude slower than simpler static web
+pages. In this article we therefore focus on the automatic scaling of
+the PHP tier.
 
-As an example, in Figure~\ref{workload}, we show the PHP workload 
-sampled from one trace, as the number of PHP requests per minute 
-during approximately one day. One aspect that we noticed about the 
-workload is that the requests are heterogeneous in complexity.
-To illustrate this heterogeneity, in Figure~\ref{phpRespTimeDispersion}
-we present the distribution of the response time values for the PHP 
-requests during the execution of the trace shown in Figure~\ref{workload}.
-For this experiment we used a fixed number of 5 PHP servers,
-which are sufficient for handling the workload from the access 
-trace even at its peaks; this is why in this case the response 
-time is not influenced by the intensity of the workload.  
-However, the results show a relatively wide 
-dispersion of the response time: the response time values are 
-commonly spread between approximately 100 and 300 milliseconds, 
-so there is a factor of 3 between the slowest and the fastest requests. 
-The main reason for this dispersion is that the Wikipedia articles 
-vary in complexity, requiring different amounts of information that
-needs to be retrieved from the database and assembled in a page. 
+As an example, in Figure~\ref{workload}, we show the PHP workload
+sampled from one trace, as the number of PHP requests per minute
+during approximately one day. One aspect that we noticed about the
+workload is that the requests are heterogeneous in complexity.  To
+illustrate this heterogeneity, in Figure~\ref{phpRespTimeDispersion}
+we present the distribution of the response time values for the PHP
+requests during the execution of the trace shown in
+Figure~\ref{workload}.  For this experiment we used a fixed number of
+5 PHP servers, which are sufficient for handling the workload from the
+access trace even at its peaks; this is why in this case the response
+time is not influenced by the intensity of the workload.  However, the
+results show a relatively wide dispersion of the response time: the
+response time values are commonly spread between approximately 100 and
+300 milliseconds, so there is a factor of 3 between the slowest and
+the fastest requests.  The main reason for this dispersion is that the
+Wikipedia articles vary in complexity, requiring different amounts of
+information that needs to be retrieved from the database and assembled
+in a page.
 
 % 4. Expectations for the evaluation presented
 
-We also conclude from this experiment that, since the response time of the application varies and cannot be properly predicted even when the request rate is known, 
-a provisioning algorithm aiming to keep the application's response time 
-under a certain limit should take into account several monitoring 
-parameters (not just the request rate or just the response time).
+We also conclude from this experiment that, since the response time of
+the application varies and cannot be properly predicted even when the
+request rate is known, a provisioning algorithm aiming to keep the
+application's response time under a certain limit should take into
+account several monitoring parameters (not just the request rate or
+just the response time).
 
 
 
