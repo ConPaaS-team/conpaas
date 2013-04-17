@@ -97,8 +97,11 @@ def conpaas_init_ssl_ctx(dir, role, uid=None, sid=None):
         verify_callback = _conpaas_callback_agent
     elif role == 'manager':
         verify_callback = _conpaas_callback_manager
+    elif role == 'director':
+        verify_callback = _conpaas_callback_director
     elif role == 'user':
         verify_callback = _conpaas_callback_user
+
 	if uid == None:
             # Extract uid from the certificate itself
             uid = x509.get_x509_dn_field(file_get_contents(cert_file), 'UID')
@@ -285,6 +288,26 @@ def _conpaas_callback_user(connection, x509, errnum, errdepth, ok):
     if dict['UID'] != __uid:
        return False
         
+    return ok 
+
+def _conpaas_callback_director(connection, x509, errnum, errdepth, ok):
+    '''
+        The custom certificate verification function called on the
+        director's client side. The director might sends requests only to
+        managers.
+    '''
+
+    components = x509.get_subject().get_components()
+    dict = {}
+    for key,value in components:
+        dict[key] = value
+        if key == 'CN':
+            if value == 'CA':
+                return ok
+
+    if dict['role'] != 'manager':
+       return False
+
     return ok 
 
 def https_get(host, port, uri, params=None):
