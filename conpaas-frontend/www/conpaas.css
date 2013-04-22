@@ -177,6 +177,11 @@ a:hover {
 	padding-left: 20px;
 }
 
+.user .demousercredit {
+        color: #F80;
+	font-size: 16px;
+}
+
 .user .logout {
 	background: url('images/logout.png') top left no-repeat;
 }
