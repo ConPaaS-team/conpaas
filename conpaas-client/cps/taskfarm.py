@@ -80,9 +80,15 @@ class Client(BaseClient):
         # This call gives a urllib2.URLError "Connection reset by peer" quite
         # often...
         res = self.callmanager(service['sid'], "get_service_info", False, {})
-            
+
+        data = simplejson.dumps(res);
+        print "data:", data 
         print "total tasks:", res['noTotalTasks']
         print "completed tasks:", res['noCompletedTasks']
+        if res['noCompletedTasks'] > 0:
+            sres = self.callmanager(service['sid'], "get_sampling_results", False, {})
+            sdata = simplejson.dumps(sres);
+            print "samplingresults:", sdata 
 
     def logs(self, service_id):
         """The getLog method is called get_log in TaskFarm"""
