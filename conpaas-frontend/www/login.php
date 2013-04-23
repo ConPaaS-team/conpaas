@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright (c) 2010-2012, Contrail consortium.
+ * Copyright (c) 2010-2013, Contrail consortium.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms,
@@ -68,10 +68,10 @@ $page = new LoginPage();
             Each service is self-managed and elastic:
             <ul>
                 <li> it can deploy itself on the cloud </li>
-                <li> it monitors its own performance
+                <li> it monitors its own performance </li>
                 <li> it can increase or decrease its processing capacity by dynamically <br />(de-)provisioning instances of itself in the cloud </li>
             </ul>
-            <em>Copyright &copy;2011-2012 Contrail consortium.<br>All rights reserved.</em>
+            <em>Copyright &copy;2011-2013 Contrail consortium.<br>All rights reserved.</em>
             </p>
         </td>
         <td class="formwrap">
