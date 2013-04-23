@@ -190,6 +190,7 @@ conpaas.ui = (function (this_module) {
         /* on instable state */function (state) {
             $('#moneySpent').html(state.moneySpent);
             $('#moneySpent').effect('highlight', {}, 1000);
+            $('#demo_user_credit').html($('#run_user_credit').html() - state.moneySpent);
             $('#completedTasks').html(state.completedTasks);
             $('#completedTasks').effect('highlight', {}, 1000);
             var percentDone = state.completedTasks * 100 / state.totalTasks;

@@ -154,6 +154,28 @@ class TaskFarmPage extends ServicePage {
 		.'</div>';
 	}
 
+/*
+ *	In demo mode temporarily subtract moneySpent from user_credit to show the credit decrement at work, and also change the display format.
+ */
+        public function renderUserCredit() {
+                $state = $this->service->fetchState();
+                $money_spent = 0;
+                if (isset($state['result'])) {
+                        $result = $state['result'];
+                        $mode = $result['mode'];
+                        if ($mode == 'DEMO') {
+                                return    '<div class="runusercredit" id="run_user_credit">'
+                                        . ($this->user_credit)
+                                        . '</div>'
+                                        . '<div class="demousercredit" id="demo_user_credit">'
+                                        . ($this->user_credit - $result['moneySpent'])
+                                        . '</div>';
+                                
+                        }
+                }
+                return $this->user_credit;
+        }
+
 	private function renderStatusSection() {
 		$state = $this->service->fetchState();
 		if (!isset($state['result'])) {

@@ -202,6 +202,10 @@ class Page {
 			.'</div>';
 	}
 
+	public function renderUserCredit() {
+		return $this->getUserCredit();
+	}
+
 	public function renderHeader() {
 		return
 			'<div class="header">'
@@ -216,7 +220,7 @@ class Page {
   					.'<div class="usercredit" id="user_credit_container" '
   							.' title="credits">'
   						.'<span id="user_credit">'
-  					     	.$this->getUserCredit()
+  					     	.$this->renderUserCredit()
   					    .'</span>'
   					.'</div>'
 					.'<div class="username">'
