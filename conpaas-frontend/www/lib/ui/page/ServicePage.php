@@ -186,15 +186,6 @@ class ServicePage extends Page {
 		return $this->nodes;
 	}
 
-	private function renderCloud() {
-		static $cloud_providers = array(
-			0 => 'local deployment',
-			1 => 'Amazon EC2',
-			2 => 'OpenNebula',
-        );
-		return $cloud_providers[$this->service->getCloudType()];
-	}
-
 	public function renderInstances() {
 		$nodes = $this->getNodes();
 		if ($nodes === false) {
@@ -204,7 +195,7 @@ class ServicePage extends Page {
 		$html =
 			'<div class="brief">'.
 				$this->service->getNodesCount().' '.$instances_txt.' running '.
-				'on '.$this->renderCloud().' in '.$this->service->getCloudName().
+				'in '.$this->service->getCloudName().
 			'</div>'.
 			'<div id="instances">';
 

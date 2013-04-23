@@ -26,10 +26,7 @@ class ManagerController(Controller):
         self.service_name = service_name
         self.service_id = service_id
         self.user_id = user_id
-        if cloud_name[0].isdigit():
-            self.cloud_name = cloud_name[1:]
-        else:
-            self.cloud_name = cloud_name
+        self.cloud_name = cloud_name
         self.role = "manager"
 
     def _get_certificate(self, email, cn, org):

@@ -394,12 +394,8 @@ class Service {
 		return $this->uid;
 	}
 
-    public function getCloudType() {
-        return (int) substr($this->cloud,0,1);
-    }
-
 	public function getCloudName() {
-	  return substr($this->cloud,1);
+	  return $this->cloud;
 	}
 
 	public function getManagerPort() {
