@@ -245,18 +245,9 @@ def start(service_name, service_id, user_id, cloud_name, app_id, vpn):
     # FIXME: test_manager(ip, port) not implemented yet. Just return True.
     node = controller.create_nodes(1, lambda ip, port: True, None, cloud)[0]
 
-
     controller._stop_reservation_timer()
 
-    cloud_description = '0' #local
-    if cloud.get_cloud_type() == 'ec2':
-        cloud_description = '1'
-    elif cloud.get_cloud_type() == 'opennebula':
-        cloud_description = '2'
-
-    cloud_description += cloud.get_cloud_name()
-
-    return node.ip, node.id, cloud_description
+    return node.ip, node.id, cloud.get_cloud_type()
 
 @cloud_page.route("/available_clouds", methods=['GET'])
 def available_clouds():
