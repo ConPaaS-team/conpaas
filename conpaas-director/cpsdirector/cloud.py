@@ -244,7 +244,7 @@ def start(service_name, service_id, user_id, cloud_name, app_id, vpn):
 
     controller._stop_reservation_timer()
 
-    return node.ip, node.id, cloud.get_cloud_type()
+    return node.ip, node.id, cloud.get_cloud_name()
 
 @cloud_page.route("/available_clouds", methods=['GET'])
 def available_clouds():
