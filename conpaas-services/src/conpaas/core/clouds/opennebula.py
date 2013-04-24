@@ -1,4 +1,4 @@
-'''
+"""
 Copyright (c) 2010-2012, Contrail consortium.
 All rights reserved.
 
@@ -33,7 +33,7 @@ WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
 OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
-'''
+"""
 
 import urlparse
 
@@ -102,22 +102,6 @@ class OpenNebulaCloud(Cloud):
         self.cx = cx.encode('hex')
 
     def config(self, config_params={}, context=None):
-        '''Sets some configuration parameters (Overrides the default ones).
-
-           @keyword    inst_type:   (optional)
-                                    Id of the node type of this driver
-           @type       inst_type:   int
-
-           @keyword    cpu:   Number of cpus for the VM. (optional)
-           @type       cpu:   int
-
-           @keyword    memory:  Quantity of RAM. (optional)
-           @type       memory:  int
-
-           @param      context: The context file
-
-        '''
-
         if 'inst_type' in config_params:
             self.inst_type = config_params['inst_type']
 
