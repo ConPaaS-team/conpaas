@@ -1,18 +1,19 @@
 import json
 import os
-from threading import Thread, Lock, Timer, Event
+
+from conpaas.core.manager import BaseManager
 
 from conpaas.core.expose import expose
 from conpaas.core.controller import Controller
-from conpaas.core.http import HttpJsonResponse, HttpErrorResponse,\
-                         HttpFileDownloadResponse, HttpRequest,\
-                         FileUploadField, HttpError, _http_post
+
+from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse
+
 from conpaas.core.log import create_logger
 import conpaas.core.file
 import app
 from edge import NetworkSnapshot
 
-class ContentDeliveryManager(object):
+class ContentDeliveryManager(BaseManager):
 
     # Manager states - Used by the frontend
     S_INIT = 'INIT'         # manager initialized but not yet started
