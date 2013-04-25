@@ -438,7 +438,7 @@ the list: when scaling the service up and down, other instances may be
 created or removed. The first instance will however remain across these
 reconfigurations, until the service is terminated.
 
-Managine the key-value store
+Managing the key-value store
 ----------------------------
 
 Scalarix provides its own Web-based interface to monitor the state and
@@ -511,7 +511,7 @@ The demo mode
 
 With large bags of tasks and/or with long running tasks, the TaskFarm
 service can take a long time to execute the given bag. The service
-provides its users with a progress bar and reports the amount money
+provides its users with a progress bar and reports the amount of money
 spent so far. TaskFarm service also provides a “demo” mode where the
 users can try the service with custom bags without spending time and
 money.
