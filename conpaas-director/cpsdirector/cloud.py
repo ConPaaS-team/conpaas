@@ -5,6 +5,7 @@ from netaddr import IPNetwork
 
 from conpaas.core.controller import Controller
 from conpaas.core.misc import file_get_contents
+from conpaas.core.node import ServiceNode
 from conpaas.core.log import create_logger
 
 from cpsdirector.x509cert import generate_certificate
@@ -181,11 +182,7 @@ EOF
     def stop(self, vmid):
         log('Trying to stop service %s on cloud %s' % (vmid, self.cloud_name))
         cloud = self.get_cloud_by_name(self.cloud_name)
-        if not cloud.connected:
-            cloud._connect()
-        vmids = filter(lambda node: node.id == vmid, cloud.list_vms())
-        if len(vmids) == 1:
-            cloud.kill_instance(vmids[0])
+        cloud.kill_instance(ServiceNode(vmid, None, None, self.cloud_name))
         self._stop_reservation_timer()
 
     def get_cloud_by_name(self, cloud_name):
