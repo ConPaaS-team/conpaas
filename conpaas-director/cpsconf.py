@@ -5,14 +5,25 @@ from cpsdirector import common, db
 from conpaas.core.https import x509
 
 import os
+import re
 import sys
 import random
 import platform
 
+from urlparse import urlparse
 from distutils.spawn import find_executable
 
 CERT_DIR = common.config_parser.get('conpaas', 'CERT_DIR')
-hostname = common.rlinput('Please enter your hostname: ', platform.node())
+
+if common.config_parser.has_option('director', 'DIRECTOR_URL'):
+    # Get default hostname from DIRECTOR_URL if it exists already
+    hostname = common.config_parser.get('director', 'DIRECTOR_URL')
+    hostname = re.sub(':.*', '', urlparse(hostname).netloc)
+else:
+    # If DIRECTOR_URL does not exist, just trust platform.node()
+    hostname = platform.node()
+
+hostname = common.rlinput('Please enter your hostname: ', hostname)
 
 # create CA keypair
 cakey = x509.gen_rsa_keypair()
@@ -113,11 +124,20 @@ conf += """
 
 open('/etc/apache2/sites-available/conpaas-director', 'w').write(conf)
 
-conffile = open(common.CONFFILE).read()
-if 'DIRECTOR_URL' not in conffile:
-    # append DIRECTOR_URL
-    open(common.CONFFILE, 'a').write("\nDIRECTOR_URL = https://%s:%s" %
-                                     (hostname, conf_values['port']))
+conflines = open(common.CONFFILE).readlines()
+
+director_url = "DIRECTOR_URL = https://%s:%s\n" % (hostname, conf_values['port'])
+
+try:
+    num, line = [ (num, line) for num, line in enumerate(conflines) 
+        if 'DIRECTOR_URL' in line ][0]
+    # DIRECTOR_URL already there. Update its value.
+    conflines[num] = director_url
+except IndexError:
+    # DIRECTOR_URL is not present. Add it.
+    conflines.append(director_url)
+
+open(common.CONFFILE, 'w').writelines(conflines)
 
 db.create_all()
 
