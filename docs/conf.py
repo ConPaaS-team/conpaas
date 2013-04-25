@@ -97,7 +97,9 @@ html_theme = 'default'
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-#html_theme_options = {}
+html_theme_options = {
+    'stickysidebar': True
+}
 
 # Add any paths that contain custom themes here, relative to this directory.
 #html_theme_path = []
@@ -185,7 +187,7 @@ latex_elements = {
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
   ('manual', 'ConPaaS.tex', u'ConPaaS Documentation',
-   u'Guillaume Pierre \\and Emanuele Rocca \\and Adriana Szekeres \\and Kaveh Razavi', 'manual'),
+   u'The ConPaaS team <info@conpaas.eu>', 'manual'),
   #('installation', 'installation.tex', u'ConPaaS Installation HOWTO',
   # u'Emanuele Rocca, Guillaume Pierre', 'howto'),
   #('userguide', 'userguide.tex', u'ConPaaS User Guide',
