@@ -3,6 +3,7 @@
 from cpsdirector import common, db
 
 from conpaas.core.https import x509
+from conpaas.core.misc import rlinput
 
 import os
 import re
@@ -23,7 +24,7 @@ else:
     # If DIRECTOR_URL does not exist, just trust platform.node()
     hostname = platform.node()
 
-hostname = common.rlinput('Please enter your hostname: ', hostname)
+hostname = rlinput('Please enter your hostname: ', hostname)
 
 # create CA keypair
 cakey = x509.gen_rsa_keypair()

@@ -10,14 +10,16 @@ import sqlalchemy
 from cpsdirector import db, common
 from cpsdirector.user import create_user
 
+from conpaas.core.misc import rlinput
+
 if __name__ == "__main__":
     db.create_all()
     try:
         email, username, password = sys.argv[1:]
     except ValueError:
         print "\nAdd new ConPaaS user"
-        email = common.rlinput('E-mail: ')
-        username = common.rlinput('Username: ')
+        email = rlinput('E-mail: ')
+        username = rlinput('Username: ')
         pprompt = lambda: (getpass.getpass(),
                            getpass.getpass('Retype password: '))
 
