@@ -47,6 +47,7 @@ from conpaas.core.manager import BaseManager
 from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse
 
 from conpaas.services.htcondor.agent import client
+import node_info
 
 class HTCondorManager(BaseManager):
     """Manager class with the following exposed methods:
@@ -130,6 +131,8 @@ class HTCondorManager(BaseManager):
             # The first agent is a HTCondor Hub and a HTCondor Node
             client.create_hub(hub_node.ip, self.AGENT_PORT)
             client.create_node(hub_node.ip, self.AGENT_PORT, hub_node.ip)
+            self.logger.info("Added node %s: %s " % (hub_node.id, hub_node.ip))
+            node_info.add_node_info('/etc/hosts', hub_node.ip, hub_node.id)
 
             self.hub_ip = hub_node.ip
 
@@ -198,12 +201,16 @@ class HTCondorManager(BaseManager):
     def _do_add_nodes(self, count, cloud):
         """Add 'count' HTCondor Nodes to this deployment"""
         startCloud = self._init_cloud(cloud)
+        vals = { 'action': '_do_add_nodes', 'count': count }
+        self.logger.debug(self.ACTION_REQUESTING_NODES % vals)
         node_instances = self.controller.create_nodes(count, 
             client.check_agent_process, self.AGENT_PORT, startCloud)
 
         # Startup agents
         for node in node_instances:
             client.create_node(node.ip, self.AGENT_PORT, self.hub_ip)
+            self.logger.info("Added node %s: %s " % (node.id, node.ip))
+            node_info.add_node_info('/etc/hosts', node.ip, node.id)
 
         self.nodes += node_instances
         self.state = self.S_RUNNING
@@ -239,6 +246,7 @@ class HTCondorManager(BaseManager):
             node = self.nodes.pop()
             self.logger.info("Removing node with IP %s" % node.ip)
             self.controller.delete_nodes([ node ])
+            node_info.remove_node_info('/etc/hosts', node.ip)
 
         self.state = self.S_RUNNING
 
