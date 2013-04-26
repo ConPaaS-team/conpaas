@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# This script is part of the agent contextualization file. It 
+# starts a python script that parses the given arguments
+# and starts the agent server, which in turn will start
+# the agent service. 
+
+echo "DAEMON_LIST = MASTER, STARTD
+CONDOR_HOST = master.htc
+ALLOW_WRITE = *.htc
+" >> /etc/condor/condor_config.local
+
+grep IP_WHITE_LIST $ROOT_DIR/config.cfg | sed 's/.*= //;s/$/	master.htc/' >> /etc/hosts
+# TODO: run everything as user condor, for now make the execute directory writable for world
+chmod 777 /var/lib/condor/execute
+condor_restart
+
+# setup and run local agent
+$CPS_HOME/sbin/agent/default-cpsagent -c $ROOT_DIR/config.cfg 1>$ROOT_DIR/agent.out 2>$ROOT_DIR/agent.err &
+agent_pid=$!
+echo $agent_pid > $ROOT_DIR/agent.pid
