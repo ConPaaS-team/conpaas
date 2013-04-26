@@ -114,7 +114,7 @@ class piechart
     ** got constructors in PHP, now do we? ;-)
     **
     ** RB 09.03.2006:
-    **   - rearranged: please use indentation to seperate if/for blocks/statements!
+    **   - rearranged: please use indentation to separate if/for blocks/statements!
     **   - modified to use draw_slices in stead of draw_slice
     */
     function init ($w, $h, $d) {

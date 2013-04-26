@@ -485,7 +485,7 @@ The bag of tasks file
 
 The bag of tasks file is a simple plain text file that contains the list
 of tasks along with their arguments to be executed. The tasks are
-seperated by new lines. This file needs to be uploaded to the service,
+separated by new lines. This file needs to be uploaded to the service,
 before the service can start sampling. Below is an example of a simple
 bag of tasks file containing three tasks:
 
