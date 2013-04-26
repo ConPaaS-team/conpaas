@@ -13,6 +13,7 @@ import StringIO
 import simplejson
 
 from conpaas.core import https
+from conpaas.core.misc import rlinput
 
 class BaseClient(object):
     # Set this to the service type. eg: php, java, mysql...
@@ -251,9 +252,15 @@ class BaseClient(object):
 
         # Loop till  we get a valid URL
         while True:
-            target_url = raw_input('Enter the director URL: ')
             try:
-                url = urlparse.urlparse(target_url)
+                # Previously saved target_url, if any
+                target = self.read_conf_value("target")
+            except IOError:
+                target = ''
+
+            target = rlinput('Enter the director URL: ', target)
+            try:
+                url = urlparse.urlparse(target)
             except IndexError:
                 print wrong_url
                 continue
@@ -268,7 +275,7 @@ class BaseClient(object):
                     method='available_services', 
                     post=False, 
                     data={}, 
-                    endpoint=target_url, 
+                    endpoint=target, 
                     use_certs=False)
 
                 # If this yields True we can be reasonably sure that the
@@ -280,12 +287,18 @@ class BaseClient(object):
                 continue
 
             # Valid URL
-            self.write_conf_to_file('target', target_url)
+            self.write_conf_to_file('target', target)
             break
 
         while True:
+            try:
+                # Previously saved username, if any
+                username = self.read_conf_value("username")
+            except IOError:
+                username = ''
+
             # Get the username
-            username = raw_input('Enter your username: ')
+            username = rlinput('Enter your username: ', username)
             self.write_conf_to_file('username', username)
 
             # Get the password
