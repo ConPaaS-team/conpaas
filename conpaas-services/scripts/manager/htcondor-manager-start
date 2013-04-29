@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# This script is part of the manager contextualization file. It 
+# starts a python script that parses the given arguments
+# and starts the manager server, which in turn will start
+# the manager service. 
+
+echo "DAEMON_LIST = MASTER, COLLECTOR, NEGOTIATOR, SCHEDD
+CONDOR_HOST = master.htc
+ALLOW_WRITE = *.htc
+NEGOCIATOR_HOST = $(CONDOR_HOST)
+" >> /etc/condor/condor_config.local
+
+grep MY_IP $ROOT_DIR/config.cfg | sed 's/.*= //;s/$/	master.htc/' >> /etc/hosts
+condor_restart
+
+# This file is the default manager-start file. It can be
+# customized as needed by the sevice.  
+
+$CPS_HOME/sbin/manager/default-cpsmanager -c $ROOT_DIR/config.cfg 1>$ROOT_DIR/manager.out 2>$ROOT_DIR/manager.err &
+manager_pid=$!
+echo $manager_pid > $ROOT_DIR/manager.pid
