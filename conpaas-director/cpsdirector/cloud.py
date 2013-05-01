@@ -168,12 +168,16 @@ EOF
 
     def deduct_credit(self, value):
         uid = self.config_parser.get("manager", "USER_ID")
+        service_id = self.config_parser.get("manager", "SERVICE_ID")
 
         user = User.query.filter_by(uid=uid).one()
+        log('Decrement user %s credit: sid=%s, old_credit=%s, decrement=%s' % (
+            uid, service_id, user.credit, value))
         user.credit -= value
 
         if user.credit > -1:
             db.session.commit()
+            log('New credit for user %s: %s' % (uid, user.credit))
             return True
 
         db.session.rollback()
