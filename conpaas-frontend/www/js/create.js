@@ -94,6 +94,7 @@ conpaas.ui = (function (this_module) {
                 });
             }
         }, function (response) {
+            conpaas.ui.visible('pgstatLoading', false);
             $(button).removeAttr('disabled');
             $(button).removeClass('button-disabled');
             $(button).addClass('button');
