@@ -44,6 +44,9 @@ try {
 	if (!isset($_SESSION['uid'])) {
 		throw new Exception('User not logged in');
 	}
+	if (!array_key_exists('cloud', $_POST)){
+		throw new Exception('To start a service a cloud must be selected');
+	}
     $sid = $_POST['sid'];
     $cloud = $_POST['cloud'];
 	$service_data = ServiceData::getServiceById($sid);
