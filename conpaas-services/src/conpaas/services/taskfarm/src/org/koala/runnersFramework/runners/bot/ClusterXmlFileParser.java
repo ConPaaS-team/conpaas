@@ -42,7 +42,8 @@ public class ClusterXmlFileParser {
     static final String DISKTARGET = "disktarget";
     static final String CONTEXTTARGET = "contexttarget";
     static final String OSARCH = "osarch";
-    
+    static final String SECURITYGROUP = "securitygroup";
+    static final String REGION = "region";
     
 
     public List<ClusterMetadata> readConfig(String configFile) {
@@ -185,6 +186,16 @@ public class ClusterXmlFileParser {
                     if (event.asStartElement().getName().getLocalPart().equals(OSARCH)) {
                         event = eventReader.nextEvent();
                         clusterMetadata.os_arch = event.asCharacters().getData();
+                        continue;
+                    }
+                    if (event.asStartElement().getName().getLocalPart().equals(SECURITYGROUP)) {
+                        event = eventReader.nextEvent();
+                        clusterMetadata.security_group = event.asCharacters().getData();
+                        continue;
+                    }
+                    if (event.asStartElement().getName().getLocalPart().equals(REGION)) {
+                        event = eventReader.nextEvent();
+                        clusterMetadata.region = event.asCharacters().getData();
                         continue;
                     }
                 }

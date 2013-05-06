@@ -27,5 +27,6 @@ public class ClusterMetadata {
     String disk_target = "sda";
     String contex_target = "sdb";
     String os_arch = "i386";
-    
+    String security_group = "default";
+    String region = "ec2.us-east-1.amazonaws.com";
 }

@@ -372,7 +372,11 @@ public class BatsServiceApiImpl implements BatsServiceApi, UncaughtExceptionHand
             serviceState.state = State.STOPPED;
         } catch (IOException ioe) {
             return new MethodReportError(ioe.getLocalizedMessage());
-        }
+        } catch (Exception e)
+	{
+	    // XXX when workers are already killed.
+	    // This should be properly handled in the future.
+	}
 
         retVal.append("Ok.");
         return retVal;

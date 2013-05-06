@@ -38,23 +38,29 @@ public class EC2ClusterAmazonAPI extends Cluster {
 		
 	/* Instance type */
 	private String instanceType;
+
+	/* Security group */
+	private String security_group;
 	
-	
+	/*
     public EC2ClusterAmazonAPI(String hostname, int port, String alias, long timeUnit,
             double costUnit, int maxNodes, String speedFactor,
             String AMI, String instanceType,
             String keyPairName, String keyPairPath,
-            String accessKey, String secretKey) {
+            String accessKey, String secretKey,
+	    String security_group, String region) {
 		super(hostname, alias, timeUnit, costUnit, maxNodes);
 		
 		this.AMI = AMI;
 		this.speedFactor = speedFactor;
 		this.keyPairName = keyPairName;
 		this.instanceType = instanceType;
+		this.security_group = security_group;
 		this.ec2 = new AmazonEC2Client(new BasicAWSCredentials(accessKey, secretKey));
+		this.ec2.setEndpoint(region);
 		
 	}
-
+*/
     public EC2ClusterAmazonAPI(ClusterMetadata cm) {
         super(cm.hostName, cm.alias, cm.timeUnit, cm.costUnit, cm.maxNodes);
 
@@ -62,8 +68,10 @@ public class EC2ClusterAmazonAPI extends Cluster {
         this.speedFactor = cm.speedFactor;
         this.keyPairName = cm.keyPairName;
         this.instanceType = cm.instanceType;
-        this.ec2 = new AmazonEC2Client(
+	this.security_group = cm.security_group;
+	this.ec2 = new AmazonEC2Client(
                 new BasicAWSCredentials(cm.accessKey, cm.secretKey));
+	this.ec2.setEndpoint(cm.region);
     }
     
     private String getContent(String dataFile) {
@@ -100,6 +108,7 @@ public class EC2ClusterAmazonAPI extends Cluster {
 	    .withMinCount(noNodes)
 	    .withMaxCount(noNodes)
 	    .withKeyName(this.keyPairName)
+	    .withSecurityGroups(this.security_group)
 	    .withUserData(Base64.encodeBase64String(createUserData(electionName, poolName).getBytes()));
 		
 		RunInstancesResult result;
@@ -140,7 +149,7 @@ public class EC2ClusterAmazonAPI extends Cluster {
 			throws IOException {
         
 		
-		myIbis.registry().signal("die", from);
+		//myIbis.registry().signal("die", from);
         String instanceIDWithLocation = from.location().toString();
         String instanceID[] = instanceIDWithLocation.split("@"); 
         

@@ -1,6 +1,7 @@
 #!/bin/bash
 
 export IP_PUBLIC
+export SAMPLING_WORKERS
 
 port=8999
 iplServerOutput=/root/iplServer.out

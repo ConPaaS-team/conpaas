@@ -83,8 +83,11 @@ public class SamplingPhaseMaster extends Master {
 			shutdownIbis();
 			throw new RuntimeException("Size of the BoT too small for the number of clusters");
 		}
-
-		bot.noInitialWorkers = 1;
+		try {
+			bot.noInitialWorkers = Integer.parseInt(System.getenv().get("SAMPLING_WORKERS"));
+		} catch (Exception E) {
+			bot.noInitialWorkers = 1;
+		}
 
 		Cluster cheapest = findCheapest();
 
@@ -797,8 +800,14 @@ public class SamplingPhaseMaster extends Master {
 		System.out.println("Remaining tasks: " + bot.tasks.size());
 		bot.jobsRemainingAfterSampling = bot.tasks.size();
 		dumpSchedules();
-		System.out.println("Shuting down...");
-
+		System.out.println("Shuting down and killing workers...");
+		try {
+			this.terminateAllWorkers();
+		}
+		catch (Exception E)
+		{
+			E.printStackTrace(System.err);
+		}
 		// and now quit... is there something i should do?
 		// some shutdowns?!?!
 

@@ -249,6 +249,8 @@ if __name__ == '__main__':
     dict['keypairname'] = config_parser.get('iaas', 'KEY_NAME')
     dict['accesskey'] = config_parser.get('iaas', 'USER')
     dict['secretkey'] = config_parser.get('iaas', 'PASSWORD')
+    dict['region'] = config_parser.get('iaas', 'REGION')
+    dict['securitygroup'] = config_parser.get('iaas', 'SECURITY_GROUP_NAME')
 
   make_xml(dict).writexml(f)
   f.close()
@@ -263,6 +265,7 @@ if __name__ == '__main__':
     environ['HEX_FILE'] = agent_context_file
   elif config_parser.get('iaas', 'DRIVER').upper() == 'EC2': 
     environ['EC2_WORKER_INIT_SH'] = agent_context_file 
+  environ['SAMPLING_WORKERS'] = config_get_default(config_parser, 'iaas', 'SAMPLING_WORKERS', '1')
 
   f = open(agent_context_file, 'w')
   f.write(agent_context)

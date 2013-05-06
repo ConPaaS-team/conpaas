@@ -266,13 +266,13 @@ public class BoTRunner implements Serializable {
                             cm.alias, cm.timeUnit, cm.costUnit, cm.maxNodes, "" + cm.speedFactor,
                             cm.image_id, cm.network_id, cm.keyPairName, cm.keyPairPath, cm.accessKey, 
                             cm.secretKey, cm.disk_target, cm.contex_target, cm.os_arch);
-                } else if (!"".equals(cm.instanceType) && !"".equals(cm.instanceType)) {
+                } else if (!"".equals(cm.instanceType)) {
                     cluster = (Cluster) getClusterInstance(cm.className, cm.hostName, cm.port,
                             cm.alias, cm.timeUnit, cm.costUnit, cm.maxNodes, "" + cm.speedFactor,
                             cm.image_id, cm.network_id, cm.instanceType, cm.keyPairName, cm.keyPairPath, cm.accessKey,
-                            cm.secretKey);
+                            cm.secretKey, cm.security_group, cm.region, "");
                 }
-                if ("".equals(cm.image_id)) {
+		else if ("".equals(cm.image_id)) {
                     cluster = (Cluster) getClusterInstance(cm.className, cm.hostName,
                             cm.alias, cm.timeUnit, cm.costUnit, cm.maxNodes, cm.speedFactor);
                 }
@@ -433,10 +433,10 @@ public class BoTRunner implements Serializable {
     private Object getClusterInstance(String className, String hostname, int port,
             String alias, long timeUnit, double costUnit, int maxNodes, String speedFactor,
             int imageId, int networkId, String instanceType, String keyPairName, String keyPairPath,
-            String accessKey, String secretKey) {
+            String accessKey, String secretKey, String security_group, String region, String ec2_specifier) {
         try {
             Class cl = Class.forName(className);
-            Class[] cloudClusterClass = new Class[14];
+            Class[] cloudClusterClass = new Class[16];
             cloudClusterClass[0] = String.class;
             cloudClusterClass[1] = int.class;
             cloudClusterClass[2] = String.class;
@@ -451,13 +451,15 @@ public class BoTRunner implements Serializable {
             cloudClusterClass[11] = String.class;
             cloudClusterClass[12] = String.class;
             cloudClusterClass[13] = String.class;
-
-            java.lang.reflect.Constructor constructor = cl.getConstructor(cloudClusterClass);
+            cloudClusterClass[14] = String.class;
+            cloudClusterClass[15] = String.class;
+            
+	    java.lang.reflect.Constructor constructor = cl.getConstructor(cloudClusterClass);
             Object invoker = constructor.newInstance(new Object[]{
                         hostname, port, alias, timeUnit, costUnit, maxNodes,
                         speedFactor, imageId, networkId, instanceType,
                         keyPairName, keyPairPath,
-                        accessKey, secretKey});
+                        accessKey, secretKey, security_group, region});
             if (!(invoker instanceof Cluster)) {
                 System.out.println("The class " + className + " is not a subclass of class Cluster.");
                 return null;

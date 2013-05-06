@@ -108,6 +108,9 @@ CERT_DIR = /etc/cpsdirector/certs
 # The price per TIMEUNIT of this specific machine type on this cloud
 # COSTUNIT = 1
 
+# Initial number of sampling workers
+#SAMPLING_WORKERS = 1
+
 # The maximum number of VMs that the system is allowed to allocate from this
 # cloud
 # MAXNODES = 20
