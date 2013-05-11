@@ -1,11 +1,20 @@
 ============
 Installation 
 ============
-ConPaaS_ is composed of two parts: a web service, called **cpsdirector**, and a
-web front-end called **cpsfrontend**. The web service implements a restful API
-which is used by the ConPaaS command line tools and by the web front-end.
+ConPaaS_ is a Platform-as-a-Service system. It aims at simplifying the
+deployment and management of applications in the Cloud.  
+
+The central component of ConPaaS, called *ConPaaS Director* (**cpsdirector**),
+is responsible for handling user authentication, creating new applications,
+handling their life-cycle and much more. **cpsdirector** is a web service
+exposing all its functionalities via an HTTP-based API.
+
+ConPaaS can be used either via a command line interface (**cpsclient**) or
+through a web frontend called **cpsfrontend**. This document explains how to
+install and configure all the aforementioned components.
 
 .. _ConPaaS: http://www.conpaas.eu
+.. _Flask: http://flask.pocoo.org/
 
 Both **cpsdirector** and **cpsfrontend** can run inside or outside the cloud.
 ConPaaS services are designed to run either in an `OpenNebula` cloud
@@ -17,8 +26,8 @@ Installing ConPaaS requires to take the following steps:
    new one. Details on how to do this vary depending on the choice of cloud
    where ConPaaS will run. Instructions on how to find or create a ConPaaS image
    suitable to run on Amazon EC2 can be found in :ref:`conpaas-on-ec2`.
-   Section :ref:`conpaas-on-opennebula` describes how to create a ConPaaS image
-   for OpenNebula.
+   The section :ref:`conpaas-on-opennebula` describes how to create a ConPaaS
+   image for OpenNebula.
 
 #. Install and configure **cpsdirector** as explained in
    :ref:`director-installation`. All system configuration takes place in the
@@ -33,15 +42,22 @@ Director installation
 =====================
 
 The ConPaaS Director is a web service that allows users to manage their
-ConPaaS services. Users can create, configure and terminate services
-through it. This section describes the process of setting up a ConPaaS
-director on a Debian (or Ubuntu) system.
+ConPaaS applications. Users can create, configure and terminate their cloud
+applications through it. This section describes the process of setting up a
+ConPaaS director on a Debian GNU/Linux system. Only versions 6.0 (Squeeze) and
+7.0 (Wheezy) are supported. 
 
 #. Install the required packages::
 
    $ sudo apt-get update
    $ sudo apt-get install build-essential python-setuptools python-dev 
    $ sudo apt-get install libapache2-mod-wsgi libcurl4-openssl-dev
+
+#. Make sure that your system's time and date are correct by installing and
+   running **ntpdate**::
+
+   $ sudo apt-get install ntpdate
+   $ sudo ntpdate 0.us.pool.ntp.org
 
 #. Download http://www.conpaas.eu/dl/cpsdirector-1.1.0.tar.gz and
    uncompress it
@@ -84,9 +100,11 @@ interact with the system.
 
 It is therefore crucial that the SSL certificate of your director contains the
 proper information. In particular, the `commonName` field of the certificate
-should carry the **public hostname of your director**. The installation
-procedure takes care of setting up such a field. However, should your director
-hostname change, please ensure you run the following commands::
+should carry the **public hostname of your director**, and it should match the
+*hostname* part of :envvar:`DIRECTOR_URL` in
+:file:`/etc/cpsdirector/director.cfg`. The installation procedure takes care
+of setting up such a field. However, should your director hostname change,
+please ensure you run the following commands::
 
     $ sudo cpsconf.py
     $ sudo service apache2 restart
@@ -123,7 +141,7 @@ After having uncompressed it you should:
 -  Create a :file:`config.php` file in the web server directory where you
    have chosen to install the frontend. Please refer to
    :file:`config-example.php` for a detailed explaination of all the
-   configuration options. Note that :file:`config.php`` must contain the
+   configuration options. Note that :file:`config.php` must contain the
    :envvar:`CONPAAS_CONF_DIR` option, pointing to the directory mentioned in
    the previous step
 
