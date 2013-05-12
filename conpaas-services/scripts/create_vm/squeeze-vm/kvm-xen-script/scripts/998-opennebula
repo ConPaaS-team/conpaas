@@ -1,0 +1,29 @@
+# Section: 997-opennebula
+
+##### TO CUSTOMIZE: #####
+# This part is for OpenNebula contextualization. The contextualization scripts (and possibly
+# other necessary files) will be provided through OpenNebula to the VM as an ISO image.
+# We need to mount this image and execute the contextualization scripts. You might need
+# to change the dev file associated with the CD-ROM inside your virtual machine from
+# "/dev/sr0" to something else (depending on your operating system and on the virtualization 
+# software, it can be /dev/hdb, /dev/sdb etc.). You can check this in a VM that is already running
+# in your OpenNebula system and that has been configured with contextualization.  
+ 
+cat <<"EOF" > $ROOT_DIR/etc/rc.local
+#!/bin/sh
+mount -t iso9660 /dev/sr0 /mnt
+ 
+if [ -f /mnt/context.sh ]; then
+  . /mnt/context.sh
+  if [ -n "$USERDATA" ]; then
+    echo "$USERDATA" | /usr/bin/xxd -p -r | /bin/sh
+  elif [ -e /mnt/init.sh ]; then
+    . /mnt/init.sh
+  fi
+fi
+ 
+umount /mnt
+
+exit 0
+EOF
+

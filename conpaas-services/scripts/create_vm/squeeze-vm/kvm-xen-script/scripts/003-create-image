@@ -1,0 +1,164 @@
+# Section: 003-create-image
+if [ `id -u` -ne 0 ]; then
+  cecho 'need root permissions for this script';
+  exit 1;
+fi
+
+# System rollback function
+function cleanup() {
+    # Set errormsg if something went wrong
+    [ $? -ne 0 ] && errormsg="Script terminated with errors"
+
+    for mpoint in /dev/pts /dev /proc /
+    do
+      mpoint="${ROOT_DIR?:not set}${mpoint}"
+
+      # Only attempt to umount $ROOT_DIR{/dev/pts,/dev,/proc,/} if necessary
+      if [ -d $mpoint ]
+      then
+        cecho "Umounting $mpoint"
+        umount $mpoint || true
+      fi
+    done
+
+    sleep 1s
+    losetup -d $LOOP_DEV_P
+    sleep 1s
+    kpartx -d $LOOP_DEV
+    sleep 1s
+    losetup -d $LOOP_DEV
+    sleep 1s
+    rm -r $ROOT_DIR
+    # Print "Done" on success, $errormsg otherwise
+    cecho "${errormsg:-Done}"
+}
+
+# Check if required binaries are in $PATH
+for bin in dd parted losetup kpartx mkfs.ext3 tune2fs mount debootstrap chroot umount grub-install
+do
+  if [ -z `which $bin` ]
+  then
+    if [ -x /usr/lib/command-not-found ]
+    then
+      /usr/lib/command-not-found $bin
+    else
+      echo "$bin: command not found"
+    fi
+    exit 1
+  fi
+done
+
+cecho "Creating empty disk image at" $FILENAME
+dd if=/dev/zero of=$FILENAME bs=1M count=$FILESIZE
+
+cecho "Writing partition table"
+parted -s $FILENAME mklabel msdos
+
+cecho "Creating primary partition"
+cyl_total=`parted -s $FILENAME unit s print | awk '{if (NF > 2 && $1 == "Disk") print $0}' | sed 's/Disk .* \([0-9]\+\)s/\1/'`
+cyl_partition=`expr $cyl_total - 2048`
+parted -s $FILENAME unit s mkpart primary 2048 $cyl_partition
+
+cecho "Setting boot flag"
+parted -s $FILENAME set 1 boot on
+
+LOOP_DEV=`losetup -f`
+cecho "Going to use" $LOOP_DEV
+losetup $LOOP_DEV $FILENAME
+
+dname=`kpartx -l $LOOP_DEV | awk '{print $1}'`
+PART_DEV=/dev/mapper/$dname
+cecho "Mapping partition to device"
+kpartx -a $LOOP_DEV
+
+cecho "Creating ext3 filesystem"
+echo 'y' | mkfs.ext3 $PART_DEV
+cecho "Setting label 'root'"
+tune2fs $PART_DEV -L root
+
+ROOT_DIR=`mktemp -d`
+cecho "Using $ROOT_DIR as mount point"
+
+cecho "Mounting disk image"
+
+LOOP_DEV_P=`losetup -f`
+losetup $LOOP_DEV_P $PART_DEV
+mount $LOOP_DEV_P $ROOT_DIR
+#mount $PART_DEV $ROOT_DIR
+
+# Always clean up on exit
+trap "cleanup" EXIT
+
+cecho "Starting debootstrap"
+debootstrap --arch $ARCH --include locales $DEBIAN_DIST $ROOT_DIR $DEBIAN_MIRROR
+
+cecho "Writing fstab"
+echo "/dev/sda1 / ext3 defaults 0 1" > $ROOT_DIR/etc/fstab
+cecho "Writing /etc/network/interfaces"
+cat <<EOF > $ROOT_DIR/etc/network/interfaces
+auto lo
+iface lo inet loopback
+auto eth0
+iface eth0 inet static
+EOF
+cecho "Removing udev persistent rules"
+rm $ROOT_DIR/etc/udev/rules.d/70-persistent* || true
+
+cecho "Changing hostname"
+cat <<EOF > $ROOT_DIR/etc/hostname
+conpaas
+EOF
+
+sed -i '1i 127.0.0.1  conpaas' $ROOT_DIR/etc/hosts
+
+# mount /dev/pts to avoid error message: Can not write log, openpty() failed (/dev/pts not mounted?) 
+cecho "Mounting /dev, /dev/pts and /proc in chroot"
+mount -obind /dev $ROOT_DIR/dev
+mount -obind /dev/pts $ROOT_DIR/dev/pts
+mount -t proc proc $ROOT_DIR/proc
+
+cecho "Setting keyboard layout"
+chroot $ROOT_DIR /bin/bash -c "echo 'debconf keyboard-configuration/variant  select  USA' | debconf-set-selections"
+
+cecho "Generating and setting locale"
+chroot $ROOT_DIR /bin/bash -c "sed --in-place 's/^# en_US.UTF-8/en_US.UTF-8/' /etc/locale.gen"
+chroot $ROOT_DIR /bin/bash -c 'locale-gen'
+chroot $ROOT_DIR /bin/bash -c 'update-locale LANG=en_US.UTF-8'
+
+cecho "Running apt-get update"
+chroot $ROOT_DIR /bin/bash -c 'apt-get -y update'
+cecho "Installing linux-image-$KERNEL_VERSION"
+chroot $ROOT_DIR /bin/bash -c "apt-get -y install linux-image-$KERNEL_VERSION"
+cecho "Installing grub package"
+chroot $ROOT_DIR /bin/bash -c 'DEBIAN_FRONTEND=noninteractive apt-get -y --force-yes install grub'
+
+mkdir -p $ROOT_DIR/boot/grub
+cat <<EOF > $ROOT_DIR/boot/grub/device.map 
+(hd0)   $LOOP_DEV
+(hd0,1) $LOOP_DEV_P
+EOF
+
+chroot $ROOT_DIR grub-mkconfig -o /boot/grub/grub.cfg
+
+cecho "Writing /boot/grub/grub.cfg"
+cat <<EOF > $ROOT_DIR/boot/grub/grub.cfg
+set default=0
+set timeout=0
+menuentry 'linux-image-$KERNEL_VERSION' {
+  insmod ext2
+  set root='(hd0,1)'
+  linux  /boot/vmlinuz-$KERNEL_VERSION root=/dev/sda1
+  initrd /boot/initrd.img-$KERNEL_VERSION
+}
+EOF
+
+cecho "Running grub-install"
+grub-install --no-floppy --grub-mkdevicemap=$ROOT_DIR/boot/grub/device.map --root-directory=$ROOT_DIR $LOOP_DEV
+
+# disable auto start after package install
+cat <<EOF > $ROOT_DIR/usr/sbin/policy-rc.d
+#!/bin/sh
+exit 101
+EOF
+chmod 755 $ROOT_DIR/usr/sbin/policy-rc.d
+

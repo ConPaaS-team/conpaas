@@ -1,0 +1,53 @@
+# Section: 004-ConPaaS-core
+
+GIT_SERVICE="false"
+
+# Generate a script that will install the dependencies in the system. 
+cat <<EOF > $ROOT_DIR/conpaas_install
+#!/bin/bash
+# Function for displaying highlighted messages.
+function cecho() {
+  echo -en "\033[1m"
+  echo -n "#" \$@
+  echo -e "\033[0m"
+}
+
+# set root passwd
+echo "root:contrail" | chpasswd
+
+# fix apt sources
+sed --in-place 's/main/main contrib non-free/' /etc/apt/sources.list
+
+# install dependencies
+apt-get -f -y update
+# pre-accept sun-java6 licence
+echo "debconf shared/accepted-sun-dlj-v1-1 boolean true" | debconf-set-selections
+DEBIAN_FRONTEND=noninteractive apt-get -y --force-yes --no-install-recommends --no-upgrade \
+        install openssh-server \
+				python python-pycurl python-openssl python-m2crypto \
+				python-cheetah libxslt1-dev yaws subversion unzip less
+update-rc.d yaws disable
+
+cecho "===== install IPOP package ====="
+echo "deb http://www.grid-appliance.org/files/packages/deb/ stable contrib" >> /etc/apt/sources.list
+wget -O - http://www.grid-appliance.org/files/packages/deb/repo.key | apt-key add -
+apt-get update
+apt-get -f -y install ipop
+
+# remove cached .debs from /var/cache/apt/archives to save disk space
+apt-get clean
+
+# create directory structure
+echo > /var/log/cpsagent.log
+mkdir /etc/cpsagent/
+mkdir /var/tmp/cpsagent/
+mkdir /var/run/cpsagent/
+mkdir /var/cache/cpsagent/
+echo > /var/log/cpsmanager.log
+mkdir /etc/cpsmanager/
+mkdir /var/tmp/cpsmanager/
+mkdir /var/run/cpsmanager/
+mkdir /var/cache/cpsmanager/
+
+EOF
+

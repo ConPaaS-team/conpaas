@@ -1,0 +1,29 @@
+# Section: 505-hadoop
+
+cat <<EOF >> $ROOT_DIR/conpaas_install
+cecho "===== install cloudera repo for hadoop ====="
+# add cloudera repo for hadoop
+echo "deb http://archive.cloudera.com/debian $DEBIAN_DIST-cdh3 contrib" >> /etc/apt/sources.list
+wget -O - http://archive.cloudera.com/debian/archive.key 2>/dev/null | apt-key add -
+apt-get -f -y update
+apt-get -f -y --no-install-recommends --no-upgrade install \
+  hadoop-0.20 hadoop-0.20-namenode hadoop-0.20-datanode \
+  hadoop-0.20-secondarynamenode hadoop-0.20-jobtracker  \
+  hadoop-0.20-tasktracker hadoop-pig hue-common  hue-filebrowser \
+  hue-jobbrowser hue-jobsub hue-plugins hue-server dnsutils
+update-rc.d hadoop-0.20-namenode disable
+update-rc.d hadoop-0.20-datanode disable
+update-rc.d hadoop-0.20-secondarynamenode disable
+update-rc.d hadoop-0.20-jobtracker disable
+update-rc.d hadoop-0.20-tasktracker disable
+update-rc.d hue disable
+# create a default config dir
+mkdir -p /etc/hadoop-0.20/conf.contrail
+update-alternatives --install /etc/hadoop-0.20/conf hadoop-0.20-conf /etc/hadoop-0.20/conf.contrail 99
+# remove cloudera repo
+sed --in-place "s%deb http://archive.cloudera.com/debian $DEBIAN_DIST-cdh3 contrib%%" /etc/apt/sources.list
+apt-get -f -y update
+
+
+EOF
+

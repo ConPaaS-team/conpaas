@@ -1,0 +1,12 @@
+# Section: 502-mysql
+
+cat <<EOF >> $ROOT_DIR/conpaas_install
+# fix apt sources
+sed --in-place 's/main/main contrib non-free/' /etc/apt/sources.list
+apt-get -f -y update
+DEBIAN_FRONTEND=noninteractive apt-get -y --force-yes --no-install-recommends --no-upgrade \
+		install mysql-server python-mysqldb
+update-rc.d mysql disable
+
+EOF
+

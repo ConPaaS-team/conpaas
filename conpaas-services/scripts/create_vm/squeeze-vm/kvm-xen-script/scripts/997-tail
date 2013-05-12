@@ -1,0 +1,14 @@
+# Section: 996-tail
+
+cat <<EOF >> $ROOT_DIR/conpaas_install
+apt-get -f -y clean
+exit 0
+EOF
+
+# Execute the script for installing the dependencies.
+chmod a+x $ROOT_DIR/conpaas_install
+chroot $ROOT_DIR /bin/bash /conpaas_install
+rm -f $ROOT_DIR/conpaas_install
+
+rm -f $ROOT_DIR/usr/sbin/policy-rc.d
+

@@ -1,0 +1,29 @@
+# Section: 503-condor
+
+cat <<EOF >> $ROOT_DIR/conpaas_install
+cecho "===== install HTCondor package ====="
+mkdir -p /var/lib/condor
+chown condor /var/lib/condor
+chgrp condor /var/lib/condor
+chmod 766 /var/lib/condor
+# avoid warning: W: GPG error: http://mozilla.debian.net squeeze-backports Release: The following signatures couldn't be verified because the public key is not available: NO_PUBKEY 85A3D26506C4AE2A 
+#apt-get install debian-keyring
+wget -O - -q http://mozilla.debian.net/archive.asc | apt-key add -
+# avoid warning: W: GPG error: http://dl.google.com stable Release: The following signatures couldn't be verified because the public key is not available: NO_PUBKEY A040830F7FAC5991 
+wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
+
+# If things go wrong, you may want to read  http://research.cs.wisc.edu/htcondor/debian/
+# 
+echo "deb http://research.cs.wisc.edu/htcondor/debian/stable/ $DEBIAN_DIST contrib" >> /etc/apt/sources.list
+apt-get update
+apt-get -f -y --force-yes install sun-java6-jdk ant condor
+echo ===== check if HTCondor is running =====
+ps -ef | grep condor
+echo ===== stop condor =====
+/etc/init.d/condor stop
+echo ===== 
+
+# remove cached .debs from /var/cache/apt/archives to save disk space
+apt-get clean
+EOF
+

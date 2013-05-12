@@ -1,0 +1,16 @@
+# Section: 506-scalaris
+
+cat <<EOF >> $ROOT_DIR/conpaas_install
+cecho "===== install scalaris repo ====="
+# add scalaris repo
+echo "deb http://download.opensuse.org/repositories/home:/scalaris/Debian_6.0 /" >> /etc/apt/sources.list
+wget -O - http://download.opensuse.org/repositories/home:/scalaris/Debian_6.0/Release.key 2>/dev/null | apt-key add -
+apt-get -f -y update
+apt-get -f -y --no-install-recommends --no-upgrade install scalaris screen erlang
+update-rc.d scalaris disable
+# remove scalaris repo
+sed --in-place 's%deb http://download.opensuse.org/repositories/home:/scalaris/Debian_6.0 /%%' /etc/apt/sources.list
+apt-get -f -y update
+
+EOF
+
