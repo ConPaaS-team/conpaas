@@ -109,7 +109,7 @@ CERT_DIR = /etc/cpsdirector/certs
 # COSTUNIT = 1
 
 # Initial number of sampling workers
-#SAMPLING_WORKERS = 1
+# SAMPLING_WORKERS = 1
 
 # The maximum number of VMs that the system is allowed to allocate from this
 # cloud
@@ -158,6 +158,10 @@ CERT_DIR = /etc/cpsdirector/certs
 # OpenNebula (an IP address).
 
 # NET_GATEWAY = 
+
+# The netmask of the OpenNebula virtual network (e.g. 255.255.255.0).
+
+# NET_NETMASK = 
 
 # The DNS server that VMs should use to resolve DNS names (an IP address).
 

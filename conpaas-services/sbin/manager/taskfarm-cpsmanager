@@ -237,6 +237,7 @@ if __name__ == '__main__':
     dict['networkid'] = config_parser.get('iaas', 'NET_ID')
     dict['nameserver'] = config_parser.get('iaas', 'NET_NAMESERVER')
     dict['gateway'] = config_parser.get('iaas', 'NET_GATEWAY')
+    dict['netmask'] = config_parser.get('iaas', 'NET_NETMASK')
     dict['imageid'] = config_parser.get('iaas', 'IMAGE_ID')
     dict['disktarget'] = config_parser.get('iaas', 'DISK_TARGET')
     dict['contexttarget'] = config_parser.get('iaas', 'CONTEXT_TARGET')

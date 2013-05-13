@@ -56,8 +56,8 @@ def config_parser(name):
     elif name == cloud_names[2]:
         nebula_params = ['URL', 'USER', 'PASSWORD', 'IMAGE_ID',
                          'INST_TYPE', 'NET_ID', 'NET_GATEWAY',
-                         'NET_NAMESERVER', 'OS_ARCH', 'OS_ROOT',
-                         'DISK_TARGET', 'CONTEXT_TARGET']
+                         'NET_NETMASK', 'NET_NAMESERVER', 'OS_ARCH', 
+                         'OS_ROOT', 'DISK_TARGET', 'CONTEXT_TARGET']
         iaas_config.read(
             "conpaas-services/config/cloud/opennebula.cfg.example")
         __check_params(nebula_params)

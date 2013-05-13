@@ -53,7 +53,7 @@ class OpenNebulaCloud(Cloud):
         cloud_params = ['URL', 'USER', 'PASSWORD',
                         'IMAGE_ID', 'INST_TYPE',
                         'NET_ID', 'NET_GATEWAY',
-                        'NET_NAMESERVER',
+                        'NET_NETMASK', 'NET_NAMESERVER',
                         'OS_ARCH',
                         'OS_ROOT',
                         'DISK_TARGET',
@@ -71,6 +71,7 @@ class OpenNebulaCloud(Cloud):
         self.inst_type = _get('INST_TYPE')
         self.net_id = _get('NET_ID')
         self.net_gw = _get('NET_GATEWAY')
+        self.net_nm = _get('NET_NETMASK')
         self.net_ns = _get('NET_NAMESERVER')
         self.os_arch = _get('OS_ARCH')
         self.os_root = _get('OS_ROOT')
@@ -172,6 +173,7 @@ class OpenNebulaCloud(Cloud):
         context['HOSTNAME'] = '$NAME'
         context['IP_PUBLIC'] = '$NIC[IP]'
         context['IP_GATEWAY'] = self.net_gw
+        context['NETMASK'] = self.net_nm
         context['NAMESERVER'] = self.net_ns
         context['USERDATA'] = self.cx
         context['TARGET'] = self.context_target

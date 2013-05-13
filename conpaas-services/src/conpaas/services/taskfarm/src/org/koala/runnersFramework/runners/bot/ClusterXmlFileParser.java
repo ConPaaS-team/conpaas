@@ -39,6 +39,7 @@ public class ClusterXmlFileParser {
     static final String SECRETKEY = "secretkey";
     static final String DNS = "nameserver";
     static final String GATEWAY = "gateway";
+    static final String NETMASK = "netmask";
     static final String DISKTARGET = "disktarget";
     static final String CONTEXTTARGET = "contexttarget";
     static final String OSARCH = "osarch";
@@ -171,6 +172,11 @@ public class ClusterXmlFileParser {
                     if (event.asStartElement().getName().getLocalPart().equals(GATEWAY)) {
                         event = eventReader.nextEvent();
                         clusterMetadata.gateway = event.asCharacters().getData();
+                        continue;
+                    }
+                    if (event.asStartElement().getName().getLocalPart().equals(NETMASK)) {
+                        event = eventReader.nextEvent();
+                        clusterMetadata.netmask = event.asCharacters().getData();
                         continue;
                     }
                     if (event.asStartElement().getName().getLocalPart().equals(DISKTARGET)) {

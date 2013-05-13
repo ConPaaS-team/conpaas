@@ -18,7 +18,7 @@ public class OpenNebulaOcaCluster extends Cluster {
     public transient int currentNoNodes = 0;
     public int image_id, network_id;
     public String mem;
-    public String dns, gateway;
+    public String dns, gateway, netmask;
     public String diskTarget, contextTarget, OSArch;
     /*number of CPUs for the VM*/
     public String speedFactor;
@@ -34,61 +34,22 @@ public class OpenNebulaOcaCluster extends Cluster {
     /**
      * irrelevant dns and gateway default values.
      */
-    public static final String DNS = "130.73.79.13";
-    public static final String Gateway = "10.0.0.1";
     public static final String DEF_MEM = "1024";
     
     
-    public OpenNebulaOcaCluster(String hostname, int port, String alias, long timeUnit,
-            double costUnit, int maxNodes, String speedFactor,
-            int image_id, int network_id,
-            String mem, String dns, String gateway, String e, 
-            String diskTarget, String contextTarget, String OSArch) {
-        super(hostname, alias, timeUnit, costUnit, maxNodes);
-        this.image_id = image_id;        
-        this.network_id = network_id;
-        this.speedFactor = speedFactor;
-        this.diskTarget = diskTarget;
-        this.contextTarget = contextTarget;
-        this.OSArch = OSArch;
-        if((mem != null) && (!mem.equals(""))) {
-        	this.mem = mem;
-        } else {
-        	this.mem = DEF_MEM;
-        }
-        if((dns != null) && (!dns.equals(""))) {
-        	this.dns = dns;
-        } else {
-        	this.dns = DNS;
-        } 
-        if((gateway != null) && (!gateway.equals(""))) {
-        	this.gateway = dns;
-        } else {
-        	this.gateway = Gateway;
-        }
-    }
-    
     public OpenNebulaOcaCluster(ClusterMetadata cm) {
         super(cm.hostName, cm.alias, cm.timeUnit, cm.costUnit, cm.maxNodes);
-        this.image_id = cm.image_id;        
+        
+	this.image_id = cm.image_id;        
         this.network_id = cm.network_id;
         this.speedFactor = cm.speedFactor;
         this.diskTarget = cm.disk_target;
         this.contextTarget = cm.contex_target;
         this.OSArch = cm.os_arch;
-        
+     	this.dns = cm.dns;
+	this.netmask = cm.netmask;
         this.mem = DEF_MEM;
 
-        if((cm.dns != null) && (!cm.dns.equals(""))) {
-        	this.dns = cm.dns;
-        } else {
-        	this.dns = DNS;
-        } 
-        if(!"".equals(cm.gateway)) {
-        	this.gateway = cm.gateway;
-        } else {
-        	this.gateway = Gateway;
-        }
     }
 
     private void setOneClient() {
@@ -203,13 +164,10 @@ public class OpenNebulaOcaCluster extends Cluster {
                 + "]\n\n"
                 + "CONTEXT = [\n"
                 + "hostname   = \"$NAME\",\n"
-                /*+ "dns        = \"$NETWORK[DNS, NAME=\\\"Small network\\\"]\",\n"*/
                 + "nameserver        = " + dns + ",\n"
-                /*    + "gateway    = \"$NETWORK[GATEWAY, NAME=\\\"Small network\\\"]\",\n"*/
                 + "ip_gateway    = " + gateway + ",\n"
-//                + "ip_public  = \"$NIC[IP, NETWORK=\\\"Private LAN\\\"]\",\n"
-                  + "ip_public  = \"$NIC[IP]\",\n"
-                /* variables required by a BoT worker */
+                + "netmask    = " + netmask + ",\n"
+                + "ip_public  = \"$NIC[IP]\",\n"
                 + "LOCATION=\"" + location + "\",\n"
                 + "ELECTIONNAME=\"" + electionName + "\",\n"
                 + "POOLNAME=\"" + poolName + "\",\n"

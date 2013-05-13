@@ -260,24 +260,8 @@ public class BoTRunner implements Serializable {
 
         for (ClusterMetadata cm : listClustersMetadata) {
             cluster = (Cluster) getClusterInstance(cm);
-            if (cluster == null) {
-                if (!"".equals(cm.image_id) && "".equals(cm.instanceType)) {
-                    cluster = (Cluster) getClusterInstance(cm.className, cm.hostName, cm.port,
-                            cm.alias, cm.timeUnit, cm.costUnit, cm.maxNodes, "" + cm.speedFactor,
-                            cm.image_id, cm.network_id, cm.keyPairName, cm.keyPairPath, cm.accessKey, 
-                            cm.secretKey, cm.disk_target, cm.contex_target, cm.os_arch);
-                } else if (!"".equals(cm.instanceType)) {
-                    cluster = (Cluster) getClusterInstance(cm.className, cm.hostName, cm.port,
-                            cm.alias, cm.timeUnit, cm.costUnit, cm.maxNodes, "" + cm.speedFactor,
-                            cm.image_id, cm.network_id, cm.instanceType, cm.keyPairName, cm.keyPairPath, cm.accessKey,
-                            cm.secretKey, cm.security_group, cm.region, "");
-                }
-		else if ("".equals(cm.image_id)) {
-                    cluster = (Cluster) getClusterInstance(cm.className, cm.hostName,
-                            cm.alias, cm.timeUnit, cm.costUnit, cm.maxNodes, cm.speedFactor);
-                }
-            }
-            if (cluster != null) {
+            
+	    if (cluster != null) {
                 Clusters.put(cluster.alias, cluster);
             }
         }
@@ -299,64 +283,6 @@ public class BoTRunner implements Serializable {
         }
 
         System.out.println("BoT time unit set to: " + this.timeUnit);
-    }
-
-    /*
-     * private void readClustersFromPlainFile() { String[] clusterInfo; Cluster
-     * cluster = null; String className, clusterName, alias; long timeUnit; int
-     * costUnit, maxNodes; double speedFactor;
-     *
-     * try { Scanner in = new Scanner(new File("cluster.config")); while
-     * (in.hasNext()) { clusterInfo = in.nextLine().split(" ");
-     *
-     * if (clusterInfo.length != 7) { System.err.println("Skipped one line from
-     * cluster.config file"); continue; }
-     *
-     * className = clusterInfo[0]; clusterName = clusterInfo[1]; alias =
-     * clusterInfo[2]; timeUnit = Long.parseLong(clusterInfo[3]); costUnit =
-     * Integer.parseInt(clusterInfo[4]); maxNodes =
-     * Integer.parseInt(clusterInfo[5]); speedFactor =
-     * Double.parseDouble(clusterInfo[6]);
-     *
-     * cluster = (Cluster) getClusterInstance(className, clusterName, alias,
-     * timeUnit, costUnit, maxNodes, speedFactor);
-     *
-     * if (cluster != null) { Clusters.put(cluster.alias, cluster); } }
-     * in.close(); System.out.println("Read: " + Clusters.size() + "
-     * clusters."); } catch (FileNotFoundException ex) {
-     * System.err.println("Failed to open cluster.config file.");
-     * System.err.println(ex); return; } } /* /** Creates an instance of the
-     * class specified in the 1st parameter with the rest of the parameters as
-     * arguments.
-     */
-    /*
-     * physical hosts cluster
-     */
-    private Object getClusterInstance(String className, String hostname,
-            String alias, long timeUnit, double costUnit, int maxNodes, String speedFactor) {
-        try {
-            Class cl = Class.forName(className);
-            Class[] cloudClusterClass = new Class[6];
-            cloudClusterClass[0] = String.class;
-            cloudClusterClass[1] = String.class;
-            cloudClusterClass[2] = long.class;
-            cloudClusterClass[3] = double.class;
-            cloudClusterClass[4] = int.class;
-            cloudClusterClass[5] = String.class;
-
-            java.lang.reflect.Constructor constructor = cl.getConstructor(cloudClusterClass);
-            Object invoker = constructor.newInstance(new Object[]{
-                        hostname, alias, timeUnit, costUnit, maxNodes,
-                        speedFactor});
-            if (!(invoker instanceof Cluster)) {
-                System.out.println("The class " + className + " is not a subclass of class Cluster.");
-                return null;
-            }
-            return invoker;
-        } catch (Exception ex) {
-            Logger.getLogger(BoTRunner.class.getName()).log(Level.SEVERE, null, ex);
-            return null;
-        }
     }
 
     /**
@@ -383,109 +309,6 @@ public class BoTRunner implements Serializable {
         }
     }
 
-    /*
-     * VM hosts cluster
-     */
-    private Object getClusterInstance(String className, String hostname, int port,
-            String alias, long timeUnit, double costUnit, int maxNodes, String speedFactor,
-            int imageId, int networkId, String keyPairName, String keyPairPath,
-            String accessKey, String secretKey, String diskTarget, String contextTarget, String OSArch) {
-        try {
-            Class cl = Class.forName(className);
-            Class[] cloudClusterClass = new Class[16];
-            cloudClusterClass[0] = String.class;
-            cloudClusterClass[1] = int.class;
-            cloudClusterClass[2] = String.class;
-            cloudClusterClass[3] = long.class;
-            cloudClusterClass[4] = double.class;
-            cloudClusterClass[5] = int.class;
-            cloudClusterClass[6] = String.class;
-            cloudClusterClass[7] = int.class;
-            cloudClusterClass[8] = int.class;
-            cloudClusterClass[9] = String.class;
-            cloudClusterClass[10] = String.class;
-            cloudClusterClass[11] = String.class;
-            cloudClusterClass[12] = String.class;
-            cloudClusterClass[13] = String.class;
-            cloudClusterClass[14] = String.class;
-            cloudClusterClass[15] = String.class;
-
-            java.lang.reflect.Constructor constructor = cl.getConstructor(cloudClusterClass);
-            Object invoker = constructor.newInstance(new Object[]{
-                        hostname, port, alias, timeUnit, costUnit, maxNodes,
-                        speedFactor, imageId, networkId,
-                        keyPairName, keyPairPath,
-                        accessKey, secretKey, diskTarget, contextTarget});
-            if (!(invoker instanceof Cluster)) {
-                System.out.println("The class " + className + " is not a subclass of class Cluster.");
-                return null;
-            }
-            return invoker;
-        } catch (Exception ex) {
-            Logger.getLogger(BoTRunner.class.getName()).log(Level.SEVERE, null, ex);
-            return null;
-        }
-    }
-
-    /*
-     * EC2 parser
-     */
-    private Object getClusterInstance(String className, String hostname, int port,
-            String alias, long timeUnit, double costUnit, int maxNodes, String speedFactor,
-            int imageId, int networkId, String instanceType, String keyPairName, String keyPairPath,
-            String accessKey, String secretKey, String security_group, String region, String ec2_specifier) {
-        try {
-            Class cl = Class.forName(className);
-            Class[] cloudClusterClass = new Class[16];
-            cloudClusterClass[0] = String.class;
-            cloudClusterClass[1] = int.class;
-            cloudClusterClass[2] = String.class;
-            cloudClusterClass[3] = long.class;
-            cloudClusterClass[4] = double.class;
-            cloudClusterClass[5] = int.class;
-            cloudClusterClass[6] = String.class;
-            cloudClusterClass[7] = int.class;
-            cloudClusterClass[8] = int.class;
-            cloudClusterClass[9] = String.class;
-            cloudClusterClass[10] = String.class;
-            cloudClusterClass[11] = String.class;
-            cloudClusterClass[12] = String.class;
-            cloudClusterClass[13] = String.class;
-            cloudClusterClass[14] = String.class;
-            cloudClusterClass[15] = String.class;
-            
-	    java.lang.reflect.Constructor constructor = cl.getConstructor(cloudClusterClass);
-            Object invoker = constructor.newInstance(new Object[]{
-                        hostname, port, alias, timeUnit, costUnit, maxNodes,
-                        speedFactor, imageId, networkId, instanceType,
-                        keyPairName, keyPairPath,
-                        accessKey, secretKey, security_group, region});
-            if (!(invoker instanceof Cluster)) {
-                System.out.println("The class " + className + " is not a subclass of class Cluster.");
-                return null;
-            }
-            return invoker;
-        } catch (Exception ex) {
-            Logger.getLogger(BoTRunner.class.getName()).log(Level.SEVERE, null, ex);
-            return null;
-        }
-    }
-
-    /*
-     * private Object getClusterInstance(String className, String hostname,
-     * String alias, long timeUnit, int costUnit, int maxNodes, double
-     * speedFactor){ try { Class cl = Class.forName(className);
-     * java.lang.reflect.Constructor constructor = cl.getConstructor(new
-     * Class[]{String.class, String.class, long.class, double.class, int.class,
-     * double.class}); Object invoker = constructor.newInstance(new
-     * Object[]{hostname, alias, timeUnit, costUnit, maxNodes, speedFactor}); if
-     * (!(invoker instanceof Cluster)) { System.out.println("The class " +
-     * className + " is not a subclass of class Cluster."); return null; }
-     * return invoker; } catch (Exception ex) {
-     * Logger.getLogger(BoTRunner.class.getName()).log(Level.SEVERE, null, ex);
-     * return null; }
-    }
-     */
     public static void main(String[] args) {
 
         int size;
