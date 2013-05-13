@@ -49,3 +49,12 @@ def generate_certificate(cert_dir, uid, sid, role, email, cn, org, ca_cert=None)
     return { 'ca_cert': ca_cert, 
              'key': crypto.dump_privatekey(crypto.FILETYPE_PEM, req_key), 
              'cert': certificate }
+
+def get_cert_cname(cert_dir):
+    """Return the CNAME value of director's certificate"""
+    cert = crypto.load_certificate(crypto.FILETYPE_PEM, 
+        file_get_contents(os.path.join(cert_dir, "cert.pem")))
+
+    subject = cert.get_subject()
+
+    return [ el[1] for el in subject.get_components() if el[0] == 'CN' ][0]
