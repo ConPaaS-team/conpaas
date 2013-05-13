@@ -9,16 +9,17 @@ is responsible for handling user authentication, creating new applications,
 handling their life-cycle and much more. **cpsdirector** is a web service
 exposing all its functionalities via an HTTP-based API.
 
-ConPaaS can be used either via a command line interface (**cpsclient**) or
-through a web frontend called **cpsfrontend**. This document explains how to
-install and configure all the aforementioned components.
+ConPaaS can be used either via a command line interface called **cpsclient** or
+through a web frontend (**cpsfrontend**). This document explains how to install
+and configure all the aforementioned components.
 
 .. _ConPaaS: http://www.conpaas.eu
 .. _Flask: http://flask.pocoo.org/
 
-Both **cpsdirector** and **cpsfrontend** can run inside or outside the cloud.
-ConPaaS services are designed to run either in an `OpenNebula` cloud
-installation or in the `Amazon Web Services` cloud.
+Both **cpsdirector** and **cpsfrontend** can be installed on your own hardware
+or on virtual machines running on public or private clouds. ConPaaS services
+are designed to run either in an `OpenNebula` cloud installation or in the
+`Amazon Web Services` cloud.
 
 Installing ConPaaS requires to take the following steps:
 
@@ -41,11 +42,12 @@ Installing ConPaaS requires to take the following steps:
 Director installation
 =====================
 
-The ConPaaS Director is a web service that allows users to manage their
-ConPaaS applications. Users can create, configure and terminate their cloud
+The ConPaaS Director is a web service that allows users to manage their ConPaaS
+applications. Users can create, configure and terminate their cloud
 applications through it. This section describes the process of setting up a
-ConPaaS director on a Debian GNU/Linux system. Only versions 6.0 (Squeeze) and
-7.0 (Wheezy) are supported. 
+ConPaaS director on a Debian GNU/Linux system. Although the ConPaaS director
+might run on other distributions, only Debian versions 6.0 (Squeeze) and 7.0
+(Wheezy) are officially supported. 
 
 #. Install the required packages::
 
@@ -53,8 +55,8 @@ ConPaaS director on a Debian GNU/Linux system. Only versions 6.0 (Squeeze) and
    $ sudo apt-get install build-essential python-setuptools python-dev 
    $ sudo apt-get install libapache2-mod-wsgi libcurl4-openssl-dev
 
-#. Make sure that your system's time and date are correct by installing and
-   running **ntpdate**::
+#. Make sure that your system's time and date are set correctly by installing
+   and running **ntpdate**::
 
    $ sudo apt-get install ntpdate
    $ sudo ntpdate 0.us.pool.ntp.org
