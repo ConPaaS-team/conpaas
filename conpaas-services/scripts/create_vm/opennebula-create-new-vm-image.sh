@@ -64,7 +64,6 @@ KERNEL_VERSION=2.6.32-5-amd64
 # Services that will be installed:
 PHP_SERVICE=true
 MYSQL_SERVICE=true
-CONDOR_SERVICE=true
 IPOP_SERVICE=true
 GIT_SERVICE=true
 SELENIUM_SERVICE=true
@@ -330,9 +329,9 @@ apt-get -f -y update
 apt-get clean
 EOF
 
-$CONDOR_SERVICE || echo 'cecho "===== Skipped CONDOR ====="' >> $ROOT_DIR/conpaas_install
-$CONDOR_SERVICE && cat <<EOF >> $ROOT_DIR/conpaas_install
-cecho "===== install HTCondor package ====="
+$HTCONDOR_SERVICE || echo 'cecho "===== Skipped HTCONDOR ====="' >> $ROOT_DIR/conpaas_install
+$HTCONDOR_SERVICE && cat <<EOF >> $ROOT_DIR/conpaas_install
+cecho "===== install packages required by HTCondor ====="
 mkdir -p /var/lib/condor
 chown condor /var/lib/condor
 chgrp condor /var/lib/condor
@@ -479,13 +478,6 @@ make
 make install
 cd ..
 rm -rf nginx-1.2.2*
-
-EOF
-
-$HTCONDOR_SERVICE || echo 'cecho "===== Skipped HTCONDOR ====="' >> $ROOT_DIR/conpaas_install
-$HTCONDOR_SERVICE && cat <<EOF >> $ROOT_DIR/conpaas_install
-cecho "===== install packages required by HTCondor ====="
-# you may want to add the software needed for your new HTCondor service here
 
 EOF
 

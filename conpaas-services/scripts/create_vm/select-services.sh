@@ -1,5 +1,5 @@
 #!/bin/bash
-services="php mysql condor ipop git selenium hadoop scalaris xtreemfs cds htcondor"
+services="php mysql htcondor ipop git selenium hadoop scalaris xtreemfs cds"
 SERVICES=`echo -n $services | tr '[a-z]' '[A-Z]'`
 USAGE=`echo $services | sed 's/ / | /g'`
 for uc in `echo $SERVICES`; do eval ${uc}_SERVICE=false ; done
@@ -12,7 +12,7 @@ do
 	lc=`echo -n $i | tr '[A-Z]' '[a-z]'`
 	case $lc in
 	all) for ii in `echo $SERVICES`; do eval ${ii}_SERVICE=true ; done ;;
-	php|mysql|condor|ipop|git|selenium|hadoop|scalaris|xtreemfs|cds|htcondor) eval ${uc}_SERVICE=true ;;
+	php|mysql|htcondor|ipop|git|selenium|hadoop|scalaris|xtreemfs|cds) eval ${uc}_SERVICE=true ;;
 	*)	echo "Unknown service \`$i'" ; echo "Usage: $0 [ $USAGE ]" ; exit 1 ;;
 	esac
 done
