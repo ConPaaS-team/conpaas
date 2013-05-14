@@ -868,13 +868,16 @@ public class ExecutionPhaseMaster extends Master {
 	void updateFrontEndCache()
 	{
 		double price = 0;
+		double oldvalue = 0;
 		for (Cluster cluster : bot.Clusters.values()) {
 			Collection<WorkerStats> wss = workers.get(cluster.alias).values();					
 			for (WorkerStats ws : wss) {
 				price += Math.ceil((double)ws.getUptime() / 60000 / cluster.timeUnit) * cluster.costUnit;
 			}
 		}
+		oldvalue = BatsServiceApiImpl.serviceState.moneySpent;
 		BatsServiceApiImpl.serviceState.moneySpent = price + BatsServiceApiImpl.serviceState.moneySpentSampling;
+		bot.decrementUserCredit(BatsServiceApiImpl.serviceState.moneySpent - oldvalue);
 		BatsServiceApiImpl.serviceState.noCompletedTasks = bot.finishedTasks.size();
 	}
 

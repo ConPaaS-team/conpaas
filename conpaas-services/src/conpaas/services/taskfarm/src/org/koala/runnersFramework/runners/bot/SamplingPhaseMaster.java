@@ -442,8 +442,11 @@ public class SamplingPhaseMaster extends Master {
 				price += Math.ceil((double)ws.getUptime() / 60000 / cluster.timeUnit) * cluster.costUnit;
                             }			
                         }
+                        double oldvalue = 0;
                         BatsServiceApiImpl.serviceState.noCompletedTasks = bot.finishedTasks.size();
+                        oldvalue = BatsServiceApiImpl.serviceState.moneySpent;
                         BatsServiceApiImpl.serviceState.moneySpent = price;
+                        bot.decrementUserCredit(BatsServiceApiImpl.serviceState.moneySpent - oldvalue);
                         BatsServiceApiImpl.serviceState.moneySpentSampling = price;
 		}
 
@@ -539,7 +542,10 @@ public class SamplingPhaseMaster extends Master {
 			}			
 		}
                 // Update cache object - this is probably redundant, but just making sure.
+                double oldvalue;
+                oldvalue = BatsServiceApiImpl.serviceState.moneySpent;
                 BatsServiceApiImpl.serviceState.moneySpent = price;
+                bot.decrementUserCredit(BatsServiceApiImpl.serviceState.moneySpent - oldvalue);
 
 		System.out.println("Due amount sampling " + price);                
 		sampleCost = price;

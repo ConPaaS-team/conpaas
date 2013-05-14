@@ -167,6 +167,23 @@ public class BoTRunner implements Serializable {
         this.masterImpl = masterImpl;
     }
 
+    public void decrementUserCredit(double price) {
+       if (price > 0) {
+               runShellCommand("/bin/bash /root/ConPaaS/bin/cpsclient.taskfarm decrementUserCredit " + price);
+       }
+    }
+
+    private void runShellCommand(String cmd) {
+            try {
+                // Run command
+                System.err.println("RUN: " + cmd);
+                System.out.println("RUN: " + cmd);
+                Process process = Runtime.getRuntime().exec(cmd);
+            } catch (Exception e) {
+                e.printStackTrace(System.err);
+            }
+    }
+
     public void calculateSampleSize()
     {
     	double zeta_sq = this.zeta * this.zeta;
