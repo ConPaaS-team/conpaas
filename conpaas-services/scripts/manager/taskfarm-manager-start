@@ -14,3 +14,9 @@ export _JAVA_OPTIONS="-Djava.net.preferIPv4Stack=true"
 $CPS_HOME/sbin/manager/taskfarm-cpsmanager -c $ROOT_DIR/config.cfg -a $IP_PUBLIC -s $CERT_DIR 1>$ROOT_DIR/manager.out 2>$ROOT_DIR/manager.err &
 manager_pid=$!
 echo $manager_pid > $ROOT_DIR/manager.pid
+
+# The following is used for crediting the TaskFarm manager
+echo "$CPS_HOME/sbin/manager/default-cpsmanager -c $ROOT_DIR/config.cfg 1>>$ROOT_DIR/creditor.out 2>$ROOT_DIR/creditor.err &">$ROOT_DIR/creditor.out
+$CPS_HOME/sbin/manager/default-cpsmanager -c $ROOT_DIR/config.cfg 1>>$ROOT_DIR/creditor.out 2>$ROOT_DIR/creditor.err &
+creditor_pid=$!
+echo $creditor_pid > $ROOT_DIR/creditor.pid
