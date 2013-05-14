@@ -122,6 +122,53 @@ as follows::
     $ sudo apt-get install sqlite3
     $ sudo sqlite3 /etc/cpsdirector/director.db
 
+Troubleshooting
+---------------
+There are a few things you can check if for some reason your Director
+installation is not behaving as expected.
+
+If you cannot create services, this is what you should try to do on your
+Director:
+
+1. Run the **cpscheck.py** command as root to attempt an automatic detection of
+   possible misconfigurations.
+2. Check your system's time and date settings as explained previously.
+3. Test network connectivity between the director and the virtual machines
+   deployed on the cloud(s) you are using.
+
+If services get created, but they fail to startup properly, you should try to
+ssh into your manager VM as root and:
+
+1. Make sure that a ConPaaS manager process has been started::
+
+    root@conpaas:~# ps x | grep cpsmanage[r]
+      968 ?        Sl     0:02 /usr/bin/python /root/ConPaaS/sbin/manager/php-cpsmanager -c /root/config.cfg -s 192.168.122.15
+    
+    
+2. If a ConPaaS manager process has **not** been started, you should check if
+   the manager VM can download a copy of the ConPaaS source code from the
+   director. From the manager VM::
+
+    root@conpaas:~# wget --ca-certificate /etc/cpsmanager/certs/ca_cert.pem \
+        `awk '/BOOTSTRAP/ { print $3 }' /root/config.cfg`/ConPaaS.tar.gz
+
+   The URL used by your manager VM to download the ConPaaS source code depends
+   on the value you have set on your Director in
+   :file:`/etc/cpsdirector/director.cfg` for the variable :envvar:`DIRECTOR_URL`.
+
+3. See if your manager's port **443** is open *and* reachable from your
+   Director. In the following example, our manager's IP address is 192.168.122.15
+   and we are checking if *the director* can contact *the manager* on port 443::
+
+    root@conpaas-director:~# nmap -p443 192.168.122.15
+    Starting Nmap 6.00 ( http://nmap.org ) at 2013-05-14 16:17 CEST
+    Nmap scan report for 192.168.122.15
+    Host is up (0.00070s latency).
+    PORT    STATE SERVICE
+    443/tcp open  https
+
+    Nmap done: 1 IP address (1 host up) scanned in 0.08 seconds
+
 .. _frontend-installation:
 
 Frontend installation
