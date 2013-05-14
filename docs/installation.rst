@@ -135,6 +135,8 @@ Director:
 2. Check your system's time and date settings as explained previously.
 3. Test network connectivity between the director and the virtual machines
    deployed on the cloud(s) you are using.
+4. Check the contents of :file:`/var/log/apache2/director-access.log` and
+   :file:`/var/log/apache2/director-error.log`.
 
 If services get created, but they fail to startup properly, you should try to
 ssh into your manager VM as root and:
@@ -168,6 +170,9 @@ ssh into your manager VM as root and:
     443/tcp open  https
 
     Nmap done: 1 IP address (1 host up) scanned in 0.08 seconds
+
+4. Check the contents of :file:`/root/manager.err`, :file:`/root/manager.out`
+   and :file:`/var/log/cpsmanager.log`.
 
 .. _frontend-installation:
 
