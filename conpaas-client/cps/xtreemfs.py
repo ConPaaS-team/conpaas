@@ -37,17 +37,13 @@ class Client(BaseClient):
 
     def usage(self, cmdname):
         BaseClient.usage(self, cmdname)
-        print "    add_nodes                  serviceid count    # add the specified number of osd nodes"
-        print "    remove_nodes               serviceid count    # remove the specified number of osd nodes"
-        print "    list_volumes               serviceid"
-        print "    create_volume              serviceid vol_name"
-        print "    delete_volume              serviceid vol_name"
-        print "    list_osd_sel_policies      serviceid"
-        print "    set_osd_sel_policy         serviceid vol_name policy"
-        print "    list_replica_sel_policies  serviceid"
-        print "    set_replica_sel_policy     serviceid vol_name policy"
-        print "    list_replication_policies  serviceid"
-        print "    set_replication_policy     serviceid vol_name policy factor"
+        print "    add_nodes         serviceid count [cloud] # add the specified number of osd nodes"
+        print "    remove_nodes      serviceid count [cloud] # remove the specified number of osd nodes"
+        print "    list_volumes      serviceid"
+        print "    create_volume     serviceid vol_name"
+        print "    delete_volume     serviceid vol_name"
+        print "    list_policies     serviceid policy_type # [ osd_sel | replica_sel | replication ]"
+        print "    set_policy        serviceid policy_type vol_name policy [factor]"
 # TODO: add when there is more than one striping policy
 #        print "    list_striping_policies     serviceid"
 #        print "    set_striping_policy        serviceid vol_name policy width stripe-size"
@@ -55,7 +51,9 @@ class Client(BaseClient):
     def main(self, argv):
         command = argv[1]
 
-        if command in ( 'add_nodes', 'remove_nodes', 'list_volumes', 'create_volume', 'delete_volume', 'list_striping_policies', 'list_replication_policies', 'list_osd_sel_policies', 'list_replica_sel_policies', 'set_striping_policy', 'set_replication_policy', 'set_osd_sel_policy', 'set_replica_sel_policy' ):
+        if command in ( 'add_nodes', 'remove_nodes', 'list_volumes', 
+                        'create_volume', 'delete_volume', 
+                        'list_policies', 'set_policy' ):
             try:
                 sid = int(argv[2])
             except (IndexError, ValueError):
@@ -119,17 +117,60 @@ class Client(BaseClient):
             else:
                 print res['volumes']
 
-        if command in ( 'list_osd_sel_policies', 'list_replica_sel_policies', 'list_replication_policies', 'list_striping_policies' ):
+        if command == 'list_policies':
+            try:
+                policy_type = argv[3] 
+            except IndexError:
+                self.usage(argv[0])
+                sys.exit(0)
+
+            if policy_type == 'osd_sel':
+                command = 'list_osd_sel_policies'
+
+            elif policy_type == 'replica_sel':
+                command = 'list_replica_sel_policies'
+
+            elif policy_type == 'replication':
+                command = 'list_replication_policies'
+
+            else:
+                self.usage(argv[0])
+                sys.exit(0)
+
             res = self.callmanager(sid, command, False, {})
             if 'error' in res:
                 print res['error']
             else:
                 print res['policies']
 
-        if command in ( 'set_osd_sel_policy', 'set_replica_sel_policy' ):
+        if command == 'set_policy':
             try:
-                params = { 'volumeName': argv[3], 'policy': argv[4] }
+                policy_type = argv[3] 
             except IndexError:
+                self.usage(argv[0])
+                sys.exit(0)
+
+            try:
+                params = { 'volumeName': argv[4], 'policy': argv[5] }
+            except IndexError:
+                self.usage(argv[0])
+                sys.exit(0)
+
+            if policy_type == 'osd_sel':
+                command = 'set_osd_sel_policy'
+
+            elif policy_type == 'replica_sel':
+                command = 'set_replica_sel_policy'
+
+            elif policy_type == 'replication':
+                command = 'set_replication_policy'
+                try:
+                    # set_replication_policy requires a 'factor'
+                    params['factor'] = argv[6]
+                except IndexError:
+                    self.usage(argv[0])
+                    sys.exit(0)
+            else:
                 self.usage(argv[0])
                 sys.exit(0)
 
@@ -140,31 +181,17 @@ class Client(BaseClient):
                 print res['stdout']
                 print "Policy set." 
 
-        if command in 'set_replication_policy':
-            try:
-                params = { 'volumeName': argv[3], 'policy': argv[4], 'factor': argv[5] }
-            except IndexError:
-                self.usage(argv[0])
-                sys.exit(0)
-
-            res = self.callmanager(sid, command, True, params)
-            if 'error' in res:
-                print res['error']
-            else:
-                print res['stdout']
-                print "Policy set." 
-
-        if command in 'set_striping_policy':
-            try:
-                params = { 'volumeName': argv[3], 'policy': argv[4], 'width': argv[5], 'stripe-size': argv[6] }
-            except IndexError:
-                self.usage(argv[0])
-                sys.exit(0)
-
-            res = self.callmanager(sid, command, True, params)
-            if 'error' in res:
-                print res['error']
-            else:
-                print res['stdout']
-                print "Policy set." 
+#        if command in 'set_striping_policy':
+#            try:
+#                params = { 'volumeName': argv[3], 'policy': argv[4], 'width': argv[5], 'stripe-size': argv[6] }
+#            except IndexError:
+#                self.usage(argv[0])
+#                sys.exit(0)
+#
+#            res = self.callmanager(sid, command, True, params)
+#            if 'error' in res:
+#                print res['error']
+#            else:
+#                print res['stdout']
+#                print "Policy set." 
 
