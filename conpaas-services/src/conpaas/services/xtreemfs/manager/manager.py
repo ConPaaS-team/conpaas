@@ -230,7 +230,7 @@ class XtreemFSManager(BaseManager):
             if nr_mrc < 0: 
                 return invalid_arg('Expected a positive integer value for "mrc"')
 
-        # TODO: 'osd' is no longer required, when adding other servives is supported
+        # TODO: 'osd' is no longer required, when adding other services is supported
         if not 'osd' in kwargs:
             return HttpErrorResponse('ERROR: Required argument doesn\'t exist')
         if not isinstance(kwargs['osd'], int):
@@ -492,15 +492,15 @@ class XtreemFSManager(BaseManager):
                  "-g", owner,
                  "-m", "744" ]
 
-        process = subprocess.Popen(args, stdout=subprocess.PIPE)
+        process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         (stdout, stderr) = process.communicate()
         process.poll()
 
-        if process.returncode == 1:
-            self.logger.info('Failed to create volume:%s;%s', stdout, stderr)
+        if process.returncode != 0:
+            self.logger.info('Failed to create volume: %s; %s', stdout, stderr)
             return HttpErrorResponse("The volume could not be created")
 
-        self.logger.info('Creating Volume:%s;%s', stdout, stderr)
+        self.logger.info('Creating Volume: %s; %s', stdout, stderr)
         return HttpJsonResponse()
 
     @expose('POST') 
@@ -514,22 +514,23 @@ class XtreemFSManager(BaseManager):
 
         volumeName = kwargs.pop('volumeName')
 
-        args = [ 'rmfs.xtreemfs',
+        args = [ 'rmfs.xtreemfs', '-f',
                  '%s:32636/%s' % (self.mrcNodes[0].ip, volumeName) ]
 
-        process = subprocess.Popen(args, stdout=subprocess.PIPE)
+        process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         (stdout, stderr) = process.communicate()
         process.poll()
 
-        if process.returncode == 1:
-            self.logger.info('Failed to delete volume:%s;%s', stdout, stderr)
+        if process.returncode != 0:
+            self.logger.info('Failed to delete volume: %s; %s', stdout, stderr)
             return HttpErrorResponse("The volume could not be deleted")
 
-        self.logger.info('Deleting Volume:%s;%s', stdout, stderr)
+        self.logger.info('Deleting Volume: %s; %s', stdout, stderr)
+        # TODO(maybe): issue xtfs_cleanup on all OSDs to free space (or don't and assume xtfs_cleanup is run by a cron job or something)
         return HttpJsonResponse()
 
     @expose('GET')
-    def viewVolumes(self, kwargs):
+    def listVolumes(self, kwargs):
         if len(kwargs) != 0:
             return HttpErrorResponse('ERROR: Arguments unexpetced')
 
@@ -538,12 +539,199 @@ class XtreemFSManager(BaseManager):
 
         args = [ 'lsfs.xtreemfs', self.mrcNodes[0].ip + ':32636' ]
 
-        process = subprocess.Popen(args, stdout=subprocess.PIPE)
+        process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         (stdout, stderr) = process.communicate()
         process.poll()
 
-        if process.returncode == 1:
-            self.logger.info('Failed to view volume:%s;%s', stdout, stderr)
+        if process.returncode != 0:
+            self.logger.info('Failed to view volume: %s; %s', stdout, stderr)
             return HttpErrorResponse("The volume list cannot be accessed")
 
         return HttpJsonResponse({ 'volumes': stdout })
+
+    # NOTE: see xtfsutil for the available policies
+    @expose('GET')
+    def list_striping_policies(self, kwargs):
+        if len(kwargs) != 0:
+            return HttpErrorResponse('ERROR: Arguments unexpetced')
+        return HttpJsonResponse({ 'policies': "RAID0" })
+
+    @expose('GET')
+    def list_replication_policies(self, kwargs):
+        if len(kwargs) != 0:
+            return HttpErrorResponse('ERROR: Arguments unexpetced')
+        return HttpJsonResponse({ 'policies': "ronly, WaR1, WqRq" })
+
+    @expose('GET')
+    def list_osd_sel_policies(self, kwargs):
+        if len(kwargs) != 0:
+            return HttpErrorResponse('ERROR: Arguments unexpetced')
+        return HttpJsonResponse({ 'policies': "DEFAULT, FQDN, UUID, DCMAP, VIVALDI" })
+
+    @expose('GET')
+    def list_replica_sel_policies(self, kwargs):
+        if len(kwargs) != 0:
+            return HttpErrorResponse('ERROR: Arguments unexpetced')
+        return HttpJsonResponse({ 'policies': "DEFAULT, FQDN, DCMAP, VIVALDI" })
+
+    def set_policy(self, volumeName, policyName, args):
+        mountPoint = '/tmp/' + volumeName
+        
+        # mkdir -p <mountpoint>
+        process = subprocess.Popen(['mkdir', '-p', mountPoint])
+        (stdout, stderr) = process.communicate()
+        process.poll()
+        if process.returncode != 0:
+            self.logger.info('Failed to set %s policy: %s; %s', policyName, stdout, stderr)
+            return HttpErrorResponse("Failed to set %s policy: %s; %s" % (policyName, stdout, stderr))
+
+        # mount.xtreemfs <dir_ip>:32638/<volumename> <mountpoint>
+        process = subprocess.Popen(['mount.xtreemfs',
+                                     '%s:32638/%s' % (self.dirNodes[0].ip, volumeName),
+                                     mountPoint],  
+                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        (stdout, stderr) = process.communicate()
+        process.poll()
+        if process.returncode != 0:
+            self.logger.info('Failed to set %s policy: %s; %s', policyName, stdout, stderr)
+            return HttpErrorResponse("Failed to set %s policy: %s; %s" % (policyName, stdout, stderr))
+
+#        # with python 2.7
+#        try: 
+#	        # mkdir -p <mountpoint>
+#            subprocess.check_output(['mkdir', '-p', mountPoint])
+#	        # mount.xtreemfs <dir_ip>:32638/<volumename> <mountpoint>
+#            subprocess.check_output(['mount.xtreemfs',
+#                                     '%s:32638/%s' % (self.dirNodes[0].ip, volumeName),
+#                                     mountPoint],  
+#                                    stdout=subprocess.STDOUT)
+#        except subprocess.CalledProcessError as e:
+#            return HttpErrorResponse('ERROR: could not mount volume: ' + e.output)
+
+        # xtfsutil <mountpoint> args
+        process = subprocess.Popen(['xtfsutil', mountPoint] + args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        (stdout_xtfsutil, stderr_xtfsutil) = (stdout, stderr) = process.communicate()
+        process.poll()
+
+        if process.returncode != 0:
+            self.logger.info('Failed to set %s policy: %s; %s', policyName, stdout, stderr)
+            return HttpErrorResponse("Failed to set %s policy: %s; %s" % (policyName, stdout, stderr))
+
+        # umount <mountpoint>
+        process = subprocess.Popen(['umount', mountPoint],  
+                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        (stdout, stderr) = process.communicate()
+        process.poll()
+        if process.returncode != 0:
+            self.logger.info('Failed to set %s policy: %s; %s', policyName, stdout, stderr)
+            return HttpErrorResponse("Failed to set %s policy: %s; %s" % (policyName, stdout, stderr))
+
+        # rmdir <mountpoint>
+        process = subprocess.Popen(['rmdir', mountPoint])
+        (stdout, stderr) = process.communicate()
+        process.poll()
+        if process.returncode != 0:
+            self.logger.info('Failed to set %s policy: %s; %s', policyName, stdout, stderr)
+            return HttpErrorResponse("Failed to set %s policy: %s; %s" % (policyName, stdout, stderr))
+
+#        # with python 2.7
+#        try: 
+#            # umount <mountpoint>
+#            subprocess.check_output(['umount', mountPoint])
+#            # fusermount -u <mountpoint>
+#            #subprocess.check_output(['fusermount', '-u', mountPoint])
+#      	     # rmdir <mountpoint>
+#            subprocess.check_output(['rmdir', mountPoint])
+#        except subprocess.CalledProcessError as e:
+#            return HttpErrorResponse('ERROR: could not unmount volume: ' + e.output)
+
+        self.logger.info('Setting %s policy: %s; %s', policyName, stdout_xtfsutil, stderr_xtfsutil)
+        return HttpJsonResponse({ 'stdout': stdout_xtfsutil })
+
+    @expose('POST')
+    def set_osd_sel_policy(self, kwargs):
+        if self.state != self.S_RUNNING:
+            return HttpErrorResponse('ERROR: Wrong state to set OSD selection policy.')
+
+        if not 'volumeName' in kwargs:
+            return HttpErrorResponse('ERROR: Required argument (volumeName) doesn\'t exist')
+        if not 'policy' in kwargs:
+            return HttpErrorResponse('ERROR: Required argument (policy) doesn\'t exist')
+
+        volumeName = kwargs.pop('volumeName')
+        policy = kwargs.pop('policy')
+
+        # xtfsutil <path> --set-osp <policy>
+        args = [ '--set-osp', policy ]
+        
+        return self.set_policy(volumeName, 'OSD selection', args)
+
+    @expose('POST')
+    def set_replica_sel_policy(self, kwargs):
+        if self.state != self.S_RUNNING:
+            return HttpErrorResponse('ERROR: Wrong state to set Replica selection policy.')
+
+        if not 'volumeName' in kwargs:
+            return HttpErrorResponse('ERROR: Required argument (volumeName) doesn\'t exist')
+        if not 'policy' in kwargs:
+            return HttpErrorResponse('ERROR: Required argument (policy) doesn\'t exist')
+
+        volumeName = kwargs.pop('volumeName')
+        policy = kwargs.pop('policy')
+
+        # xtfsutil <path> --set-rsp <policy>
+        args = [ '--set-rsp', policy ]
+        
+        return self.set_policy(volumeName, 'Replica selection', args)
+
+    @expose('POST')
+    def set_replication_policy(self, kwargs):
+        if self.state != self.S_RUNNING:
+            return HttpErrorResponse('ERROR: Wrong state to set Replication policy.')
+
+        if not 'volumeName' in kwargs:
+            return HttpErrorResponse('ERROR: Required argument (volumeName) doesn\'t exist')
+        if not 'policy' in kwargs:
+            return HttpErrorResponse('ERROR: Required argument (policy) doesn\'t exist')
+        if not 'factor' in kwargs:
+            return HttpErrorResponse('ERROR: Required argument (factor) doesn\'t exist')
+
+        volumeName = kwargs.pop('volumeName')
+        policy = kwargs.pop('policy')
+        factor = kwargs.pop('factor')
+
+        # xtfsutil <path> --set-drp --replication-policy <policy> --replication-factor <factor>
+        args = [ '--set-drp',
+                 '--replication-policy', policy,
+                 '--replication-factor', factor ]
+        
+        return self.set_policy(volumeName, 'Replication', args)
+
+    @expose('POST')
+    def set_striping_policy(self, kwargs):
+        if self.state != self.S_RUNNING:
+            return HttpErrorResponse('ERROR: Wrong state to set Striping policy.')
+
+        if not 'volumeName' in kwargs:
+            return HttpErrorResponse('ERROR: Required argument (volumeName) doesn\'t exist')
+        if not 'policy' in kwargs:
+            return HttpErrorResponse('ERROR: Required argument (policy) doesn\'t exist')
+        if not 'width' in kwargs:
+            return HttpErrorResponse('ERROR: Required argument (factor) doesn\'t exist')
+        if not 'stripe-size' in kwargs:
+            return HttpErrorResponse('ERROR: Required argument (stripe-size) doesn\'t exist')
+
+
+        volumeName = kwargs.pop('volumeName')
+        policy = kwargs.pop('policy')
+        width = kwargs.pop('width')
+        stripe_size = kwargs.pop('stripe-size')
+
+        # xtfsutil <path> --set-dsp --striping-policy <policy> --striping-policy-width <width> --striping-policy-stripe-size <stripe-size>
+        args = [ '--set-dsp',
+                 '--striping-policy', policy,
+                 '--striping-policy-width', width,
+                 '--striping-policy-stripe-size', stripe_size ]
+        
+        return self.set_policy(volumeName, 'Striping', args)
+

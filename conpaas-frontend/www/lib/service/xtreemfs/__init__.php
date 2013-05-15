@@ -88,7 +88,7 @@ class XtreemFSService extends Service {
 	}
 
  	public function viewVolumes() {
- 		$json = $this->managerRequest('get', 'viewVolumes', array());
+ 		$json = $this->managerRequest('get', 'listVolumes', array());
  		$volumes = json_decode($json, true);
  		return $volumes['result']['volumes'];
  	}

@@ -58,7 +58,7 @@ def startup(host, port):
   method = 'startup'
   return _check(https.client.jsonrpc_post(host, port, '/', method))
 
-def add_nodes(host, port,nr_dir=None,nr_mrc=None, osd=0):
+def add_nodes(host, port, nr_dir=None, nr_mrc=None, osd=0):
   method = 'add_nodes'
   params = {}
   if nr_dir: params['dir'] = nr_dir
@@ -93,15 +93,71 @@ def createOSD(host, port):
   params = {}
   return _check(https.client.jsonrpc_post(host, port, '/', method))
 
-def createVolume(host,port,volumeName=None):
+def createVolume(host, port, volumeName=None):
   method = 'createVolume'
   params = {}
   params['volumeName'] = volumeName
-  return _check(https.client.jsonrpc_post(host, port, '/', method,params=params))
+  return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
 
-def deleteVolume(host,port,volumeName=None):
+def deleteVolume(host, port, volumeName=None):
   method = 'deleteVolume'
   params = {}
   params['volumeName'] = volumeName
-  return _check(https.client.jsonrpc_post(host, port, '/', method,params=params))
+  return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
+
+def listVolumes(host, port):
+  method = 'listVolumes'
+  params = {}
+  return _check(https.client.jsonrpc_get(host, port, '/', method))
+  
+def list_striping_policies(host, port):
+  method = 'list_striping_policies'
+  params = {}
+  return _check(https.client.jsonrpc_get(host, port, '/', method))
+  
+def list_replication_policies(host, port):
+  method = 'list_replication_policies'
+  params = {}
+  return _check(https.client.jsonrpc_get(host, port, '/', method))
+  
+def list_osd_sel_policies(host, port):
+  method = 'list_osd_sel_policies'
+  params = {}
+  return _check(https.client.jsonrpc_get(host, port, '/', method))
+  
+def list_replica_sel_policies(host, port):
+  method = 'list_replica_sel_policies'
+  params = {}
+  return _check(https.client.jsonrpc_get(host, port, '/', method))
+
+def set_osd_sel_policy(host, port, volumeName=None, policy=None):
+  method = 'set_osd_sel_policy'
+  params = {}
+  params['volumeName'] = volumeName
+  params['policy'] = policy
+  return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
+
+def set_replica_sel_policy(host, port, volumeName=None, policy=None):
+  method = 'set_replica_sel_policy'
+  params = {}
+  params['volumeName'] = volumeName
+  params['policy'] = policy
+  return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
+
+def set_replication_policy(host, port, volumeName=None, policy=None, factor=None):
+  method = 'set_replication_policy'
+  params = {}
+  params['volumeName'] = volumeName
+  params['policy'] = policy
+  params['factor'] = factor
+  return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
+
+def set_striping_policy(host, port, volumeName=None, policy=None, width=None, stripe_size=None):
+  method = 'set_striping_policy'
+  params = {}
+  params['volumeName'] = volumeName
+  params['policy'] = policy
+  params['width'] = width
+  params['stripe-size'] = stripe_size
+  return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
 

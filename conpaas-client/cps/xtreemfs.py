@@ -37,15 +37,25 @@ class Client(BaseClient):
 
     def usage(self, cmdname):
         BaseClient.usage(self, cmdname)
-        print "    add_nodes         serviceid count     # add the specified number of osd nodes"
-        print "    remove_nodes      serviceid count     # remove the specified number of osd nodes"
-        print "    create_volume     serviceid vol_name"
-        print "    list_volumes      serviceid"
+        print "    add_nodes                  serviceid count    # add the specified number of osd nodes"
+        print "    remove_nodes               serviceid count    # remove the specified number of osd nodes"
+        print "    list_volumes               serviceid"
+        print "    create_volume              serviceid vol_name"
+        print "    delete_volume              serviceid vol_name"
+        print "    list_osd_sel_policies      serviceid"
+        print "    set_osd_sel_policy         serviceid vol_name policy"
+        print "    list_replica_sel_policies  serviceid"
+        print "    set_replica_sel_policy     serviceid vol_name policy"
+        print "    list_replication_policies  serviceid"
+        print "    set_replication_policy     serviceid vol_name policy factor"
+# TODO: add when there is more than one striping policy
+#        print "    list_striping_policies     serviceid"
+#        print "    set_striping_policy        serviceid vol_name policy width stripe-size"
 
     def main(self, argv):
         command = argv[1]
 
-        if command in ( 'add_nodes', 'remove_nodes', 'list_volumes', 'create_volume' ):
+        if command in ( 'add_nodes', 'remove_nodes', 'list_volumes', 'create_volume', 'delete_volume', 'list_striping_policies', 'list_replication_policies', 'list_osd_sel_policies', 'list_replica_sel_policies', 'set_striping_policy', 'set_replication_policy', 'set_osd_sel_policy', 'set_replica_sel_policy' ):
             try:
                 sid = int(argv[2])
             except (IndexError, ValueError):
@@ -89,9 +99,72 @@ class Client(BaseClient):
             else:
                 print "Volume", params['volumeName'], "created" 
 
+        if command == 'delete_volume':
+            try:
+                params = { 'volumeName': argv[3] }
+            except IndexError:
+                self.usage(argv[0])
+                sys.exit(0)
+
+            res = self.callmanager(sid, 'deleteVolume', True, params)
+            if 'error' in res:
+                print res['error']
+            else:
+                print "Volume", params['volumeName'], "deleted" 
+
         if command == 'list_volumes':
-            res = self.callmanager(sid, 'viewVolumes', False, {})
+            res = self.callmanager(sid, 'listVolumes', False, {})
             if 'error' in res:
                 print res['error']
             else:
                 print res['volumes']
+
+        if command in ( 'list_osd_sel_policies', 'list_replica_sel_policies', 'list_replication_policies', 'list_striping_policies' ):
+            res = self.callmanager(sid, command, False, {})
+            if 'error' in res:
+                print res['error']
+            else:
+                print res['policies']
+
+        if command in ( 'set_osd_sel_policy', 'set_replica_sel_policy' ):
+            try:
+                params = { 'volumeName': argv[3], 'policy': argv[4] }
+            except IndexError:
+                self.usage(argv[0])
+                sys.exit(0)
+
+            res = self.callmanager(sid, command, True, params)
+            if 'error' in res:
+                print res['error']
+            else:
+                print res['stdout']
+                print "Policy set." 
+
+        if command in 'set_replication_policy':
+            try:
+                params = { 'volumeName': argv[3], 'policy': argv[4], 'factor': argv[5] }
+            except IndexError:
+                self.usage(argv[0])
+                sys.exit(0)
+
+            res = self.callmanager(sid, command, True, params)
+            if 'error' in res:
+                print res['error']
+            else:
+                print res['stdout']
+                print "Policy set." 
+
+        if command in 'set_striping_policy':
+            try:
+                params = { 'volumeName': argv[3], 'policy': argv[4], 'width': argv[5], 'stripe-size': argv[6] }
+            except IndexError:
+                self.usage(argv[0])
+                sys.exit(0)
+
+            res = self.callmanager(sid, command, True, params)
+            if 'error' in res:
+                print res['error']
+            else:
+                print res['stdout']
+                print "Policy set." 
+
