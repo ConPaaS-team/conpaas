@@ -52,7 +52,6 @@ Created on September, 2011
 
 import httplib, json
 import sys
-from threading import Thread
 
 from conpaas.core import https
 from conpaas.core.misc import file_get_contents

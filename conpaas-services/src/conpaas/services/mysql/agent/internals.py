@@ -41,10 +41,9 @@ Created in February, 2012
 '''
 
 from os.path import exists, join
-from os import remove, makedirs
-from shutil import rmtree
+from os import remove
 from threading import Lock
-import pickle, zipfile, tarfile
+import pickle
 
 #from conpaas.core.misc import get_ip_address
 from conpaas.core.agent import BaseAgent, AgentException

@@ -42,12 +42,8 @@ Created on Jun 8, 2011
 
 
 import httplib, json
-import sys
-
 
 from conpaas.core import https
-from conpaas.core.log import create_logger
-
 
 class AgentException(Exception): pass
 

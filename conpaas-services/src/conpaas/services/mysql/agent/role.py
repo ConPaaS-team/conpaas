@@ -40,19 +40,14 @@ Created in February, 2012
 @author: alesc, aaasz
 '''
 
-import os, io, socket
+import os, socket
 import ConfigParser
 import MySQLdb
 
-from os.path import join, devnull, exists
-from os import kill, chown, setuid, setgid
-from pwd import getpwnam
-from signal import SIGINT, SIGTERM, SIGUSR2, SIGHUP
+from os.path import devnull, exists
+from os import kill
 from subprocess import Popen
-from shutil import rmtree, copy2
-from Cheetah.Template import Template
 
-from conpaas.core.misc import verify_port, verify_ip_port_list, verify_ip_or_domain
 from conpaas.core.log import create_logger
 
 S_INIT        = 'INIT'
@@ -100,11 +95,9 @@ class MySQLServer(object):
             if self.mysqlconfig.has_option('mysqld', 'bind-address'):
                 self.mysqlconfig.remove_option('mysqld', 'bind-address')
 
-        except ConfigParser.Error, err:
-            #ex = AgentException(E_CONFIG_READ_FAILED, str(err))
+        except ConfigParser.Error:
             sql_logger.exception('Could not read config file')
-        except IOError, err:
-            #ex = AgentException(E_CONFIG_NOT_EXIST, str(err))
+        except IOError:
             sql_logger.exception('Config file doesn\'t exist')
 
         # Creating a supervisor object

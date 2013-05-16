@@ -42,9 +42,6 @@ Created on Mar 9, 2011
 @author: ales, aaasz
 '''
 
-import os
-import ConfigParser
-
 from conpaas.core.log import create_logger
 from conpaas.core.node import ServiceNode
 
@@ -114,7 +111,7 @@ class Configuration(object):
         
     '''Returns the list of service nodes as tuples <IP, PORT>.'''
     def getMySQLTuples(self):
-        return [ [serviceNode.ip, MYSQL_PORT] for serviceNode in self.serviceNodes.values() ]
+        return [ [serviceNode.ip, self.MYSQL_PORT] for serviceNode in self.serviceNodes.values() ]
       
     ''' Returns the list of IPs of MySQL instances'''
     def getMySQLIPs(self):
