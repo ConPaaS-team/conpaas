@@ -40,14 +40,12 @@ Created February, 2012
 
 '''
 
-from threading import Thread, Lock, Timer, Event
+from threading import Thread
 
 from conpaas.core.expose import expose
-from conpaas.core.controller import Controller
 from conpaas.core.manager import BaseManager
-from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse, \
-                                      HttpError
-from conpaas.core.log import create_logger
+from conpaas.core.https.server import HttpJsonResponse
+from conpaas.core.https.server import HttpErrorResponse, HttpError
 from conpaas.services.scalaris.agent import client
 
 class ScalarisManager(BaseManager):
