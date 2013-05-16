@@ -1,5 +1,4 @@
-import inspect, tempfile, os, os.path, tarfile, time, stat, json, urlparse
-from string import Template
+import tempfile, os, os.path
 
 import re
 import unittest
