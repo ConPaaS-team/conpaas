@@ -79,7 +79,6 @@ from httplib import HTTPConnection
 
 from conpaas.core.misc import file_get_contents
 
-import sys
 import json
 
 from . import x509
