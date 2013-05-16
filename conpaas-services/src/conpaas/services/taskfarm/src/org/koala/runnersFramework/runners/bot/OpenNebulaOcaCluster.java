@@ -222,16 +222,18 @@ public class OpenNebulaOcaCluster extends Cluster {
 		// XXX Another deletion method which can be used when self-VM
 		// Deletion causes OpenNebula to crash.
     	try {
-    	System.err.println("Deleting with ID: " + Integer.parseInt(map.get(node.location())));
-    	VirtualMachine vm = new VirtualMachine(Integer.parseInt(map.get(node.location())), oneClient);
-        OneResponse oneResponse = vm.finalizeVM();
-        map.remove(node.location());
-        if (oneResponse.isError()) {
-            System.err.println(this.getClass() + ": Failed to finalize VM:\n"
-                    + oneResponse.getMessage());
-        } else {
-            System.err.println("All went fine...");
-        }
+                String loc = node.location().toString();
+                Integer vm_id = Integer.parseInt(map.get(loc));
+                System.err.println("Deleting with loc: " + loc + ", ID: " + vm_id );
+                VirtualMachine vm = new VirtualMachine(vm_id, oneClient);
+                OneResponse oneResponse = vm.finalizeVM();
+                map.remove(loc);
+                if (oneResponse.isError()) {
+                    System.err.println(this.getClass() + ": Failed to finalize VM:\n"
+                            + oneResponse.getMessage());
+                } else {
+                    System.err.println("All went fine...");
+                }
     	}
      	catch(Exception E)
     	{
