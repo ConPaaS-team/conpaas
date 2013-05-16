@@ -164,26 +164,6 @@ class MySQLAgent(BaseAgent):
         return ret
 
     # TODO: clean code
-    def _perform_action(self, args):
-        if not exists(self.master_file):
-            return HttpErrorResponse(AgentException(AgentException.E_CONFIG_NOT_EXIST).message)
-        try:
-            fd = open(self.master_file, 'r')
-            p = pickle.load(fd)
-            func = getattr(p, method)
-            if callable(func):
-                ret = func(args)
-            else:
-                raise
-            fd.close()
-        except Exception as e:
-            ex = AgentException(AgentException.E_CONFIG_READ_FAILED, 
-			    role.MySQLMaster.__name__, self.master_file, detail=e)
-            self.logger.exception(ex.message)
-            raise
-        else:
-            return ret
-
     def _take_snapshot(self):
         if not exists(self.master_file):
             return HttpErrorResponse(AgentException(
