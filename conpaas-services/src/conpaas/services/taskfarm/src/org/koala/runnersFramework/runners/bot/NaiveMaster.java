@@ -232,7 +232,7 @@ public class NaiveMaster extends Master {
 
 	private Job sayGB (IbisIdentifier to) {
 		
-		System.err.println("We say goodbye to " + to.location().toString());
+		System.err.println("We say goodbye to " + to.location().toString() + " from " + this.getClass().getName());
 		
 		String cluster = to.location().getParent().toString();
 		String node = to.location().getLevel(0);

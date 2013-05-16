@@ -584,7 +584,7 @@ public class MyMaster extends Master {
 		String node = to.location().getLevel(0);
 		WorkerStats ws = workers.get(cluster).get(node);
 		Cluster actualCluster = bot.Clusters.get(cluster);
-		System.err.println("We say goodbye to " + to.location().toString());
+		System.err.println("We say goodbye to " + to.location().toString() + " from " + this.getClass().getName());
 		terminateWorker(actualCluster,ws, " scheduler decision");
 		return new NoJob();
 	}

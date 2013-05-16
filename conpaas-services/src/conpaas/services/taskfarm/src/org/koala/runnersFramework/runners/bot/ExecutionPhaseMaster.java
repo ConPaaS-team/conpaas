@@ -834,7 +834,7 @@ public class ExecutionPhaseMaster extends Master {
 		/*if enough of ATU is left could replicate jobs sent to other "dying" workers*/ 
 		/*this.jobsDone == this.totalNumberTasks*/
 		if(bot.tasks.size()==0) {
-			System.err.println("We say goodbye to " + to.location().toString());
+			System.err.println("We say goodbye to " + to.location().toString() + " from " + this.getClass().getName());
 
 			String node = to.location().getLevel(0);
 			workers.get(cluster).get(node).workerFinished(System.currentTimeMillis());

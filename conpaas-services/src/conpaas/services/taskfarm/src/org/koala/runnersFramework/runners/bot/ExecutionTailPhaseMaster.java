@@ -859,7 +859,7 @@ public class ExecutionTailPhaseMaster extends Master {
 			/*this.jobsDone == this.totalNumberTasks*/
 			if((bot.tasks.size()==0) && (this.jobsDone == this.totalNumberTasks)) {
 							
-				System.err.println("We say goodbye to " + to.location().toString());
+				System.err.println("We say goodbye to " + to.location().toString() + " from " + this.getClass().getName());
 				
 				releaseNode(cluster, to);
 				//bot.Clusters.get(cluster).setPendingNodes(bot.Clusters.get(cluster).getPendingNodes()-1);
