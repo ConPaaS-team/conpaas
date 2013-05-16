@@ -21,8 +21,8 @@ service; a TaskFarming service for high-performance batch
 processing; and a shared file system service.
 %Figure~\ref{arch} shows ConPaaS hosting an application composed of a PhP service and a MySQL service, that could represents the architecture of any today's web application.
 
-The architecture of ConPaaS services comprises two main building
-blocks: agents and managers.
+Each ConPaaS service is made up of one manager virtual machine (VM)
+and a number of agent VMs.
 
 \begin{figure*}[Ht]
 \begin{center}
@@ -34,8 +34,8 @@ blocks: agents and managers.
 \end{figure*}
 
 \begin{itemize}
-\item \textbf{Agent}: The agent VMs (virtual machines) host the needed components to provide the service-specific functionality. Based on the performance requirements or the application workload, the number of agent VMs hosting these components can grow or shrink on demand. Thus, as an example, the minimal configuration of the PHP web hosting service consists of a single agent VM. If necessary,
-the service can progressively grow to multiple agent VMs hosting its
+\item \textbf{Agent}: The agent VMs host the necessary components to provide the service-specific functionality. Based on the performance requirements or the application workload, agent VMs can be started or stopped on demand. Thus, as an example, the minimal configuration of the PHP web hosting service consists of a single agent VM. If necessary,
+the service can grow to multiple agent VMs hosting its
 components: load balancer for distributing the incoming traffic, web
 servers for static pages and/or PHP servers for dynamic pages.
 \item \textbf{Manager}: Each service is controlled by one manager VM. The manager is in charge of centralizing monitoring data, controlling the allocation of resources assigned to the service, and coordinating reconfigurations so no loss of service is experienced when adding or removing resources.
@@ -50,10 +50,9 @@ and the MySQL service.
 
 \subsection*{Elasticity}
 
-ConPaaS uses an innovative approach for autonomous application scaling
-and interoperability with several private and public IaaS clouds. As
-illustrated in Figure~\ref{arch}, each ConPaaS service includes a
-monitoring data analysis mechanism and a resource provisioning system.
+As illustrated in Figure~\ref{arch}, the manager VM of each ConPaaS
+service includes a performance monitoring and a resource provisioning
+system.
 
 %ConPaaS incorporates a scalable distributed monitoring engine which is based on the Ganglia~\cite{ganglia} monitoring system. Ganglia consists of a server component (gmetad) that aggregates monitoring statistics from various VMs, and a reporting agent (gmond) which runs inside each VM. By default, Ganglia monitors only system-level metrics such as disk, CPU, memory and network usage. Unfortunately, these metrics often do not provide enough information about system performance due to the heterogeneity of the applications. As a consequence, in ConPaaS, we enhanced ganglia to also monitor service workloads by enhancing the reporting agent to track service-specific logs at runtime, and report statistics over a reporting period of 5 minutes. For instance, the PhP service includes new ganglia metrics that report statistics about the response time and request rate for static and dynamic user requests, respectively. Once the monitoring data is collected from the agents VMs, the resource provisioning  algorithm decides whether to trigger scaling operations based on this data. 
 

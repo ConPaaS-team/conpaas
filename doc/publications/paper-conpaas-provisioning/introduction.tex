@@ -91,21 +91,21 @@ available.
 
 Faced with this difficult scientific challenge, the academic community
 has proposed a wide range of sophisticated resource provisioning
-algorithms~\cite{muppala_regression-based_2012, urgaonkar_agile_2008,vasic_dejavu:_2012}. 
+algorithms~\cite{dejun2011,muppala_regression-based_2012, urgaonkar_agile_2008, vasic_dejavu_2012}. 
 %However, we observe a wide discrepancy
 %between these academic proposals and the very simple techniques
 %actually used by the cloud industry where provisioning decisions are
 %usually triggered by lower/upper thresholds on resource
 %utilization. 
-However, we observe a wide discrepancy between these academic propositions
-and the simple mechanisms that are currently available to cloud
-customers. These mechanisms are usually based on defining lower or
-upper thresholds on resource utilization. Crossing one of the
-thresholds will trigger a pre-defined resource provisioning action
-such as adding or removing one machine.
+However, we observe a wide discrepancy between these academic
+propositions and the very simple mechanisms that are currently
+available to cloud customers. These mechanisms are usually based on
+lower or upper thresholds on resource utilization. Crossing one of the
+thresholds triggers a pre-defined resource provisioning action such as
+adding or removing one machine.
 
-We postulate three possible reasons why sophisticated techniques have
-not been more widely deployed: \emph{(i)} the gains of using
+We postulate three possible reasons why sophisticated techniques are
+not more widely deployed: \emph{(i)} the gains of using
 sophisticated provisioning strategies are too low to be worth the
 effort; \emph{(ii)} implementing and evaluating these techniques is a
 difficult exercise, which is why real cloud systems rely on simpler
@@ -120,24 +120,22 @@ workloads~\cite{do_profiling_2011, islam_empirical_2012}. % By using
 % different execution times between requests, which increase the
 % difficulties to make scaling decisions.
 
-This paper aims to investigate which of these possible causes 
-are the real problems, and to find whether it is possible to
-implement an automatic scaling algorithm which provides better 
-results than the simple ones without being too complex.
+This paper investigate which of these possible causes are the real
+problems, and aims to propose automatic scaling algorithms which
+provide better results than the simple ones without overly increasing
+complexity.
 %This paper aims to identify the real cause of why cloud providers use simpler provisioning techniques.
-We do this by implementing a provisioning system in realistic 
-conditions, and reporting on \emph{(i)} how hard implementation 
-was; and \emph{(ii)} potential gains from using this  technique 
-compared to the threshold-based solution. To achieve this, we designed 
-and implemented a resource provisioning technique in ConPaaS, 
-an open source platform-as-a-service environment for hosting 
-cloud applications~\cite{conpaasIC}. Our technique uses several
-levels of thresholds to predict future performance degradations, 
-workload trend detection to better handle traffic spikes
-and dynamic load balancing weights to handle resources heterogeneity. 
-To test our system in realistic settings, we deployed a copy of 
-Wikipedia and replayed a fraction of the real access traces to
-its official web site.
+We implemented several resource provisioning mechanisms in ConPaaS, an
+open source platform-as-a-service environment for hosting cloud
+applications~\cite{conpaasIC}. Our techniques use several levels of
+thresholds to predict future performance degradations, workload trend
+detection to better handle traffic spikes and dynamic load balancing
+weights to handle resources heterogeneity. We exercised these
+algorithms in realistic unstable workload situations by deploying a
+copy of Wikipedia and replaying a fraction of the real access traces
+to its official web site. Finally, we report on \emph{(i)}
+implementation complexity; and \emph{(ii)} potential gains compared to
+the threshold-based solution. 
 %For the sake of comparison and discussion, we deployed the MediaWiki application and used real access traces to validate our technique, opening doors to real implementation of promising auto-scaling systems.
 
 
