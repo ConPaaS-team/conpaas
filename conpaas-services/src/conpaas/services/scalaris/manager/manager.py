@@ -43,7 +43,7 @@ Created February, 2012
 from threading import Thread
 
 from conpaas.core.expose import expose
-from conpaas.core.manager import BaseManager
+from conpaas.core.manager import BaseManager, ManagerException
 from conpaas.core.https.server import HttpJsonResponse
 from conpaas.core.https.server import HttpErrorResponse, HttpError
 from conpaas.services.scalaris.agent import client
@@ -78,7 +78,8 @@ class ScalarisManager(BaseManager):
         self.logger.debug("Entering ScalarisManager startup")
 
         if self.state != self.S_INIT and self.state != self.S_STOPPED:
-            return HttpErrorResponse(ManagerException(E_STATE_ERROR).message)
+            return HttpErrorResponse(ManagerException(
+                ManagerException.E_STATE_ERROR).message)
 
         self.state = self.S_PROLOGUE
         Thread(target=self._do_startup, kwargs=kwargs).start()
