@@ -632,7 +632,6 @@ class BasicWebserversManager(BaseManager):
       return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
 
     config = self._configuration_get()
-    webServiceNodes = config.getWebServiceNodes()
 
     repo = git.DEFAULT_CODE_REPO
     codeVersionId = git.git_code_version(repo)

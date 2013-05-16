@@ -194,15 +194,6 @@ class WebServersAgent(BaseAgent):
         raise AgentException(AgentException.E_ARGS_UNEXPECTED, kwargs.keys())
       return ret
 
-    @expose('GET')
-    def getWebServerState(self, kwargs):
-      """GET state of WebServer"""
-      if len(kwargs) != 0:
-        return HttpErrorResponse(AgentException(
-            AgentException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
-      with web_lock:
-        return _get(kwargs, self.webserver_file, self.WebServer)
-
     @expose('POST')
     def createWebServer(self, kwargs):
       """Create the WebServer"""

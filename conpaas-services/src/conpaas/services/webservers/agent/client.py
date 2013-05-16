@@ -56,10 +56,6 @@ def _check(response):
   if data['error']: raise AgentException(data['error'])
   else: return True
 
-def getWebServerState(host, port):
-  method = 'getWebServerState'
-  return _check(https.client.jsonrpc_get(host, port, '/', method))
-
 def createWebServer(host, port, web_port, code_versions):
   method = 'createWebServer'
   params = {
