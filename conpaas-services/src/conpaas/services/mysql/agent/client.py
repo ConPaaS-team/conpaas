@@ -60,22 +60,6 @@ def _check(response):
     else:
         return True
 
-def get_master_state(host, port):
-    method = 'get_master_state'
-    result = https.client.jsonrpc_get(host, port, '/', method)
-    if _check(result):
-        return result
-    else:
-        return False
-
-def get_slave_state(host, port):
-    method = 'get_slave_state'
-    result = https.client.jsonrpc_get(host, port, '/', method)
-    if _check(result):
-        return result
-    else:
-        return False
-
 # TODO: with dump ?
 def create_master(host, port, master_server_id):
     method = 'create_master'

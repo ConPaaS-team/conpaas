@@ -297,15 +297,6 @@ class MySQLAgent(BaseAgent):
         else:
             return HttpJsonResponse()
 
-    @expose('GET')
-    def get_master_state(self, kwargs):
-      """GET state of Master"""
-      if len(kwargs) != 0:
-        return HttpErrorResponse(AgentException(
-            AgentException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
-      with web_lock:
-        return _get(kwargs, self.master_file, role.MySQLMaster)
-
     @expose('POST')
     def create_slave(self, kwargs):
       '''
@@ -393,14 +384,5 @@ class MySQLAgent(BaseAgent):
         else:
             with self.slave_lock:
                 return self._create(kwargs, self.slave_file, role.MySQLSlave)
-
-    @expose('GET')
-    def get_slave_state(self, kwargs):
-      """GET state of Slave"""
-      if len(kwargs) != 0:
-        return HttpErrorResponse(AgentException(AgentException.E_ARGS_UNEXPECTED, 
-                                 kwargs.keys()).message)
-      with slave_lock:
-        return _get(kwargs, self.slave_file, role.MySQLSlave)
 
     # TODO: Update slave - if manager changes! 
