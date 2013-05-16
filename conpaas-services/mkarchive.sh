@@ -12,7 +12,7 @@ $BATS_HOME/compile.sh
 
 # Make the archive 
 mkdir ConPaaS
-cp -r bin config contrib misc sbin scripts src ConPaaS > /dev/null
+cp -r config contrib misc sbin scripts src ConPaaS > /dev/null
 
 # Cleanup if taken from svn
 rm -Rf `find ConPaaS -name .svn`
