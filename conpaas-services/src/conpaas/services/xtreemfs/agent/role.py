@@ -40,18 +40,10 @@ Created on May, 2012
 @author: Dragos Diaconescu
 '''
 
-from os.path import join, devnull, exists
-from os import kill, chown, setuid, setgid
-from pwd import getpwnam
-from signal import SIGINT, SIGTERM, SIGUSR2, SIGHUP
+from os.path import join, devnull
 from subprocess import Popen
-from shutil import rmtree, copy2
 from Cheetah.Template import Template
-from threading import Thread
-from conpaas.core.misc import verify_port, verify_ip_port_list, verify_ip_or_domain
 from conpaas.core.log import create_logger
-from conpaas.core.https.server import HttpJsonResponse
-import subprocess
 import uuid
 
 S_INIT        = 'INIT'
