@@ -978,6 +978,13 @@ public class ExecutionPhaseMaster extends Master {
 			}
 		}
 		updateFrontEndCache();
+                try {
+                        this.terminateAllWorkers();
+                }
+                catch (Exception E)
+                {
+                        E.printStackTrace(System.err);
+                }
 	}
 
 	@Override
