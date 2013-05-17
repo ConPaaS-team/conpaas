@@ -4,7 +4,6 @@ import os
 from conpaas.core.manager import BaseManager
 
 from conpaas.core.expose import expose
-from conpaas.core.controller import Controller
 
 from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse
 
@@ -60,7 +59,7 @@ class ContentDeliveryManager(BaseManager):
             snapshot = NetworkSnapshot()
             json_snapshot = snapshot.memcache_get_json()
             return HttpJsonResponse(json.loads(json_snapshot))
-        except Exception as e:
+        except Exception:
             return HttpErrorResponse('Failed to fetch snapshot')
 
     @expose('GET')
