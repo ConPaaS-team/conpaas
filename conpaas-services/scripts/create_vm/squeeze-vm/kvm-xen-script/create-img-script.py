@@ -38,10 +38,7 @@
 # generates another script which creates VM images for
 # ConPaaS, to be used for OpenNebula with KVM.
 
-import sys
-import os
-import glob
-import ConfigParser
+import sys, os, ConfigParser, stat
 
 output_filename = 'create-img.sh'
 
@@ -76,6 +73,10 @@ def append_str_to_output(string):
 
 def close_output_file():
     output_file.close()
+    os.chmod(output_filename,
+            stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR |
+            stat.S_IRGRP | stat.S_IXGRP |
+            stat.S_IXOTH)
 
 if __name__ == '__main__':
     root_dir = 'scripts/'
@@ -118,17 +119,29 @@ if __name__ == '__main__':
 
     # Write message about the selected services
     print 'Setting up image for', hypervisor.upper()
-    
+
     # Write general scripts
     filenames = config.get('SCRIPT_FILE_NAMES', 'general_scripts')
     for filename in filenames.split():
         append_file_to_output(root_dir + filename)
 
     # Write service scripts
-    service_scripts = glob.glob(root_dir + '[5-9][0-9][0-9]*')
-    service_scripts.sort()
-    for filename in service_scripts:
-        append_file_to_output(filename)
+    for servicename, should_include in config.items('SERVICES'):
+        if 'true' == should_include:
+            filename = config.get('SCRIPT_FILE_NAMES', servicename + '_script')
+            append_file_to_output(root_dir + filename)
+
+    # Write user script
+    filename = config.get('SCRIPT_FILE_NAMES', 'user_script')
+    append_file_to_output(root_dir + filename)
+
+    # Write tail script
+    filename = config.get('SCRIPT_FILE_NAMES', 'tail_script')
+    append_file_to_output(root_dir + filename)
+
+    # Write opennebula script
+    filename = config.get('SCRIPT_FILE_NAMES', 'opennebula_script')
+    append_file_to_output(root_dir + filename)
 
     close_output_file()
 
