@@ -372,8 +372,8 @@ class Controller(object):
             @return The cloud object which name is the same as @param name
 
         """
-        return filter(lambda cloud: cloud.get_cloud_name() == cloud_name,
-                      self.__available_clouds)[0]
+        return [ cloud for cloud in self.__available_clouds 
+            if cloud.get_cloud_name() == cloud_name ][0]
 
     #=========================================================================#
     #               config_cloud(self, cloud, config_params)                  #
