@@ -315,7 +315,7 @@ class DirectorTest(Common):
         self.assertEquals(expected, simplejson.loads(response.data))
             
     def test_credit_right_sid_enough_credit(self):
-        service = self.__new_service()
+        self.__new_service()
 
         data = { 'sid': 1, 'decrement': 119, 'uid': 1, 'role': 'manager' }
         response = self.app.post('/callback/decrementUserCredit.php', data=data)
@@ -326,7 +326,7 @@ class DirectorTest(Common):
         self.assertEquals(0, user.credit)
 
     def test_credit_right_sid_not_enough_credit(self):
-        service = self.__new_service()
+        self.__new_service()
 
         # Setting user's credit to 0
         user = cpsdirector.user.get_user(TEST_USER_DATA['username'], TEST_USER_DATA['password'])

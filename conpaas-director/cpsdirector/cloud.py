@@ -186,6 +186,10 @@ EOF
     def stop(self, vmid):
         log('Trying to stop service %s on cloud %s' % (vmid, self.cloud_name))
         cloud = self.get_cloud_by_name(self.cloud_name)
+
+        if not cloud.connected:
+            cloud._connect()
+
         cloud.kill_instance(ServiceNode(vmid, None, None, self.cloud_name))
         self._stop_reservation_timer()
 

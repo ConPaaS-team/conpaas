@@ -25,8 +25,8 @@ class Client(BaseClient):
 
     def usage(self, cmdname):
         BaseClient.usage(self, cmdname)
-        print "    add_nodes    serviceid count"
-        print "    remove_nodes serviceid count"
+        print "    add_nodes         serviceid count"
+        print "    remove_nodes      serviceid count"
 
     def main(self, argv):
         command = argv[1]
