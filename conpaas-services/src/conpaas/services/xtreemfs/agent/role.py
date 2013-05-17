@@ -54,6 +54,10 @@ S_STOPPED     = 'STOPPED'
 
 logger = create_logger(__name__)
 
+MRC_STARTUP = None
+DIR_STARTUP = None
+OSD_STARTUP = None
+OSD_REMOVE = None
 ETC = None
 
 def init(config_parser):

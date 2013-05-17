@@ -2,12 +2,11 @@
 
 import logging
 from optparse import OptionParser
-import os
 import subprocess
 import time
 
 import app
-from edge import EdgeLocation, NetworkSnapshot
+from edge import NetworkSnapshot
 
 
 class RemoteCommand:
