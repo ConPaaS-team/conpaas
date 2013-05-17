@@ -160,9 +160,7 @@ class BaseClient(object):
             res = self.callapi("start/" + service_type + '/' + cloud, True, data)
         sid = res['sid']
 
-        if cloud is not None:
-            print "In " + cloud + ": ",
-        print "Creating new " + service_type + " manager (sid=" + str(sid) + ") on " + res['manager'] + "... ",
+        print "Creating new manager on " + res['manager'] + "... ",
         sys.stdout.flush()
 
         self.wait_for_state(sid, initial_state)
