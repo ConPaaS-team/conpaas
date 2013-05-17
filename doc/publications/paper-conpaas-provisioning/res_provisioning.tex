@@ -1,5 +1,6 @@
-In this section, we describe the different provisioning techniques implemented in ConPaaS.
-
+We evaluated three resource provisioning algorithms: a trigger-based
+algorithm representing a baseline comparable to systems currently in
+production, and two new algorithms.
 
 
 %\subsection{Load-based provisioning}
@@ -27,10 +28,12 @@ parameters like CPU utilization, network traffic volume etc.
 This trigger-based technique is currently used in well-known 
 cloud platforms such as RightScale~\cite{right-scale} or OpenShift~\cite{openshift}. 
 
-For the sake of comparison, we designed and implemented a 
-trigger-based provisioning mechanism in ConPaaS. This technique 
-monitors CPU usage and application response time metrics, and 
-dynamically adjusts the computational power allocated to an application by analyzing whether the monitoring data exceed their thresholds~\footnote{Every metric has an upper and a lower threshold respectively (threshold\_max, threshold\_min).}, as illustrated in Algorithm~\ref{triggerBased_prov}. The lower and upper thresholds are pre-defined by the user before execution.
+For the sake of comparison, we designed and implemented a
+trigger-based provisioning mechanism in ConPaaS. This technique
+monitors CPU usage and application response time metrics, and assigns
+a lower and upper threshold for each metric. It then creates or
+deletes VMs whenever one of the threshold is crossed. The thresholds
+are statically defined by the user before execution.
 
 \begin{algorithm} 
 {\scriptsize
@@ -65,7 +68,8 @@ Sleep for 5 minutes \;
 %\subsubsection{Problematic of this algorithm}
 %subsubsection{Drawbacks of this algorithm}
 
-Even though these type of mechanisms are simple and widely used in cloud platforms, they are excessively reactive and not so precise when provisioning web applications due to the following factors: 
+Even though this is simple and widely used in cloud platforms, we show
+that it is too reactive because of the following reasons:
 
 %regarding the decision making process
 %\corina{I removed the item about services as black boxes, because now
