@@ -1,5 +1,3 @@
-import sys
-
 from web import WebClient
 
 class Client(WebClient):
