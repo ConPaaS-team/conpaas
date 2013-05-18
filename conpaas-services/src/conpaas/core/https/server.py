@@ -78,6 +78,8 @@ from OpenSSL import SSL
 
 from conpaas.core import log
 from conpaas.core.expose import exposed_functions
+from conpaas.core.services import manager_services 
+from conpaas.core.services import agent_services 
 
 
 class HttpError(Exception): pass
@@ -133,9 +135,9 @@ class ConpaasSecureServer(HTTPSServer):
         self.callback_dict = {'GET': {}, 'POST': {}, 'UPLOAD': {}}
 
         if role == 'manager':
-            from conpaas.core.services import manager_services as services
+            services = manager_services
         else:
-            from conpaas.core.services import agent_services as services
+            services = agent_services
 
         # Instantiate the requested service class
         service_type = config_parser.get(role, 'TYPE')
