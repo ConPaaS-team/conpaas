@@ -68,7 +68,7 @@ class Application(db.Model):
             if candidate_network not in assigned_networks:
                 return candidate_network
 
-def get_app(user_id, app_id):
+def get_app_by_id(user_id, app_id):
     app = Application.query.filter_by(aid=app_id).first()
     if not app:
         log('Application %s does not exist' % app_id)
@@ -80,28 +80,38 @@ def get_app(user_id, app_id):
 
     return app
 
+def get_app_by_name(user_id, app_name):
+    app = Application.query.filter_by(name=app_name).first()
+    if not app:
+        log('Application %s does not exist' % app_name)
+        return
+
+    if app.user_id != user_id:
+        log('Application %s is not owned by user %s' % (app_name, user_id))
+        return
+
+    return app
+
 def get_default_app(user_id):
     return Application.query.filter_by(user_id=user_id).order_by(
         Application.aid).first()
 
-from cpsdirector.user import cert_required
-@application_page.route("/createapp", methods=['POST'])
-@cert_required(role='user')
-def createapp():
-    app_name = request.values.get('name')
-    if not app_name:
-        log('"name" is a required argument')
-        return build_response(simplejson.dumps(False))
+def check_app_exists(app_name):
+    if Application.query.filter_by(name=app_name).first():
+        return True
 
+    return False
+
+def _createapp(app_name):
     log('User %s creating a new application %s' % (g.user.username, app_name))
 
     # check if the application already exists
-    if Application.query.filter_by(name=app_name).first():
+    if check_app_exists(app_name):
         log('Application name %s already exists' % app_name)
 
-        return build_response(jsonify({
+        return jsonify({
             'error': True,
-            'msg': 'Application name "%s" already taken' % app_name }))
+            'msg': 'Application name "%s" already taken' % app_name })
 
     a = Application(name=app_name, user=g.user)
 
@@ -112,9 +122,22 @@ def createapp():
     db.session.commit()
 
     log('Application %s created properly' % (a.aid))
-    return build_response(jsonify(a.to_dict()))
+    return jsonify(a.to_dict())
+
+from cpsdirector.user import cert_required
+@application_page.route("/createapp", methods=['POST'])
+@cert_required(role='user')
+def createapp():
+    app_name = request.values.get('name')
+    if not app_name:
+        log('"name" is a required argument')
+        return build_response(simplejson.dumps(False))
+
+    return build_response(_createapp(app_name))
 
 from cpsdirector.service import Service
+from cpsdirector.service import stop
+from cpsdirector.service import callmanager
 
 @application_page.route("/delete/<int:appid>", methods=['POST'])
 @cert_required(role='user')
@@ -128,14 +151,14 @@ def delete(appid):
     """
     log('User %s attempting to delete application %s' % (g.user.uid, appid))
 
-    app = get_app(g.user.uid, appid)
+    app = get_app_by_id(g.user.uid, appid)
     if not app:
         return build_response(simplejson.dumps(False))
 
     # If an application with id 'appid' exists and user is the owner
     for service in Service.query.filter_by(application_id=appid):
-        log('Stopping service %s' % service.sid)
-        service.stop()
+        callmanager(service.sid, "shutdown", True, {})
+        stop(service.sid)
 
     db.session.delete(app)
     db.session.commit()

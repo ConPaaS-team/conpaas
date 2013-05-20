@@ -96,35 +96,55 @@ def get_service(user_id, service_id):
 
     return service
 
+from conpaas.core import https
+def callmanager(service_id, method, post, data, files=[]):
+    """Call the manager API.
+
+    'service_id': an integer holding the service id of the manager.
+    'method': a string representing the API method name.
+    'post': boolean value. True for POST method, false for GET.
+    'data': a dictionary representing the data to be sent to the director.
+    'files': sequence of (name, filename, value) tuples for data to be uploaded as files.
+
+    callmanager loads the manager JSON response and returns it as a Python
+    object.
+    """
+    service = get_service(g.user.uid, service_id)
+
+    https.client.conpaas_init_ssl_ctx('/etc/cpsdirector/certs', 'director')
+
+    # File upload
+    if files:
+        res = https.client.https_post(service.manager, 443, '/', data, files)
+    # POST
+    elif post:
+        res = https.client.jsonrpc_post(service.manager, 443, '/', method, data)
+    # GET
+    else:
+        res = https.client.jsonrpc_get(service.manager, 443, '/', method, data)
+
+    if res[0] == 200:
+        try:
+            data = simplejson.loads(res[1])
+        except simplejson.decoder.JSONDecodeError:
+            # Not JSON, simply return what we got
+            return res[1]
+
+        return data.get('result', data)
+
+    raise Exception, "Call to method %s on %s failed: %s.\nParams = %s" % (
+        method, service.manager, res[1], data)
+
 @service_page.route("/available_services", methods=['GET'])
 def available_services():
     """GET /available_services"""
     return simplejson.dumps(valid_services)
 
-from cpsdirector.application import get_default_app, get_app
+from cpsdirector.application import get_default_app, get_app_by_id
 
 from cpsdirector.user import cert_required
 
-@service_page.route("/start/<servicetype>", methods=['POST'])
-@service_page.route("/start/<servicetype>/<cloudname>", methods=['POST'])
-@cert_required(role='user')
-def start(servicetype, cloudname="default"):
-    """eg: POST /start/php
-
-    POSTed values might contain 'appid' to specify that the service to be
-    created has to belong to a specific application. If 'appid' is omitted, the
-    service will belong to the default application.
-
-    Returns a dictionary with service data (manager's vmid and IP address,
-    service name and ID) in case of successful authentication and correct
-    service creation. False is returned otherwise.
-    """
-    appid = request.values.get('appid')
-
-    # Use default application id if no appid was specified
-    if not appid:
-        appid = get_default_app(g.user.uid).aid
-
+def _start(servicetype, cloudname, appid):
     log('User %s creating a new %s service inside application %s' % (
 	    g.user.username, servicetype, appid))
 
@@ -135,7 +155,7 @@ def start(servicetype, cloudname="default"):
         return build_response(jsonify({ 'error': True,
                                         'msg': error_msg }))
 
-    app = get_app(g.user.uid, appid)
+    app = get_app_by_id(g.user.uid, appid)
     if not app:
         return build_response(jsonify({ 'error': True,
 		                        'msg': "Application not found" }))
@@ -172,16 +192,35 @@ def start(servicetype, cloudname="default"):
     log('%s (id=%s) created properly' % (s.name, s.sid))
     return build_response(jsonify(s.to_dict()))
 
-@service_page.route("/rename/<int:serviceid>", methods=['POST'])
+@service_page.route("/start/<servicetype>", methods=['POST'])
+@service_page.route("/start/<servicetype>/<cloudname>", methods=['POST'])
 @cert_required(role='user')
-def rename(serviceid):
+def start(servicetype, cloudname="default"):
+    """eg: POST /start/php
+
+    POSTed values might contain 'appid' to specify that the service to be
+    created has to belong to a specific application. If 'appid' is omitted, the
+    service will belong to the default application.
+
+    Returns a dictionary with service data (manager's vmid and IP address,
+    service name and ID) in case of successful authentication and correct
+    service creation. False is returned otherwise.
+    """
+    appid = request.values.get('appid')
+
+    # Use default application id if no appid was specified
+    if not appid:
+        appid = get_default_app(g.user.uid).aid
+
+    return _start(servicetype, cloudname, appid)
+
+def _rename(serviceid, newname):
     log('User %s attempting to rename service %s' % (g.user.uid, serviceid))
 
     service = get_service(g.user.uid, serviceid)
     if not service:
         return make_response(simplejson.dumps(False))
 
-    newname = request.values.get('name')
     if not newname:
         log('"name" is a required argument')
         return build_response(simplejson.dumps(False))
@@ -189,6 +228,16 @@ def rename(serviceid):
     service.name = newname
     db.session.commit()
     return simplejson.dumps(True)
+
+@service_page.route("/rename/<int:serviceid>", methods=['POST'])
+@cert_required(role='user')
+def rename(serviceid):
+    newname = request.values.get('name')
+    if not newname:
+        log('"name" is a required argument')
+        return build_response(simplejson.dumps(False))
+
+    return _rename(serviceid, newname)
 
 @service_page.route("/callback/terminateService.php", methods=['POST'])
 @cert_required(role='manager')
