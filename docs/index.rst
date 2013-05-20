@@ -8,6 +8,7 @@ Contents:
    
    installation
    userguide
+   manifest
    internals
    api
 
