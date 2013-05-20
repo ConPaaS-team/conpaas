@@ -441,7 +441,8 @@ class BaseClient(object):
         print
         print "    credentials                           # set your ConPaaS credentials"
         print "    listapp                               # list all applications"
-        print "    available         'clouds'            # list supported services or available clouds if parameter specified"
+        print "    available                             # list supported services"
+        print "    clouds                                # list available clouds"
         print "    list              [appid]             # list running services under an application"
         print "    deleteapp         appid               # delete an application"
         print "    createapp         appname             # create a new application"
@@ -469,10 +470,9 @@ class BaseClient(object):
             sys.exit(0)
 
         # Service and application generic commands
-        if command in ( "listapp", "createapp", 
-                        "manifest", "download_manifest",
-                        "list", "credentials", "available", 
-                        "create", "deleteapp" ):
+        if command in ( "listapp", "createapp", "manifest",
+                        "download_manifest", "list", "credentials", 
+                        "available", "clouds", "create", "deleteapp" ):
 
             if command == "create":
                 try:
@@ -541,11 +541,10 @@ class BaseClient(object):
                 return getattr(self, command)(appid)
 
             if command == "available":
-                if len(sys.argv) == 2:
-                    cloud = ''
-                else:
-                    cloud = argv[2]
-                return getattr(self, command)(cloud)
+                return getattr(self, command)('services')
+
+            if command == "clouds":
+                return getattr(self, 'available')('clouds')
 
             # We need no params, just call the method and leave
             return getattr(self, command)()
