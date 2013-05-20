@@ -387,6 +387,27 @@ class BaseClient(object):
         else:
             print "failed."
 
+    def manifest(self, manifestfile):
+        print "Uploading the manifest... "
+        sys.stdout.flush()
+
+        f = open(manifestfile, 'r')
+        json = f.read()
+        f.close()
+
+        res = self.callapi("upload_manifest", True, { 'manifest': json })
+        if res:
+            print "done."
+        else:
+            print "failed."
+
+    def download_manifest(self, appid):
+        res = self.callapi("download_manifest/%s" % appid, True, {})
+        if res:
+            print res
+        else:
+            print "E: Failed downloading manifest file"
+
     def listapp(self, doPrint=True):
         """Call the 'listapp' method on the director and print the results
         nicely"""
@@ -424,6 +445,8 @@ class BaseClient(object):
         print "    list              [appid]             # list running services under an application"
         print "    deleteapp         appid               # delete an application"
         print "    createapp         appname             # create a new application"
+        print "    manifest          filename            # upload a new manifest"
+        print "    download_manifest appid               # download an existing manifest"
         print "    create            servicetype [appid] # create a new service [inside a specific application]"
         print "    start             serviceid [cloud]   # startup the specified service on default or one of the available clouds"
         print "    info              serviceid           # get service details"
@@ -445,9 +468,11 @@ class BaseClient(object):
             self.usage(argv[0])
             sys.exit(0)
 
-        # Service and appplication generic commands
-        if command in ( "listapp", "createapp", "list", "credentials",
-                        "available", "create", "deleteapp" ):
+        # Service and application generic commands
+        if command in ( "listapp", "createapp", 
+                        "manifest", "download_manifest",
+                        "list", "credentials", "available", 
+                        "create", "deleteapp" ):
 
             if command == "create":
                 try:
@@ -489,15 +514,32 @@ class BaseClient(object):
             if command == "createapp":
                 appname = argv[2]
                 return getattr(self, command)(appname)
+
             if command == "deleteapp":
                 appid = argv[2]
                 return getattr(self, command)(appid)
+
+            if command == "manifest":
+                try:
+                    # 'manifest' wants a filename type. Check if we got one,
+                    # and if it is acceptable.
+                    open(argv[2])
+                    return getattr(self, command)(argv[2])
+                except (IndexError, IOError):
+                    self.usage(argv[0])
+                    sys.exit(0)
+
+            if command == "download_manifest":
+                appid = argv[2]
+                return getattr(self, command)(appid)
+
             if command == "list":
                 if len(sys.argv) == 2:
                     appid = 0
                 else:
                     appid = argv[2]
                 return getattr(self, command)(appid)
+
             if command == "available":
                 if len(sys.argv) == 2:
                     cloud = ''
