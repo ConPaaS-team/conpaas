@@ -77,39 +77,17 @@ class MySQLManager(BaseManager):
 
     """
 
-    # TODO: move this in core !!!!
-    S_INIT = 'INIT'
-    S_PROLOGUE = 'PROLOGUE'
-    S_RUNNING = 'RUNNING'
-    S_ADAPTING = 'ADAPTING'
-    S_EPILOGUE = 'EPILOGUE'
-    S_STOPPED = 'STOPPED'
-    S_ERROR = 'ERROR'
-
     def __init__(self, conf, **kwargs):
         BaseManager.__init__(self, conf)
 
         self.logger.debug("Entering MySQLServerManager initialization")
         self.controller.generate_context('mysql')
         self.controller.config_clouds({ "mem" : "512", "cpu" : "1" })
-        self.state = self.S_INIT
         self.config = Configuration(conf)
         self.logger.debug("Leaving MySQLServer initialization")
 
         # The unique id that is used to start the master/slave
         self.id = 0
-
-    @expose('POST')
-    def startup(self, kwargs):
-        ''' Starts the service - it will start and configure a MySQL master '''
-        self.logger.debug("Entering MySQLServerManager startup")
-
-        if self.state != self.S_INIT and self.state != self.S_STOPPED:
-            return HttpErrorResponse(ManagerException(E_STATE_ERROR).message)
-
-        self.state = self.S_PROLOGUE
-        Thread(target=self._do_startup, kwargs=kwargs).start()
-        return HttpJsonResponse({'state': self.S_PROLOGUE})
 
     def _do_startup(self, cloud):
         ''' Starts up the service. The first node will be the MYSQL master.

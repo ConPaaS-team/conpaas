@@ -14,16 +14,6 @@ from edge import NetworkSnapshot
 
 class ContentDeliveryManager(BaseManager):
 
-    # Manager states - Used by the frontend
-    S_INIT = 'INIT'         # manager initialized but not yet started
-    S_PROLOGUE = 'PROLOGUE' # manager is starting up
-    S_RUNNING = 'RUNNING'   # manager is running
-    S_ADAPTING = 'ADAPTING' # manager is in a transient state - frontend will keep
-                            # polling until manager out of transient state 
-    S_EPILOGUE = 'EPILOGUE' # manager is shutting down
-    S_STOPPED = 'STOPPED'   # manager stopped
-    S_ERROR = 'ERROR'       # manager is in error state
-
     def __init__(self,
                  config_parser, # config file
                  **kwargs):     # anything you can't send in config_parser

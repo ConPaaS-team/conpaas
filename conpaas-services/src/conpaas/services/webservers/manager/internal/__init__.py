@@ -80,14 +80,6 @@ class BasicWebserversManager(BaseManager):
   CONFIG = 'config'
   DEPLOYMENT_STATE = 'deployment_state'
   
-  S_INIT = 'INIT'
-  S_PROLOGUE = 'PROLOGUE'
-  S_RUNNING = 'RUNNING'
-  S_ADAPTING = 'ADAPTING'
-  S_EPILOGUE = 'EPILOGUE'
-  S_STOPPED = 'STOPPED'
-  S_ERROR = 'ERROR'
-  
   def __init__(self, config_parser):
     BaseManager.__init__(self, config_parser)
 
@@ -191,11 +183,12 @@ class BasicWebserversManager(BaseManager):
       serviceNodeKwargs.extend([ {'runWeb':True} for _ in range(config.web_count) ])
       serviceNodeKwargs.extend([ {'runBackend':True} for _ in range(config.backend_count) ])
     
-    #if not self._deduct_credit(len(serviceNodeKwargs)):
-    #  return HttpErrorResponse(ManagerException(ManagerException.E_NOT_ENOUGH_CREDIT).message)
-    
     self._state_set(self.S_PROLOGUE, msg='Starting up')
-    Thread(target=self.do_startup, args=[config, serviceNodeKwargs, kwargs['cloud']]).start()
+
+    kwargs['config'] = config
+    kwargs['serviceNodeKwargs'] = serviceNodeKwargs
+    
+    Thread(target=self.do_startup, kwargs=kwargs).start()
     return HttpJsonResponse({'state': self.S_PROLOGUE})
   
   @expose('POST')

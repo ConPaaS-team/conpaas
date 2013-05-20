@@ -43,22 +43,12 @@ Created February, 2012
 from threading import Thread
 
 from conpaas.core.expose import expose
-from conpaas.core.manager import BaseManager, ManagerException
+from conpaas.core.manager import BaseManager
 from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse, \
                                       HttpError
 from conpaas.services.mapreduce.agent import client
 
 class MapReduceManager(BaseManager):
-
-    # Manager states - Used by the frontend
-    S_INIT = 'INIT'         # manager initialized but not yet started
-    S_PROLOGUE = 'PROLOGUE' # manager is initializing
-    S_RUNNING = 'RUNNING'   # manager is running
-    S_ADAPTING = 'ADAPTING' # manager is in a transient state - frontend will keep
-                            # polling until manager out of transient state
-    S_EPILOGUE = 'EPILOGUE' # manager is shutting down
-    S_STOPPED = 'STOPPED'   # manager stopped
-    S_ERROR = 'ERROR'       # manager is in error state
 
     def __init__(self,
                  config_parser, # config file
@@ -66,23 +56,10 @@ class MapReduceManager(BaseManager):
                                 # (hopefully the new service won't need anything extra)
         BaseManager.__init__(self, config_parser)
 
-        self.state = self.S_INIT
         self.nodes = []
         # Setup the clouds' controller
         self.controller.generate_context('mapreduce')
         self.controller.config_clouds({ "mem" : "1024", "cpu" : "1" })
-
-    @expose('POST')
-    def startup(self, kwargs):
-        ''' Starts the service - it will start and configure the scalaris management server  '''
-
-        self.logger.debug("Entering HadoopManager startup")
-
-        if self.state != self.S_INIT and self.state != self.S_STOPPED:
-            return HttpErrorResponse(ManagerException(ManagerException.E_STATE_ERROR).message)
-        self.state = self.S_PROLOGUE
-        Thread(target=self._do_startup, kwargs=kwargs).start()
-        return HttpJsonResponse({'state': self.S_PROLOGUE})
 
     def _do_startup(self, cloud):
         ''' Starts up the service. The first node will be the job 

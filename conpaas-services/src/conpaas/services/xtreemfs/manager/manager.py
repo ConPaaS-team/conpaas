@@ -58,20 +58,7 @@ def invalid_arg(msg):
 
 class XtreemFSManager(BaseManager):
     
-    # Manager states - Used by the frontend
-    S_INIT = 'INIT'         # manager initialized but not yet started
-    S_PROLOGUE = 'PROLOGUE' # manager is starting up
-    S_RUNNING = 'RUNNING'   # manager is running
-    S_ADAPTING = 'ADAPTING' # manager is in a transient stata: frontend will
-                            # keep polling until manager out of transient state
-    S_EPILOGUE = 'EPILOGUE' # manager is shutting down
-    S_STOPPED = 'STOPPED'   # manager stopped
-    S_ERROR = 'ERROR'       # manager is in error state
-
-    def __init__(self,
-                 config_parser, # config file
-                 **kwargs):     # anything you can't send in config_parser
-
+    def __init__(self, config_parser, **kwargs):
         BaseManager.__init__(self, config_parser)
 
         # node lists
@@ -87,21 +74,7 @@ class XtreemFSManager(BaseManager):
 
         # Setup the clouds' controller
         self.controller.generate_context('xtreemfs')
-        self.state = self.S_INIT
 
-    @expose('POST')
-    def startup(self, kwargs):
-        self.logger.debug("XtreemFSManager startup")
-
-        if self.state != self.S_INIT and self.state != self.S_STOPPED:
-            return HttpErrorResponse(ManagerException(
-                ManagerException.E_STATE_ERROR).message)
-
-        self.state = self.S_PROLOGUE
-        Thread(target=self._do_startup, kwargs=kwargs).start()
-        return HttpJsonResponse({'state': self.S_PROLOGUE})
-
-    
     def _start_dir(self, nodes):
         for node in nodes:
             try:

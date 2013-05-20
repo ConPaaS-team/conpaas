@@ -35,6 +35,8 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 """
 
+from threading import Thread
+
 import os.path
 from conpaas.core.log import create_logger
 from conpaas.core.expose import expose
@@ -49,10 +51,34 @@ from conpaas.core.ganglia import ManagerGanglia
 class BaseManager(object):
     """Manager class with the following exposed methods:
 
+    startup() -- POST
     getLog() -- GET
     upload_startup_script() -- UPLOAD
     get_startup_script() -- GET
     """
+
+    # Manager states 
+    S_INIT = 'INIT'         # manager initialized but not yet started
+    S_PROLOGUE = 'PROLOGUE' # manager is starting up
+    S_RUNNING = 'RUNNING'   # manager is running
+    S_ADAPTING = 'ADAPTING' # manager is in a transient state - frontend will 
+                            # keep polling until manager out of transient state
+    S_EPILOGUE = 'EPILOGUE' # manager is shutting down
+    S_STOPPED = 'STOPPED'   # manager stopped
+    S_ERROR = 'ERROR'       # manager is in error state
+
+    # String template for error messages returned when performing actions in
+    # the wrong state
+    WRONG_STATE_MSG = "ERROR: cannot perform %(action)s in state %(curstate)s"
+
+    # String template for error messages returned when a required argument is
+    # missing
+    REQUIRED_ARG_MSG = "ERROR: %(arg)s is a required argument"
+
+    # String template for debugging messages logged on nodes creation
+    ACTION_REQUESTING_NODES = "requesting %(count)s nodes in %(action)s"
+
+    AGENT_PORT = 5555
 
     def __init__(self, config_parser):
         self.logger = create_logger(__name__)
@@ -78,6 +104,31 @@ class BaseManager(object):
             self.logger.exception(err)
         else:
             self.logger.info('Ganglia started successfully')
+
+        self.state = self.S_INIT
+
+    @expose('POST')
+    def startup(self, kwargs):
+        """Start the given service"""
+        # Starting up the service makes sense only in the INIT or STOPPED
+        # states
+        if self.state != self.S_INIT and self.state != self.S_STOPPED:
+            vals = { 'curstate': self.state, 'action': 'startup' }
+            return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
+
+        # Check if the specified cloud, if any, is available
+        if 'cloud' in kwargs:
+            try:
+                self._init_cloud(kwargs['cloud'])
+            except IndexError:
+                return HttpErrorResponse(
+                    "A cloud named '%s' could not be found" % kwargs['cloud'])
+
+        self.logger.info('Manager starting up')
+        self.state = self.S_PROLOGUE
+        Thread(target=self._do_startup, kwargs=kwargs).start()
+
+        return HttpJsonResponse({ 'state': self.state })
 
     @expose('GET')
     def getLog(self, kwargs):

@@ -52,7 +52,6 @@ import node_info
 class HTCondorManager(BaseManager):
     """Manager class with the following exposed methods:
 
-    startup() -- POST
     shutdown() -- POST
     add_nodes(count) -- POST
     remove_nodes(count) -- POST
@@ -60,29 +59,6 @@ class HTCondorManager(BaseManager):
     get_service_info() -- GET
     get_node_info(serviceNodeId) -- GET
     """
-    # Manager states 
-    S_INIT = 'INIT'         # manager initialized but not yet started
-    S_PROLOGUE = 'PROLOGUE' # manager is starting up
-    S_RUNNING = 'RUNNING'   # manager is running
-    S_ADAPTING = 'ADAPTING' # manager is in a transient state - frontend will 
-                            # keep polling until manager out of transient state
-    S_EPILOGUE = 'EPILOGUE' # manager is shutting down
-    S_STOPPED = 'STOPPED'   # manager stopped
-    S_ERROR = 'ERROR'       # manager is in error state
-
-    # String template for error messages returned when performing actions in
-    # the wrong state
-    WRONG_STATE_MSG = "ERROR: cannot perform %(action)s in state %(curstate)s"
-
-    # String template for error messages returned when a required argument is
-    # missing
-    REQUIRED_ARG_MSG = "ERROR: %(arg)s is a required argument"
-
-    # String template for debugging messages logged on nodes creation
-    ACTION_REQUESTING_NODES = "requesting %(count)s nodes in %(action)s"
-
-    AGENT_PORT = 5555
-
     def __init__(self, config_parser, **kwargs):
         """Initialize a HTCondor Manager. 
 
@@ -95,24 +71,7 @@ class HTCondorManager(BaseManager):
         # Setup the clouds' controller
         self.controller.generate_context('htcondor')
 
-        self.state = self.S_INIT
         self.hub_ip = None
-
-    @expose('POST')
-    def startup(self, kwargs):
-        """Start the HTCondor service"""
-        self.logger.info('Manager starting up')
-
-        # Starting up the service makes sense only in the INIT or STOPPED
-        # states
-        if self.state != self.S_INIT and self.state != self.S_STOPPED:
-            vals = { 'curstate': self.state, 'action': 'startup' }
-            return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
-
-        self.state = self.S_PROLOGUE
-        Thread(target=self._do_startup, kwargs=kwargs).start()
-
-        return HttpJsonResponse({ 'state': self.state })
 
     def _do_startup(self, cloud):
         """Start up the service. The first node will be an agent running a
