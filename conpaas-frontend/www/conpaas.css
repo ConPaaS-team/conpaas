@@ -1309,6 +1309,11 @@ body.loginbody {
 	float: right;
 }
 
+#deploy {
+	margin: 5px 5px 15px 5px;
+	float: right;
+}
+
 .selectHint {
 	margin: 10px 5px 0 15px;
 	font-size: 11px;

@@ -49,8 +49,14 @@ class Apppage extends Page {
 	public function renderPageHeader() {
 		return
 			'<div class="menu">'
-				.'<a class="button" href="#">'
+				.'<a class="button" id="newapp" href="#">'
 					.'<img src="images/service-plus.png" /> create new application'
+				.'</a>'
+  				.'<a class="button" href="ajax/getCertificate.php">'
+  					.' download certificate'
+  				.'</a>'
+				.'<a class="button" href="manifest.php">'
+					.' upload manifest'
 				.'</a>'
 			.'</div>'
 			.'<div class="clear"></div>';

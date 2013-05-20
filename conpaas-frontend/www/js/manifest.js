@@ -35,78 +35,10 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* This counter will increase every time a service will be
- * started and when it will goes back to 0 then return to
- * the index page.
- */
-var service_up = 0;
+manifest = [];
 
-/* This array contains objects of all the services that needs to be started.
- * Each object will contain the following arguments
- *
- *  frontendName
- *  type
- *  cloud
- *  sid
- */
-var services = [ ];
-
-/* If anything goes wrong, stop the animations and try again.
- */
-function stop() {
-	$('.loading').hide();
-	$('#status').html('');
-	$('#create').removeAttr('disabled');
-}
-
-function done() {
-	service_up--;
-
-	if (service_up == 0)
-		window.location = 'services.php';
-}
-
-function checkErrors(response) {
-	if (response.error != null) {
-		alert(response.error);
-		stop();
-		done();
-	}
-}
-
-function startServices(specs) {
-	$('#file').val('');
-	$('.loading').show();
-
-	services = specs.Services;
-
-	for (var id = 0 ; id < services.length ; id++) {
-		service_up++;
-		if (services[id].Type == "php") {
-			php_start(id);
-		} else if (services[id].Type == "java") {
-			java_start(id);
-		} else if (services[id].Type == "mysql") {
-			mysql_start(id);
-		} else if (services[id].Type == "scalaris") {
-			scalaris_start(id);
-		} else if (services[id].Type == "hadoop") {
-			hadoop_start(id);
-		} else if (services[id].Type == "selenium") {
-			selenium_start(id);
-		} else if (services[id].Type == "xtreemfs") {
-			xtreemfs_start(id);
-		} else if (services[id].Type == "taskfarm") {
-			taskfarm_start(id);
-		} else {
-			alert("Error, type " + services[id].Type + " unknown");
-			service_up--;
-		}
-	}
-
-	if (service_up == 0)
-		window.location = 'services.php';
-}
+manifest['owncloud'] = '{ "Application" : "Owncloud", "Services" : [ { "Type" : "php", "FrontendName" : "Php backend", "Archive" : "http://download.owncloud.org/community/owncloud-5.0.6.tar.bz2" }, { "Type" : "mysql", "FrontendName" : "Mysql backend" } ] }';
+manifest['wordpress'] = '{ "Application" : "Wordpress", "Services" : [ { "Type" : "php", "FrontendName" : "Php backend", "Archive" : "http://wordpress.org/wordpress-3.5.1.tar.gz" }, { "Type" : "mysql", "FrontendName" : "Mysql backend" } ] }';
 
 $(document).ready(function() {
 	$('#fileForm').ajaxForm({
@@ -117,9 +49,8 @@ $(document).ready(function() {
 				$('#file').val('');
 				return;
 			}
-			// request ended ok
-			specs = JSON.parse(response.result);
-			startServices(specs);
+			alert("Manifest uploaded correctly, now it can take a while to startup everything")
+			window.location = 'index.php';
 		},
 		error: function(response) {
 			alert('#fileForm.ajaxForm() error: ' + response.error);
@@ -128,5 +59,29 @@ $(document).ready(function() {
 
 	$('input:file').change(function() {
 		$('#fileForm').submit();
+	});
+
+	$('#deploy').click(function() {
+		type = $('input[name=type]:checked').val();
+		if (manifest[type] == '') {
+			alert("There is no manifest for such an application");
+			return;
+		}
+
+		$.ajax({
+			type: "POST",
+			url: "ajax/uploadManifest.php",
+			data: { json: manifest[type] },
+			dataType: 'json'
+		}).done(function(response) {
+			if (typeof response.error != 'undefined' && response.error != null) {
+				alert('Error: ' + response.error);
+				$('#file').val('');
+				return;
+			}
+			alert("Manifest uploaded correctly, now it can take a while to startup everything")
+			window.location = 'index.php';
+		});
+
 	});
 });

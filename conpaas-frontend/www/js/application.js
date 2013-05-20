@@ -76,7 +76,7 @@ conpaas.ui = (function (this_module) {
 		$('.deleteApplication-' + application.aid).click(
                         that.makeDeleteHandler_(application));
             }
-            $('.button').click(that.makeCreateHandler_(application));
+            $('#newapp').click(that.makeCreateHandler_(application));
             conpaas.ui.visible('pgstatInfo', false);
 
 	    return true; /* Never do polling */

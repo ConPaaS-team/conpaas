@@ -36,63 +36,28 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-require_module('application');
-require_module('ui');
+require_once('__init__.php');
+require_module('https');
 
-function DashboardApplicationUI(Application $application) {
-	return new DashboardApplicationUI($application);
+try {
+	if (!isset($_SESSION['uid'])) {
+		throw new Exception('User not logged in');
+	}
+
+	if (!isset($_SESSION['aid'])) {
+		throw new Exception('The aid is not in the session');
+	}
+
+	$aid = $_SESSION['aid'];
+
+	$res = json_decode(HTTPS::post(Conf::DIRECTOR . '/download_manifest/' . $aid,
+		array(), false, $_SESSION['uid']));
+
+	header("Content-type: application/json");
+	print json_encode($res);
+} catch (Exception $e) {
+	echo json_encode(array(
+		'error' => $e->getMessage(),
+	));
 }
-
-class DashboardApplicationUI {
-
-	private $application;
-	private $last = false;
-
-	public function __construct(Application $application) {
-		$this->application = $application;
-	}
-
-	public function setLast($last=true) {
-		$this->last = $last;
-		return $this;
-	}
-
-	private function renderStatistic($content) {
-		return
-			'<div class="statistic">'
-				.'<div class="statcontent">'.$content.'</div>'
-			.'</div>';
-	}
-
-    private function renderStats() {
-        return $this->renderStatistic('<img class="deleteApplication-'.
-            $this->application->getAID().'" src="images/remove.png" />');
-    }
-
-	private function renderTitle() {
-		$title =
-			'<a href="services.php?aid='.$this->application->getAID().'">'
-			.$this->application->getName()
-			.'</a>';
-
-		return
-			'<div class="title">'
-				.$title
-			.'</div>';
-	}
-
-	public function __toString() {
-		$lastClass = $this->last ? 'last' : '';
-		return
-			'<tr class="service" id="service-'.$this->application->getAID().'">'
-				.'<td class="wrapper '.$lastClass.'">'
-					.'<div class="content">'
-						.$this->renderTitle()
-					.'</div>'
-					.$this->renderStats()
-					.'<div class="clear"></div>'
-				.'</td>'
-			.'</tr>';
-	}
-
-}
+?>

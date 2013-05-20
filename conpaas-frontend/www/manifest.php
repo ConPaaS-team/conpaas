@@ -37,7 +37,6 @@
  */
 
 require_once('__init__.php');
-require_module('ui/cloud');
 require_module('ui/page');
 
 $page = new Page();
@@ -46,20 +45,12 @@ $page = new Page();
 <html xmlns="http://www.w3.org/1999/xhtml">
    <head>
       <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-      <title>ConPaaS - create new service </title>
+      <title>ConPaaS - Upload new manifest</title>
       <link type="text/css" rel="stylesheet" href="conpaas.css" />
       <?php echo $page->renderIcon(); ?>
       <script src="js/jquery-1.5.js"></script>
       <script src="js/jquery.form.js"></script>
-      <script src="js/manifests/general.js"></script>
-      <script src="js/manifests/php.js"></script>
-      <script src="js/manifests/java.js"></script>
-      <script src="js/manifests/mysql.js"></script>
-      <script src="js/manifests/scalaris.js"></script>
-      <script src="js/manifests/hadoop.js"></script>
-      <script src="js/manifests/selenium.js"></script>
-      <script src="js/manifests/xtreemfs.js"></script>
-      <script src="js/manifests/taskfarm.js"></script>
+      <script src="js/manifest.js"></script>
    </head>
    <body class="<?php echo $page->getBrowserClass(); ?>">
       <?php echo $page->renderHeader(); ?>
@@ -87,6 +78,28 @@ $page = new Page();
                </td>
             </tr>
          </table>
+
+         <table class="form" cellspacing="0" cellpading="0">
+           <tr class="service">
+             <td class="description"> <img src="images/owncloud.png" height="32" /></td>
+             <td class="radio" width="150px"><input type="radio" name="type" value="owncloud" /> OwnCloud</td>
+             <td class="info" width="480px"> OwnCloud version 5.0 deployment </td>
+           </tr>
+           <tr class="service">
+             <td class="description"> <img src="images/wordpress.png" height="32" /></td>
+             <td class="radio" width="150px"><input type="radio" name="type" value="wordpress" /> WordPress</td>
+             <td class="info" width="480px"> WordPress version 3.5 deployment </td>
+           </tr>
+         </table>
+
+         <a id="deploy" class="button" href="javascript: void(0);">
+                  <img src="images/play.png" style="vertical-align: top;"/> Deploy Application
+         </a>
+
+         <br>
+         <br>
+         <br>
+         <br>
 
       </div>
 
