@@ -372,8 +372,12 @@ class Controller(object):
             @return The cloud object which name is the same as @param name
 
         """
-        return [ cloud for cloud in self.__available_clouds 
-            if cloud.get_cloud_name() == cloud_name ][0]
+        try:
+            return [ cloud for cloud in self.__available_clouds 
+                if cloud.get_cloud_name() == cloud_name ][0]
+        except IndexError:
+            raise Exception("Unknown cloud: %s. Available clouds: %s" % (
+                cloud_name, self.__available_clouds))
 
     #=========================================================================#
     #               config_cloud(self, cloud, config_params)                  #
