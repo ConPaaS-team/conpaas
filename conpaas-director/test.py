@@ -138,6 +138,14 @@ class DirectorTest(Common):
         response = self.app.post('/listapp', data={ 'uid': 1 })
         self.assertEquals(200, response.status_code)
 
+    def test_200_on_uploadmanifest(self):
+        response = self.app.post('/upload_manifest', data={ 'uid': 1 })
+        self.assertEquals(200, response.status_code)
+
+    def test_200_on_downloadmanifest(self):
+        response = self.app.post('/download_manifest/1', data={ 'uid': 1 })
+        self.assertEquals(200, response.status_code)
+
     def test_false_start_wrong_credentials(self):
         # Here the credentials are wrong because no user in the DB has uid 1
         response = self.app.post('/start/php', data={ 'uid': 1 })
