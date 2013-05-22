@@ -54,9 +54,6 @@ lynx -dump $hadoop_hue_url | grep 'Launching Hue' > /dev/null
 
 (if [ "$?" -eq 0 ]; then echo "OK"; else echo "FAILURE"; fi) | ts
 
-exit 
-
-
 cpsclient.py stop $hadoop_sid | ts
 
 while [ -z "`cpsclient.py info $hadoop_sid | grep 'state: STOPPED'`" ]
