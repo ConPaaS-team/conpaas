@@ -453,7 +453,10 @@ The MapReduce service provides the well-known Apache Hadoop framework in
 ConPaaS. Once the MapReduce service is created and started, the
 front-end provides useful links to the Hadoop namenode, the job tracker,
 and to a graphical interface which allows to upload/download data
-to/from the service and issue MapReduce jobs.
+to/from the service and issue MapReduce jobs. 
+
+**IMPORTANT:** This service requires virtual machines with *at least* 384 MB of
+RAM to function properly.
 
 The TaskFarm service
 ====================
