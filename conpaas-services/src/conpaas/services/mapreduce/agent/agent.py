@@ -85,8 +85,10 @@ class MapReduceAgent(BaseAgent):
 
     def _do_startup(self):
       if self.first_node == 'true':
-        (stdout, stderr) = subprocess.Popen(["sudo", "-u", "hdfs", "hadoop", "namenode", "-format"], \
-                                              stdout=subprocess.PIPE).communicate()
+        (stdout, stderr) = subprocess.Popen(
+            "su - hdfs -c '/usr/bin/hadoop namenode -format'",
+            stdout=subprocess.PIPE, shell=True).communicate()
+
         self.logger.info('Formatted namenode: %s; %s', stdout, stderr)
         
         (stdout, stderr) = subprocess.Popen(["/etc/init.d/hadoop-0.20-namenode", "start"], \
@@ -97,8 +99,10 @@ class MapReduceAgent(BaseAgent):
                                               stdout=subprocess.PIPE).communicate()
         self.logger.info('Started secondarynamenode: %s; %s', stdout, stderr)
  
-        (stdout, stderr) = subprocess.Popen(["sudo", "-u", "hdfs", "hadoop", "fs", "-chmod", "777", "/"], \
-                                              stdout=subprocess.PIPE).communicate()
+        (stdout, stderr) = subprocess.Popen(
+            "su - hdfs -c '/usr/bin/hadoop fs -chmod 777 /'",
+            stdout=subprocess.PIPE, shell=True).communicate()
+
         self.logger.info('set hdfs writable: %s; %s', stdout, stderr)
 
         (stdout, stderr) = subprocess.Popen(["/etc/init.d/hadoop-0.20-jobtracker", "start"], \
