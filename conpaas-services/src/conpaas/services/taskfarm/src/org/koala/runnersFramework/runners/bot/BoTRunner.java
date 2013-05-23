@@ -169,7 +169,7 @@ public class BoTRunner implements Serializable {
 
     public void decrementUserCredit(double price) {
        if (price > 0) {
-               runShellCommand("/bin/bash /root/ConPaaS/bin/cpsclient.taskfarm decrementUserCredit " + price);
+               runShellCommand("/bin/bash /root/ConPaaS/src/conpaas/services/taskfarm/agent/callback.sh decrementUserCredit " + price);
        }
     }
 
