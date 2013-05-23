@@ -62,6 +62,21 @@ class Client(BaseClient):
         # TaskFarm does not have to be started
         pass
 
+    def stop(self, service_id):
+        # TaskFarm does not have to be stopped
+        pass
+    
+    def terminate(self, service_id):
+        # TaskFarm is never in 'STOPPED' state
+        print "Terminating service... "
+        sys.stdout.flush()
+
+        res = self.callapi("stop/%s" % service_id, True, {})
+        if res:
+            print "done."
+        else:
+            print "failed."
+
     def upload_bag_of_tasks(self, service_id, filename, xtreemfs_location):
         """eg: upload_bag_of_tasks(service_id=1, 
                                    filename="/var/lib/outsideTester/contrail3/test.bot", 
