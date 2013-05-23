@@ -26,10 +26,12 @@ def check_manifest(json):
     try:
         parse = simplejson.loads(json)
     except:
+        log('The uploaded manifest is not valid json')
         return False
 
     for service in parse.get('Services'):
         if not service.get('Type'):
+            log('The "Type" field is mandatory')
             return False
 
     return True
@@ -78,6 +80,10 @@ def download_manifest(appid):
     manifest = {}
 
     app = get_app_by_id(g.user.uid, appid)
+
+    if not app:
+        log('The appid %s does not exist' % appid)
+        return simplejson.dumps(False)
 
     manifest['Services'] = []
     manifest['Application'] = app.name
