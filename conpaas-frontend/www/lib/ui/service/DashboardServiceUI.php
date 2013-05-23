@@ -36,6 +36,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+date_default_timezone_set('UTC');
 require_module('service');
 require_module('ui');
 
