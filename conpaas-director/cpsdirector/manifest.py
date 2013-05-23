@@ -73,10 +73,6 @@ from cpsdirector.application import get_app_by_id
 @manifest_page.route("/download_manifest/<appid>", methods=['POST'])
 @cert_required(role='user')
 def download_manifest(appid):
-    if not appid:
-        log('"appid" is a required argument')
-        return build_response(simplejson.dumps(False))
-
     manifest = {}
 
     app = get_app_by_id(g.user.uid, appid)
