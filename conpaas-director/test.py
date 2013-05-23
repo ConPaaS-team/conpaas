@@ -540,5 +540,125 @@ class DirectorTest(Common):
         self.assertEquals(200, response.status_code)
         self.assertEquals(["default"], simplejson.loads(response.data))
 
+    # Manifest tests
+    def test_missing_manifest_argument(self):
+        self.create_user()
+
+        data = {
+            'uid': 1,
+        }
+
+        response = self.app.post('/upload_manifest', data=data)
+        self.assertEquals(200, response.status_code)
+        self.assertEquals(False, simplejson.loads(response.data))
+
+    def test_wrong_manifest_service(self):
+        self.create_user()
+
+        data = {
+            'uid': 1,
+            'manifest': '{ "Services" : [ { "FronendName" : "Test" } ] }'
+        }
+
+        response = self.app.post('/upload_manifest', data=data)
+        self.assertEquals(200, response.status_code)
+        self.assertEquals(False, simplejson.loads(response.data))
+
+    def test_wrong_manifest_json(self):
+        self.create_user()
+
+        data = {
+            'uid': 1,
+            'manifest': '{ "Services : [ { "FronendName" : "Test" } ] }'
+        }
+
+        response = self.app.post('/upload_manifest', data=data)
+        self.assertEquals(200, response.status_code)
+        self.assertEquals(False, simplejson.loads(response.data))
+
+    def test_wrong_manifest_json(self):
+        self.create_user()
+
+        data = {
+            'uid': 1,
+            'manifest': '{ "Services : [ { "FronendName" : "Test" } ] }'
+        }
+
+        response = self.app.post('/upload_manifest', data=data)
+        self.assertEquals(200, response.status_code)
+        self.assertEquals(False, simplejson.loads(response.data))
+
+    def test_fake_manifest_service(self):
+        self.create_user()
+
+        data = {
+            'uid': 1,
+            'manifest': '{ "Services" : [ { "Type" : "fake" } ] }'
+        }
+
+        response = self.app.post('/upload_manifest', data=data)
+        self.assertEquals(200, response.status_code)
+        self.assertEquals(True, simplejson.loads(response.data)['error'])
+
+    def test_correct_empty_manifest(self):
+        self.create_user()
+
+        data = {
+            'uid': 1,
+            'manifest': '{ "Services" : [ ] }'
+        }
+
+        response = self.app.post('/upload_manifest', data=data)
+        self.assertEquals(200, response.status_code)
+        self.assertEquals(True, simplejson.loads(response.data))
+
+    def test_correct_empty_manifest_thread(self):
+        self.create_user()
+
+        data = {
+            'uid': 1,
+            'manifest': '{ "Services" : [ ] }',
+            'thread': 1
+        }
+
+        response = self.app.post('/upload_manifest', data=data)
+        self.assertEquals(200, response.status_code)
+        self.assertEquals(True, simplejson.loads(response.data))
+
+    def test_download_manifest_missing(self):
+        self.create_user()
+
+        data = {
+            'uid': 1,
+        }
+
+        response = self.app.post('/download_manifest', data=data)
+        self.assertEquals(404, response.status_code)
+
+    def test_download_manifest_wrong_appid(self):
+        self.create_user()
+
+        data = {
+            'uid': 1,
+        }
+
+        response = self.app.post('/download_manifest/3', data=data)
+        self.assertEquals(200, response.status_code)
+        self.assertEquals(False, simplejson.loads(response.data))
+
+    def test_download_manifest(self):
+        self.create_user()
+        self.app.post('/start/php', data={ 'uid': 1 })
+
+        data = {
+            'uid': 1
+        }
+
+        result = '{"Services": [{"FrontendName": "New php service", "Type": "php", "Cloud": "iaas"}], "Application": "New Application"}'
+
+        response = self.app.post('/download_manifest/1', data=data)
+        self.assertEquals(200, response.status_code)
+        self.assertEquals(result, response.data)
+
 if __name__ == "__main__":
     unittest.main()
