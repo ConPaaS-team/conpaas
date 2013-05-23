@@ -187,6 +187,8 @@ class TaskFarmPage extends ServicePage {
 		'<div id="taskfarm-status">'
 			.StatNumber($state['moneySpent'], 'money spent', '$')
 				->setId('moneySpent')
+			.StatNumber($state['noTotalTasks'], 'of')
+				->setId('totalTasks')
 			.StatNumber($state['noCompletedTasks'], 'completed tasks')
 				->setId('completedTasks')
 			.'<div class="clear"></div>'

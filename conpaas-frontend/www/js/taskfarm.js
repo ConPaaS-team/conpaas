@@ -199,6 +199,8 @@ conpaas.ui = (function (this_module) {
             $('#moneySpent').html(state.moneySpent);
             $('#moneySpent').effect('highlight', {}, 1000);
             $('#demo_user_credit').html($('#run_user_credit').html() - state.moneySpent);
+            $('#totalTasks').html(state.totalTasks);
+            $('#totalTasks').effect('highlight', {}, 1000);
             $('#completedTasks').html(state.completedTasks);
             $('#completedTasks').effect('highlight', {}, 1000);
             var percentDone = state.completedTasks * 100 / state.totalTasks;
