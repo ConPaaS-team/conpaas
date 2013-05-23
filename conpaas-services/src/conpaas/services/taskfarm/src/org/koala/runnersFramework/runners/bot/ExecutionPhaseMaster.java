@@ -743,8 +743,8 @@ public class ExecutionPhaseMaster extends Master {
 
 	@Override
 	protected Job handleJobRequest(IbisIdentifier from) {
-		/*for now, when a new worker shows up, if there are no more jobs just return nojob
-		 * should consider later addition of job replication*/		
+		/*	For now, when a new worker shows up, if there are no more jobs just return nojob.
+		 *TODO: Should consider later addition of job replication. */           
 
 		String cluster = from.location().getParent().toString();
 		String node = from.location().getLevel(0);
@@ -760,6 +760,11 @@ public class ExecutionPhaseMaster extends Master {
 			System.err.println("node " + from.location().toString() + " in cluster " + cluster 
 					+ " has been dismissed right after registration with master");
 
+			/*	we do not use the VM, so better immedeately remove it from the pool 
+			 *	and let the customer pay for this VM anyway 
+			 */
+			bot.decrementUserCredit(1.0);
+			terminateWorker(bot.Clusters.get(cluster), workers.get(cluster).get(node), " worker was dismissed");
 			return new NoJob();
 		}
 
