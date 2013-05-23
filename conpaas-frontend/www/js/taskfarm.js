@@ -188,14 +188,14 @@ conpaas.ui = (function (this_module) {
             window.location.reload();
         },
         /* on instable state */function (state) {
-	    var curspent = $('#moneySpent').html();$
-	    if (curspent < state.moneySpent) {$
-		/* TODO: get the real credit from the director's database, $
-		 *	 because this code does not take into account any credits spent by parallel services!!$
-		 */$
-		var newcred = curspent - state.moneySpent + parseInt( $('#user_credit').html() );$
-		$('#user_credit').html( newcred );$
-	    }$
+	    var curspent = $('#moneySpent').html();
+	    if (curspent < state.moneySpent) {
+		/* TODO: get the real credit from the director's database, 
+		 *	 because this code does not take into account any credits spent by parallel services!!
+		 */
+		var newcred = curspent - state.moneySpent + parseInt( $('#user_credit').html() );
+		$('#user_credit').html( newcred );
+	    }
             $('#moneySpent').html(state.moneySpent);
             $('#moneySpent').effect('highlight', {}, 1000);
             $('#demo_user_credit').html($('#run_user_credit').html() - state.moneySpent);
