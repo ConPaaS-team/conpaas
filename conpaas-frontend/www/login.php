@@ -52,7 +52,7 @@ $page = new LoginPage();
 <html>
     <head>
           <?php echo $page->renderContentType(); ?>
-        <?php echo $page->renderTitle(); ?>
+        <?php echo $page->renderTitle(' - Login'); ?>
         <?php echo $page->renderIcon(); ?>
         <?php echo $page->renderHeaderCSS(); ?>
     </head>

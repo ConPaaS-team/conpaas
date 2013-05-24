@@ -134,8 +134,8 @@ class Page {
 		return $scripts;
 	}
 
-	public function renderTitle() {
-		return '<title>ConPaaS - management interface</title>';
+	public function renderTitle($pageTitle) {
+		return '<title>ConPaaS - management interface' . $pageTitle . '</title>';
 	}
 
 	public function getUserCredit() {
