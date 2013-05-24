@@ -2,7 +2,7 @@
 
 from setuptools import setup
 
-CPSVERSION = '1.1.0'
+CPSVERSION = '1.2.0-rc1'
 
 long_description = """
 ConPaaS: an integrated runtime environment for elastic Cloud applications 
@@ -19,4 +19,4 @@ setup(name='cpsclient',
       packages=['cps',],
       scripts=['cpsclient.py'],
       install_requires=['cpslib'],
-      dependency_links=[ 'http://www.conpaas.eu/dl/cpslib-%s.tar.gz' % CPSVERSION, ],)
+      dependency_links=[ 'http://www.linux.it/~ema/conpaas/cpslib-%s.tar.gz' % CPSVERSION, ],)

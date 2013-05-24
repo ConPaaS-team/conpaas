@@ -9,7 +9,7 @@ from grp import getgrnam
 from setuptools import setup
 from pkg_resources import Requirement, resource_filename
 
-CPSVERSION = '1.1.0'
+CPSVERSION = '1.2.0-rc1'
 
 CONFDIR = '/etc/cpsdirector'
 
@@ -32,7 +32,7 @@ setup(name='cpsdirector',
       data_files=[ ( CONFDIR, [ 'director.cfg.example', 'ConPaaS.tar.gz' ] ), ],
       scripts=[ 'cpsadduser.py', 'director.wsgi', 'cpsconf.py', 'cpscheck.py' ],
       install_requires=[ 'cpslib', 'flask-sqlalchemy', 'apache-libcloud==0.8.0', 'netaddr' ],
-      dependency_links=[ 'http://www.conpaas.eu/dl/cpslib-%s.tar.gz' % CPSVERSION, ],)
+      dependency_links=[ 'http://www.linux.it/~ema/conpaas/cpslib-%s.tar.gz' % CPSVERSION, ],)
 
 if __name__ == "__main__" and sys.argv[1] == "install":
     # overwrite /etc/cpsdirector/{config,scripts}
