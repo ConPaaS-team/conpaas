@@ -57,6 +57,7 @@ conpaas.ui = (function (this_module) {
     onShowRegister: function (event) {
         var page = event.data;
         page.state = 'register';
+        $(document).attr('title', 'ConPaaS - management interface - Register');
         $('#login-title').hide('slow');
         $('#register-title').show();
         $(this).hide();
