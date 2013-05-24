@@ -1,0 +1,27 @@
+#!/bin/bash
+
+get_metadata() {
+        curl http://169.254.169.254/latest/meta-data/$1
+}
+
+# Set cloud-provided DNS servers in /etc/dhcp/dhclient.conf
+for dns_server in `awk '/nameserver/ { print $2 }' /etc/resolv.conf` 
+do 
+    echo "prepend domain-name-servers $dns_server;" >> /etc/dhcp/dhclient.conf
+done
+
+IP_PUBLIC=$(get_metadata public-ipv4)
+PRIVATE_IP=$(get_metadata local-ipv4)
+PUBLIC_HOSTNAME=$(get_metadata public-hostname)
+PRIVATE_HOSTNAME=$(get_metadata hostname)
+VM_ID=$(get_metadata instance-id)
+
+echo "$PRIVATE_HOSTNAME" >/etc/hostname
+
+echo -e "127.0.0.1\tlocalhost" > /etc/hosts.new
+echo -e "$PRIVATE_IP\t$PRIVATE_HOSTNAME" >> /etc/hosts.new
+echo -e "$IP_PUBLIC\t$PUBLIC_HOSTNAME" >> /etc/hosts.new
+mv /etc/hosts.new /etc/hosts
+chmod a+r /etc/hosts
+
+hostname "$PRIVATE_HOSTNAME"
