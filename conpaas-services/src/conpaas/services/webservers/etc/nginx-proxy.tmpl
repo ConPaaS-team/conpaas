@@ -30,6 +30,7 @@ http {
                 '"\$http_referer" "\$http_user_agent" \$msec \$request_time';
 
   access_log  $timed_log  timed_requests;
+  server_names_hash_bucket_size 128;
 
   ## UPSTREAM CONFIG FOR STATIC DOCUMENTS
   #if $web_list
