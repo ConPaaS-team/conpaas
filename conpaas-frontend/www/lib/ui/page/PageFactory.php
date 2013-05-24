@@ -69,9 +69,11 @@ class PageFactory {
 			case 'cds':
 				require_module('ui/page/cds');
 				return new CDSPage($service);
+/*
 			case 'htcondor':
 				require_module('ui/page/htcondor');
 				return new HTCondorPage($service);
+*/
 /* BLUE_PRINT_INSERT		do not remove this line: it is a placeholder for installing new services */
 			default:
 				throw new Exception('Unknown service type');
