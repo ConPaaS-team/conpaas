@@ -312,7 +312,7 @@ EOF
 ($PHP_SERVICE || $MYSQL_SERVICE) && cat <<EOF >> $ROOT_DIR/conpaas_install
 cecho "===== add dotdeb repo for php fpm ====="
 # add dotdeb repo for php fpm
-echo "deb http://packages.dotdeb.org stable all" >> /etc/apt/sources.list
+echo "deb http://packages.dotdeb.org $DEBIAN_DIST all" >> /etc/apt/sources.list
 wget -O - http://www.dotdeb.org/dotdeb.gpg 2>/dev/null | apt-key add -
 apt-get -f -y update
 apt-get -f -y --no-install-recommends --no-upgrade install php5-fpm php5-curl \
@@ -322,7 +322,7 @@ apt-get -f -y --no-install-recommends --no-upgrade install php5-fpm php5-curl \
 update-rc.d php5-fpm disable
 
 # remove dotdeb repo
-sed --in-place 's%deb http://packages.dotdeb.org stable all%%' /etc/apt/sources.list
+sed --in-place "s%deb http://packages.dotdeb.org $DEBIAN_DIST all%%" /etc/apt/sources.list
 apt-get -f -y update
 
 # remove cached .debs from /var/cache/apt/archives to save disk space
@@ -394,12 +394,12 @@ $SELENIUM_SERVICE || echo 'cecho "===== Skipped SELENIUM ====="' >> $ROOT_DIR/co
 $SELENIUM_SERVICE && cat <<EOF >> $ROOT_DIR/conpaas_install
 cecho "===== install SELENIUM ====="
 # recent versions of iceweasel and chrome
-echo "deb http://backports.debian.org/debian-backports squeeze-backports main" >> /etc/apt/sources.list
-echo "deb http://mozilla.debian.net/ squeeze-backports iceweasel-esr" >> /etc/apt/sources.list
+echo "deb http://backports.debian.org/debian-backports $DEBIAN_DIST-backports main" >> /etc/apt/sources.list
+echo "deb http://mozilla.debian.net/ $DEBIAN_DIST-backports iceweasel-esr" >> /etc/apt/sources.list
 echo "deb http://dl.google.com/linux/deb/ stable main" >> /etc/apt/sources.list
     
 apt-get -f -y update
-apt-get -f -y --force-yes install -t squeeze-backports iceweasel
+apt-get -f -y --force-yes install -t $DEBIAN_DIST-backports iceweasel
 apt-get -f -y --force-yes install google-chrome-beta
 
 EOF
