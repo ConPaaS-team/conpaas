@@ -22,17 +22,14 @@ public class MyTimerTask extends TimerTask {
 
 	public void run() {
 		
-		try {
+		//try {
 			//cluster.terminateNode(who, myIbis);
 			System.err.println("Skipped terminateNode in MyTimerTask");
-			if (1 * 0 - 1 > 0) { // keep the compiler happy by (never) throwing an exception
-				throw new IOException("blah");
-			}
 			//myIbis.registry().signal("die", from);
-		} catch (IOException e) {
+		//} catch (IOException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		//	e.printStackTrace();
+		//}
 	}
 
 
