@@ -189,6 +189,9 @@ conpaas.ui = (function (this_module) {
         },
         /* on instable state */function (state) {
 	    var curspent = $('#moneySpent').html();
+	    if ( $('#run_user_credit').html() ) {
+		$('#demo_user_credit').html($('#run_user_credit').html() - state.moneySpent);
+	    } else
 	    if (curspent < state.moneySpent) {
 		/* TODO: get the real credit from the director's database, 
 		 *	 because this code does not take into account any credits spent by parallel services!!
@@ -198,7 +201,6 @@ conpaas.ui = (function (this_module) {
 	    }
             $('#moneySpent').html(state.moneySpent);
             $('#moneySpent').effect('highlight', {}, 1000);
-            $('#demo_user_credit').html($('#run_user_credit').html() - state.moneySpent);
             $('#totalTasks').html(state.totalTasks);
             $('#totalTasks').effect('highlight', {}, 1000);
             $('#completedTasks').html(state.completedTasks);
