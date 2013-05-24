@@ -8,7 +8,14 @@ import sys
 # Define which are the 'root' packages (form
 # which the dependency analysis starts)
 
-debian_pkgs = ['linux-image-2.6.32-5-686', 'bash', 'apt', 'apt-utils', 'cron', 'vim-tiny', 'grub-common', 'grub-pc', 'net-tools', 'iputils-ping']
+
+debian_pkgs = ['linux-image-2.6.32-5-xen-amd64', 'linux-image-2.6.32-5-amd64', 
+               'initramfs-tools', 'bash', 'apt', 'apt-utils', 'cron', 
+               'vim-tiny', 'grub-common', 'grub', 'grub-pc', 'net-tools', 
+               'iputils-ping', 'rsyslog', 'binfmt-support', 'dbus', 
+               'avahi-daemon', 'libavahi-core7', 'libdaemon0', 'libnss-mdns', 
+               'bsdmainutils', 'resolvconf', 'netbase', 'iproute', 'ifupdown',
+               'isc-dhcp-common', 'isc-dhcp-client']
 
 core_pkgs = ['openssh-server', 'python', 'python-pycurl', 'python-openssl',
             'python-m2crypto', 'python-cheetah', 'libxslt1-dev', 'yaws',

@@ -3,12 +3,12 @@
 cat <<EOF >> $ROOT_DIR/conpaas_install
 cecho "===== install SELENIUM ====="
 # recent versions of iceweasel and chrome
-echo "deb http://backports.debian.org/debian-backports squeeze-backports main" >> /etc/apt/sources.list
-echo "deb http://mozilla.debian.net/ squeeze-backports iceweasel-esr" >> /etc/apt/sources.list
+echo "deb http://backports.debian.org/debian-backports $DEBIAN_DIST-backports main" >> /etc/apt/sources.list
+echo "deb http://mozilla.debian.net/ $DEBIAN_DIST-backports iceweasel-esr" >> /etc/apt/sources.list
 echo "deb http://dl.google.com/linux/deb/ stable main" >> /etc/apt/sources.list
     
 apt-get -f -y update
-apt-get -f -y --force-yes install -t squeeze-backports iceweasel
+apt-get -f -y --force-yes install -t $DEBIAN_DIST-backports iceweasel
 apt-get -f -y --force-yes install xvfb xinit google-chrome-beta
 
 EOF
