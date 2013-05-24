@@ -483,22 +483,22 @@ class BaseClient(object):
                         raise IndexError
 
                     try:
-                        appid = argv[3]
+                        appid = int(argv[3])
                         if appid not in self.listapp(False):
-                            raise IndexError
+                            print "E: Unknown application id: %s" % appid
+                            sys.exit(1)
                     except IndexError:
                         appid = None
 
-                    try:
-                        if appid is None:
-                            cloud = argv[3]
-                        else:
+                    cloud = None
+                    if appid:
+                        try:
                             cloud = argv[4]
-                        if cloud not in self.available_clouds():
-                            raise IndexError
-                    except IndexError:
-                        cloud = None
-
+                            if cloud not in self.available_clouds():
+                                print "E: Unknown cloud: %s" % cloud
+                                sys.exit(1)
+                        except IndexError:
+                            pass
 
                     # taskfarm-specific service creation
                     if service_type == 'taskfarm':
