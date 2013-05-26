@@ -472,7 +472,8 @@ class BaseClient(object):
         # Service and application generic commands
         if command in ( "listapp", "createapp", "manifest",
                         "download_manifest", "list", "credentials", 
-                        "available", "clouds", "create", "deleteapp" ):
+                        "available", "clouds", "create",
+                        "deleteapp", "getcerts" ):
 
             if command == "create":
                 try:

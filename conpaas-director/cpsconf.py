@@ -24,7 +24,10 @@ else:
     # If DIRECTOR_URL does not exist, just trust platform.node()
     hostname = platform.node()
 
-hostname = rlinput('Please enter your hostname: ', hostname)
+try:
+    hostname = sys.argv[1]
+except IndexError:
+    hostname = rlinput('Please enter your hostname: ', hostname)
 
 # create CA keypair
 cakey = x509.gen_rsa_keypair()
