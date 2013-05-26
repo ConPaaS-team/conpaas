@@ -18,8 +18,8 @@ debian_pkgs = ['linux-image-2.6.32-5-xen-amd64', 'linux-image-2.6.32-5-amd64',
                'isc-dhcp-common', 'isc-dhcp-client']
 
 core_pkgs = ['openssh-server', 'python', 'python-pycurl', 'python-openssl',
-            'python-m2crypto', 'python-cheetah', 'libxslt1-dev', 'yaws',
-            'subversion', 'unzip', 'less', 'ipop']
+             'python-m2crypto', 'python-cheetah', 'libxslt1-dev', 'yaws',
+             'subversion', 'unzip', 'less', 'ipop']
 
 php_pkgs = ['php5-fpm', 'php5-curl', 'php5-mcrypt', 'php5-mysql', 'php5-odbc',
             'php5-pgsql', 'php5-sqlite', 'php5-sybase', 'php5-xmlrpc',
@@ -30,7 +30,7 @@ mysql_pkgs = ['mysql-server', 'python-mysqldb']
 
 condor_pkgs = ['sun-java6-jdk', 'ant', 'condor']
 
-selenium_pkgs = ['iceweasel', 'xvfb', 'xinit', 'google-chrome-beta']
+selenium_pkgs = ['iceweasel', 'xvfb', 'xinit', 'google-chrome-stable']
 
 hadoop_pkgs =   ['hadoop-0.20', 'hadoop-0.20-namenode', 'hadoop-0.20-datanode',
                 'hadoop-0.20-secondarynamenode', 'hadoop-0.20-jobtracker',
