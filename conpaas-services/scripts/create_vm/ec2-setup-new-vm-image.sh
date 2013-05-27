@@ -127,7 +127,7 @@ function install_deb() {
 
   apt-get -f -y update
   apt-get -f -y --force-yes install -t $DEBIAN_DIST-backports iceweasel
-  apt-get -f -y --force-yes install google-chrome-beta
+  apt-get -f -y --force-yes install google-chrome-stable
 
   # add cloudera repo for hadoop
   echo "deb http://archive.cloudera.com/debian $DEBIAN_DIST-cdh3 contrib" >> /etc/apt/sources.list

@@ -400,7 +400,7 @@ echo "deb http://dl.google.com/linux/deb/ stable main" >> /etc/apt/sources.list
     
 apt-get -f -y update
 apt-get -f -y --force-yes install -t $DEBIAN_DIST-backports iceweasel
-apt-get -f -y --force-yes install google-chrome-beta
+apt-get -f -y --force-yes install google-chrome-stable
 
 EOF
 
