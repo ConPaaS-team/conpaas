@@ -85,6 +85,7 @@ class BaseManager(object):
         self.controller = Controller(config_parser)
         self.logfile = config_parser.get('manager', 'LOG_FILE')
         self.config_parser = config_parser
+        self.state = self.S_INIT
 
         # IPOP setup
         ipop.configure_conpaas_node(config_parser)
@@ -104,8 +105,6 @@ class BaseManager(object):
             self.logger.exception(err)
         else:
             self.logger.info('Ganglia started successfully')
-
-        self.state = self.S_INIT
 
     @expose('POST')
     def startup(self, kwargs):
