@@ -65,10 +65,13 @@ class BaseGanglia(object):
     def configure(self):
         """Create Ganglia configuration. Gmond is needed by managers and
         agents."""
-        if not os.path.isdir(self.GANGLIA_CONFD):
-            os.mkdir(self.GANGLIA_CONFD)
-        if not os.path.isdir(self.GANGLIA_MODULES_DIR):
-            os.mkdir(self.GANGLIA_MODULES_DIR)
+        try:
+            if not os.path.isdir(self.GANGLIA_CONFD):
+                os.mkdir(self.GANGLIA_CONFD)
+            if not os.path.isdir(self.GANGLIA_MODULES_DIR):
+                os.mkdir(self.GANGLIA_MODULES_DIR)
+        except OSError:
+            pass
 
         # Copy modpython.conf
         src = os.path.join(self.cps_home, 'contrib', 'ganglia_modules', 
