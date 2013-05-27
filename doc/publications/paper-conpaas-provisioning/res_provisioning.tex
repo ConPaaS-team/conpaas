@@ -1,6 +1,8 @@
-We evaluated three resource provisioning algorithms: a trigger-based
+We evaluate three resource provisioning algorithms: a trigger-based
 algorithm representing a baseline comparable to systems currently in
-production, and two new algorithms.
+production, and two new algorithms based on\ldots
+
+\fixme{We need to explain the principle behind our algorithms here.}
 
 
 %\subsection{Load-based provisioning}
@@ -16,17 +18,16 @@ production, and two new algorithms.
 
 %\hector{Yes, I agree I was thinking on rightscale ... good then.}
 
-The existing cloud infrastructures provide means to implement
-provisioning mechanisms that adjust the amount of allocated 
-resources based on a number of standard monitoring parameters. 
-These are simple trigger-based systems that define threshold 
-rules to increase or decrease the amount of computational resources
-when certain conditions are met. As an example, the Auto Scaling 
-system offered by Amazon EC2~\cite{amazonEC2} can be used to define 
-rules for scaling out or back an application based on monitoring
-parameters like CPU utilization, network traffic volume etc. 
-This trigger-based technique is currently used in well-known 
-cloud platforms such as RightScale~\cite{right-scale} or OpenShift~\cite{openshift}. 
+Existing cloud infrastructures adjust the amount of allocated
+resources based on a number of standard monitoring parameters.  These
+are simple trigger-based systems which define threshold rules to
+increase or decrease the amount of computational resources when
+certain conditions are met. As an example, the Auto Scaling system
+offered by Amazon EC2~\cite{amazonEC2} can be used to define rules for
+scaling out or back an application based on monitoring parameters like
+CPU utilization, network traffic volume, etc. Similar trigger-based
+techniques are also used in platforms such as
+RightScale~\cite{right-scale} or OpenShift~\cite{openshift}.
 
 For the sake of comparison, we designed and implemented a
 trigger-based provisioning mechanism in ConPaaS. This technique
@@ -35,7 +36,7 @@ a lower and upper threshold for each metric. It then creates or
 deletes VMs whenever one of the threshold is crossed. The thresholds
 are statically defined by the user before execution.
 
-\begin{algorithm} 
+\begin{algorithm}[t]
 {\scriptsize
 \SetAlgoLined
 \SetInd{0mm}{2mm}
@@ -68,8 +69,9 @@ Sleep for 5 minutes \;
 %\subsubsection{Problematic of this algorithm}
 %subsubsection{Drawbacks of this algorithm}
 
-Even though this is simple and widely used in cloud platforms, we show
-that it is too reactive because of the following reasons:
+Even though this algorithm is simple and widely used in cloud
+platforms, we will show that it is too reactive. This is due to two
+main factors:
 
 %regarding the decision making process
 %\corina{I removed the item about services as black boxes, because now
@@ -80,12 +82,14 @@ that it is too reactive because of the following reasons:
 
 
 \begin{itemize}
-\item  \textbf{Workload heterogeneity:} For some web sites, the 
-workload fluctuates following an irregular pattern, with occasional
-short traffic spikes. An excessively reactive algorithm cannot handle
-these situations well, and will cause frequent fluctuations in the number
-of allocated resources; this has negative effects on the stability and
-performance of the system, as well as increases the infrastructure cost. 
+\item \textbf{Workload heterogeneity:} For some web sites, the
+  workload fluctuates following an irregular pattern, with occasional
+  short traffic spikes. An excessively reactive algorithm cannot
+  handle these situations well, and will cause frequent fluctuations
+  in the number of allocated resources; this has negative effects on
+  the stability and performance of the system. It also increases the
+  infrastructure cost because it frequently stops machines very
+  shortly after starting them.
 
 %Obviously, a reactive algorithm can be seen a good choice for resource provisioning, however. The system %performance of an application change in time if the type of workload changes.
 
@@ -101,24 +105,22 @@ performance of the system, as well as increases the infrastructure cost.
 %These constraints are too generic, as other application-specific constraints are not considered. 
 
 %\item VMs are heterogeneous in performance, and thereby their throughput vary depending of its hardware configuration (instance's types). 
-\item  \textbf{Resources heterogeneity:} The performance of virtual instances 
-provided by current clouds is largely heterogeneous, even among
-instances of the same type, as shown in~\cite{ec2Performance}.
-Simple trigger-based provisioning systems do not take this heterogeneity
-into account, thus providing less efficient resource allocation. 
+\item \textbf{Resources heterogeneity:} The performance of virtual
+  instances provided by current clouds is largely heterogeneous, even
+  among instances of the same type~\cite{ec2Performance}.  Simple
+  trigger-based provisioning systems do not take this heterogeneity
+  into account, thus providing less efficient resource allocation.
 
 % The provisioning mechanism omit the heterogeneity of the VMs associated to host an application. 
 
 \end{itemize}
 
-Based on these factors, we believe trigger-based provisioning mechanisms can 
-be improved without drastically increasing their complexity. A possible 
-solution is the utilization of techniques that handle workload and resource
-heterogeneity without being excessively reactive. Moreover, the implementation 
-of these techniques should remain simple to facilitate their integration in 
-existing auto-scaling systems. In the following we present two techniques 
-that aim at solving the aforementioned drawbacks by relying on predictive 
-and more accurate methods.
+We believe that trigger-based provisioning mechanisms can be improved
+without drastically increasing their complexity. A possible solution
+is the utilization of techniques that handle workload and resource
+heterogeneity without being excessively reactive. We now present two
+techniques which aim at solving the aforementioned drawbacks by relying
+on predictive and more accurate methods.
 
 % to dynamically adjust the computational power to irregular workload pattern of web applications.
 
@@ -151,14 +153,36 @@ and more accurate methods.
 
 %Based on our previous knowledge from load-based provisioning, we designed and implemented an algorithm which improves the accuracy of our scaling actions %when hosting web applications. To achieve that, our algorithm relies on three simple mechanisms: the definition of weights to each metric included in the %performance requirements, the use of flexible thresholds and the estimation of the workload trend. 
 
-To handle the workload heterogeneity and excessive reactiveness of trigger-based techniques, we designed and implemented an algorithm that relies on three simple mechanisms: the definition of weights to each metric included in the performance requirements, the estimation of the workload trend and the use of two-levels of threshold ranges. 
+To handle the workload heterogeneity and mitigate the reactiveness of
+trigger-based techniques, we designed and implemented an algorithm
+that relies on three simple mechanisms: automatic weighting of
+different metrics according to their predictiveness, estimating the
+overall workload trend, and relying on two levels of threshold ranges
+instead of one.
 
 %In order to handle temporal bursty workload, we designed and implemented a predictive and reactive algorithm by relying on
 \vspace{2mm}
 
 %Traditional algorithms would scale out and back whenever a system-level metric exceeds its beforehand defined threshold range. 
 
-\textbf{Weighted metrics:}  Through the definition of weight values to application and system metrics, our scaling decisions can adapt to the characteristics of the workload produced by an application. This mechanism allows to determine the weight of a metric based on its efficiency to rapidly alert of the existence of any degradation, as described in Algorithm~\ref{history_prov}. As such, to automatically obtain these weight values, this mechanims calculates the correlation coefficients associated to the response times in comparison with the metrics. As an example, when hosting the MediaWiki application, our algorithm associates to the CPU metric a higher weight than the request rate, since higher values in the CPU usage rapidly indicate the existence of a performance degradation, due to the large diversity in the complexity of the requests. As pointed out in~\cite{singh_autonomic_2010}, provisionins decisions solely made on the basis of request rate or CPU usage can incur errors  by under- or over-provisioning an application. This mechanism is also flexible, as users could define different sets of metric-weight pairs depending of the application.
+\textbf{Weighted metrics:} Through the definition of weight values to
+application and system metrics, our scaling decisions can adapt to the
+characteristics of the workload produced by an application. This
+mechanism allows to determine the weight of a metric based on its
+efficiency to rapidly alert of the existence of any degradation, as
+described in Algorithm~\ref{history_prov}. As such, to automatically
+obtain these weight values, this mechanims calculates the correlation
+coefficients associated to the response times in comparison with the
+metrics. As an example, when hosting the MediaWiki application, our
+algorithm associates to the CPU metric a higher weight than the
+request rate, since higher values in the CPU usage rapidly indicate
+the existence of a performance degradation, due to the large diversity
+in the complexity of the requests. As pointed out
+in~\cite{singh_autonomic_2010}, provisionins decisions solely made on
+the basis of request rate or CPU usage can incur errors by under- or
+over-provisioning an application. This mechanism is also flexible, as
+users could define different sets of metric-weight pairs depending of
+the application.
 
 % As pointed out in~\cite{singh_autonomic_2010} and \cite{roy_capacity_2011},
 

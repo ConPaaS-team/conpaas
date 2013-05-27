@@ -87,30 +87,11 @@ response time.
 
 \begin{figure}
 \begin{center}
-\includegraphics[width=0.49\textwidth, height=6cm]{./images/traceWorkload}
+\subfigure[Workload intensity]{\includegraphics[width=0.49\textwidth, height=6cm]{./images/traceWorkload}\label{workload}}
+\subfigure[PHP request complexity]{\includegraphics[width=0.49\textwidth, height=6cm]{./images/phpRespTimeDispersion}\label{phpRespTimeDispersion}}
+\label{wiki_workload}
+\caption{One day of Wikipedia trace}
 \end{center}
-\vspace{-5mm}
-\caption{Wikipedia trace workload.}
-\label{workload}
-\end{figure}
-
-% Corina - I think this paragraph would be better suitable for future work:
-%In addition, other properties may be also considered important when using the Wikipedia traces such as the interarrival time between requests, the distribution of page popularity, the mix of static/dynamic requests, the ratio of read/write operations and requests for non-existing pages and files.
-
-%\begin{itemize}
-%\item The intervarrival time between requests follows a Poisson distribution.
-
-%\item The distribution of page popularity varies from very popular pages to those being accessed very infrequently.
-
-%\item The mix of static/dynamic requests presents a strong variation. 
-
-\begin{figure}
-\begin{center}
-\includegraphics[width=0.49\textwidth, height=6cm]{./images/phpRespTimeDispersion}
-\end{center}
-\vspace{-5mm}
-\caption{Complexity of PhP requests.}
-\label{phpRespTimeDispersion}
 \end{figure}
 
 %\item The ratio of read/write operations vary having more reads than editions or creations of wiki pages.

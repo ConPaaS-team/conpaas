@@ -33,13 +33,13 @@ and a number of agent VMs.
 \label{arch}
 \end{figure*}
 
-\begin{itemize}
-\item \textbf{Agent}: The agent VMs host the necessary components to provide the service-specific functionality. Based on the performance requirements or the application workload, agent VMs can be started or stopped on demand. Thus, as an example, the minimal configuration of the PHP web hosting service consists of a single agent VM. If necessary,
+\begin{description}
+\item[Agent:] The agent VMs host the necessary components to provide the service-specific functionality. Based on the performance requirements or the application workload, agent VMs can be started or stopped on demand. Thus, as an example, the minimal configuration of the PHP web hosting service consists of a single agent VM. If necessary,
 the service can grow to multiple agent VMs hosting its
 components: load balancer for distributing the incoming traffic, web
 servers for static pages and/or PHP servers for dynamic pages.
-\item \textbf{Manager}: Each service is controlled by one manager VM. The manager is in charge of centralizing monitoring data, controlling the allocation of resources assigned to the service, and coordinating reconfigurations so no loss of service is experienced when adding or removing resources.
-\end{itemize}
+\item[Manager:] Each service is controlled by one manager VM. The manager is in charge of centralizing monitoring data, controlling the allocation of resources assigned to the service, and coordinating reconfigurations so no loss of service is experienced when adding or removing resources.
+\end{description}
 
 Figure~\ref{arch} shows the architecture of the ConPaaS deployment for
 a typical PHP web application backed by a MySQL database. The
