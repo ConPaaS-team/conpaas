@@ -178,7 +178,7 @@ algorithm associates to the CPU metric a higher weight than the
 request rate, since higher values in the CPU usage rapidly indicate
 the existence of a performance degradation, due to the large diversity
 in the complexity of the requests. As pointed out
-in~\cite{singh_autonomic_2010}, provisionins decisions solely made on
+in~\cite{singh_autonomic_2010}, provisioning decisions solely made on
 the basis of request rate or CPU usage can incur errors by under- or
 over-provisioning an application. This mechanism is also flexible, as
 users could define different sets of metric-weight pairs depending of
@@ -193,7 +193,7 @@ the application.
 %High values in the request rate cannot always indicate that an application is becoming overloaded, due to the large diversity in the complexity of the requests.
 
 
-\begin{algorithm}
+\begin{algorithm}[t]
 {\scriptsize
 \SetAlgoLined
 \SetInd{0mm}{2mm}
@@ -300,7 +300,7 @@ To sum up, the feedback algorithm triggers a scaling action when a serie of cond
 
 %As an example of flexible thresholds for the CPU-usage, we established a predictive range comprised between 30\% and 70\% , and a reactive comprised between 20\% and 80\%.  
 
-\begin{figure}
+\begin{figure}[t]
 \begin{center}
 \includegraphics[width=7cm, height=5.3cm]{./images/thresholdGraphic.jpg}
 \end{center}
