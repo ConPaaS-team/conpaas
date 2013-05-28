@@ -204,31 +204,40 @@ the application.
 Create a queue to store historical workload, \emph{q}\;
 Establish flexible thresholds: \emph{pred\_thr} and \emph{reac\_thr} \;
 \BlankLine
-\While{auto-scaling is ON}{
-Collect monitoring data of each metric, \emph{data}\;
-Calculate the weight of each metric, \emph{w}
 
-\uIf{ avg(data$_i$) $>=$ pred\_thr\_max$_i$}{ \label{alg:thr1}
-	Increment chances of \emph{scaling\_out}: \emph{s\_out} = \emph{s\_out} + \emph{w$_i$}\;
-}\ElseIf{ avg(data$_i$) $<$ pred\_thr\_min$_i$}{
-	Increment chances of \emph{scaling\_back}:  \emph{s\_bck} = \emph{s\_bck} + \emph{w$_i$}\; \label{alg:thr2}
-\Else{
-Decrease the chances: \emph{s\_bck} - \emph{w$_i$} or \emph{s\_out} - \emph{w$_i$}\;\label{alg:thr3}
-}}
+\While{auto-scaling is ON}{
+Initialize \emph{s\_bck} and\emph{s\_out} to 0\;
+Collect monitoring data (last $\sim$5min), \emph{data}\;
 \BlankLine
-Add to \emph{q} the most recent workload value\; \label{alg:esti1}
+Add to \emph{q} the most recent workload value, \emph{response\_time}\; \label{alg:esti1}
 Estimate historical workload trends (last $\sim$30min), \emph{td}\;
 \hspace{3mm}	- Increasing, \emph{td} = 1 / Decreasing, \emph{td} = 0\;	\label{alg:esti2}
 \BlankLine
+\While{metrics \textbf{in} \emph{data}}{
+Compute the weight of metric$_i$, \emph{w$_i$}: \\
+\hspace{2mm} \emph{w$_i$} = correlation\_coefficient(metric$_i$, \emph{response\_time})\;
+\BlankLine
+\uIf{ avg(metric$_i$) $>=$ pred\_thr\_max$_i$}{ \label{alg:thr1}
+	Increment chances of \emph{scaling\_out}: \emph{s\_out} = \emph{s\_out} + \emph{w$_i$}\;
+}\ElseIf{ avg(metric$_i$) $<$ pred\_thr\_min$_i$}{
+	Increment chances of \emph{scaling\_back}:  \emph{s\_bck} = \emph{s\_bck} + \emph{w$_i$}\; \label{alg:thr2}
+\Else{
+Decrease the chances: \\ 
+\hspace{3mm} \emph{s\_bck} =\emph{s\_bck} - \emph{w$_i$} \textbf{or} \emph{s\_out} =\emph{s\_out} - \emph{w$_i$}\;\label{alg:thr3}
+}}
+
+\BlankLine
+
 \If{ no recent scaling operation}{
-\uIf{ avg(data$_i$) $>=$ reac\_thr\_max$_i$ \textbf{and}  $td$ = 1 \textbf{and} \emph{s\_out} $>$ \emph{s\_bck}}{ \label{alg:thr4}
+\uIf{ avg(metric$_i$) $>=$ reac\_thr\_max$_i$ \textbf{and}  $td$ = 1 \textbf{and} \emph{s\_out} $>$ \emph{s\_bck}}{ \label{alg:thr4}
 	ADD resources\;
 }
-\ElseIf{ avg(data$_i$) $<$ reac\_thr\_min$_i$ \textbf{and} \emph{td} = 0 \textbf{and} s\_out $<$ s\_bck }{ \label{alg:thr5}
+\ElseIf{ avg(metric$_i$) $<$ reac\_thr\_min$_i$ \textbf{and} \emph{td} = 0 \textbf{and} s\_out $<$ s\_bck }{ \label{alg:thr5}
 	REMOVE resources\;
 }
-Reset \emph{s\_bck} and\emph{s\_out}\;
+Reset \emph{s\_bck} and\emph{s\_out} to 0 \;
 }\Else{ Sleep during 5 minutes\;}
+}
 }
 }
 \caption{Feedback}
