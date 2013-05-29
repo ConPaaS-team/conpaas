@@ -249,20 +249,33 @@ Reset \emph{s\_bck} and\emph{s\_out} to 0 \;
 %in what situations can the extra condition with s\_in and s\_out prevent
 %scaling out? Also, are s\_in and s\_out ever reset or decremented?}
 
-\textbf{Workload's trend estimation:} Nowadays, there is a wide
-literature on mathematical models that try to predict future
-alterations in web application's workload. However, the workload
-heterogeneity and network traffic of web applications make more
-difficult to provide accurate predictions using these models. Besides,
-the complexity of these models sometimes prevent its integration into
-real auto scaling systems. To design a robust and simple provisioning
-system, we decided to use a feedback mechanism that analyzes the
-behavior of the system performance during a short interval of
-time. Even though different intervals can be used, an analysis of the
-monitoring data during approx. 30min (considering 15min between
-scaling actions) provides enough information to detect the workload's
-current trend, and thereby to classify the type of workload alteration
-as \emph{constant} or \emph{temporal} (Algorithm~\ref{history_prov}
+\paragraph{Workload's trend estimation:} 
+a difficult problem in any autoscaling system is the fact that any
+decision has a delayed effect. Provisioning extra resources can take a
+couple of minutes before they are ready to process traffic. Besides,
+cloud computing resources are usually charged at a 1-hour granularity
+so the scaling decision has consequences at least during the first
+hours after provisioning. If is therefore important to estimate the
+medium-term trend of traffic intensity in addition to any short-term
+bursts. We therefore estimate the workload trend using past values
+over a period of the same order of magnitude (30\ minutes in our
+experiments). We classify workloads in one out of three categories:
+stable, increasing or decreasing.
+
+\emph{Nowadays, there is a wide literature on mathematical models that try
+to predict future alterations in web application's workload. However,
+the workload heterogeneity and network traffic of web applications
+make more difficult to provide accurate predictions using these
+models. Besides, the complexity of these models sometimes prevent its
+integration into real auto scaling systems. To design a robust and
+simple provisioning system, we decided to use a feedback mechanism
+that analyzes the behavior of the system performance during a short
+interval of time. Even though different intervals can be used, an
+analysis of the monitoring data during approx. 30min (considering
+15min between scaling actions) provides enough information to detect
+the workload's current trend, and thereby to classify the type of
+workload alteration as \emph{constant} or \emph{temporal}
+(Algorithm~\ref{history_prov}
 lines \ref{alg:esti1}-\ref{alg:esti2}). Only \emph{constant}
 variations may trigger scaling actions to avoid frequent fluctuations
 in the system performance caused by short and sudden \emph{temporal}
@@ -272,7 +285,7 @@ moving average) or interval of time can be utilized to calculate the
 workload trend estimation. Note, however, the analysis of the
 monitoring data during intervals of time between 15-60min offers a
 clear picture of the workload's trend, as pointed out
-in~\cite{gandhi_hybrid_2012}.
+in~\cite{gandhi_hybrid_2012}.}
 
 %\textbf{Two-level thresholds:} The use of flexible thresholds reduces the reactiveness of our algorithm, as it allows to analyze the progress of performance %fluctuations. This algorithm uses two levels of threshold ranges for each metric: \emph{predictive} and \emph{reactive}. As shown on %Figure~\ref{flexibleThresholds}, there are two "head rooms" between the SLO (Service Level Objective) threshold (performance requirements pre-defined by the %user) and the flexible thresholds.  First, the head-room $H_1$ is between the predictive threshold and the reactive thresholds, and is intended to alert of possible %workload alterations in advance. Thereby, when the system performance exceeds the predictive ranges, there is an increment in the chances of scaling actions will %be triggered to tackle future SLO violations, as denoted by  \emph{s\_in} and \emph{s\_out} in Algorithm~\ref{flexibleThresholds}. Otherwise, there is a decrease of %the scaling chances. Note that, \emph{s\_in} and \emph{s\_out} are calculated based on the metric's weight. The second head-room $H_2$ comprises between the %SLO and reactive thresholds is used to trigger scaling actions if the workload presents a \emph{constant} variation. 
 
