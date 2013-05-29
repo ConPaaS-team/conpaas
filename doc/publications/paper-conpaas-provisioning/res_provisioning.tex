@@ -176,7 +176,7 @@ assign a weight to each metric according to its predictiveness. For
 example, when hosting the MediaWiki application, the hosting system
 needs to deal with requests having a wide diversity of computing
 complexity, and with significant variations in the ratios of simple
-vs.\ complex reauests. Our algorithm therefore associates a higher
+vs.\ complex requests. Our algorithm therefore associates a higher
 weight to the CPU usage metric than to the request rate.
 
 % As pointed out in~\cite{singh_autonomic_2010} and \cite{roy_capacity_2011},
@@ -219,8 +219,9 @@ Estimate historical workload trends (last $\sim$30min), \emph{td}\;
 	// Increment chances of \emph{scaling\_back}\\
         \emph{s\_bck} = \emph{s\_bck} + \emph{w$_i$}\; \label{alg:thr2}
 \Else{
-// Decrease the chances \\
-\emph{s\_bck} =\emph{s\_bck} - \emph{w$_i$} \textbf{or} \emph{s\_out} =\emph{s\_out} - \emph{w$_i$}\;\label{alg:thr3}
+	// Decrease the chances \\
+	\emph{s\_bck} =\emph{s\_bck} - \emph{w$_i$}\; 
+	\emph{s\_out} =\emph{s\_out} - \emph{w$_i$}\;\label{alg:thr3}
 }}
 
 \BlankLine
