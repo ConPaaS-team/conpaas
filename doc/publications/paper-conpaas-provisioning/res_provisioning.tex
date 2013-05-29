@@ -40,7 +40,7 @@ are statically defined by the user before execution.
 {\scriptsize
 \SetAlgoLined
 \SetInd{0mm}{2mm}
-\KwData{ Pre-defined metric threshold ranges, \emph{SLO\_threshold}
+\KwData{Pre-defined metric threshold ranges, \emph{SLO\_threshold}
 }
 \KwResult{Scaling decisions}
 \BlankLine
@@ -59,7 +59,7 @@ REMOVE resources\;
 Sleep for 5 minutes \; 
 }
 }
-\caption{Trigger-based}
+\caption{Trigger-based provisioning}
 \label{triggerBased_prov}
 \end{algorithm}
 
@@ -155,34 +155,29 @@ on predictive and more accurate methods.
 
 To handle the workload heterogeneity and mitigate the reactiveness of
 trigger-based techniques, we designed and implemented an algorithm
-that relies on three simple mechanisms: automatic weighting of
-different metrics according to their predictiveness, estimating the
-overall workload trend, and relying on two levels of threshold ranges
-instead of one.
+that relies on three simple mechanisms: integration of several metrics
+and automatic weighting of each metrics according to its
+predictiveness; estimating the overall workload trend; and definition
+of two levels of threshold ranges instead of one.
 
 %In order to handle temporal bursty workload, we designed and implemented a predictive and reactive algorithm by relying on
 \vspace{2mm}
 
 %Traditional algorithms would scale out and back whenever a system-level metric exceeds its beforehand defined threshold range. 
 
-\textbf{Weighted metrics:} Through the definition of weight values to
-application and system metrics, our scaling decisions can adapt to the
-characteristics of the workload produced by an application. This
-mechanism allows to determine the weight of a metric based on its
-efficiency to rapidly alert of the existence of any degradation, as
-described in Algorithm~\ref{history_prov}. As such, to automatically
-obtain these weight values, this mechanims calculates the correlation
-coefficients associated to the response times in comparison with the
-metrics. As an example, when hosting the MediaWiki application, our
-algorithm associates to the CPU metric a higher weight than the
-request rate, since higher values in the CPU usage rapidly indicate
-the existence of a performance degradation, due to the large diversity
-in the complexity of the requests. As pointed out
+\textbf{Weighted metrics:} As pointed out
 in~\cite{singh_autonomic_2010}, provisioning decisions solely made on
 the basis of request rate or CPU usage can incur errors by under- or
-over-provisioning an application. This mechanism is also flexible, as
-users could define different sets of metric-weight pairs depending of
-the application.
+over-provisioning an application. We propose instead to use a
+collection of metrics likely to indicate the need to scale the system
+up or down. Our algorithm continuously measures the correlation
+between each metric's values and the actual scaling decisions. We thus
+assign a weight to each metric according to its predictiveness. For
+example, when hosting the MediaWiki application, the hosting system
+needs to deal with requests having a wide diversity of computing
+complexity, and with significant variations in the ratios of simple
+vs.\ complex reauests. Our algorithm therefore associates a higher
+weight to the CPU usage metric than to the request rate.
 
 % As pointed out in~\cite{singh_autonomic_2010} and \cite{roy_capacity_2011},
 
@@ -197,7 +192,7 @@ the application.
 {\scriptsize
 \SetAlgoLined
 \SetInd{0mm}{2mm}
-\KwData{ Pre-defined metric threshold ranges, \emph{SLO\_threshold}
+\KwData{Pre-defined metric threshold ranges, \emph{SLO\_threshold}
 }
 \KwResult{Scaling decisions}
 \BlankLine
@@ -213,17 +208,19 @@ Add to \emph{q} the most recent workload value, \emph{response\_time}\; \label{a
 Estimate historical workload trends (last $\sim$30min), \emph{td}\;
 \hspace{3mm}	- Increasing, \emph{td} = 1 / Decreasing, \emph{td} = 0\;	\label{alg:esti2}
 \BlankLine
-\While{metrics \textbf{in} \emph{data}}{
-Compute the weight of metric$_i$, \emph{w$_i$}: \\
-\hspace{2mm} \emph{w$_i$} = correlation\_coefficient(metric$_i$, \emph{response\_time})\;
+\For{\textbf{each} metric \textbf{in} \emph{data}}{
+ // Compute the weight \emph{w$_i$} of metric$_i$  \\
+ \emph{w$_i$} = correlation\_coefficient(metric$_i$, \emph{response\_time})\;
 \BlankLine
 \uIf{ avg(metric$_i$) $>=$ pred\_thr\_max$_i$}{ \label{alg:thr1}
-	Increment chances of \emph{scaling\_out}: \emph{s\_out} = \emph{s\_out} + \emph{w$_i$}\;
+	// Increment chances of \emph{scaling\_out}\\
+         \emph{s\_out} = \emph{s\_out} + \emph{w$_i$}\;
 }\ElseIf{ avg(metric$_i$) $<$ pred\_thr\_min$_i$}{
-	Increment chances of \emph{scaling\_back}:  \emph{s\_bck} = \emph{s\_bck} + \emph{w$_i$}\; \label{alg:thr2}
+	// Increment chances of \emph{scaling\_back}\\
+        \emph{s\_bck} = \emph{s\_bck} + \emph{w$_i$}\; \label{alg:thr2}
 \Else{
-Decrease the chances: \\ 
-\hspace{3mm} \emph{s\_bck} =\emph{s\_bck} - \emph{w$_i$} \textbf{or} \emph{s\_out} =\emph{s\_out} - \emph{w$_i$}\;\label{alg:thr3}
+// Decrease the chances \\
+\emph{s\_bck} =\emph{s\_bck} - \emph{w$_i$} \textbf{or} \emph{s\_out} =\emph{s\_out} - \emph{w$_i$}\;\label{alg:thr3}
 }}
 
 \BlankLine
@@ -240,7 +237,7 @@ Reset \emph{s\_bck} and\emph{s\_out} to 0 \;
 }
 }
 }
-\caption{Feedback}
+\caption{Feedback provisioning}
 \label{history_prov}
 \end{algorithm}
 
