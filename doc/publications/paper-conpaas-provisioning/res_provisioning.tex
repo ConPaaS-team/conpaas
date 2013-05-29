@@ -206,7 +206,9 @@ Collect monitoring data (last $\sim$5min), \emph{data}\;
 \BlankLine
 Add to \emph{q} the most recent workload value, \emph{response\_time}\; \label{alg:esti1}
 Estimate historical workload trends (last $\sim$30min), \emph{td}\;
-\hspace{3mm}	- Increasing, \emph{td} = 1 / Decreasing, \emph{td} = 0\;	\label{alg:esti2}
+\hspace{3mm}	- Increasing, \emph{td} = 1\;
+\hspace{3mm}	- Decreasing, \emph{td} = 0\;
+\hspace{3mm}	- Stable, \emph{td} = -1\;	\label{alg:esti2}
 \BlankLine
 \For{\textbf{each} metric \textbf{in} \emph{data}}{
  // Compute the weight \emph{w$_i$} of metric$_i$  \\
