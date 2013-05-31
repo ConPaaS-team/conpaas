@@ -74,6 +74,7 @@ try {
         }
     }
 	// check if the user already exists
+        $_SESSION['password'] = 'avoid "Undefined index: password" message';
 	$uinfo = UserData::getUserByName($_POST['username']);
 	if ($uinfo !== 	false) {
 		echo json_encode(array(
