@@ -63,7 +63,7 @@ class UserData {
 
 	public static function getUserByName($username, $refresh_certs=false) {
        $res = HTTPS::post(Conf::DIRECTOR . '/login', array('username' => $username, 
-           'password' => $_SESSION['password']));
+           'password' => (isset($_SESSION['password']) ? $_SESSION['password'] : 'avoid "Undefined index: password" message')));
 
        $user = json_decode($res);
 
