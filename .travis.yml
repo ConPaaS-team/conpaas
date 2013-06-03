@@ -5,9 +5,9 @@ python:
   - pypy
 install:
   - pip install coveralls
-  - python conpaas-director/setup.py install
+  - sh -c 'cd conpaas-director' && python setup.py install
 script: 
-  - coverage run --source=cpsdirector conpaas-director/test.py
+  - sh -c 'cd conpaas-director' && coverage run --source=cpsdirector test.py
 after_success: 
   - coveralls
 notifications:
