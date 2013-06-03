@@ -7,15 +7,19 @@ from grp import getgrnam
 
 from ConfigParser import ConfigParser
 
+config_parser = ConfigParser()
+
 CONFFILE = os.getenv('DIRECTOR_CFG')
 
 if not CONFFILE:
     CONFFILE = "/etc/cpsdirector/director.cfg"
 
-config_parser = ConfigParser()
+# Config values for unit testing
+if os.getenv('DIRECTOR_TESTING'):
+    CONFFILE = 'director.cfg.example'
+
 config_parser.read(CONFFILE)
 
-# Config values for unit testing
 if os.getenv('DIRECTOR_TESTING'):
     # dummy cloud
     config_parser.set("iaas", "DRIVER", "dummy")
