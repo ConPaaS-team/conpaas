@@ -1,32 +1,14 @@
 #!/bin/sh
 
-start_service() {
-    service_type=$1
-    manager_ip=`cpsclient.py create $1 | awk '{ print $5 }' | sed s/...$//`
-    sid=`cpsclient.py list | grep $manager_ip | awk '{ print $2 }'`
-
-    cpsclient.py start $sid > /dev/null
-    return $sid
-}
-
-wait_for_running() {
-    sid=$1
-
-    while [ -z "`cpsclient.py info $sid | grep 'state: RUNNING'`" ]
-    do
-        sleep 2
-    done
-}
+manifest='{ "Application" : "Selenium", "Services" : [ { "Type" : "selenium", "FrontendName" : "Selenium test", "Start" : 1 } ] }'
 
 # Create and start service
 echo "Selenium functional test started" | ts
 
-start_service "selenium"
-selenium_sid="$?"
-
-echo "Selenium service created" | ts
-
-wait_for_running $selenium_sid
+echo $manifest > /tmp/testmanifest
+cpsclient.py manifest /tmp/testmanifest | ts
+selenium_sid=`cpsclient.py list | grep selenium | awk '{ print $2 }'`
+rm /tmp/testmanifest
 
 echo "Selenium service running" | ts
 
@@ -42,4 +24,5 @@ do
     sleep 2
 done
 
-cpsclient.py terminate $selenium_sid | ts
+appid=`cpsclient.py listapp | grep Selenium | awk '{ print $1 }'`
+cpsclient.py deleteapp $appid | ts

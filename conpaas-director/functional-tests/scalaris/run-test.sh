@@ -1,32 +1,14 @@
 #!/bin/sh
 
-start_service() {
-    service_type=$1
-    manager_ip=`cpsclient.py create $1 | awk '{ print $5 }' | sed s/...$//`
-    sid=`cpsclient.py list | grep $manager_ip | awk '{ print $2 }'`
-
-    cpsclient.py start $sid > /dev/null
-    return $sid
-}
-
-wait_for_running() {
-    sid=$1
-
-    while [ -z "`cpsclient.py info $sid | grep 'state: RUNNING'`" ]
-    do
-        sleep 2
-    done
-}
+manifest='{ "Application" : "Scalaris", "Services" : [ { "Type" : "scalaris", "FrontendName" : "Scalaris test", "Start" : 1 } ] }'
 
 # Create and start service
 echo "Scalaris functional test started" | ts
 
-start_service "scalaris"
-scalaris_sid="$?"
-
-echo "Scalaris service created" | ts
-
-wait_for_running $scalaris_sid
+echo $manifest > /tmp/testmanifest
+cpsclient.py manifest /tmp/testmanifest | ts
+scalaris_sid=`cpsclient.py list | grep scalaris | awk '{ print $2 }'`
+rm /tmp/testmanifest
 
 echo "Scalaris service running" | ts
 
@@ -43,4 +25,5 @@ do
     sleep 2
 done
 
-cpsclient.py terminate $scalaris_sid | ts
+appid=`cpsclient.py listapp | grep Scalaris | awk '{ print $1 }'`
+cpsclient.py deleteapp $appid | ts

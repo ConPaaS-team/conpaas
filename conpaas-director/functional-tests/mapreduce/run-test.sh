@@ -1,32 +1,14 @@
 #!/bin/sh
 
-start_service() {
-    service_type=$1
-    manager_ip=`cpsclient.py create $1 | awk '{ print $5 }' | sed s/...$//`
-    sid=`cpsclient.py list | grep $manager_ip | awk '{ print $2 }'`
-
-    cpsclient.py start $sid > /dev/null
-    return $sid
-}
-
-wait_for_running() {
-    sid=$1
-
-    while [ -z "`cpsclient.py info $sid | grep 'state: RUNNING'`" ]
-    do
-        sleep 2
-    done
-}
+manifest='{ "Application" : "MapReduce", "Services" : [ { "Type" : "hadoop", "FrontendName" : "MapReduce test", "Start" : 1 } ] }'
 
 # Create and start service
 echo "Hadoop functional test started" | ts
 
-start_service "hadoop"
-hadoop_sid="$?"
-
-echo "Hadoop service created" | ts
-
-wait_for_running $hadoop_sid
+echo $manifest > /tmp/testmanifest
+cpsclient.py manifest /tmp/testmanifest | ts
+hadoop_sid=`cpsclient.py list | grep hadoop | awk '{ print $2 }'`
+rm /tmp/testmanifest
 
 echo "Hadoop service running" | ts
 
@@ -54,11 +36,5 @@ lynx -dump $hadoop_hue_url | grep 'Launching Hue' > /dev/null
 
 (if [ "$?" -eq 0 ]; then echo "OK"; else echo "FAILURE"; fi) | ts
 
-cpsclient.py stop $hadoop_sid | ts
-
-while [ -z "`cpsclient.py info $hadoop_sid | grep 'state: STOPPED'`" ]
-do
-    sleep 2
-done
-
-cpsclient.py terminate $hadoop_sid | ts
+appid=`cpsclient.py listapp | grep MapReduce | awk '{ print $1 }'`
+cpsclient.py deleteapp $appid | ts

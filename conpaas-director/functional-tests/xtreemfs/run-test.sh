@@ -1,14 +1,5 @@
 #!/bin/sh
 
-start_service() {
-    service_type=$1
-    manager_ip=`cpsclient.py create $1 | awk '{ print $5 }' | sed s/...$//`
-    sid=`cpsclient.py list | grep $manager_ip | awk '{ print $2 }'`
-
-    cpsclient.py start $sid > /dev/null
-    return $sid
-}
-
 wait_for_running() {
     sid=$1
 
@@ -18,21 +9,17 @@ wait_for_running() {
     done
 }
 
+manifest='{ "Application" : "XtreemFS", "Services" : [ { "Type" : "xtreemfs", "FrontendName" : "XtreemFS test", "Start" : 1, "VolumeStartup": { "volumeName" : "testvol", "owner" : "xtreemfs" } } ] }'
+
 # Create and start service
 echo "XtreemFS functional test started" | ts
 
-start_service "xtreemfs"
-xtreemfs_sid="$?"
-
-echo "XtreemFS service created" | ts
-
-wait_for_running $xtreemfs_sid
+echo $manifest > /tmp/testmanifest
+cpsclient.py manifest /tmp/testmanifest | ts
+xtreemfs_sid=`cpsclient.py list | grep xtreemfs | awk '{ print $2 }'`
+rm /tmp/testmanifest
 
 echo "XtreemFS service running" | ts
-
-# Create a new volume
-cpsclient.py create_volume $xtreemfs_sid testvol > /dev/null
-wait_for_running $xtreemfs_sid
 
 # The list of volumes should contain "testvol"
 if [ "testvol" = "`cpsclient.py list_volumes $xtreemfs_sid | awk '/testvol/ { print $1 }'`" ]
@@ -116,4 +103,5 @@ do
     sleep 2
 done
 
-cpsclient.py terminate $xtreemfs_sid | ts
+appid=`cpsclient.py listapp | grep XtreemFS | awk '{ print $1 }'`
+cpsclient.py deleteapp $appid | ts

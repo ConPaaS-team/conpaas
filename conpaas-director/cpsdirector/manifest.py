@@ -579,6 +579,9 @@ class MXTreemFS(MGeneral):
             name = json.get('VolumeStartup').get('volumeName')
             owner = json.get('VolumeStartup').get('owner')
 
+            # Wait few seconds so that the new node is up.
+            time.sleep(10)
+
             if name != "" and owner != "":
                 res = self.createvolume(sid, name, owner)
                 if 'error' in res:
