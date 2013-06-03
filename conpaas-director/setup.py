@@ -35,6 +35,10 @@ setup(name='cpsdirector',
       dependency_links=[ 'http://www.linux.it/~ema/conpaas/cpslib-%s.tar.gz' % CPSVERSION, ],)
 
 if __name__ == "__main__" and sys.argv[1] == "install":
+    if not os.geteuid() == 0:
+        print "Please run this script as root"
+        sys.exit(0)
+
     # overwrite /etc/cpsdirector/{config,scripts}
     for what in 'config', 'scripts':
         targetdir = os.path.join(CONFDIR, what)
