@@ -280,3 +280,6 @@ chmod a+x /etc/init.d/ec2-*
 update-rc.d ec2-get-credentials defaults
 update-rc.d ec2-ssh-host-key-gen defaults
 update-rc.d ec2-run-user-data defaults
+
+# Never run fsck
+tune2fs -i 0 /dev/sda1
