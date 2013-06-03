@@ -9,9 +9,12 @@ from grp import getgrnam
 from setuptools import setup
 from pkg_resources import Requirement, resource_filename
 
-CPSVERSION = '1.2.0-rc1'
+CPSVERSION = '1.2.0-rc2'
 
 CONFDIR = '/etc/cpsdirector'
+
+if not os.geteuid() == 0:
+    CONFDIR = 'cpsdirectorconf'
 
 long_description = """
 ConPaaS: an integrated runtime environment for elastic Cloud applications 
@@ -31,14 +34,10 @@ setup(name='cpsdirector',
       package_data={ 'cpsdirector': [ 'ConPaaS.tar.gz', ] },
       data_files=[ ( CONFDIR, [ 'director.cfg.example', 'ConPaaS.tar.gz' ] ), ],
       scripts=[ 'cpsadduser.py', 'director.wsgi', 'cpsconf.py', 'cpscheck.py' ],
-      install_requires=[ 'cpslib', 'flask-sqlalchemy', 'apache-libcloud==0.8.0', 'netaddr' ],
+      install_requires=[ 'cpslib', 'flask-sqlalchemy', 'apache-libcloud', 'netaddr' ],
       dependency_links=[ 'http://www.linux.it/~ema/conpaas/cpslib-%s.tar.gz' % CPSVERSION, ],)
 
 if __name__ == "__main__" and sys.argv[1] == "install":
-    if not os.geteuid() == 0:
-        print "Please run this script as root"
-        sys.exit(0)
-
     # overwrite /etc/cpsdirector/{config,scripts}
     for what in 'config', 'scripts':
         targetdir = os.path.join(CONFDIR, what)
