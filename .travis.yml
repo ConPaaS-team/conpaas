@@ -10,7 +10,7 @@ python:
 install:
   - pip install coveralls
 script: 
-  - travis.sh
+  - ./travis.sh
 after_success: 
   - coveralls
 notifications:
