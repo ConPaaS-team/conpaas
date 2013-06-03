@@ -53,8 +53,12 @@ class ManagerController(Controller):
         tmpl_values = {}
 
         # Get contextualization script for the cloud
-        tmpl_values['cloud_script'] = file_get_contents(
-            os.path.join(cloud_scripts_dir, cloud))
+        try:
+            tmpl_values['cloud_script'] = file_get_contents(
+                os.path.join(cloud_scripts_dir, cloud))
+        except IOError:
+            self.logger.info("No cloud configuration script found for '%s'" % cloud)
+            tmpl_values['cloud_script'] = ''
 
         # Get manager setup file
         mngr_setup = file_get_contents(
