@@ -1,7 +1,6 @@
 #
 
 PYTHON=`which python`
-COVERAGE=`which python-coverage`
 DESTDIR=/
 PROJECT=cpsdirector
 VERSION=1.1.0
@@ -23,6 +22,3 @@ clean:
 	rm -rf build/ MANIFEST cpsdirector.egg-info conpaas ConPaaS.tar.gz
 	find . -name '*.pyc' -delete
     
-test:
-	$(COVERAGE) run --source=cpsdirector test.py
-	$(COVERAGE) report -m
