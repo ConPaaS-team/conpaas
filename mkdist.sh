@@ -14,6 +14,13 @@ mkdir -p conpaas-director/conpaas
 cp -a conpaas-services/config/ conpaas-director/conpaas
 cp -a conpaas-services/scripts/ conpaas-director/conpaas
 
+# build PDF manual
+cd docs 
+make latexpdf 
+cp _build/latex/ConPaaS.pdf ../conpaas-director 
+make clean
+cd ..
+
 # build conpaas archive and ship it with the director
 cd conpaas-services
 sh mkarchive.sh > /dev/null 2>&1
