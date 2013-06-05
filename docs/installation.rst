@@ -181,7 +181,9 @@ ssh into your manager VM as root and:
 Frontend installation
 =====================
 As for the Director, only Debian versions 6.0 (Squeeze) and 7.0 (Wheezy) are
-supported, and no external APT repository should be enabled.
+supported, and no external APT repository should be enabled. In a typical
+setup, Director and Frontend are installed on the same host. However such does
+not need to be the case.
 
 The ConPaaS Frontend can be downloaded from
 http://www.conpaas.eu/dl/cpsfrontend-1.1.0.tar.gz. 
