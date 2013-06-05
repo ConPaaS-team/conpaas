@@ -17,9 +17,15 @@ and configure all the aforementioned components.
 .. _Flask: http://flask.pocoo.org/
 
 Both **cpsdirector** and **cpsfrontend** can be installed on your own hardware
-or on virtual machines running on public or private clouds. ConPaaS services
-are designed to run either in an `OpenNebula` cloud installation or in the
-`Amazon Web Services` cloud.
+or on virtual machines running on public or private clouds. If you wish to
+install them on Amazon EC2, the `Official Debian Wheezy EC2 image
+(ami-1d620e74)`_ is known to work well. Please note that the *root* account is
+disabled and that you should instead login as *admin*.
+
+.. _Official Debian Wheezy EC2 image (ami-1d620e74): https://console.aws.amazon.com/ec2/v2/home?region=us-east-1#Images:filter=all-images;platform=all-platforms;visibility=public-images;search=ami-1d620e74
+
+ConPaaS services are designed to run either in an `OpenNebula` cloud
+installation or in the `Amazon Web Services` cloud.
 
 Installing ConPaaS requires to take the following steps:
 
@@ -49,7 +55,7 @@ ConPaaS director on a Debian GNU/Linux system. Although the ConPaaS director
 might run on other distributions, only Debian versions 6.0 (Squeeze) and 7.0
 (Wheezy) are officially supported. Also, only official Debian APT repositories
 should be enabled in :file:`/etc/apt/sources.list` and
-:file:`/etc/apt/sources.list.d/`.
+:file:`/etc/apt/sources.list.d/`. 
 
 #. Install the required packages::
 
@@ -67,6 +73,9 @@ should be enabled in :file:`/etc/apt/sources.list` and
    uncompress it
 
 #. Run :command:`make install` as root
+
+#. After all the required packages are installed, you will get prompted for
+   your hostname. Please provide your **public** IP address / hostname
 
 #. Edit :file:`/etc/cpsdirector/director.cfg` providing your cloud
    configuration. Among other things, you will have to choose an Amazon
@@ -94,6 +103,10 @@ it might be that the default VirtualHost created by the ConPaaS director
 installation process conflicts with your Apache configuration. The
 Apache Virtual Host documentation might be useful to fix those issues:
 http://httpd.apache.org/docs/2.2/vhosts/.
+
+Finally, you can start adding users to your ConPaaS installation as follows::
+
+    $ sudo cpsadduser.py
 
 SSL certificates
 ----------------
@@ -243,11 +256,11 @@ dependencies of its processes. For your convenience we provide a pre-built
 public AMI, already configured and ready to be used on Amazon EC2, for each
 availability zone supported by ConPaaS. The AMI IDs of said images are:
 
--  ``ami-4055db70`` United States West (Oregon)
+-  ``ami-6154c551`` United States West (Oregon)
 
--  ``ami-4b249322`` United States East (Northern Virginia)
+-  ``ami-cd066ca4`` United States East (Northern Virginia)
 
--  ``ami-db0a0ba`` Europe West (Ireland)
+-  ``ami-8d0313f9`` Europe West (Ireland)
 
 You can use one of these values when configuring your ConPaaS director
 installation as described in :ref:`director-installation`.
