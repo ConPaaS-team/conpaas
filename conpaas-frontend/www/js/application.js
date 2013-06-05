@@ -84,6 +84,9 @@ conpaas.ui = (function (this_module) {
     },
     createApplication: function (application) {
 	var newapp = prompt("Application name : ", "New Application");
+        if (newapp == null) { // user clicked Cancel button
+                return;
+        }   
 	this.server.req('ajax/createApplication.php', {
 		name: newapp
 	}, 'post', function (response) {
