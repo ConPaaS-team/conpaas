@@ -1,0 +1,62 @@
+Include Galera into ConPaaS services
+
+1. Copy galera folder into conpaas/conpaas-services/src/conpaas/services.
+2. Add the following configuration into conpaas/conpaas-services/config/agent/mysql-agent.cfg.
+
+[Galera_configuration]
+wsrep_file=/etc/mysql/conf.d/wsrep.cnf
+wsrep_sst_username=sst
+wsrep_sst_password=sstpasswd
+wsrep_provider=/usr/lib/galera/libgalera_smm.so
+wsrep_sst_method=rsync
+
+3. Register galera in conpaas/conpaas-services/src/conpaas/core/services.py. It should look like:
+
+manager_services = {'php'    : {'class' : 'PHPManager', 
+                                'module': 'conpaas.services.webservers.manager.internal.php'},
+                    'java'   : {'class' : 'JavaManager',
+                                'module': 'conpaas.services.webservers.manager.internal.java'},
+                    'scalaris' : {'class' : 'ScalarisManager',
+                                  'module': 'conpaas.services.scalaris.manager.manager'},
+                    'hadoop' : {'class' : 'MapReduceManager',
+                                'module': 'conpaas.services.mapreduce.manager.manager'},
+                    'helloworld' : {'class' : 'HelloWorldManager',
+                                    'module': 'conpaas.services.helloworld.manager.manager'},
+                    'mysql' : {'class' : 'MySQLManager',
+                               'module': 'conpaas.services.mysql.manager.manager'},
+                    'galera' : {'class' : 'GaleraManager',
+                               'module': 'conpaas.services.galera.manager.manager'},
+                    'xtreemfs' : {'class' : 'XtreemFSManager',
+                                  'module': 'conpaas.services.xtreemfs.manager.manager'},
+                    'selenium' : {'class' : 'SeleniumManager',
+                                  'module': 'conpaas.services.selenium.manager.manager'},
+                    'htcondor' : {'class' : 'HTCondorManager',
+                                  'module': 'conpaas.services.htcondor.manager.manager'},
+#""" BLUE_PRINT_INSERT_MANAGER 		do not remove this line: it is a placeholder for installing new services """
+		    }
+
+agent_services = {'web' : {'class' : 'WebServersAgent',
+                           'module': 'conpaas.services.webservers.agent.internals'},
+                  'scalaris' : {'class' : 'ScalarisAgent',
+                                'module': 'conpaas.services.scalaris.agent.agent'},
+                  'mapreduce' : {'class' : 'MapReduceAgent',
+                                 'module': 'conpaas.services.mapreduce.agent.agent'},
+                  'helloworld' : {'class' : 'HelloWorldAgent',
+                                  'module': 'conpaas.services.helloworld.agent.agent'},
+                  'mysql' : {'class' : 'MySQLAgent',
+                             'module': 'conpaas.services.mysql.agent.internals'},
+                  'galera' : {'class' : 'GaleraAgent',
+                             'module': 'conpaas.services.galera.agent.internals'},
+                  'xtreemfs' : {'class' : 'XtreemFSAgent',
+                                'module': 'conpaas.services.xtreemfs.agent.agent'},
+                  'selenium' : {'class' : 'SeleniumAgent',
+                                'module': 'conpaas.services.selenium.agent.agent'},
+                  'htcondor' : {'class' : 'HTCondorAgent',
+                                'module': 'conpaas.services.htcondor.agent.agent'},
+#""" BLUE_PRINT_INSERT_AGENT 		do not remove this line: it is a placeholder for installing new services """
+		  }
+
+4. Move galera* script into conpaas/conpaas-services/scripts/create_vm. 
+
+
+
