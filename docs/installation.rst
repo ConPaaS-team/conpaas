@@ -47,7 +47,9 @@ applications. Users can create, configure and terminate their cloud
 applications through it. This section describes the process of setting up a
 ConPaaS director on a Debian GNU/Linux system. Although the ConPaaS director
 might run on other distributions, only Debian versions 6.0 (Squeeze) and 7.0
-(Wheezy) are officially supported. 
+(Wheezy) are officially supported. Also, only official Debian APT repositories
+should be enabled in :file:`/etc/apt/sources.list` and
+:file:`/etc/apt/sources.list.d/`.
 
 #. Install the required packages::
 
@@ -178,8 +180,11 @@ ssh into your manager VM as root and:
 
 Frontend installation
 =====================
+As for the Director, only Debian versions 6.0 (Squeeze) and 7.0 (Wheezy) are
+supported, and no external APT repository should be enabled.
+
 The ConPaaS Frontend can be downloaded from
-http://www.conpaas.eu/dl/cpsfrontend-1.1.0.tar.gz.
+http://www.conpaas.eu/dl/cpsfrontend-1.1.0.tar.gz. 
 
 After having uncompressed it you should:
 
