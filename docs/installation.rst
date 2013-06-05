@@ -194,30 +194,36 @@ ssh into your manager VM as root and:
 Frontend installation
 =====================
 As for the Director, only Debian versions 6.0 (Squeeze) and 7.0 (Wheezy) are
-supported, and no external APT repository should be enabled. In a typical
-setup, Director and Frontend are installed on the same host. However such does
-not need to be the case.
+supported, and no external APT repository should be enabled. In a typical setup
+Director and Frontend are installed on the same host, but such does not need to
+be the case.
 
 The ConPaaS Frontend can be downloaded from
 http://www.conpaas.eu/dl/cpsfrontend-1.1.0.tar.gz. 
 
-After having uncompressed it you should:
+After having uncompressed it you should install the required Debian packages::
 
--  Install the ``libapache2-mod-php5`` and ``php5-curl`` Debian packages
+   $ sudo apt-get install libapache2-mod-php5 php5-curl
 
--  Copy all the files contained in the :file:`www` directory underneath your
-   web server document root
+Copy all the files contained in the :file:`www` directory underneath your web
+server document root. For example::
 
--  Copy :file:`conf/main.ini` and :file:`conf/welcome.txt` in your ConPaaS
-   Director configuration folder (:file:`/etc/cpsdirector`). Modify those files
-   to suit your needs
+   $ sudo cp -a www/ /var/www/conpaas/
 
--  Create a :file:`config.php` file in the web server directory where you
-   have chosen to install the frontend. Please refer to
-   :file:`config-example.php` for a detailed explaination of all the
-   configuration options. Note that :file:`config.php` must contain the
-   :envvar:`CONPAAS_CONF_DIR` option, pointing to the directory mentioned in
-   the previous step
+Copy :file:`conf/main.ini` and :file:`conf/welcome.txt` in your ConPaaS
+Director configuration folder (:file:`/etc/cpsdirector`). Modify those files to
+suit your needs::
+
+   $ sudo cp conf/{main.ini,welcome.txt} /etc/cpsdirector/
+
+Create a :file:`config.php` file in the web server directory where you have
+chosen to install the frontend. :file:`config-example.php` is a good starting
+point::
+
+   $ sudo cp www/config-example.php /var/www/conpaas/config.php
+
+Note that :file:`config.php` must contain the :envvar:`CONPAAS_CONF_DIR`
+option, pointing to the directory mentioned in the previous step
 
 Enable SSL if you want to use your frontend via https, for example by
 issuing the following commands::
