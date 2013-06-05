@@ -318,6 +318,22 @@ class MJava(MGeneral):
         return 'ok'
 
 class MMySql(MGeneral):
+    def load_dump(self, sid, url):
+        contents = urllib2.urlopen(url).read()
+        filename = url.split('/')[-1]
+
+        files = [ ( 'mysqldump_file', filename, contents ) ]
+
+        res = callmanager(sid, "/", True, { 'method' : 'load_dump' }, files)
+
+        return res
+
+    def set_password(self, sid, password):
+        data = { 'user': 'mysqldb', 'password': password }
+        res = callmanager(sid, "set_password", True, data)
+
+        return res
+
     def start(self, json, appid):
         servicetype = json.get('Type')
         cloud = 'default'
@@ -355,7 +371,15 @@ class MMySql(MGeneral):
 
         self.wait_for_state(sid, 'RUNNING')
 
-        # TODO Upload the dump file
+        if json.get('Dump'):
+            res = self.load_dump(sid, json.get('Dump'))
+            if 'error' in res:
+                return res['error']
+
+        if json.get('Password'):
+            res = self.set_password(sid, json.get('Password'))
+            if 'error' in res:
+                return res['error']
 
         if json.get('StartupInstances'):
             params = {
