@@ -62,7 +62,7 @@ function install_deb() {
   update-locale LANG=en_US.UTF-8
 
   # install packages
-  apt-get -f -y install openssh-server \
+  apt-get -f -y install openssh-server curl \
         python python-pycurl python-cheetah python-openssl \
         python-m2crypto python-mysqldb python-netaddr \
         nginx tomcat6-user memcached ganglia-monitor gmetad rrdtool logtail \
