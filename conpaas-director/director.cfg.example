@@ -80,11 +80,11 @@ CERT_DIR = /etc/cpsdirector/certs
 #
 # ConPaaS official AMI ids are: 
 #
-# - ami-6154c551 United States West (Oregon)
-# - ami-cd066ca4 United States East (Northern Virginia)
-# - ami-8d0313f9 Europe West (Ireland)
+# - ami-0933a239 United States West (Oregon)
+# - ami-5f087c36 United States East (Northern Virginia)
+# - ami-3b46554f Europe West (Ireland)
 
-# IMAGE_ID = ami-6154c551
+# IMAGE_ID = ami-0933a239
 
 # This variable contains the type of EC2 instances to use. A good value to use
 # inexpensive, low-performance instances is "t1.micro".
