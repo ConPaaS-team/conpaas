@@ -264,7 +264,7 @@ availability zone supported by ConPaaS. The AMI IDs of said images are:
 
 -  ``ami-0933a239`` United States West (Oregon)
 
--  ``ami-5f087c36`` United States East (Northern Virginia)
+-  ``ami-bb780cd2`` United States East (Northern Virginia)
 
 -  ``ami-3b46554f`` Europe West (Ireland)
 
