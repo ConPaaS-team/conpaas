@@ -463,7 +463,7 @@ class XtreemFSManager(BaseManager):
                  '%s:32636/%s' % (self.mrcNodes[0].ip, volumeName),
                  "-u", owner,
                  "-g", owner,
-                 "-m", "744" ]
+                 "-m", "777" ]
 
         process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         (stdout, stderr) = process.communicate()
