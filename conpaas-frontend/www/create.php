@@ -129,8 +129,13 @@ $page = new Page();
                   <td class="input">
                   <?php
                        $clouds = json_decode(HTTPS::get(Conf::DIRECTOR . '/available_clouds'));
+                       
                        foreach($clouds as $cloud){
-                           echo '<input type="radio" name="available_clouds" value="'.$cloud.'"/>'.$cloud.'<br/>';
+                           if ($cloud === 'default')
+                            $checked = 'checked';
+                           else
+                            $checked = '';
+                           echo '<input type="radio"' . $checked . ' name="available_clouds" value="'.$cloud.'"/>'.$cloud.'<br/>';
                        }?>
                   </td>
               </tr>

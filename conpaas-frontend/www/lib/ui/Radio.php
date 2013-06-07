@@ -42,6 +42,13 @@ function Radio($text) {
 
 class Radio extends Button{
 
+    protected $checked = '';
+
+    public function setDefault() {
+        $this->checked = 'checked';
+        return $this;
+    }
+
     public function __construct($text) {
         parent::__construct($text);
     }
@@ -49,7 +56,8 @@ class Radio extends Button{
     public function __toString() {
         return
             '<input id="'.$this->id.'" type="radio" '
-            .' title="'.$this->title.'"'.'name="'.$this->title.'"'
+            .' title="'.$this->title.'"'.' name="'.$this->title.'"'
+            ." $this->checked"
             .' class="button '.$this->isVisible().'"'
             .' value="'.$this->text.'" '.$this->disabledMarker().'/>'.$this->text;
     }
