@@ -216,7 +216,13 @@ class Controller(object):
                         self.update_context({ 'IPOP_IP_ADDRESS': vpn_ip })
                         
                         for newinst in cloud.new_instances(1, name, inst_type):
+                            # Set VPN IP
                             newinst.ip = vpn_ip
+
+                            if newinst.private_ip == '':
+                                # If private_ip is not set yet, use vpn_ip
+                                newinst.private_ip = vpn_ip
+
                             poll.append(newinst)
 
                         self.__logger.debug("cloud.new_instances: %s" % poll)
