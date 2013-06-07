@@ -118,11 +118,11 @@ class Cloud:
         @type   has_private_ip: C{bool}
 
         '''
-        try:
+        if type(instances) is list:
             return [ self.__create_one_service_node(node, has_private_ip)
                     for node in instances ]
-        except TypeError:
-            return [ self.__create_one_service_node(instances, has_private_ip) ]
+
+        return self.__create_one_service_node(instances, has_private_ip)
 
     def __create_one_service_node(self, instance, has_private_ip=True):
         '''

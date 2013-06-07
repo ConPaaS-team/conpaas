@@ -106,4 +106,10 @@ class EC2Cloud(Cloud):
         kwargs['ex_securitygroup'] = self.sg
         kwargs['ex_keyname'] = self.key_name
         kwargs['ex_userdata'] = self.cx
-        return self._create_service_nodes(self.driver.create_node(**kwargs))
+
+        nodes = self._create_service_nodes(self.driver.create_node(**kwargs))
+
+        if type(nodes) is list:
+            return nodes
+
+        return [ nodes ]
