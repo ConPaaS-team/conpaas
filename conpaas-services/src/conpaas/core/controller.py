@@ -213,7 +213,7 @@ class Controller(object):
                     # contextualization data for each new instance
                     for _ in range(count - len(ready)):
                         vpn_ip = self.get_available_ipop_address()
-                        self.update_context({ 'IPOP_IP_ADDRESS': vpn_ip })
+                        self.update_context({ 'IPOP_IP_ADDRESS': vpn_ip }, cloud)
                         
                         for newinst in cloud.new_instances(1, name, inst_type):
                             # Set VPN IP
