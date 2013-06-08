@@ -61,6 +61,16 @@ $(document).ready(function() {
 		$('#fileForm').submit();
 	});
 
+    $('#logout').click(function () {
+        $.ajax({
+                type: 'POST',
+                url: 'ajax/logout.php', 
+                data: {}
+        }).done(function () { 
+            window.location = 'index.php'; 
+        });       
+    });
+
 	$('#deploy').click(function() {
 		type = $('input[name=type]:checked').val();
 		if (manifest[type] == '') {
