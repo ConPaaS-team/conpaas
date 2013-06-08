@@ -57,7 +57,7 @@ $page = new Page();
 
       <div class="pagecontent createpage">
          <div class="pageheader">
-            <h1> <img src="images/create.png" /> Create service</h1>
+            <h1> <img src="images/create.png" /> Deploy application</h1>
             <div class="clear"></div>
          </div>
 
