@@ -119,7 +119,7 @@ class BaseManager(object):
         if 'cloud' in kwargs:
             try:
                 self._init_cloud(kwargs['cloud'])
-            except IndexError:
+            except Exception:
                 return HttpErrorResponse(
                     "A cloud named '%s' could not be found" % kwargs['cloud'])
 

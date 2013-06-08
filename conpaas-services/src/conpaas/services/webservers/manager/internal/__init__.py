@@ -207,7 +207,14 @@ class BasicWebserversManager(BaseManager):
   
   def do_startup(self, config, serviceNodeKwargs, cloud):
     self.logger.debug('do_startup: Going to request %d new nodes' % len(serviceNodeKwargs))
-    cloud = self._init_cloud(cloud)
+
+    try:
+      cloud = self._init_cloud(cloud)
+    except Exception:
+      self.logger.exception("A cloud named '%s' could not be found" % cloud)
+      self._state_set(self.S_STOPPED, msg='Unknown cloud: %s' % cloud)
+      return 
+
     try:
       self._adapting_set_count(len(serviceNodeKwargs))
       node_instances = self.controller.create_nodes(len(serviceNodeKwargs),
@@ -299,7 +306,13 @@ class BasicWebserversManager(BaseManager):
     webNodesKill = []
     backendNodesKill = []
     
-    cloud = self._init_cloud(cloud)
+    try:
+      cloud = self._init_cloud(cloud)
+    except Exception:
+      self.logger.exception("A cloud named '%s' could not be found" % cloud)
+      self._state_set(self.S_RUNNING, msg='Unknown cloud: %s' % cloud)
+      return 
+
     if backend > 0 and config.backend_count == 0:
       backendNodesKill.append(config.getBackendServiceNodes()[0])
     if web > 0 and config.web_count == 0:
