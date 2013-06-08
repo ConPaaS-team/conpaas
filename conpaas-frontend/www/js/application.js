@@ -77,6 +77,7 @@ conpaas.ui = (function (this_module) {
                         that.makeDeleteHandler_(application));
             }
             $('#newapp').click(that.makeCreateHandler_(application));
+            $('#newapplink').click(that.makeCreateHandler_(application));
             conpaas.ui.visible('pgstatInfo', false);
 
 	    return true; /* Never do polling */
@@ -97,7 +98,11 @@ conpaas.ui = (function (this_module) {
 	});
     },
     deleteApplication: function (application) {
-	console.log(application);
+	var r = confirm('Are you sure to delete the application?');
+	if (r == false) {
+		return;
+	}
+
 	this.server.req('ajax/deleteApplication.php', {
 		aid: application.aid
 	}, 'post', function (response) {

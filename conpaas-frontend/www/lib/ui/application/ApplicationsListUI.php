@@ -86,7 +86,7 @@ class ApplicationsListUI {
 			return
 			'<div class="box infobox">'
 				.'You have no applications in the dashboard. '
-				.'Go ahead and <a href="create.php">create a new application</a>.'
+				.'Go ahead and <a id="newapplink" href="#">create a new application</a>.'
 			.'</div>';
 		}
 		return
