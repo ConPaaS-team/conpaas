@@ -57,6 +57,12 @@ might run on other distributions, only Debian versions 6.0 (Squeeze) and 7.0
 should be enabled in :file:`/etc/apt/sources.list` and
 :file:`/etc/apt/sources.list.d/`. 
 
+**cpsdirector** is available here:
+http://www.conpaas.eu/dl/cpsdirector-1.1.0.tar.gz. The tarball includes an
+installation script called :file:`install.sh` for your convenience. You can
+either run it as root or follow the installation procedure outlined below in
+order to setup your ConPaaS Director installation.
+
 #. Install the required packages::
 
    $ sudo apt-get update
