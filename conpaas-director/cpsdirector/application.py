@@ -97,7 +97,7 @@ def get_default_app(user_id):
         Application.aid).first()
 
 def check_app_exists(app_name):
-    if Application.query.filter_by(name=app_name).first():
+    if Application.query.filter_by(name=app_name, user_id=g.user.uid).first():
         return True
 
     return False
