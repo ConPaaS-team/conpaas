@@ -136,7 +136,8 @@ class Controller(object):
         network = self.__ipop_subnet.iter_hosts()
         
         # Currently running hosts
-        running_hosts = [ str(node.ip) for node in self.__created_nodes ] 
+        running_hosts = [ str(node.ip) 
+            for node in self.__created_nodes + self.__partially_created_nodes ] 
 
         self.__logger.debug("get_available_ipop_address: running nodes: %s" 
             % running_hosts)
@@ -189,8 +190,8 @@ class Controller(object):
 
         while len(ready) < count:
             iteration += 1
-            msg = '[_create_nodes]: iteration %d: creating %d nodes' % (
-                iteration, count - len(ready))
+            msg = '[create_nodes] iter %d: creating %d nodes on cloud %s' % (
+                iteration, count - len(ready), cloud.cloud_name)
 
             if inst_type:
                 msg += ' of type %s' % inst_type
@@ -223,16 +224,13 @@ class Controller(object):
                                 # If private_ip is not set yet, use vpn_ip
                                 newinst.private_ip = vpn_ip
 
-                            poll.append(newinst)
+                            self.__partially_created_nodes.append(newinst)
 
                         self.__logger.debug("cloud.new_instances: %s" % poll)
                 else:
-                    poll = cloud.new_instances(count - len(ready), name, inst_type)
+                    self.__partially_created_nodes = cloud.new_instances(
+                        count - len(ready), name, inst_type)
 
-                try:
-                    self.__partially_created_nodes += poll
-                except TypeError:
-                    self.__partially_created_nodes.append(poll)
             except Exception as e:
                 self.__logger.exception(
                     '[_create_nodes]: Failed to request new nodes')
@@ -241,9 +239,11 @@ class Controller(object):
                 raise e
             finally:
                 self.__force_terminate_lock.release()
+
             poll, failed = self.__wait_for_nodes(
                 self.__partially_created_nodes, test_agent, port)
             ready += poll
+
             poll = []
             if failed:
                 self.__logger.debug('[_create_nodes]: %d nodes '
