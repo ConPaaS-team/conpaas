@@ -52,12 +52,12 @@ class Apppage extends Page {
 				.'<a class="button" id="newapp" href="#">'
 					.'<img src="images/service-plus.png" /> create new application'
 				.'</a>'
+				.'<a class="button" href="manifest.php">'
+					.' deploy ready-made application'
+				.'</>'
   				.'<a class="button" href="ajax/getCertificate.php">'
   					.' download certificate'
   				.'</a>'
-				.'<a class="button" href="manifest.php">'
-					.' upload manifest'
-				.'</a>'
 			.'</div>'
 			.'<div class="clear"></div>';
 	}
