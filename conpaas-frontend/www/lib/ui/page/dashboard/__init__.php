@@ -52,9 +52,6 @@ class Dashboard extends Page {
   				.'<a class="button" href="create.php">'
   					.'<img src="images/service-plus.png" /> create new service'
   				.'</a>'
-  				.'<a class="button" href="ajax/getManifest.php">'
-  					.' download manifest'
-  				.'</a>'
   			.'</div>'
   			.'<div class="clear"></div>';
 	}
