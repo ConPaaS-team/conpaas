@@ -173,7 +173,7 @@ CERT_DIR = /etc/cpsdirector/certs
 
 # The device that will be mounted as root on the VM. Most often it
 # is "sda" or "hda".
-# (corrseponds to the OpenNebula "ROOT" parameter from the VM template)
+# (corresponds to the OpenNebula "ROOT" parameter from the VM template)
 
 # OS_ROOT = sda
 
