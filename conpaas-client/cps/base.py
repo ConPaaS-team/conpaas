@@ -449,7 +449,7 @@ class BaseClient(object):
         print "    manifest          filename            # upload a new manifest"
         print "    download_manifest appid               # download an existing manifest"
         print "    create            servicetype [appid] # create a new service [inside a specific application]"
-        print "    start             serviceid [cloud]   # startup the specified service on default or one of the available clouds"
+        print "    start             serviceid [cloud]   # startup the given service [on a specific cloud]"
         print "    info              serviceid           # get service details"
         print "    logs              serviceid           # get service logs"
         print "    stop              serviceid           # stop the specified service"
