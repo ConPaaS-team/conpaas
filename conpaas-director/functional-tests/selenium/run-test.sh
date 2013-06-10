@@ -1,6 +1,6 @@
 #!/bin/sh
 
-manifest='{ "Application" : "Selenium", "Services" : [ { "Type" : "selenium", "FrontendName" : "Selenium test", "Start" : 1 } ] }'
+manifest='{ "Application" : "Selenium", "Services" : [ { "Type" : "selenium", "ServiceName" : "Selenium test", "Start" : 1 } ] }'
 
 # Create and start service
 echo "Selenium functional test started" | ts

@@ -37,8 +37,8 @@
 
 manifest = [];
 
-manifest['owncloud'] = '{ "Application" : "Owncloud", "Services" : [ { "Type" : "php", "FrontendName" : "Php backend", "Archive" : "http://download.owncloud.org/community/owncloud-5.0.6.tar.bz2" }, { "Type" : "mysql", "FrontendName" : "Mysql backend" } ] }';
-manifest['wordpress'] = '{ "Application" : "Wordpress", "Services" : [ { "Type" : "php", "FrontendName" : "Php backend", "Archive" : "http://wordpress.org/wordpress-3.5.1.tar.gz" }, { "Type" : "mysql", "FrontendName" : "Mysql backend" } ] }';
+manifest['owncloud'] = '{ "Application" : "Owncloud", "Services" : [ { "Type" : "php", "ServiceName" : "Php backend", "Archive" : "http://download.owncloud.org/community/owncloud-5.0.6.tar.bz2" }, { "Type" : "mysql", "ServiceName" : "Mysql backend" } ] }';
+manifest['wordpress'] = '{ "Application" : "Wordpress", "Services" : [ { "Type" : "php", "ServiceName" : "Php backend", "Archive" : "http://wordpress.org/wordpress-3.5.1.tar.gz" }, { "Type" : "mysql", "ServiceName" : "Mysql backend" } ] }';
 
 $(document).ready(function() {
 	$('#fileForm').ajaxForm({

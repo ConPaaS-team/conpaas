@@ -1,6 +1,6 @@
 #!/bin/sh
 
-manifest='{ "Application" : "Taskfarm", "Services" : [ { "Type" : "taskfarm", "FrontendName" : "Taskfarm test", "Start" : 1 } ] }'
+manifest='{ "Application" : "Taskfarm", "Services" : [ { "Type" : "taskfarm", "ServiceName" : "Taskfarm test", "Start" : 1 } ] }'
 
 # Create and start service
 echo "Taskfarm functional test started" | ts

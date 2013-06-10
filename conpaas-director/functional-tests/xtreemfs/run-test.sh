@@ -9,7 +9,7 @@ wait_for_running() {
     done
 }
 
-manifest='{ "Application" : "XtreemFS", "Services" : [ { "Type" : "xtreemfs", "FrontendName" : "XtreemFS test", "Start" : 1, "VolumeStartup": { "volumeName" : "testvol", "owner" : "xtreemfs" } } ] }'
+manifest='{ "Application" : "XtreemFS", "Services" : [ { "Type" : "xtreemfs", "ServiceName" : "XtreemFS test", "Start" : 1, "VolumeStartup": { "volumeName" : "testvol", "owner" : "xtreemfs" } } ] }'
 
 # Create and start service
 echo "XtreemFS functional test started" | ts

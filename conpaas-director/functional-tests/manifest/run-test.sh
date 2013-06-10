@@ -1,7 +1,7 @@
 #!/bin/sh
 
-owncloud='{ "Application" : "Owncloud", "Services" : [ { "Type" : "php", "FrontendName" : "Php backend", "Archive" : "http://download.owncloud.org/community/owncloud-5.0.6.tar.bz2", "Start" : 1 }, { "Type" : "mysql", "FrontendName" : "Mysql backend" } ] }'
-wordpress='{ "Application" : "Wordpress", "Services" : [ { "Type" : "php", "FrontendName" : "Php backend", "Archive" : "http://wordpress.org/wordpress-3.5.1.tar.gz", "Start" : 1 }, { "Type" : "mysql", "FrontendName" : "Mysql backend" } ] }'
+owncloud='{ "Application" : "Owncloud", "Services" : [ { "Type" : "php", "ServiceName" : "Php backend", "Archive" : "http://download.owncloud.org/community/owncloud-5.0.6.tar.bz2", "Start" : 1 }, { "Type" : "mysql", "ServiceName" : "Mysql backend" } ] }'
+wordpress='{ "Application" : "Wordpress", "Services" : [ { "Type" : "php", "ServiceName" : "Php backend", "Archive" : "http://wordpress.org/wordpress-3.5.1.tar.gz", "Start" : 1 }, { "Type" : "mysql", "ServiceName" : "Mysql backend" } ] }'
 
 # Start of the tests
 echo "Manifest functional test started" | ts

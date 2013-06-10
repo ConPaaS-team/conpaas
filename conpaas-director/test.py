@@ -654,7 +654,7 @@ class DirectorTest(Common):
             'uid': 1
         }
 
-        result = '{"Services": [{"FrontendName": "New php service", "Type": "php", "Cloud": "iaas"}], "Application": "New Application"}'
+        result = '{"Services": [{"ServiceName": "New php service", "Type": "php", "Cloud": "iaas"}], "Application": "New Application"}'
 
         response = self.app.post('/download_manifest/1', data=data)
         self.assertEquals(200, response.status_code)

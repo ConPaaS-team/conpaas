@@ -1,6 +1,6 @@
 #!/bin/sh
 
-manifest='{ "Application" : "MapReduce", "Services" : [ { "Type" : "hadoop", "FrontendName" : "MapReduce test", "Start" : 1 } ] }'
+manifest='{ "Application" : "MapReduce", "Services" : [ { "Type" : "hadoop", "ServiceName" : "MapReduce test", "Start" : 1 } ] }'
 
 # Create and start service
 echo "Hadoop functional test started" | ts

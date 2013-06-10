@@ -1,6 +1,6 @@
 #!/bin/sh
 
-manifest='{ "Application" : "Scalaris", "Services" : [ { "Type" : "scalaris", "FrontendName" : "Scalaris test", "Start" : 1 } ] }'
+manifest='{ "Application" : "Scalaris", "Services" : [ { "Type" : "scalaris", "ServiceName" : "Scalaris test", "Start" : 1 } ] }'
 
 # Create and start service
 echo "Scalaris functional test started" | ts

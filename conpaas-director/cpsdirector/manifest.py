@@ -87,7 +87,7 @@ def download_manifest(appid):
     for service in Service.query.filter_by(application_id=appid):
         tmp = {}
         tmp['Type'] = service.type
-        tmp['FrontendName'] = service.name
+        tmp['ServiceName'] = service.name
         tmp['Cloud'] = service.cloud
         manifest['Services'].append(tmp)
 
@@ -183,8 +183,8 @@ class MPhp(MGeneral):
 
         self.wait_for_state(sid, 'INIT')
 
-        if json.get('FrontendName'):
-            res = service_rename(sid, json.get('FrontendName'))
+        if json.get('ServiceName'):
+            res = service_rename(sid, json.get('ServiceName'))
             error = self.check_error(res)
             if error:
                 return error
@@ -267,8 +267,8 @@ class MJava(MGeneral):
 
         self.wait_for_state(sid, 'INIT')
 
-        if json.get('FrontendName'):
-            res = service_rename(sid, json.get('FrontendName'))
+        if json.get('ServiceName'):
+            res = service_rename(sid, json.get('ServiceName'))
             error = self.check_error(res)
             if error:
                 return error
@@ -350,8 +350,8 @@ class MMySql(MGeneral):
 
         self.wait_for_state(sid, 'INIT')
 
-        if json.get('FrontendName'):
-            res = service_rename(sid, json.get('FrontendName'))
+        if json.get('ServiceName'):
+            res = service_rename(sid, json.get('ServiceName'))
             error = self.check_error(res)
             if error:
                 return error
@@ -412,8 +412,8 @@ class MScalaris(MGeneral):
 
         self.wait_for_state(sid, 'INIT')
 
-        if json.get('FrontendName'):
-            res = service_rename(sid, json.get('FrontendName'))
+        if json.get('ServiceName'):
+            res = service_rename(sid, json.get('ServiceName'))
             error = self.check_error(res)
             if error:
                 return error
@@ -464,8 +464,8 @@ class MHadoop(MGeneral):
 
         self.wait_for_state(sid, 'INIT')
 
-        if json.get('FrontendName'):
-            res = service_rename(sid, json.get('FrontendName'))
+        if json.get('ServiceName'):
+            res = service_rename(sid, json.get('ServiceName'))
             error = self.check_error(res)
             if error:
                 return error
@@ -516,8 +516,8 @@ class MSelenium(MGeneral):
 
         self.wait_for_state(sid, 'INIT')
 
-        if json.get('FrontendName'):
-            res = service_rename(sid, json.get('FrontendName'))
+        if json.get('ServiceName'):
+            res = service_rename(sid, json.get('ServiceName'))
             error = self.check_error(res)
             if error:
                 return error
@@ -578,8 +578,8 @@ class MXTreemFS(MGeneral):
 
         self.wait_for_state(sid, 'INIT')
 
-        if json.get('FrontendName'):
-            res = service_rename(sid, json.get('FrontendName'))
+        if json.get('ServiceName'):
+            res = service_rename(sid, json.get('ServiceName'))
             error = self.check_error(res)
             if error:
                 return error
@@ -642,8 +642,8 @@ class MTaskFarm(MGeneral):
 
         self.wait_for_state(sid, 'INIT')
 
-        if json.get('FrontendName'):
-            res = service_rename(sid, json.get('FrontendName'))
+        if json.get('ServiceName'):
+            res = service_rename(sid, json.get('ServiceName'))
             error = self.check_error(res)
             if error:
                 return error

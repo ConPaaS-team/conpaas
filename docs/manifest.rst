@@ -34,7 +34,7 @@ following is the simplest manifest file::
 
     "Services" : [
      {
-      "FrontendName" : "PHP sudoku backend",
+      "ServiceName" : "PHP sudoku backend",
       "Type" : "php",
       "Start" : 0,
       "Archive" : "http://www.conpaas.eu/wp-content/uploads/2011/09/sudoku.tar.gz"
@@ -73,7 +73,7 @@ exactly the same MediaWiki application shown in the video::
 
     "Services" : [
      {
-      "FrontendName" : "Wiki-Webserver",
+      "ServiceName" : "Wiki-Webserver",
       "Type" : "java",
       "Archive" : "http://mywebsite.com/scalaris-wiki.war",
       "StartupInstances" : {
@@ -84,7 +84,7 @@ exactly the same MediaWiki application shown in the video::
       "Start" : 1
      },
      {
-      "FrontendName" : "Wiki-Database",
+      "ServiceName" : "Wiki-Database",
       "Type" : "scalaris",
       "Archive" : "http://mywebsite.com/wikipediadump",
       "Start" : 1
@@ -140,7 +140,7 @@ The following fields are optional and are available in all the services.
 
 -  *Start*: Specify if the service should be started or not (0 or 1)
 
--  *FrontendName*: Specify the name of the service displayed in the
+-  *ServiceName*: Specify the name of the service displayed in the
    frontend
 
 -  *StartupScript*: Specify an URL of a script that will be executed at
@@ -229,7 +229,7 @@ available::
 
    "Services" : [
     {
-     "FrontendName" : "Meaningful PHP service name",
+     "ServiceName" : "Meaningful PHP service name",
      "Type" : "php",
      "Cloud" : "default",
      "Start" : 0,
@@ -241,7 +241,7 @@ available::
      }
     },
     {
-     "FrontendName" : "Meaningful Java service name",
+     "ServiceName" : "Meaningful Java service name",
      "Type" : "java",
      "Cloud" : "default",
      "Start" : 0,
@@ -253,7 +253,7 @@ available::
      }
     },
     {
-     "FrontendName" : "Meaningful MySQL service name",
+     "ServiceName" : "Meaningful MySQL service name",
      "Type" : "mysql",
      "Cloud" : "default",
      "Start" : 0,
@@ -263,7 +263,7 @@ available::
      }
     },
     {
-     "FrontendName" : "Meaningful Scalaris service name",
+     "ServiceName" : "Meaningful Scalaris service name",
      "Type" : "scalaris",
      "Cloud" : "default",
      "Start" : 0,
@@ -272,7 +272,7 @@ available::
      }
     },
     {
-     "FrontendName" : "Meaningful Hadoop service name",
+     "ServiceName" : "Meaningful Hadoop service name",
      "Type" : "hadoop",
      "Cloud" : "default",
      "Start" : 0,
@@ -281,7 +281,7 @@ available::
      }
     },
     {
-     "FrontendName" : "Meaningful Selenium service name",
+     "ServiceName" : "Meaningful Selenium service name",
      "Type" : "selenium",
      "Cloud" : "default",
      "Start" : 0,
@@ -290,7 +290,7 @@ available::
      }
     },
     {
-     "FrontendName" : "Meaningful XtreemFS service name",
+     "ServiceName" : "Meaningful XtreemFS service name",
      "Type" : "xtreemfs",
      "Cloud" : "default",
      "Start" : 0,
