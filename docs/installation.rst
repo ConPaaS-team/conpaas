@@ -143,6 +143,17 @@ as follows::
     $ sudo apt-get install sqlite3
     $ sudo sqlite3 /etc/cpsdirector/director.db
 
+Multi-cloud support
+-------------------
+ConPaaS services can be created and scaled on multiple heterogeneous clouds.
+
+In order to configure **cpsdirector** to use multiple clouds, you need to set
+the :envvar:`OTHER_CLOUDS` variable in the **[iaas]** section of
+:file:`/etc/cpsdirector/director.cfg`. For each cloud name defined in
+:envvar:`OTHER_CLOUDS` you need to create a new configuration section named
+after the cloud itself. Please refer to
+:file:`/etc/cpsdirector/director.cfg.multicloud-example` for an example.
+
 Troubleshooting
 ---------------
 There are a few things you can check if for some reason your Director
