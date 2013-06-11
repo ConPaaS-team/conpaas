@@ -1,0 +1,62 @@
+[conpaas]
+CONF_DIR = /etc/cpsdirector
+CERT_DIR = /etc/cpsdirector/certs
+
+
+[iaas]
+# Our default cloud
+DRIVER = opennebula
+IMAGE_ID = 42
+INST_TYPE = small
+USER = oneadmin
+PASSWORD = password
+URL = http://occi-server.example.org:4567
+NET_ID = 1
+NET_GATEWAY = gateway.example.org
+NET_NAMESERVER = 8.8.8.8
+NET_NETMASK = 255.255.255.0
+OS_ARCH = x86_64
+OS_ROOT = hda
+DISK_TARGET = hda
+CONTEXT_TARGET = hdc
+
+# Here we specify the names of our additional clouds
+OTHER_CLOUDS = ec2virginia, amsterdam
+
+# We need one section for each cloud name listed in OTHER_CLOUDS
+
+[ec2virginia]
+# We want to use EC2 Virginia as one of our additional clouds
+
+DRIVER = ec2
+USER = EC2USERNAME
+PASSWORD = EC2PASSWORD
+SECURITY_GROUP_NAME = my_securitygroup
+KEY_NAME = my_keyname
+REGION = ec2.us-east-1.amazonaws.com
+IMAGE_ID = ami-bb780cd2
+SIZE_ID = t1.micro
+
+[amsterdam]
+# We also have a data center in Amsterdam with a running OpenNebula installation 
+
+DRIVER = opennebula
+IMAGE_ID = 2
+INST_TYPE = small
+USER = oneadmin
+PASSWORD = password
+URL = http://occi-server-amsterdam.example.org:4567
+NET_ID = 1
+NET_GATEWAY = gateway-amsterdam.example.org
+NET_NAMESERVER = 8.8.8.8
+NET_NETMASK = 255.255.255.0
+OS_ARCH = x86_64
+OS_ROOT = hda
+DISK_TARGET = hda
+CONTEXT_TARGET = hdc
+
+
+[director]
+DEBUG = true
+DATABASE_URI = sqlite:////etc/cpsdirector/director.db
+DIRECTOR_URL = https://director.example.org:5555

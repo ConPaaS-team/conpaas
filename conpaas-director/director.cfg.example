@@ -18,13 +18,13 @@ CERT_DIR = /etc/cpsdirector/certs
 # Amazon EC2 #
 ##############
 
-# Uncomment the following directive only if you want to set ConPaaS on multiple
-# clouds, this will require you to start managers on the appropriate cloud thus
-# making you choose it in the front-end.
+# Multicloud support: uncomment the OTHER_CLOUDS directive if you want to be
+# able to use ConPaaS on more than one cloud. Choose a name for each of the
+# additional clouds you want to use and create a corresponding configuration
+# section. Please refer to /etc/cpsdirector/director.cfg.multicloud for an
+# example.
 
-# By uncommenting the following line you can add python sections with the names
-# defined in the directive:
-# CLOUDS = testcloud1,testcloud2
+# OTHER_CLOUDS = cloud1,cloud2
 
 # Uncomment the following directives and set them to the appropriate values if
 # you want to use ConPaaS on Amazon EC2. If you want to use OpenNebula, skip
