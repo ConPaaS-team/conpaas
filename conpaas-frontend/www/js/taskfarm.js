@@ -99,9 +99,11 @@ conpaas.ui = (function (this_module) {
             that = this;
         data.addColumn('number', 'Execution Time');
         data.addColumn('number', 'Cost');
+        // Add column for custom tooltip content
+        data.addColumn({type: 'string', role: 'tooltip', 'p': {'html': true}});
 	counter = 0;
         schedules.forEach(function (schedule) {
-            data.addRow([schedule.time, schedule.cost]);
+            data.addRow([schedule.time, schedule.cost, 'Time: '+schedule.time+' minutes\nCost: '+schedule.cost+' $']);
 	    counter++;
         });
         options = {
