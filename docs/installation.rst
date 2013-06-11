@@ -462,24 +462,40 @@ Make sure OpenNebula is properly configured
 OpenNebula’s OCCI daemon is used by ConPaaS to communicate with your
 OpenNebula cluster.
 
-#. Ensure your occi-server.conf contains the following lines in
-   instance\_types:
+#. Ensure the OCCI server configuration file ``/etc/one/occi-server.conf``
+   contains the following lines in section instance\_types:
 
    ::
 
        :custom:
          :template: custom.erb
 
-#. At the end of the OCCI profile file ``occi_templates/common.erb``
-   from your OpenNebula installation, add the content of the file
-   ``misc/common.erb`` from the ConPaaS distribution. This new version
-   features a number of improvements from the standard version:
+#. At the end of the OCCI profile file ``/etc/one/occi_templates/common.erb``
+   from your OpenNebula installation, append the following lines:
+   
+   ::
+   
+       <% @vm_info.each('OS') do |os| %>
+            <% if os.attr('TYPE', 'arch') %>
+              OS = [ arch = "<%= os.attr('TYPE', 'arch').split('/').last %>" ]
+            <% end %>
+       <% end %>
+       GRAPHICS = [type="vnc",listen="0.0.0.0",port="-1"]
+
+
+   These new lines adds a number of improvements from the standard version:
 
    -  The match for ``OS TYPE:arch`` allows the caller to specify the
       architecture of the machine.
 
-   -  The graphics line allows for using vnc to connect to the VM. This
+   -  The last line allows for using VNC to connect to the VM. This
       is very useful for debugging purposes and is not necessary once
       testing is complete.
 
-#. Make sure you started OpenNebula’s OCCI daemon
+#. Make sure you started OpenNebula’s OCCI daemon:
+
+   ::
+
+       sudo occi-server start
+
+ 
