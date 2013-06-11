@@ -121,7 +121,7 @@ class Controller(object):
                 config_parser)
             self.__available_clouds.append(self.__default_cloud)
 
-        if config_parser.has_option('iaas', 'CLOUDS'):
+        if config_parser.has_option('iaas', 'OTHER_CLOUDS'):
             self.__available_clouds.extend(iaas.get_clouds(config_parser))
             # if there is no default cloud defined in 'iaas'
             if self.__default_cloud is None:

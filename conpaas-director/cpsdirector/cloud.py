@@ -69,10 +69,10 @@ class ManagerController(Controller):
 
         # Get cloud config values from director.cfg
         cloud_sections = ['iaas']
-        if self.config_parser.has_option('iaas', 'CLOUDS'):
+        if self.config_parser.has_option('iaas', 'OTHER_CLOUDS'):
             cloud_sections.extend(
                 [cloud_name for cloud_name
-                 in self.config_parser.get('iaas', 'CLOUDS').split(',')
+                 in self.config_parser.get('iaas', 'OTHER_CLOUDS').split(',')
                  if self.config_parser.has_section(cloud_name)])
 
         def __extract_cloud_cfg(section_name):
@@ -259,8 +259,8 @@ def start(service_name, service_id, user_id, cloud_name, app_id, vpn):
 def available_clouds():
     """GET /available_clouds"""
     clouds = ['default']
-    if config_parser.has_option('iaas','CLOUDS'):
+    if config_parser.has_option('iaas','OTHER_CLOUDS'):
         clouds.extend([cloud_name for cloud_name
-            in config_parser.get('iaas', 'CLOUDS').split(',')
+            in config_parser.get('iaas', 'OTHER_CLOUDS').split(',')
             if config_parser.has_section(cloud_name)])
     return simplejson.dumps(clouds)
