@@ -169,6 +169,9 @@ class TaskFarmPage extends ServicePage {
                                         . '</div>'
                                         . '<div class="demousercredit" id="demo_user_credit">'
                                         . ($this->user_credit - $result['moneySpent'])
+                                        . '</div>'
+                                        . '<div class="demousercreditexplanation" id="demo_user_credit_explanation">'
+                                        . '(demo credits)'
                                         . '</div>';
                                 
                         }
