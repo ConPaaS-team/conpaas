@@ -37,7 +37,7 @@
 
 manifest = [];
 
-manifest['owncloud'] = '{ "Application" : "Owncloud", "Services" : [ { "Type" : "php", "ServiceName" : "Php backend", "Archive" : "http://download.owncloud.org/community/owncloud-5.0.6.tar.bz2" }, { "Type" : "mysql", "ServiceName" : "Mysql backend" } ] }';
+manifest['owncloud'] = '{ "Application" : "New OwnCloud application", "Services" : [ { "Type" : "xtreemfs", "ServiceName" : "XtreemFS service", "Start" : 1, "VolumeStartup" : { "volumeName" : "data", "owner" : "www-data" } }, { "Type" : "mysql", "ServiceName" : "MySql service", "Start" : 1, "Dump" : "https://online.conpaas.eu/owncloud/owncloud.sql", "Password" : "contrail123" }, { "Type" : "php", "ServiceName" : "PHP service", "Start" : 1, "Archive" : "https://online.conpaas.eu/owncloud/owncloud.tar.bz2", "StartupScript" : "https://online.conpaas.eu/owncloud/owncloud-startup.sh" } ]  }';
 manifest['wordpress'] = '{ "Application" : "Wordpress", "Services" : [ { "Type" : "php", "ServiceName" : "Php backend", "Archive" : "http://wordpress.org/wordpress-3.5.1.tar.gz" }, { "Type" : "mysql", "ServiceName" : "Mysql backend" } ] }';
 
 $(document).ready(function() {

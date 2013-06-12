@@ -129,9 +129,42 @@ class MGeneral():
             except (socket.error, urllib2.URLError):
                 time.sleep(2)
 
-    def upload_startup_script(self, service_id, url):
-        contents = urllib2.urlopen(url).read()
-        filename = url.split('/')[-1]
+    def update_environment(self, appid):
+        env = ''
+
+        # Find mysql ip address
+        try:
+            sid = Service.query.filter_by(application_id=appid, type='mysql').first().sid
+            nodes = callmanager(sid, "list_nodes", False, {})
+
+            params = { 'serviceNodeId': nodes['masters'][0] }
+            details = callmanager(sid, "get_node_info", False, params)
+            env = env + 'echo "env[MYSQL_IP]=\'%s\'" >> /root/ConPaaS/src/conpaas/services/webservers/etc/fpm.tmpl\n' % details['serviceNode']['ip']
+            env = env + 'export MYSQL_IP=\'%s\'\n' % details['serviceNode']['ip']
+        except:
+            env = env + ''
+
+        # Find xtreemfs ip address
+        try:
+            sid = Service.query.filter_by(application_id=appid, type='xtreemfs').first().sid
+            nodes = callmanager(sid, "list_nodes", False, {})
+
+            params = { 'serviceNodeId': nodes['dir'][0] }
+            details = callmanager(sid, "get_node_info", False, params)
+            env = env + 'echo "env[XTREEMFS_IP]=\'%s\'" >> /root/ConPaaS/src/conpaas/services/webservers/etc/fpm.tmpl\n' % details['serviceNode']['ip']
+            env = env + 'export XTREEMFS_IP=\'%s\'\n' % details['serviceNode']['ip']
+        except:
+            env = env + ''
+
+        return env
+
+    def upload_startup_script(self, service_id, url, environment=''):
+        contents = environment
+        filename = 'env.sh'
+
+        if url != '':
+            contents = environment + urllib2.urlopen(url).read()
+            filename = url.split('/')[-1]
 
         files = [ ( 'script', filename, contents ) ]
 
@@ -198,10 +231,15 @@ class MPhp(MGeneral):
             if 'error' in res:
                 return res['error']
 
+        env = self.update_environment(appid)
+        url = ''
+
         if json.get('StartupScript'):
-            res = self.upload_startup_script(sid, json.get('StartupScript'))
-            if 'error' in res:
-                return res['error']
+            url = json.get('StartupScript')
+
+        res = self.upload_startup_script(sid, url, env)
+        if 'error' in res:
+            return res['error']
 
         if not json.get('Start') or json.get('Start') == 0:
             return 'ok'
@@ -371,13 +409,13 @@ class MMySql(MGeneral):
 
         self.wait_for_state(sid, 'RUNNING')
 
-        if json.get('Dump'):
-            res = self.load_dump(sid, json.get('Dump'))
+        if json.get('Password'):
+            res = self.set_password(sid, json.get('Password'))
             if 'error' in res:
                 return res['error']
 
-        if json.get('Password'):
-            res = self.set_password(sid, json.get('Password'))
+        if json.get('Dump'):
+            res = self.load_dump(sid, json.get('Dump'))
             if 'error' in res:
                 return res['error']
 
@@ -604,7 +642,7 @@ class MXTreemFS(MGeneral):
             owner = json.get('VolumeStartup').get('owner')
 
             # Wait few seconds so that the new node is up.
-            time.sleep(10)
+            time.sleep(20)
 
             if name != "" and owner != "":
                 res = self.createvolume(sid, name, owner)
