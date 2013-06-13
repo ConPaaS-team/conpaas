@@ -21,8 +21,8 @@ CERT_DIR = /etc/cpsdirector/certs
 # Multicloud support: uncomment the OTHER_CLOUDS directive if you want to be
 # able to use ConPaaS on more than one cloud. Choose a name for each of the
 # additional clouds you want to use and create a corresponding configuration
-# section. Please refer to /etc/cpsdirector/director.cfg.multicloud for an
-# example.
+# section. Please refer to /etc/cpsdirector/director.cfg.multicloud-example for
+# more details.
 
 # OTHER_CLOUDS = cloud1,cloud2
 
