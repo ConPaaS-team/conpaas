@@ -387,6 +387,16 @@ class BaseClient(object):
         else:
             print "failed."
 
+    def renameapp(self, appid, name):
+        print "Renaming application... "
+        sys.stdout.flush()
+
+        res = self.callapi("renameapp/%s" % appid, True, { 'name' : name })
+        if res:
+            print "done."
+        else:
+            print "failed."
+
     def manifest(self, manifestfile):
         print "Uploading the manifest... "
         sys.stdout.flush()
@@ -446,6 +456,7 @@ class BaseClient(object):
         print "    list              [appid]             # list running services under an application"
         print "    deleteapp         appid               # delete an application"
         print "    createapp         appname             # create a new application"
+        print "    renameapp         appid newname       # rename an application"
         print "    manifest          filename            # upload a new manifest"
         print "    download_manifest appid               # download an existing manifest"
         print "    create            servicetype [appid] # create a new service [inside a specific application]"
@@ -473,7 +484,7 @@ class BaseClient(object):
         if command in ( "listapp", "createapp", "manifest",
                         "download_manifest", "list", "credentials", 
                         "available", "clouds", "create",
-                        "deleteapp", "getcerts" ):
+                        "deleteapp", "renameapp", "getcerts" ):
 
             if command == "create":
                 try:
@@ -519,6 +530,11 @@ class BaseClient(object):
             if command == "deleteapp":
                 appid = argv[2]
                 return getattr(self, command)(appid)
+
+            if command == "renameapp":
+                appid = argv[2]
+                name  = argv[3]
+                return getattr(self, command)(appid, name)
 
             if command == "manifest":
                 try:

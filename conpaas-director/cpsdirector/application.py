@@ -165,6 +165,31 @@ def delete(appid):
 
     return build_response(simplejson.dumps(True))
 
+def _renameapp(appid, newname):
+    log('User %s attempting to rename application %s' % (g.user.uid, appid))
+
+    app = get_app_by_id(g.user.uid, appid)
+    if not app:
+        return make_response(simplejson.dumps(False))
+
+    if not newname:
+        log('"name" is a required argument')
+        return build_response(simplejson.dumps(False))
+
+    app.name = newname
+    db.session.commit()
+    return simplejson.dumps(True)
+
+@application_page.route("/renameapp/<int:appid>", methods=['POST'])
+@cert_required(role='user')
+def renameapp(appid):
+    newname = request.values.get('name')
+    if not newname:
+        log('"name" is a required argument')
+        return build_response(simplejson.dumps(False))
+
+    return _renameapp(appid, newname)
+
 @application_page.route("/listapp", methods=['POST', 'GET'])
 @cert_required(role='user')
 def list_applications():

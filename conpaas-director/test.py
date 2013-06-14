@@ -134,6 +134,10 @@ class DirectorTest(Common):
         response = self.app.post('/delete/1', data={ 'uid': 1 })
         self.assertEquals(200, response.status_code)
 
+    def test_200_on_renameapp(self):
+        response = self.app.post('/renameapp/1', data={ 'uid': 1, 'name': 'test' })
+        self.assertEquals(200, response.status_code)
+
     def test_200_on_listapp(self):
         response = self.app.post('/listapp', data={ 'uid': 1 })
         self.assertEquals(200, response.status_code)
@@ -522,6 +526,27 @@ class DirectorTest(Common):
         self.assertEquals(200, response.status_code)
 
         self.assertEquals(True, simplejson.loads(response.data))
+
+    def test_rename_application(self):
+        self.create_user()
+
+        data = {
+            'uid': 1,
+            'name': 'New test name'
+        }
+
+        response = self.app.post('/renameapp/1', data=data)
+        self.assertEquals(200, response.status_code)
+
+        data = {
+            'uid': 1
+        }
+
+        response = self.app.post('/listapp', data=data)
+        self.assertEquals(200, response.status_code)
+
+        app = simplejson.loads(response.data)
+        self.assertEquals('New test name', app[0]['name'])
 
     def test_delete_application_not_exists(self):
         self.create_user()
