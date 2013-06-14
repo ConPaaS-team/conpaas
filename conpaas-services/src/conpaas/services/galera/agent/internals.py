@@ -263,7 +263,6 @@ class GaleraAgent(BaseAgent):
     def setup_slave(self, kwargs):
         """Create a replication Slave"""
         self.logger.debug('slave in setup_slave ') 
-        ret = {}
         if 'master_host' not in kwargs:
             raise AgentException(AgentException.E_ARGS_MISSING, 'master_host')
         params = {"master_host" : kwargs["master_host"], "config":self.config_parser}
