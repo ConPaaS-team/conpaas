@@ -576,18 +576,6 @@ class DirectorTest(Common):
         self.assertEquals(200, response.status_code)
         self.assertEquals(False, simplejson.loads(response.data))
 
-    def test_wrong_manifest_json(self):
-        self.create_user()
-
-        data = {
-            'uid': 1,
-            'manifest': '{ "Services : [ { "FronendName" : "Test" } ] }'
-        }
-
-        response = self.app.post('/upload_manifest', data=data)
-        self.assertEquals(200, response.status_code)
-        self.assertEquals(False, simplejson.loads(response.data))
-
     def test_fake_manifest_service(self):
         self.create_user()
 
