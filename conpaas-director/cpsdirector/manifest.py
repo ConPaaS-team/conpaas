@@ -725,14 +725,18 @@ def new_manifest(json):
     except:
         return 'Error parsing json'
 
+    # 'Application' has to be defined
     app_name = parse.get('Application')
-    appid = get_default_app(g.user.uid).aid
-    if app_name:
-        if not check_app_exists(app_name):
-            res = createapp(app_name)
-            appid = simplejson.loads(res.data).get('aid')
-        else:
-            appid = get_app_by_name(g.user.uid, app_name).aid
+    if not app_name:
+        return 'Application is not defined'
+
+    if not check_app_exists(app_name):
+        # Create application if it does not exist yet
+        res = createapp(app_name)
+        appid = simplejson.loads(res.data).get('aid')
+    else:
+        # Get application by name if it exists
+        appid = get_app_by_name(g.user.uid, app_name).aid
 
     if not parse.get('Services'):
         return 'ok'

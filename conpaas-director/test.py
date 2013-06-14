@@ -588,7 +588,7 @@ class DirectorTest(Common):
         self.assertEquals(200, response.status_code)
         self.assertEquals(True, simplejson.loads(response.data)['error'])
 
-    def test_correct_empty_manifest(self):
+    def test_refuse_empty_manifest(self):
         self.create_user()
 
         data = {
@@ -598,7 +598,9 @@ class DirectorTest(Common):
 
         response = self.app.post('/upload_manifest', data=data)
         self.assertEquals(200, response.status_code)
-        self.assertEquals(True, simplejson.loads(response.data))
+        ret = simplejson.loads(response.data)
+        self.assertEquals('Application is not defined', ret['msg'])
+        self.failUnless(ret['error'])
 
     def test_correct_empty_manifest_thread(self):
         self.create_user()
