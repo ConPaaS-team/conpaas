@@ -80,6 +80,7 @@ from httplib import HTTPConnection
 from conpaas.core.misc import file_get_contents
 
 import json
+import httplib
 
 from . import x509
 
@@ -450,6 +451,19 @@ def jsonrpc_post(host, port, uri, method, params={}):
     body = r.read()
     h.close()
     return r.status, body
+
+def check_response(response):
+    """Check the given HTTP response, returning the result if everything went
+    fine"""
+    code, body = response
+    if code != httplib.OK: 
+        raise Exception('Received http response code %d' % (code))
+
+    data = json.loads(body)
+    if data['error']: 
+        raise Exception(data['error'])
+    
+    return data['result']
 
 if __name__ == "__main__":
     conpaas_init_ssl_ctx('/etc/conpaas-security/certs', 'manager')
