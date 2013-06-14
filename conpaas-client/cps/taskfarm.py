@@ -77,11 +77,31 @@ class Client(BaseClient):
         else:
             print "failed."
 
+    def get_mode (self, service_id):
+        res = self.callmanager(service_id, "get_service_info", False, {})
+        return res['mode'];
+
+    def set_mode (self, service_id, new_mode):
+        """
+                new mode = DEMO or REAL
+        """
+        new_mode = new_mode.upper()
+        if not (new_mode in ( "DEMO", "REAL" )):
+            return { 'result' : { 'error' : 'ERROR: invalid mode %s: use DEMO or REAL' % new_mode }}
+        old_mode = self.get_mode(service_id)
+        if old_mode != 'NA':
+            return { 'result' : { 'error' : 'ERROR: mode is already set to %s' % old_mode }}
+        res = self.callmanager(service_id, "set_service_mode", True, [new_mode])
+        return { 'result': res }
+
     def upload_bag_of_tasks(self, service_id, filename, xtreemfs_location):
         """eg: upload_bag_of_tasks(service_id=1, 
                                    filename="/var/lib/outsideTester/contrail3/test.bot", 
                                    xtreemfs_location="192.168.122.1/uc3")
         """
+        mode = self.get_mode(service_id)
+        if mode == 'NA':
+            return { 'result' : { 'error' : 'ERROR: to upload bag of task, first specify run mode DEMO or REAL\n\tcpsclient.py serviceid set_mode [ DEMO | REAL ]' }}
         service = self.service_dict(service_id)
         params = { 'uriLocation': xtreemfs_location, 'method': 'start_sampling' }
         filecontents = open(filename).read()
@@ -112,10 +132,34 @@ class Client(BaseClient):
 
     def usage(self, cmdname):
         BaseClient.usage(self, cmdname)
-        print "    upload_bot serviceid filename xtreemfs_loc"
+        print "    set_mode   serviceid [ DEMO | REAL ]         # select run mode"
+        print "    upload_bot serviceid filename xtreemfs_loc   # upload bag of tasks and set file location "
 
     def main(self, argv):
         command = argv[1]
+
+        if command == "set_mode":
+            try:
+                sid = int(argv[2])
+            except (IndexError, ValueError):
+                self.usage(argv[0])
+                sys.exit(0)
+
+            self.check_service_id(sid)
+
+            try:
+                mode = argv[3]
+            except IndexError:
+                self.usage(argv[0])
+                sys.exit(0)
+
+            res = self.set_mode(sid, mode)
+            if 'error' in res['result']:
+                print res['result']['error']
+            elif 'message' in res['result']:
+                print res['result']['message']
+            else:
+                print res
 
         if command == "upload_bot":
             try:
