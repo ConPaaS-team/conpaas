@@ -14,6 +14,8 @@ echo "Scalaris service running" | ts
 
 management_url=`cpsclient.py info $scalaris_sid | awk '/^management server url/ { print $4 }'`
 
+sleep 5
+
 lynx -dump $management_url | grep 'Scalaris Management Server Info Page' > /dev/null
 
 (if [ "$?" -eq 0 ]; then echo "Test passed!"; else echo "Test failed!"; fi) | ts
