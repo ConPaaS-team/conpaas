@@ -39,7 +39,7 @@ manifest = [];
 
 manifest['owncloud'] = '{ "Application" : "New OwnCloud application", "Services" : [ { "Type" : "xtreemfs", "ServiceName" : "XtreemFS service", "Start" : 1, "VolumeStartup" : { "volumeName" : "data", "owner" : "www-data" } }, { "Type" : "mysql", "ServiceName" : "MySql service", "Start" : 1, "Dump" : "https://online.conpaas.eu/owncloud/owncloud.sql", "Password" : "contrail123" }, { "Type" : "php", "ServiceName" : "PHP service", "Start" : 1, "Archive" : "https://online.conpaas.eu/owncloud/owncloud.tar.bz2", "StartupScript" : "https://online.conpaas.eu/owncloud/owncloud-startup.sh" } ]  }';
 
-manifest['wordpress'] = '{ "Application" : "New Wordpress application", "Services" : [ { "Type" : "mysql", "ServiceName" : "MySql service", "Start" : 1, "Dump" : "https://online.conpaas.eu/wordpress/wordpress.sql", "Password" : "contrail123" }, { "Type" : "php", "ServiceName" : "PHP service", "Start" : 1, "Archive" : "https://online.conpaas.eu/wordpress/wordpress.tar.gz", "StartupScript" : "https://online.conpaas.eu/wordpress/wordpress.sh" } ]  }';
+manifest['wordpress'] = '{ "Application" : "New Wordpress application", "Services" : [ { "Type" : "xtreemfs", "ServiceName" : "XtreemFS service", "Start" : 1, "VolumeStartup" : { "volumeName" : "data", "owner" : "www-data" } }, { "Type" : "mysql", "ServiceName" : "MySql service", "Start" : 1, "Dump" : "https://online.conpaas.eu/wordpress/wordpress.sql", "Password" : "contrail123" }, { "Type" : "php", "ServiceName" : "PHP service", "Start" : 1, "Archive" : "https://online.conpaas.eu/wordpress/wordpress.tar.gz", "StartupScript" : "https://online.conpaas.eu/wordpress/wordpress.sh" } ]  }';
 
 $(document).ready(function() {
 	$('#fileForm').ajaxForm({
