@@ -80,11 +80,13 @@ $page = new Page();
          </table>
 
          <table class="form" cellspacing="0" cellpading="0">
+           <!--
            <tr class="service">
              <td class="description"> <img src="images/owncloud.png" height="32" /></td>
              <td class="radio" width="150px"><input type="radio" name="type" value="owncloud" /> OwnCloud</td>
              <td class="info" width="480px"> OwnCloud version 5.0 deployment </td>
            </tr>
+            -->
            <tr class="service">
              <td class="description"> <img src="images/wordpress.png" height="32" /></td>
              <td class="radio" width="150px"><input type="radio" name="type" value="wordpress" /> WordPress</td>
