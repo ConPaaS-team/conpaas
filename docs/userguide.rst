@@ -129,7 +129,7 @@ follows:
 
 ::
 
-    $ sudo easy_install http://www.conpaas.eu/dl/cpsclient-1.1.0.tar.gz
+    $ sudo easy_install http://www.conpaas.eu/dl/cpsclient-1.2.0.tar.gz
 
 ``cpsclient`` can also be installed in a Python virtual environment if
 ``virtualenv`` is available on the machine you are using. This method of
@@ -141,7 +141,7 @@ privileges.
     $ virtualenv conpaas # create the 'conpaas' virtualenv
     $ cd conpaas
     $ source bin/activate # activate it
-    $ easy_install http://www.conpaas.eu/dl/cpsclient-1.1.0.tar.gz
+    $ easy_install http://www.conpaas.eu/dl/cpsclient-1.2.0.tar.gz
 
 List all options of the command-line tool.
      

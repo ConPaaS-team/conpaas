@@ -58,7 +58,7 @@ should be enabled in :file:`/etc/apt/sources.list` and
 :file:`/etc/apt/sources.list.d/`. 
 
 **cpsdirector** is available here:
-http://www.conpaas.eu/dl/cpsdirector-1.1.0.tar.gz. The tarball includes an
+http://www.conpaas.eu/dl/cpsdirector-1.2.0.tar.gz. The tarball includes an
 installation script called :file:`install.sh` for your convenience. You can
 either run it as root or follow the installation procedure outlined below in
 order to setup your ConPaaS Director installation.
@@ -75,7 +75,7 @@ order to setup your ConPaaS Director installation.
    $ sudo apt-get install ntpdate
    $ sudo ntpdate 0.us.pool.ntp.org
 
-#. Download http://www.conpaas.eu/dl/cpsdirector-1.1.0.tar.gz and
+#. Download http://www.conpaas.eu/dl/cpsdirector-1.2.0.tar.gz and
    uncompress it
 
 #. Run :command:`make install` as root
@@ -216,7 +216,7 @@ Director and Frontend are installed on the same host, but such does not need to
 be the case.
 
 The ConPaaS Frontend can be downloaded from
-http://www.conpaas.eu/dl/cpsfrontend-1.1.0.tar.gz. 
+http://www.conpaas.eu/dl/cpsfrontend-1.2.0.tar.gz. 
 
 After having uncompressed it you should install the required Debian packages::
 

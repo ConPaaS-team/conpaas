@@ -32,7 +32,7 @@ Usage
 -----
 To use the director you need to install the ConPaaS command line clients.
 
-$ sudo easy_install http://www.conpaas.eu/dl/cpsclient-1.1.0.tar.gz
+$ sudo easy_install http://www.conpaas.eu/dl/cpsclient-1.2.0.tar.gz
 
 That command should bring in all the required dependencies. The client
 can then be used by regular users. Usage output can be displayed by
@@ -45,4 +45,4 @@ To install the CLI clients as non-root users you need virtualenv:
 $ virtualenv test # create the virtualenv
 $ cd test
 $ source bin/activate # activate it
-$ easy_install http://www.conpaas.eu/dl/cpsclient-1.1.0.tar.gz
+$ easy_install http://www.conpaas.eu/dl/cpsclient-1.2.0.tar.gz

@@ -4,7 +4,6 @@ PYTHON=`which python`
 COVERAGE=`which python-coverage`
 DESTDIR=/
 PROJECT=cpsdirector
-VERSION=1.1.0
 
 all:
 	@echo "make source - Create source package"
