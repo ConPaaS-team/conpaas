@@ -215,7 +215,7 @@ class Page {
   						.'<a href="javascript: void(0);" id="logout">logout</a>'
   					.'</div>'
 		                        . '<div class="help" title="help">'
-		                            . '<a target=_blank href="help/index.html">help</a>'
+		                            . '<a target=_blank href="https://conpaas.readthedocs.org/">help</a>'
                                         . '</div>'
   					.'<div class="usercredit" id="user_credit_container" '
   							.' title="credits">'
