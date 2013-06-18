@@ -281,8 +281,8 @@ class BaseClient(object):
                 # If this yields True we can be reasonably sure that the
                 # provided URL is correct
                 assert type(available_services) is list 
-            except Exception:
-                print "E: No ConPaaS Director at the provider URL\n"
+            except Exception, e:
+                print "E: No ConPaaS Director at the provided URL: %s\n" % e
                 continue
 
             # Valid URL
