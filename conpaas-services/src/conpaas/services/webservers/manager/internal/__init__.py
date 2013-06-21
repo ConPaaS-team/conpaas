@@ -1,64 +1,8 @@
-'''
-Copyright (c) 2010-2012, Contrail consortium.
-All rights reserved.
+# -*- coding: utf-8 -*-
 
-Redistribution and use in source and binary forms, 
-with or without modification, are permitted provided
-that the following conditions are met:
-
- 1. Redistributions of source code must retain the
-    above copyright notice, this list of conditions
-    and the following disclaimer.
- 2. Redistributions in binary form must reproduce
-    the above copyright notice, this list of 
-    conditions and the following disclaimer in the
-    documentation and/or other materials provided
-    with the distribution.
- 3. Neither the name of the Contrail consortium nor the
-    names of its contributors may be used to endorse
-    or promote products derived from this software 
-    without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
-CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
-INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
-MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
-CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
-BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
-INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
-WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
-OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
-
-
-Created on Feb 8, 2011
-
-@author: ielhelw
-
-- What is a deployment?
-  A set of VMs logically grouped into 3 roles; web servers, php and load balancers.
-
-- What is the configuration?
-  web servers:    port, list of php (ip, port)
-  php:           port
-  load balancer:  port, list of web servers (ip, port)
-  CODE to be placed at doc_root of all webserver VMs. Any file ending with
-  '.php' is considered a dynamic script and will be passed to an php process.
-  CODE should be located at the same directory path at all web servers and
-  phps.
-
-- How is a deployment started?
-  A VM is created by the cloud front-end to host the MANAGER. The manager reads
-  the initial configuration (from cloud storage or service?) and starts
-  requesting VMs as needed by the configuration. Each VM will host an AGENT
-  that is responsible for starting processes in it. The MANAGER will assign
-  roles to each VM by instructing their AGENTs to run certain processes.
-  
-'''
+"""
+    :copyright: (C) 2010-2013 by Contrail Consortium.
+"""
 
 from threading import Thread
 import memcache, tempfile, os, os.path, time
