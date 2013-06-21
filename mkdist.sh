@@ -22,29 +22,40 @@ make clean
 cd ..
 
 # build conpaas archive and ship it with the director
+echo '###### build conpaas archive and ship it with the director'
 cd conpaas-services
-sh mkarchive.sh > /dev/null 2>&1
+sh mkarchive.sh > ../SERVICES.LOG 2>&1
 cd ..
+if [ `cat SERVICES.LOG | wc -l` -gt 3 ]
+then
+    cat SERVICES.LOG
+    exit 1
+fi
 mv conpaas-services/ConPaaS.tar.gz conpaas-director
 
 # build cpsclient and cpslib
+echo '###### build cpsclient and cpslib'
 for d in "conpaas-client" "conpaas-services/src"
 do
     cd $d 
     sed -i s/'^CPSVERSION =.*'/"CPSVERSION = \'$CPSVERSION\'"/ setup.py
-    python setup.py clean > /dev/null
-    python setup.py sdist > /dev/null 2>&1
-    python setup.py clean > /dev/null
-    cd - > /dev/null
-done
+    python setup.py clean
+    python setup.py sdist
+    python setup.py clean
+    cd -
+done > CLIENT+LIB.LOG 2>&1
+grep -i error CLIENT+LIB.LOG && exit 1
 
 # build cpsdirector
+echo '###### build cpsdirector'
 cd conpaas-director 
 sed -i s/'^CPSVERSION =.*'/"CPSVERSION = \'$CPSVERSION\'"/ setup.py
-make source > /dev/null
+make source > ../DIRECTOR.LOG 2>&1 || exit 1
 cd ..
+grep -i error DIRECTOR.LOG && exit 1
 
 # build cpsfrontend
+echo '###### build cpsfrontend'
 cp -a conpaas-frontend cpsfrontend-$CPSVERSION
 find cpsfrontend-$CPSVERSION -type d -name .svn | xargs rm -rf
 tar cfz cpsfrontend-$CPSVERSION.tar.gz cpsfrontend-$CPSVERSION
@@ -58,7 +69,8 @@ done
 # cleaning up
 find . -name \*.egg-info -type d |xargs rm -rf
 
-cd conpaas-director && make clean > /dev/null
+echo ======= cleaning up ======= >> DIRECTOR.LOG
+cd conpaas-director && make clean >> ../DIRECTOR.LOG
 cd ..
 
 echo "TARBALLS BUILT:"
