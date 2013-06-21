@@ -1,0 +1,105 @@
+
+%There is a wide literature on issues related to dynamic resource provisioning for cloud web applications. Different approaches present solutions based on queuing models~\cite{urgaonkar_agile_2008}, mathematical models~\cite{muppala_regression-based_2012} or even approaches using neural networks techniques~\cite{islam_empirical_2012}. However, most of these models require a deep understanding in mathematics or machine learning techniques which are not easily interpreted by non specialists. Besides the traffic in web applications is shaped by a combination of different factors such as diurnal/seasonal cycles that follows an irregular pattern, thus making extremely challenging the design and development of realistic and accurate provisioning mechanisms. 
+
+%These well-known drawbacks force to IaaS like Amazon EC2 and Windows Azure, or PaaS like RightScale and OpenShift,  to design simple trigger-based auto-scaling systems, instead of relying on approaches from academic research. Unfortunately, these scaling systems are imprecise and wasteful in terms of resource consumption and cost savings. % an easy target for flash crowds.
+
+%As a consequence, more relevant and realistic academic approaches have been proposed over the last years. \emph{Urgaonkar et al.}~\cite{urgaonkar_agile_2008} designed and implemented a predictive and reactive mechanism using a queuing model to decide the number of resources to be provisioned, and an admission control mechanism to face extreme workload variations. 
+%A differnent approach for handling the worload variations was proposed by \emph{Muppala et al.}~\cite{muppala_regression-based_2012}, where offline training techniques were utilized to gather information about the resource requirements of the incoming requests.
+
+%DejaVu~\cite{vasic_dejavu:_2012} and CBMG~\cite{roy_efficient_2011} also built similar mechanisms to classify the workload need by analyzing recent traffic spikes and the customer behavior, respectively. Even though these approaches present good results, they require additional resources to identify the workload requirements, and an exhaustive knowlegde of the deployed applications; thus preventing its integration in existing auto scaling systems. Simarly, regarding the resource heterogeneity of cloud infrastructures, online profiling-based techniques~\cite{kaviani_profiling-as--service:_2011} have recently emerged as a possible solution to the precise estimation of the resource throughput under certain workload. This technique replicates at runtime a server hosting an application, with a new server with profiling instrumentation. Despite the use of this technique is still under study, the configuration of a parallel environment and the limited accuracy of its scaling decisions are the major drawbacks for its adoption.
+
+%As we mentioned, offline and online profiling are promising techniques when handling unpredictable and temporal burstly workloads in web applications. 
+
+%As a proposal closely related to ours, \emph{Ghanbari et al.}~\cite{ghanbari_exploring_2011} designed an auto scaling system using control theoretic and rules-based models. The authors claimed for simpler provisioning mechanisms in comparison with the sophisticated academic approaches. However, factors such as resource heterogeneity were not addressed in this system.  
+
+
+%%%% INTRO %%%%
+
+Over the last few years, more and more cloud providers designed and integrated dynamic resource provisioning systems into their infrastructures.  Using these systems, cloud providers offered the possibility to dynamically provision or deprovision virtual resources to the deployed applications, thus adapting the performance capacity to the service demand. Hence nowadays, the majority of IaaS like Amazon EC2~\cite{amazonEC2} and Windows Azure~\cite{azure-project}, or PaaS like RightScale~\cite{right-scale} and OpenShift~\cite{openshift}, provide simple autoscaling systems based on lower or upper thresholds on resource utilization (specified by the user).  Crossing one of the thresholds triggers a pre-defined resource provisioning action such as adding or removing one machine. Unfortunately, these trigger-based systems are imprecise and wasteful in terms of SLO fulfillment and resource consumption, as pointed out in~\cite{ghanbari_exploring_2011}.
+
+% These systems are easily interpreted by non specialists. 
+
+%Obviously, these new and revolutionary mechanisms emerged in conjunction with a pricing model known as \emph{pay-as-you-go}, where customers pay only for the resources they actually use. This business model is particularly favorable for application domains where workloads vary widely over time, such as the domain of Web application hosting. 
+
+
+
+
+\begin{table*}\label{Ref_summary}
+  {\scriptsize 
+    \begin{tabular}{  | p{0.8cm} | p{3cm} | p{1.5cm} | p{3cm} | p{2.6cm} | p{1.4cm} | p{2.5cm} |}
+    \hline
+\textbf{Ref} & \textbf{Autoscaling technique}  & \textbf{Scaling \newline actions} & \textbf{Scaling criteria} & \multicolumn{2}{|c|}{\textbf{Measuring resource performance}}    & \textbf{Experimental platform} \\ 
+ &   &  &  & \textbf{Technique} & \textbf{Analysis}  &  \\ \hline
+\textit{\cite{urgaonkar_agile_2008}}   & Queuing theory and thresholds & Horizontal & Request rate and response time &  --  & -- & Custom testbed. \newline Real traces (FIFA'98) \\ \hline
+\textit{\cite{roy_efficient_2011}}   & Look-ahead and customer behavior analysis & Horizontal & Response time &  --  & -- & Custom testbed. \newline Real traces (FIFA'98)  \\ \hline
+\textit{\cite{ali-eldin_2012}}   & Closed loop with two controllers: reactive and one proactive  & Horizontal & Request rate and response time  & -- & -- & Simulation. \newline Real traces (FIFA'98)  \\ \hline
+\textit{\cite{bunch_2012}}   & Queuing theory, workload forecasting and thresholds  & Horizontal and vertical & Request rate and response time  & -- &  --  & Custom testbed and EC2. \newline No real traces. (Apache benchmark tool)\\ \hline
+\textit{\cite{roy_2011}}   & Queuing theory, forecasting and thresholds  & Horizontal &  Cpu usage and response time  & Offline profiling: cpu & Homogeneous &  Custom testbed. (RUBiS)  \\ \hline
+\textit{\cite{smartscale_2012}}   &  Workload forecasting and classifier & Horizontal and vertical &  Cpu usage, memory and response time & Offline profiling: cpu and memory under a fixed workload; & Homogeneous &  Custom  testbed. \newline No real traces (Olio).  \\ \hline
+\textit{\cite{sharma_cost-aware_2011}}   & Workload forecasting and thresholds  & Horizontal and vertical & Request rate and response time  & Offline profiling: max request rate under a gradually increasing synthetic workload & Heterogeneous &  EC2 and OpenNebula. \newline No real traces. (TPC-W) \\ \hline
+\textit{\cite{dejavu2012}}   & Queuing theory and workload classifier & Horizontal &  Request rate and response time  & Online profiling: cpu, memory and I/O rate under a fixed workload & Homogeneous &  Custom testbed. \newline Real traces. (HotMail'09)  \\ \hline
+\textit{ConPaaS}   & Closed loop, thresholds and workload forecasting & Horizontal and vertical &  Response time, request rate and cpu usage & Online profiling: Ideal cpu and request rate  under current workload & Heterogeneous &  EC2 and OpenNebula. \newline Real traces. (English Wikipedia'11)  \\ \hline
+ \end{tabular}
+
+\caption{Summary of references about performance capacity measurement.}
+\label{Ref_summary}
+}
+\end{table*}
+
+%%% RESOURCE HOMOGENEOUS %%%%
+As a consequence, and shown in Table~\ref{Ref_summary}, more relevant and realistic academic approaches have been proposed over the last years. An earlier work~\cite{urgaonkar_agile_2008} designed and implemented a predictive and reactive mechanism using a queuing model to decide the number of resources to be provisioned, and an admission control mechanism to face extreme workload variations. More recently, a look-ahead provisioning systems was proposed to horizontally scale web applications for minimizing SLO violations and operational cost \cite{roy_efficient_2011}. In this system, the application's response time was used as the unique metric to trigger scaling actions, thus reducing the accuracy of their decisions when hosting complex web applications. Unlike,~\cite{ali-eldin_2012} and~\cite{bunch_2012} designed scaling mechanisms that predict the future service demand depending on other metrics such as the request volume. Specifically, ~\cite{bunch_2012} designed a pluggable and cost-aware autoscaling system for PaaS that supports horizontal and vertical scaling of web applications by analyzing application metrics. The scalability of a web application is determined through the analysis of numerous factors such as request volume, cpu usage and response time; so thereby an exhaustive analysis of the application metrics allows to improve the accuracy of the decisions. However, even though these approaches proved to efficiently answer to the question \emph{"When to provision?"}, the resource heterogeneity in cloud infrastructures emerged as a new limitation when answering to the question \emph{"How and which type of vm instance to provision?"}.
+%the number and type of resources to provision.
+
+%However, this solution is undesirable   when hosting web applications due to admission control mechanisms may impact in the user experience.
+
+
+%  resouces combinations in these works didn't take into consideration the resources heterogeneity neither the requests heterogeneity, as web %application workload can be deduct by several metrics than only request volume or response time.
+
+ 
+%%% RESOURCE HETEROGENEOUS %%%%
+To outcome this limitation, online and offline profiling-based techniques~\cite{kaviani_profiling-as--service:_2011} have recently emerged as a possible solution to the precise estimation of the resource throughput under certain workload. This technique replicates at design-time (offline) or runtime (online) a server hosting an application, with a new server with profiling instrumentation. In~\cite{roy_2011}, the authors uses an offline profiling technique for the definition of profiles at component-level. This mechanism measures the resource utilization (in terms of cpu usage) of each component allocated to one resource. By doing so, the authors can estimate the future demand of each component allocated to one specific type of resource. Similarly, \emph{Smartscale}~\cite{smartscale_2012} provided an offline technique to analyze the cpu usage and memory consumed by one resource to decide the number of identical resources to provision. Like our system, a decision tree was utilized to determine the optimal scaling strategy to use. However, the creation of one profile per type of hardware configuration (at design-time) limits the adoption of this technique in cloud infrastructures due to its high operational cost. For a complete offline training, these systems require to profile as many additional resources as instance's types are supported in the infrastructure. Closer to our work,~\cite{sharma_cost-aware_2011} built a cost-aware provisioning system that took into consideration the heterogeneity of resources in cloud infrastructures prior to any resource selection. Although using an offline profiling technique, this work was able to estimate the maximum performance capacity of a resource by running an application on different vm instance types, and subjecting them to a gradually increasing synthetic workload. This type of profiling technique can trigger frequent scaling actions as the profiling data gives information about the maximum performance of each resource. Ideally, this data may give information about the performance capacity under which SLA violations or under-utilization barely occur.
+
+Using online profiling techniques, DejaVu~\cite{dejavu2012}  built a mechanisms to classify the workload need by analyzing recent traffic spikes and the performance behavior of the resources, respectively. To do that, DejaVu configures a parallel environment that distributes a fixed percentage of the current traffic to a specific type of resource for the definition of profiles. Even though this approach presents good results, it requires additional resources to identify the workload requirements of each instance type offered by a cloud provider. Moreover, an exhaustive knowledge of the deployed applications is needed; thus preventing its integration in existing autoscaling systems.  
+
+
+\fixme{To sum up, ....Only request rate, offline profiling, online profiling cost}
+
+%the vm capacity the different types of resources in cloud infrastrucutres by using offline profiling. The profiling data gives information about the point on which the server staturates analyzing the maximum request rate served by a machine. Use the least-cost comibination. No real application were used in their experiments.
+
+%They didnt use real applications. Classify the workload using k-means. It was cost-efficient.
+
+% (slo fulfillment vs cost)
+
+%the maximum throughtput of the resources by analizying the cpucomposing LR and queuing theory to predict the future demand, offline profiling on multiple components (no usable for wrb app), no cloud based resources, .
+
+
+
+
+
+
+
+
+
+%Regarding the management of flash crowds~\cite{zhang_resilient_2009}, a proactive application %workload manager was designed to separate the user requests between two groups of servers:  %one  named  'base workload'  referred to the smaller and smoother variations in the workload; %and the other 'tresspassing' referred to the temporal burstly workloads caused by flash crowds. %To do this, the authors attempt to divide the data items into popular and less popular, and %place them in the right group of servers. Even tough a realistic evaluation was conducted on %Amazon EC2 utilizing real traces (Yahoo video streaming), authors do not explain in details how %the dynamic resource provisioning is done. 
+
+%An evaluation using real-traces on a homogeneous infrastructures shows the benefits of this approach when handling flash crowds. 
+%Unfortunately, its admission control mechanism incurs into sporadic SLA violations ( if the server utilization exceed a pre-defined threshold) reducing the QoS of the service, and therefore affecting user experience. 
+
+
+
+% Workloads follow irregular patterns including “ﬂash crowds".
+
+
+
+
+%Similarly to the previous work, \cite{wang_appraise:_2009} extended queuing models and %transaction mix models to design a predictive and reactive provisioning system. To model the %application performance, they integrated proactive control and feedback control methods that %dynamically adjusted the CPU capacity allocated to servers. This work only considered SLA %constraints at the system-level, while others constraints at application-specific level such as %response time and request rate were not taken into consideration. Besides, an evaluation of %CPU variations on a homogeneous infrastructure, when processing traces from a non real-world %application, lack arguments to valid its approach.
+
+%control and dynamic provisioning components in addition to the load balancing algorithm. It applies admission control to make sure ﬂash crowd requests
+%will not overload the provisioned server pool by dropping requests, and uses queuing-model based dynamic provisioning technology.
+
+
+% It is slow to workload changes and not eﬀective at handling complex load
+%patterns experienced in practice. Besides, over peak load reactive dynamic provisioning typically does no more than overprovisioning over one computing resource, while %the provisioning over other resources including storage and networking is not explicitly addressed or optimized.
+
+
+%Recently, in  \cite{kaviani_profiling-as--service:_2011}, profiling-based techniques have been %utilized for managing the tradeofff between performance overload, and cost savings for %dynamic resource provisioning. The authors replicate at runtime a regular server hosting an %application, with a new server with profiling instrumentation. Their experimental results show %how profiling techniques can be included in a resource provisioning system, without causing %important response time delays or throughput alterations in comparison with non-profiling %provisioning. As we mentioned in Section~\ref{experiments}, profiling techniques can report %more benefits than  performance degradations or expenses.
