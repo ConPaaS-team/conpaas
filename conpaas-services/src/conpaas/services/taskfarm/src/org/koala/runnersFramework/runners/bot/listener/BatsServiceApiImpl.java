@@ -92,6 +92,7 @@ public class BatsServiceApiImpl implements BatsServiceApi, UncaughtExceptionHand
     @Override
     public MethodReport start_sampling(String filesLocationUrl, String inputFile) {
         
+	serviceState.phase = State.PHASE_SAMPLING;
     	if (serviceState.mode.equals(State.MODE_DEMO)) {
     		return demo.start_sampling(inputFile);
     	}
@@ -281,6 +282,7 @@ public class BatsServiceApiImpl implements BatsServiceApi, UncaughtExceptionHand
     @Override
     public MethodReport start_execution(long schedulesFileTimeStamp, int scheduleNo) {
     	
+	serviceState.phase = State.PHASE_EXECUTING;
     	if (serviceState.mode.equals(State.MODE_DEMO)) {
             return demo.start_execution(scheduleNo);
         }

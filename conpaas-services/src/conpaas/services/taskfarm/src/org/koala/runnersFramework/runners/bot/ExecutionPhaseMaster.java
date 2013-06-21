@@ -884,6 +884,9 @@ public class ExecutionPhaseMaster extends Master {
 		BatsServiceApiImpl.serviceState.moneySpent = price + BatsServiceApiImpl.serviceState.moneySpentSampling;
 		bot.decrementUserCredit(BatsServiceApiImpl.serviceState.moneySpent - oldvalue);
 		BatsServiceApiImpl.serviceState.noCompletedTasks = bot.finishedTasks.size();
+		if (BatsServiceApiImpl.serviceState.noCompletedTasks == BatsServiceApiImpl.serviceState.noTotalTasks) {
+			BatsServiceApiImpl.serviceState.phase = State.PHASE_FINISHED;
+		}
 	}
 
 	@Override

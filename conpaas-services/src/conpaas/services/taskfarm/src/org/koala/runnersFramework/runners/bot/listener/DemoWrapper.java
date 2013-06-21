@@ -150,8 +150,14 @@ class DemoWrapper  {
 					BatsServiceApiImpl.serviceState.noCompletedTasks = 0;
 				} else if (executionFinishTime == 0) {
 					BatsServiceApiImpl.serviceState.noCompletedTasks = (int) (samplingPercentage * BatsServiceApiImpl.serviceState.noTotalTasks);
+					if (BatsServiceApiImpl.serviceState.noCompletedTasks == BatsServiceApiImpl.serviceState.noTotalTasks) {
+						BatsServiceApiImpl.serviceState.phase = BatsServiceApiImpl.serviceState.PHASE_FINISHED_WHILE_SAMPLING;
+					} else {
+						BatsServiceApiImpl.serviceState.phase = BatsServiceApiImpl.serviceState.PHASE_SAMPLING_READY;
+					}
 				} else {
 					BatsServiceApiImpl.serviceState.noCompletedTasks = BatsServiceApiImpl.serviceState.noTotalTasks;
+					BatsServiceApiImpl.serviceState.phase = BatsServiceApiImpl.serviceState.PHASE_FINISHED;
 				}
 			}
 
