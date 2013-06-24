@@ -2,27 +2,47 @@ To evaluate our autoscaling system described above, we ran experiments
 on two infrastructures: a homogeneous one (the DAS-4, a multi-cluster system
 hosted by universities in The Netherlands~\cite{das4}) and a heterogeneous
 one (the Amazon EC2 cloud~\cite{amazonEC2}). The goal of our experiments
-was to evaluate and compare the three classes of customers by how well they fulfill 
-the SLOs and by the amount of resources they allocate.
+was to evaluate and compare different scaling plans by how well they react under sudden
+workload changes (e.g. a network outage). In particular, our evaluation focus on
+the SLO fulfillment, amount and type of resources the scaling plans allocated to handle
+this traffic anomaly. 
 
 %In this section we conducted our experiments on a heterogeneous infrastructure like Amazon EC2~\cite{amazonEC2}, and on a homogeneous infrastructure like DAS-4 (the Distributed ASCI Supercomputer 4)~\cite{das4}. In our experiment campaign, we compared the degree of SLO enforcement and resource consumption for each provisioning algorithm implemented in ConPaaS. 
 
 %DAS-4 is the Dutch Computational Infrastructure, a six-cluster wide-area distributed system designed with research purposes
 
-\textbf{Testbed configuration:}  As a representative scenario, we deployed the MediaWiki application using ConPaaS on both infrastructures, and we ran the Wikibench tools with a 10\% sample of a real Wikipedia access trace for 24hours. 
+\textbf{Testbed configuration:}  As a representative scenario, we deployed the MediaWiki~\cite{mediawiki} application using ConPaaS~\cite{conpaasIC} on both infrastructures. ConPaaS is an open-source runtime environment for hosting applications in Cloud infrastructures. To run the MediaWiki application, we used the WikiBench benchmark~\cite{wikibench}. This benchmark uses a full copy of Wikipedia as the web application, and replays a fraction of the actual Wikipedia's access traces. 
+
+Given such a scenario, ConPaaS provides support for all the required services to host a copy of Wikipedia: a PHP web hosting and a MySQL service. The MySQL service is loaded with a full copy of the English Wikipedia articles as of 2011, which has a size of approximately 40GB.  In the PHP service, the configuration was composed of one load balancer, one or more static web server and one or more PHP servers. For these experiments, we focus on the elasticity of the PHP tier, and in particular how the number of vm's hosting PHP servers will grow and shrink on demand.
+
+For monitoring-data analysis, ConPaaS provides a monitoring component based on Ganglia~\cite{ganglia}, a scalable distributed monitoring system. We implemented modules that extend Ganglia's standard set of monitoring metrics by adding a number of service-specific metric for measuring the request rate and response times of static and dynamic requests.
+
+ 
+
+%The architecture of ConPaaS services comprises two main building blocks: agents and managers.  The agent VMs host the needed components to provide the service-specific functionality. While the manager is in charge of centralizing monitoring data, controlling the allocation of resources, and coordinating reconfigurations when adding or removing resources. 
+
+
+
+% and we ran the Wikibench tools with a 10\% sample of a real Wikipedia access trace for 24hours. 
+%Instead of basing our evaluations on unrealistic workloads,
+
+
+%We then use WikiBench to replay access traces from 2011~\cite{urdaneta2009}.
+
 %Consequently, our goal is to evaluate the behavior of the provisioning algorithms, when scaling out and back the number of VMs hosting PhP servers to guarantee several performance requirements, referred to as SLO.  Accordingly, some assumptions were made:
 We configured the experiments as follows:
 
+
 \begin{itemize}
-\item  Response times from static requests were not analyzed due to its lightweight nature. 
+%\item  Response times from static requests were not analyzed due to its lightweight nature. 
 
 \item The monitoring data was collected over a reporting period of 5 minutes.
 
 \item We fixed a SLO of 700 milliseconds at the service's side.
 
-\item We fixed a SLO penalty to half the price of a small instance per violation in any of the cloud infrastructures.
+\item We fixed a SLO penalty per violation to half the price of a small instance in DAS-4 and EC2 infrastructures.
 
-\item The algorithms used the same statistically-chosen performance threshold ranges. 
+%\item The algorithms used the same statistically-chosen performance threshold ranges. 
 
 \item A minimum interval of 10 minutes has been established between scaling actions to avoid excessive oscillations. 
 \end{itemize}
@@ -31,11 +51,22 @@ We configured the experiments as follows:
 %To provide the Wikipedia services, an initial configuration was composed of 4 VMs, and 1 VM to host the Wikibench tools. The 4 VMs include a PhP service manager VM, a PhP agent VM, a web server and a http-proxy agent VM (both in the same VM), and finally a MySQL agent VM to store the English Wikipedia data, as explained in Section~\ref{wikipedia}.
 
 
+\textbf{Workload trace:}  Instead of using unrealistic and synthetic workloads generated by benchmark tools, such as TPC-W, RuBiS and RuBBoS, we ran the Wikibench tools with a 10\% sample of a real Wikipedia access trace from 2011.  This trace contains requests for static pages as well as dynamic PHP requests. As mentioned above, the most important performance bottleneck is the application logic of the application: PHP requests are processed an order of magnitude slower than simpler static web pages. Figure~\ref{workload} plots the PHP workload sampled from one trace, as the number of PHP requests per minute during approximately three days. One interesting aspect that we noticed about this trace is a sudden drop in the workload during a period of time of 17min. By looking at the traffic logs, it seems that the access traces were not written into the logs due to an anomaly probably caused by a network outage or power shutdown. 
 
+\begin{figure}
+\begin{center}
+\includegraphics[width=0.49\textwidth, height=6cm]{./images/traceWorkload2011}
+\end{center}
+\vspace{-5mm}
+\caption{Wikipedia trace workload.}
+\label{workload}
+\end{figure}
 
-
+In this article we therefore focus on the automatic scaling of the PHP tier during this outage.
 
 \subsection{Heterogeneous Infrastructure}
+
+Initially, our experiments on EC2 used small instances for the PHP service and one large instance for the MySQL service. Table~\ref{EC2instances} details the available configurations of the different types of instances in EC2.
 
 \begin{table}
   {\scriptsize 
@@ -55,94 +86,69 @@ We configured the experiments as follows:
 }
 \end{table}
 
-\subsubsection{SLA fulfillment: low}
+\paragraph{SLA fulfillment}
 
-\begin{figure}
-  \begin{center}
-    \includegraphics[width=.85\linewidth]{images/exps2011/low/ec2/proxyDataPoints_output_filtered.eps}
-  \end{center}
-\vspace{-5mm}
-  \caption{EC2: Response time values for a bronze customer.}
-  \label{lowResponseTime}
-\end{figure}
+\begin{figure*}[htb]
+	\begin{minipage}[b]{0.32\linewidth}
+		\includegraphics[height=4cm]{images/exps2011/low/ec2/proxyDataPoints_output_filtered.eps}	
+		\vspace{-4mm}
+	\end{minipage}
+	\hfill
+	\begin{minipage}[b]{0.32\linewidth}
+		\includegraphics[height=4cm]{images/exps2011/medium/ec2/proxyDataPoints_output_filtered.eps}
+		\vspace{-4mm}
+	\end{minipage}
+\hfill
+\begin{minipage}[b]{0.32\linewidth}
+		\includegraphics[height=4cm]{images/exps2011/high/ec2/proxyDataPoints_output_filtered.eps}
+		\vspace{-4mm}
+	\end{minipage}
+\caption{Response time values during the outage.}
+\label{fig:EC2ResponseTime}
+\end{figure*}
 
-\begin{figure}
-  \begin{center}
-    \includegraphics[width=.85\linewidth]{images/exps2011/low/ec2/inst_type_machines_filtered.eps}
-  \end{center}
-\vspace{-5mm}
-  \caption{EC2: Cloud instances provisioned for a bronze customer.}
-  \label{lowInstances}
-\end{figure}
+\paragraph{Resource consumption}
 
-\begin{figure}
-  \begin{center}
-    \includegraphics[width=.85\linewidth]{images/exps2011/low/ec2/penaltyVScost_filtered.eps}
-  \end{center}
-\vspace{-5mm}
-  \caption{EC2: Infrastructure cost vs SLO violation penalty for a bronze customer.}
-  \label{lowPenalty}
-\end{figure}
+\begin{figure*}[htb]
+	\begin{minipage}[b]{0.32\linewidth}
+		\includegraphics[height=4cm]{images/exps2011/low/ec2/inst_type_machines_filtered.eps}	
+		\vspace{-4mm}
+	\end{minipage}
+	\hfill
+	\begin{minipage}[b]{0.32\linewidth}
+		\includegraphics[height=4cm]{images/exps2011/medium/ec2/inst_type_machines_filtered.eps}
+		\vspace{-4mm}
+	\end{minipage}
+\hfill
+\begin{minipage}[b]{0.32\linewidth}
+		\includegraphics[height=4cm]{images/exps2011/high/ec2/inst_type_machines_filtered.eps}
+		\vspace{-4mm}
+	\end{minipage}
+\caption{Cloud instances provisioned to handle the outage.}
+\label{fig:EC2Instances}
+\end{figure*}
 
-\subsubsection{SLA fulfillment: medium}
+\paragraph{SLO violation cost VS Infrastructure cost}
 
-\begin{figure}
-  \begin{center}
-    \includegraphics[width=.85\linewidth]{images/exps2011/medium/ec2/proxyDataPoints_output_filtered.eps}
-  \end{center}
-\vspace{-5mm}
-  \caption{EC2: Response time values for a silver customer.}
-  \label{zoomOutage}
-\end{figure}
+\begin{figure*}[htb]
+	\begin{minipage}[b]{0.32\linewidth}
+		\includegraphics[height=4cm]{images/exps2011/low/ec2/penaltyVScost_filtered.eps}	
+		\vspace{-4mm}
+	\end{minipage}
+	\hfill
+	\begin{minipage}[b]{0.32\linewidth}
+		\includegraphics[height=4cm]{images/exps2011/medium/ec2/penaltyVScost_filtered.eps}
+		\vspace{-4mm}
+	\end{minipage}
+\hfill
+\begin{minipage}[b]{0.32\linewidth}
+		\includegraphics[height=4cm]{images/exps2011/high/ec2/penaltyVScost_filtered.eps}
+		\vspace{-4mm}
+	\end{minipage}
+\caption{Cloud instances provisioned to handle the outage.}
+\label{fig:EC2Penalty}
+\end{figure*}
 
-\begin{figure}
-  \begin{center}
-    \includegraphics[width=.85\linewidth]{images/exps2011/medium/ec2/inst_type_machines_filtered.eps}
-  \end{center}
-\vspace{-5mm}
-  \caption{EC2: Cloud instances provisioned for a silver customer.}
-  \label{mediumInstances}
-\end{figure}
-
-
-\begin{figure}
-  \begin{center}
-    \includegraphics[width=.85\linewidth]{images/exps2011/medium/ec2/penaltyVScost_filtered.eps}
-  \end{center}
-\vspace{-5mm}
-  \caption{EC2: Infrastructure cost vs SLO violation penalty for a silver customer.}
-  \label{mediumPenalty}
-\end{figure}
-
-\subsubsection{SLA fulfillment: high}
-
-
-\begin{figure}
-  \begin{center}
-    \includegraphics[width=.85\linewidth]{images/exps2011/high/ec2/proxyDataPoints_output_filtered.eps}
-  \end{center}
-\vspace{-5mm}
-  \caption{EC2: Response time values for a gold customer.}
-  \label{zoomOutage}
-\end{figure}
-
-\begin{figure}
-  \begin{center}
-    \includegraphics[width=.85\linewidth]{images/exps2011/high/ec2/inst_type_machines_filtered.eps}
-  \end{center}
-\vspace{-5mm}
-  \caption{EC2: Cloud instances provisioned for a gold customer.}
-  \label{resOutage}
-\end{figure}
-
-\begin{figure}
-  \begin{center}
-    \includegraphics[width=.85\linewidth]{images/exps2011/high/ec2/penaltyVScost_filtered.eps}
-  \end{center}
-\vspace{-5mm}
-  \caption{EC2: Infrastructure cost vs SLO violation penalty for a gold customer.}
-  \label{highPenalty}
-\end{figure}
 
 \begin{table*}\label{summaryEC2}
   {\scriptsize 
@@ -150,9 +156,9 @@ We configured the experiments as follows:
     \begin{tabular}{  | c | c | c | c | c |}
     \hline
          \textbf{Name}  & \textbf{SLO Violations} & \textbf{Decisions}  & \textbf{Cost}  & \textbf{Cost violations} \\ \hline
-   \textit{Bronze}   &  1299 &  23 &  38.275\$ \$ & 38.97 \$ \\ \hline   
-   \textit{Silver}  &  461 &  27 &  47,555\$ \$ &  13.83 \$ \\ \hline   
-\textit{Gold} &   1007  &  19 &  59.4\$ \$ & 25.77 \$ \\ \hline   
+   \textit{Bronze}   &  117 &  23 &  38.275 \$ &  \$ \\ \hline   
+   \textit{Silver}  &  74 &  27 &  47,555 \$ &   \$ \\ \hline   
+\textit{Gold} &   63  &  4 &  59.4 \$ &  \$ \\ \hline   
 
  \end{tabular}
 \end{center}
@@ -162,10 +168,15 @@ We configured the experiments as follows:
 }
 \end{table*}
 
+
+\subsubsection{Analysis of results}
+
 %%% EXPERIMENTS DAS4 %%%%
 
 
 \subsection{Homogeneous Infrastructure}
+
+Our experiments on DAS-4 rely on OpenNebula as IaaS~\cite{sotomayor_virtual_2009}. To deploy the Wikipedia services, we initially provisioned small instances for the PHP service and one large instance for the MySQL service. Table~\ref{DAS4instances} detailed the hardware configurations of the different vm sizes in DAS-4.
 
 \begin{table}\label{DAS4instances}
   {\scriptsize 
@@ -187,99 +198,70 @@ We configured the experiments as follows:
 \end{table}
 
 
-\subsubsection{SLA fulfillment: low}
-
-\begin{figure}
-  \begin{center}
-    \includegraphics[width=.85\linewidth]{images/exps2011/low/das/proxyDataPoints_output_filtered.eps}
-  \end{center}
-\vspace{-5mm}
-  \caption{DAS4: Response time values for a bronze customer.}
-  \label{lowResponseTime}
-\end{figure}
+\paragraph{SLA fulfillment}
 
 
-
-\begin{figure}
-  \begin{center}
-    \includegraphics[width=.85\linewidth]{images/exps2011/low/das/inst_type_machines_filtered.eps}
-  \end{center}
-\vspace{-5mm}
-  \caption{DAS4: Resource utilization during the outage for a bronze customer.}
-  \label{resOutage}
-\end{figure}
-
-
-\begin{figure}
-  \begin{center}
-    \includegraphics[width=.85\linewidth]{images/exps2011/low/das/penaltyVScost_filtered.eps}
-  \end{center}
-\vspace{-5mm}
-  \caption{DAS4: Infrastructure cost vs SLO violation penalty for a bronze customer.}
-  \label{lowPenalty}
-\end{figure}
-
-\subsubsection{SLA fulfillment: medium}
-
-\begin{figure}
-  \begin{center}
-    \includegraphics[width=.85\linewidth]{images/exps2011/medium/das/proxyDataPoints_output_filtered.eps}
-  \end{center}
-\vspace{-5mm}
-  \caption{DAS4: Response time values for a silver customer.}
-  \label{mediumResponseTime}
-\end{figure}
+\begin{figure*}[htb]
+	\begin{minipage}[b]{0.32\linewidth}
+		\includegraphics[height=4cm]{images/exps2011/low/das/proxyDataPoints_output.eps}	
+		\vspace{-4mm}
+	\end{minipage}
+	\hfill
+	\begin{minipage}[b]{0.32\linewidth}
+		\includegraphics[height=4cm]{images/exps2011/medium/das/proxyDataPoints_output.eps}
+		\vspace{-4mm}
+	\end{minipage}
+\hfill
+\begin{minipage}[b]{0.32\linewidth}
+		\includegraphics[height=4cm]{images/exps2011/high/das/proxyDataPoints_output.eps}
+		\vspace{-4mm}
+	\end{minipage}
+\caption{Response time values during the outage.}
+\label{fig:EC2ResponseTime}
+\end{figure*}
 
 
-\begin{figure}
-  \begin{center}
-    \includegraphics[width=.85\linewidth]{images/exps2011/medium/das/inst_type_machines_filtered.eps}
-  \end{center}
-\vspace{-5mm}
-  \caption{DAS4: Cloud instances provisioned for a silver customer.}
-  \label{mediumInstances}
-\end{figure}
+\paragraph{Resource consumption}
 
+\begin{figure*}[htb]
+	\begin{minipage}[b]{0.32\linewidth}
+		\includegraphics[height=4cm]{images/exps2011/low/das/inst_type_machines.eps}	
+		\vspace{-4mm}
+	\end{minipage}
+	\hfill
+	\begin{minipage}[b]{0.32\linewidth}
+		\includegraphics[height=4cm]{images/exps2011/medium/das/inst_type_machines.eps}
+		\vspace{-4mm}
+	\end{minipage}
+\hfill
+\begin{minipage}[b]{0.32\linewidth}
+		\includegraphics[height=4cm]{images/exps2011/high/das/inst_type_machines.eps}
+		\vspace{-4mm}
+	\end{minipage}
+\caption{Cloud instances provisioned to handle the outage.}
+\label{fig:DASInstances}
+\end{figure*}
 
+\paragraph{SLO violation cost VS Infrastructure cost}
 
-\begin{figure}
-  \begin{center}
-    \includegraphics[width=.85\linewidth]{images/exps2011/medium/das/penaltyVScost_filtered.eps}
-  \end{center}
-\vspace{-5mm}
-  \caption{DAS4: Infrastructure cost vs SLO violation penalty for a silver customer.}
-  \label{mediumPenalty}
-\end{figure}
-
-\subsubsection{SLA fulfillment: high}
-
-\begin{figure}
-  \begin{center}
-    \includegraphics[width=.85\linewidth]{images/exps2011/high/das/proxyDataPoints_output_filtered.eps}
-  \end{center}
-\vspace{-5mm}
-  \caption{DAS4: Response time values for a gold customer.}
-  \label{highResponseTime}
-\end{figure}
-
-
-\begin{figure}
-  \begin{center}
-    \includegraphics[width=.85\linewidth]{images/exps2011/high/das/inst_type_machines_filtered.eps}
-  \end{center}
-\vspace{-5mm}
-  \caption{DAS4: Cloud instances provisioned for a gold customer.}
-  \label{highInstances}
-\end{figure}
-
-\begin{figure}
-  \begin{center}
-    \includegraphics[width=.85\linewidth]{images/exps2011/high/das/penaltyVScost_filtered.eps}
-  \end{center}
-\vspace{-5mm}
-  \caption{DAS4: Infrastructure cost vs SLO violation penalty for a gold customer.}
-  \label{highPenalty}
-\end{figure}
+\begin{figure*}[htb]
+	\begin{minipage}[b]{0.32\linewidth}
+		\includegraphics[height=4cm]{images/exps2011/low/das/penaltyVScost.eps}	
+		\vspace{-4mm}
+	\end{minipage}
+	\hfill
+	\begin{minipage}[b]{0.32\linewidth}
+		\includegraphics[height=4cm]{images/exps2011/medium/das/penaltyVScost.eps}
+		\vspace{-4mm}
+	\end{minipage}
+\hfill
+\begin{minipage}[b]{0.32\linewidth}
+		\includegraphics[height=4cm]{images/exps2011/high/das/penaltyVScost.eps}
+		\vspace{-4mm}
+	\end{minipage}
+\caption{Cloud instances provisioned to handle the outage.}
+\label{fig:DASPenalty}
+\end{figure*}
 
 \begin{table*}
   {\scriptsize 
@@ -287,9 +269,11 @@ We configured the experiments as follows:
     \begin{tabular}{  | c | c | c | c | c |}
     \hline
          \textbf{Name}  & \textbf{SLO Violations} & \textbf{Decisions}  & \textbf{Cost}  & \textbf{Cost violations} \\ \hline
-   \textit{Bronze}   &  438 &  22 &  49.98\$ \$ & 13.14 \$ \\ \hline   
-   \textit{Silver}  &  150 &  9 &  42.665\$ \$ &  4.5 \$ \\ \hline   
-\textit{Gold} &  142 & 27 & 51.377\$ \$ & 3.81 \$ \\ \hline   
+   \textit{A}   & 250  &  8 &  6.4 \$ &  \$ \\ \hline   
+   \textit{B}  &   &   &   \$ &  4.5 \$ \\ \hline   
+   \textit{C}  &  127 &  9 &  6.9 \$ &   \$ \\ \hline   
+   \textit{D}  &   &   &   \$ &   \$ \\ \hline   
+\textit{E} &  83 & 31 & 12.8 \$ &  \$ \\ \hline   
 
  \end{tabular}
 \end{center}
@@ -298,3 +282,5 @@ We configured the experiments as follows:
 \label{summaryDAS4}
 }
 \end{table*}
+
+\subsubsection{Analysis of results}
