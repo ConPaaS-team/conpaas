@@ -57,6 +57,25 @@ class HostingPage extends ServicePage {
 		.'</form>';
 	}
 
+	private function bytesOf ($size_str) {
+		switch (substr ($size_str, -1))	{
+			case 'M': case 'm': return (int)$size_str * 1048576;
+			case 'K': case 'k': return (int)$size_str * 1024;
+			case 'G': case 'g': return (int)$size_str * 1073741824;
+			default: return $size_str;
+		}
+	}
+
+	private function minSize($size1, $size2) {
+		$size1_int = $this->bytesOf($size1);
+		$size2_int = $this->bytesOf($size2);
+		if ($size1_int < $size2_int) {
+			return $size1;
+		} else {
+			return $size2;
+		}
+	}
+
 	protected function renderCodeForm() {
 		return
 			'<div id="deployform">'
@@ -83,6 +102,7 @@ class HostingPage extends ServicePage {
 					.'<div class="clear"></div>'
 					.'<div class="hint">'
 						.'example: <b>.zip</b>, <b>.tar</b> of your source tree'
+						.' (max '.$this->minSize(ini_get('upload_max_filesize'), ini_get('post_max_size')).')'
 					.'</div>'
 				.'</div>'
 				// this one is invisible for now

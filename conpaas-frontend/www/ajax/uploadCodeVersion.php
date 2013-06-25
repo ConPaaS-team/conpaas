@@ -13,6 +13,38 @@ if (!isset($_SESSION['uid'])) {
 	throw new Exception('User not logged in');
 }
 
+function strerror($code) {
+	switch ($code) {
+		case UPLOAD_ERR_INI_SIZE:
+			$message = "The uploaded file exceeds maximum file size ".ini_get('upload_max_filesize');
+			break;
+		case UPLOAD_ERR_FORM_SIZE:
+			$message = "The uploaded file exceeds the MAX_FILE_SIZE directive that was specified in the HTML form.";
+			break;
+		case UPLOAD_ERR_PARTIAL:
+			$message = "The uploaded file was only partially uploaded.";
+			break;
+		case UPLOAD_ERR_NO_FILE:
+			$message = "No file was uploaded.";
+			break;
+		case UPLOAD_ERR_NO_TMP_DIR:
+			$message = "Missing a temporary folder.";
+			break;
+		case UPLOAD_ERR_CANT_WRITE:
+			$message = "Failed to write file to disk.";
+			break;
+		case UPLOAD_ERR_EXTENSION:
+			$message = "File upload stopped by PHP extension.";
+			break;
+
+		default:
+			$message = "Unknown upload error code ".$code;
+			break;
+	}
+	return $message;
+}
+
+
 $sid = $_GET['sid'];
 $service_data = ServiceData::getServiceById($sid);
 $service = ServiceFactory::create($service_data);
@@ -24,8 +56,9 @@ if($service->getUID() !== $_SESSION['uid']) {
 if (isset($_FILES['code'])) {
 	$path = '/tmp/'.$_FILES['code']['name'];
 	if (move_uploaded_file($_FILES['code']['tmp_name'], $path) === false) {
+		$error_msg = strerror($_FILES['code']['error']);
 		echo json_encode(array(
-			'error' => 'could not move uploaded file'
+			'error' => 'could not move uploaded file: '.$error_msg
 		));
 		exit();
 	}
