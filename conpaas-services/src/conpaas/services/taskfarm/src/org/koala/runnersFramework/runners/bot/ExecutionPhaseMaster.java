@@ -18,6 +18,7 @@ import ibis.ipl.SendPort;
 import ibis.ipl.SendPortIdentifier;
 import ibis.ipl.WriteMessage;
 import org.koala.runnersFramework.runners.bot.listener.BatsServiceApiImpl;
+import org.koala.runnersFramework.runners.bot.listener.State;
 
 
 public class ExecutionPhaseMaster extends Master {
