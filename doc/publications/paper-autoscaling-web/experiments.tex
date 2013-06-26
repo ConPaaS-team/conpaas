@@ -5,7 +5,7 @@ one (the Amazon EC2 cloud~\cite{amazonEC2}). The goal of our experiments
 was to evaluate and compare different scaling plans by how well they react under sudden
 workload changes (e.g. a network outage). In particular, our evaluation focus on
 the SLO fulfillment, amount and type of resources the scaling plans allocated to handle
-this traffic anomaly. 
+a traffic anomaly. 
 
 %In this section we conducted our experiments on a heterogeneous infrastructure like Amazon EC2~\cite{amazonEC2}, and on a homogeneous infrastructure like DAS-4 (the Distributed ASCI Supercomputer 4)~\cite{das4}. In our experiment campaign, we compared the degree of SLO enforcement and resource consumption for each provisioning algorithm implemented in ConPaaS. 
 
@@ -13,11 +13,15 @@ this traffic anomaly.
 
 \textbf{Testbed configuration:}  As a representative scenario, we deployed the MediaWiki~\cite{mediawiki} application using ConPaaS~\cite{conpaasIC} on both infrastructures. ConPaaS is an open-source runtime environment for hosting applications in Cloud infrastructures. To run the MediaWiki application, we used the WikiBench benchmark~\cite{wikibench}. This benchmark uses a full copy of Wikipedia as the web application, and replays a fraction of the actual Wikipedia's access traces. 
 
-Given such a scenario, ConPaaS provides support for all the required services to host a copy of Wikipedia: a PHP web hosting and a MySQL service. The MySQL service is loaded with a full copy of the English Wikipedia articles as of 2011, which has a size of approximately 40GB.  In the PHP service, the configuration was composed of one load balancer, one or more static web server and one or more PHP servers. For these experiments, we focus on the elasticity of the PHP tier, and in particular how the number of vm's hosting PHP servers will grow and shrink on demand.
+Given such a scenario, ConPaaS provides support for all the required services to host a copy of Wikipedia: a PHP web hosting and a MySQL service. The MySQL service is loaded with a full copy of the English Wikipedia articles as of 2011, which has a size of approximately 40GB.  In the PHP service, the configuration was composed of one load balancer, one or more static web server and one or more PHP servers. For these experiments, we focus on the elasticity of the PHP tier, and in particular how the number and size of vm's hosting PHP servers will change on demand.
 
-For monitoring-data analysis, ConPaaS provides a monitoring component based on Ganglia~\cite{ganglia}, a scalable distributed monitoring system. We implemented modules that extend Ganglia's standard set of monitoring metrics by adding a number of service-specific metric for measuring the request rate and response times of static and dynamic requests.
+For monitoring-data analysis, ConPaaS provides a monitoring component based on Ganglia~\cite{ganglia}, a scalable distributed monitoring system. 
 
- 
+%We implemented modules that extend Ganglia's standard set of monitoring metrics by adding a number of service-specific metric for measuring the request rate and response times of static and dynamic requests.
+
+%To refine this search process according to the final goal and adapted to the customer preferences (user experience), the Scaler provides three classes of SLA agreements in function of the type of customer. These three classes of customers namely, gold, silver and bronze minimize the SLA violations with a different infrastructure cost. Accordingly, a gold customer pays more in order to get the best service at the cost of some extra over-provisioning. A silver customer gets good availability while a bronze customer obtains a reduced, but acceptable, SLA fulfillment but with very little over-provisioning.
+
+To classify the provisioning decisions based on customer preferences such as availability, performance and cost, we define different classes of customers following a metal classification. These three classes of customers namely, gold, silver and bronze minimize the SLA violations with a different infrastructure cost. For instance, a gold customer pays more in order to get the best service at the cost of some extra over-provisioning. A silver customer gets good availability while a bronze customer obtains a reduced, but acceptable, SLA fulfillment but with very little over-provisioning. We configured the experiments as follows:
 
 %The architecture of ConPaaS services comprises two main building blocks: agents and managers.  The agent VMs host the needed components to provide the service-specific functionality. While the manager is in charge of centralizing monitoring data, controlling the allocation of resources, and coordinating reconfigurations when adding or removing resources. 
 
@@ -30,7 +34,7 @@ For monitoring-data analysis, ConPaaS provides a monitoring component based on G
 %We then use WikiBench to replay access traces from 2011~\cite{urdaneta2009}.
 
 %Consequently, our goal is to evaluate the behavior of the provisioning algorithms, when scaling out and back the number of VMs hosting PhP servers to guarantee several performance requirements, referred to as SLO.  Accordingly, some assumptions were made:
-We configured the experiments as follows:
+
 
 
 \begin{itemize}
@@ -40,7 +44,7 @@ We configured the experiments as follows:
 
 \item We fixed a SLO of 700 milliseconds at the service's side.
 
-\item We fixed a SLO penalty per violation to half the price of a small instance in DAS-4 and EC2 infrastructures.
+%\item We fixed a SLO penalty per violation to half the price of a small instance in DAS-4 and EC2 infrastructures.
 
 %\item The algorithms used the same statistically-chosen performance threshold ranges. 
 
@@ -51,7 +55,7 @@ We configured the experiments as follows:
 %To provide the Wikipedia services, an initial configuration was composed of 4 VMs, and 1 VM to host the Wikibench tools. The 4 VMs include a PhP service manager VM, a PhP agent VM, a web server and a http-proxy agent VM (both in the same VM), and finally a MySQL agent VM to store the English Wikipedia data, as explained in Section~\ref{wikipedia}.
 
 
-\textbf{Workload trace:}  Instead of using unrealistic and synthetic workloads generated by benchmark tools, such as TPC-W, RuBiS and RuBBoS, we ran the Wikibench tools with a 10\% sample of a real Wikipedia access trace from 2011.  This trace contains requests for static pages as well as dynamic PHP requests. As mentioned above, the most important performance bottleneck is the application logic of the application: PHP requests are processed an order of magnitude slower than simpler static web pages. Figure~\ref{workload} plots the PHP workload sampled from one trace, as the number of PHP requests per minute during approximately three days. One interesting aspect that we noticed about this trace is a sudden drop in the workload during a period of time of 17min. By looking at the traffic logs, it seems that the access traces were not written into the logs due to an anomaly probably caused by a network outage or power shutdown. 
+\textbf{Workload trace:}  Instead of using unrealistic and synthetic workloads generated by benchmark tools, such as TPC-W, RuBiS and RuBBoS, we ran the Wikibench tools with a 10\% sample of a real Wikipedia access trace from 2011.  This trace contains requests for static pages as well as dynamic PHP requests. As mentioned above, the most important performance bottleneck is the application logic of the application: PHP requests are processed an order of magnitude slower than simpler static web pages. Figure~\ref{workload} plots the PHP workload sampled from one trace, as the number of PHP requests per minute during approximately three days. One interesting aspect that we noticed about this trace is a sudden drop in the load during a period of time around 17min. By looking at the traffic logs, it seems that the access traces were not written into the logs due to an anomaly probably caused by a network outage or power shutdown. 
 
 \begin{figure}
 \begin{center}
@@ -62,18 +66,20 @@ We configured the experiments as follows:
 \label{workload}
 \end{figure}
 
+\fixme{Zoom the outage}
+
 In this article we therefore focus on the automatic scaling of the PHP tier during this outage.
 
 \subsection{Heterogeneous Infrastructure}
 
-Initially, our experiments on EC2 used small instances for the PHP service and one large instance for the MySQL service. Table~\ref{EC2instances} details the available configurations of the different types of instances in EC2.
+Initially, our experiments on EC2 used small instances for the PHP service and one large instance for the MySQL service. Table~\ref{EC2instances} details the hardware configuration and cost per-hour of the different sizes of EC2 instances employed during the experiments.
 
 \begin{table}
   {\scriptsize 
 \begin{center}
     \begin{tabular}{  | c | c | c | c | c |}
     \hline
-      \textbf{Name}  & \textbf{Configuration} & \textbf{Cost/hr} \\ \hline
+      \textbf{Size}  & \textbf{Configuration} & \textbf{Cost/hr} \\ \hline
    \textit{m1.small}   & 1-ECU~\footnote{One EC2 compute unit provides the equivalent CPU capacity of a 1.0-1.2 GHz 2007 Opteron or 2007 Xeon processor.}  -- 1.5Gb RAM&  0.06\$ \\ \hline
    \textit{m1.medium}   & 2-ECU -- 4Gb RAM&  0.12\$ \\ \hline
 \textit{c1.medium} & 5-ECU -- 3Gb RAM& 0.145\$   \\ \hline
@@ -86,68 +92,103 @@ Initially, our experiments on EC2 used small instances for the PHP service and o
 }
 \end{table}
 
-\paragraph{SLA fulfillment}
+
+\subsubsection{SLO fulfillment} 
+Figure~\ref{fig:EC2ResponseTime} represents the degree of SLO fulfillment of three different classes of customers, indicating the response time data-points obtained during the execution of the Wikipedia workload trace. In particular, Figure~\ref{fig:EC2ResponseTime} focus on the interval of time in which the outage occurred. The results show how the system scales back when the request volume drops, and quickly scales in when the load increases suddently. As shown on Figure~\ref{fig:EC2ResponseTime},  the degree of SLO fulfillment gradually improves depending on the type of customer choosen to handle this traffic anomaly. Thus, the \emph{bronze} and \emph{silver} customers employ around 600ms to find the performance stability,  but experiencing more SLO violations when using a \emph{bronze} customer. While the \emph{gold} customer requires less time to handle this traffic spike reducing at the maximum the number of violations, as detailed in Table~\ref{summaryEC2}. The selection of one class of customer or another has important consequences, specially when a non-fulfillment of the requirements affects to the revenues of the customer.
 
 \begin{figure*}[htb]
 	\begin{minipage}[b]{0.32\linewidth}
+		\captionof*{figure}{{\scriptsize \textbf{Bronze}}}
+		\vspace{-4mm}
 		\includegraphics[height=4cm]{images/exps2011/low/ec2/proxyDataPoints_output_filtered.eps}	
 		\vspace{-4mm}
 	\end{minipage}
 	\hfill
 	\begin{minipage}[b]{0.32\linewidth}
+		\captionof*{figure}{{\scriptsize \textbf{Silver}}}
+		\vspace{-4mm}
 		\includegraphics[height=4cm]{images/exps2011/medium/ec2/proxyDataPoints_output_filtered.eps}
 		\vspace{-4mm}
 	\end{minipage}
 \hfill
 \begin{minipage}[b]{0.32\linewidth}
+		\captionof*{figure}{{\scriptsize \textbf{Gold}}}
+		\vspace{-4mm}
 		\includegraphics[height=4cm]{images/exps2011/high/ec2/proxyDataPoints_output_filtered.eps}
 		\vspace{-4mm}
 	\end{minipage}
-\caption{Response time values during the outage.}
+\caption{EC2: Response time values during the outage.}
 \label{fig:EC2ResponseTime}
 \end{figure*}
 
-\paragraph{Resource consumption}
+
+\subsubsection{Resource utilization} 
+To better understand the impact of selecting a scaling plan adapted to the customer preferences, we shall also focus on the resource consumption illustrated on Figure~\ref{fig:EC2Instances}. While satisfying the requirements, the use of poor hardware configurations can easily expose the system to performance degradations and consequently increases the time required to stabilize the system performance. This can be seen on  Figure~\ref{fig:EC2Instances}(left), in the time interval between t=ms and t=ms. The \emph{bronze} customer used the cheapest configuration, thus compromising the performance and raising the number of SLO violations for a long period of time. Unlike the \emph{silver} and \emph{gold} customer utilizes along the whole execution powerful configurations that enables to minimize these degradations. Specifically, the \emph{gold} customer allocated an expensive resource combination that was able to handle such traffic anomaly while avoiding the under-utilization of the resources. 
+
+%The system's unstability is clearly shown in the planB where the resource combination changes from 1800-2000m till find an optimal resource combination to handle the traffic.
 
 \begin{figure*}[htb]
 	\begin{minipage}[b]{0.32\linewidth}
+		\captionof*{figure}{{\scriptsize \textbf{Bronze}}}
+		\vspace{-4mm}
 		\includegraphics[height=4cm]{images/exps2011/low/ec2/inst_type_machines_filtered.eps}	
 		\vspace{-4mm}
 	\end{minipage}
 	\hfill
 	\begin{minipage}[b]{0.32\linewidth}
+		\captionof*{figure}{{\scriptsize \textbf{Silver}}}
+		\vspace{-4mm}
 		\includegraphics[height=4cm]{images/exps2011/medium/ec2/inst_type_machines_filtered.eps}
 		\vspace{-4mm}
 	\end{minipage}
 \hfill
 \begin{minipage}[b]{0.32\linewidth}
+		\captionof*{figure}{{\scriptsize \textbf{Gold}}}
+		\vspace{-4mm}
 		\includegraphics[height=4cm]{images/exps2011/high/ec2/inst_type_machines_filtered.eps}
 		\vspace{-4mm}
 	\end{minipage}
-\caption{Cloud instances provisioned to handle the outage.}
+\caption{EC2: Cloud instances provisioned to handle the outage.}
 \label{fig:EC2Instances}
 \end{figure*}
 
-\paragraph{SLO violation cost VS Infrastructure cost}
+\subsubsection{Analysis of results}
+The results of the three runs are summarized in Table~\ref{summaryEC2}, where we show the amount of SLO violations, the number of provisioning decisions taken by the autoscaling system and an estimation of the cost of running the VMs in Amazon EC2.
 
-\begin{figure*}[htb]
-	\begin{minipage}[b]{0.32\linewidth}
-		\includegraphics[height=4cm]{images/exps2011/low/ec2/penaltyVScost_filtered.eps}	
-		\vspace{-4mm}
-	\end{minipage}
-	\hfill
-	\begin{minipage}[b]{0.32\linewidth}
-		\includegraphics[height=4cm]{images/exps2011/medium/ec2/penaltyVScost_filtered.eps}
-		\vspace{-4mm}
-	\end{minipage}
-\hfill
-\begin{minipage}[b]{0.32\linewidth}
-		\includegraphics[height=4cm]{images/exps2011/high/ec2/penaltyVScost_filtered.eps}
-		\vspace{-4mm}
-	\end{minipage}
-\caption{Cloud instances provisioned to handle the outage.}
-\label{fig:EC2Penalty}
-\end{figure*}
+As depicted on Figure~\ref{fig:EC2ResponseTime} and Figure~\ref{fig:EC2Instances}, the selection of one hardware configuration or another have a direct effect in the performance. The use of \emph{bronze} settings shows the vulnerability of selecting a configuration with low operational cost, as it easily becomes unstable when handling bursty workloads. Hence, poor hardware configurations increase the probability of experiencing SLO violations under sudden traffic spikes, outages or other traffic anomalies. 
+
+When using a mixed configuration like \emph{silver}, the \emph{Scaler} explore the tradeoff between performance capacity and cost by combining different hardware configurations that handle the load with an acceptable cost. However, the search of such resource combination can be hard-to-find, affecting to the stability of the application due to frequent scaling actions, as shown on Figure~\ref{fig:EC2ResponseTime}(center). Finally, with a \emph{gold} customer, the Scaler provisions resources that offer better performance in exchange for a higher infrastructure cost. With litttle over-provisioning, these strategies enforces the QoS requirements and improves considerably the stability and performance of the system by distributing the new request volume across the most powerful resources.  
+
+Another interesting aspect that we noticed during these experiments is the economical impact of selecting one class of customer or another when minimizing the SLO violations.
+
+\fixme{Include a plot showing the infra cost vs penalty cost for a bronze customer}
+\fixme{The unstability of silver EC2 is also provoked in some part due to the load balancing system which have to adapt the weights to a wide number of different types of resoruces.}
+
+
+ %This type of provisioning decisions enable to handle these traffic anomalies by distributing the new request volume across the most powerful resources. 
+
+
+%\vspace{3mm}
+%\noindent\textbf{SLO violation cost VS Infrastructure cost:}
+
+%\begin{figure*}[htb]
+%	\begin{minipage}[b]{0.32\linewidth}
+%		\includegraphics[height=4cm]{images/exps2011/low/ec2/penaltyVScost_filtered.eps}	
+%		\vspace{-4mm}
+%	\end{minipage}
+%	\hfill
+%	\begin{minipage}[b]{0.32\linewidth}
+%		\includegraphics[height=4cm]{images/exps2011/medium/ec2/penaltyVScost_filtered.eps}
+%		\vspace{-4mm}
+%	\end{minipage}
+%\hfill
+%\begin{minipage}[b]{0.32\linewidth}
+%		\includegraphics[height=4cm]{images/exps2011/high/ec2/penaltyVScost_filtered.eps}
+%		\vspace{-4mm}
+%	\end{minipage}
+%\caption{Cloud instances provisioned to handle the outage.}
+%\label{fig:EC2Penalty}
+%\end{figure*}
 
 
 \begin{table*}\label{summaryEC2}
@@ -155,9 +196,9 @@ Initially, our experiments on EC2 used small instances for the PHP service and o
 \begin{center}
     \begin{tabular}{  | c | c | c | c | c |}
     \hline
-         \textbf{Name}  & \textbf{SLO Violations} & \textbf{Decisions}  & \textbf{Cost}  & \textbf{Cost violations} \\ \hline
-   \textit{Bronze}   &  117 &  23 &  38.275 \$ &  \$ \\ \hline   
-   \textit{Silver}  &  74 &  27 &  47,555 \$ &   \$ \\ \hline   
+         \textbf{Customer}  & \textbf{SLO Violations} & \textbf{Decisions}  & \textbf{Cost}  & \textbf{Cost violations} \\ \hline
+   \textit{Bronze}   &  117 &  6 &  38.275 \$ &  \$ \\ \hline   
+   \textit{Silver}  &  74 &  14 &  47,555 \$ &   \$ \\ \hline   
 \textit{Gold} &   63  &  4 &  59.4 \$ &  \$ \\ \hline   
 
  \end{tabular}
@@ -169,21 +210,23 @@ Initially, our experiments on EC2 used small instances for the PHP service and o
 \end{table*}
 
 
-\subsubsection{Analysis of results}
+
 
 %%% EXPERIMENTS DAS4 %%%%
 
 
 \subsection{Homogeneous Infrastructure}
 
-Our experiments on DAS-4 rely on OpenNebula as IaaS~\cite{sotomayor_virtual_2009}. To deploy the Wikipedia services, we initially provisioned small instances for the PHP service and one large instance for the MySQL service. Table~\ref{DAS4instances} detailed the hardware configurations of the different vm sizes in DAS-4.
+Our experiments on DAS-4 rely on OpenNebula as IaaS~\cite{sotomayor_virtual_2009}. To deploy the Wikipedia services, we initially provisioned \emph{small} instances for the PHP service and one \emph{large} instance for the MySQL service. Additionally, for these experiments, we specified a cost per-hour for each one of the available resources, and extended from three to five the initial customer classification: \emph{platinum, gold, silver, bronze} and \emph{copper}. Table~\ref{DAS4instances} detailed the hardware configurations of the different VM sizes in DAS-4.
+
+%following the same criteria of SLO fulfillment and infrastructure cost
 
 \begin{table}\label{DAS4instances}
   {\scriptsize 
 \begin{center}
     \begin{tabular}{  | c | c | c | c | }
     \hline
-       \textbf{Name}  & \textbf{Configuration} & \textbf{Cost/hr} \\ \hline
+       \textbf{Size}  & \textbf{Configuration} & \textbf{Cost/hr} \\ \hline
    \textit{small}   & 1-core 2.4Ghz -- 1Gb RAM&  0.05\$ \\ \hline
    \textit{medium}   & 4-core 2.4Ghz  -- 4Gb RAM&  0.23\$ \\ \hline
 \textit{highcpu-medium} & 6-core 2.4Ghz -- 3Gb RAM& 0.28\$   \\ \hline
@@ -198,82 +241,146 @@ Our experiments on DAS-4 rely on OpenNebula as IaaS~\cite{sotomayor_virtual_2009
 \end{table}
 
 
-\paragraph{SLA fulfillment}
+\subsubsection{SLO fulfillment}
 
+Figure~\ref{fig:DAS4ResponseTime} shows the performance behavior of the scaling plans selected for five types of customers. As depicted in Figure~\ref{fig:DAS4ResponseTime}, the performance stability is mainly affected by two aspects: frequent scalings operations and traffic spikes. The \emph{platinum} customer presents an unstable performance pattern, due to numerous provisioning actions aiming to find the optimal scaling plan. In contrast, the performance behavior of the \emph{gold} customer shows no oscillations even during the outage, which can be explained by the selection of an appropriate resource combination.
+
+%an optimal combination of resources that stabilizes the performance even during the outage. 
+
+
+Regarding traffic spikes caused by the outage, it is clear how customer configurations, like \emph{copper, bronze and silver}, are vulnerable to workload changes causing SLO violations. As shown on Figure~\ref{fig:DAS4ResponseTime},  the configurations that priorizies the infrastructure cost than performance are directly affected by the effects of the outage. This can be seen in the time interval between t=min and t=min for the \emph{copper} customer, and between t=min and t=min for the \emph{bronze} customer, respectively. By selecting an appropriate scaling plan, the performance stability and SLO fulfillment can be enforced without dramatically raising the cost.
+
+%In this case, the combination of one highcpu-medium and two small vm instances were enough to handle the new request volume without causing SLO violations.
+
+%On the other hand, when using the copper and bronze configurations, the system becomes vulnerable to traffic fluctuations. In this case, it can be seen in the interval of time t=ms and t=ms for the copper and bronze customers.
+
+
+
+\fixme{The unstability of silver DAS4 is also provoked in some part due to the load balancing system which have to adapt the weights to a wide number of different types of resoruces.}
 
 \begin{figure*}[htb]
-	\begin{minipage}[b]{0.32\linewidth}
-		\includegraphics[height=4cm]{images/exps2011/low/das/proxyDataPoints_output.eps}	
+	\begin{minipage}[b]{0.20\linewidth}
+		\captionof*{figure}{{\scriptsize \textbf{Copper}}}
+		\vspace{-4mm}
+		\includegraphics[width=\linewidth,height=4cm]{images/exps2011/low/das/proxyDataPoints_output.eps}	
 		\vspace{-4mm}
 	\end{minipage}
 	\hfill
-	\begin{minipage}[b]{0.32\linewidth}
-		\includegraphics[height=4cm]{images/exps2011/medium/das/proxyDataPoints_output.eps}
+\begin{minipage}[b]{0.19\linewidth}
+		\captionof*{figure}{{\scriptsize \textbf{Bronze}}}
+		\vspace{-4mm}
+		\includegraphics[width=\linewidth,height=4cm]{images/exps2011/medium_down/das/proxyDataPoints_output.eps}
 		\vspace{-4mm}
 	\end{minipage}
 \hfill
-\begin{minipage}[b]{0.32\linewidth}
-		\includegraphics[height=4cm]{images/exps2011/high/das/proxyDataPoints_output.eps}
+	\begin{minipage}[b]{0.2\linewidth}
+		\captionof*{figure}{{\scriptsize \textbf{Silver}}}
+		\vspace{-4mm}
+		\includegraphics[width=\linewidth,height=4cm]{images/exps2011/medium/das/proxyDataPoints_output.eps}
 		\vspace{-4mm}
 	\end{minipage}
-\caption{Response time values during the outage.}
-\label{fig:EC2ResponseTime}
+\hfill
+\begin{minipage}[b]{0.2\linewidth}
+		\captionof*{figure}{{\scriptsize \textbf{Gold}}}
+		\vspace{-4mm}
+		\includegraphics[width=\linewidth,height=4cm]{images/exps2011/medium_up/das/proxyDataPoints_output.eps}
+		\vspace{-4mm}
+	\end{minipage}
+\hfill
+\begin{minipage}[b]{0.19\linewidth}
+		\captionof*{figure}{{\scriptsize \textbf{Platinum}}}
+		\vspace{-4mm}
+		\includegraphics[width=\linewidth,height=4cm]{images/exps2011/high/das/proxyDataPoints_output.eps}
+		\vspace{-4mm}
+	\end{minipage}
+\caption{DAS4: Response time values during the outage.}
+\label{fig:DAS4ResponseTime}
 \end{figure*}
 
 
-\paragraph{Resource consumption}
+\subsubsection{Resource utilization}
+
+As explained above, frequent scaling actions can affect to the performance stability, but also inappropriate scaling decisions. This can be seen in Figure~\ref{fig:EC2Instances}, where the \emph{copper} and \emph{bronze} customers attempt to scale back the system when the load drops, but the resulting resource combinations cannot handle the new request volume, and the system is scaled up again.  At difference, the \emph{gold} customer only de-provisions small resources during the outage, which enables to distribute the new load among the current resources, meanwhile new resources are allocated to avoid future saturation. 
+
+Once the outage occurred, another interesting aspect to notice is the type of resources employed to minimize the number of SLO violations. While the \emph{silver} customer provisions powerful machines (e.g. \emph{highcpu-medium}) that quickly reduce the degradations, the \emph{copper} customer gradually allocates \emph{small} resources that require more time to handle the workload. When using the \emph{gold} or \emph{platinum} settings, the system barely appreciates the changes in the workload, thus justifying the use of different sizes of resources to better enforce the QoS requirements. 
+
+On the other hand, it is remarkable to point out that the amount of allocated resources is not a subject of discussion between customer configurations, The poor performance isolation and the network bandwitdth are mainly the consequences of this performance variations.
+
+
+%In this case, the combination of one highcpu-medium and two small vm instances were enough to handle the new request volume without causing SLO violations.
+
 
 \begin{figure*}[htb]
-	\begin{minipage}[b]{0.32\linewidth}
-		\includegraphics[height=4cm]{images/exps2011/low/das/inst_type_machines.eps}	
+	\begin{minipage}[b]{0.19\linewidth}
+		\captionof*{figure}{{\scriptsize \textbf{Copper}}}
+		\vspace{-4mm}
+		\includegraphics[width=\linewidth,height=4cm]{images/exps2011/low/das/inst_type_machines.eps}	
 		\vspace{-4mm}
 	\end{minipage}
 	\hfill
-	\begin{minipage}[b]{0.32\linewidth}
-		\includegraphics[height=4cm]{images/exps2011/medium/das/inst_type_machines.eps}
+\begin{minipage}[b]{0.2\linewidth}
+		\captionof*{figure}{{\scriptsize \textbf{Bronze}}}
+		\vspace{-4mm}
+		\includegraphics[width=\linewidth,height=4cm]{images/exps2011/medium_down/das/inst_type_machines.eps}
 		\vspace{-4mm}
 	\end{minipage}
 \hfill
-\begin{minipage}[b]{0.32\linewidth}
-		\includegraphics[height=4cm]{images/exps2011/high/das/inst_type_machines.eps}
+	\begin{minipage}[b]{0.2\linewidth}
+		\captionof*{figure}{{\scriptsize \textbf{Silver}}}
+		\vspace{-4mm}
+		\includegraphics[width=\linewidth,height=4cm]{images/exps2011/medium/das/inst_type_machines.eps}
 		\vspace{-4mm}
 	\end{minipage}
-\caption{Cloud instances provisioned to handle the outage.}
+\hfill
+	\begin{minipage}[b]{0.2\linewidth}
+		\captionof*{figure}{{\scriptsize \textbf{Gold}}}
+		\vspace{-4mm}
+		\includegraphics[width=\linewidth,height=4cm]{images/exps2011/medium_up/das/inst_type_machines.eps}
+		\vspace{-4mm}
+	\end{minipage}
+\hfill
+\begin{minipage}[b]{0.19\linewidth}
+		\captionof*{figure}{{\scriptsize \textbf{Platinum}}}
+		\vspace{-4mm}
+		\includegraphics[width=\linewidth,height=4cm]{images/exps2011/high/das/inst_type_machines.eps}
+		\vspace{-4mm}
+	\end{minipage}
+\caption{DAS4: Cloud instances provisioned to handle the outage.}
 \label{fig:DASInstances}
 \end{figure*}
 
-\paragraph{SLO violation cost VS Infrastructure cost}
+%\paragraph{SLO violation cost VS Infrastructure cost}
 
-\begin{figure*}[htb]
-	\begin{minipage}[b]{0.32\linewidth}
-		\includegraphics[height=4cm]{images/exps2011/low/das/penaltyVScost.eps}	
-		\vspace{-4mm}
-	\end{minipage}
-	\hfill
-	\begin{minipage}[b]{0.32\linewidth}
-		\includegraphics[height=4cm]{images/exps2011/medium/das/penaltyVScost.eps}
-		\vspace{-4mm}
-	\end{minipage}
-\hfill
-\begin{minipage}[b]{0.32\linewidth}
-		\includegraphics[height=4cm]{images/exps2011/high/das/penaltyVScost.eps}
-		\vspace{-4mm}
-	\end{minipage}
-\caption{Cloud instances provisioned to handle the outage.}
-\label{fig:DASPenalty}
-\end{figure*}
+%\begin{figure*}[htb]
+%	\begin{minipage}[b]{0.32\linewidth}
+%		\includegraphics[height=4cm]{images/exps2011/low/das/penaltyVScost.eps}	
+%		\vspace{-4mm}
+%	\end{minipage}
+%	\hfill
+%	\begin{minipage}[b]{0.32\linewidth}
+%		\includegraphics[height=4cm]{images/exps2011/medium/das/penaltyVScost.eps}
+%		\vspace{-4mm}
+%	\end{minipage}
+%\hfill
+%\begin{minipage}[b]{0.32\linewidth}
+%		\includegraphics[height=4cm]{images/exps2011/high/das/penaltyVScost.eps}
+%		\vspace{-4mm}
+%	\end{minipage}
+%\caption{Cloud instances provisioned to handle the outage.}
+%\label{fig:DASPenalty}
+%\end{figure*}
 
 \begin{table*}
   {\scriptsize 
 \begin{center}
     \begin{tabular}{  | c | c | c | c | c |}
     \hline
-         \textbf{Name}  & \textbf{SLO Violations} & \textbf{Decisions}  & \textbf{Cost}  & \textbf{Cost violations} \\ \hline
-   \textit{A}   & 250  &  8 &  6.4 \$ &  \$ \\ \hline   
-   \textit{B}  &   &   &   \$ &  4.5 \$ \\ \hline   
-   \textit{C}  &  127 &  9 &  6.9 \$ &   \$ \\ \hline   
-   \textit{D}  &   &   &   \$ &   \$ \\ \hline   
-\textit{E} &  83 & 31 & 12.8 \$ &  \$ \\ \hline   
+         \textbf{Customer}  & \textbf{SLO Violations} & \textbf{Decisions}  & \textbf{Cost}  & \textbf{Cost violations} \\ \hline
+   \textit{copper}   & 138  &  6 &  6.4 \$ &  \$ \\ \hline   
+   \textit{bronze}  &  129 &   8&  9.5 \$ &  \$ \\ \hline   
+   \textit{silver}  &  82  & 10  &  10.4 \$ &   \$ \\ \hline   
+   \textit{gold}  & 0  &  4  &   8.39 \$ &   \$ \\ \hline   
+\textit{platinum} &  0 & 24 & 12.8 \$ &  \$ \\ \hline   
 
  \end{tabular}
 \end{center}

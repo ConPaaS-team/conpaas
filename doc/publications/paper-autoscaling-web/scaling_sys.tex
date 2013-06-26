@@ -8,17 +8,17 @@ The proposed autoscaling system scales a web application in response to change i
 
 \vspace{2mm}
 
-\textbf{Profiler: } To choose a scaling plan, provisioning systems have to know the limitations of the different server configurations when running an application. The definition of profiles for each instance's type improves the accuracy of the scaling actions, specifically in heterogeneous cloud infrastructures. Thus, the Profiler component calculates the optimal throughput of each type of provisioned configurations (vm instance in the following) using profiling techniques.
+\textbf{Profiler: } To choose a scaling plan, provisioning systems have to know the computing capacity of the different server configurations when running an application. The definition of profiles for each instance's type improves the accuracy of the scaling actions, specifically in heterogeneous cloud infrastructures. Thus, the Profiler component calculates the optimal throughput of each type of provisioned configurations (vm instance in the following).
 
 % without any server instrumentation.
 
 \vspace{2mm}
 
-\textbf{Dynamic load balancer: } In order to adapt our system to the heterogeneity of requests and cloud resources, this component dynamically assign weights to the backend servers to proportionally distribute the incoming traffic based on the performance characteristics of each backend. As an example, a server with four cores is able to process a higher number of requests so its weight has to a be greater than a server with only one core.
+\textbf{Dynamic load balancer: } In order to adapt our system to the heterogeneity of requests and cloud resources, this component dynamically assigns weights to the backend servers to proportionally distribute the incoming traffic based on the performance characteristics of each backend. As an example, a server with four cores is able to process a higher number of requests so its weight has to a be greater than a server with only one core.
 
 \vspace{2mm}
 
-\textbf{Scaler:} This component contains the central intelligence of our autoscaling system. As illustrated in Figure~\ref{autoScalingSys}, Scaler uses the Predictor and Profiler components to find the optimal provisioning strategy that fulfills a pre-established SLO (Service Level Objective). Furthermore, this component constantly analyzes the behavior of each provisioned vm triggering the Dynamic load balancer component when need it.
+\textbf{Scaler:} This component contains the central intelligence of our autoscaling system. As illustrated in Figure~\ref{autoScalingSys}, Scaler uses the Predictor and Profiler components to find the optimal provisioning strategy that fulfills a pre-established SLO (Service Level Objective). Furthermore, this component constantly analyzes the behavior of each provisioned VM triggering the Dynamic load balancer component when necessary.
 
 \begin{figure}[htb]
   \begin{center}
@@ -29,11 +29,11 @@ The proposed autoscaling system scales a web application in response to change i
   \label{autoScalingSys}
 \end{figure}
 
-\fixme{Write a link to present the rest of subsections.}
+\fixme{Write a link to present the rest of the section 3.}
 %In the following we ..
 
 \subsection{Vertical and horizontal scaling}
-The Scaler component is the central governance of this autoscaling system, and thereby is the responsible of triggering any scaling action. Our system supports two ways to add and remove resources to an application: vertical and horizontal scaling. Horizontal scaling enables to create a cluster of virtual machines associated to one application whose size is dynamically adapted to the workload fluctuations by adding or removing resources to the cluster. This scaling technique is commonly supported for the majority of resource provisioning systems. On the other hand, in our system, vertical scaling enables to add or remove resources with high or less cpu and memory using \emph{service live migration}. Using this mechanism, the Scaler migrates the hosted service (web applications) from one virtual machine to another with a better hardware configuration. To reduce the degradations caused by this type of migration or by the booting time of the new machine, the Scaler checks the proper functioning of the new machine in order to release the older one.
+The Scaler component is the central component of this autoscaling system, and thereby is the responsible of triggering scaling actions. Our system supports two ways to add and remove resources to an application: vertical and horizontal scaling. Horizontal scaling enables to create a cluster of virtual machines associated to one application whose size is dynamically adapted to the workload fluctuations by adding or removing resources to the cluster. This scaling technique is commonly supported for the majority of resource provisioning systems. On the other hand, in our system, vertical scaling enables to add or remove resources with high or less cpu and memory using \emph{service live migration}. Using this mechanism, the Scaler migrates the hosted service (web applications) from one virtual machine to another with a better hardware configuration. To reduce the degradations caused by this type of migration or by the booting time of the new machine, the Scaler checks the proper functioning of the new machine in order to release the older one.
 
 In order to decide when to trigger any of these two scaling actions, our system uses the following three methods: 
 \begin{itemize}
@@ -334,7 +334,7 @@ cost\_strategy = \dfrac{  slo\_fulfillment  } {infra\_cost}
 \end{equation}
 }
 
-\fixme{I could omit the use of the SLO penalty, as it is a constant in my experiments. Instead I could say that the user decides what they need.}
+\fixme{I could omit the use of the SLO penalty, as it is a constant in my experiments. Instead I could say that the system adapts to the user needs.}
 
 The criteria for the selection of the optimal strategy is configurable, and thereby it can be defined by the customer preferences. For instance, large enterprises need to provide high availability and performance to their clients, disposing of a generous budget for such a mission. Moreover, \emph{$SLO_{penalty}$} can be also used as a criteria for the selection of the most appropriated strategy according to its value.
 

@@ -7,6 +7,7 @@
 
 \usepackage{boxedminipage}
 \usepackage{morefloats}
+\usepackage{caption}
 
 % the fixme command
 \newcommand{\fixme}[1]
@@ -94,8 +95,9 @@ This work is funded by the FP7 Programme of the European Commission in the conte
 
 \balancecolumns
 
-%\bibliographystyle{abbrv}
+%\bibliographystyle{plain}
 %\bibliography{socc2013}
+
 
 \begin{thebibliography}{10}
 
@@ -109,7 +111,7 @@ Vector autoregressive models for multivariate time series.
   SuperComputer 4. }.
 
 \bibitem{ali-eldin_2012}
-A.~Ali-Eldin, J.~Tordsson, and E.~Elmroth.
+Ahmed Ali-Eldin, Johan Tordsson, and Erik Elmroth.
 \newblock An adaptive hybrid elasticity controller for cloud infrastructures.
 \newblock In {\em NOMS'12}, pages 204--212, 2012.
 
@@ -117,47 +119,56 @@ A.~Ali-Eldin, J.~Tordsson, and E.~Elmroth.
 {Amazon Elastic Compute Cloud (EC2)}.
 
 \bibitem{bunch_2012}
-C.~Bunch, V.~Arora, N.~Chohan, C.~Krintz, S.~Hegde, and A.~Srivastava.
+Chris Bunch, Vaibhav Arora, Navraj Chohan, Chandra Krintz, Shashank Hegde, and
+  Ankit Srivastava.
 \newblock A pluggable autoscaling service for open cloud paas systems.
 \newblock In {\em UCC'12}, pages 191--194, 2012.
 
 \bibitem{chandra_dynamic_2003}
-A.~Chandra, W.~Gong, and P.~Shenoy.
+Abhishek Chandra, Weibo Gong, and Prashant Shenoy.
 \newblock Dynamic resource allocation for shared data centers using online
   measurements.
 \newblock {\em {SIGMETRICS} Perform. Eval. Rev.}, 31(1):300--301, June 2003.
 
 \bibitem{ec2Performance}
-J.~Dejun, G.~Pierre, and C.-H. Chi.
+Jiang Dejun, Guillaume Pierre, and Chi-Hung Chi.
 \newblock {EC2} performance analysis for resource provisioning of
   service-oriented applications.
 \newblock In {\em Proceedings of the 3rd Workshop on Non-Functional Properties
-  and SLA Management in Service-Oriented Computing}, Nov. 2009.
+  and SLA Management in Service-Oriented Computing}, November 2009.
 
 \bibitem{smartscale_2012}
-S.~Dutta, S.~Gera, A.~Verma, and B.~Viswanathan.
+Sourav Dutta, Sankalp Gera, Akshat Verma, and Balaji Viswanathan.
 \newblock Smartscale: Automatic application scaling in enterprise clouds.
 \newblock In {\em IEEE CLOUD'12}, pages 221--228, 2012.
 
+\bibitem{wikibench}
+Guido~Urdaneta Erik-Jan~van Baaren and Guillaume Pierre.
+\newblock Wikibench: A distributed, wikipedia based web application benchmark.
+\newblock 2009.
+
 \bibitem{gandhi_hybrid_2012}
-A.~Gandhi, Y.~Chen, D.~Gmach, M.~Arlitt, and M.~Marwah.
+Anshul Gandhi, Yuan Chen, Daniel Gmach, Martin Arlitt, and Manish Marwah.
 \newblock Hybrid resource provisioning for minimizing data center {SLA}
   violations and power consumption.
 \newblock {\em Sustainable Computing: Informatics and Systems}, 2(2):91--104,
   June 2012.
 
+\bibitem{ganglia}
+{Ganglia monitoring system. http://ganglia.sourceforge.net/}.
+
 \bibitem{ghanbari_exploring_2011}
-H.~Ghanbari, B.~Simmons, M.~Litoiu, and G.~Iszlai.
+Hamoun Ghanbari, Bradley Simmons, Marin Litoiu, and Gabriel Iszlai.
 \newblock Exploring alternative approaches to implement an elasticity policy.
 \newblock In {\em Proc.\ IEEE CLOUD}, 2011.
 
 \bibitem{jiangThesis}
-D.~Jiang.
+Dejun Jiang.
 \newblock {\em Performance Guarantees For Web Applications}.
 \newblock Phd thesis, VU University Amsterdam, March 2012.
 
 \bibitem{kaviani_profiling-as--service:_2011}
-N.~Kaviani, E.~Wohlstadter, and R.~Lea.
+Nima Kaviani, Eric Wohlstadter, and Rodger Lea.
 \newblock Profiling-as-a-service: adaptive scalable resource profiling for the
   cloud in the cloud.
 \newblock In {\em Proceedings of the 9th international conference on
@@ -165,21 +176,26 @@ N.~Kaviani, E.~Wohlstadter, and R.~Lea.
   2011. Springer-Verlag.
 
 \bibitem{exponential_smoothing2010}
-H.~Mi, H.~Wang, G.~Yin, Y.~Zhou, D.~Shi, and L.~Yuan.
+Haibo Mi, Huaimin Wang, Gang Yin, Yangfan Zhou, Dianxi Shi, and Lin Yuan.
 \newblock Online self-reconfiguration with performance guarantee for
   energy-efficient large-scale cloud computing data centers.
 \newblock In {\em 2010 {IEEE} International Conference on Services Computing
   ({SCC)}}, pages 514--521, July.
 
 \bibitem{muppala_regression-based_2012}
-S.~Muppala, X.~Zhou, L.~Zhang, and G.~Chen.
+Sireesha Muppala, Xiaobo Zhou, Liqiang Zhang, and Guihai Chen.
 \newblock Regression-based resource provisioning for session slowdown guarantee
   in multi-tier internet servers.
 \newblock {\em Journal of Parallel and Distributed Computing}, 72(3):362--375,
-  Mar. 2012.
+  March 2012.
 
 \bibitem{openshift}
 {OpenShift. https://openshift.redhat.com/app/flex}.
+
+\bibitem{conpaasIC}
+Guillaume Pierre and Corina Stratan.
+\newblock {ConPaaS}: a platform for hosting elastic cloud applications.
+\newblock {\em IEEE Internet Computing}, 16(5):88--92, September-October 2012.
 
 \bibitem{right-scale}
 {RightScale. http://www.rightscale.com//}.
@@ -192,7 +208,7 @@ N.~Roy, A.~Dubey, and A.~Gokhale.
   ({CLOUD)}}, pages 500--507, July.
 
 \bibitem{roy_2011}
-N.~Roy, A.~Dubey, A.~Gokhale, and L.~Dowdy.
+Nilabja Roy, Abhishek Dubey, Aniruddha Gokhale, and Larry Dowdy.
 \newblock A capacity planning process for performance assurance of
   component-based distributed systems.
 \newblock In {\em Proceedings of the 2nd ACM/SPEC International Conference on
@@ -205,32 +221,39 @@ U.~Sharma, P.~Shenoy, S.~Sahu, and A.~Shaikh.
 \newblock In {\em 2011 31st International Conference on Distributed Computing
   Systems ({ICDCS)}}, pages 559 --570, June 2011.
 
+\bibitem{sotomayor_virtual_2009}
+B.~Sotomayor, {R.S.} Montero, {I.M.} Llorente, and I.~Foster.
+\newblock Virtual infrastructure management in private and hybrid clouds.
+\newblock {\em {IEEE} Internet Computing}, 13(5):14--22, October 2009.
+
 \bibitem{urgaonkar_agile_2008}
-B.~Urgaonkar, P.~Shenoy, A.~Chandra, P.~Goyal, and T.~Wood.
+Bhuvan Urgaonkar, Prashant Shenoy, Abhishek Chandra, Pawan Goyal, and Timothy
+  Wood.
 \newblock Agile dynamic provisioning of multi-tier internet applications.
-\newblock {\em {ACM} Trans. Auton. Adapt. Syst.}, 3(1):1--39, Mar. 2008.
+\newblock {\em {ACM} Trans. Auton. Adapt. Syst.}, 3(1):1--39, March 2008.
 
 \bibitem{dejavu2012}
-N.~Vasić, D.~Novaković, S.~Miu{\textbackslash}vcin, D.~Kostić, and
-  R.~Bianchini.
+Nedeljko Vasi\'c, Dejan Novakovi\'c, Svetozar Miu\u cin, Dejan
+  Kosti\'c, and Ricardo Bianchini.
 \newblock {DejaVu:} accelerating resource allocation in virtualized
   environments.
-\newblock {\em {SIGARCH} Comput. Archit. News}, 40(1):423--436, Mar. 2012.
+\newblock {\em {SIGARCH} Comput. Archit. News}, 40(1):423--436, March 2012.
+
+\bibitem{mediawiki}
+{Wikipedia Foundation}.
+\newblock MediaWiki a free software wiki package. {http://www.mediawiki.org}.
 
 \bibitem{azure-project}
 {WindowsAzure. http://www.windowsazure.com/}.
 
 \bibitem{wolski_network_1999}
-R.~Wolski, N.~T. Spring, and J.~Hayes.
+Rich Wolski, Neil~T. Spring, and Jim Hayes.
 \newblock The network weather service: A distributed resource performance
   forecasting service for metacomputing.
 \newblock {\em Journal of Future Generation Computing Systems}, 15:757--768,
   1999.
 
 \end{thebibliography}
-
-
-
 
 
 \end{document}
