@@ -16,11 +16,11 @@ and configure all the aforementioned components.
 .. _ConPaaS: http://www.conpaas.eu
 .. _Flask: http://flask.pocoo.org/
 
-Both **cpsdirector** and **cpsfrontend** can be installed on your own hardware
-or on virtual machines running on public or private clouds. If you wish to
-install them on Amazon EC2, the `Official Debian Wheezy EC2 image
-(ami-1d620e74)`_ is known to work well. Please note that the *root* account is
-disabled and that you should instead login as *admin*.
+ConPaaS's **cpsdirector** and its two clients, **cpsclient** and **cpsfrontend**,
+can be installed on your own hardware or on virtual machines running on public
+or private clouds. If you wish to install them on Amazon EC2, the `Official Debian
+Wheezy EC2 image (ami-1d620e74)`_ is known to work well. Please note that the
+*root* account is disabled and that you should instead login as *admin*.
 
 .. _Official Debian Wheezy EC2 image (ami-1d620e74): https://console.aws.amazon.com/ec2/v2/home?region=us-east-1#Images:filter=all-images;platform=all-platforms;visibility=public-images;search=ami-1d620e74
 
@@ -39,6 +39,9 @@ Installing ConPaaS requires to take the following steps:
 #. Install and configure **cpsdirector** as explained in
    :ref:`director-installation`. All system configuration takes place in the
    director. 
+
+#. Install and configure **cpsclient** as explained in
+   :ref:`cpsclient-installation`.
 
 #. Install **cpsfrontend** and configure it to use your ConPaaS
    director as explained in :ref:`frontend-installation`.
@@ -205,6 +208,26 @@ ssh into your manager VM as root and:
 
 4. Check the contents of :file:`/root/manager.err`, :file:`/root/manager.out`
    and :file:`/var/log/cpsmanager.log`.
+
+.. _cpsclient-installation:
+
+Command line tool installation
+================================
+
+The command line tool, called ``cpsclient``, can be installed as root
+or as a regular user.
+
+As root::
+
+    $ sudo easy_install http://www.conpaas.eu/dl/cpsclient-1.2.0.tar.gz
+
+Or, if you do not have root privileges, the ``cpsclient`` can also be installed
+in a Python virtual environment if ``virtualenv`` is available on your machine::
+
+    $ virtualenv conpaas # create the 'conpaas' virtualenv
+    $ cd conpaas
+    $ source bin/activate # activate it
+    $ easy_install http://www.conpaas.eu/dl/cpsclient-1.2.0.tar.gz
 
 .. _frontend-installation:
 

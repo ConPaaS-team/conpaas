@@ -122,26 +122,8 @@ Controlling services using the command-line interfaces
 
 Command-line interfaces allow one to control services without using the
 graphical interface. The command-line interfaces also offer additional
-functionality for advanced usage of the services.
-
-The command line tools, called ``cpsclient``, can be installed as
-follows:
-
-::
-
-    $ sudo easy_install http://www.conpaas.eu/dl/cpsclient-1.2.0.tar.gz
-
-``cpsclient`` can also be installed in a Python virtual environment if
-``virtualenv`` is available on the machine you are using. This method of
-installing the CLI tools can be used in case you do not have root
-privileges.
-
-::
-
-    $ virtualenv conpaas # create the 'conpaas' virtualenv
-    $ cd conpaas
-    $ source bin/activate # activate it
-    $ easy_install http://www.conpaas.eu/dl/cpsclient-1.2.0.tar.gz
+functionalities for advanced usage of the services.
+See :ref:`cpsclient-installation` to install it.
 
 List all options of the command-line tool.
      
