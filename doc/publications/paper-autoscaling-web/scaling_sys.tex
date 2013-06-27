@@ -1,14 +1,17 @@
 
 
-The proposed autoscaling system scales a web application in response to change in throughput at fixed intervals, which we denote by reconfiguration intervals of 10 minutes. This system is able to provision the right amount and type of resources for minimizing the number of SLA violations while keeping the operational cost adapted to the customer requirements. Vertical and horizontal scaling actions can be applicable to satisfy the service demand. This architecture has the following key components:
+The proposed autoscaling system scales a web application in response to change in throughput at fixed intervals, which we denote by reconfiguration intervals of 10 minutes. This system is able to provision the right amount and type of resources for minimizing the number of SLA violations while keeping the operational cost adapted to the customer requirements. This architecture has the following key components:
+
+%Vertical and horizontal scaling actions can be applicable to satisfy the service demand. 
 
 \vspace{2mm}
 
-\textbf{Predictor: } Inspired by~\cite{wolski_network_1999}, the Predictor component takes the monitoring data as input and uses different time-series analysis techniques to predict the future service demand for the next time interval. To provide accurate forecasting measures, this component utilizes the technique that exhibited the lowest cumulative error measure during the previous monitoring window. By doing so, the Predictor is able to adapt the predictions to the current type of workload. This component supports five distinct statistical models that fits four types of workload: \emph{(1)} \emph{Linear Regression} for linear trends~\cite{muppala_regression-based_2012}, \emph{(2)} \emph{Auto Regression Moving Average} (ARMA) for linear with small oscillations~\cite{roy_efficient_2011}, \emph{(3)} \emph{Exponential Smoothing} for daily and seasonal~\cite{exponential_smoothing2010}, and \emph{(4)} \emph{Autoregression} and \emph{Vector Autoregression} for correlated trends~\cite{vector_autoregression_2006,chandra_dynamic_2003}. 
+\textbf{Predictor: } To prevent SLA violations in advance, workload prediction is needed to estimate the incomming traffic. However, this operation becomes more problematic by the fact that Web application workloads are often very unstable following an irregular pattern, with occasional short traffic spikes. Based on that and inspired by~\cite{wolski_network_1999}, our Predictor component takes the monitoring data as input and uses different time-series analysis techniques to predict the future service demand for the next time interval. To provide accurate forecasting measures, this component utilizes the technique that exhibited the lowest cumulative error measure during the previous monitoring window. By doing so, the Predictor is able to adapt the predictions to the current type of workload. This component supports five distinct statistical models that fits four types of workload: \emph{(1)} \emph{Linear Regression} for linear trends~\cite{muppala_regression-based_2012}, \emph{(2)} \emph{Auto Regression Moving Average} (ARMA) for linear with small oscillations~\cite{roy_efficient_2011}, \emph{(3)} \emph{Exponential Smoothing} for daily and seasonal~\cite{exponential_smoothing2010}, and \emph{(4)} \emph{Autoregression} and \emph{Vector Autoregression} for correlated trends~\cite{vector_autoregression_2006,chandra_dynamic_2003}. 
+
 
 \vspace{2mm}
 
-\textbf{Profiler: } To choose a scaling plan, provisioning systems have to know the computing capacity of the different server configurations when running an application. The definition of profiles for each instance's type improves the accuracy of the scaling actions, specifically in heterogeneous cloud infrastructures. Thus, the Profiler component calculates the optimal throughput of each type of provisioned configurations (vm instance in the following).
+\textbf{Profiler: } To choose a scaling plan, provisioning systems have to know the computing capacity of the different server configurations when running an application. To do that, the system creates profiles for each instance's type by analyzing its performance behavior (e.g. measuring the cpu usage, request rate and response times).  The definition of profiles per-instance's type improves the accuracy of the scaling actions, specifically in heterogeneous cloud infrastructures. Thus, the Profiler component calculates the optimal throughput of each type of provisioned configurations (vm instance in the following). By optimal throughput, we mean the performance pattern under which a resource assures the QoS requirements while avoiding its under/over-utilization.
 
 % without any server instrumentation.
 
@@ -29,32 +32,33 @@ The proposed autoscaling system scales a web application in response to change i
   \label{autoScalingSys}
 \end{figure}
 
-\fixme{Write a link to present the rest of the section 3.}
-%In the following we ..
+In the following, we focus on answering when to scale and which scaling plan to choose when running web applications.
 
-\subsection{Vertical and horizontal scaling}
-The Scaler component is the central component of this autoscaling system, and thereby is the responsible of triggering scaling actions. Our system supports two ways to add and remove resources to an application: vertical and horizontal scaling. Horizontal scaling enables to create a cluster of virtual machines associated to one application whose size is dynamically adapted to the workload fluctuations by adding or removing resources to the cluster. This scaling technique is commonly supported for the majority of resource provisioning systems. On the other hand, in our system, vertical scaling enables to add or remove resources with high or less cpu and memory using \emph{service live migration}. Using this mechanism, the Scaler migrates the hosted service (web applications) from one virtual machine to another with a better hardware configuration. To reduce the degradations caused by this type of migration or by the booting time of the new machine, the Scaler checks the proper functioning of the new machine in order to release the older one.
+\subsection{Provisioning on demand: Horizontal scaling}
+The Scaler component is the central component of this autoscaling system, and thereby is the responsible of triggering scaling actions. Our system supports horizontal scaling as a technique to add and remove resources to an application. Horizontal scaling enables to create a cluster of virtual machines associated to one application whose size is dynamically adapted to the workload fluctuations by adding or removing resources to the cluster. This scaling technique is commonly supported for the majority of resource provisioning systems. Howerver, our system is able to use the heterogeneity of the cloud infrastructures to improve the efficiency of the scaling actions.
 
-In order to decide when to trigger any of these two scaling actions, our system uses the following three methods: 
+% On the other hand, in our system, vertical scaling enables to add or remove resources with high or less cpu and memory using \emph{service live migration}. Using this mechanism, the Scaler migrates the hosted service (web applications) from one virtual machine to another with a better hardware configuration. To reduce the degradations caused by this type of migration or by the booting time of the new machine, the Scaler checks the proper functioning of the new machine in order to release the older one.
+
+In order to decide when to trigger a scaling action, our system uses the following three methods: 
 \begin{itemize}
+
 \item \emph{Response time analysis:} A precise analysis of the monitoring data is crucial to minimize performance degradations that are sometimes omitted by traditional analytical methods such as the median, average or moving average. To obtain precise information (response times) that indicates the performance behavior of an application, we decided to extend a known smoothing technique called \emph{Weighted Moving Average} (WMA). Using our extension of WMA, it first associated weights in an increasing order giving more importance to the latest monitoring data; and second it doubles the original weight value of each data-point that exceeds the performance requirements (response time). By doing so, our system analyzes the monitoring data giving special importance to the data points on which SLO violations have occurred, and thereby is able to detect and avoid the maximum number of violations.
 
 \item \emph{Definition of a reactive threshold:} Additionally to the fixed threshold pre-defined by the QoS requirements, our system also includes an extra threshold (based on these requirements) that will enable in advance to react against any traffic oscillation minimizing the number of SLO violations or under-utilization of the provisioned resources. This reactive threshold specifies one upper and lower boundaries creating two head-rooms between them and the performance requirements pre-defined by the user (for the response time).
 
-\item \emph{Workload forecasting: }  The \emph{Predictor} component is utilized to trigger short-term forecasts operations that will minimize at the maximum the number of SLA violations, as well as to keep a high level of efficiency in the predictions. 
+\item \emph{Workload forecasting: }  The \emph{Predictor} component is utilized to trigger short-term forecasts operations that will minimize at the maximum the number of SLA violations, as well as keep a high level of efficiency in the predictions. 
 \end{itemize}
 
 Based on these techniques, the \emph{Scaler} evaluates whether the current performance behavior requires to trigger any of the following scaling actions:
 
 \begin{itemize}
 
-\item \textbf{Scale out or up:} Additional resources are provisioned if the performance behavior exceeds the upper boundary of the reactive threshold, and the \emph{Predictor} confirms that such traffic changes will remain at least during the next monitoring window (in our experiments 5min). 
+\item \textbf{Scale out:} Additional resources are provisioned if the system performance exceeds the upper boundary of the reactive threshold, and the \emph{Predictor} confirms that such traffic changes will remain at least during the next monitoring window (in our experiments 5min). 
 
-\item \textbf{Scale back or down:} Resources are released if the performance behavior exceeds the lower boundary of the reactive threshold, and the \emph{Predictor} confirms that such traffic changes will remain at least during the next monitoring window.
+\item \textbf{Scale back:} Resources are released if the system performance exceeds the lower boundary of the reactive threshold, and the \emph{Predictor} confirms that such traffic changes will remain at least during the next monitoring window.
 
 \end{itemize}
 
-\fixme{Some parts of this subsection could be omitted.}
 
 
 %\subsubsection{Response time analysis - Time-series smoothing}

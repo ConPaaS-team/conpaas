@@ -26,19 +26,19 @@ Over the last few years, more and more cloud providers designed and integrated d
 
 \begin{table*}\label{Ref_summary}
   {\scriptsize 
-    \begin{tabular}{  | p{0.8cm} | p{3cm} | p{1.5cm} | p{3cm} | p{2.6cm} | p{1.4cm} | p{2.5cm} |}
+    \begin{tabular}{  | p{0.8cm} | p{3.5cm} | p{3cm} | p{3.2cm} | p{1.4cm} | p{3.2cm} |}
     \hline
-\textbf{Ref} & \textbf{Autoscaling technique}  & \textbf{Scaling \newline actions} & \textbf{Scaling criteria} & \multicolumn{2}{|c|}{\textbf{Measuring resource performance}}    & \textbf{Experimental platform} \\ 
- &   &  &  & \textbf{Technique} & \textbf{Analysis}  &  \\ \hline
-\textit{\cite{urgaonkar_agile_2008}}   & Queuing theory and thresholds & Horizontal & Request rate and response time &  --  & -- & Custom testbed. \newline Real traces (FIFA'98) \\ \hline
-\textit{\cite{roy_efficient_2011}}   & Look-ahead and customer behavior analysis & Horizontal & Response time &  --  & -- & Custom testbed. \newline Real traces (FIFA'98)  \\ \hline
-\textit{\cite{ali-eldin_2012}}   & Closed loop with two controllers: reactive and one proactive  & Horizontal & Request rate and response time  & -- & -- & Simulation. \newline Real traces (FIFA'98)  \\ \hline
-\textit{\cite{bunch_2012}}   & Queuing theory, workload forecasting and thresholds  & Horizontal and vertical & Request rate and response time  & -- &  --  & Custom testbed and EC2. \newline No real traces. (Apache benchmark tool)\\ \hline
-\textit{\cite{roy_2011}}   & Queuing theory, forecasting and thresholds  & Horizontal &  Cpu usage and response time  & Offline profiling: cpu & Homogeneous &  Custom testbed. (RUBiS)  \\ \hline
-\textit{\cite{smartscale_2012}}   &  Workload forecasting and classifier & Horizontal and vertical &  Cpu usage, memory and response time & Offline profiling: cpu and memory under a fixed workload; & Homogeneous &  Custom  testbed. \newline No real traces (Olio).  \\ \hline
-\textit{\cite{sharma_cost-aware_2011}}   & Workload forecasting and thresholds  & Horizontal and vertical & Request rate and response time  & Offline profiling: max request rate under a gradually increasing synthetic workload & Heterogeneous &  EC2 and OpenNebula. \newline No real traces. (TPC-W) \\ \hline
-\textit{\cite{dejavu2012}}   & Queuing theory and workload classifier & Horizontal &  Request rate and response time  & Online profiling: cpu, memory and I/O rate under a fixed workload & Homogeneous &  Custom testbed. \newline Real traces. (HotMail'09)  \\ \hline
-\textit{ConPaaS}   & Closed loop, thresholds and workload forecasting & Horizontal and vertical &  Response time, request rate and cpu usage & Online profiling: Ideal cpu and request rate  under current workload & Heterogeneous &  EC2 and OpenNebula. \newline Real traces. (English Wikipedia'11)  \\ \hline
+\textbf{Ref} & \textbf{Autoscaling technique}   & \textbf{Scaling criteria} & \multicolumn{2}{|c|}{\textbf{Measuring resource performance}}    & \textbf{Experimental platform} \\ 
+ &   &    & \textbf{Technique} & \textbf{Analysis}  &  \\ \hline
+\textit{\cite{urgaonkar_agile_2008}}   & Queuing theory and thresholds  & Request rate and response time &  --  & -- & Custom testbed. \newline Real traces (FIFA'98) \\ \hline
+\textit{\cite{roy_efficient_2011}}   & Look-ahead and customer behavior analysis  & Response time &  --  & -- & Custom testbed. \newline Real traces (FIFA'98)  \\ \hline
+\textit{\cite{ali-eldin_2012}}   & Closed loop with two controllers: reactive and one proactive   & Request rate and response time  & -- & -- & Simulation. \newline Real traces (FIFA'98)  \\ \hline
+\textit{\cite{bunch_2012}}   & Queuing theory, workload forecasting and thresholds  & Request rate and response time  & -- &  --  & Custom testbed and EC2. \newline No real traces. (Apache benchmark tool)\\ \hline
+\textit{\cite{roy_2011}}   & Queuing theory, forecasting and thresholds   &  Cpu usage and response time  & Offline profiling: cpu & Homogeneous &  Custom testbed. (RUBiS)  \\ \hline
+\textit{\cite{smartscale_2012}}   &  Workload forecasting and classifier  &  Cpu usage, memory and response time & Offline profiling: cpu and memory under a fixed workload; & Homogeneous &  Custom  testbed. \newline No real traces (Olio).  \\ \hline
+\textit{\cite{sharma_cost-aware_2011}}   & Workload forecasting and thresholds   & Request rate and response time  & Offline profiling: max request rate under a gradually increasing synthetic workload & Heterogeneous &  EC2 and OpenNebula. \newline No real traces. (TPC-W) \\ \hline
+\textit{\cite{dejavu2012}}   & Queuing theory and workload classifier  &  Request rate and response time  & Online profiling: cpu, memory and I/O rate under a fixed workload & Homogeneous &  Custom testbed. \newline Real traces. (HotMail'09)  \\ \hline
+\textit{ConPaaS}   & Closed loop, thresholds and workload forecasting  &  Response time, request rate and cpu usage & Online profiling: Ideal cpu and request rate  under current workload & Heterogeneous &  EC2 and OpenNebula. \newline Real traces. (English Wikipedia'11)  \\ \hline
  \end{tabular}
 
 \caption{Summary of references about performance capacity measurement.}
