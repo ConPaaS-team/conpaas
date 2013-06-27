@@ -225,13 +225,13 @@ we will need a PHP and a MySQL service in ConPaaS.
 
 #. That’s it! The system works, and can be scaled up and down.
 
-Note that the “file upload” functionality of WordPress will not work if
+Note that, for this simple example, the “file upload” functionality of WordPress will not work if
 you scale the system up. This is because WordPress stores files in the
 local file system of the PHP server where the upload has been processed.
 If a subsequent request for this file is processed by another PHP server
-then the file will not be found. In a next ConPaaS release we will
-provide a shared file system service which will allow one to avoid this
-issue.
+then the file will not be found.
+The solution to that issue consists in using the shared file-system
+service called XtreemFS to store the uploaded files.
 
 The PHP Web hosting service
 ===========================
