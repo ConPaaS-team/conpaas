@@ -2,7 +2,7 @@
 Installation 
 ============
 ConPaaS_ is a Platform-as-a-Service system. It aims at simplifying the
-deployment and management of applications in the Cloud.  
+deployment and management of applications in the Cloud.
 
 The central component of ConPaaS, called *ConPaaS Director* (**cpsdirector**),
 is responsible for handling user authentication, creating new applications,
@@ -137,7 +137,7 @@ please ensure you run the following commands::
 
 Director database
 -----------------
-The ConPaaS Director uses a sqlite database to store information about
+The ConPaaS Director uses a SQLite database to store information about
 registered users and running services. It is not normally necessary for
 ConPaaS administrators to directly access such a database. However,
 should the need arise, it is possible to inspect and modify the database
@@ -456,7 +456,7 @@ Debian/Ubuntu instance in the cloud.
          
 
 #. Edit the
-   *conpaas/scripts/create\_vm/opennebula-create-new-vm-image.sh* script
+   ``conpaas/scripts/create\_vm/opennebula-create-new-vm-image.sh`` script
    if necessary: there are two sections in the script that you might
    need to customize with parameters that are specific to your system.
    These sections are marked by comment lines containing the text "TO

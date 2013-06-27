@@ -199,7 +199,7 @@ we will need a PHP and a MySQL service in ConPaaS.
 
 #. Create a PHP service, start it.
 
-#. Download a Wordpress tarball from http://www.wordpress.org, and
+#. Download a WordPress tarball from http://www.wordpress.org, and
    expand it in your computer.
 
 #. Copy file ``wordpress/wp-config-sample.php`` to
@@ -229,7 +229,7 @@ Note that the “file upload” functionality of WordPress will not work if
 you scale the system up. This is because WordPress stores files in the
 local file system of the PHP server where the upload has been processed.
 If a subsequent request for this file is processed by another PHP server
-then the file will not be found. In a next ConPaaS release we wil
+then the file will not be found. In a next ConPaaS release we will
 provide a shared file system service which will allow one to avoid this
 issue.
 
@@ -239,10 +239,11 @@ The PHP Web hosting service
 The PHP Web hosting service is dedicated to hosting Web applications
 written in PHP. It can also host static Web content.
 
+
+.. _code_upload:
+
 Uploading application code
 --------------------------
-
-[codeupload]
 
 PHP applications can be uploaded as an archive or via the Git version
 control system.
@@ -315,7 +316,7 @@ By default the PHP service does not display anything in case PHP errors
 occur while executing the application. This setting is useful for
 production, when you do not want to reveal internal information to
 external users. While developing an application it is however useful to
-let PHP display erors.
+let PHP display errors.
 
 ::
 
@@ -349,7 +350,7 @@ The following example illustrates how to upload an archive with the
     $ cpsclient.py upload_code serviceid archivename
 
 To upload new versions of your application via Git, please refer to
-Section [codeupload] of this document.
+section :ref:`code_upload`.
 
 Access the application
 ----------------------
@@ -386,7 +387,7 @@ The frontend provides the command-line to access the database.
 Copy-paste this command in a terminal. You will be asked for the user
 password, after which you can use the database as you wish.
 
-Note that the ``mysqldb`` user has extended priviledges. It can create
+Note that the ``mysqldb`` user has extended privileges. It can create
 new databases, new users etc.
 
 Uploading a database dump
@@ -395,7 +396,7 @@ Uploading a database dump
 The ConPaaS frontend allows to easily upload database dumps to a MySQL
 service. Note that this functionality is restricted to dumps of a
 relatively small size. To upload larger dumps you can always use the
-regular mysql command for this:
+regular ``mysql`` command for this:
 
 ::
 
@@ -404,17 +405,17 @@ regular mysql command for this:
 The Scalarix key-value store service
 ====================================
 
-The Scalarix service provices an in-memory key-value store. It is highly
+The Scalarix service provides an in-memory key-value store. It is highly
 scalable and fault-tolerant. This service deviates slightly from the
 organization of other services in that it does not have a separate
 manager virtual machine instance. Scalarix is fully symmetric so any
-scalarix node can act as a service manager.
+Scalarix node can act as a service manager.
 
 Accessing the key-value store
 -----------------------------
 
 Clients of the Scalarix service need the IP address of (at least) one
-node to connect to the servicve. Copy-paste the address of any of the
+node to connect to the service. Copy-paste the address of any of the
 running instances in the client. A good choice is the first instance in
 the list: when scaling the service up and down, other instances may be
 created or removed. The first instance will however remain across these
