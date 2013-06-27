@@ -157,6 +157,42 @@ the :envvar:`OTHER_CLOUDS` variable in the **[iaas]** section of
 after the cloud itself. Please refer to
 :file:`/etc/cpsdirector/director.cfg.multicloud-example` for an example.
 
+Virtual Private Networks with IPOP
+----------------------------------
+Network connectivity between private clouds running on different networks can
+be achieved in ConPaaS by using IPOP_ (IP over P2P). 
+
+VPN support in ConPaaS is per-application: each application you create will get
+its own IPOP Virtual Private Network. VMs running in the same application will
+be able to communicate with each other.
+
+In order to enable IPOP you need to set the following variables in
+:file:`/etc/cpsdirector/director.cfg`:
+
+    * :envvar:`VPN_BASE_NETWORK` 
+    * :envvar:`VPN_NETMASK`
+    * :envvar:`VPN_SERVICE_BITS`
+
+Unless you need to access 172.16.0.0/12 networks, the default settings
+available in :file:`/etc/cpsdirector/director.cfg.example` are probably going
+to work just fine.
+
+The maximum number of services per application, as well as the number of agents
+per service, is influenced by your choice of :envvar:`VPN_NETMASK` and
+:envvar:`VPN_SERVICE_BITS`::
+
+    services_per_application = 2^VPN_SERVICE_BITS
+    agents_per_service = 2^(32 - NETMASK_CIDR - VPN_SERVICE_BITS) - 1
+
+For example, by using 172.16.0.0 for :envvar:`VPN_BASE_NETWORK`, 255.240.0.0
+(/12) for :envvar:`VPN_NETMASK`, and 5 :envvar:`VPN_SERVICE_BITS`, you will get
+a 172.16.0.0/12 network for each of your applications. Such a network space
+will be then logically partitioned between services in the same application.
+With 5 bits to identify the service, you will get a maximum number of 32
+services per application (2^5) and 32767 agents per service (2^(32-12-5)-1).
+
+.. _IPOP: http://www.grid-appliance.org/wiki/index.php/IPOP
+
 Troubleshooting
 ---------------
 There are a few things you can check if for some reason your Director
@@ -221,8 +257,8 @@ As root::
 
     $ sudo easy_install http://www.conpaas.eu/dl/cpsclient-1.2.0.tar.gz
 
-Or, if you do not have root privileges, the ``cpsclient`` can also be installed
-in a Python virtual environment if ``virtualenv`` is available on your machine::
+Or, if you do not have root privileges, ``cpsclient`` can also be installed in
+a Python virtual environment if ``virtualenv`` is available on your machine::
 
     $ virtualenv conpaas # create the 'conpaas' virtualenv
     $ cd conpaas
