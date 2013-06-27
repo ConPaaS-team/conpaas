@@ -301,6 +301,14 @@ point::
 Note that :file:`config.php` must contain the :envvar:`CONPAAS_CONF_DIR`
 option, pointing to the directory mentioned in the previous step
 
+By default, PHP sets a default maximum size for uploaded files to 2Mb
+(and 8Mb to HTTP POST requests).
+However, in the web frontend, users will need to upload larger files
+(for example, a WordPress tarball is about 5Mb, a MySQL dump can be tens of Mb).
+To set higher limits, set the properties `post_max_size` and `upload_max_filesize`
+in file :file:`/etc/php5/apache2/php.ini`. Note that property `upload_max_filesize`
+cannot be larger than property `post_max_size`.
+
 Enable SSL if you want to use your frontend via https, for example by
 issuing the following commands::
 
