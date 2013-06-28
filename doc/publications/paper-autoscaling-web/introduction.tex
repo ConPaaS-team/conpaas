@@ -1,22 +1,35 @@
+With the rise of cloud computing, modern enterprise software systems started to deploy their services over clouds. As a utility-oriented and service-based computing methodology, cloud infrastructures offer many attractive features to their customers.  In particular, cloud providers allow tenants to rent resources in a \emph{pay-as-you-go} fashion. This pricing model is specifically employed by enterprise software systems where the assurance of QoS requirements is crucial to boost the volume of customers, and hence their revenues. Typically these requirements are specified by the enterprise (customer) and affirmed by cloud provider in the form of a \emph{service level agreement} (SLA), and vary depending on the size of the enterprise. Thus, large enterprises such as (e.g. Amazon, Twitter and eBay), pay more to provide high assurance of availability and performance to their clients; while small enterprises pay less to obtain an acceptable performance but with little service availability. 
 
-Talk about wikipedia outage, traffic spikes and amazon outages "Popular websites crippled by hours-long Amazon cloud service outage"
 
-Talk about vertical and horizontal scaling
-Measuring instance performance
-Multi instance infrastrucutres
+%Application providers pay for server resources, and in turn, are provided performance guarantees, expressed in the form of a service level agrreement (SLA).
 
-Even if we use two level threshold there are traffic oscillations which cannot be handled by the system due to minimal variations. These minimal oscillations can sometimes be higher than the own infrastructure cost and degradate the user experience. In this paper, we try to minimize these by using a heterogonouer resource provisioning system. the cost of the infrastructure
+When dealing with websites, the fulfillment of the QoS requirements becomes more complex, as the workload demand fluctuates as a result of sudden changes in the popularity, request mix or caused by flash crowds, outages and network misconfigurations.
+For instance, on June 25th 2009, the news of Michael Jackson's death quickly crippled for hours-long popular websites, such as \emph{TMZ.com}, \emph{The Angeles Times} or \emph{Twitter}, which suffered outages~\cite{outagesTimes}. These traffic anomalies are specifically difficult to handle by traditional resource management systems, thus causing long periods of unsatisfactory fulfillment of the requirements~\cite{trafficCongestion}. Failure to comply with satisfying these requirements are often associated with significant financial penalties or other forms of loss of revenue such as decreased in the user base. 
+Therefore, it is crucial to use resource provisioning systems that scale an application on demand while meeting the requirements.
 
-Contribution:
-App metrics instead of other system which hare limited to VM-level metrics. (Pluggable autoscaling service)
-Real application and traces
-Cost considerations.
-Decision making scaling up/down out/in.
-Dynamic load balancing
-Measuring instance performance without additional resources
+Nowadays, cloud infrastructures provide elastic provisioning by supporting a variety of scaling mechanisms and wide list of different hardware configurations. However, when using these systems to scale on demand, users must manually define how and which type of configuration they want to scale in response to changing conditions. As an example, while running an application, users may define a policy to add two additional resources when the load on the running resources reaches 75\%.  As a consequence of this manual and tedious procedure, it comes up a new challenge to autoscaling systems, as they have to decide which type of resources to choose for a particular workload. In the following, we will use the term \emph{scaling plan} to refer to this searching process to find the most appropriate resource combination.
 
-SLO fulfillment in order to avoid the cost of slo penalties.
-Type of machines
-SLO penalty -- different type of customers
+%our concern here is to design an autoscaling system that mitigates these penalties.
 
-Explain what is a scaling plan
+%this system are not able to decide which resources configuration fits better with the current workload.
+
+%The definition of a scaling plan according to the servide demand over the time is needed.
+
+% App metrics instead of other system which hare limited to VM-level metrics. (Pluggable autoscaling service)
+%Measuring instance performance without additional resource
+%SLO penalty
+
+%We believe that by exploiting the heterogeneity of cloud infrastructure the performance degradations caused by outages could be mitigated.
+
+\textbf{Contribution.}  In this paper, we present an autoscaling system that exploits the heterogeneity of cloud infrastructures to better enforce the customer requirements, even under unstable workload situations. To achieve that, our system first measures the resource performance to know the capacity of each allocated resources, and consequently finds the \emph{scaling plan} that better match the workload requirements. To handle resources heterogeneity, the proposed system provides a weighted load balancing mechanism that enables to distribute the incoming traffic across the resources depending on their performance capacities.
+For the sake of discussion, we evaluated our system in realistic unstable workload situations by deploying a copy of Wikipedia and replaying a fraction of the real access traces to its official web site. Similarly, this evaluation was conducted on a private and public cloud.
+
+% By doing so, we minimize the performance degradations caused by traffic spikes or other traffic anomalies.  and measures resource performance to provide more accurate scaling decisions. according to the workload requirements.
+
+ %A use the to choose the best combination of resources according to the customer requirmetns. online profiling techniques
+
+%When
+
+
+
+\textbf{Outline.} Section~\ref{sec:motivation} identifies the problem statement and motivation; Section~\ref{sec:approach} presents our autoscaling system approach; Section~\ref{sec:experiments} discusses our experimental evaluation; Section~\ref{sec:relatedWorks} reviews the related work; and Section~\ref{sec:conclusion} presents concluding remarks.

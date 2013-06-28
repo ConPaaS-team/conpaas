@@ -52,14 +52,14 @@
 
 \end{abstract}
 
-\keywords{Cloud computing, dynamic resource provisioning, workload forecasting, sensitivity analysis} % NOT required for Proceedings
+\keywords{Cloud computing, dynamic resource provisioning, resource heterogeneity, workload forecasting, sensitivity analysis} % NOT required for Proceedings
 
 
-\section{Introduction \label{intro}}
+\section{Introduction}
 
 \input{introduction}
 
-\section{Motivation and Problem statement \label{motivation}}
+\section{Motivation and Problem statement}
 
 \input{motivation}
 
@@ -72,20 +72,20 @@
 %\input{wikibench_v2}
 
 
-\section{Approach \label{approach}}
+\section{Autoscaling system}
 
 \input{scaling_sys}
 
 
-\section{Experiments}
+\section{Experiments \label{sec:experiments}}
 
 \input{experiments}
 
-\section{Related works}
+\section{Related works \label{sec:relatedWorks}}
 
 \input{relatedWorks}
 
-\section{Conclusion}
+\section{Conclusion \label{sec:conclusion}}
 
 \input{conclusion}
 
@@ -97,7 +97,6 @@ This work is funded by the FP7 Programme of the European Commission in the conte
 
 %\bibliographystyle{plain}
 %\bibliography{socc2013}
-
 
 \begin{thebibliography}{10}
 
@@ -117,6 +116,14 @@ Ahmed Ali-Eldin, Johan Tordsson, and Erik Elmroth.
 
 \bibitem{amazonEC2}
 {Amazon Elastic Compute Cloud (EC2)}.
+
+\bibitem{trafficCongestion}
+Yuliy Baryshnikov, Ed~Coffman, Guillaume Pierre, Dan Rubenstein, Mark
+  Squillante, and Teddy Yimwadsana.
+\newblock Predictability of web-server traffic congestion.
+\newblock In {\em Proceedings of the 10th International Workshop on Web Content
+  Caching and Distribution}, WCW '05, pages 97--103, Washington, DC, USA, 2005.
+  IEEE Computer Society.
 
 \bibitem{bunch_2012}
 Chris Bunch, Vaibhav Arora, Navraj Chohan, Chandra Krintz, Shashank Hegde, and
@@ -155,12 +162,19 @@ Anshul Gandhi, Yuan Chen, Daniel Gmach, Martin Arlitt, and Manish Marwah.
   June 2012.
 
 \bibitem{ganglia}
-{Ganglia monitoring system. http://ganglia.sourceforge.net/}.
+{Ganglia monitoring system,}.
 
 \bibitem{ghanbari_exploring_2011}
 Hamoun Ghanbari, Bradley Simmons, Marin Litoiu, and Gabriel Iszlai.
 \newblock Exploring alternative approaches to implement an elasticity policy.
 \newblock In {\em Proc.\ IEEE CLOUD}, 2011.
+
+\bibitem{herbst_2013}
+Nikolas~Roman Herbst, Nikolaus Huber, Samuel Kounev, and Erich Amrehn.
+\newblock Self-adaptive workload classification and forecasting for proactive
+  resource provisioning.
+\newblock In {\em Proceedings of the 4th ACM/SPEC International Conference on
+  Performance Engineering}, ICPE '13, pages 187--198. ACM, 2013.
 
 \bibitem{jiangThesis}
 Dejun Jiang.
@@ -197,8 +211,16 @@ Guillaume Pierre and Corina Stratan.
 \newblock {ConPaaS}: a platform for hosting elastic cloud applications.
 \newblock {\em IEEE Internet Computing}, 16(5):88--92, September-October 2012.
 
+\bibitem{outagesTimes}
+Linnie Rawlinson and Nick Hunt.
+\newblock Jackson dies, almost takes internet with him.
+\newblock {\em CNN}, Jun 2009.
+
 \bibitem{right-scale}
 {RightScale. http://www.rightscale.com//}.
+
+\bibitem{rackspace}
+{Rackspace. http://www.rackspace.com//}.
 
 \bibitem{roy_efficient_2011}
 N.~Roy, A.~Dubey, and A.~Gokhale.
@@ -216,13 +238,13 @@ Nilabja Roy, Abhishek Dubey, Aniruddha Gokhale, and Larry Dowdy.
   ACM.
 
 \bibitem{sharma_cost-aware_2011}
-U.~Sharma, P.~Shenoy, S.~Sahu, and A.~Shaikh.
+Upendra Sharma, P.~Shenoy, S.~Sahu, and A.~Shaikh.
 \newblock A cost-aware elasticity provisioning system for the cloud.
 \newblock In {\em 2011 31st International Conference on Distributed Computing
   Systems ({ICDCS)}}, pages 559 --570, June 2011.
 
 \bibitem{sotomayor_virtual_2009}
-B.~Sotomayor, {R.S.} Montero, {I.M.} Llorente, and I.~Foster.
+Borja Sotomayor, Ruben {S.} Montero, Ignacio {M.} Llorente, and Ian Foster.
 \newblock Virtual infrastructure management in private and hybrid clouds.
 \newblock {\em {IEEE} Internet Computing}, 13(5):14--22, October 2009.
 
@@ -233,8 +255,8 @@ Bhuvan Urgaonkar, Prashant Shenoy, Abhishek Chandra, Pawan Goyal, and Timothy
 \newblock {\em {ACM} Trans. Auton. Adapt. Syst.}, 3(1):1--39, March 2008.
 
 \bibitem{dejavu2012}
-Nedeljko Vasi\'c, Dejan Novakovi\'c, Svetozar Miu\u cin, Dejan
-  Kosti\'c, and Ricardo Bianchini.
+Nedeljko Vasić, Dejan Novaković, Svetozar Miu{\textbackslash}vcin, Dejan
+  Kostić, and Ricardo Bianchini.
 \newblock {DejaVu:} accelerating resource allocation in virtualized
   environments.
 \newblock {\em {SIGARCH} Comput. Archit. News}, 40(1):423--436, March 2012.
@@ -254,6 +276,7 @@ Rich Wolski, Neil~T. Spring, and Jim Hayes.
   1999.
 
 \end{thebibliography}
+
 
 
 \end{document}
