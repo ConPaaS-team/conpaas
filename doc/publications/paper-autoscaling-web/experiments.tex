@@ -97,7 +97,7 @@ Initially, our experiments on EC2 used small instances for the PHP service and o
 \end{table}
 
 
-\subsubsection{SLO fulfillment} 
+\subsubsection{Performance stability and SLO fulfillment} 
 Figure~\ref{fig:EC2ResponseTime} represents the degree of SLO fulfillment of three different classes of customers, indicating the response time data-points obtained during the execution of the Wikipedia workload trace. In particular, Figure~\ref{fig:EC2ResponseTime} focus on the interval of time in which the outage occurred. The results show how the system scales back when the request volume drops, and quickly scales in when the load increases suddenly. As shown on Figure~\ref{fig:EC2ResponseTime},  the degree of SLO fulfillment gradually improves depending on the type of customer chosen to handle this traffic anomaly. Thus, the \emph{bronze} and \emph{silver} customers employ around ?min to reach the performance stability,  but experiencing more SLO violations when using a \emph{bronze} customer. While the \emph{gold} customer requires less time to handle this traffic spike reducing at the maximum the number of violations, as detailed in Table~\ref{summaryEC2}. The selection of one class of customer or another has important consequences, specially when a non-fulfillment of the requirements affects to the revenues of the customer.
 
 \begin{figure*}[htb]
@@ -245,7 +245,7 @@ Our experiments on DAS-4 rely on OpenNebula as IaaS~\cite{sotomayor_virtual_2009
 \end{table}
 
 %\subsubsection{Performance impact of the outage}
-\subsubsection{SLO fulfillment}
+\subsubsection{Performance stability and SLO fulfillment}
 
 Figure~\ref{fig:DAS4ResponseTime} shows the performance behavior of the scaling plans selected for five types of customers. As depicted in Figure~\ref{fig:DAS4ResponseTime}, the performance stability is mainly affected by two aspects: frequent scalings operations and traffic spikes. Thus, the \emph{platinum} customer presents an unstable performance pattern, due to numerous provisioning actions aiming to find the optimal scaling plan. In contrast, the performance behavior of the \emph{gold} customer shows no oscillations even during the outage, which can be explained by the selection of an appropriate resource combination.
 
