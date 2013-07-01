@@ -33,8 +33,7 @@ from conpaas.core.services import manager_services
 
 service_page = Blueprint('service_page', __name__)
 
-# Manually add task farming to the list of valid services
-valid_services = manager_services.keys() + ['taskfarm', ]
+valid_services = manager_services.keys()
 
 class Service(db.Model):
     sid = db.Column(db.Integer, primary_key=True,
