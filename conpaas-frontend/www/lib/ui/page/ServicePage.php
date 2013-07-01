@@ -47,7 +47,7 @@ class ServicePage extends Page {
 	}
 
 	protected function renderBackLinks() {
-		return LinkUI('back to Dashboard', 'index.php')
+		return LinkUI('back to Services', 'services.php?aid='.$_SESSION['aid'])
 			->setIconPosition(LinkUI::POS_LEFT)
 			->setIconURL('images/link_s_back.png');
 	}
