@@ -27,7 +27,7 @@ $backendType = $service->getType();
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
   	<?php echo $page->renderContentType(); ?>
-    <?php echo $page->renderTitle(); ?>
+    <?php echo $page->renderTitle(' - '.$backendType); ?>
     <?php echo $page->renderIcon(); ?>
     <?php echo $page->renderHeaderCSS(); ?>
   </head>
