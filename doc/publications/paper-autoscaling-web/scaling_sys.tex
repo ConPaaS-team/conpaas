@@ -139,10 +139,10 @@ Collect profiling data of \emph{inst\_type}: \emph{req\_rate, cpu\_usage and res
 \BlankLine
 Initialize instance capacity \emph{Ideal\_Throughput$_{inst}$} to 0 \;
 \uIf{ \emph{resp\_time\_data}, \emph{cpu\_usage\_data}, \emph{req\_rate\_data}  \textbf{not empty}}{
-Calculate average of \emph{cpu\_usage\_data}, \emph{CPU$_{inst}$} \; \label{alg:throughput_start}
+Calculate average of \emph{cpu\_usage\_data}, \emph{CPU\_usage$_{inst}$} \; \label{alg:throughput_start}
 Calculate average of \emph{req\_rate\_data}, \emph{Num\_requests$_{inst}$} \;
 \BlankLine
-\emph{Ideal\_Throughput$_{inst}$} = $\dfrac{\emph{CPU$_{inst}$} } {\emph{Num\_requests$_{inst}$} }$  \; \label{alg:throughput_end}
+\emph{Ideal\_Throughput$_{inst}$} = $\dfrac{\emph{CPU\_usage$_{inst}$} } {\emph{Num\_requests$_{inst}$} }$  \; \label{alg:throughput_end}
 \BlankLine
 Store instance computing capacity, \emph{Ideal\_Throughput$_{inst}$} \; 
 }
@@ -222,14 +222,14 @@ As an example in Figure~\ref{fig:vm_performance1} and Figure~\ref{fig:vm_perform
 %\label{fig:vm_performance}
 %\end{figure*}
 
-\item Classify the different instance types depending on its computing capacity. Using the profiling smoothed data of each instance type (refer to Lines \ref{alg:throughput_start}-\ref{alg:throughput_end}), the Profiler computes a factor, named \emph{Ideal\_Throughput$_{inst}$}, as the average cpu utilization required to process the average of served requests (cycles/requests) for one instance, where \emph{CPU$_{inst}$} represents the average of  cpu usage (clocks/sec) and \emph{Num\_requests$_{inst}$} the average of request rate (requests/sec), as illustrated in the next Equation~\ref{cpu_speed}:
+\item Classify the different instance types depending on its computing capacity. Using the profiling smoothed data of each instance type (refer to Lines \ref{alg:throughput_start}-\ref{alg:throughput_end}), the Profiler computes a factor, named \emph{Ideal\_Throughput$_{inst}$}, as the average cpu utilization required to process the average of served requests (cycles/requests) for one instance, where \emph{CPU\_usage$_{inst}$} represents the average of  cpu usage (clocks/sec) and \emph{Num\_requests$_{inst}$} the average of request rate (requests/sec), as illustrated in the next Equation~\ref{cpu_speed}:
 
 {\scriptsize
 \begin{equation}\label{cpu_speed}
 \begin{split}
-CPU_{inst} = \dfrac{   \sum_{i=1}^N \big( cpu\_usage\_data_{i}  \big) } { N } \\
+CPU\_usage_{inst} = \dfrac{   \sum_{i=1}^N \big( cpu\_usage\_data_{i}  \big) } { N } \\
 Num\_requests_{inst} = \dfrac{   \sum_{i=1}^N \big( req\_rate\_data_{i} \big) } { N } \\
-Ideal\_Throughput_{inst} =\dfrac{   CPU_{inst}  } {  Num\_requests_{inst}  } 
+Ideal\_Throughput_{inst} =\dfrac{   CPU\_usage_{inst}  } {  Num\_requests_{inst}  } 
 \end{split}
 \end{equation}
 }
@@ -286,13 +286,13 @@ Prior to any resource selection, the \emph{Scaler} has to measure the requiremen
 
 The workload complexity is a factor that identifies how much the current workload is affecting the ideal performance pattern of the allocated resources. It identifies the complexity of the incoming traffic and includes degradations caused by operative system activities, low network performance, performance isolation or request heterogeneity. These degradations affect the performance and are often omitted by individually analyzing the request rate or cpu usage consumed by the allocated resources. 
 
-To calculate the workload complexity (denoted by \emph{$Workload_{complex}$}), we first analyzes the monitoring data gathering the request rate (denoted by $Num\_reqs\_server_{i}$) and cpu utilization (denoted by \emph{$CPU\_usage\_server_{i}$}) consumed by the allocated resources. Secondly, unlike the \emph{CPU$_{inst}$},  we calculate the expected cpu usage of each resource (denoted by \emph{CPU\_expected$_{i}$} ) using its current request rate (denoted by $Num\_reqs\_server_{i}$) and its optimized throughput (denoted by $Ideal\_Throughput_{inst_{i}}$). Finally we compute the \emph{$Workload_{complex}$} factor using the sum of cpu usage consumed to handle the current workload and the sum of expected cpu usage of all the resources, as illustrated in Equation~\ref{workload_complexity}.
+To calculate the workload complexity (denoted by \emph{$Workload_{complex}$}), we first analyzes the monitoring data gathering the request rate (denoted by $Num\_reqs\_server_{i}$) and cpu utilization (denoted by \emph{$CPU\_usage\_server_{i}$}) consumed by the allocated resources. Secondly, unlike the \emph{CPU$_{inst}$},  we calculate the expected cpu usage of each resource (denoted by \emph{CPU\_usage\_expected$_{i}$} ) using its current request rate (denoted by $Num\_reqs\_server_{i}$) and its optimized throughput (denoted by $Ideal\_Throughput_{inst_{i}}$). Finally we compute the \emph{$Workload_{complex}$} factor using the sum of cpu usage consumed to handle the current workload and the sum of expected cpu usage of all the resources, as illustrated in Equation~\ref{workload_complexity}.
 
 {\scriptsize
 \begin{equation}\label{workload_complexity}
 \begin{split}
-CPU\_expected_{i} =  Num\_reqs\_server_{i}  * Ideal\_Throughput_{inst_{i}} \\
-Workload_{complex}  = \dfrac{ \sum_{i=1}^N CPU\_usage\_server_{i}  }  {  \sum_{i=1}^N  CPU\_expected_{i}     } = \dfrac{ \ (cycles / sec) }  {  (cycles / sec ) }
+CPU\_usage\_expected_{i} =  Num\_reqs\_server_{i}  * Ideal\_Throughput_{inst_{i}} \\
+Workload_{complex}  = \dfrac{ \sum_{i=1}^N CPU\_usage\_server_{i}  }  {  \sum_{i=1}^N  CPU\_usage\_expected_{i}     } = \dfrac{ \ (cycles / sec) }  {  (cycles / sec ) }
 \end{split}
 \end{equation}
 }
@@ -307,6 +307,8 @@ Additionally, the total cpu utilization ($\sum_{i=1}^N CPU\_usage\_server_{i} $)
   \caption{Predictor component: forecasting results for 30min ahead.}
   \label{fig:forecast}
 \end{figure}
+
+\fixme{Calculate MAPE error for the forecasting results}
 
 \subsubsection{Calculating the different scaling plans}
 
@@ -325,25 +327,13 @@ CPU_{strategy} = \dfrac{ \sum_{i=1}^n \bigg( \bigg( \dfrac{ Num\_reqs_{total} * 
 \end{equation}
 }
 
-Equation~\ref{resource_combination} defines how the workload will be distributed across the different resources taken into account their performance capacities.  Thus, the \emph{Scaler} selects a strategy that uses \emph{N} resources to distribute the \emph{$Num\_reqs_{total}$} (total rate of served requests) with a workload complexity \emph{$Workload_{complex}$} across \emph{N} instances with an optimized throughput \emph{$Ideal\_Throughput_{inst}$}. \emph{$CPU_{strategy}$} measures the CPU usage consumed to process the current workload when using a specific resource combination of \emph{N} resources.
-
-
+Equation~\ref{resource_combination} defines how the workload will be distributed across the different resources taken into account their performance capacities.  Thus, the \emph{Scaler} selects a strategy that uses \emph{N} resources to distribute the \emph{$Num\_reqs_{total}$} (total rate of served requests) with a workload complexity \emph{$Workload_{complex}$} across \emph{N} instances with an optimized throughput \emph{$Ideal\_Throughput_{inst}$}. \emph{$CPU_{strategy}$} measures the CPU usage consumed (cycles/sec) to process the current workload when using a specific resource combination of \emph{N} resources.
 
 %As an example, Figure~\ref{fig:scalingTree} shows three scaling plans that propose three different resource combinations: (left) a strategy is selected by adding two new \emph{small} instances, (center) a strategy proposes to replace one \emph{small} instance by one \emph{large}, and (right) both operations are combined by replacing one \emph{small} instance by one \emph{medium} and then adding one \emph{small}. 
 
-\begin{figure}[htb]
-  \begin{center}
-    \includegraphics[width=\linewidth,height=4.5cm]{images/decisionTree2}
-  \end{center}
-\vspace{-5mm}
-  \caption{Decision tree: examples of scaling actions using vm instances.}
-  \label{fig:scalingTree}
-\end{figure}
-
-
 Note that, the search space of possible strategies can be as large as the number of available hardware configurations, and allocated resources in the current scaling plan. It makes hard-to-find the best resource combination in a reasonable short period of time, so that the \emph{Scaler} filters the strategies based on the following criteria:
 \begin{itemize}
-\item Establish the maximum CPU usage consumed by a strategy to process a particular workload, where \emph{$CPU_{strategy} \leq CPU_{SLO}$}. \emph{$CPU_{SLO}$} specifies the cpu usage at which the application starts to experience SLO violations (or performance degradations). Hence, the proposed scaling plans optimizes the current performance below these values producing SLO violations.
+\item Establish the maximum CPU usage consumed  by a strategy to process a particular workload (denoted by \emph{$CPU_{SLO}$}). It limits the number of possible plans where \emph{$CPU_{strategy} \leq CPU_{SLO}$}. \emph{$CPU_{SLO}$} specifies the cpu usage at which the application starts to experience SLO violations or over-utilization. As a result, the proposed scaling plans optimizes the current performance below values causing performance degradations.  Limit the number of possible scaling plans 
 
 %can be calculated either based on the Amazon EC2 recommendations ( CPU values always lower than 75\%), or based on the CPU values at which the application starts to experience SLO violations (or performance degradations). 
 
@@ -353,7 +343,17 @@ Note that, the search space of possible strategies can be as large as the number
 
 These assumptions avoid to trigger new scaling actions in the next time interval, and consequently reduce the operational cost. 
 
-As an example, Figure~\ref{fig:scalingTree} shows a decision tree in which a link connects two resources if the \emph{$CPU_{strategy}$}  scaling plans that propose three different resource combinations: (left) a strategy is selected by adding two new \emph{small} instances, (center) a strategy proposes to replace one \emph{small} instance by one \emph{large}, and (right) both operations are combined by replacing one \emph{small} instance by one \emph{medium} and then adding one \emph{small}. 
+As an example, Figure~\ref{fig:scalingTree} shows a possible scaling plan obtained by using our decision tree and Equation~\ref{resource_combination}. This plan proposes to add two \emph{small} and one \emph{huge} instances to one initial \emph{small} instance. When the performance capacity of a current resource combination is not enough to handle the workload, we add new resources as long as the resulting \emph{$CPU_{strategy}$} (calculated by adding the new resource) is lower than \emph{$CPU_{SLO}$}. This searching process stop when all the possible combinations have been proved or there are not more combinations satisfying the aforementioned criteria.
+
+
+\begin{figure}[htb]
+  \begin{center}
+    \includegraphics[width=\linewidth,height=4.5cm]{images/decisionTree2}
+  \end{center}
+\vspace{-5mm}
+  \caption{Decision tree: example of a scaling plan using four VM instances.}
+  \label{fig:scalingTree}
+\end{figure}
 
 
 In summary, using the Equation~\ref{resource_combination}, the Scaler is able to answer to the question \emph{"How many and which type of VM instances to provision?"}.
@@ -366,7 +366,7 @@ In summary, using the Equation~\ref{resource_combination}, the Scaler is able to
 
 %they are classified based on their infrastructure cost and degree of SLO fulfillmen
 
-Once the Scaler obtains a list of filtered scaling strategies, it computes the cost of each possible strategy how the cost incurred by its SLO fulfillment degree and the infrastructure cost. The infrastructure cost (denoted by \emph{infra\_cost}) specifies the cost required to provision additional resources for the next hour. While the SLO fulfillment degree (denoted by \emph{slo\_fulfillment}) indicates the vulnerability of a strategy to experience SLO violations. 
+Once the \emph{Scaler} obtains a list of filtered scaling strategies, it computes the cost of each possible strategy how the cost incurred by its SLO fulfillment degree and the infrastructure cost. The infrastructure cost (denoted by \emph{infra\_cost}) specifies the cost required to provision additional resources for the next hour. While the SLO fulfillment degree (denoted by \emph{slo\_fulfillment}) indicates the vulnerability of a strategy to experience SLO violations. 
 
 As defined in the Equation~\ref{strategy_cost}, the \emph{slo\_fulfillment} cost is calculated given the percentage of \emph{$CPU_{strategy}$} and the \emph{$CPU_{SLO}$}. Obviously, higher values in the percentage of \emph{$CPU_{strategy}$} imply an increment in the probability of having SLO violations under traffic spikes, so the \emph{slo\_fulfillment} will increase as well. 
 
@@ -385,7 +385,7 @@ cost\_strategy = \dfrac{  slo\_fulfillment  } {infra\_cost}
 \end{equation}
 }
 
-\fixme{I could omit the use of the SLO penalty, as it is a constant in my experiments. Instead I could say that the system adapts to the user needs.}
+%\fixme{I could omit the use of the SLO penalty, as it is a constant in my experiments. Instead I could say that the system adapts to the user needs.}
 
 The criteria for the selection of the optimal strategy is configurable, and thereby it can adapted to the customer preferences. For instance, large enterprises need to provide high availability and performance to their clients, disposing of a generous budget for such a mission. 
 
