@@ -37,6 +37,8 @@ class EC2Cloud(Cloud):
         self.sg = iaas_config.get(cloud_name, 'SECURITY_GROUP_NAME')
         self.ec2_region = iaas_config.get(cloud_name, 'REGION')
 
+        self.logger.info('EC2 cloud ready. REGION=%s' % self.ec2_region)
+
     def get_cloud_type(self):
         return 'ec2'
 
@@ -69,7 +71,21 @@ class EC2Cloud(Cloud):
         if inst_type is None:
             inst_type = self.size_id
 
-        size = [ i for i in self.driver.list_sizes() if i.id == inst_type ][0]
+        # available sizes
+        sizes = self.driver.list_sizes()
+
+        # available size IDs
+        size_ids = [ size.id for size in sizes ] 
+
+        try:
+            # index of the size we want
+            size_idx = size_ids.index(inst_type)
+        except ValueError:
+            # size not found
+            raise Exception("Requested size not found. '%s' not in %s" % (
+                inst_type, size_ids)) 
+
+        size = sizes[size_idx]
 
         img = NodeImage(self.img_id, '', None)
         kwargs = {'size': size,
