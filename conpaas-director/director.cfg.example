@@ -194,6 +194,12 @@ CERT_DIR = /etc/cpsdirector/certs
 
 # XMLRPC = 
 
+# We recommend using OpenNebula 3.6 or greater to take full advantage of
+# ConPaaS features. This value has to match exactly the version of OpenNebula
+# you are running. If omitted it will default to 2.2.
+
+# OPENNEBULA_VERSION = 3.8
+
 [director]
 DEBUG = true
 DATABASE_URI = sqlite:////etc/cpsdirector/director.db

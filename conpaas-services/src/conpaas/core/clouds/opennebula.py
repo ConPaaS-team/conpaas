@@ -11,12 +11,15 @@
 
 import urlparse
 
+from ConfigParser import NoOptionError
+
 from libcloud.compute.types import Provider
 from libcloud.compute.providers import get_driver
 from libcloud.compute.base import NodeImage
 
 from .base import Cloud
 
+DEFAULT_API_VERSION = '2.2'
 
 class OpenNebulaCloud(Cloud):
 
@@ -52,8 +55,16 @@ class OpenNebulaCloud(Cloud):
         self.disk_target = _get('DISK_TARGET')
         self.context_target = _get('CONTEXT_TARGET')
 
+        try:
+            self.api_version = _get('OPENNEBULA_VERSION')
+        except NoOptionError:
+            self.api_version = DEFAULT_API_VERSION
+
         self.cpu = None
         self.mem = None
+        
+        self.logger.info('OpenNebula cloud ready. API_VERSION=%s' % 
+            self.api_version)
 
     def get_cloud_type(self):
         return 'opennebula'
@@ -68,7 +79,7 @@ class OpenNebulaCloud(Cloud):
                                secure=(parsed.scheme == 'https'),
                                host=parsed.hostname,
                                port=parsed.port,
-                               api_version='2.2')
+                               api_version=self.api_version)
 
         self.connected = True
 
@@ -113,8 +124,21 @@ class OpenNebulaCloud(Cloud):
         if inst_type is None:
             inst_type = self.inst_type
 
-        kwargs['size'] = [ 
-            i for i in self.driver.list_sizes() if i.name == inst_type ][0]
+        # available sizes
+        sizes = self.driver.list_sizes()
+
+        # available size names
+        size_names = [ size.name for size in sizes ]
+
+        try:
+            # index of the size we want
+            size_idx = size_names.index(inst_type)
+        except ValueError:
+            # size not found
+            raise Exception("Requested size not found. '%s' not in %s" % (
+                inst_type, size_names))
+
+        kwargs['size'] = sizes[size_idx]
 
         # 'CPU'
         if self.cpu is not None:
