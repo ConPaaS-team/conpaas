@@ -10,7 +10,7 @@
 """
 
 from conpaas.core.node import ServiceNode
-
+from conpaas.core.log import create_logger
 
 class Cloud:
     ''' Abstract Cloud '''
@@ -22,6 +22,7 @@ class Cloud:
         self.driver = None
         self.cx_template = None
         self.cx = None
+        self.logger = create_logger(__name__)
 
     def get_cloud_name(self):
         return self.cloud_name
@@ -68,6 +69,8 @@ class Cloud:
         @return vms: List[ServiceNode]
 
         '''
+        self.logger.debug('list_vms(has_private_ip=%s)' % has_private_ip)
+
         if self.connected is False:
             self._connect()
         return [serviceNode for serviceNode in
@@ -135,6 +138,8 @@ class Cloud:
            @param node: A ServiceNode instance, where node.id is the
                         vm_id
         '''
+        self.logger.debug('kill_instance(node=%s)' % node)
+
         if self.connected is False:
             self._connect()
         return self.driver.destroy_node(node.as_libcloud_node())
