@@ -6,7 +6,6 @@ from netaddr import IPNetwork
 from conpaas.core.controller import Controller
 from conpaas.core.misc import file_get_contents
 from conpaas.core.node import ServiceNode
-from conpaas.core.log import create_logger
 
 from cpsdirector.x509cert import generate_certificate
 from cpsdirector.common import config_parser, log
@@ -23,7 +22,6 @@ class ManagerController(Controller):
                                                str(app_id), service_name, vpn)
 
         Controller.__init__(self, self.config_parser)
-        self.logger = create_logger(__name__)
         self.service_name = service_name
         self.service_id = service_id
         self.user_id = user_id
@@ -57,7 +55,6 @@ class ManagerController(Controller):
             tmpl_values['cloud_script'] = file_get_contents(
                 os.path.join(cloud_scripts_dir, cloud))
         except IOError:
-            self.logger.info("No cloud configuration script found for '%s'" % cloud)
             tmpl_values['cloud_script'] = ''
 
         # Get manager setup file
