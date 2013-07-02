@@ -126,7 +126,11 @@ conf += """
 </VirtualHost>
 """
 
-open('/etc/apache2/sites-available/conpaas-director', 'w').write(conf)
+try:
+    open('/etc/apache2/sites-available/conpaas-director', 'w').write(conf)
+except IOError:
+    print "W: Cannot write Apache config file. Are you root?"
+    sys.exit(0)
 
 conflines = open(common.CONFFILE).readlines()
 
