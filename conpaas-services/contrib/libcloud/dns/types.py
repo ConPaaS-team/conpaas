@@ -28,12 +28,14 @@ __all__ = [
 
 
 class Provider(object):
-    DUMMY = 0
-    LINODE = 1
-    ZERIGO = 2
-    RACKSPACE_US = 3
-    RACKSPACE_UK = 4
-    ROUTE_53 = 5
+    DUMMY = 'dummy'
+    LINODE = 'linode'
+    ZERIGO = 'zerigo'
+    RACKSPACE_US = 'rackspace_us'
+    RACKSPACE_UK = 'rackspace_uk'
+    ROUTE53 = 'route53'
+    HOSTVIRTUAL = 'hostvirtual'
+    GANDI = 'gandi'
 
 
 class RecordType(object):
@@ -54,6 +56,10 @@ class RecordType(object):
     PTR = 11
     NAPTR = 12
     REDIRECT = 13
+    GEO = 14
+    URL = 15
+    WKS = 16
+    LOC = 17
 
     @classmethod
     def __repr__(self, value):
@@ -63,12 +69,16 @@ class RecordType(object):
 
 class ZoneError(LibcloudError):
     error_type = 'ZoneError'
+    kwargs = ('zone_id', )
 
     def __init__(self, value, driver, zone_id):
         self.zone_id = zone_id
         super(ZoneError, self).__init__(value=value, driver=driver)
 
     def __str__(self):
+        return self.__repr__()
+
+    def __repr__(self):
         return ('<%s in %s, zone_id=%s, value=%s>' %
                 (self.error_type, repr(self.driver),
                  self.zone_id, self.value))
@@ -90,6 +100,9 @@ class RecordError(LibcloudError):
         super(RecordError, self).__init__(value=value, driver=driver)
 
     def __str__(self):
+        return self.__repr__()
+
+    def __repr__(self):
         return ('<%s in %s, record_id=%s, value=%s>' %
                 (self.error_type, repr(self.driver),
                  self.record_id, self.value))

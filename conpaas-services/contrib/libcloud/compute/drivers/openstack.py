@@ -16,16 +16,14 @@
 OpenStack driver
 """
 
-import binascii
-
 try:
     import simplejson as json
 except ImportError:
     import json
 
-import os
-
 import warnings
+
+from itertools import chain
 
 from libcloud.utils.py3 import httplib
 from libcloud.utils.py3 import b
@@ -37,6 +35,7 @@ import base64
 from xml.etree import ElementTree as ET
 
 from libcloud.common.openstack import OpenStackBaseConnection
+from libcloud.common.openstack import OpenStackDriverMixin
 from libcloud.common.types import MalformedResponseError
 from libcloud.compute.types import NodeState, Provider
 from libcloud.compute.base import NodeSize, NodeImage
@@ -55,7 +54,7 @@ __all__ = [
     'OpenStack_1_1_Connection',
     'OpenStack_1_1_NodeDriver',
     'OpenStackNodeDriver'
-  ]
+]
 
 ATOM_NAMESPACE = "http://www.w3.org/2005/Atom"
 
@@ -63,7 +62,6 @@ DEFAULT_API_VERSION = '1.1'
 
 
 class OpenStackResponse(Response):
-
     node_driver = None
 
     def success(self):
@@ -107,8 +105,13 @@ class OpenStackResponse(Response):
             text = "; ".join([err.text or '' for err in body.getiterator()
                               if err.text])
         elif self.has_content_type('application/json'):
-            text = ';'.join([fault_data['message'] for fault_data
-                             in body.values()])
+            values = body.values()
+
+            if len(values) > 0 and 'message' in values[0]:
+                text = ';'.join([fault_data['message'] for fault_data
+                                 in values])
+            else:
+                text = body
         else:
             # while we hope a response is always one of xml or json, we have
             # seen html or text in the past, its not clear we can really do
@@ -120,6 +123,10 @@ class OpenStackResponse(Response):
 
 
 class OpenStackComputeConnection(OpenStackBaseConnection):
+    # default config for http://devstack.org/
+    service_type = 'compute'
+    service_name = 'nova'
+    service_region = 'RegionOne'
 
     def request(self, action, params=None, data='', headers=None,
                 method='GET'):
@@ -132,7 +139,7 @@ class OpenStackComputeConnection(OpenStackBaseConnection):
             headers = {'Content-Type': self.default_content_type}
 
         if method == "GET":
-            params['cache-busting'] = binascii.hexlify(os.urandom(8))
+            self._add_cache_busting_to_params(params)
 
         return super(OpenStackComputeConnection, self).request(
             action=action,
@@ -140,22 +147,25 @@ class OpenStackComputeConnection(OpenStackBaseConnection):
             method=method, headers=headers)
 
 
-class OpenStackNodeDriver(NodeDriver):
+class OpenStackNodeDriver(NodeDriver, OpenStackDriverMixin):
     """
     Base OpenStack node driver. Should not be used directly.
     """
+    api_name = 'openstack'
+    name = 'OpenStack'
+    website = 'http://openstack.org/'
 
     NODE_STATE_MAP = {
         'BUILD': NodeState.PENDING,
         'REBUILD': NodeState.PENDING,
         'ACTIVE': NodeState.RUNNING,
         'SUSPENDED': NodeState.TERMINATED,
+        'DELETED': NodeState.TERMINATED,
         'QUEUE_RESIZE': NodeState.PENDING,
         'PREP_RESIZE': NodeState.PENDING,
         'VERIFY_RESIZE': NodeState.RUNNING,
         'PASSWORD': NodeState.PENDING,
         'RESCUE': NodeState.PENDING,
-        'REBUILD': NodeState.PENDING,
         'REBOOT': NodeState.REBOOTING,
         'HARD_REBOOT': NodeState.REBOOTING,
         'SHARE_IP': NodeState.PENDING,
@@ -165,7 +175,7 @@ class OpenStackNodeDriver(NodeDriver):
     }
 
     def __new__(cls, key, secret=None, secure=True, host=None, port=None,
-                 api_version=DEFAULT_API_VERSION, **kwargs):
+                api_version=DEFAULT_API_VERSION, **kwargs):
         if cls is OpenStackNodeDriver:
             if api_version == '1.0':
                 cls = OpenStack_1_0_NodeDriver
@@ -176,6 +186,10 @@ class OpenStackNodeDriver(NodeDriver):
                     "No OpenStackNodeDriver found for API version %s" %
                     (api_version))
         return super(OpenStackNodeDriver, cls).__new__(cls)
+
+    def __init__(self, *args, **kwargs):
+        OpenStackDriverMixin.__init__(self, **kwargs)
+        super(OpenStackNodeDriver, self).__init__(*args, **kwargs)
 
     def destroy_node(self, node):
         uri = '/servers/%s' % (node.id)
@@ -191,31 +205,39 @@ class OpenStackNodeDriver(NodeDriver):
         return self._reboot_node(node, reboot_type='HARD')
 
     def list_nodes(self):
-        return self._to_nodes(self.connection.request('/servers/detail')
-                                             .object)
+        return self._to_nodes(
+            self.connection.request('/servers/detail').object)
 
     def list_images(self, location=None, ex_only_active=True):
-        return self._to_images(self.connection.request('/images/detail')
-                                              .object, ex_only_active)
+        """
+        @inherits: L{NodeDriver.list_images}
+
+        @param ex_only_active: True if list only active
+        @type ex_only_active: C{bool}
+
+        """
+        return self._to_images(
+            self.connection.request('/images/detail').object, ex_only_active)
 
     def list_sizes(self, location=None):
-        return self._to_sizes(self.connection.request('/flavors/detail')
-                                             .object)
+        return self._to_sizes(
+            self.connection.request('/flavors/detail').object)
 
     def list_locations(self):
         return [NodeLocation(0, '', '', self)]
 
     def _ex_connection_class_kwargs(self):
-        rv = {}
-        if self._ex_force_base_url:
-            rv['ex_force_base_url'] = self._ex_force_base_url
-        if self._ex_force_auth_url:
-            rv['ex_force_auth_url'] = self._ex_force_auth_url
-        if self._ex_force_auth_version:
-            rv['ex_force_auth_version'] = self._ex_force_auth_version
-        return rv
+        return self.openstack_connection_kwargs()
 
     def ex_get_node_details(self, node_id):
+        """
+        Lists details of the specified server.
+
+        @param       node_id: ID of the node which should be used
+        @type        node_id: C{str}
+
+        @rtype: L{Node}
+        """
         # @TODO: Remove this if in 0.6
         if isinstance(node_id, Node):
             node_id = node_id.id
@@ -228,14 +250,29 @@ class OpenStackNodeDriver(NodeDriver):
         return self._to_node_from_obj(resp.object)
 
     def ex_soft_reboot_node(self, node):
+        """
+        Soft reboots the specified server
+
+        @param      node:  node
+        @type       node: L{Node}
+
+        @rtype: C{bool}
+        """
         return self._reboot_node(node, reboot_type='SOFT')
 
     def ex_hard_reboot_node(self, node):
+        """
+        Hard reboots the specified server
+
+        @param      node:  node
+        @type       node: L{Node}
+
+        @rtype: C{bool}
+        """
         return self._reboot_node(node, reboot_type='HARD')
 
 
 class OpenStack_1_0_Response(OpenStackResponse):
-
     def __init__(self, *args, **kwargs):
         # done because of a circular reference from
         # NodeDriver -> Connection -> Response
@@ -245,7 +282,6 @@ class OpenStack_1_0_Response(OpenStackResponse):
 
 class OpenStack_1_0_Connection(OpenStackComputeConnection):
     responseCls = OpenStack_1_0_Response
-    _url_key = "server_url"
     default_content_type = 'application/xml; charset=UTF-8'
     accept_format = 'application/xml'
     XML_NAMESPACE = 'http://docs.rackspacecloud.com/servers/api/v1.0'
@@ -263,15 +299,10 @@ class OpenStack_1_0_NodeDriver(OpenStackNodeDriver):
     """
     connectionCls = OpenStack_1_0_Connection
     type = Provider.OPENSTACK
-    api_name = 'openstack'
-    name = 'OpenStack'
 
     features = {"create_node": ["generates_password"]}
 
     def __init__(self, *args, **kwargs):
-        self._ex_force_base_url = kwargs.pop('ex_force_base_url', None)
-        self._ex_force_auth_url = kwargs.pop('ex_force_auth_url', None)
-        self._ex_force_auth_version = kwargs.pop('ex_force_auth_version', None)
         self._ex_force_api_version = str(kwargs.pop('ex_force_api_version',
                                                     None))
         self.XML_NAMESPACE = self.connectionCls.XML_NAMESPACE
@@ -288,13 +319,17 @@ class OpenStack_1_0_NodeDriver(OpenStackNodeDriver):
 
     def _to_image(self, element):
         return NodeImage(id=element.get('id'),
-                      name=element.get('name'),
-                      driver=self.connection.driver,
-                      extra={'updated': element.get('updated'),
-                             'created': element.get('created'),
-                             'status': element.get('status'),
-                             'serverId': element.get('serverId'),
-                             'progress': element.get('progress')})
+                         name=element.get('name'),
+                         driver=self.connection.driver,
+                         extra={'updated': element.get('updated'),
+                                'created': element.get('created'),
+                                'status': element.get('status'),
+                                'serverId': element.get('serverId'),
+                                'progress': element.get('progress'),
+                                'minDisk': element.get('minDisk'),
+                                'minRam': element.get('minRam')
+                                }
+                         )
 
     def _change_password_or_name(self, node, name=None, password=None):
         uri = '/servers/%s' % (node.id)
@@ -303,9 +338,9 @@ class OpenStack_1_0_NodeDriver(OpenStackNodeDriver):
             name = node.name
 
         body = {'xmlns': self.XML_NAMESPACE,
-                 'name': name}
+                'name': name}
 
-        if password != None:
+        if password is not None:
             body['adminPass'] = password
 
         server_elm = ET.Element('server', body)
@@ -313,7 +348,7 @@ class OpenStack_1_0_NodeDriver(OpenStackNodeDriver):
         resp = self.connection.request(
             uri, method='PUT', data=ET.tostring(server_elm))
 
-        if resp.status == httplib.NO_CONTENT and password != None:
+        if resp.status == httplib.NO_CONTENT and password is not None:
             node.extra['password'] = password
 
         return resp.status == httplib.NO_CONTENT
@@ -322,29 +357,34 @@ class OpenStack_1_0_NodeDriver(OpenStackNodeDriver):
         """
         Create a new node
 
-        See L{NodeDriver.create_node} for more keyword args.
+        @inherits: L{NodeDriver.create_node}
+
         @keyword    ex_metadata: Key/Value metadata to associate with a node
         @type       ex_metadata: C{dict}
 
         @keyword    ex_files:   File Path => File contents to create on
                                 the node
         @type       ex_files:   C{dict}
+
+        @keyword    ex_shared_ip_group_id: The server is launched into
+            that shared IP group
+        @type       ex_shared_ip_group_id: C{str}
         """
         name = kwargs['name']
         image = kwargs['image']
         size = kwargs['size']
 
         attributes = {'xmlns': self.XML_NAMESPACE,
-             'name': name,
-             'imageId': str(image.id),
-             'flavorId': str(size.id)}
+                      'name': name,
+                      'imageId': str(image.id),
+                      'flavorId': str(size.id)}
 
         if 'ex_shared_ip_group' in kwargs:
             # Deprecate this. Be explicit and call the variable
             # ex_shared_ip_group_id since user needs to pass in the id, not the
             # name.
-            warnings.warn('ex_shared_ip_group argument is deprecated. Please'
-                          + ' use ex_shared_ip_group_id')
+            warnings.warn('ex_shared_ip_group argument is deprecated.'
+                          ' Please use ex_shared_ip_group_id')
 
         if 'ex_shared_ip_group_id' in kwargs:
             shared_ip_group_id = kwargs['ex_shared_ip_group_id']
@@ -371,8 +411,16 @@ class OpenStack_1_0_NodeDriver(OpenStackNodeDriver):
 
         This will reboot the instance to complete the operation.
 
-        L{node.extra['password']} will be set to the new value if the
+        L{Node.extra['password']} will be set to the new value if the
         operation was successful.
+
+        @param      node: node to set password
+        @type       node: L{Node}
+
+        @param      password: new password.
+        @type       password: C{str}
+
+        @rtype: C{bool}
         """
         return self._change_password_or_name(node, password=password)
 
@@ -381,6 +429,14 @@ class OpenStack_1_0_NodeDriver(OpenStackNodeDriver):
         Sets the Node's name.
 
         This will reboot the instance to complete the operation.
+
+        @param      node: node to set name
+        @type       node: L{Node}
+
+        @param      name: new name
+        @type       name: C{str}
+
+        @rtype: C{bool}
         """
         return self._change_password_or_name(node, name=name)
 
@@ -388,17 +444,18 @@ class OpenStack_1_0_NodeDriver(OpenStackNodeDriver):
         """
         Change an existing server flavor / scale the server up or down.
 
-        @keyword    node: node to resize.
-        @param      node: C{Node}
+        @param      node: node to resize.
+        @type       node: L{Node}
 
-        @keyword    size: new size.
-        @param      size: C{NodeSize}
+        @param      size: new size.
+        @type       size: L{NodeSize}
+
+        @rtype: C{bool}
         """
         elm = ET.Element(
             'resize',
             {'xmlns': self.XML_NAMESPACE,
-             'flavorId': str(size.id),
-            }
+             'flavorId': str(size.id)}
         )
 
         resp = self.connection.request("/servers/%s/action" % (node.id),
@@ -414,8 +471,10 @@ class OpenStack_1_0_NodeDriver(OpenStackNodeDriver):
 
         For more info refer to the API documentation: http://goo.gl/zjFI1
 
-        @keyword    node: node for which the resize request will be confirmed.
-        @param      node: C{Node}
+        @param      node: node for which the resize request will be confirmed.
+        @type       node: L{Node}
+
+        @rtype: C{bool}
         """
         elm = ET.Element(
             'confirmResize',
@@ -435,8 +494,10 @@ class OpenStack_1_0_NodeDriver(OpenStackNodeDriver):
 
         For more info refer to the API documentation: http://goo.gl/AizBu
 
-        @keyword    node: node for which the resize request will be reverted.
-        @param      node: C{Node}
+        @param      node: node for which the resize request will be reverted.
+        @type       node: L{Node}
+
+        @rtype: C{bool}
         """
         elm = ET.Element(
             'revertResize',
@@ -449,6 +510,17 @@ class OpenStack_1_0_NodeDriver(OpenStackNodeDriver):
         return resp.status == httplib.NO_CONTENT
 
     def ex_rebuild(self, node_id, image_id):
+        """
+        Rebuilds the specified server.
+
+        @param       node_id: ID of the node which should be used
+        @type        node_id: C{str}
+
+        @param       image_id: ID of the image which should be used
+        @type        image_id: C{str}
+
+        @rtype: C{bool}
+        """
         # @TODO: Remove those ifs in 0.6
         if isinstance(node_id, Node):
             node_id = node_id.id
@@ -459,8 +531,7 @@ class OpenStack_1_0_NodeDriver(OpenStackNodeDriver):
         elm = ET.Element(
             'rebuild',
             {'xmlns': self.XML_NAMESPACE,
-             'imageId': image_id,
-            }
+             'imageId': image_id}
         )
 
         resp = self.connection.request("/servers/%s/action" % node_id,
@@ -469,6 +540,17 @@ class OpenStack_1_0_NodeDriver(OpenStackNodeDriver):
         return resp.status == httplib.ACCEPTED
 
     def ex_create_ip_group(self, group_name, node_id=None):
+        """
+        Creates a shared IP group.
+
+        @param       group_name:  group name which should be used
+        @type        group_name: C{str}
+
+        @param       node_id: ID of the node which should be used
+        @type        node_id: C{str}
+
+        @rtype: C{bool}
+        """
         # @TODO: Remove this if in 0.6
         if isinstance(node_id, Node):
             node_id = node_id.id
@@ -476,12 +558,12 @@ class OpenStack_1_0_NodeDriver(OpenStackNodeDriver):
         group_elm = ET.Element(
             'sharedIpGroup',
             {'xmlns': self.XML_NAMESPACE,
-             'name': group_name,
-            }
+             'name': group_name}
         )
 
         if node_id:
-            ET.SubElement(group_elm,
+            ET.SubElement(
+                group_elm,
                 'server',
                 {'id': node_id}
             )
@@ -492,19 +574,53 @@ class OpenStack_1_0_NodeDriver(OpenStackNodeDriver):
         return self._to_shared_ip_group(resp.object)
 
     def ex_list_ip_groups(self, details=False):
+        """
+        Lists IDs and names for shared IP groups.
+        If details lists all details for shared IP groups.
+
+        @param       details: True if details is required
+        @type        details: C{bool}
+
+        @rtype: C{list} of L{OpenStack_1_0_SharedIpGroup}
+        """
         uri = '/shared_ip_groups/detail' if details else '/shared_ip_groups'
         resp = self.connection.request(uri,
                                        method='GET')
         groups = findall(resp.object, 'sharedIpGroup',
-                               self.XML_NAMESPACE)
+                         self.XML_NAMESPACE)
         return [self._to_shared_ip_group(el) for el in groups]
 
     def ex_delete_ip_group(self, group_id):
+        """
+        Deletes the specified shared IP group.
+
+        @param       group_id:  group id which should be used
+        @type        group_id: C{str}
+
+        @rtype: C{bool}
+        """
         uri = '/shared_ip_groups/%s' % group_id
         resp = self.connection.request(uri, method='DELETE')
         return resp.status == httplib.NO_CONTENT
 
     def ex_share_ip(self, group_id, node_id, ip, configure_node=True):
+        """
+        Shares an IP address to the specified server.
+
+        @param       group_id:  group id which should be used
+        @type        group_id: C{str}
+
+        @param       node_id: ID of the node which should be used
+        @type        node_id: C{str}
+
+        @param       ip: ip which should be used
+        @type        ip: C{str}
+
+        @param       configure_node: configure node
+        @type        configure_node: C{bool}
+
+        @rtype: C{bool}
+        """
         # @TODO: Remove this if in 0.6
         if isinstance(node_id, Node):
             node_id = node_id.id
@@ -529,6 +645,17 @@ class OpenStack_1_0_NodeDriver(OpenStackNodeDriver):
         return resp.status == httplib.ACCEPTED
 
     def ex_unshare_ip(self, node_id, ip):
+        """
+        Removes a shared IP address from the specified server.
+
+        @param       node_id: ID of the node which should be used
+        @type        node_id: C{str}
+
+        @param       ip: ip which should be used
+        @type        ip: C{str}
+
+        @rtype: C{bool}
+        """
         # @TODO: Remove this if in 0.6
         if isinstance(node_id, Node):
             node_id = node_id.id
@@ -540,6 +667,14 @@ class OpenStack_1_0_NodeDriver(OpenStackNodeDriver):
         return resp.status == httplib.ACCEPTED
 
     def ex_list_ip_addresses(self, node_id):
+        """
+        List all server addresses.
+
+        @param       node_id: ID of the node which should be used
+        @type        node_id: C{str}
+
+        @rtype: C{bool}
+        """
         # @TODO: Remove this if in 0.6
         if isinstance(node_id, Node):
             node_id = node_id.id
@@ -591,8 +726,7 @@ class OpenStack_1_0_NodeDriver(OpenStackNodeDriver):
         return [self._to_node(el) for el in node_elements]
 
     def _to_node_from_obj(self, obj):
-        return self._to_node(findall(obj, 'server',
-                                           self.XML_NAMESPACE)[0])
+        return self._to_node(findall(obj, 'server', self.XML_NAMESPACE)[0])
 
     def _to_node(self, el):
         def get_ips(el):
@@ -605,11 +739,11 @@ class OpenStack_1_0_NodeDriver(OpenStackNodeDriver):
             return d
 
         public_ip = get_ips(findall(el, 'addresses/public/ip',
-                                          self.XML_NAMESPACE))
+                                    self.XML_NAMESPACE))
         private_ip = get_ips(findall(el, 'addresses/private/ip',
-                                          self.XML_NAMESPACE))
+                                     self.XML_NAMESPACE))
         metadata = get_meta_dict(findall(el, 'metadata/meta',
-                                          self.XML_NAMESPACE))
+                                         self.XML_NAMESPACE))
 
         n = Node(id=el.get('id'),
                  name=el.get('name'),
@@ -619,14 +753,14 @@ class OpenStack_1_0_NodeDriver(OpenStackNodeDriver):
                  private_ips=private_ip,
                  driver=self.connection.driver,
                  extra={
-                    'password': el.get('adminPass'),
-                    'hostId': el.get('hostId'),
-                    'imageId': el.get('imageId'),
-                    'flavorId': el.get('flavorId'),
-                    'uri': "https://%s%s/servers/%s" % (
+                     'password': el.get('adminPass'),
+                     'hostId': el.get('hostId'),
+                     'imageId': el.get('imageId'),
+                     'flavorId': el.get('flavorId'),
+                     'uri': "https://%s%s/servers/%s" % (
                          self.connection.host,
                          self.connection.request_path, el.get('id')),
-                    'metadata': metadata,
+                     'metadata': metadata,
                  })
         return n
 
@@ -636,14 +770,14 @@ class OpenStack_1_0_NodeDriver(OpenStackNodeDriver):
 
     def _to_size(self, el):
         return NodeSize(id=el.get('id'),
-                     name=el.get('name'),
-                     ram=int(el.get('ram')),
-                     disk=int(el.get('disk')),
-                     # XXX: needs hardcode
-                     bandwidth=None,
-                     # Hardcoded
-                     price=self._get_size_price(el.get('id')),
-                     driver=self.connection.driver)
+                        name=el.get('name'),
+                        ram=int(el.get('ram')),
+                        disk=int(el.get('disk')),
+                        # XXX: needs hardcode
+                        bandwidth=None,
+                        # Hardcoded
+                        price=self._get_size_price(el.get('id')),
+                        driver=self.connection.driver)
 
     def ex_limits(self):
         """
@@ -652,7 +786,8 @@ class OpenStack_1_0_NodeDriver(OpenStackNodeDriver):
         and absolute limits like total amount of available
         RAM to be used by servers.
 
-        @return: C{dict} with keys 'rate' and 'absolute'
+        @return: dict with keys 'rate' and 'absolute'
+        @rtype: C{dict}
         """
 
         def _to_rate(el):
@@ -667,10 +802,10 @@ class OpenStack_1_0_NodeDriver(OpenStackNodeDriver):
 
         limits = self.connection.request("/limits").object
         rate = [_to_rate(el) for el in findall(limits, 'rate/limit',
-            self.XML_NAMESPACE)]
+                                               self.XML_NAMESPACE)]
         absolute = {}
         for item in findall(limits, 'absolute/limit',
-          self.XML_NAMESPACE):
+                            self.XML_NAMESPACE):
             absolute.update(_to_absolute(item))
 
         return {"rate": rate, "absolute": absolute}
@@ -678,27 +813,33 @@ class OpenStack_1_0_NodeDriver(OpenStackNodeDriver):
     def ex_save_image(self, node, name):
         """Create an image for node.
 
-        @keyword    node: node to use as a base for image
-        @param      node: L{Node}
-        @keyword    name: name for new image
-        @param      name: C{string}
+        @param      node: node to use as a base for image
+        @type       node: L{Node}
+
+        @param      name: name for new image
+        @type       name: C{str}
+
+        @rtype: L{NodeImage}
         """
 
         image_elm = ET.Element(
-                'image',
-                {'xmlns': self.XML_NAMESPACE,
-                    'name': name,
-                    'serverId': node.id})
+            'image',
+            {'xmlns': self.XML_NAMESPACE,
+             'name': name,
+             'serverId': node.id}
+        )
 
-        return self._to_image(self.connection.request("/images",
-                    method="POST",
-                    data=ET.tostring(image_elm)).object)
+        return self._to_image(
+            self.connection.request("/images", method="POST",
+                                    data=ET.tostring(image_elm)).object)
 
     def ex_delete_image(self, image):
         """Delete an image for node.
 
-        @keyword    image: the image to be deleted
-        @param      image: L{NodeImage}
+        @param      image: the image to be deleted
+        @type       image: L{NodeImage}
+
+        @rtype: C{bool}
         """
         uri = '/images/%s' % image.id
         resp = self.connection.request(uri, method='DELETE')
@@ -709,21 +850,22 @@ class OpenStack_1_0_NodeDriver(OpenStackNodeDriver):
         if servers_el:
             servers = [s.get('id')
                        for s in findall(servers_el[0], 'server',
-                       self.XML_NAMESPACE)]
+                                        self.XML_NAMESPACE)]
         else:
             servers = None
         return OpenStack_1_0_SharedIpGroup(id=el.get('id'),
-                                      name=el.get('name'),
-                                      servers=servers)
+                                           name=el.get('name'),
+                                           servers=servers)
 
     def _to_ip_addresses(self, el):
-        return OpenStack_1_0_NodeIpAddresses(
-            [ip.get('addr') for ip in
-             findall(findall(el, 'public', self.XML_NAMESPACE)[0],
-             'ip', self.XML_NAMESPACE)],
-            [ip.get('addr') for ip in
-             findall(findall(el, 'private', self.XML_NAMESPACE)[0],
-             'ip', self.XML_NAMESPACE)])
+        public_ips = [ip.get('addr') for ip in findall(
+            findall(el, 'public', self.XML_NAMESPACE)[0],
+            'ip', self.XML_NAMESPACE)]
+        private_ips = [ip.get('addr') for ip in findall(
+            findall(el, 'private', self.XML_NAMESPACE)[0],
+            'ip', self.XML_NAMESPACE)]
+
+        return OpenStack_1_0_NodeIpAddresses(public_ips, private_ips)
 
     def _get_size_price(self, size_id):
         try:
@@ -756,7 +898,6 @@ class OpenStack_1_0_NodeIpAddresses(object):
 
 
 class OpenStack_1_1_Response(OpenStackResponse):
-
     def __init__(self, *args, **kwargs):
         # done because of a circular reference from
         # NodeDriver -> Connection -> Response
@@ -764,9 +905,131 @@ class OpenStack_1_1_Response(OpenStackResponse):
         super(OpenStack_1_1_Response, self).__init__(*args, **kwargs)
 
 
+class OpenStackNetwork(object):
+    """
+    A Virtual Network.
+    """
+
+    def __init__(self, id, name, cidr, driver, extra=None):
+        self.id = str(id)
+        self.name = name
+        self.cidr = cidr
+        self.driver = driver
+        self.extra = extra or {}
+
+    def __repr__(self):
+        return '<OpenStackNetwork id="%s" name="%s" cidr="%s">' % (self.id,
+               self.name, self.cidr,)
+
+
+class OpenStackSecurityGroup(object):
+    """
+    A Security Group.
+    """
+
+    def __init__(self, id, tenant_id, name, description, driver, rules=None,
+                 extra=None):
+        """
+        Constructor.
+
+        @keyword    id: Group id.
+        @type       id: C{str}
+
+        @keyword    tenant_id: Owner of the security group.
+        @type       tenant_id: C{str}
+
+        @keyword    name: Human-readable name for the security group. Might
+                          not be unique.
+        @type       name: C{str}
+
+        @keyword    description: Human-readable description of a security
+                                 group.
+        @type       description: C{str}
+
+        @keyword    rules: Rules associated with this group.
+        @type       description: C{list} of L{OpenStackSecurityGroupRule}
+
+        @keyword    extra: Extra attributes associated with this group.
+        @type       extra: C{dict}
+        """
+        self.id = id
+        self.tenant_id = tenant_id
+        self.name = name
+        self.description = description
+        self.driver = driver
+        self.rules = rules or []
+        self.extra = extra or {}
+
+    def __repr__(self):
+        return ('<OpenStackSecurityGroup id=%s tenant_id=%s name=%s \
+        description=%s>' % (self.id, self.tenant_id, self.name,
+                            self.description))
+
+
+class OpenStackSecurityGroupRule(object):
+    """
+    A Rule of a Security Group.
+    """
+
+    def __init__(self, id, parent_group_id, ip_protocol, from_port, to_port,
+                 driver, ip_range=None, group=None, tenant_id=None,
+                 extra=None):
+        """
+        Constructor.
+
+        @keyword    id: Rule id.
+        @type       id: C{str}
+
+        @keyword    parent_group_id: ID of the parent security group.
+        @type       parent_group_id: C{str}
+
+        @keyword    ip_protocol: IP Protocol (icmp, tcp, udp, etc).
+        @type       ip_protocol: C{str}
+
+        @keyword    from_port: Port at start of range.
+        @type       from_port: C{int}
+
+        @keyword    to_port: Port at end of range.
+        @type       to_port: C{int}
+
+        @keyword    ip_range: CIDR for address range.
+        @type       ip_range: C{str}
+
+        @keyword    group: Name of a source security group to apply to rule.
+        @type       group: C{str}
+
+        @keyword    tenant_id: Owner of the security group.
+        @type       tenant_id: C{str}
+
+        @keyword    extra: Extra attributes associated with this rule.
+        @type       extra: C{dict}
+        """
+        self.id = id
+        self.parent_group_id = parent_group_id
+        self.ip_protocol = ip_protocol
+        self.from_port = from_port
+        self.to_port = to_port
+        self.driver = driver
+        self.ip_range = ''
+        self.group = {}
+
+        if group is None:
+            self.ip_range = ip_range
+        else:
+            self.group = {'name': group, 'tenant_id': tenant_id}
+
+        self.tenant_id = tenant_id
+        self.extra = extra or {}
+
+    def __repr__(self):
+        return ('<OpenStackSecurityGroupRule id=%s parent_group_id=%s \
+                ip_protocol=%s from_port=%s to_port=%s>' % (self.id,
+                self.parent_group_id, self.ip_protocol, self.from_port,
+                self.to_port))
+
+
 class OpenStack_1_1_Connection(OpenStackComputeConnection):
     responseCls = OpenStack_1_1_Response
-    _url_key = "server_url"
     accept_format = 'application/json'
     default_content_type = 'application/json; charset=UTF-8'
 
@@ -780,16 +1043,10 @@ class OpenStack_1_1_NodeDriver(OpenStackNodeDriver):
     """
     connectionCls = OpenStack_1_1_Connection
     type = Provider.OPENSTACK
-    api_name = 'openstack'
-    name = 'OpenStack'
 
     features = {"create_node": ["generates_password"]}
 
     def __init__(self, *args, **kwargs):
-        self._ex_force_base_url = kwargs.pop('ex_force_base_url', None)
-        self._ex_force_auth_url = kwargs.pop('ex_force_auth_url', None)
-        self._ex_force_auth_version = kwargs.pop('ex_force_auth_version',
-                                                 None)
         self._ex_force_api_version = str(kwargs.pop('ex_force_api_version',
                                                     None))
         super(OpenStack_1_1_NodeDriver, self).__init__(*args, **kwargs)
@@ -797,13 +1054,30 @@ class OpenStack_1_1_NodeDriver(OpenStackNodeDriver):
     def create_node(self, **kwargs):
         """Create a new node
 
-        See L{NodeDriver.create_node} for more keyword args.
+        @inherits:  L{NodeDriver.create_node}
+
         @keyword    ex_metadata: Key/Value metadata to associate with a node
         @type       ex_metadata: C{dict}
 
         @keyword    ex_files:   File Path => File contents to create on
-                                the node
+                                the no  de
         @type       ex_files:   C{dict}
+
+        @keyword    ex_keyname:  Name of existing public key to inject into
+                                 instance
+        @type       ex_keyname:  C{str}
+
+        @keyword    ex_userdata: String containing user data
+                                 see
+                                 https://help.ubuntu.com/community/CloudInit
+        @type       ex_userdata: C{str}
+
+        @keyword    networks: The server is launched into a set of Networks.
+        @type       networks: L{OpenStackNetwork}
+
+        @keyword    ex_security_groups: List of security groups to assign to
+                                        the node
+        @type       ex_security_groups: C{list} of L{OpenStackSecurityGroup}
         """
 
         server_params = self._create_args_to_params(None, **kwargs)
@@ -813,9 +1087,13 @@ class OpenStack_1_1_NodeDriver(OpenStackNodeDriver):
                                        data={'server': server_params})
 
         create_response = resp.object['server']
-        server_resp = self.connection.request('/servers/%s' % create_response['id'])
+        server_resp = self.connection.request(
+            '/servers/%s' % create_response['id'])
         server_object = server_resp.object['server']
-        server_object['adminPass'] = create_response['adminPass']
+
+        # adminPass is not always present
+        # http://docs.openstack.org/essex/openstack-compute/admin/content/configuring-compute-API.html#d6e1833
+        server_object['adminPass'] = create_response.get('adminPass', None)
 
         return self._to_node(server_object)
 
@@ -829,18 +1107,22 @@ class OpenStack_1_1_NodeDriver(OpenStackNodeDriver):
         return images
 
     def _to_image(self, api_image):
+        server = api_image.get('server', {})
         return NodeImage(
-                      id=api_image['id'],
-                      name=api_image['name'],
-                      driver=self,
-                      extra=dict(
-                                 updated=api_image['updated'],
-                                 created=api_image['created'],
-                                 status=api_image['status'],
-                                 progress=api_image.get('progress'),
-                                 metadata=api_image.get('metadata'),
-                      )
-                  )
+            id=api_image['id'],
+            name=api_image['name'],
+            driver=self,
+            extra=dict(
+                updated=api_image['updated'],
+                created=api_image['created'],
+                status=api_image['status'],
+                progress=api_image.get('progress'),
+                metadata=api_image.get('metadata'),
+                serverId=server.get('id'),
+                minDisk=api_image.get('minDisk'),
+                minRam=api_image.get('minRam'),
+            )
+        )
 
     def _to_nodes(self, obj):
         servers = obj['servers']
@@ -857,6 +1139,24 @@ class OpenStack_1_1_NodeDriver(OpenStackNodeDriver):
             'personality': self._files_to_personality(kwargs.get("ex_files",
                                                                  {}))
         }
+
+        if 'ex_keyname' in kwargs:
+            server_params['key_name'] = kwargs['ex_keyname']
+
+        if 'ex_userdata' in kwargs:
+            server_params['user_data'] = base64.b64encode(
+                b(kwargs['ex_userdata'])).decode('ascii')
+
+        if 'networks' in kwargs:
+            networks = kwargs['networks']
+            networks = [{'uuid': network.id} for network in networks]
+            server_params['networks'] = networks
+
+        if 'ex_security_groups' in kwargs:
+            server_params['security_groups'] = []
+            for security_group in kwargs['ex_security_groups']:
+                name = security_group.name
+                server_params['security_groups'].append({'name': name})
 
         if 'name' in kwargs:
             server_params['name'] = kwargs.get('name')
@@ -888,6 +1188,17 @@ class OpenStack_1_1_NodeDriver(OpenStackNodeDriver):
         return resp.status == httplib.ACCEPTED
 
     def ex_set_password(self, node, password):
+        """
+        Changes the administrator password for a specified server.
+
+        @param      node: Node to rebuild.
+        @type       node: L{Node}
+
+        @param      password: The administrator password.
+        @type       password: C{str}
+
+        @rtype: C{bool}
+        """
         resp = self._node_action(node, 'changePassword', adminPass=password)
         node.extra['password'] = password
         return resp.status == httplib.ACCEPTED
@@ -896,11 +1207,13 @@ class OpenStack_1_1_NodeDriver(OpenStackNodeDriver):
         """
         Rebuild a Node.
 
-        @type node: C{Node}
-        @param node: Node to rebuild.
+        @param      node: Node to rebuild.
+        @type       node: L{Node}
 
-        @type image: C{NodeImage}
-        @param image: New image to use.
+        @param      image: New image to use.
+        @type       image: L{NodeImage}
+
+        @rtype: C{bool}
         """
         server_params = self._create_args_to_params(node, image=image)
         resp = self._node_action(node, 'rebuild', **server_params)
@@ -910,26 +1223,57 @@ class OpenStack_1_1_NodeDriver(OpenStackNodeDriver):
         """
         Change a node size.
 
-        @type node: C{Node}
-        @param node: Node to resize.
+        @param      node: Node to resize.
+        @type       node: L{Node}
 
-        @type image: C{NodeSize}
-        @param image: New size to use.
+        @type       size: L{NodeSize}
+        @param      size: New size to use.
+
+        @rtype: C{bool}
         """
-
         server_params = self._create_args_to_params(node, size=size)
         resp = self._node_action(node, 'resize', **server_params)
         return resp.status == httplib.ACCEPTED
 
     def ex_confirm_resize(self, node):
+        """
+        Confirms a pending resize action.
+
+        @param      node: Node to resize.
+        @type       node: L{Node}
+
+        @rtype: C{bool}
+        """
         resp = self._node_action(node, 'confirmResize')
         return resp.status == httplib.NO_CONTENT
 
     def ex_revert_resize(self, node):
+        """
+        Cancels and reverts a pending resize action.
+
+        @param      node: Node to resize.
+        @type       node: L{Node}
+
+        @rtype: C{bool}
+        """
         resp = self._node_action(node, 'revertResize')
         return resp.status == httplib.ACCEPTED
 
     def ex_save_image(self, node, name, metadata=None):
+        """
+        Creates a new image.
+
+        @param      node: Node
+        @type       node: L{Node}
+
+        @param      name: The name for the new image.
+        @type       name: C{str}
+
+        @param      metadata: Key and value pairs for metadata.
+        @type       metadata: C{dict}
+
+        @rtype: L{NodeImage}
+        """
         optional_params = {}
         if metadata:
             optional_params['metadata'] = metadata
@@ -941,6 +1285,14 @@ class OpenStack_1_1_NodeDriver(OpenStackNodeDriver):
     def ex_set_server_name(self, node, name):
         """
         Sets the Node's name.
+
+        @param      node: Node
+        @type       node: L{Node}
+
+        @param      name: The name of the server.
+        @type       name: C{str}
+
+        @rtype: L{Node}
         """
         return self._update_node(node, name=name)
 
@@ -948,24 +1300,32 @@ class OpenStack_1_1_NodeDriver(OpenStackNodeDriver):
         """
         Get a Node's metadata.
 
-        @return     Key/Value metadata associated with node.
-        @type       C{dict}
+        @param      node: Node
+        @type       node: L{Node}
+
+        @return: Key/Value metadata associated with node.
+        @rtype: C{dict}
         """
         return self.connection.request(
-                '/servers/%s/metadata' % (node.id,), method='GET',
-            ).object['metadata']
+            '/servers/%s/metadata' % (node.id,),
+            method='GET',).object['metadata']
 
     def ex_set_metadata(self, node, metadata):
         """
         Sets the Node's metadata.
 
-        @keyword    metadata: Key/Value metadata to associate with a node
+        @param      node: Node
+        @type       node: L{Node}
+
+        @param      metadata: Key/Value metadata to associate with a node
         @type       metadata: C{dict}
+
+        @rtype: C{dict}
         """
         return self.connection.request(
-                '/servers/%s/metadata' % (node.id,), method='PUT',
-                data={'metadata': metadata}
-            ).object['metadata']
+            '/servers/%s/metadata' % (node.id,), method='PUT',
+            data={'metadata': metadata}
+        ).object['metadata']
 
     def ex_update_node(self, node, **node_updates):
         """
@@ -974,24 +1334,243 @@ class OpenStack_1_1_NodeDriver(OpenStackNodeDriver):
 
         The driver currently only supports updating the node name.
 
+        @param      node: Node
+        @type       node: L{Node}
+
         @keyword    name:   New name for the server
         @type       name:   C{str}
+
+        @rtype: L{Node}
         """
         potential_data = self._create_args_to_params(node, **node_updates)
         updates = {'name': potential_data['name']}
         return self._update_node(node, **updates)
 
+    def _to_networks(self, obj):
+        networks = obj['networks']
+        return [self._to_network(network) for network in networks]
+
+    def _to_network(self, obj):
+        return OpenStackNetwork(id=obj['id'],
+                                name=obj['label'],
+                                cidr=obj.get('cidr', None),
+                                driver=self)
+
+    def ex_list_networks(self):
+        """
+        Get a list of Networks that are available.
+
+        @rtype: C{list} of L{OpenStackNetwork}
+        """
+        return self._to_networks(
+            self.connection.request('/os-networksv2').object)
+
+    def ex_create_network(self, name, cidr):
+        """
+        Create a new Network
+
+        @param name: Name of network which should be used
+        @type name: C{str}
+
+        @param cidr: cidr of network which should be used
+        @type cidr: C{str}
+
+        @rtype: L{OpenStackNetwork}
+        """
+        return self._to_network(self.connection.request(
+            '/os-networksv2', method='POST',
+            data={'network': {'cidr': cidr, 'label': name}}
+        ).object['network'])
+
+    def ex_delete_network(self, network):
+        """
+        Get a list of NodeNetorks that are available.
+
+        @param network: Network which should be used
+        @type network: L{OpenStackNetwork}
+
+        @rtype: C{bool}
+        """
+        resp = self.connection.request('/os-networksv2/%s' % (network.id),
+                                       method='DELETE')
+        return resp.status == httplib.ACCEPTED
+
+    def _to_security_group_rules(self, obj):
+        return [self._to_security_group_rule(security_group_rule) for
+                security_group_rule in obj]
+
+    def _to_security_group_rule(self, obj):
+        ip_range = group = tenant_id = None
+        if obj['group'] == {}:
+            ip_range = obj['ip_range'].get('cidr', None)
+        else:
+            group = obj['group'].get('name', None)
+            tenant_id = obj['group'].get('tenant_id', None)
+
+        return OpenStackSecurityGroupRule(id=obj['id'],
+                                          parent_group_id=
+                                          obj['parent_group_id'],
+                                          ip_protocol=obj['ip_protocol'],
+                                          from_port=obj['from_port'],
+                                          to_port=obj['to_port'],
+                                          driver=self,
+                                          ip_range=ip_range,
+                                          group=group,
+                                          tenant_id=tenant_id)
+
+    def _to_security_groups(self, obj):
+        security_groups = obj['security_groups']
+        return [self._to_security_group(security_group) for security_group in
+                security_groups]
+
+    def _to_security_group(self, obj):
+        return OpenStackSecurityGroup(id=obj['id'],
+                                      tenant_id=obj['tenant_id'],
+                                      name=obj['name'],
+                                      description=obj.get('description', ''),
+                                      rules=self._to_security_group_rules(
+                                      obj.get('rules', [])),
+                                      driver=self)
+
+    def ex_list_security_groups(self):
+        """
+        Get a list of Security Groups that are available.
+
+        @rtype: C{list} of L{OpenStackSecurityGroup}
+        """
+        return self._to_security_groups(
+            self.connection.request('/os-security-groups').object)
+
+    def ex_get_node_security_groups(self, node):
+        """
+        Get Security Groups of the specified server.
+
+        @rtype: C{list} of L{OpenStackSecurityGroup}
+        """
+        return self._to_security_groups(
+            self.connection.request('/servers/%s/os-security-groups' %
+                                    (node.id)).object)
+
+    def ex_create_security_group(self, name, description):
+        """
+        Create a new Security Group
+
+        @param name: Name of the new Security Group
+        @type  name: C{str}
+
+        @param description: Description of the new Security Group
+        @type  description: C{str}
+
+        @rtype: L{OpenStackSecurityGroup}
+        """
+        return self._to_security_group(self.connection.request(
+            '/os-security-groups', method='POST',
+            data={'security_group': {'name': name, 'description': description}}
+        ).object['security_group'])
+
+    def ex_delete_security_group(self, security_group):
+        """
+        Delete a Security Group.
+
+        @param security_group: Security Group should be deleted
+        @type  security_group: L{OpenStackSecurityGroup}
+
+        @rtype: C{bool}
+        """
+        resp = self.connection.request('/os-security-groups/%s' %
+                                       (security_group.id),
+                                       method='DELETE')
+        return resp.status == httplib.NO_CONTENT
+
+    def ex_create_security_group_rule(self, security_group, ip_protocol,
+                                      from_port, to_port, cidr=None,
+                                      source_security_group=None):
+        """
+        Create a new Rule in a Security Group
+
+        @param security_group: Security Group in which to add the rule
+        @type  security_group: L{OpenStackSecurityGroup}
+
+        @param ip_protocol: Protocol to which this rule applies
+                            Examples: tcp, udp, ...
+        @type  ip_protocol: C{str}
+
+        @param from_port: First port of the port range
+        @type  from_port: C{int}
+
+        @param to_port: Last port of the port range
+        @type  to_port: C{int}
+
+        @param cidr: CIDR notation of the source IP range for this rule
+        @type  cidr: C{str}
+
+        @param source_security_group: Existing Security Group to use as the
+                                      source (instead of CIDR)
+        @type  source_security_group: L{OpenStackSecurityGroup
+
+        @rtype: L{OpenStackSecurityGroupRule}
+        """
+        source_security_group_id = None
+        if type(source_security_group) == OpenStackSecurityGroup:
+            source_security_group_id = source_security_group.id
+
+        return self._to_security_group_rule(self.connection.request(
+            '/os-security-group-rules', method='POST',
+            data={'security_group_rule': {
+            'ip_protocol': ip_protocol,
+            'from_port': from_port,
+            'to_port': to_port,
+            'cidr': cidr,
+            'group_id': source_security_group_id,
+            'parent_group_id': security_group.id}}
+        ).object['security_group_rule'])
+
+    def ex_delete_security_group_rule(self, rule):
+        """
+        Delete a Rule from a Security Group.
+
+        @param rule: Rule should be deleted
+        @type  rule: L{OpenStackSecurityGroupRule}
+
+        @rtype: C{bool}
+        """
+        resp = self.connection.request('/os-security-group-rules/%s' %
+                                       (rule.id), method='DELETE')
+        return resp.status == httplib.NO_CONTENT
+
     def ex_get_size(self, size_id):
-        return self._to_size(self.connection.request('/flavors/%s' %
-                                                     (size_id,))
-                   .object['flavor'])
+        """
+        Get a NodeSize
+
+        @param      size_id: ID of the size which should be used
+        @type       size_id: C{str}
+
+        @rtype: L{NodeSize}
+        """
+        return self._to_size(self.connection.request(
+            '/flavors/%s' % (size_id,)) .object['flavor'])
 
     def ex_get_image(self, image_id):
-        return self._to_image(self.connection.request('/images/%s' %
-                                                      (image_id,))
-                   .object['image'])
+        """
+        Get a NodeImage
+
+        @param      image_id: ID of the image which should be used
+        @type       image_id: C{str}
+
+        @rtype: L{NodeImage}
+        """
+        return self._to_image(self.connection.request(
+            '/images/%s' % (image_id,)).object['image'])
 
     def ex_delete_image(self, image):
+        """
+        Delete a NodeImage
+
+        @param      image: image witch should be used
+        @type       image: L{NodeImage}
+
+        @rtype: C{bool}
+        """
         resp = self.connection.request('/images/%s' % (image.id,),
                                        method='DELETE')
         return resp.status == httplib.NO_CONTENT
@@ -1017,15 +1596,25 @@ class OpenStack_1_1_NodeDriver(OpenStackNodeDriver):
         return self._to_node(obj['server'])
 
     def _to_node(self, api_node):
+        public_networks_labels = ['public', 'internet']
+
+        public_ips, private_ips = [], []
+
+        for label, values in api_node['addresses'].items():
+            ips = [v['addr'] for v in values]
+
+            if label in public_networks_labels:
+                public_ips.extend(ips)
+            else:
+                private_ips.extend(ips)
+
         return Node(
             id=api_node['id'],
             name=api_node['name'],
             state=self.NODE_STATE_MAP.get(api_node['status'],
                                           NodeState.UNKNOWN),
-            public_ips=[addr_desc['addr'] for addr_desc in
-                       api_node['addresses'].get('public', [])],
-            private_ips=[addr_desc['addr'] for addr_desc in
-                        api_node['addresses'].get('private', [])],
+            public_ips=public_ips,
+            private_ips=private_ips,
             driver=self,
             extra=dict(
                 hostId=api_node['hostId'],
@@ -1035,9 +1624,12 @@ class OpenStack_1_1_NodeDriver(OpenStackNodeDriver):
                 imageId=api_node['image']['id'],
                 flavorId=api_node['flavor']['id'],
                 uri=next(link['href'] for link in api_node['links'] if
-                     link['rel'] == 'self'),
+                         link['rel'] == 'self'),
                 metadata=api_node['metadata'],
-                password=api_node.get('adminPass'),
+                password=api_node.get('adminPass', None),
+                created=api_node['created'],
+                updated=api_node['updated'],
+                key_name=api_node.get('key_name', None),
             ),
         )
 
@@ -1058,16 +1650,49 @@ class OpenStack_1_1_NodeDriver(OpenStackNodeDriver):
         )
 
     def _get_size_price(self, size_id):
-            try:
-                return get_size_price(
-                    driver_type='compute',
-                    driver_name=self.api_name,
-                    size_id=size_id,
-                )
-            except KeyError:
-                return(0.0)
+        try:
+            return get_size_price(
+                driver_type='compute',
+                driver_name=self.api_name,
+                size_id=size_id,
+            )
+        except KeyError:
+            return(0.0)
 
     def _extract_image_id_from_url(self, location_header):
         path = urlparse.urlparse(location_header).path
         image_id = path.split('/')[-1]
         return image_id
+
+    def ex_rescue(self, node, password=None):
+        # Requires Rescue Mode extension
+        """
+        Rescue a node
+
+        @param      node: node
+        @type       node: L{Node}
+
+        @param      password: password
+        @type       password: C{str}
+
+        @rtype: L{Node}
+        """
+        if password:
+            resp = self._node_action(node, 'rescue', adminPass=password)
+        else:
+            resp = self._node_action(node, 'rescue')
+            password = json.loads(resp.body)['adminPass']
+        node.extra['password'] = password
+        return node
+
+    def ex_unrescue(self, node):
+        """
+        Unrescue a node
+
+        @param      node: node
+        @type       node: L{Node}
+
+        @rtype: C{bool}
+        """
+        resp = self._node_action(node, 'unrescue')
+        return resp.status == httplib.ACCEPTED

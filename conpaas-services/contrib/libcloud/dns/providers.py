@@ -14,6 +14,7 @@
 # limitations under the License.
 
 from libcloud.utils.misc import get_driver as get_provider_driver
+from libcloud.utils.misc import set_driver as set_provider_driver
 from libcloud.dns.types import Provider
 
 DRIVERS = {
@@ -27,10 +28,17 @@ DRIVERS = {
         ('libcloud.dns.drivers.rackspace', 'RackspaceUSDNSDriver'),
     Provider.RACKSPACE_UK:
         ('libcloud.dns.drivers.rackspace', 'RackspaceUKDNSDriver'),
-    Provider.ROUTE_53:
-        ('libcloud.dns.drivers.route_53', 'Route53DNSDriver')
+    Provider.HOSTVIRTUAL:
+        ('libcloud.dns.drivers.hostvirtual', 'HostVirtualDNSDriver'),
+    Provider.ROUTE53:
+        ('libcloud.dns.drivers.route53', 'Route53DNSDriver'),
+    Provider.GANDI:
+        ('libcloud.dns.drivers.gandi', 'GandiDNSDriver')
 }
 
 
 def get_driver(provider):
     return get_provider_driver(DRIVERS, provider)
+
+def set_driver(provider, module, klass):
+    return set_provider_driver(DRIVERS, provider, module, klass)

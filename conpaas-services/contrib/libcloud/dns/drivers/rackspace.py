@@ -12,6 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from libcloud.common.openstack import OpenStackDriverMixin
 
 __all__ = [
     'RackspaceUSDNSDriver',
@@ -33,7 +34,7 @@ from libcloud.dns.types import ZoneDoesNotExistError, RecordDoesNotExistError
 from libcloud.dns.base import DNSDriver, Zone, Record
 
 VALID_ZONE_EXTRA_PARAMS = ['email', 'comment', 'ns1']
-VALID_RECORD_EXTRA_PARAMS = ['ttl', 'comment']
+VALID_RECORD_EXTRA_PARAMS = ['ttl', 'comment', 'priority']
 
 
 class RackspaceDNSResponse(OpenStack_1_1_Response):
@@ -72,7 +73,6 @@ class RackspaceDNSConnection(OpenStack_1_1_Connection, PollingConnection):
     """
 
     responseCls = RackspaceDNSResponse
-    _url_key = 'dns_url'
     XML_NAMESPACE = None
     poll_interval = 2.5
     timeout = 30
@@ -80,7 +80,7 @@ class RackspaceDNSConnection(OpenStack_1_1_Connection, PollingConnection):
     def get_poll_request_kwargs(self, response, context, request_kwargs):
         job_id = response.object['jobId']
         kwargs = {'action': '/status/%s' % (job_id),
-                'params': {'showDetails': True}}
+                  'params': {'showDetails': True}}
         return kwargs
 
     def has_completed(self, response):
@@ -91,6 +91,33 @@ class RackspaceDNSConnection(OpenStack_1_1_Connection, PollingConnection):
 
         return status == 'COMPLETED'
 
+    def get_endpoint(self):
+        """
+        FIXME:
+        Dirty, dirty hack. DNS doesn't get returned in the auth 1.1 service
+        catalog, so we build it from the servers url.
+        """
+
+        if self._auth_version == "1.1":
+            ep = self.service_catalog.get_endpoint(name="cloudServers")
+
+            return self._construct_dns_endpoint_from_servers_endpoint(ep)
+        elif "2.0" in self._auth_version:
+            ep = self.service_catalog.get_endpoint(name="cloudServers",
+                                                   service_type="compute",
+                                                   region=None)
+
+            return self._construct_dns_endpoint_from_servers_endpoint(ep)
+        else:
+            raise LibcloudError("Auth version %s not supported" %
+                                (self._auth_version))
+
+    def _construct_dns_endpoint_from_servers_endpoint(self, ep):
+        if 'publicURL' in ep:
+            return ep['publicURL'].replace("servers", "dns")
+        else:
+            raise LibcloudError('Could not find specified endpoint')
+
 
 class RackspaceUSDNSConnection(RackspaceDNSConnection):
     auth_url = AUTH_URL_US
@@ -100,7 +127,15 @@ class RackspaceUKDNSConnection(RackspaceDNSConnection):
     auth_url = AUTH_URL_UK
 
 
-class RackspaceDNSDriver(DNSDriver):
+class RackspaceDNSDriver(DNSDriver, OpenStackDriverMixin):
+    website = 'http://www.rackspace.com/'
+
+    def __init__(self, *args, **kwargs):
+        OpenStackDriverMixin.__init__(self, *args, **kwargs)
+        super(RackspaceDNSDriver, self).__init__(*args, **kwargs)
+
+    def _ex_connection_class_kwargs(self):
+        return self.openstack_connection_kwargs()
 
     RECORD_TYPE_MAP = {
         RecordType.A: 'A',
@@ -206,6 +241,9 @@ class RackspaceDNSDriver(DNSDriver):
         if 'ttl' in extra:
             data['ttl'] = int(extra['ttl'])
 
+        if 'priority' in extra:
+            data['priority'] = int(extra['priority'])
+
         payload = {'records': [data]}
         self.connection.set_context({'resource': 'zone', 'id': zone.id})
         response = self.connection.async_request(action='/domains/%s/records'
@@ -234,7 +272,7 @@ class RackspaceDNSDriver(DNSDriver):
         if 'comment' in extra:
             payload['comment'] = extra['comment']
 
-        type = type if type else record.type
+        type = type if type is not None else record.type
         data = data if data else record.data
 
         self.connection.set_context({'resource': 'record', 'id': record.id})
@@ -305,11 +343,9 @@ class RackspaceDNSDriver(DNSDriver):
         record_data = data['data']
         extra = {'fqdn': fqdn}
 
-        if 'ttl' in data:
-            extra['ttl'] = data['ttl']
-
-        if 'comment' in data:
-            extra['comment'] = data['comment']
+        for key in VALID_RECORD_EXTRA_PARAMS:
+            if key in data:
+                extra[key] = data[key]
 
         record = Record(id=str(id), name=name, type=type, data=record_data,
                         zone=zone, driver=self, extra=extra)
@@ -325,7 +361,11 @@ class RackspaceDNSDriver(DNSDriver):
         @param name: Record name.
         @type name: C{str}
         """
-        name = '%s.%s' % (name, domain)
+        if name:
+            name = '%s.%s' % (name, domain)
+        else:
+            name = domain
+
         return name
 
     def _to_partial_record_name(self, domain, name):
