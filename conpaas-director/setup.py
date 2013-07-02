@@ -57,4 +57,8 @@ if __name__ == "__main__" and sys.argv[1] == "install":
         os.mkdir(os.path.join(CONFDIR, "certs"))
 
     # set www-data as the owner of CONFDIR
-    os.chown(CONFDIR, getpwnam('www-data').pw_uid, getgrnam('www-data').gr_gid)
+    try:
+        os.chown(CONFDIR, getpwnam('www-data').pw_uid, 
+            getgrnam('www-data').gr_gid)
+    except OSError:
+        print "W: 'chown www-data:www-data %s' failed" % CONFDIR
