@@ -159,8 +159,17 @@ after the cloud itself. Please refer to
 
 Virtual Private Networks with IPOP
 ----------------------------------
+
 Network connectivity between private clouds running on different networks can
 be achieved in ConPaaS by using IPOP_ (IP over P2P). 
+
+IPOP is useful when you need to deploy ConPaaS instances across multiple
+clouds. IPOP adds a virtual network interface to all ConPaaS instances
+belonging to an application, allowing services to communicate over a virtual
+private network as if they were deployed on the same LAN. This is achieved
+transparently to the user and applications - the only configuration needed to
+enable IPOP is to determine the network's base IP address, mask, and the number
+of IP addresses in this virtual network that are allocated to each service.
 
 VPN support in ConPaaS is per-application: each application you create will get
 its own IPOP Virtual Private Network. VMs running in the same application will
