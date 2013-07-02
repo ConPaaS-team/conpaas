@@ -23,3 +23,7 @@ if [ $ONE_AUTH_CONTENT ]; then
   echo $ONE_AUTH_CONTENT > $ONE_AUTH
 fi
 
+# PCI Hotplug Support is needed in order to attach persistent storage volumes
+# to this instance
+/sbin/modprobe acpiphp
+/sbin/modprobe pci_hotplug
