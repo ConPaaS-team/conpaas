@@ -1091,7 +1091,7 @@ class OpenNebula_3_6_NodeDriver(OpenNebula_3_2_NodeDriver):
                              size=int(storage.findtext('SIZE')),
                              driver=self.connection.driver)
 
-    def create_volume(self, size, name, location=None, snapshot=None):
+    def create_volume(self, size, name, location=None, snapshot=None, persistent=True):
         storage = ET.Element('STORAGE')
 
         vol_name = ET.SubElement(storage, 'NAME')
@@ -1107,7 +1107,10 @@ class OpenNebula_3_6_NodeDriver(OpenNebula_3_2_NodeDriver):
         public.text = 'NO'
 
         persistent = ET.SubElement(storage, 'PERSISTENT')
-        persistent.text = 'YES'
+        if persistent:
+            persistent.text = 'YES'
+        else:
+            persistent.text = 'NO'
 
         fstype = ET.SubElement(storage, 'FSTYPE')
         fstype.text = 'ext3'
