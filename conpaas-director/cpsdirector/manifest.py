@@ -716,8 +716,6 @@ class MTaskFarm(MGeneral):
         return 'ok'
 
 from cpsdirector.application import check_app_exists
-from cpsdirector.application import get_default_app
-from cpsdirector.application import get_app_by_name
 from cpsdirector.application import _createapp as createapp
 def new_manifest(json):
     try:
@@ -735,8 +733,17 @@ def new_manifest(json):
         res = createapp(app_name)
         appid = simplejson.loads(res.data).get('aid')
     else:
-        # Get application by name if it exists
-        appid = get_app_by_name(g.user.uid, app_name).aid
+        # Try different application names
+        for i in range(2, 99):
+            new_name = "%s (%d)" % (app_name, i)
+            if not check_app_exists(new_name):
+                res = createapp(new_name)
+                appid = simplejson.loads(res.data).get('aid')
+                break
+
+        # If all the applications exists, then exit
+        if i is 99:
+            return 'Application can not be created'
 
     if not parse.get('Services'):
         return 'ok'
