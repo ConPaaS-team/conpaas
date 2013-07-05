@@ -23,6 +23,14 @@ class Dashboard extends Page {
   			.'<div class="clear"></div>';
 	}
 
+	protected function renderBackLinks() {
+		$app = LinkUI('Applications', 'index.php')
+			->setIconPosition(LinkUI::POS_LEFT)
+			->setIconURL('images/link_s_back.png');
+
+		return $app;
+	}
+
 	public function renderContent() {
 
 	}
