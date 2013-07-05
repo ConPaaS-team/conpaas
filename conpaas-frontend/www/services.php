@@ -31,6 +31,7 @@ $services = ServiceData::getServicesByUser($page->getUID(), $_SESSION['aid']);
   <body class="<?php echo $page->getBrowserClass(); ?>">
 	<?php echo $page->renderHeader(); ?>
 	<div class="pagecontent">
+		<?php echo $page->renderTopMenu(); ?>
 		<div class="pageheader">
 			<?php echo $page->renderPageHeader(); ?>
 		</div>

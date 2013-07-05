@@ -33,6 +33,26 @@ conpaas.ui = (function (this_module) {
             that.deleteService(service);
         };
     },
+    saveName: function (newName, onSuccess, onError) {
+        this.server.req('ajax/renameApplication.php',
+                {name: newName}, 'post',
+                onSuccess, onError);
+    },
+    onClickName: function (event) {
+        var page = event.data;
+        var newname = prompt("Enter a new name", $('#name').html());
+        if (!newname) {
+            return;
+        }
+        page.saveName(newname, function () {
+            $('#name').html(newname);
+        })
+    },
+    attachHandlers: function () {
+        var that = this;
+        conpaas.ui.Page.prototype.attachHandlers.call(this);
+        $('#name').click(this, this.onClickName);
+    },
     checkServices: function () {
         var that = this;
         this.poller.setLoadingText('checking services...').poll(
