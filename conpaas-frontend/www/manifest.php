@@ -59,6 +59,11 @@ $page = new Page();
              <td class="radio" width="150px"><input type="radio" name="type" value="wordpress" /> WordPress</td>
              <td class="info" width="480px"> WordPress version 3.5 deployment </td>
            </tr>
+           <tr class="service">
+             <td class="description"> <img src="images/mediawiki.png" height="32" /></td>
+             <td class="radio" width="150px"><input type="radio" name="type" value="mediawiki" /> MediaWiki</td>
+             <td class="info" width="480px"> MediaWiki version 1.21 deployment </td>
+           </tr>
          </table>
 
          <a id="deploy" class="button" href="javascript: void(0);">

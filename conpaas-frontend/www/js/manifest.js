@@ -9,6 +9,9 @@ manifest['owncloud'] = '{ "Application" : "New OwnCloud application", "Services"
 
 manifest['wordpress'] = '{ "Application" : "New Wordpress application", "Services" : [ { "Type" : "xtreemfs", "ServiceName" : "XtreemFS service", "Start" : 1, "VolumeStartup" : { "volumeName" : "data", "owner" : "www-data" } }, { "Type" : "mysql", "ServiceName" : "MySQL service", "Start" : 1, "Dump" : "https://online.conpaas.eu/wordpress/wordpress.sql", "Password" : "contrail123" }, { "Type" : "php", "ServiceName" : "PHP service", "Start" : 1, "Archive" : "https://online.conpaas.eu/wordpress/wordpress.tar.gz", "StartupScript" : "https://online.conpaas.eu/wordpress/wordpress.sh" } ]  }';
 
+manifest['mediawiki'] = '{ "Application" : "New MediaWiki application", "Services" : [ { "Type" : "xtreemfs", "ServiceName" : "XtreemFS service", "Start" : 1, "VolumeStartup" : { "volumeName" : "data", "owner" : "www-data" } }, { "Type" : "mysql", "ServiceName" : "MySQL service", "Start" : 1, "Dump" : "https://online.conpaas.eu/mediawiki/mediawiki.sql", "Password" : "contrail123" }, { "Type" : "php", "ServiceName" : "PHP service", "Start" : 1, "Archive" : "https://online.conpaas.eu/mediawiki/mediawiki.tar.gz", "StartupScript" : "https://online.conpaas.eu/mediawiki/mediawiki.sh" } ]  }';
+
+
 $(document).ready(function() {
 	$('#fileForm').ajaxForm({
 		dataType: 'json',
