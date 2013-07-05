@@ -25,15 +25,15 @@ class Dashboard extends Page {
 	}
 
 	private function getApplicationNameByID($aid) {
-		$applications_data = ApplicationData::getApplications($aid);
+		$applications_data = ApplicationData::getApplications($_SESSION['uid']);
 		foreach ($applications_data as $application_data) {
 			$application = new Application($application_data);
 			if ($application->getAID() == $aid) {
 				return $application->getName();
 			}
 
-			return '';
 		}
+		return '';
 	}
 
 	private function renderName() {
