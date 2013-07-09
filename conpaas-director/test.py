@@ -548,6 +548,33 @@ class DirectorTest(Common):
         app = simplejson.loads(response.data)
         self.assertEquals('New test name', app[0]['name'])
 
+    def test_rename_non_existing_application(self):
+        self.create_user()
+
+        data = {
+            'uid': 1,
+            'name': 'New test name'
+        }
+
+        response = self.app.post('/renameapp/42', data=data)
+        self.assertEquals(200, response.status_code)
+
+        app = simplejson.loads(response.data)
+        self.assertEquals(False, app)
+
+    def test_rename_application_no_new_name(self):
+        self.create_user()
+
+        data = {
+            'uid': 1,
+        }
+
+        response = self.app.post('/renameapp/1', data=data)
+        self.assertEquals(200, response.status_code)
+        
+        app = simplejson.loads(response.data)
+        self.assertEquals(False, app)
+
     def test_delete_application_not_exists(self):
         self.create_user()
 
@@ -559,6 +586,40 @@ class DirectorTest(Common):
         self.assertEquals(200, response.status_code)
 
         self.assertEquals(False, simplejson.loads(response.data))
+
+    def test_get_app_by_id(self):
+        self.create_user()
+
+        # get application owned by user
+        app = cpsdirector.application.get_app_by_id(user_id=1, app_id=1)
+        self.assertEquals(1, app.user_id)
+        self.assertEquals(1, app.aid)
+        self.assertEquals('New Application', app.name)
+
+        # attempt to get application NOT owned by user
+        app = cpsdirector.application.get_app_by_id(user_id=2, app_id=1)
+        self.assertEquals(None, app)
+
+    def test_get_app_by_name(self):
+        self.create_user()
+
+        # existing application owned by user
+        app = cpsdirector.application.get_app_by_name(user_id=1, 
+            app_name='New Application')
+
+        self.assertEquals(1, app.user_id)
+        self.assertEquals(1, app.aid)
+        self.assertEquals('New Application', app.name)
+
+        # non-existing application
+        app = cpsdirector.application.get_app_by_name(user_id=1, 
+            app_name='Does Not Exist')
+        self.assertEquals(None, app)
+
+        # existing application NOT owned by user
+        app = cpsdirector.application.get_app_by_name(user_id=2,
+            app_name='New Application')
+        self.assertEquals(None, app)
 
     def test_list_available_clouds(self):
         response = self.app.get('/available_clouds')
