@@ -28,13 +28,21 @@ class Cloud:
         return self.cloud_name
 
     def _check_cloud_params(self, iaas_config, cloud_params=[]):
+        """Check for missing or empty parameters in iaas_config"""
+        error_template = '%s config param %s for %s'
+
         for field in cloud_params:
-            if (
-                not iaas_config.has_option(self.cloud_name, field)
-                or iaas_config.get(self.cloud_name, field) == ''
-            ):
-                raise Exception('Missing %s config param %s for %s' %
-                                (self.get_cloud_type, field, self.cloud_name))
+            if not iaas_config.has_option(self.cloud_name, field):
+                raise Exception('Missing ' + error_template % (
+                    self.get_cloud_type(), field, self.cloud_name
+                ))
+
+            if iaas_config.get(self.cloud_name, field) == '':
+                raise Exception('Empty ' + error_template % (
+                    self.get_cloud_type(), field, self.cloud_name
+                ))
+
+        return None
 
     def _connect(self):
         '''
