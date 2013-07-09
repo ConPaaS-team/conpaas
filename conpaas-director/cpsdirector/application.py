@@ -170,10 +170,6 @@ def _renameapp(appid, newname):
 
     app = get_app_by_id(g.user.uid, appid)
     if not app:
-        return make_response(simplejson.dumps(False))
-
-    if not newname:
-        log('"name" is a required argument')
         return build_response(simplejson.dumps(False))
 
     app.name = newname
