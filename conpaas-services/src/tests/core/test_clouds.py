@@ -3,6 +3,7 @@ import unittest
 from ConfigParser import ConfigParser
 
 from conpaas.core.clouds import base
+from conpaas.core.clouds import dummy
 
 class MockPrivateIP(object):
     address = '127.0.0.1'
@@ -131,6 +132,44 @@ class TestCloudsBase(unittest.TestCase):
         self.cloud.connected = True
 
         self.cloud.driver = MockDriver()
+        self.failUnless(self.cloud.kill_instance(MockNode()))
+
+class TestCloudDummy(TestCloudsBase):
+
+    def setUp(self):
+        self.cloud = dummy.DummyCloud('test_cloud', None)
+
+    def test_get_cloud_type(self):
+        self.assertEquals('dummy', self.cloud.get_cloud_type())
+
+    def test_config(self):
+        self.cloud.config(context={})
+        self.assertEquals({}, self.cloud.cx)
+
+    def test_connect(self):
+        self.failIf(self.cloud.connected)
+
+        self.cloud._connect()
+
+        self.failUnless(self.cloud.connected)
+
+    def test_new_instances(self):
+        new_instances = self.cloud.new_instances(2)
+        self.assertEquals(2, len(new_instances))
+
+        self.assertEquals('127.0.0.3', new_instances[0].ip)
+
+    def test_list_vms(self):
+        vms = self.cloud.list_vms()
+        self.assertEquals("127.0.0.1", vms[0].ip)
+
+    def test_kill_instance(self):
+        # Trying to kill an instance without being connected should raise an
+        # exception
+        self.assertRaises(Exception, self.cloud.kill_instance, None)
+
+        self.cloud._connect()
+
         self.failUnless(self.cloud.kill_instance(MockNode()))
 
 if __name__ == "__main__":

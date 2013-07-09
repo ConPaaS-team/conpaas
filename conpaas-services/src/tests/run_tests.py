@@ -8,6 +8,7 @@ suites = [
     unittest.TestLoader().loadTestsFromTestCase(test_agent.TestAgent),
     unittest.TestLoader().loadTestsFromTestCase(test_git.TestGit),
     unittest.TestLoader().loadTestsFromTestCase(test_clouds.TestCloudsBase),
+    unittest.TestLoader().loadTestsFromTestCase(test_clouds.TestCloudDummy),
 ]
 
 alltests = unittest.TestSuite(suites)
