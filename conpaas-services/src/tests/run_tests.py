@@ -2,10 +2,14 @@ import unittest
 
 from core import test_agent
 from core import test_git
+from core import test_clouds
 
-agent_suite = unittest.TestLoader().loadTestsFromTestCase(test_agent.TestAgent)
-git_suite = unittest.TestLoader().loadTestsFromTestCase(test_git.TestGit)
+suites = [
+    unittest.TestLoader().loadTestsFromTestCase(test_agent.TestAgent),
+    unittest.TestLoader().loadTestsFromTestCase(test_git.TestGit),
+    unittest.TestLoader().loadTestsFromTestCase(test_clouds.TestCloudsBase),
+]
 
-alltests = unittest.TestSuite([agent_suite, git_suite])
+alltests = unittest.TestSuite(suites)
 
 alltests.run(unittest.result.TestResult())
