@@ -1,5 +1,12 @@
 #!/bin/sh
 
+COVERAGE="`which python-coverage`"
+
+if [ -z "$COVERAGE" ]
+then
+    COVERAGE="`which coverage`"
+fi
+
 cd $CI_HOME/conpaas-client
 python setup.py install
 
@@ -24,4 +31,10 @@ DIRECTOR_TESTING=true python cpsconf.py localhost
 # Fake tarball
 touch cpsdirectorconf/ConPaaS.tar.gz
 
-coverage run --source=cpsdirector test.py
+$COVERAGE run --source=cpsdirector test.py
+$COVERAGE report -m
+
+cd ../conpaas-services/src/tests/ 
+
+$COVERAGE run --source=conpaas run_tests.py
+$COVERAGE report -m
