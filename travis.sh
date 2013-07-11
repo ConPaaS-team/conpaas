@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -e 
+
 COVERAGE="`which python-coverage`"
 
 if [ -z "$COVERAGE" ]

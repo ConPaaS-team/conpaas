@@ -18,27 +18,6 @@ def config_parser(role='agent'):
     config_parser.set(role, 'CONPAAS_HOME', IPOP_CONF_DIR)
     return config_parser
 
-#class MockAgentGanglia(ganglia.AgentGanglia):
-#    """Mock Ganglia class, produces no errors"""
-#
-#    def configure(self):
-#        return None
-#
-#    def start(self):
-#        return None
-#
-#def mock_agent_ganglia(self):
-#    return MockAgentGanglia(config_parser())
-#
-#class MockAgentGangliaStartError(MockAgentGanglia):
-#    """Mock Ganglia class, something goes wrong while starting up"""
-#
-#    def start(self):
-#        return 'Error starting Ganglia'
-#
-#def mock_agent_ganglia_error(self):
-#    return MockAgentGangliaStartError(config_parser())
-        
 class TestIPOP(unittest.TestCase):
 
     def setUp(self):
