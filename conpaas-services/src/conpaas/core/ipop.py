@@ -126,7 +126,11 @@ def configure_conpaas_node(config_parser):
     ip_base = config_parser.get(section, 'IPOP_BASE_IP')
     netmask = config_parser.get(section, 'IPOP_NETMASK')
 
-    bootstrap_nodes = list_lines(config_parser.get(section, 'IPOP_BOOTSTRAP_NODES'))
+    if config_parser.has_option(section, 'IPOP_BOOTSTRAP_NODES'):
+        bootstrap_nodes = list_lines(
+            config_parser.get(section, 'IPOP_BOOTSTRAP_NODES'))
+    else:
+        bootstrap_nodes = None
 
     msg = 'Starting IPOP. namespace=%s ip_base=%s netmask=%s ip_address=%s' % (
         ipop_namespace, ip_base, netmask, ip_address)
