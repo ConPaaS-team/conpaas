@@ -103,7 +103,7 @@ class HTCondorManager(BaseManager):
     @expose('POST')
     def add_nodes(self, kwargs):
         """Add kwargs['count'] nodes to this deployment"""
-        self.controller.update_context(dict(STRING='htcondor'))
+        self.controller.add_context_replacement(dict(STRING='htcondor'))
 
         # Adding nodes makes sense only in the RUNNING state
         if self.state != self.S_RUNNING:

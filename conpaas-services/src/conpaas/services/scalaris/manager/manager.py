@@ -30,7 +30,7 @@ class ScalarisManager(BaseManager):
         '''
         startCloud = self._init_cloud(cloud)
         try:
-          self.controller.update_context(self.context, startCloud)
+          self.controller.add_context_replacement(self.context, startCloud)
           instance = self.controller.create_nodes(1, \
             client.check_agent_process, 5555, startCloud)
           self.nodes += instance
@@ -40,7 +40,7 @@ class ScalarisManager(BaseManager):
           self.context['FIRST'] = 'false'
           self.context['MGMT_SERVER']=self._render_node(instance[0], 'mgmt_server')
           self.logger.info('Finished first node')
-          self.controller.update_context(self.context, startCloud)
+          self.controller.add_context_replacement(self.context, startCloud)
         except:
             self.logger.exception('do_startup: Failed to request a new node')
             self.state = self.S_STOPPED
@@ -84,7 +84,7 @@ class ScalarisManager(BaseManager):
         try:
             self.logger.info('Starting nodes: %d', count)
             self.context['KNOWN_HOSTS']=self._render_known_hosts()
-            self.controller.update_context(self.context, startCloud)
+            self.controller.add_context_replacement(self.context, startCloud)
             node_instances = self.controller.create_nodes(count,
                 client.check_agent_process, 5555, startCloud)
             self.logger.info('Create nodes: %s', node_instances)

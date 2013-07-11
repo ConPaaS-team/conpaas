@@ -52,7 +52,7 @@ class MySQLManager(BaseManager):
         # Generate a password for root
         # TODO: send a username?
         self.root_pass = ''.join([choice(string.letters + string.digits) for i in range(10)])
-        self.controller.update_context(dict(mysql_username='mysqldb', \
+        self.controller.add_context_replacement(dict(mysql_username='mysqldb', \
                                 mysql_password=self.root_pass),cloud=startCloud)
         try:
             node_instances = self.controller.create_nodes(1,

@@ -33,7 +33,7 @@ class MapReduceManager(BaseManager):
         try:
           self.context = {'FIRST': 'true',
                           'MGMT_SERVER': ''}
-          self.controller.update_context(self.context, cloud = startCloud)
+          self.controller.add_context_replacement(self.context, cloud = startCloud)
           instance = self.controller.create_nodes(1,
             client.check_agent_process, 5555, startCloud)
           self.nodes += instance
@@ -45,7 +45,7 @@ class MapReduceManager(BaseManager):
           self.logger.info('Called startup: %s', instance[0])
           self.context = {'FIRST': 'false',
                           'MGMT_SERVER': instance[0].ip}
-          self.controller.update_context(self.context, cloud = startCloud)
+          self.controller.add_context_replacement(self.context, cloud = startCloud)
         except:
           self.logger.exception('do_startup: Failed to request a new node')
           self.state = self.S_STOPPED

@@ -40,8 +40,7 @@ class TestCloudsBase(unittest.TestCase):
         self.assertEquals('test_cloud', self.cloud.cloud_name)
         self.assertFalse(self.cloud.connected)
         self.assertEquals(None, self.cloud.driver)
-        self.assertEquals(None, self.cloud.cx_template)
-        self.assertEquals(None, self.cloud.cx)
+        self.assertEquals(None, self.cloud._context)
 
     def test_get_cloud_name(self):
         self.assertEquals('test_cloud', self.cloud.get_cloud_name())
@@ -88,17 +87,12 @@ class TestCloudsBase(unittest.TestCase):
     def test_get_cloud_type(self):
         self.assertRaises(NotImplementedError, self.cloud.get_cloud_type)
 
-    def test_get_context_template(self):
-        self.assertEquals(self.cloud.cx_template, 
-            self.cloud.get_context_template())
+    def test_get_context(self):
+        self.assertEquals(self.cloud._context, self.cloud.get_context())
 
-    def test_set_context_template(self):
-        self.cloud.set_context_template(self.cloud.cx_template)
-
-        self.assertEquals(self.cloud.cx_template, 
-            self.cloud.get_context_template())
-        self.assertEquals(self.cloud.cx, 
-            self.cloud.get_context_template())
+    def test_set_context(self):
+        self.cloud.set_context(self.cloud._context)
+        self.assertEquals(self.cloud._context, self.cloud.get_context())
 
     def test_config(self):
         self.assertRaises(NotImplementedError, self.cloud.config, None, None)
@@ -144,7 +138,7 @@ class TestCloudDummy(TestCloudsBase):
 
     def test_config(self):
         self.cloud.config(context={})
-        self.assertEquals({}, self.cloud.cx)
+        self.assertEquals({}, self.cloud._context)
 
     def test_connect(self):
         self.failIf(self.cloud.connected)

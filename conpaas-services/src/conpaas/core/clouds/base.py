@@ -9,6 +9,9 @@
     :copyright: (C) 2010-2013 by Contrail Consortium.
 """
 
+from itertools import chain
+from string import Template
+
 from conpaas.core.node import ServiceNode
 from conpaas.core.log import create_logger
 
@@ -20,8 +23,8 @@ class Cloud:
         self.cloud_name = cloud_name
         self.connected = False
         self.driver = None
-        self.cx_template = None
-        self.cx = None
+        self._context = None
+        self._mapping_vars = {}
         self.logger = create_logger(__name__)
 
     def get_cloud_name(self):
@@ -56,15 +59,51 @@ class Cloud:
         raise NotImplementedError(
             'get_cloud_type not implemented for this cloud driver')
 
-    def get_context_template(self):
-        return self.cx_template
 
-    def set_context_template(self, cx):
+    def set_context(self, new_context):
         """
-        Set the context template (i.e. without replacing anything in it)
+        Sets the context for this cloud.
         """
-        self.cx_template = cx
-        self.cx = cx
+        self._context = new_context
+
+
+    def add_context_replacement(self, replace={}, strict=False):
+        """Add a variable replacement to the variable replacements to apply to
+           the context as a template.
+
+            @param replace A dictionary that specifies which words shoud be
+                           replaced with what. For example:
+                           replace = dict(name='A', age='57')
+                           context1 =  '$name , $age'
+                           => new_context1 = 'A , 57'
+                           context2 ='${name}na, ${age}'
+                           => new_context2 = 'Ana, 57'
+            
+            @param strict  If true, then setting a replacement for an already
+                           replaced variable will raise an exception.
+
+        """
+        
+        if strict: 
+            intersect_vars = set(self.mapping_vars.keys()).intersection(set(replace.keys()))
+            if len(intersect_vars) != 0:
+                raise Exception('Cannot overwrite replacements for variables %s in strict mode. \
+                        Existing replacements are %s. Conflicting new replacements are %s' \
+                        % (intersect_vars, self._mapping_vars, replace))
+        self._mapping_vars = dict(chain(self._mapping_vars.items(), replace.items()))
+
+
+    def get_context(self):
+        """
+        Returns the context.
+        Apply the replacement variables if any.
+        Return an empty string if it has not been set. 
+        """
+        if self._context is not None:
+            return Template(self._context).safe_substitute(self._mapping_vars)
+        else:
+            return None
+
 
     def config(self, config_params, context):
         raise NotImplementedError(

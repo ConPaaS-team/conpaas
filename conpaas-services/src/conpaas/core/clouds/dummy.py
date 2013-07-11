@@ -32,7 +32,7 @@ class DummyCloud(Cloud):
 
     def config(self, config_params={}, context=None):
         if context is not None:
-            self.cx = context
+            self._context = context
 
     def new_instances(self, count, name='conpaas', inst_type=None):
         if not self.connected:

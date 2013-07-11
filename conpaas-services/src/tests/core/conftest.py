@@ -80,7 +80,7 @@ def cloud(request, mocked_driver):
         return dums
     elif name == cloud_names[1]:
         aws_ec2 = ec2.EC2Cloud(cloud_name, config_parser(name))
-        aws_ec2.set_context_template('')
+        aws_ec2.set_context('')
         __connect_and_check(aws_ec2)
         mocked_driver.mock_add_spec(EC2NodeDriver, True)
         assert isinstance(aws_ec2.driver,
@@ -89,7 +89,7 @@ def cloud(request, mocked_driver):
         return aws_ec2
     elif name == cloud_names[2]:
         nebula = opennebula.OpenNebulaCloud(cloud_name, config_parser(name))
-        nebula.set_context_template('')
+        nebula.set_context('')
         __connect_and_check(nebula)
         mocked_driver.mock_add_spec(OpenNebulaNodeDriver, True)
         assert isinstance(nebula.driver, get_driver(Provider.OPENNEBULA))

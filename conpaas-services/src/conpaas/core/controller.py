@@ -191,7 +191,7 @@ class Controller(object):
                     # contextualization data for each new instance
                     for _ in range(count - len(ready)):
                         vpn_ip = self.get_available_ipop_address()
-                        self.update_context({ 'IPOP_IP_ADDRESS': vpn_ip }, cloud)
+                        self.add_context_replacement({ 'IPOP_IP_ADDRESS': vpn_ip }, cloud)
                         
                         for newinst in cloud.new_instances(1, name, inst_type):
                             # Set VPN IP
@@ -301,7 +301,7 @@ class Controller(object):
         def __set_cloud_ctx(cloud):
             contxt = self._get_context_file(service_name,
                                             cloud.get_cloud_type())
-            cloud.set_context_template(contxt)
+            cloud.set_context(contxt)
 
         if cloud is None:
             for cloud in self.__available_clouds:
@@ -309,11 +309,10 @@ class Controller(object):
         else:
             __set_cloud_ctx(cloud)
 
-    #=========================================================================#
-    #               update_context(self, replace, cloud)                      #
-    #=========================================================================#
-    def update_context(self, replace={}, cloud=None):
-        """Updates the contextualization file for the default/given cloud.
+
+    def add_context_replacement(self, replace={}, cloud=None, strict=False):
+        """Add a variable replacement to the variable replacements to apply to
+           the context template for the default/given cloud.
 
             @param replace A dictionary that specifies which words shoud be
                            replaced with what. For example:
@@ -326,14 +325,16 @@ class Controller(object):
             @param cloud (Optional) If specified, the context will be generated
                          for it, otherwise it will be generated for the default
                          cloud
+            
+            @param strict  If true, then setting a replacement for an already
+                           replaced variable will raise an exception.
 
         """
         if cloud is None:
             cloud = self.__default_cloud
 
-        contxt = cloud.get_context_template()
-        contxt = Template(contxt).safe_substitute(replace)
-        cloud.config(context=contxt)
+        cloud.add_context_replacement(replace, strict)
+
 
     #=========================================================================#
     #               get_clouds(self)                                          #

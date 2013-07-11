@@ -48,7 +48,7 @@ class HelloWorldManager(BaseManager):
 
     @expose('POST')
     def add_nodes(self, kwargs):
-        self.controller.update_context(dict(STRING='helloworld'))
+        self.controller.add_context_replacement(dict(STRING='helloworld'))
         if self.state != self.S_RUNNING:
             return HttpErrorResponse('ERROR: Wrong state to add_nodes')
         if not 'count' in kwargs:

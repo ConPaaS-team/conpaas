@@ -83,9 +83,9 @@ class OpenNebulaCloud(Cloud):
 
         self.connected = True
 
-    def set_context_template(self, cx):
-        self.cx_template = cx
-        self.cx = cx.encode('hex')
+    def get_context(self):
+        cx = Cloud.get_context(self)
+        return cx.encode('hex')
 
     def config(self, config_params={}, context=None):
         if 'inst_type' in config_params:
@@ -98,7 +98,7 @@ class OpenNebulaCloud(Cloud):
             self.mem = config_params['mem']
 
         if context is not None:
-            self.cx = context.encode('hex')
+            self._context = context
 
     def list_vms(self):
         return Cloud.list_vms(self, False)
@@ -173,7 +173,7 @@ class OpenNebulaCloud(Cloud):
         context['IP_GATEWAY'] = self.net_gw
         context['NETMASK'] = self.net_nm
         context['NAMESERVER'] = self.net_ns
-        context['USERDATA'] = self.cx
+        context['USERDATA'] = self.get_context()
         context['TARGET'] = self.context_target
         kwargs['context'] = context
 

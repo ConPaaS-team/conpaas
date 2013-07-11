@@ -171,12 +171,12 @@ class TestController(unittest.TestCase):
 
         self.controller = controller.Controller(self.config_parser)
 
-        self.assertEquals(None, self.controller.get_clouds()[0].cx)
+        self.assertEquals(None, self.controller.get_clouds()[0]._context)
 
         self.controller.generate_context('mysql')
 
         self.failUnless('MySQL_configuration' in 
-            self.controller._Controller__default_cloud.cx)
+            self.controller._Controller__default_cloud._context)
 
     @mock.patch('conpaas.core.controller.Controller._get_certificate', 
         mock_get_certificate)
@@ -193,18 +193,18 @@ class TestController(unittest.TestCase):
             self.controller.get_cloud_by_name('iaas'))
 
         self.failUnless('MySQL_configuration' in 
-            self.controller._Controller__default_cloud.cx)
+            self.controller._Controller__default_cloud._context)
 
     def test_update_context(self):
         self.test_generate_context()
 
         self.failIf('username=test' in
-            self.controller._Controller__default_cloud.cx)
+            self.controller._Controller__default_cloud._context)
 
-        self.controller.update_context({ 'mysql_username': 'test' })
+        self.controller.add_context_replacement({ 'mysql_username': 'test' })
 
         self.failUnless('username=test' in
-            self.controller._Controller__default_cloud.cx)
+            self.controller._Controller__default_cloud.get_context())
 
     def test_get_unknown_cloud_by_name(self):
         self.controller = self.__get_dummy_controller()

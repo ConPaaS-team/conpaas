@@ -62,7 +62,7 @@ class EC2Cloud(Cloud):
             self.size_id = config_params['inst_type']
 
         if context is not None:
-            self.cx = context
+            self._context = context
 
     def new_instances(self, count, name='conpaas', inst_type=None):
         if self.connected is False:
@@ -95,7 +95,7 @@ class EC2Cloud(Cloud):
         kwargs['ex_maxcount'] = str(count)
         kwargs['ex_securitygroup'] = self.sg
         kwargs['ex_keyname'] = self.key_name
-        kwargs['ex_userdata'] = self.cx
+        kwargs['ex_userdata'] = self.get_context()
 
         nodes = self._create_service_nodes(self.driver.create_node(**kwargs))
 

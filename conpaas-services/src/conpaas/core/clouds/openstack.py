@@ -38,7 +38,7 @@ class OpenStackCloud(Cloud):
 
     def config(self, config_params={}, context=None):
         if context is not None:
-            self.cx = context
+            self._context = context
 
     def new_instances(self, count, name='conpaas', inst_type=None):
         if self.connected is False:
@@ -61,7 +61,7 @@ class OpenStackCloud(Cloud):
             'ex_maxcount': str(count),
             'ex_securitygroup': self.sg,
             'ex_keyname': self.key_name,
-            'ex_userdata': self.cx
+            'ex_userdata': self.get_context()
         }
 
         return self._create_service_nodes(self.driver.create_node(**kwargs))
