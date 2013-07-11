@@ -25,7 +25,7 @@ mkdir -p cpsdirectorconf/certs
 # We cannot use system-wide directories
 sed -i s#/etc/cpsdirector#$PWD/cpsdirectorconf# director.cfg.example
 
-python setup.py install
+python setup.py install || true
 
 # Create certificates
 DIRECTOR_TESTING=true python cpsconf.py localhost
