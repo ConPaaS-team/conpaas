@@ -7,6 +7,7 @@
 from threading import Thread
 import os, tempfile
 import string
+import sys
 from random import choice
 
 from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse, \
@@ -284,7 +285,8 @@ class MySQLManager(BaseManager):
             for master in masters:
                 client.set_password(master.ip, self.config.AGENT_PORT, kwargs['user'], kwargs['password'])
         except:
-            self.logger.exception('set_password: Could not set password')
+            e = sys.exc_info()[1]
+            self.logger.exception('set_password: Could not set password: %s' % e)
             self.state = self.S_ERROR
             return HttpErrorResponse('Failed to set password')
         else:
