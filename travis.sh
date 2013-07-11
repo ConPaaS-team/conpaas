@@ -2,7 +2,7 @@
 
 set -e 
 
-COVERAGE="`which python-coverage`"
+COVERAGE="`which python-coverage || true`"
 
 if [ -z "$COVERAGE" ]
 then
