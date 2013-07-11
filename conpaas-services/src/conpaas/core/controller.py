@@ -103,9 +103,6 @@ class Controller(object):
 
         if config_parser.has_option('iaas', 'OTHER_CLOUDS'):
             self.__available_clouds.extend(iaas.get_clouds(config_parser))
-            # if there is no default cloud defined in 'iaas'
-            if self.__default_cloud is None:
-                self.__default_cloud = self.__available_clouds.pop(0)
 
         # Setting VM role
         self.role = 'agent'
