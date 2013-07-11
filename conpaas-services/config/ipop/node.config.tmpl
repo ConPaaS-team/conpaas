@@ -10,6 +10,11 @@
     </EdgeListener>
   </EdgeListeners>
   <RemoteTAs>
+#if $bootstrap_nodes
+  #for $node in $bootstrap_nodes
+    <Transport>brunet.$node</Transport>
+  #end for
+#else
     <Transport>brunet.tcp://193.136.166.56:49302</Transport>
     <Transport>brunet.udp://193.136.166.56:49302</Transport>
     <Transport>brunet.tcp://152.81.47.5:49302</Transport>
@@ -410,6 +415,7 @@
     <Transport>brunet.udp://94.93.82.149:49302</Transport>
     <Transport>brunet.tcp://128.119.41.210:49302</Transport>
     <Transport>brunet.udp://128.119.41.210:49302</Transport>
+#end if
   </RemoteTAs>
   <XmlRpcManager>
     <Enabled>true</Enabled>

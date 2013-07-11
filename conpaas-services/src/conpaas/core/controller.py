@@ -62,6 +62,12 @@ class Controller(object):
         else:
             self.__ipop_netmask = None
 
+        if config_parser.has_option('manager', 'IPOP_BOOTSTRAP_NODES'):
+            # Application-level network's bootstrap nodes
+            self.__ipop_bootstrap_nodes = config_parser.get('manager', 'IPOP_BOOTSTRAP_NODES')
+        else:
+            self.__ipop_bootstrap_nodes = None
+
         if config_parser.has_option('manager', 'IPOP_SUBNET'):
             # Only import from netaddr if IPOP has to be started
             from netaddr import IPNetwork
@@ -490,6 +496,7 @@ class Controller(object):
             agent_cfg += '\nIPOP_BASE_IP = %s' % self.__ipop_base_ip
             agent_cfg += '\nIPOP_NETMASK = %s' % self.__ipop_netmask
             agent_cfg += '\nIPOP_IP_ADDRESS = $IPOP_IP_ADDRESS'
+            agent_cfg += '\nIPOP_BOOTSTRAP_NODES = %s' % (self.__ipop_bootstrap_nodes or '')
 
         if os.path.isfile(agent_cfg_dir + '/' + service_name + '-agent.cfg'):
             agent_cfg_file = open(agent_cfg_dir +

@@ -200,6 +200,22 @@ will be then logically partitioned between services in the same application.
 With 5 bits to identify the service, you will get a maximum number of 32
 services per application (2^5) and 32767 agents per service (2^(32-12-5)-1).
 
+*Optional*: specify your own bootstrap nodes.
+When two VMs use IPOP, they need a bootstrap node to find each other.
+IPOP comes with a default list of bootstrap nodes from PlanetLab servers which
+is enough for most use cases.
+However, you may want to specify your own bootstrap nodes (replacing the default list).
+Uncomment and set :envvar:`VPN_BOOTSTRAP_NODES` to the list of addresses
+of your bootstrap nodes, one address per line.
+A bootstrap node address specifies a protocol, an IP address and a port.
+For example::
+
+    VPN_BOOTSTRAP_NODES =
+        udp://192.168.35.2:40000
+        tcp://192.168.122.1:40000
+        tcp://172.16.98.5:40001
+
+
 .. _IPOP: http://www.grid-appliance.org/wiki/index.php/IPOP
 
 Troubleshooting

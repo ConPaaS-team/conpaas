@@ -120,6 +120,9 @@ class ManagerController(Controller):
             mngr_cfg += '\nIPOP_NETMASK = %s' % self.config_parser.get(
                 'conpaas', 'VPN_NETMASK')
 
+            mngr_cfg += '\nIPOP_BOOTSTRAP_NODES = %s' % self.config_parser.get(
+                'conpaas', 'VPN_BOOTSTRAP_NODES')
+
         tmpl_values['mngr_cfg'] = mngr_cfg
 
         # Add default manager startup script

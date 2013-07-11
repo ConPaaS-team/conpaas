@@ -14,7 +14,7 @@ import urlparse
 
 from Cheetah.Template import Template
 
-from conpaas.core.misc import run_cmd
+from conpaas.core.misc import run_cmd, list_lines
 from conpaas.core.log import create_logger
 
 IPOP_CONF_DIR = "/opt/ipop/etc/"
@@ -32,15 +32,16 @@ def get_ipop_namespace(config_parser):
     return "cps-%s-%s" % (base_namespace, app_id)
 
 def configure_ipop(tmpl_dir, namespace, ip_base, netmask, ip_address=None, 
-                   udp_port=0):
+                   udp_port=0, bootstrap_nodes=None):
     """Create or re-write the configuration files required by IPOP.
 
     By omitting ip_address, the resulting IPOP configuration will be DHCP
-    based. By omitting udp_port, a random port will be chosen.
+    based. By omitting udp_port, a random port will be chosen. By omitting
+    bootstrap_nodes, the default list of bootstrap nodes will be used.
     """
     wanted_params = {
-        'bootstrap.config': (),
-        'node.config': ( 'udp_port', ),
+        'bootstrap.config': ( 'bootstrap_nodes', ),
+        'node.config': ( 'udp_port', 'bootstrap_nodes', ),
         'ipop.config': ( 'namespace', ),
         'ipop.vpn.config': ( 'ip_address', 'netmask', 'dhcp', 
                              'static', 'use_ipop_hostname' ),
@@ -48,6 +49,7 @@ def configure_ipop(tmpl_dir, namespace, ip_base, netmask, ip_address=None,
     }
         
     procedure_args = {
+        'bootstrap_nodes' : bootstrap_nodes,
         'tmpl_dir': tmpl_dir,
         'namespace': namespace,
         'ip_base': ip_base,
@@ -124,10 +126,12 @@ def configure_conpaas_node(config_parser):
     ip_base = config_parser.get(section, 'IPOP_BASE_IP')
     netmask = config_parser.get(section, 'IPOP_NETMASK')
 
+    bootstrap_nodes = list_lines(config_parser.get(section, 'IPOP_BOOTSTRAP_NODES'))
+
     msg = 'Starting IPOP. namespace=%s ip_base=%s netmask=%s ip_address=%s' % (
         ipop_namespace, ip_base, netmask, ip_address)
 
     logger.info(msg)
 
-    configure_ipop(ipop_tmpl_dir, ipop_namespace, ip_base, netmask, ip_address)
+    configure_ipop(ipop_tmpl_dir, ipop_namespace, ip_base, netmask, ip_address, bootstrap_nodes=bootstrap_nodes)
     restart_ipop()

@@ -97,3 +97,12 @@ def rlinput(prompt, prefill=''):
         return raw_input(prompt)
     finally:
         readline.set_startup_hook()
+
+def list_lines(lines):
+    """Returns the list of trimmed lines.
+    
+    @param lines  Multi-line string
+    
+    """
+    return list(filter(None, (x.strip() for x in lines.splitlines())))
+

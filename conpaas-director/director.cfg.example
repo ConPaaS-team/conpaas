@@ -13,6 +13,16 @@ CERT_DIR = /etc/cpsdirector/certs
 # VPN_NETMASK = 255.240.0.0
 # VPN_SERVICE_BITS = 5 
 
+# If you want to use your own bootstrap nodes, give the list here of their IP
+# address, their port and their access protocol (UDP or TCP). Set one address
+# per line. If this configuration variable is commented or empty, then the
+# default list of bootstrap nodes is used.
+#
+# VPN_BOOTSTRAP_NODES =
+#    udp://aaa.bbb.ccc.ddd:port1
+#    tcp://eee.fff.ggg.hhh:port2
+#    ...
+
 [iaas]
 ##############
 # Amazon EC2 #
