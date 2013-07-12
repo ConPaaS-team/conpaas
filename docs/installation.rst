@@ -449,7 +449,7 @@ The following ports should be open for all running instances:
 
 -  TCP ports 4369, 14194 and 14195 – used by the Scalarix service
 
--  TCP ports 8475, 8999 – used by the TaskFarm service
+-  TCP ports 2633, 8475, 8999 – used by the TaskFarm service
 
 -  TCP ports 32636, 32638 and 32640 – used by the XtreemFS service
 
