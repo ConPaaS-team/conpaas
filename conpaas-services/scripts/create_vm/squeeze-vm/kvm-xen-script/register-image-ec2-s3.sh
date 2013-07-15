@@ -16,13 +16,13 @@ EC2_ACCESS_SECRET=  #TODO
 [ -z "$EC2_CERT" ] && EC2_CERT=                     #TODO
 export JAVA_HOME EC2_HOME EC2_AMITOOL_HOME AWS_IAM_HOME EC2_PRIVATE_KEY EC2_CERT
 
-PATH=$PATH:$EC2_AMITOOL_HOME:$EC2_HOME
+PATH=$PATH:$EC2_AMITOOL_HOME/bin:$EC2_HOME/bin
 
-USAGE="Usage: `basename $0` [-h] [-b <bucket-name>] [-u EC2-user-number] [-i EC2-Access-Key-Id] [-s EC2-Secret-Access-Key]  -f <image-file>  -n <ami-name>"
+USAGE="Usage: `basename $0` [-h] [-b <bucket-name>] [-u EC2-user-number] [-i EC2-Access-Key-Id] [-s EC2-Secret-Access-Key] [-p path-to-pk.pem] [-c path-to-cert.pem]  -f <image-file>  -n <ami-name>"
 
 function check {
     for x in "$@" ; do
-        [ -z "${!x}" ] && { echo ERROR: $x is not set. >&2 ; exit 1 ; }
+        [ -z "${!x}" ] && { echo ERROR: $x is not set. >&2 ; echo -e "\n"$USAGE >&2 ; exit 1 ; }
     done
     :
 }
@@ -31,7 +31,7 @@ function check {
 IMG=
 AMI_NAME=
 # Parse command line options.
-while getopts hb:u:i:s:f:n: OPT; do
+while getopts hb:u:i:s:p:c:f:n: OPT; do
     case "$OPT" in
         h)
             echo $USAGE
@@ -49,6 +49,12 @@ while getopts hb:u:i:s:f:n: OPT; do
         s)
             EC2_ACCESS_SECRET=$OPTARG
             ;;
+        p)
+            EC2_PRIVATE_KEY=$OPTARG
+            ;;
+        c)
+            EC2_CERT=$OPTARG
+            ;;
         f)
             IMG=$OPTARG
             ;;
@@ -65,13 +71,12 @@ done
 shift `expr $OPTIND - 1`
 [ $# -ne 0 ] && { echo $USAGE >&2 ; exit 1 ; }
 
-check BUCKET EC2_USER EC2_ACCESS EC2_ACCESS_SECRET JAVA_HOME EC2_HOME AWS_IAM_HOME EC2_PRIVATE_KEY EC2_CERT
+check BUCKET EC2_USER EC2_ACCESS EC2_ACCESS_SECRET JAVA_HOME EC2_HOME AWS_IAM_HOME EC2_PRIVATE_KEY EC2_CERT IMG AMI_NAME
 
-[ -z "$AMI_NAME" ] && { echo $USAGE >&2 ; exit 1 ; }
-[ -z "$IMG" ] && { echo $USAGE >&2 ; exit 1 ; }
 [ -z "$EC2_AMITOOL_HOME" ] && echo WARNING: EC2_AMITOOL_HOME is not set. It will default to EC2_HOME.
 
 
+filename=$(basename "${IMG}")
 EC2_TMP=`mktemp -d`
 ec2-bundle-image -i ${IMG} -k ${EC2_PRIVATE_KEY} -c ${EC2_CERT} -u ${EC2_USER} -d $EC2_TMP --arch x86_64 --kernel aki-427d952b -B ami=sda,root=/dev/sda1,ephemeral0=sdb,swap=sdc
 ec2-upload-bundle -b ${BUCKET} -m $EC2_TMP/$filename.manifest.xml -a ${EC2_ACCESS} -s ${EC2_ACCESS_SECRET}
