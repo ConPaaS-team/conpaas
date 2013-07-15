@@ -92,6 +92,23 @@ trap "cleanup" EXIT
 cecho "Starting debootstrap"
 debootstrap --arch $ARCH --include locales $DEBIAN_DIST $ROOT_DIR $DEBIAN_MIRROR
 
+opennebula_specific="iface eth0 inet static"
+
+ec2_specific=$(cat <<EOF
+allow-hotplug eth0
+iface eth0 inet dhcp
+EOF
+)
+
+if [ "$CLOUD" == "opennebula" ] ; then
+    net_config="$opennebula_specific"
+elif [ "$CLOUD" == "ec2" ] ; then
+    net_config="$ec2_specific"
+else
+  cecho 'Something went wrong. "CLOUD" shell variable is not properly defined.';
+  exit 1;
+fi
+
 cecho "Writing fstab"
 echo "/dev/sda1 / ext3 defaults 0 1" > $ROOT_DIR/etc/fstab
 cecho "Writing /etc/network/interfaces"
@@ -99,7 +116,7 @@ cat <<EOF > $ROOT_DIR/etc/network/interfaces
 auto lo
 iface lo inet loopback
 auto eth0
-iface eth0 inet static
+$net_config
 EOF
 cecho "Removing udev persistent rules"
 rm $ROOT_DIR/etc/udev/rules.d/70-persistent* || true
@@ -151,6 +168,19 @@ menuentry 'linux-image-$KERNEL_VERSION' {
   initrd /boot/initrd.img-$KERNEL_VERSION
 }
 EOF
+
+if [ "$CLOUD" == "ec2" ] ; then
+    cecho "Writing /boot/grub/menu.lst"
+    cat <<EOF > $ROOT_DIR/boot/grub/menu.lst
+default 0
+timeout 0
+
+title linux-image-2.6.32-5-xen-amd64
+  root (hd0,0)
+  kernel /boot/vmlinuz-2.6.32-5-xen-amd64 root=/dev/xvda1 ro
+  initrd /boot/initrd.img-2.6.32-5-xen-amd64
+EOF
+fi
 
 cecho "Running grub-install"
 grub-install --no-floppy --grub-mkdevicemap=$ROOT_DIR/boot/grub/device.map --root-directory=$ROOT_DIR $LOOP_DEV

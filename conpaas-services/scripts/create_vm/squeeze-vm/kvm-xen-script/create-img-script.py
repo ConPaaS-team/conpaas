@@ -106,7 +106,21 @@ if __name__ == '__main__':
             'the OS that will be installed (please make\n')
     append_str_to_output('# sure to modify the kernel version name accordingly if you modify the architecture).\n')
 
+    cloud = config.get('CUSTOMIZABLE', 'cloud')
     hypervisor = config.get('CUSTOMIZABLE', 'hypervisor')
+
+    if cloud == 'opennebula':
+        pass
+    elif cloud == 'ec2':
+        if hypervisor != 'xen':
+            print 'WARNING: Your choice of hypervisor is not compatible with Amazon EC2. Xen will be used instead.'
+            hypervisor = 'xen'
+    else:
+        print 'Choose a cloud.'
+        sys.exit(1)
+
+    append_str_to_output('CLOUD=' + cloud + '\n')
+
     if hypervisor == 'kvm':
         append_str_to_output('ARCH=' + config.get('RECOMMENDED', 'kvm_arch') + '\n')
         append_str_to_output('KERNEL_VERSION=' + config.get('RECOMMENDED', 'kvm_kernel_version') + '\n\n')
@@ -139,8 +153,11 @@ if __name__ == '__main__':
     filename = config.get('SCRIPT_FILE_NAMES', 'tail_script')
     append_file_to_output(root_dir + filename)
 
-    # Write opennebula script
-    filename = config.get('SCRIPT_FILE_NAMES', 'opennebula_script')
+    # Write contextualization script
+    if cloud == 'opennebula':
+        filename = config.get('SCRIPT_FILE_NAMES', 'opennebula_script')
+    elif cloud == 'ec2':
+        filename = config.get('SCRIPT_FILE_NAMES', 'ec2_script')
     append_file_to_output(root_dir + filename)
 
     close_output_file()
