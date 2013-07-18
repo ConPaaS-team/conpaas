@@ -80,6 +80,7 @@ class SeleniumManager(BaseManager):
     def _do_shutdown(self):
         """Delete all nodes and switch to status STOPPED"""
         self.controller.delete_nodes(self.nodes)
+        self.nodes = []      		# Not only delete the nodes, but clear the list too
         self.state = self.S_STOPPED
 
     def __check_count_in_args(self, kwargs):
