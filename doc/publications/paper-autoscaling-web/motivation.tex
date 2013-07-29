@@ -1,19 +1,68 @@
 
-%%  ENVIRONMENT,  PROBLEM -- SLO FULFILLMEMT %%
-The two main steps in resource provisioning are the decision of when to allocate resources and the selection of appropriate resources.
-Accordingly, the most important and challenging step is the selection of an appropriate scaling plan that satisfies the performance requirements with an acceptable operational cost. 
-To overcome this step, scaling systems have to take into consideration: the customer preferences in terms of QoS requirements and the resource heterogeneity.
 
-A first problem in autoscaling systems arises when having to choose the scaling plan that better enforces the QoS requirements. Customer requirements, such as service-availability and performance, directly affect to the definition of a scaling plan, and therefore have to be considered when selecting a hardware configuration.
+The two main steps in resource provisioning are the decision of when to allocate resources and the selection of appropriate resources to provision.
+Among these two, the most important and challenging step is the selection of an appropriate scaling plan that satisfies the performance requirements with an acceptable operational cost. 
+To overcome this step, scaling systems have to take into consideration the customer preferences in terms of QoS requirements, the resource heterogeneity and workload requirements.
+
+%%  ENVIRONMENT,  PROBLEM -- SLO FULFILLMEMT %%
+The first problem in autoscaling systems is choosing the scaling plan that better enforces the QoS requirements. Customer preferences, such as service-availability and performance, directly affect to the definition of a scaling plan, and therefore have to be considered when selecting a hardware configuration.
+
+%%  ENVIRONMENT,  HOW MUCH TO PROVISION %%
 
 %Cloud infrastructures allows tenants to rent resources in a \emph{pay-as-you-go} fashion. This pricing model is specifically employed by enterprise software systems where the assurance of QoS requirements is crucial to boost the volume of customers, and hence their revenues. Typically these requirements are specified by the enterprise (customer) and affirmed by cloud provider, and vary depending on the size of the enterprise. Thus, large enterprises such as (e.g. Amazon, Twitter and eBay), pay more to provide high assurance of availability and performance to their clients; while small enterprises pay less to obtain an acceptable performance but with little service availability. When dealing with web applications, the achievement of these requirements become more complex, as the workload demand fluctuates as a result of sudden changes in the popularity, workload mix or caused by flash crowds, outages and network misconfigurations. These traffic anomalies are specifically difficult to handle by traditional systems, thus causing long periods of unsatisfactory fulfillment of the requirements. Failure to comply with satisfying these requirements are often associated with significant financial penalties or other forms of loss of revenue such as decreased in the user base. Hence, a first problem in autoscaling systems arises when having to choose the scaling plan that better enforces the QoS requirements. 
 
 % A problem in autoscaling systems arises when handling the mentioned traffic anomalies in order to enforce the requirements.
 
-%%  PROBLEM -- SCALING PLAN, RESOURCE HETEROGENEITY %%
-Consequently, and regarding the cloud infrastructures, another problem in autoscaling comes up when deciding the right hardware configuration that will enforce these requirements over time. Cloud infrastructures are highly heterogeneous offering a wide diversity of server configurations for rent, each with a different infrastructure cost. As illustrated in Table~\ref{EC2instances} and Table~\ref{DAS4instances}, the pricing of servers can be generally defined by a linear function, where the cost per-server increases linearly with the number of cores. According to this resource classification, autoscaling systems can dynamically allocate and de-allocated servers with different hardware configurations to adapt the computing capacity to the service demand. For instance, gradually increasing workload volume can be handled by choosing a new configuration that minimizes the infrastructure cost of servers. In contrast, a sudden variations in workload caused by a flash crowd or outage will require additional capacity to be brought online as quickly as possible. Even though the diversity of hardware configurations is common in cloud infrastructures, the majority of autoscaling systems focus on minimizing the infrastructure cost rather than selecting a right combination of resources~\cite{herbst_2013,urgaonkar_agile_2008,dejavu2012}. This manner to proceed may lead to periods of unsatisfactory performance, specifically for applications that need to provide high availability to their clients. Note that, the use of low cost hardware configurations (\emph{e.g. small}) may suffer performance degradations caused by the interference between activities of other VM's allocated to the same physical server. In summary, the selection of the resulting scaling plan has to find the tradeoff between the service demand and the capacity of this new configuration to fulfill the requirements.
+%%  PROBLEM -> TRADEOFF PRICE - CAPACITY %%
+Consequently, and regarding the cloud infrastructures, another problem in autoscaling comes up when deciding the right hardware configuration that will enforce these requirements over time. Cloud infrastructures are highly heterogeneous offering distinct server configurations, where the cost/hour per-server increases linearly with the number of cores and memory, as illustrated in Table~\ref{EC2instances} and Table~\ref{DAS4instances}. According to this resource classification, autoscaling systems can dynamically allocate and de-allocate servers based on their prices but not on their performance capacity, which depends on the application. 
+To adapt the computing capacity to the service demand, autoscaling systems need to measure the computing capacity of the different resources to know which hardware configuration to choose over time. For instance, gradually increasing workload volume can be handled by choosing a new configuration that minimizes the infrastructure cost of servers. In contrast, a sudden variations in workload caused by a flash crowd or outage will require additional capacity to be brought online as quickly as possible. 
 
-Given such a scenario, the goal of our work is to develop a system that supports elasticity for applications by choosing the most suited scaling plan according to the customer preferences.
+\begin{table}
+  {\scriptsize 
+\begin{center}
+    \begin{tabular}{  | c | c | c | c | c |}
+    \hline
+      \textbf{Size}  & \textbf{Configuration} & \textbf{Cost/hr} \\ \hline
+   \textit{m1.small}   & 1-ECU~\footnote{One EC2 compute unit provides the equivalent CPU capacity of a 1.0-1.2 GHz 2007 Opteron or 2007 Xeon processor.}  -- 1.5Gb RAM&  0.06\$ \\ \hline
+   \textit{m1.medium}   & 2-ECU -- 4Gb RAM&  0.12\$ \\ \hline
+\textit{c1.medium} & 5-ECU -- 3Gb RAM& 0.145\$   \\ \hline
+\textit{m1.large} & 4-ECU -- 8Gb RAM& 0.24\$   \\ \hline
+ \end{tabular}
+\end{center}
+\vspace{-5mm}
+\caption{EC2 instance type characteristics.}
+\label{EC2instances}
+}
+\end{table}
+
+\begin{table}
+  {\scriptsize 
+\begin{center}
+    \begin{tabular}{  | c | c | c | c | }
+    \hline
+       \textbf{Size}  & \textbf{Configuration} & \textbf{Cost/hr} \\ \hline
+   \textit{small}   & 1-core 2.4Ghz -- 1Gb RAM&  0.05\$ \\ \hline
+   \textit{medium}   & 4-core 2.4Ghz  -- 4Gb RAM&  0.23\$ \\ \hline
+\textit{highcpu-medium} & 6-core 2.4Ghz -- 3Gb RAM& 0.28\$   \\ \hline
+\textit{large} & 8-core 2.4Ghz  -- 8Gb RAM& 0.46\$   \\ \hline
+
+ \end{tabular}
+\end{center}
+\vspace{-5mm}
+\caption{DAS4 instance type characteristics.}
+\label{DAS4instances}
+}
+\end{table}
+
+Similarly, to prevent future SLA violations, the selection of a scaling plan must be conditional on the current and future workload requirements. The allocation of an unsuitable resource combination can lead to loss in revenues as well as customer dissatisfaction. Therefore, we need medium-term traffic predictions to estimate the future service demand, and thereby enable to provision resources that will handle future changes in the workload, at least within the next hour. In summary, the selection of the resulting scaling plan has to find the tradeoff between the service demand and the capacity of this new configuration to fulfill the requirements. 
+
+%can dynamically allocate and de-allocate servers with different hardware configurations to adapt the computing capacity to the service demand. 
+
+%Even though the diversity of hardware configurations is common in cloud infrastructures, the majority of autoscaling systems focus on minimizing the infrastructure cost rather than selecting a right combination of resources~\cite{herbst_2013,urgaonkar_agile_2008,dejavu2012}. This manner to proceed may lead to periods of unsatisfactory performance, specifically for applications that need to provide high availability to their clients. Note that, the use of low cost hardware configurations (\emph{e.g. small}) may suffer performance degradations caused by the interference between activities of other VM's allocated to the same physical server.
+
+A new problem emerged as a result of this autoscaling approach that is an equitable load balancing of the incoming traffic. Traditional load balancing algorithms, such as round-robin, fastest or random, distribute the incoming traffic across the backend without considering the resource heterogeneity. Therefore, when provisioning multiple type of instances, a new load balancing algorithm is required to distribute the incoming traffic across the resources taken into consideration their performance capacity. 
+
+As a result, the goal of our work is to develop a system that supports elasticity for applications by choosing the most suited scaling plan according to the customer preferences.
 
 % Even though the diversity of hardware configurations is common in cloud infrastructures, the majority of autoscaling systems focus on the decision of when to provision rather than in the selection of suited resources.
 

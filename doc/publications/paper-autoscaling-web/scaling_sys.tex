@@ -1,5 +1,5 @@
 
-The proposed autoscaling system scales a web application in response to change in throughput at fixed intervals, which we denote by reconfiguration intervals of 10 minutes.  This system operates alongside the services deployed by a PaaS. Although it can be integrated into any other cloud platform easily. To feed this system, we rely on a monitoring engine provided by the cloud platform to track the application-workload and system resources. This architecture has the following key components:
+The proposed autoscaling system scales a web application in response to change in throughput at fixed intervals, which we denote by reconfiguration intervals set to 10 minutes.  This system operates alongside the services deployed by ConPaaS, an open-source runtime environment for hosting applications in Cloud infrastructures~\cite{conpaasIC}. Nevertheless, it can also be easily integrated into any other PaaS, as it only relies on two common services provided by any platform: the resource manager and the monitoring engine. To feed this system, we use the monitoring engine that tracks the application-workload and system resources. This architecture has the following key components:
 
 %aThis system is able to provision the right amount and type of resources for minimizing the number of SLA violations while keeping the operational cost adapted to the customer requirements.
 
@@ -7,22 +7,28 @@ The proposed autoscaling system scales a web application in response to change i
 
 \vspace{2mm}
 
-\textbf{Predictor: } To prevent SLA violations in advance, workload prediction is needed to estimate the incoming traffic. However, this operation becomes more problematic by the fact that Web application workloads are often very unstable following an irregular pattern, with occasional short traffic spikes. Based on that and inspired by~\cite{wolski_network_1999}, our Predictor component takes the monitoring data as input and uses different time-series analysis techniques to predict the future service demand for the next time interval. To provide accurate forecasting measures, this component utilizes the technique that exhibited the lowest cumulative error measure during the previous monitoring window. By doing so, the Predictor is able to adapt the predictions to the current type of workload. This component supports five distinct statistical models that fits four types of workload: \emph{(1)} \emph{Linear Regression} for linear trends~\cite{muppala_regression-based_2012}, \emph{(2)} \emph{Auto Regression Moving Average} (ARMA) for linear with small oscillations~\cite{roy_efficient_2011}, \emph{(3)} \emph{Exponential Smoothing} for daily and seasonal~\cite{exponential_smoothing2010}, and \emph{(4)} \emph{Autoregression} and \emph{Vector Autoregression} for correlated trends~\cite{vector_autoregression_2006,chandra_dynamic_2003}. 
+%To choose a scaling plan, provisioning systems have to know the computing capacity of the different server configurations when running an application. To do that, the system creates profiles for each instance type by analyzing its performance behavior (e.g. measuring the cpu usage, request rate and response times). 
 
-
-\vspace{2mm}
-
-\textbf{Profiler: } To choose a scaling plan, provisioning systems have to know the computing capacity of the different server configurations when running an application. To do that, the system creates profiles for each instance's type by analyzing its performance behavior (e.g. measuring the cpu usage, request rate and response times).  The definition of profiles per-instance's type improves the accuracy of the scaling actions, specifically in heterogeneous cloud infrastructures. Thus, the Profiler component calculates the optimized throughput of each type of provisioned configurations (VM instance in the following). By optimized throughput, we mean the performance pattern under which a resource assures the QoS requirements while avoiding its under/over-utilization.
+\textbf{Profiler: } This component was designed to measure the computing capacity of the different server configurations when running an application. To do that, this component creates profiles for each instance type by analyzing its performance behavior (e.g. the percentage of cpu usage, request rate and response time).  The definition of profiles per-instance type improves the accuracy of the scaling actions, specifically in heterogeneous cloud infrastructures. Thus, the \emph{Profiler} component calculates the \emph{optimized throughput} of each type of provisioned configuration (VM instance in the following). Here an \emph{optimized throughput} is the performance pattern under which a resource assures the QoS requirements while avoiding its under/over-utilization.
 
 % without any server instrumentation.
 
-\vspace{2mm}
 
-\textbf{Dynamic load balancer: } In order to adapt our system to the heterogeneity of requests and cloud resources, this component dynamically assigns weights to the backend servers to proportionally distribute the incoming traffic based on the performance characteristics of each backend. As an example, a server with four cores is able to process a higher number of requests so its weight has to a be greater than a server with only one core.
 
 \vspace{2mm}
 
-\textbf{Scaler:} This component governs our autoscaling system. As illustrated in Figure~\ref{autoScalingSys}, Scaler uses the Predictor and Profiler components to find the optimal provisioning strategy that fulfills a pre-established SLO (Service Level Objective). Furthermore, this component constantly analyzes the behavior of each provisioned VM triggering the Dynamic load balancer component when necessary.
+%However, this operation becomes more problematic by the fact that Web application workloads are often very unstable following an irregular pattern, with occasional short traffic spikes.
+
+\textbf{Predictor: } To prevent SLA violations in advance, workload prediction is needed to estimate the incoming traffic. Inspired by~\cite{wolski_network_1999}, our Predictor component takes the monitoring data as input and uses different time-series analysis techniques to predict the future service demand for the next time interval. To provide accurate forecasting measures, this component utilizes the technique that exhibited the lowest cumulative error measure during the previous monitoring window. By doing so, the Predictor is able to adapt the predictions to the current type of workload. This component supports five distinct statistical models that fits four types of workload: \emph{(1)} \emph{Linear Regression} for linear trends~\cite{muppala_regression-based_2012}, \emph{(2)} \emph{Auto Regression Moving Average} (ARMA) for linear with small oscillations~\cite{roy_efficient_2011}, \emph{(3)} \emph{Exponential Smoothing} for daily and seasonal~\cite{exponential_smoothing2010}, and \emph{(4)} \emph{Autoregression} and \emph{Vector Autoregression} for correlated trends~\cite{vector_autoregression_2006,chandra_dynamic_2003}. 
+
+
+\vspace{2mm}
+
+\textbf{Dynamic load balancer: } In order to adapt our system to the heterogeneity of requests and cloud resources, this component dynamically assigns weights to the backend servers to proportionally distribute the incoming traffic based on the performance characteristics of each backend. As an example, a server with four cores is able to process a higher number of requests, thus its weight is usually greater than a server with only one core.
+
+\vspace{2mm}
+
+\textbf{Scaler:} This component governs our autoscaling system. As illustrated in Figure~\ref{autoScalingSys}, Scaler uses the \emph{Predictor} and \emph{Profiler} components to find the provisioning strategy that fulfills a pre-established SLO (Service Level Objective), and consequently better enforces the customer preferences. Furthermore, this component constantly analyzes the behavior of each provisioned VM, triggering the \emph{Dynamic load balancer} component when necessary.
 
 \begin{figure}[htb]
   \begin{center}
@@ -33,28 +39,39 @@ The proposed autoscaling system scales a web application in response to change i
   \label{autoScalingSys}
 \end{figure}
 
-In the following, we focus on answering when to scale and which scaling plan to choose when running web applications.
+In the rest of this section, we focus on answering when to scale and which scaling plan to choose when running web applications.
 
 \subsection{Provisioning on demand}
-The Scaler component is the central component of this autoscaling system, and thereby is the responsible of triggering scaling actions. Our system supports horizontal scaling as a technique to add and remove resources to an application. Horizontal scaling enables to create a cluster of virtual machines associated to one application whose size is dynamically adapted to the workload fluctuations by adding or removing resources to the cluster. This scaling technique is commonly supported for the majority of resource provisioning systems. However, our system is able to use the heterogeneity of the cloud infrastructures to improve the efficiency of the scaling actions.
+As a central component of this autoscaling system, the Scaler component is responsible for triggering the scaling actions. Our system supports horizontal scaling as a technique to add and remove resources to an application. Horizontal scaling enables to create a cluster of virtual machines associated to one application, which size is dynamically adapted to the workload fluctuations by adding or removing resources to the cluster. Even though this scaling technique is commonly supported for the majority of resource provisioning systems~\cite{ali-eldin_2012,bunch_2012,urgaonkar_agile_2008}, our approach is able to use the resource heterogeneity of the cloud infrastructures to improve the efficiency of the scaling actions.
+
+In order to decide when to trigger a scaling action, our system uses the following three methods: 
 
 % On the other hand, in our system, vertical scaling enables to add or remove resources with high or less cpu and memory using \emph{service live migration}. Using this mechanism, the Scaler migrates the hosted service (web applications) from one virtual machine to another with a better hardware configuration. To reduce the degradations caused by this type of migration or by the booting time of the new machine, the Scaler checks the proper functioning of the new machine in order to release the older one.
 
-In order to decide when to trigger a scaling action, our system uses the following three methods: 
+
 \begin{itemize}
 
-\item \emph{Response time analysis:} A precise analysis of the monitoring data is crucial to minimize performance degradations that are sometimes omitted by traditional analytical methods such as the median, average or moving average. To obtain precise information (response times) that indicates the performance behavior of an application, we decided to extend a known smoothing technique called \emph{Weighted Moving Average} (WMA). Using our extension of WMA, it first associated weights in an increasing order giving more importance to the latest monitoring data; and second it doubles the original weight value of each data-point that exceeds the performance requirements (response time). By doing so, our system analyzes the monitoring data giving special importance to the data points on which SLO violations have occurred, and thereby is able to detect and avoid the maximum number of violations.
+\item \emph{Response time analysis:} A precise analysis of the monitoring data is crucial to minimize performance degradations that are sometimes omitted by traditional analytical methods such as the median, average or moving average. To extract precise information from the monitoring data  (e.g. response times) describing the performance behavior of an application, we decided to extend a known smoothing technique called \emph{Weighted Moving Average} (WMA). Using our extension for WMA, it analyzes the monitoring data associating weights in an increasing order giving more importance to the latest monitoring data; and second it increments (in a configurable) the original weight value of each data-point that exceeds the performance requirements. The weight increment can be modified to rise the awareness of the system to SLO violations  (in our experiments this increment was twice the original weight). By doing so, our system analyzes the monitoring data giving special importance to the data points on which SLO violations have occurred, and thereby is able to detect and avoid the maximum number of violations.
 
-\item \emph{Definition of a reactive threshold:} Additionally to the fixed threshold pre-defined by the QoS requirements, our system also includes an extra threshold (based on these requirements) that will enable in advance to react against any traffic variation minimizing the number of SLO violations or under-utilization of the provisioned resources. This reactive threshold specifies one upper and lower boundaries creating two head-rooms between them and the performance requirements (response time) pre-defined by the user.
+\item \emph{Definition of a reactive threshold:} Additionally to the fixed SLO threshold pre-defined by the QoS requirements (maximum response time), our system also includes an extra threshold (based on these requirements) that will enable in advance to react against any traffic variation, minimizing the number of SLO violations, or under-utilization of the provisioned resources. As illustrated in Figure~\ref{thr}, this reactive threshold specifies one upper and lower boundaries creating two head-rooms between them and the fixed threshold pre-defined by the user.
 
-\item \emph{Workload forecasting: }  The \emph{Predictor} component is utilized to trigger short-term forecasts operations that will minimize at the maximum the number of SLA violations, as well as keep a high level of efficiency in the predictions. 
+\begin{figure}[htb]
+  \begin{center}
+    \includegraphics[width=.85\linewidth]{images/thresholdGraphic}
+  \end{center}
+\vspace{-5mm}
+  \caption{Reactive threshold.}
+  \label{thr}
+\end{figure}
+
+\item \emph{Workload forecasting: }  The \emph{Predictor} component is utilized to trigger short-term forecasts operations that will minimize the number of future SLA violations, as well as keeping a high level of efficiency in the predictions. 
 \end{itemize}
 
-Based on these techniques, the \emph{Scaler} evaluates whether the current performance behavior requires to trigger any of the following scaling actions:
+Based on these techniques, the \emph{Scaler} evaluates whether the current performance behavior requires triggering any of the following scaling actions:
 
 \begin{itemize}
 
-\item \textbf{Scale out:} Additional resources are provisioned if the loaded system state (response time or cpu utilization) exceeds the upper threshold, and the \emph{Predictor} confirms that such traffic changes will remain at least during the next monitoring window (in our experiments 5min). 
+\item \textbf{Scale out:} Additional resources are provisioned if the loaded system state (response time or cpu utilization) exceeds the upper threshold, and the \emph{Predictor} confirms that such traffic changes will remain at least during the next monitoring window. In our experiments, we define monitoring windows of 5 minutes due to this interval is the minimum necessary time to collect fresh data from the monitoring engine provided by ConPaaS. 
 
 \item \textbf{Scale back:} Resources are released if the loaded system state exceeds the lower threshold, and the \emph{Predictor} confirms that such traffic changes will remain at least during the next monitoring window.
 
@@ -105,13 +122,15 @@ Based on these techniques, the \emph{Scaler} evaluates whether the current perfo
 %\subsection{Online profiling of allocated instances\label{profiling}}
 \subsection{Measuring VM instance performance via online profiling\label{profiling}}
 
-Regarding the resource heterogeneity of cloud infrastructures, a sensitivity analysis of the allocated resources is crucial to provide accurate scaling decisions. Accordingly, online profiling-based techniques~\cite{kaviani_profiling-as--service:_2011} have recently emerged as a solution to  estimate the resource's throughput under a certain workload. Traditionally, this technique replicates at runtime a server hosting an application, with a new server with profiling instrumentation that analyzes the performance behavior of a specific resource under a fixed percentage of the incoming traffic~\cite{jiangThesis,dejavu2012}. The use of fixed workloads to calculate the maximum throughput of a resource do not necessary imply the definition of more accurate profiles. A reason seems to be the lack of ideal performance isolation in cloud infrastructures which affects to the precision of the definitions, and consequently reduces the accuracy of the decisions. Furthermore, setting a profiling environment, in a heterogeneous cloud infrastructure, requires as many additional resources as number of available configurations. 
+Regarding the resource heterogeneity of cloud infrastructures, a sensitivity analysis of the allocated resources is crucial to provide accurate scaling decisions. Accordingly, online profiling-based techniques~\cite{kaviani_profiling-as--service:_2011} have recently emerged as a solution to  estimate the resource's throughput under a certain workload. Traditionally, this technique replicates at runtime, a server hosting an application, with a new server with profiling instrumentation. To obtain  the profiling data, this new server analyzes the performance behavior of a specific resource under a fixed percentage of the incoming traffic~\cite{jiangThesis,dejavu2012}. The use of fixed workloads to calculate the maximum throughput of a resource do not necessary imply the definition of more accurate profiles. A reason seems to be the lack of ideal performance isolation in cloud infrastructures which affects the precision of the definitions, and consequently reduces the accuracy of the decisions. Furthermore, setting a profiling environment, in a heterogeneous cloud infrastructure, requires as many additional resources as number of available configurations. 
 
 Even though the use of online-profiling techniques is still under study, the configuration of a parallel environment and the heterogeneity of the cloud resources are the major drawbacks for its adoption. These techniques increase the operational cost and do not necessarily improve the accuracy of the scaling decisions.
 
 %Even though the use of online-profiling techniques is still under study, the configuration of a parallel %environment and the limited accuracy of its scaling decisions are the major drawbacks for its %adoption.
 
-As a consequence, we designed a novel online profiling technique that gives an estimation of the optimized throughput of each allocated instance's type without need for additional resources or parallel environments. To do that, the Profiler component use the provisioned resources for the analysis and estimation of the computing capacity of each available hardware configuration.
+As a consequence, we designed a novel online profiling technique that gives an estimation of the optimized throughput of each allocated VM instance type without the need for additional resources or parallel environments. To do that, the \emph{Profiler} component use the provisioned resources for the analysis and estimation of the computing capacity of each available hardware configuration.
+
+%Cpu.usage is relative to nominal frequency of the CPU’s – not the amount of time the CPU was busy, which is generally more relevant.
 
 \begin{algorithm}
 {\scriptsize
@@ -123,13 +142,13 @@ As a consequence, we designed a novel online profiling technique that gives an e
 
 \While{ allocated instances to profile}{
 \BlankLine
-Collect profiling data of \emph{inst\_type}: \emph{req\_rate, cpu\_usage and resp\_time}\;
+Collect profiling data of \emph{inst\_type}: \emph{req\_rate, \%cpu\_usage and resp\_time}\;
 
 \While{ profiling data to smooth}{  \label{alg:smooth}
 // Perform smoothing percentiles technique \;
 \If{ \emph{resp\_time}$_i$ $>$ (slo * 0.25) and \emph{resp\_time}$_i$ $<=$ (slo * 0.75)}{ 
-	\If{ \emph{req\_rate}$_i$ $>$ 0 and \emph{cpu\_usage}$_i$ $<$ 75}{ 
-		\hspace{3mm} Add \emph{cpu\_usage$_i$} to cpu\_usage\_data\;
+	\If{ \emph{req\_rate}$_i$ $>$ 0 and \emph{\%cpu\_usage}$_i$ $<$ 75}{ 
+		\hspace{3mm} Add \emph{\%cpu\_usage$_i$} to \%cpu\_usage\_data\;
 		\hspace{3mm} Add \emph{req\_rate$_i$} to req\_rate\_data\;
 		\hspace{3mm} Add \emph{resp\_time$_i$} to resp\_time\_data\;
 }
@@ -137,11 +156,11 @@ Collect profiling data of \emph{inst\_type}: \emph{req\_rate, cpu\_usage and res
 } \label{alg:endSmooth}
 \BlankLine
 Initialize instance capacity \emph{Ideal\_Throughput$_{inst}$} to 0 \;
-\uIf{ \emph{resp\_time\_data}, \emph{cpu\_usage\_data}, \emph{req\_rate\_data}  \textbf{not empty}}{
-Calculate average of \emph{cpu\_usage\_data}, \emph{CPU\_usage$_{inst}$} \; \label{alg:throughput_start}
+\uIf{ \emph{resp\_time\_data}, \emph{\%cpu\_usage\_data}, \emph{req\_rate\_data}  \textbf{not empty}}{
+Calculate average of \emph{\%cpu\_usage\_data}, \emph{\%CPU\_usage$_{inst}$} \; \label{alg:throughput_start}
 Calculate average of \emph{req\_rate\_data}, \emph{Num\_requests$_{inst}$} \;
 \BlankLine
-\emph{Ideal\_Throughput$_{inst}$} = $\dfrac{\emph{CPU\_usage$_{inst}$} } {\emph{Num\_requests$_{inst}$} }$  \; \label{alg:throughput_end}
+\emph{Ideal\_Throughput$_{inst}$} = $\dfrac{ \bigg( \dfrac{\emph{\%CPU\_usage$_{inst}$} } {100} \bigg)} {\emph{Num\_requests$_{inst}$ } }$  \; \label{alg:throughput_end}
 \BlankLine
 Store instance computing capacity, \emph{Ideal\_Throughput$_{inst}$} \; 
 }
@@ -162,14 +181,15 @@ Use new value of \emph{Ideal\_Throughput$_{inst}$} to rank \emph{inst\_type} in 
 \label{profilingAlg}
 \end{algorithm}
 
-As detailed in Algorithm~\ref{profilingAlg}, once the Scaler component decides to trigger a scaling action, the Profiler component estimates the throughput of the allocated instances according the following steps:
+As detailed in Algorithm~\ref{profilingAlg}, once the \emph{Scaler} component decides to trigger a scaling action, the \emph{Profiler} component estimates the throughput of the allocated instances according to the following steps:
 
 \begin{enumerate}
-\item Collect the latest hour of monitoring data from each VM instance's type. This profiling data contains information about monitoring metrics such as the request rate, cpu usage and response time, which provide enough feedback for the definition of instance profiles. 
+\item Collect the latest hour of monitoring data from each VM instance type. This profiling data contains information about monitoring metrics such as the request rate, total percentage of cpu usage and response time, which provide enough feedback for the definition of instance profiles. In fact, when provisioning web applications, these metrics are commonly used to decide whether to trigger scaling actions or not \cite{smartscale_2012,urgaonkar_agile_2008}. Nevertheless, the network bandwidth and memory usage can also be collected to define instance profiles.
 
-\item Perform a smoothing technique over the profiling data of each instance to remove the noise generated by traffic spikes. As pointed out in~\cite{gandhi_hybrid_2012}, when hosting web applications sudden changes in the workload, interference due to virtualization or OS activities may affect the precision of the profiling process. Hence, we decided to smooth the profiling data during the latest hour (or older if there is not enough data) to identify the performance capacity of one VM instance. In particular, the Profiler extracts the smoothed 75th and 25th percentiles from the response times below the SLO and 75th percentile from the cpu usage data-points. (See Lines \ref{alg:smooth}-\ref{alg:endSmooth}). This mechanism allows to identify the optimized throughput of each instance while enforcing the performance requirements and avoiding CPU saturation. 
 
-As an example in Figure~\ref{fig:vm_performance1} and Figure~\ref{fig:vm_performance2}, we show the profiling data and percentiles for one "m1.small" and one "c1.medium" EC2 instance types during one hour. The green areas represent the ranges of response times and cpu usage comprised by the percentiles. Red circles contain all data points that will be used to calculate the optimized throughput of one VM instance. As we mentioned above, some data points are excluded as they identify periods of time on which resources suffered from under-utilization or over-utilization (denoted by white areas). Furthermore, as shown in Figure~\ref{fig:vm_performance1}, a short number of data points are comprised between the percentiles for the "m1.small" instance. Its poor hardware configuration makes this type of instance more vulnerable to sudden changes in the workload.
+\item Perform a smoothing technique over the profiling data of each instance to remove the noise generated by traffic spikes. As pointed out in~\cite{gandhi_hybrid_2012}, when hosting web applications sudden changes in the workload, interference due to virtualization or OS activities may affect the precision of the profiling process. Hence, we decided to smooth the profiling data during the latest hour (or older if there is not enough data) to identify the performance capacity of each allocated VM instance type. In particular, the \emph{Profiler} extracts the smoothed 75th and 25th percentiles from the response times below the SLO in correspondence with the \emph{reactive threshold}; and 75th percentile from the percentage of cpu usage data-points. (See Lines \ref{alg:smooth}-\ref{alg:endSmooth}). Note that, we only use the 75th percentile from the cpu usage due to lower values in the cpu usage do not imply a system free of SLA violations. As an example, \emph{m1.small} instances can throw violations even under percentages of cpu usage lower than 25\%. This technique allows to identify the optimized throughput of each instance while enforcing the performance requirements and avoiding CPU saturation. 
+
+As an example in Figure~\ref{fig:vm_performance1} and Figure~\ref{fig:vm_performance2}, we show the profiling data and percentiles for one "m1.small" and one "c1.medium" EC2 instance types during one hour. The gray areas represent the ranges of response times and cpu usage comprised by the percentiles. Red circles contain all data points that will be used to calculate the optimized throughput of one VM instance. As we mentioned above, some data points are excluded as they identify periods of time on which resources suffered from under-utilization or over-utilization (denoted by white areas). Furthermore, as shown in Figure~\ref{fig:vm_performance1}, a short number of data points are comprised between the percentiles for the "m1.small" instance. Its poor hardware configuration makes this instance type more vulnerable to sudden changes in the workload.
 
 %and three red circles highlight several data-points on which the performance of the instance was optimal while enforcing the %SLO.
 
@@ -221,34 +241,38 @@ As an example in Figure~\ref{fig:vm_performance1} and Figure~\ref{fig:vm_perform
 %\label{fig:vm_performance}
 %\end{figure*}
 
-\item Classify the different instance types depending on its computing capacity. Using the profiling smoothed data of each instance type (refer to Lines \ref{alg:throughput_start}-\ref{alg:throughput_end}), the Profiler computes a factor, named \emph{Ideal\_Throughput$_{inst}$}, as the average cpu utilization required to process the average of served requests (cycles/requests) for one instance, where \emph{CPU\_usage$_{inst}$} represents the average of  cpu usage (clocks/sec) and \emph{Num\_requests$_{inst}$} the average of request rate (requests/sec), as illustrated in the next Equation~\ref{cpu_speed}:
+\item Classify the different instance types depending on its computing capacity. Using the profiling smoothed data of each instance type (refer to Lines \ref{alg:throughput_start}-\ref{alg:throughput_end}), the Profiler computes a factor, named \emph{Ideal\_Throughput$_{inst}$}, as the amount of clocks required to serve a specific amount of requests (clocks/requests)  for one instance. In Equation~\ref{cpu_speed}, the \emph{\%CPU\_usage$_{inst}$} represents the average of percentage of cpu usage (clocks) and \emph{Num\_requests$_{inst}$} the average of request rate (requests) consumed during the last hour.
+
+\fixme{Explain how we get the cpu usage.}
+
 
 {\scriptsize
 \begin{equation}\label{cpu_speed}
 \begin{split}
-CPU\_usage_{inst} = \dfrac{   \sum_{i=1}^N \big( cpu\_usage\_data_{i}  \big) } { N } \\
+\% CPU\_usage_{inst} = \dfrac{   \sum_{i=1}^N \big( \% cpu\_usage\_data_{i}  \big) } { N } \\
 Num\_requests_{inst} = \dfrac{   \sum_{i=1}^N \big( req\_rate\_data_{i} \big) } { N } \\
-Ideal\_Throughput_{inst} =\dfrac{   CPU\_usage_{inst}  } {  Num\_requests_{inst}  } 
+Ideal\_Throughput_{inst} =\dfrac{ \bigg( \dfrac{\% CPU\_usage_{inst} } { 100 }  \bigg) } {  Num\_requests_{inst}   } 
 \end{split}
 \end{equation}
 }
 
-The \emph{Ideal\_Throughput$_{inst}$} factor gives an estimation of the optimized performance capacity of one VM instance when processing the current workload. Based on the value of this factor per-instance, the \emph{Profiler} classifies the different instance-types based on its computing capacity when running an application. (See Lines \ref{alg:clas}-\ref{alg:end_clas}). The resulting classification gives an interesting feedback to the Scaler component, which is now able to identify the capacity of each instance type, and consequently to choose an optimal scaling plan. Initially, there are not instance profiles due to the lack of monitoring data, thereby the Scaler uses the number of compute units per instance as a priori classification of their performance capacities. Note that, this work only consider the compute units, but memory or bandwidth can be also taken into consideration to classify the VM instances.
+The \emph{Ideal\_Throughput$_{inst}$} factor gives an estimation of the optimized performance capacity of one VM instance when processing the current workload. Based on the value of this factor per-instance, the \emph{Profiler} classifies the different instance-types based on its computing capacity when running an application. (See Lines \ref{alg:clas}-\ref{alg:end_clas}). The resulting classification gives an interesting feedback to the Scaler component, which is now able to identify the capacity of each instance type, and consequently to choose an optimal scaling plan. Note that, a lower value of the \emph{Ideal\_Throughput$_{inst}$} indicates a higher performance capacity. Initially, there are not instance profiles due to the lack of monitoring data, thereby the \emph{Scaler} uses the number of compute units per instance as a priori classification of their performance capacities. This work only consider the compute units, but memory or bandwidth can be also taken into consideration to classify the VM instances.
 \end{enumerate}
 
-This profiling process allows to define a profile per instance type, thus facilitating the selection of an appropriate scaling plan that will satisfy the QoS requirements. As such, the profiling data can be used independently of factors such as performance isolation in clouds or request heterogeneity to improve the accuracy of the scaling decisions. Even though this profiling approach assumes that all the resources of the same type behave similarly, it can be easily extended to profile the allocated resources independently of its type.
+This profiling process allows to define a profile per instance type, thus facilitating the selection of an appropriate scaling plan that will satisfy the QoS requirements. Similarly, the profiling data can be used independently of factors such as performance isolation in clouds or request heterogeneity to improve the accuracy of the scaling decisions. Even though this profiling approach assumes that all the resources of the same type behave similarly, it can be easily extended to profile the allocated resources independently of its type. The performance of VM instances provided by current clouds is largely heterogeneous, even among instances of the same type~\cite{ec2Performance}.
 
 
 
 \subsection{Scaling plan decision-making}
 
-The definition of a scaling plan is the most important and challenging phase in a provisioning system. It is responsible of the selection of an appropriate combination of resources that fulfills the performance requirements with the lowest operational cost. 
+The discovery of a proper scaling plan is the most important and challenging phase in a provisioning system. It is responsible of the selection of an appropriate combination of resources that fulfills the QoS requirements.
+% with the lowest operational cost. 
 
 %This operation can become more laborious when running web applications, and therefore it has been barely addressed in the existing provisioning systems. Web applications are often a target of temporal traffic variations that may cause SLO violations having an impact in the user experience. Hence, the selection of an appropriate scaling plan becomes crucial to mitigate these penalties. 
 
 %On the other hand, to boost the volume of customers, the user experience appears as a mandatory requirement in web applications contrary to budget cuts that may reduce the advantage over competitors.
 
-To overcome this task, the Scaler has to take into consideration two aspects: the workload requirements and the resource heterogeneity. An exhaustive analysis of the current workload allows to identify the future demand that will determine the new configuration to use. This operation can become more laborious when running web applications due to its workload heterogeneity. On the other hand, cloud infrastructures are highly heterogeneous, offering a wide range of different hardware configurations that can be combined to better satisfy the requirements. The selection of one configuration or another can expose the application to availability or performance issues, specifically when handling traffic anomalies. Hence, the selection of an appropriate scaling plan becomes crucial to mitigate these penalties. 
+To overcome this task, we should take into consideration two aspects: the workload requirements, the resource heterogeneity and the customer preferences. An exhaustive analysis of the current workload allows to identify the future demand that will determine the new configuration to use. This operation can become more laborious when running web applications due to their workload heterogeneity. On the other hand, cloud infrastructures offer a wide range of different hardware configurations that can be combined to better satisfy the requirements. Based on the customer preferences, the selection of one configuration or another can expose the application to availability or performance issues, specifically when handling workload variations or other traffic anomalies. Hence, the selection of an appropriate scaling plan becomes crucial to mitigate these penalties. 
 
 %% Threshold fixed by the user
 
@@ -279,24 +303,33 @@ To overcome this task, the Scaler has to take into consideration two aspects: th
 
 \subsubsection{Analysis of the workload requirements}
 
-Prior to any resource selection, the \emph{Scaler} has to measure the requirements of the current workload taken into account the traffic diversity of web applications. Traditional scaling systems gather monitoring data about the request volume or cpu usage consumed to identify the workload requirements. However, the workload of web applications is highly heterogeneous being defined by sudden changes in the traffic as well as constantly-changing request mixes. As a consequence, our system computes the workload complexity considering both the total cpu usage and request rate served by the current scaling plan. Both factors provide enough information to detect the causes of a performance degradation in web applications. 
+Prior to any resource selection, the \emph{Scaler} has to measure the requirements of the current workload taken into account the traffic diversity of web applications. Traditional scaling systems gather monitoring data about the request volume or total percentage of cpu usage consumed to identify the workload requirements. However, the workload of web applications is highly heterogeneous being defined by sudden changes in the traffic as well as constantly-changing request mixes. As a consequence, our system computes the workload complexity considering both the total percentage of cpu usage and request rate served by the current scaling plan,  as factors that determine the final response time. They provide enough information to detect the causes of a performance degradation in web applications. 
 
 %In Equation~\ref{workload_complexity}, the \emph{$Workload_{complex}$} factor represents the complexity of the incoming traffic and includes degradations caused by operative system activities, low network performance, performance isolation or request heterogeneity. These degradations are omitted by individually analyzing the request rate or cpu usage consumed by all the allocated resources at any given time. Thus, the \emph{$Workload_{complex}$} is computed by using the sum of the cpu usage (denoted by \emph{$CPU\_usage_{i}$}) and the performance capacity of each allocated resource. The performance capacity is calculated as the average of the request rate served by each resource (denoted by $Num\_reqs_{i}$) and its ideal throughput (denoted by $Ideal\_Throughput_{inst_{i}}$). By using the ideal throughput instead of calculating the current throughput, the Scaler is able to measure how much the current workload is affecting the ideal performance pattern of a VM instance.
 
-The workload complexity is a factor that identifies how much the current workload is affecting the ideal performance pattern of the allocated resources. It identifies the complexity of the incoming traffic and includes degradations caused by operative system activities, low network performance, performance isolation or request heterogeneity. These degradations affect the performance and are often omitted by individually analyzing the request rate or cpu usage consumed by the allocated resources. 
+The \emph{workload complexity} is a factor that identifies how much the current workload is affecting the ideal performance pattern of the allocated resources. It identifies the complexity of the incoming traffic and includes degradations caused by operating system activities, low network performance, performance isolation or request heterogeneity. These degradations affect the performance and are often omitted by individually analyzing the request rate or cpu usage consumed by the allocated resources. 
 
-To calculate the workload complexity (denoted by \emph{$Workload_{complex}$}), we first analyzes the monitoring data gathering the request rate (denoted by $Num\_reqs\_server_{i}$) and cpu utilization (denoted by \emph{$CPU\_usage\_server_{i}$}) consumed by the allocated resources. Secondly, unlike the \emph{CPU$_{inst}$},  we calculate the expected cpu usage of each resource (denoted by \emph{CPU\_usage\_expected$_{i}$} ) using its current request rate (denoted by $Num\_reqs\_server_{i}$) and its optimized throughput (denoted by $Ideal\_Throughput_{inst_{i}}$). Finally we compute the \emph{$Workload_{complex}$} factor using the sum of cpu usage consumed to handle the current workload and the sum of expected cpu usage of all the resources, as illustrated in Equation~\ref{workload_complexity}.
+To calculate the \emph{workload complexity} (denoted by \emph{$Workload_{complex}$}), we first analyzes the monitoring data gathering the request rate (denoted by $Num\_reqs\_server_{i}$) and total percentage of cpu usage (denoted by \emph{$\%CPU\_usage\_server_{i}$}) consumed by the allocated \emph{N} resources during the monitoring window. Secondly, unlike the \emph{\%CPU\_usage$_{inst}$},  we calculate the expected cpu usage of each resource \emph{i} (denoted by \emph{CPU\_usage\_expected$_{i}$} ) using its current request rate (denoted by $Num\_reqs\_server_{i}$) and its \emph{optimized throughput} (denoted by $Ideal\_Throughput_{inst_{i}}$). By doing so, we are able to include into the \emph{$Workload_{complex}$} all the degradations that affect the ideal performance of the application. Finally we compute the \emph{$Workload_{complex}$} factor using the sum of cpu usage consumed to handle the current workload and the sum of expected cpu usage of all the resources, as illustrated in Equation~\ref{workload_complexity}.
+
+
+%\fixme{We could include in the Equation some additional information to define each factor.}
 
 {\scriptsize
 \begin{equation}\label{workload_complexity}
 \begin{split}
 CPU\_usage\_expected_{i} =  Num\_reqs\_server_{i}  * Ideal\_Throughput_{inst_{i}} \\
-Workload_{complex}  = \dfrac{ \sum_{i=1}^N CPU\_usage\_server_{i}  }  {  \sum_{i=1}^N  CPU\_usage\_expected_{i}     } = \dfrac{ \ (cycles / sec) }  {  (cycles / sec ) }
+Workload_{complex}  = \dfrac{ \bigg(  \dfrac{ \sum_{i=1}^N \%CPU\_usage\_server_{i} } {100} \bigg) }  {  \sum_{i=1}^N  CPU\_usage\_expected_{i}     } = \dfrac{ \ (clocks) }  {  (clocks) }
 \end{split}
 \end{equation}
 }
 
-Additionally, the total cpu utilization ($\sum_{i=1}^N CPU\_usage\_server_{i} $) and request rate ($\sum_{i=1}^N  Num\_reqs\_server_{i}$) can be calculated by the Predictor component to estimate the future service demand of the application for the next monitoring windows (in our experiments 30min). This enables to select in advance a scaling strategy that will handle future fluctuations in the workload, and thereby saving cost. As an example in Figure~\ref{fig:forecast}, the Predictor shows the forecast values for the resource requirements during the next 30 minutes offering an acceptable level of accuracy. An aspect to notice is that the forecasting results never under-provision the system avoiding the generation of unnecessary SLO violations.
+Additionally, the future service demand of the application, in terms of total percentage of cpu usage and request rate consumed by the resources, can be estimated by the \emph{Predictor} component for the next monitoring windows (in our experiments 30min). This enables to select in advance a scaling strategy that will handle future fluctuations in the workload, and thereby saving cost. As an example in Figure~\ref{fig:forecast}, the \emph{Predictor} shows the forecast values for the resource requirements during the next 30 minutes offering an acceptable level of accuracy. To calculate the precision of the forecasting results, we used metrics such as PRED(25)~\cite{jorgensen_experience_1995} and Mean Absolute Percentage Error (MAPE)~\cite{islam_empirical_2012} that obtained values 0.904 and 0.109 respectively. By definition, PRED(25) values closer to 1.0 and MAPE values closer to 0.0 indicates a better fit of the prediction model; thus indicating correct prediction rate of our forecasting results.
+
+% An aspect to notice is that the forecasting results never under-provision the system avoiding the generation of unnecessary SLO violations.
+
+% PRED(25) value closer to 1.0 indicates a better fit of the prediction model.
+% A lower value of MAPE implies a better fit of the predciction model; thus indicating superior prediction accuracy.
+% PRED(25) = num. observations with relative error <= 25% / num observations = 19/21 ... and MAPE = 1/n sum( |y_pred - y| /y )
 
 \begin{figure}[htb]
   \begin{center}
@@ -307,11 +340,23 @@ Additionally, the total cpu utilization ($\sum_{i=1}^N CPU\_usage\_server_{i} $)
   \label{fig:forecast}
 \end{figure}
 
-\fixme{Calculate MAPE error for the forecasting results}
 
 \subsubsection{Calculating the different scaling plans}
 
-To decide which type and amount of VM instances to release or add, the \emph{Scaler} uses an optimal decision tree that calculates all the possible scaling strategies. By going through this tree, our system evaluates all the possible resource combinations using horizontal scaling. As shown by Figure~\ref{fig:scalingTree}, in the scaling decision tree, each node represents each type of hardware configuration offered by a cloud infrastructure. While the branches define all the possible resource combinations. When processing the current workload, to decide which resources to include in the scaling plan,  the \emph{Scaler} uses the following formula~\ref{resource_combination}. 
+To decide which type and amount of VM instances to add or release, the \emph{Scaler} uses an optimal decision tree that facilitates the discovery of all the possible scaling strategies. By going through this tree, our system evaluates all the possible resource combinations using horizontal scaling operations (out, back). As shown by Figure~\ref{fig:scalingTree}, in the scaling decision tree, each node represents each type of hardware configuration offered by a cloud infrastructure, where the nodes linked by a straight line represent the current scaling strategy. While the branches, denoted by a dotted line, define all the possible resource combinations to provision. 
+
+\begin{figure}[htb]
+  \begin{center}
+    \includegraphics[width=0.85\linewidth,height=4cm]{images/optimalTree_initial}
+  \end{center}
+\vspace{-5mm}
+  \caption{Example of a decision tree created from an existing resource combination.}
+  \label{fig:scalingTree}
+\end{figure}
+
+During the selection process of possible scaling strategies, the \emph{Scaler} uses the Equation~\ref{resource_combination} to compute how a strategy will distribute the current workload across the different resources taken into account their performance capacities.  Equation~\ref{resource_combination} defines a factor, called \emph{RU\_Strategy}, that determines the resource utilization of a strategy when handling the current or future workload. According to that, the \emph{Scaler} selects a strategy that uses \emph{N} resources to distribute the \emph{$Num\_reqs_{total}$} (total requests served by the current resources or estimated by the \emph{Predictor}) with a workload complexity \emph{$Workload_{complex}$} across \emph{N} instance types with different optimized throughputs \emph{$Ideal\_Throughput_{inst_{k}}$}. As a function of the \emph{$Ideal\_Throughput_{inst}$} and \emph{$Num\_reqs_{total}$}, the \emph{$RU\_Strategy$} measures the resource utilization (clocks) to process the current workload when using a specific resource combination.
+
+%When processing the current workload, to decide which resources to include in the scaling plan,  the \emph{Scaler} uses the following formula: 
 
 %This formula determines the CPU usage consumed to process the current workload when using a specific resource combination (denoted by \emph{$CPU_{strategy}$}). Note that, CPU usage provides enough feedback about the performance capacity, as it is a function of the request complexity  and number of served requests. 
 
@@ -320,19 +365,21 @@ To decide which type and amount of VM instances to release or add, the \emph{Sca
 {\scriptsize
 \begin{equation}\label{resource_combination}
 \begin{split}
-CPU_{strategy} = \dfrac{ \sum_{i=1}^n \bigg( \bigg( \dfrac{ Num\_reqs_{total} * Workload_{complex} }  {N}  \bigg) * Ideal\_Throughput_{inst_{i}} \bigg) }  {N} \\ 
+\text{RU\_Strategy = Resource utilization of the strategy} \\ \\
+RU\_Strategy_{i} = \dfrac{ \sum_{k=1}^N \bigg( \bigg( \dfrac{ Num\_reqs_{total} } {N}  * Workload_{complex} \bigg) * Ideal\_Throughput_{inst_{k}} \bigg) }  {N} \\ 
 %\\ {\small \textit{ If } CPU\_usage_{strategy} \leqslant CPU\_max_{SLO} }
 \end{split}
 \end{equation}
 }
 
-Equation~\ref{resource_combination} defines how the workload will be distributed across the different resources taken into account their performance capacities.  Thus, the \emph{Scaler} selects a strategy that uses \emph{N} resources to distribute the \emph{$Num\_reqs_{total}$} (total rate of served requests) with a workload complexity \emph{$Workload_{complex}$} across \emph{N} instances with an optimized throughput \emph{$Ideal\_Throughput_{inst}$}. \emph{$CPU_{strategy}$} measures the CPU usage consumed (cycles/sec) to process the current workload when using a specific resource combination of \emph{N} resources.
+
 
 %As an example, Figure~\ref{fig:scalingTree} shows three scaling plans that propose three different resource combinations: (left) a strategy is selected by adding two new \emph{small} instances, (center) a strategy proposes to replace one \emph{small} instance by one \emph{large}, and (right) both operations are combined by replacing one \emph{small} instance by one \emph{medium} and then adding one \emph{small}. 
 
-Note that, the search space of possible strategies can be as large as the number of available hardware configurations, and allocated resources in the current scaling plan. It makes hard-to-find the best resource combination in a reasonable short period of time, so that the \emph{Scaler} filters the strategies based on the following criteria:
+Note that, the search space of possible strategies can be as large as the number of available hardware configurations, and allocated resources of the current scaling plan. It makes hard-to-find the best resource combinations in a reasonable short period of time, so that the \emph{Scaler} filters the possible strategies based on the following criteria:
+
 \begin{itemize}
-\item Establish the maximum CPU usage consumed  by a strategy to process a particular workload (denoted by \emph{$CPU_{SLO}$}). It limits the number of possible plans where \emph{$CPU_{strategy} \leq CPU_{SLO}$}. \emph{$CPU_{SLO}$} specifies the cpu usage at which the application starts to experience SLO violations or over-utilization. As a result, the proposed scaling plans optimizes the current performance below values causing performance degradations.  Limit the number of possible scaling plans 
+\item Define the maximum resource utilization consumed  by a strategy when processing a particular workload (denoted by \emph{$Max\_RU\_Strategy$}). It limits the number of possible plans where \emph{$RU\_Strategy_{i} \leq Max\_RU\_Strategy$}. \emph{$Max\_RU\_Strategy$} specifies the maximum resource utilization at which the application starts to experience SLO violations or over-utilization of the resources. Its value can be extracted either from the Amazon EC2 recommendations for the maximum percentage of cpu usage ( CPU usage always lower than 75\%), or based on the monitoring data at which the application starts to experience SLO violations. As a result of this policy, the proposed scaling plans optimizes the current performance below values causing performance degradations. 
 
 %can be calculated either based on the Amazon EC2 recommendations ( CPU values always lower than 75\%), or based on the CPU values at which the application starts to experience SLO violations (or performance degradations). 
 
@@ -340,19 +387,24 @@ Note that, the search space of possible strategies can be as large as the number
 
 \end{itemize}
 
-These assumptions avoid to trigger new scaling actions in the next time interval, and consequently reduce the operational cost. 
+These two policies avoid to trigger new scaling actions in short time intervals (e.g. within less than one hour), and consequently reduce the operational cost. 
 
-As an example, Figure~\ref{fig:scalingTree} shows a possible scaling plan obtained by using our decision tree and Equation~\ref{resource_combination}. This plan proposes to add two \emph{small} and one \emph{huge} instances to one initial \emph{small} instance. When the performance capacity of a current resource combination is not enough to handle the workload, we add new resources as long as the resulting \emph{$CPU_{strategy}$} (calculated by adding the new resource) is lower than \emph{$CPU_{SLO}$}. This searching process stop when all the possible combinations have been proved or there are not more combinations satisfying the aforementioned criteria.
+\vspace{3mm}
+
+%As an example of the selection process
+\noindent\textbf{Example:} Figure~\ref{fig:scalingTreeSelection} shows three possible scaling plans obtained by using our decision tree and Equation~\ref{resource_combination} (denoted by \emph{Eq(3)}) over the initial strategy illustrated in Figure~\ref{fig:scalingTree}. This initial resource combination is composed of three \emph{small} instance types which are not enough to handle the current workload. Using this strategy as reference and horizontal scaling operations, our algorithm adds and/or releases resources (leafs of the tree) as long as the resulting \emph{$RU\_Strategy$} (calculated for the new resource combination) is lower than \emph{$Max\_RU\_Strategy$} and do not propose to release resources recently added. As a result, three plans are proposed using different resource configurations and satisfying the performance requirements to handle the workload. This discovery process stops when all the possible combinations have been proved or there are not more combinations satisfying the aforementioned filtering criteria. 
+
 
 
 \begin{figure}[htb]
   \begin{center}
-    \includegraphics[width=\linewidth,height=4.5cm]{images/decisionTree2}
+    \includegraphics[width=\linewidth,height=4.5cm]{images/optimalTree_selection}
   \end{center}
 \vspace{-5mm}
-  \caption{Decision tree: example of a scaling plan using four VM instances.}
-  \label{fig:scalingTree}
+  \caption{Example of three selected scaling plans that satisfy the filtering criteria.}
+  \label{fig:scalingTreeSelection}
 \end{figure}
+
 
 
 In summary, using the Equation~\ref{resource_combination}, the Scaler is able to answer to the question \emph{"How many and which type of VM instances to provision?"}.
@@ -365,9 +417,9 @@ In summary, using the Equation~\ref{resource_combination}, the Scaler is able to
 
 %they are classified based on their infrastructure cost and degree of SLO fulfillmen
 
-Once the \emph{Scaler} obtains a list of filtered scaling strategies, it computes the cost of each possible strategy how the cost incurred by its SLO fulfillment degree and the infrastructure cost. The infrastructure cost (denoted by \emph{infra\_cost}) specifies the cost required to provision additional resources for the next hour. While the SLO fulfillment degree (denoted by \emph{slo\_fulfillment}) indicates the vulnerability of a strategy to experience SLO violations. 
+Once the \emph{Scaler} obtains a list of filtered scaling strategies, it computes the cost of applying each possible strategy how the cost incurred by its SLO fulfillment degree and the infrastructure cost. The infrastructure cost (denoted by \emph{Infra\_cost}) specifies the cost required to provision a scaling plan for the next hour. While the SLO fulfillment degree (denoted by \emph{SLO\_fulfillment}) indicates the vulnerability of a scaling plan to experience SLO violations. 
 
-As defined in the Equation~\ref{strategy_cost}, the \emph{slo\_fulfillment} cost is calculated given the percentage of \emph{$CPU_{strategy}$} and the \emph{$CPU_{SLO}$}. Obviously, higher values in the percentage of \emph{$CPU_{strategy}$} imply an increment in the probability of having SLO violations under traffic spikes, so the \emph{slo\_fulfillment} will increase as well. 
+As defined in the Equation~\ref{strategy_cost}, the \emph{SLO\_fulfillment} cost is calculated given the \emph{$RU\_Strategy_{i}$} of a strategy \emph{i} and the \emph{$Max\_RU\_Strategy$}. Obviously, higher values in the \emph{$RU\_Strategy$} imply an increment in the probability of having SLO violations under traffic spikes, so the \emph{slo\_fulfillment} will increase as well. 
 
 %As defined in the Equation~\ref{strategy_cost}, the \emph{slo\_fulfillment} cost is calculated given the percentage of \emph{$CPU_{strategy}$} and the \emph{$CPU_{SLO}$}, multiply by a SLO penalty (in \$)  pre-established between the customer and provider. Obviously, higher values in the percentage of \emph{$CPU_{strategy}$} imply an increment in the probability of having SLO violations under traffic spikes, so the \emph{slo\_fulfillment} will increase as well. 
 
@@ -376,17 +428,33 @@ As defined in the Equation~\ref{strategy_cost}, the \emph{slo\_fulfillment} cost
 {\scriptsize
 \begin{equation}\label{strategy_cost}
 \begin{split}
-infra\_cost = \sum_{i=1}^N \big( instance\_price_{i} \big) \\
+Infra\_cost_{i} = \sum_{k=1}^N \big( instance\_price_{k} \big) \\
 %slo\_fulfillment =  \bigg( \dfrac{ CPU_{strategy} } {CPU_{SLO}} \bigg) * SLO penalty \\
-slo\_fulfillment =  \bigg( \dfrac{ CPU_{strategy} } {CPU_{SLO}} \bigg)  \\
-cost\_strategy = \dfrac{  slo\_fulfillment  } {infra\_cost}
+SLO\_fulfillment_{i} =  \bigg( \dfrac{ RU\_Strategy_{i} } {Max\_RU\_Strategy} \bigg)  \\
+Cost\_strategy_{i} = \dfrac{  SLO\_fulfillment_{i}  } {Infra\_cost_{i}}
 \end{split}
 \end{equation}
 }
 
 %\fixme{I could omit the use of the SLO penalty, as it is a constant in my experiments. Instead I could say that the system adapts to the user needs.}
 
-The criteria for the selection of the optimal strategy is configurable, and thereby it can adapted to the customer preferences. For instance, large enterprises need to provide high availability and performance to their clients, disposing of a generous budget for such a mission. 
+The criteria for the selection of the optimal scaling plan is configurable, and thereby it can adapted to the customer preferences. For instance, large enterprises need to provide high availability and performance to their clients, disposing of a generous budget for such a mission. Therefore, based on the customer-tradeoff between performance/cost, the \emph{Scaler} component will choose to provision one scaling plan or another depending on the value of its \emph{Cost\_strategy}. 
+
+To facilitate the specification of the performance/cost preferences to the customers, our system provides different pre-defined criteria that adapt the scaling decisions to these requirements. These selection criteria are defined thanks to a metal classification that classifies  the different type of customers based on their performance/cost preferences. Initially, we define three different classes of customers following this metal classification. These three classes of customers namely, gold, silver and bronze minimize the SLA violations with a different infrastructure cost. 
+
+\begin{itemize}
+\item A \emph{Gold customer} identifies those customers that pay more in order to get the best service at the cost of some extra over-provisioning. 
+\item A \emph{Silver customer} includes those customers that prefer to get good availability but with a reasonable operational cost.
+\item A  \emph{Bronze customer} represents those customers who are willing to obtain a reduced, but acceptable, SLO fulfillment but with very little over-provisioning; and thereby a low operational cost. 
+
+\end{itemize}
+
+In our experiments, we will use this metal classification to show the benefits/drawbacks by selecting different scaling plans based on the class of customer.
+% when handling sudden workload variations.
+
+%To classify the provisioning decisions based on the tradeoff between performance/cost of the customer preferences, we define three different classes of customers following a medal classification. These three classes of customers namely, gold, silver and bronze minimize the SLA violations with a different infrastructure cost. For instance, a gold customer pays more in order to get the best service at the cost of some extra over-provisioning. A silver customer gets good availability while a bronze customer obtains a reduced, but acceptable, SLO fulfillment but with very little over-provisioning. 
+
+
 
 %Moreover, \emph{$SLO_{penalty}$} can be also used as a criteria for the selection of the most appropriated strategy according to some requirements.
 
@@ -434,8 +502,8 @@ load balancing system in which the weights of the servers are
 periodically re-adjusted automatically, based on the monitoring data.  
 This method assigns the same weight to each backend server at the 
 beginning of the process. As illustrated in Figure~\ref{fig:load_balancing}, the weights are then periodically
-adjusted (in our experiments, using a monitoring window of $\sim$ 15min) proportionally 
-with the difference among the average cpu usage and request rate of the servers 
+adjusted (in our experiments, using a window of $\sim$ 15min) proportionally 
+with the difference among the average of percentage of cpu usage and request rate served by the servers 
 during this time interval. By adding this technique to our autoscaling system, 
 the workload can be dynamically and proportionally distributed across the provisioned VM instances depending on their performance capacities.
 
