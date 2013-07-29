@@ -25,8 +25,6 @@ function init_variables {
         $((volume_size += 1))
     fi
 
-    export EC2_ACCESS_KEY=AKIAJV3GZITGSMUBEUCQ
-    export EC2_SECRET_KEY=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
 }
 
 
