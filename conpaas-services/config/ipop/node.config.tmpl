@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <NodeConfig>
   <BrunetNamespace>real_ufl_test0_04</BrunetNamespace>
+#if $node_address
+  <NodeAddress>brunet:node:$node_address</NodeAddress>
+#end if
   <EdgeListeners>
     <EdgeListener type="tcp">
       <port>0</port>

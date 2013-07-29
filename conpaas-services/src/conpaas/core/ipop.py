@@ -11,6 +11,8 @@
 
 import os
 import urlparse
+import hashlib
+import string
 
 from Cheetah.Template import Template
 
@@ -31,6 +33,106 @@ def get_ipop_namespace(config_parser):
     base_namespace = urlparse.urlparse(base_namespace).netloc
     return "cps-%s-%s" % (base_namespace, app_id)
 
+
+def _to_base32(binary, offset, length, pad):
+    """
+     Based on IPOP/Brunet C# source code ./Brunet/Util/Base32.cs
+     @param binary Data to encode as base32
+     @param pad if True, add padding characters to make output length a multiple of 8.
+     @return the encoded ASCII string
+    """
+    padding = '='
+    enc_length = 8 * (length / 5)
+    pad_length = 0
+    if length % 5 == 1:
+        pad_length = 6
+    elif length % 5 == 2:
+        pad_length = 4
+    elif length % 5 == 3:
+        pad_length = 3
+    elif length % 5 == 4:
+        pad_length = 1
+    else:
+        pad_length = 0
+    
+    if pad_length > 0:
+        if pad:
+            #Add a full block
+            enc_length += 8
+        else:
+            #Just add the chars we need :
+            enc_length += (8 - pad_length)
+      
+    encoded = []
+    for _i in range(enc_length):
+        encoded.append('')
+    #Here are all the full blocks :
+    #This is the number of full blocks :
+    blocks = length / 5
+    for block in range(blocks):
+        _encode_block(encoded, 8 * block, binary, offset + 5 * block, 5)
+    #Here is one last partial block
+    _encode_block(encoded, 8 * blocks, binary, offset + 5 * blocks, length % 5)
+    #Add the padding at the end
+    if pad:
+        for i in range(pad_length):
+            encoded[enc_length - i - 1] = padding
+    return ''.join(encoded)
+
+def _encode_block(ascii_out, ascii_off, binary, offset, block_length):
+    """
+     Based on IPOP/Brunet C# source code ./Brunet/Util/Base32.cs
+    """
+    alphabet = string.ascii_uppercase + string.digits[2:8]
+    #The easiest thing is just to do this by hand :
+    idx = 0
+    if block_length >= 5:
+        idx |= binary[offset + 4] & 0x1F
+        ascii_out[ascii_off + 7] = alphabet[idx]
+        idx = 0
+        idx |= (binary[offset + 4] & 0xE0) >> 5
+    if block_length >= 4:
+        idx |= (binary[offset + 3] & 0x03) << 3
+        ascii_out[ascii_off + 6] = alphabet[idx]
+        idx = 0
+        idx |= (binary[offset + 3] & 0x7C) >> 2
+        ascii_out[ascii_off + 5] = alphabet[idx]
+        idx = 0
+        idx |= (binary[offset + 3] & 0x80) >> 7
+    if block_length >= 3:
+        idx |= (binary[offset + 2] & 0x0F) << 1
+        ascii_out[ascii_off + 4] = alphabet[idx]
+        idx = 0
+        idx |= (binary[offset + 2] & 0xF0) >> 4
+    if block_length >= 2:
+        idx |= (binary[offset + 1] & 0x01) << 4
+        ascii_out[ascii_off + 3] = alphabet[idx]
+        idx = 0
+        idx |= (binary[offset + 1] & 0x3E) >> 1
+        ascii_out[ascii_off + 2] = alphabet[idx]
+        idx = 0
+        idx |= (binary[offset + 1] & 0xC0) >> 6
+    if block_length >= 1:
+        idx |= (binary[offset] & 0x7) << 2
+        ascii_out[ascii_off + 1] = alphabet[idx]
+        idx = 0
+        idx |= binary[offset] >> 3
+        ascii_out[ascii_off] = alphabet[idx]
+
+def __get_node_hash(ref_str):
+    """
+    Return the IPOP internal address in the IPOP format for the given reference string.
+    @param ref_str  reference string
+    @return: a string representing the internal IPOP address for the given string
+    """
+    sha = hashlib.sha1()
+    sha.update(ref_str)
+    digest = sha.digest()
+    hash_bytes = [ord(x) for x in digest]
+    # set the first bit of the last byte to 0 to set the IPOP/Brunet P2P address class to unicast address AHAddress
+    hash_bytes[len(hash_bytes) - 1] &= 0xFE
+    return _to_base32(hash_bytes, 0, len(hash_bytes), True)
+    
 def configure_ipop(tmpl_dir, namespace, ip_base, netmask, ip_address=None, 
                    udp_port=0, bootstrap_nodes=None):
     """Create or re-write the configuration files required by IPOP.
@@ -41,13 +143,18 @@ def configure_ipop(tmpl_dir, namespace, ip_base, netmask, ip_address=None,
     """
     wanted_params = {
         'bootstrap.config': ( 'bootstrap_nodes', ),
-        'node.config': ( 'udp_port', 'bootstrap_nodes', ),
+        'node.config': ( 'udp_port', 'bootstrap_nodes', 'node_address'),
         'ipop.config': ( 'namespace', ),
         'ipop.vpn.config': ( 'ip_address', 'netmask', 'dhcp', 
                              'static', 'use_ipop_hostname' ),
         'dhcp.config': ( 'ip_base', 'netmask', 'namespace', ),
     }
-        
+    
+    if ip_address is None or namespace == '':
+        node_address = ''
+    else:
+        node_address = __get_node_hash(namespace + ip_address)
+    
     procedure_args = {
         'bootstrap_nodes' : bootstrap_nodes,
         'tmpl_dir': tmpl_dir,
@@ -55,7 +162,8 @@ def configure_ipop(tmpl_dir, namespace, ip_base, netmask, ip_address=None,
         'ip_base': ip_base,
         'netmask': netmask,
         'ip_address': ip_address,
-        'udp_port': udp_port
+        'udp_port': udp_port,
+        'node_address': node_address
     }
 
     if ip_address is None:
