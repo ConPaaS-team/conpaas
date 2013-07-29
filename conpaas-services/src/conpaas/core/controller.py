@@ -494,7 +494,8 @@ class Controller(object):
             agent_cfg += '\nIPOP_BASE_IP = %s' % self.__ipop_base_ip
             agent_cfg += '\nIPOP_NETMASK = %s' % self.__ipop_netmask
             agent_cfg += '\nIPOP_IP_ADDRESS = $IPOP_IP_ADDRESS'
-            agent_cfg += '\nIPOP_BOOTSTRAP_NODES = %s' % (self.__ipop_bootstrap_nodes or '')
+            if self.__ipop_bootstrap_nodes is not None:
+                agent_cfg += '\nIPOP_BOOTSTRAP_NODES = %s' % self.__ipop_bootstrap_nodes
 
         if os.path.isfile(agent_cfg_dir + '/' + service_name + '-agent.cfg'):
             agent_cfg_file = open(agent_cfg_dir +
