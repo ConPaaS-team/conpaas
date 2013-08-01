@@ -759,6 +759,7 @@ class DirectorTest(Common):
         bootstrap_nodes = 'udp://192.168.122.10:40000'
         cpsdirector.common.config_parser.set('conpaas', 'VPN_BOOTSTRAP_NODES', bootstrap_nodes)
         controller = cpsdirector.cloud.ManagerController(service_name="mysql", service_id=1, user_id=1, cloud_name="iaas", app_id=1, vpn=vpn)
+        controller._stop_reservation_timer()
         cloud = controller.get_cloud_by_name("iaas")
         controller.generate_context("mysql", cloud)
         self.assertIsNotNone(cloud.get_context(), "Context has not be initialized.")
@@ -774,6 +775,7 @@ class DirectorTest(Common):
         vpn = self._init_vpn()
         cpsdirector.common.config_parser.remove_option('conpaas', 'VPN_BOOTSTRAP_NODES')
         controller = cpsdirector.cloud.ManagerController(service_name="mysql", service_id=1, user_id=1, cloud_name="iaas", app_id=1, vpn=vpn)
+        controller._stop_reservation_timer()
         cloud = controller.get_cloud_by_name("iaas")
         controller.generate_context("mysql", cloud)
         self.assertIsNotNone(cloud.get_context(), "Context has not be initialized.")
