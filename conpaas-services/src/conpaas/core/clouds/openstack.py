@@ -64,4 +64,4 @@ class OpenStackCloud(Cloud):
             'ex_userdata': self.get_context()
         }
 
-        return self._create_service_nodes(self.driver.create_node(**kwargs))
+        return [ self._create_service_nodes(self.driver.create_node(**kwargs)) ]
