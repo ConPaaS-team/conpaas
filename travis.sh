@@ -9,6 +9,9 @@ then
     COVERAGE="`which coverage`"
 fi
 
+cd $CI_HOME/conpaas-services/src
+python setup.py install
+
 cd $CI_HOME/conpaas-client
 python setup.py install
 
