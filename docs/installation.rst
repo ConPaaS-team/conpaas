@@ -61,7 +61,7 @@ should be enabled in :file:`/etc/apt/sources.list` and
 :file:`/etc/apt/sources.list.d/`. 
 
 **cpsdirector** is available here:
-http://www.conpaas.eu/dl/cpsdirector-1.2.0.tar.gz. The tarball includes an
+http://www.conpaas.eu/dl/cpsdirector-1.2.1.tar.gz. The tarball includes an
 installation script called :file:`install.sh` for your convenience. You can
 either run it as root or follow the installation procedure outlined below in
 order to setup your ConPaaS Director installation.
@@ -78,7 +78,7 @@ order to setup your ConPaaS Director installation.
    $ sudo apt-get install ntpdate
    $ sudo ntpdate 0.us.pool.ntp.org
 
-#. Download http://www.conpaas.eu/dl/cpsdirector-1.2.0.tar.gz and
+#. Download http://www.conpaas.eu/dl/cpsdirector-1.2.1.tar.gz and
    uncompress it
 
 #. Run :command:`make install` as root
@@ -280,7 +280,7 @@ or as a regular user.
 
 As root::
 
-    $ sudo easy_install http://www.conpaas.eu/dl/cpsclient-1.2.0.tar.gz
+    $ sudo easy_install http://www.conpaas.eu/dl/cpsclient-1.2.1.tar.gz
 
 Or, if you do not have root privileges, ``cpsclient`` can also be installed in
 a Python virtual environment if ``virtualenv`` is available on your machine::
@@ -288,7 +288,7 @@ a Python virtual environment if ``virtualenv`` is available on your machine::
     $ virtualenv conpaas # create the 'conpaas' virtualenv
     $ cd conpaas
     $ source bin/activate # activate it
-    $ easy_install http://www.conpaas.eu/dl/cpsclient-1.2.0.tar.gz
+    $ easy_install http://www.conpaas.eu/dl/cpsclient-1.2.1.tar.gz
 
 .. _frontend-installation:
 
@@ -300,7 +300,7 @@ Director and Frontend are installed on the same host, but such does not need to
 be the case.
 
 The ConPaaS Frontend can be downloaded from
-http://www.conpaas.eu/dl/cpsfrontend-1.2.0.tar.gz. 
+http://www.conpaas.eu/dl/cpsfrontend-1.2.1.tar.gz. 
 
 After having uncompressed it you should install the required Debian packages::
 
