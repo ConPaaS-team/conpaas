@@ -24,7 +24,7 @@ core_pkgs = ['openssh-server', 'python', 'python-pycurl', 'python-openssl',
 php_pkgs = ['php5-fpm', 'php5-curl', 'php5-mcrypt', 'php5-mysql', 'php5-odbc',
             'php5-pgsql', 'php5-sqlite', 'php5-sybase', 'php5-xmlrpc',
             'php5-xsl', 'php5-adodb', 'php5-memcache', 'php5-gd', 'nginx',
-            'git', 'tomcat6-user', 'memcached']
+            'git', 'tomcat6-user', 'memcached','python-scipy']
 
 mysql_pkgs = ['mysql-server', 'python-mysqldb']
 
