@@ -54,7 +54,7 @@ To adapt the computing capacity to the service demand, autoscaling systems need 
 }
 \end{table}
 
-Similarly, to prevent future SLA violations, the selection of a scaling plan must be conditional on the current and future workload requirements. The allocation of an unsuitable resource combination can lead to loss in revenues as well as customer dissatisfaction. Therefore, we need medium-term traffic predictions to estimate the future service demand, and thereby enable to provision resources that will handle future changes in the workload, at least within the next hour. In summary, the selection of the resulting scaling plan has to find the tradeoff between the service demand and the capacity of this new configuration to fulfill the requirements. 
+To prevent future SLA violations, the selection of a scaling plan must be conditional on the current and future workload requirements. The allocation of an unsuitable resource combination can lead to loss in revenues as well as customer dissatisfaction. Therefore, we need medium-term traffic predictions to estimate the future service demand, and thereby enable to provision resources that will handle future changes in the workload, at least within the next hour. Hence, the selection of the resulting scaling plan has to find the tradeoff between the service demand and the capacity of this new configuration to fulfill the requirements. 
 
 %can dynamically allocate and de-allocate servers with different hardware configurations to adapt the computing capacity to the service demand. 
 
@@ -62,7 +62,7 @@ Similarly, to prevent future SLA violations, the selection of a scaling plan mus
 
 A new problem emerged as a result of this autoscaling approach that is an equitable load balancing of the incoming traffic. Traditional load balancing algorithms, such as round-robin, fastest or random, distribute the incoming traffic across the backend without considering the resource heterogeneity. Therefore, when provisioning multiple type of instances, a new load balancing algorithm is required to distribute the incoming traffic across the resources taken into consideration their performance capacity. 
 
-As a result, the goal of our work is to develop a system that supports elasticity for applications by choosing the most suited scaling plan according to the customer preferences.
+As a result, the goal of our work is to develop a system that supports elasticity for applications by choosing the most suited scaling plan according to the workload requirements and customer preferences.
 
 % Even though the diversity of hardware configurations is common in cloud infrastructures, the majority of autoscaling systems focus on the decision of when to provision rather than in the selection of suited resources.
 
