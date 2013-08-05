@@ -1,0 +1,15 @@
+{       
+	"EC2": {
+            "m1.small": 1,
+            "m1.large": 4,
+	        "m1.medium": 2,
+            "c1.medium": 5
+	},
+	"OPENNEBULA": {
+            "small": 1,
+            "medium": 3,
+	        "highcpu-medium": 5,
+            "large": 7
+	}
+}
+

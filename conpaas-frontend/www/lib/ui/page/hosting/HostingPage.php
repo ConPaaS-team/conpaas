@@ -10,7 +10,10 @@ class HostingPage extends ServicePage {
 
 	public function __construct(Service $service) {
 		parent::__construct($service);
+		$this->addJS('js/jquery-1.5.js');
 		$this->addJS('js/jquery.form.js');
+		$this->addJS('js/jquery-ui.js');
+		$this->addJS('js/autoscaling_slider.js');
 		$this->addJS('js/hosting.js');
 	}
 

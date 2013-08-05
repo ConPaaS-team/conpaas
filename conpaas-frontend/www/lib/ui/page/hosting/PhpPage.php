@@ -127,7 +127,76 @@ class PhpPage extends HostingPage {
         $html = '<input type="text" size="50" id="conf-disablefunctions" value="'.$value.'" />';
         return $html;
     }
+    
+    private function getCurrentCooldownTime() {
+		$conf = $this->service->getConfiguration();
+		if ($conf === null || !isset($conf->phpconf->cool_down)) {
+			// default value
+			return '10';
+		}
+		return $conf->phpconf->cool_down;
+	}
+    
+    public function renderCooldownTimeOptions() {
+		static $options = array('5','10','15');
+		$selected = $this->getCurrentCooldownTime();
+		$html = '<select id="conf-cool_down">';
+		foreach ($options as $option) {
+			$selectedField = $selected == $option ?
+				'selected="selected"' : '';
+			$html .= '<option value="'.$option.'" '.$selectedField.'>'
+				.$option.' minutes</option>';
+		}
+		$html .= ' </select>';
+		return $html;
+	}
+	
+	private function getCurrentResponseTime() {
+		$conf = $this->service->getConfiguration();
+		if ($conf === null || !isset($conf->phpconf->response_time)) {
+			// default value
+			return '700';
+		}
+		return $conf->phpconf->response_time;
+	}
+	
+	public function renderResponseTimeField() {
+        $value = $this->getCurrentResponseTime();
+        $html = '<input type="text" size="4" id="conf-response_time" value="'.$value.'" /> milliseconds';
+        return $html;
+    }
 
+	public function renderAutoscalingStatus() {
+		if ($this->service->isAutoscalingON()) {
+			return '<label class="checkbox toggle candy" onclick="" style="width: 100px"> <input id="scaling" type="checkbox" checked/><p><span>On</span><span>Off</span></p><a class="slide-button"></a></label>';
+				
+		}
+		return '<label class="checkbox toggle candy" onclick="" style="width: 100px"> <input id="scaling" type="checkbox" /><p><span>On</span><span>Off</span></p><a class="slide-button"></a></label>';
+	}
+	
+	public function renderAutoscalingSlider() {
+		return '<select name="strategy" id="strategy"><option value="low">Standard</option><option value="medium_low">Good</option><option value="medium">Well-Adjusted</option><option value="optimal">Optimal</option><option value="high">Excellent</option></select>';
+	}
+	
+	public function renderAutoscalingSettingsSection() {
+		return
+		'<div class="form-section">'
+			.'<div class="form-header">'
+				.'<div class="title" align="left">Autoscaling settings</div>'
+				.'<div class="clear" align="right">'.$this->renderAutoscalingStatus()
+				.'</div>'
+			.'</div>'
+			.'<table class="form settings-form">'
+				.$this->renderSettingsRow('Response time',
+					$this->renderResponseTimeField())
+				.$this->renderSettingsRow('Cool down time',
+					$this->renderCooldownTimeOptions())
+				.$this->renderSettingsRow('QoS autoscaling (performance/cost)',
+					$this->renderAutoscalingSlider())
+			.'</table>'
+		.'</div>';
+	}
+	
 	public function renderSettingsSection() {
 		return
 		'<div class="form-section">'
@@ -239,6 +308,7 @@ class PhpPage extends HostingPage {
 		return $this->renderInstancesSection()
 			.$this->renderCdsSection()
 			.$this->renderCodeSection()
+			.$this->renderAutoscalingSettingsSection()
 			.$this->renderSettingsSection();
 	}
 }

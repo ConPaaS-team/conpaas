@@ -91,7 +91,11 @@ class Page {
 	}
 
 	public function renderHeaderCSS() {
-		return self::renderCSSLink('conpaas.css');
+		$cssHeaders =  '';
+		$cssHeaders .= self::renderCSSLink('conpaas.css');
+		$cssHeaders .= self::renderCSSLink('autoscaling.css');
+		
+		return $cssHeaders;
 	}
 
 	public function renderJSLoad() {

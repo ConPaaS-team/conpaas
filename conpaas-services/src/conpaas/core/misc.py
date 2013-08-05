@@ -38,7 +38,9 @@ def verify_ip_port_list(l):
     if type(l) != list:
         raise TypeError('Expected a list of [IP, PORT]')
     for pair in l:
-        if len(pair) != 2:
+        ### FIXME HECTOR ...
+        #if len(pair) != 2:
+        if len(pair) < 2:
             raise TypeError('List should contain IP,PORT values')
         if 'ip' not in pair or 'port' not in pair:
             raise TypeError('List should contain IP,PORT values')

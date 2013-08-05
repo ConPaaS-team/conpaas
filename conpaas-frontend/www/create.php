@@ -50,7 +50,7 @@ $page = new Page();
               <tr class="service">
                   <td class="description"> <img src="images/scalaris.png" height="32" /></td>
                   <td class="radio"><input type="radio" name="type" value="scalaris" /> scalarix</td>
-                  <td class="info"> in-memory key-value store </td>
+                  <td class="info"> In-memory key-value store </td>
               </tr>
               <tr class="service">
                   <td class="description"> <img src="images/hadoop.png" height="32" /></td>
@@ -65,7 +65,7 @@ $page = new Page();
                <tr class="service">
                   <td class="description"> <img src="images/xtreemfs.png" height="32" /></td>
                   <td class="radio"><input type="radio" name="type" value="xtreemfs" /> xtreemfs</td>
-                  <td class="info"> distributed file system </td>
+                  <td class="info"> Distributed file system </td>
               </tr>
             <!--
                <tr class="service">

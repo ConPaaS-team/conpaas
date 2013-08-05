@@ -81,6 +81,7 @@ conpaas.ui = (function (this_module) {
             $('#saveconf').removeAttr('disabled');
         });
         $('#saveconf').click(that, that.onSaveConfig);
+        $('#scaling').click(that, that.onScaleConfig);
         $('#cds_subscribe').click(that, that.onCdsSubscribe);
         $('#cds_unsubscribe').click(that, that.onCdsUnsubscribe);
         $('#submitPubKey').click(that, that.onSubmitPubKey);        
@@ -239,6 +240,43 @@ conpaas.ui = (function (this_module) {
         }, function () {
             $(event.target).removeAttr('disabled');
         });
+    },
+    onScaleConfig: function (event) {
+        radio = document.getElementById("scaling").checked;
+        var page = event.data,
+            params = {
+                response_time: $('#conf-response_time').val(),
+                cool_down: $('#conf-cool_down').val(),
+                strategy: $('#strategy').val(),
+             sid: page.service.sid};
+       
+     	successHandler = function () {
+			alert('Autoscaling command succesfully sent.')
+        };
+        errorHandler = function () {
+            alert('ERROR when trying to send an autoscaling command.')
+        }
+        page.freezeInput(true);              
+        
+        if (!document.getElementById("scaling").checked){
+           page.server.req('ajax/off_autoscaling.php', params, 'post',
+                successHandler, errorHandler);
+
+           $('#conf-response_time').removeAttr('disabled');
+           $('#conf-cool_down').removeAttr('disabled');
+           $('#strategy').removeAttr('disabled');
+		   page.freezeInput(false); 
+           return;
+        } else {
+         	page.server.req('ajax/on_autoscaling.php', params, 'post',
+                successHandler, errorHandler);
+            
+             $('#conf-response_time').attr('disabled', 'disabled');
+             $('#conf-cool_down').attr('disabled', 'disabled');
+             $('#strategy').attr('disabled', 'disabled');
+             page.freezeInput(false); 
+        }
+
     },
     onCdsSubscribe: function (event) {
         var page = event.data;

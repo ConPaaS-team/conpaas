@@ -29,9 +29,10 @@ class PHPService extends Service {
 		if (!$this->isReachable()) {
 			return null;
 		}
-		if ($this->conf !== null) {
-			return $this->conf;
-		}
+		// It is needed to refresh the data
+		//if ($this->conf !== null) {
+		//	return $this->conf;
+		//}
 		$json = $this->managerRequest('get', 'get_configuration', array());
 		$conf = json_decode($json);
 		if ($conf == null) {
@@ -79,6 +80,14 @@ class PHPService extends Service {
 		return false;
 	}
 
+	public function isAutoscalingON() {
+		$conf = $this->getConfiguration();
+		if ($conf && isset($conf->autoscaling) && $conf->autoscaling) {
+			return true;
+		}
+		return false;
+	}
+	
 	public function getCds() {
 		return $this->cds;
 	}

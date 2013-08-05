@@ -8,6 +8,7 @@
 
     :copyright: (C) 2010-2013 by Contrail Consortium.
 """
+DEFAULT_WEIGHT = 100
 
 class ServiceNode(object):
     '''
@@ -17,11 +18,12 @@ class ServiceNode(object):
 
     '''
 
-    def __init__(self, vmid, ip, private_ip, cloud_name):
+    def __init__(self, vmid, ip, private_ip, cloud_name, weightBackend=DEFAULT_WEIGHT):
         self.id = vmid
         self.ip = ip
         self.private_ip = private_ip
         self.cloud_name = cloud_name
+        self.weightBackend = weightBackend
 
     def __repr__(self):
         return 'ServiceNode(id=%s, ip=%s)' % (str(self.id), self.ip)

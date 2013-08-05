@@ -10,11 +10,12 @@ import re, tarfile, tempfile, stat, os.path
 from conpaas.services.webservers.manager.config import CodeVersion, PHPServiceConfiguration
 from conpaas.services.webservers.agent import client
 from conpaas.core.https.server import HttpErrorResponse, HttpJsonResponse
-
 from . import BasicWebserversManager, ManagerException
 from conpaas.core.expose import expose
 
 from conpaas.core import git
+from conpaas.services.webservers.manager.autoscaling.scaler import ProvisioningManager 
+from multiprocessing.pool import ThreadPool
 
 class PHPManager(BasicWebserversManager):
   
@@ -23,6 +24,11 @@ class PHPManager(BasicWebserversManager):
       if kwargs['reset_config']:
         self._create_initial_configuration()
       self._register_scalaris(kwargs['scalaris'])
+      
+      try:
+          self.scaler = ProvisioningManager(config_parser)
+      except Exception as ex:
+          self.logger.exception('Failed to initialize the Provisioning Manager %s' % str(ex))
   
     def _update_code(self, config, nodes):
       for serviceNode in nodes:
@@ -123,7 +129,40 @@ class PHPManager(BasicWebserversManager):
               'codeVersionId': config.currentCodeVersion,
               'phpconf': phpconf,
               'cdn': config.cdn,
+              'autoscaling':config.autoscaling
               })
+
+    @expose('POST')
+    def on_autoscaling(self, kwargs):
+      self.logger.info('on_autoscaling entering')  
+      try:
+         self.autoscaling_threads = ThreadPool(processes=1)
+         if isinstance(int(kwargs['cool_down']), int) and isinstance(int(kwargs['response_time']), int) and kwargs['strategy']:
+            self.autoscaling_threads.apply_async(self.scaler.do_provisioning, (int(kwargs.pop('response_time')), int(kwargs.pop('cool_down')), kwargs.pop('strategy')))
+            #self.logger.info('on_autoscaling passed %s' % str( int(kwargs.pop('response_time')) ) )
+            config = self._configuration_get()
+            config.autoscaling = True
+            self._configuration_set(config)
+         return HttpJsonResponse({'autoscaling': config.autoscaling})   
+      except Exception as ex:
+        self.logger.critical('Error when trying to start the autoscaling mechanism ')
+        return HttpErrorResponse(str(ex)) 
+
+    @expose('POST')
+    def off_autoscaling(self, kwargs):
+      self.logger.info('off_autoscaling entering')  
+      try:
+        self.autoscaling_threads.terminate()
+        self.scaler.stop_provisioning()
+        config = self._configuration_get()
+        config.autoscaling = False
+        self._configuration_set(config)
+        
+        self.logger.info('off_autoscaling done.')
+        return HttpJsonResponse({'autoscaling': config.autoscaling})
+      except Exception as ex:
+        self.logger.critical('Error when trying to stop the autoscaling mechanism ')
+        return HttpErrorResponse(str(ex)) 
 
     @expose('POST')
     def update_php_configuration(self, kwargs):
@@ -183,6 +222,7 @@ class PHPManager(BasicWebserversManager):
       config.web_count = 0
       config.proxy_count = 1
       config.cdn = False
+      config.autoscaling = False
     
       if not os.path.exists(self.code_repo):
         os.makedirs(self.code_repo)

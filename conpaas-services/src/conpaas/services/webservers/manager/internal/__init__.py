@@ -1,8 +1,64 @@
-# -*- coding: utf-8 -*-
+'''
+Copyright (c) 2010-2012, Contrail consortium.
+All rights reserved.
 
-"""
-    :copyright: (C) 2010-2013 by Contrail Consortium.
-"""
+Redistribution and use in source and binary forms, 
+with or without modification, are permitted provided
+that the following conditions are met:
+
+ 1. Redistributions of source code must retain the
+    above copyright notice, this list of conditions
+    and the following disclaimer.
+ 2. Redistributions in binary form must reproduce
+    the above copyright notice, this list of 
+    conditions and the following disclaimer in the
+    documentation and/or other materials provided
+    with the distribution.
+ 3. Neither the name of the Contrail consortium nor the
+    names of its contributors may be used to endorse
+    or promote products derived from this software 
+    without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
+BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
+
+
+Created on Feb 8, 2011
+
+@author: ielhelw
+
+- What is a deployment?
+  A set of VMs logically grouped into 3 roles; web servers, php and load balancers.
+
+- What is the configuration?
+  web servers:    port, list of php (ip, port)
+  php:           port
+  load balancer:  port, list of web servers (ip, port)
+  CODE to be placed at doc_root of all webserver VMs. Any file ending with
+  '.php' is considered a dynamic script and will be passed to an php process.
+  CODE should be located at the same directory path at all web servers and
+  phps.
+
+- How is a deployment started?
+  A VM is created by the cloud front-end to host the MANAGER. The manager reads
+  the initial configuration (from cloud storage or service?) and starts
+  requesting VMs as needed by the configuration. Each VM will host an AGENT
+  that is responsible for starting processes in it. The MANAGER will assign
+  roles to each VM by instructing their AGENTs to run certain processes.
+  
+'''
 
 from threading import Thread
 import memcache, tempfile, os, os.path, time
@@ -17,12 +73,24 @@ from conpaas.core.expose import expose
 from conpaas.core.manager import BaseManager
 from conpaas.core.manager import ManagerException
 
+
 from conpaas.core import git
 
 class BasicWebserversManager(BaseManager):
   # memcache keys
   CONFIG = 'config'
   DEPLOYMENT_STATE = 'deployment_state'
+  
+  # Default load balancing weight for nodes. 
+  DEFAULT_NODE_WEIGHT = 100
+    
+  S_INIT = 'INIT'
+  S_PROLOGUE = 'PROLOGUE'
+  S_RUNNING = 'RUNNING'
+  S_ADAPTING = 'ADAPTING'
+  S_EPILOGUE = 'EPILOGUE'
+  S_STOPPED = 'STOPPED'
+  S_ERROR = 'ERROR'
   
   def __init__(self, config_parser):
     BaseManager.__init__(self, config_parser)
@@ -35,6 +103,8 @@ class BasicWebserversManager(BaseManager):
 
     self.code_repo = config_parser.get('manager', 'CODE_REPO') 
     self.state_log = []
+    
+  
      
   def _state_get(self):
     return self.memcache.get(self.DEPLOYMENT_STATE)
@@ -100,7 +170,7 @@ class BasicWebserversManager(BaseManager):
           self.logger.exception('Failed to stop web at node %s' % str(serviceNode))
           self._state_set(self.S_ERROR, msg='Failed to stop web at node %s' % str(serviceNode))
           raise
-  
+
   @expose('POST')
   def startup(self, kwargs):
     
@@ -127,12 +197,11 @@ class BasicWebserversManager(BaseManager):
       serviceNodeKwargs.extend([ {'runWeb':True} for _ in range(config.web_count) ])
       serviceNodeKwargs.extend([ {'runBackend':True} for _ in range(config.backend_count) ])
     
-    self._state_set(self.S_PROLOGUE, msg='Starting up')
-
-    kwargs['config'] = config
-    kwargs['serviceNodeKwargs'] = serviceNodeKwargs
+    #if not self._deduct_credit(len(serviceNodeKwargs)):
+    #  return HttpErrorResponse(ManagerException(ManagerException.E_NOT_ENOUGH_CREDIT).message)
     
-    Thread(target=self.do_startup, kwargs=kwargs).start()
+    self._state_set(self.S_PROLOGUE, msg='Starting up')
+    Thread(target=self.do_startup, args=[config, serviceNodeKwargs, kwargs['cloud']]).start()
     return HttpJsonResponse({'state': self.S_PROLOGUE})
   
   @expose('POST')
@@ -151,14 +220,7 @@ class BasicWebserversManager(BaseManager):
   
   def do_startup(self, config, serviceNodeKwargs, cloud):
     self.logger.debug('do_startup: Going to request %d new nodes' % len(serviceNodeKwargs))
-
-    try:
-      cloud = self._init_cloud(cloud)
-    except Exception:
-      self.logger.exception("A cloud named '%s' could not be found" % cloud)
-      self._state_set(self.S_STOPPED, msg='Unknown cloud: %s' % cloud)
-      return 
-
+    cloud = self._init_cloud(cloud)
     try:
       self._adapting_set_count(len(serviceNodeKwargs))
       node_instances = self.controller.create_nodes(len(serviceNodeKwargs),
@@ -217,6 +279,10 @@ class BasicWebserversManager(BaseManager):
     backend = 0
     web = 0
     proxy = 0
+    
+    vm_backend_type = None
+    vm_web_type = None
+    
     if 'backend' in kwargs:
       if not isinstance(kwargs['backend'], int):
         return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_INVALID, detail='Expected an integer value for "backend"').message)
@@ -235,14 +301,29 @@ class BasicWebserversManager(BaseManager):
     if (backend + web + proxy) < 1:
       return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_MISSING, ['backend', 'web', 'proxy'], detail='Need a positive value for at least one').message)
     
+    ####### ADDED SCALING V2: ######################
+    if 'vm_backend_instance' in kwargs:
+      self.logger.info('VM BACKEND INSTACE: %s' % str(kwargs['vm_backend_instance']))    
+      if not isinstance(str(kwargs['vm_backend_instance']), basestring):
+        return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_INVALID, detail='Expected a string value for "vm_backend_instance"').message)
+      vm_backend_type = kwargs.pop('vm_backend_instance')
+      if len(vm_backend_type) <= 0: return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_INVALID, detail='Expected a string value for "vm_backend_instance"').message)
+    if 'vm_web_instance' in kwargs:
+      self.logger.info('VM WEB INSTACE: %s' % str(kwargs['vm_web_instance']))    
+      if not isinstance(str(kwargs['vm_web_instance']), basestring):
+        return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_INVALID, detail='Expected a string value for "vm_web_instance"').message)
+      vm_web_type = kwargs.pop('vm_web_instance')
+      if len(vm_web_type) <= 0: return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_INVALID, detail='Expected a string value for "vm_web_instance"').message)
+    #############################
+  
     if (proxy + config.proxy_count) > 1 and ( (web + config.web_count) == 0 or (backend + config.backend_count) == 0 ):
       return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_INVALID, detail='Cannot add more proxy servers without at least one "web" and one "backend"').message)
     
-    self._state_set(self.S_ADAPTING, msg='Going to add proxy=%d, web=%d, backend=%d' % (proxy, web, backend))
-    Thread(target=self.do_add_nodes, args=[config, proxy, web, backend, kwargs['cloud']]).start()
+    self._state_set(self.S_ADAPTING, msg='Going to add proxy=%d, web=%d, backend=%d, vm_backend_type=%s, vm_web_type=%s, cloud=%s' % (proxy, web, backend,str(vm_backend_type), str(vm_web_type), str(kwargs['cloud'])))
+    Thread(target=self.do_add_nodes, args=[config, proxy, web, backend, kwargs['cloud'], vm_backend_type, vm_web_type]).start()
     return HttpJsonResponse()
   
-  def do_add_nodes(self, config, proxy, web, backend, cloud):
+  def do_add_nodes(self, config, proxy, web, backend, cloud, vm_backend_type, vm_web_type):
     webNodesNew = []
     proxyNodesNew = []
     backendNodesNew = []
@@ -250,13 +331,7 @@ class BasicWebserversManager(BaseManager):
     webNodesKill = []
     backendNodesKill = []
     
-    try:
-      cloud = self._init_cloud(cloud)
-    except Exception:
-      self.logger.exception("A cloud named '%s' could not be found" % cloud)
-      self._state_set(self.S_RUNNING, msg='Unknown cloud: %s' % cloud)
-      return 
-
+    cloud = self._init_cloud(cloud)
     if backend > 0 and config.backend_count == 0:
       backendNodesKill.append(config.getBackendServiceNodes()[0])
     if web > 0 and config.web_count == 0:
@@ -272,8 +347,17 @@ class BasicWebserversManager(BaseManager):
     newNodes = []
     try:
       self._adapting_set_count(len(proxyNodesNew) + len(webNodesNew) + len(backendNodesNew))
-      node_instances = self.controller.create_nodes(len(proxyNodesNew) + len(webNodesNew) + len(backendNodesNew),
-                                                    client.check_agent_process, 5555, cloud)
+      if proxy > 0:
+        node_instances = self.controller.create_nodes(len(proxyNodesNew), client.check_agent_process, 5555, cloud)
+      if web > 0 and vm_web_type is None:
+        node_instances = self.controller.create_nodes(len(webNodesNew), client.check_agent_process, 5555, cloud)
+      elif web > 0:
+        node_instances = self.controller.create_nodes(len(webNodesNew), client.check_agent_process, 5555, cloud, inst_type = vm_web_type)  
+      
+      if backend > 0 and vm_backend_type is None:
+        node_instances = self.controller.create_nodes(len(backendNodesNew), client.check_agent_process, 5555, cloud)
+      elif backend > 0:
+        node_instances = self.controller.create_nodes(len(backendNodesNew), client.check_agent_process, 5555, cloud, inst_type = vm_backend_type)      
     except:
       self.logger.exception('do_add_nodes: Failed to request new nodes. Needed %d' % (len(proxyNodesNew + webNodesNew + backendNodesNew)))
       self._state_set(self.S_RUNNING, msg='Failed to request new nodes. Reverting to old configuration')
@@ -283,7 +367,7 @@ class BasicWebserversManager(BaseManager):
     
     i = 0
     for kwargs in proxyNodesNew + webNodesNew + backendNodesNew:
-      config.serviceNodes[node_instances[i].id] = WebServiceNode(node_instances[i], **kwargs)
+      config.serviceNodes[node_instances[i].id] = WebServiceNode(node_instances[i], self.DEFAULT_NODE_WEIGHT, self.DEFAULT_NODE_WEIGHT, **kwargs)
       newNodes += [ config.serviceNodes[node_instances[i].id] ]
       i += 1
     config.update_mappings()
@@ -327,6 +411,8 @@ class BasicWebserversManager(BaseManager):
     web = 0
     proxy = 0
     
+    node_ip = None
+    
     if 'backend' in kwargs:
       if not isinstance(kwargs['backend'], int):
         return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_INVALID, detail='Expected an integer value for "backend"').message)
@@ -344,6 +430,15 @@ class BasicWebserversManager(BaseManager):
       if proxy < 0: return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_INVALID, detail='Expected a positive integer value for "proxy"').message)
     if (backend + web + proxy) < 1:
       return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_MISSING, ['backend', 'web', 'proxy'], detail='Need a positive value for at least one').message)
+    
+    ####### ADDED SCALING V2: ######################
+    if 'node_ip' in kwargs:
+      self.logger.info('IP Node to remove: %s' % str(kwargs['node_ip']))    
+      if not isinstance(str(kwargs['node_ip']), basestring):
+        return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_INVALID, detail='Expected a string value for "node_ip"').message)
+      node_ip = kwargs.pop('node_ip')
+      if len(node_ip) <= 0: return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_INVALID, detail='Expected a string value for "node_ip"').message)
+    #############################
     if len(kwargs) != 0:
       return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
     
@@ -359,14 +454,15 @@ class BasicWebserversManager(BaseManager):
       return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_INVALID, detail='Cannot remove_nodes that many backend nodes').message)
     
     dstate = self._state_get()
-    if dstate != self.S_RUNNING:
-      return HttpErrorResponse(ManagerException(ManagerException.E_STATE_ERROR).message)
+    #FIXME: Problem with the states
+   # if dstate != self.S_RUNNING:
+    #  return HttpErrorResponse(ManagerException(ManagerException.E_STATE_ERROR).message)
     
     self._state_set(self.S_ADAPTING, msg='Going to remove_nodes proxy=%d, web=%d, backend=%d' %(proxy, web, backend))
-    Thread(target=self.do_remove_nodes, args=[config, proxy, web, backend]).start()
+    Thread(target=self.do_remove_nodes, args=[config, proxy, web, backend, node_ip]).start()
     return HttpJsonResponse()
   
-  def do_remove_nodes(self, config, proxy, web, backend):
+  def do_remove_nodes(self, config, proxy, web, backend, node_ip=None):
     packBackend = False
     packWeb = False
     packingNode = None
@@ -376,12 +472,22 @@ class BasicWebserversManager(BaseManager):
     proxyNodesKill = []
     
     if web > 0:
-      webNodesKill += config.getWebServiceNodes()[-web:]
+      if node_ip != None:
+          for serviceNode in config.getWebServiceNodes():
+              if( serviceNode.ip == node_ip):
+                webNodesKill.append(serviceNode)
+      else:     
+          webNodesKill += config.getWebServiceNodes()[-web:]
       if config.web_count - web == 0:
         packWeb = True
     
     if backend > 0:
-      backendNodesKill += config.getBackendServiceNodes()[-backend:]
+      if node_ip != None:  
+          for serviceNode in config.getBackendServiceNodes():
+              if( serviceNode.ip == node_ip):
+                backendNodesKill.append(serviceNode)             
+      else:
+          backendNodesKill += config.getBackendServiceNodes()[-backend:]
       if config.backend_count - backend == 0:
         packBackend = True
     
@@ -396,7 +502,7 @@ class BasicWebserversManager(BaseManager):
     if packWeb: packingNode.isRunningWeb = True
     
     config.update_mappings()
-    
+    self.logger.info("Remove_nodes "+str(config.serviceNodes))
     # new nodes
     if packBackend:
       # NOTE: Code update is done after starting the backend
@@ -410,27 +516,87 @@ class BasicWebserversManager(BaseManager):
     if webNodesKill or backendNodesKill:
       self._update_proxy(config, [ i for i in config.serviceNodes.values() if i.isRunningProxy and i not in proxyNodesKill ])
     
-    # remove_nodes nodes
-    self._stop_backend(config, backendNodesKill)
-    self._stop_web(config, webNodesKill)
-    self._stop_proxy(config, proxyNodesKill)
+    try:
+        # remove_nodes nodes
+        self._stop_backend(config, backendNodesKill)
+        self._stop_web(config, webNodesKill)
+        self._stop_proxy(config, proxyNodesKill)
     
-    for i in config.serviceNodes.values():
-      if not i.isRunningBackend and not i.isRunningWeb and not i.isRunningProxy:
-        del config.serviceNodes[i.id]
-        self.controller.delete_nodes([i])
+ #   self.logger.info("Internal php: service nodes "+str(config.serviceNodes.values()))
+        for i in config.serviceNodes.values():
+          if not i.isRunningBackend and not i.isRunningWeb and not i.isRunningProxy:
+            del config.serviceNodes[i.id]
+            self.controller.delete_nodes([i])
+    #    self.logger.info("Internal php: Removing_node "+str(i.id))   
+
     
+        config.proxy_count = len(config.getProxyServiceNodes())
+        config.backend_count = len(config.getBackendServiceNodes())
+        if config.backend_count == 1 and config.getBackendServiceNodes()[0] in config.getProxyServiceNodes():
+            config.backend_count = 0
+        config.web_count = len(config.getWebServiceNodes())
+        if config.web_count == 1 and config.getWebServiceNodes()[0] in config.getProxyServiceNodes():
+            config.web_count = 0
+      
+        #  config.update_mappings()
+        self.logger.info("Remove_nodes "+str(config.serviceNodes))
     
-    config.proxy_count = len(config.getProxyServiceNodes())
-    config.backend_count = len(config.getBackendServiceNodes())
-    if config.backend_count == 1 and config.getBackendServiceNodes()[0] in config.getProxyServiceNodes():
-      config.backend_count = 0
-    config.web_count = len(config.getWebServiceNodes())
-    if config.web_count == 1 and config.getWebServiceNodes()[0] in config.getProxyServiceNodes():
-      config.web_count = 0
+    except Exception as ex:
+       self.logger.critical('Error when trying to remove ')    
     
     self._state_set(self.S_RUNNING)
     self._configuration_set(config)
+
+       
+  @expose('POST')
+  def update_nodes_weight(self, kwargs):
+    config = self._configuration_get()
+    dstate = self._state_get()
+    if dstate != self.S_RUNNING:
+      self.logger.critical('update_nodes_weight function: STATE_ERROR')
+      return HttpErrorResponse(ManagerException(ManagerException.E_STATE_ERROR).message)
+    
+    self.logger.debug('Received request to update nodes weight...')
+    
+    backend_weights = {}
+    web_weights = {}
+
+    if 'web' in kwargs:
+      if not isinstance(kwargs['web'], dict):
+        return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_INVALID, detail='Expected a dictionary value for "web"').message)
+      web_weights = kwargs.pop('web')
+          
+    if 'backend' in kwargs:
+      if not isinstance(kwargs['backend'], dict):
+        return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_INVALID, detail='Expected a dictionary value for "backend"').message)
+      backend_weights = kwargs.pop('backend')
+      
+    for web_id in web_weights:
+      if web_id not in config.serviceNodes:
+        return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_INVALID, detail='The web node ID does not exist').message)
+      self.logger.debug('Updating web weight for node: %s to: %s ' % (str(web_id), str(web_weights[web_id])))
+      config.serviceNodes[web_id].weightWeb = int(web_weights[web_id])
+      
+    for backend_id in backend_weights:
+      if backend_id not in config.serviceNodes:
+        return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_INVALID, detail='The backend node ID does not exist').message)
+      self.logger.debug('Updating backend weight for node: %s to: %s ' % (str(backend_id), str(backend_weights[backend_id])))
+      config.serviceNodes[backend_id].weightBackend = int(backend_weights[backend_id])
+     
+    self.logger.debug("Result of updating node weights: %s" % str(config.serviceNodes))
+    
+    for web_id in web_weights:
+      if web_id not in config.serviceNodes:
+        return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_INVALID, detail='The web node ID does not exist').message)
+      config.serviceNodes[web_id].webWeight = int(web_weights[web_id])
+    
+    config.update_mappings()  
+    self._update_proxy(config, [ i for i in config.serviceNodes.values() if i.isRunningProxy ])
+    self._configuration_set(config)
+
+    return HttpJsonResponse()
+ 
+  
   
   @expose('GET')
   def list_nodes(self, kwargs):
@@ -465,6 +631,8 @@ class BasicWebserversManager(BaseManager):
                             'isRunningProxy': serviceNode.isRunningProxy,
                             'isRunningWeb': serviceNode.isRunningWeb,
                             'isRunningBackend': serviceNode.isRunningBackend,
+                            'weightWeb': serviceNode.weightWeb,
+                            'weightBackend': serviceNode.weightBackend
                             }
             })
 
@@ -582,6 +750,7 @@ class BasicWebserversManager(BaseManager):
       return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
 
     config = self._configuration_get()
+    webServiceNodes = config.getWebServiceNodes()
 
     repo = git.DEFAULT_CODE_REPO
     codeVersionId = git.git_code_version(repo)
@@ -660,7 +829,7 @@ class BasicWebserversManager(BaseManager):
     self.controller.generate_context("web")
 
     # All is good. Return the filename of the uploaded script
-    return HttpJsonResponse({ 'filename': ret })
+    return HttpJsonResponse({ 'filename': ret })  
 
   @expose('GET')
   def get_startup_script(self, kwargs):

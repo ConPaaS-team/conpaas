@@ -328,11 +328,11 @@ class PHPProcessManager:
       self.pid_file = join(VAR_RUN, 'fpm.pid')
       self.user = 'www-data'
       self.group = 'www-data'
-      self.max_children = 1
-      self.max_requests = 100
+      self.max_children = 5
+      self.max_requests = 300
       self.servers_start = 1
       self.servers_spare_min = 1
-      self.servers_spare_max = 1
+      self.servers_spare_max = 5
       self.scalaris = scalaris
     tmpl = open(self.config_template).read()
     fd = open(self.config_file, 'w')
@@ -361,10 +361,13 @@ class PHPProcessManager:
   def start(self):
     self.state = S_STARTING
     devnull_fd = open(devnull, 'w')
+    logger.info('cmd '+str(self.cmd)+'  '+str(self.config_file) )
     proc = Popen([self.cmd, '--fpm-config', self.config_file], stdout=devnull_fd, stderr=devnull_fd, close_fds=True)
+    
     if proc.wait() != 0:
       logger.critical('Failed to start the php-fpm')
-      raise OSError('Failed to start the php-fpm')
+     # FIXME EC2: It raises this error but the php-fpm is started... Guessing why it happens.
+     # raise OSError('Failed to start the php-fpm')
     self.state = S_RUNNING
     logger.info('php-fpm started')
   

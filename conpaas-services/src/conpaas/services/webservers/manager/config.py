@@ -12,6 +12,7 @@
 BACKEND_PORT = 9000
 WEB_PORT = 8080
 PROXY_PORT = 80
+DEFAULT_WEIGHT = 100
 
 memcache = None
 iaas = None
@@ -20,18 +21,21 @@ import time
 from conpaas.core.node import ServiceNode
 
 class WebServiceNode(ServiceNode):
-  def __init__(self, node, runProxy=False, runWeb=False, runBackend=False):
+  def __init__(self, node,  weightWeb= DEFAULT_WEIGHT, weightBackend=DEFAULT_WEIGHT, runProxy=False, runWeb=False, runBackend=False):
     ServiceNode.__init__(self, node.id,
                          node.ip, node.private_ip,
-                         node.cloud_name)
+                         node.cloud_name, weightBackend)
     self.isRunningProxy = runProxy
     self.isRunningWeb = runWeb
     self.isRunningBackend = runBackend
+    
+    self.weightBackend = weightBackend
+    self.weightWeb = weightWeb
   
   def __repr__(self):
-    return 'ServiceNode(id=%s, ip=%s, proxy=%s, web=%s, backend=%s)'\
+    return 'ServiceNode(id=%s, ip=%s, proxy=%s, web=%s, backend=%s, weight web=%s, weight backend=%s)'\
            % (str(self.id), self.ip, str(self.isRunningProxy), \
-             str(self.isRunningWeb), str(self.isRunningBackend))
+             str(self.isRunningWeb), str(self.isRunningBackend), str(self.weightWeb), str(self.weightBackend))
   
 class CodeVersion(object):
   def __init__(self, id, filename, atype, description=''):
@@ -124,7 +128,7 @@ class ServiceConfiguration(object):
     return [ serviceNode for serviceNode in self.serviceNodes.values() if serviceNode.isRunningBackend ]
   
   def getBackendTuples(self):
-    return [ {'ip': serviceNode.ip, 'port': BACKEND_PORT} for serviceNode in self.serviceNodes.values() if serviceNode.isRunningBackend ]
+    return [ {'ip': serviceNode.ip, 'port': BACKEND_PORT, 'weightBackend': serviceNode.weightBackend} for serviceNode in self.serviceNodes.values() if serviceNode.isRunningBackend ]
   
   def getWebTuples(self):
     return [ {'ip': serviceNode.ip, 'port': WEB_PORT} for serviceNode in self.serviceNodes.values() if serviceNode.isRunningWeb ]
@@ -143,6 +147,7 @@ class PHPServiceConfiguration(ServiceConfiguration):
     ServiceConfiguration.__init__(self)
     self.backend_config = PHP_FPM_Configuration()
     self.prevCodeVersion = None
+    self.autoscaling = False
 
 class JavaServiceConfiguration(ServiceConfiguration):
   def __init__(self):
