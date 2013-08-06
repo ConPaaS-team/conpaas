@@ -1,3 +1,4 @@
+import sys
 import unittest
 
 from core import test_agent
@@ -17,4 +18,7 @@ suites = [
 ]
 
 alltests = unittest.TestSuite(suites)
-unittest.TextTestRunner(verbosity=2).run(alltests)
+result = unittest.TextTestRunner(verbosity=2).run(alltests)
+
+if not result.wasSuccessful():
+    sys.exit(1)
