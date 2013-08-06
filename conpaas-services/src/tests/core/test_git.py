@@ -75,8 +75,10 @@ class TestGit(unittest.TestCase):
         repo = git.git_create_tmp_repo() 
         code_version = git.git_code_version(repo)
 
-        # git_code_version should something like '68ed1b0'
-        self.assertIsNot(None, re.match("^[a-z0-9]{7,7}$", code_version))
+        # git_code_version should be something like '68ed1b0'
+        patter = "^[a-z0-9]{7,7}$"
+        self.assertIsNot(None, re.match(pattern, code_version), 
+            "code_version '%s' does not match '%s'" % (code_version, pattern))
 
     @unittest.skipUnless(run_cmd('git')[0], "requires Git")
     def test_06_git_last_description(self):
