@@ -69,17 +69,16 @@ class TestGit(unittest.TestCase):
         # we should now have no authorized_key left
         self.assertEquals(0, len(git.get_authorized_keys()))
 
-    @unittest.skipUnless(git.git_create_tmp_repo(), "requires Git")
     def test_05_git_code_version(self):
         repo = git.git_create_tmp_repo() 
         code_version = git.git_code_version(repo)
+        print "XXX_05", code_version
 
         # git_code_version should be something like '68ed1b0'
         pattern = "^[a-z0-9]{7,7}$"
         self.assertIsNot(None, re.match(pattern, code_version), 
             "code_version '%s' does not match '%s'" % (code_version, pattern))
 
-    @unittest.skipUnless(git.git_create_tmp_repo(), "requires Git")
     def test_06_git_last_description(self):
         repo = git.git_create_tmp_repo() 
         self.assertEquals("Initial commit", git.git_last_description(repo))
@@ -88,6 +87,7 @@ class TestGit(unittest.TestCase):
         target_dir = tempfile.mkdtemp()
         repo = git.git_create_tmp_repo()
         rev = git.git_code_version(repo) 
+        print "XXX_07", rev
 
         dest_dir = git.git_enable_revision(target_dir, repo, rev)
 
