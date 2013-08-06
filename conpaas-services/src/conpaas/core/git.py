@@ -77,7 +77,7 @@ def git_create_tmp_repo():
     if res[1]:
         raise Exception(res[1])
 
-    res = run_cmd('git commit -am "Initial commit"', repo_path)
+    res = run_cmd('git commit --author "ConPaaS <info@conpaas.eu>" -am "Initial commit"', repo_path)
     if res[1]:
         raise Exception(res[1])
 

@@ -4,16 +4,12 @@ import re
 import unittest
 
 from conpaas.core import git
-from conpaas.core.misc import run_cmd
 
 class TestGit(unittest.TestCase):
 
     def setUp(self):
         git.AUTH_KEYS_FILENAME = "/tmp/conpaas_git_authorized_keys"
         open(git.AUTH_KEYS_FILENAME, 'w').write("")
-
-        if not run_cmd("git config --get user.email")[0]:
-            run_cmd("git config --global user.email info@conpaas.eu")
 
     def test_01_empty_authorized_keys(self):
         # get_authorized_keys should return 0 with an empty file
@@ -76,7 +72,6 @@ class TestGit(unittest.TestCase):
     def test_05_git_code_version(self):
         repo = git.git_create_tmp_repo() 
         code_version = git.git_code_version(repo)
-        print "XXX_05", code_version
 
         # git_code_version should be something like '68ed1b0'
         pattern = "^[a-z0-9]{7,7}$"
@@ -91,7 +86,6 @@ class TestGit(unittest.TestCase):
         target_dir = tempfile.mkdtemp()
         repo = git.git_create_tmp_repo()
         rev = git.git_code_version(repo) 
-        print "XXX_07", rev
 
         dest_dir = git.git_enable_revision(target_dir, repo, rev)
 
