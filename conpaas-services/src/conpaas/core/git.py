@@ -85,7 +85,12 @@ def git_code_version(repo):
 
     """
     cmd = 'git log -1 --pretty=oneline --format="%h"'
-    return run_cmd(cmd, repo)[0].rstrip()
+    res = run_cmd(cmd, repo)
+
+    if res[1]:
+        raise Exception(res[1])
+
+    return res[0].rstrip()
 
 def git_last_description(repo):
     """Return a string containing the subject line of the last commit performed
