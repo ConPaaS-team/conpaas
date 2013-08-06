@@ -12,11 +12,8 @@ class TestGit(unittest.TestCase):
         git.AUTH_KEYS_FILENAME = "/tmp/conpaas_git_authorized_keys"
         open(git.AUTH_KEYS_FILENAME, 'w').write("")
 
-        if not run_cmd("git config --get user.email"):
+        if not run_cmd("git config --get user.email")[0]:
             run_cmd("git config --global user.email info@conpaas.eu")
-
-        if not run_cmd("git config --get user.name"):
-            run_cmd("git config --global user.name ConPaaS")
 
     def test_01_empty_authorized_keys(self):
         # get_authorized_keys should return 0 with an empty file
