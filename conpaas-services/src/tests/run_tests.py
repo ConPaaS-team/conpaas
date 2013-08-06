@@ -17,5 +17,4 @@ suites = [
 ]
 
 alltests = unittest.TestSuite(suites)
-
-alltests.run(unittest.result.TestResult())
+unittest.TextTestRunner(verbosity=2).run(alltests)
