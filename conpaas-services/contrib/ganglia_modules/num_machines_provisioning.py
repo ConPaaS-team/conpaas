@@ -80,7 +80,6 @@ class ProvisioningLogParser(threading.Thread):
 
 			machines = {}
 
-			logger.info('HOLA')	
 			for line in f_tmp_r:
 				logger.info(line + '\n')
 				if "Getting proxy monitoring info for" in line:
