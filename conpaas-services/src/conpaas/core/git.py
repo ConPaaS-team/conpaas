@@ -68,18 +68,16 @@ def git_create_tmp_repo():
     repo_path = tempfile.mkdtemp()
 
     cmd = 'git init %s' % repo_path
-    res = run_cmd(cmd, repo_path)
-    if res[1]:
-        raise Exception(res[1])
+    run_cmd(cmd, repo_path)
 
     cmd = 'git add %s' % tempfile.mkstemp(dir=repo_path)[1]
-    res = run_cmd(cmd, repo_path)
-    if res[1]:
-        raise Exception(res[1])
+    run_cmd(cmd, repo_path)
 
-    res = run_cmd('git commit --author "ConPaaS <info@conpaas.eu>" -am "Initial commit"', repo_path)
+    cmd = 'git commit --author "ConPaaS <info@conpaas.eu>" -am "Initial commit"' 
+    res = run_cmd(cmd, repo_path)
+
     if res[1]:
-        raise Exception(res[1])
+        raise Exception("While issuing %s:\n%s" % (cmd, res[1]))
 
     return repo_path
 
@@ -94,9 +92,6 @@ def git_code_version(repo):
     """
     cmd = 'git log -1 --pretty=oneline --format="%h"'
     res = run_cmd(cmd, repo)
-
-    if res[1]:
-        raise Exception(res[1])
 
     return res[0].rstrip()
 
