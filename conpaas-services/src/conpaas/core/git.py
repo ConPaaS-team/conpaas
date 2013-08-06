@@ -66,13 +66,21 @@ def git_create_tmp_repo():
 
     This function is useful for automated testing purposes."""
     repo_path = tempfile.mkdtemp()
+
     cmd = 'git init %s' % repo_path
-    run_cmd(cmd, repo_path)
+    res = run_cmd(cmd, repo_path)
+    if res[1]:
+        raise Exception(res[1])
 
     cmd = 'git add %s' % tempfile.mkstemp(dir=repo_path)[1]
-    run_cmd(cmd, repo_path)
+    res = run_cmd(cmd, repo_path)
+    if res[1]:
+        raise Exception(res[1])
 
-    run_cmd('git commit -am "Initial commit"', repo_path)
+    res = run_cmd('git commit -am "Initial commit"', repo_path)
+    if res[1]:
+        raise Exception(res[1])
+
     return repo_path
 
 def git_code_version(repo):
