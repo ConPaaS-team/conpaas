@@ -4,6 +4,7 @@ import re
 import unittest
 
 from conpaas.core import git
+from conpaas.core.misc import run_cmd
 
 class TestGit(unittest.TestCase):
 
@@ -69,6 +70,7 @@ class TestGit(unittest.TestCase):
         # we should now have no authorized_key left
         self.assertEquals(0, len(git.get_authorized_keys()))
 
+    @unittest.skipUnless(run_cmd('git')[0], "requires Git")
     def test_05_git_code_version(self):
         repo = git.git_create_tmp_repo() 
         code_version = git.git_code_version(repo)
@@ -76,10 +78,12 @@ class TestGit(unittest.TestCase):
         # git_code_version should something like '68ed1b0'
         self.assertIsNot(None, re.match("^[a-z0-9]{7,7}$", code_version))
 
+    @unittest.skipUnless(run_cmd('git')[0], "requires Git")
     def test_06_git_last_description(self):
         repo = git.git_create_tmp_repo() 
         self.assertEquals("Initial commit", git.git_last_description(repo))
 
+    @unittest.skipUnless(run_cmd('git')[0], "requires Git")
     def test_07_git_enable_revision(self):
         target_dir = tempfile.mkdtemp()
         repo = git.git_create_tmp_repo()
