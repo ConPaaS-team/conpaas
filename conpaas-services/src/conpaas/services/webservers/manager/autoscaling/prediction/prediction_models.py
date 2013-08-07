@@ -6,10 +6,9 @@ The Predictor module estimates future values using the monitoring data.
 
 import numpy as np
 import statsmodels.api as sm
-from statsmodels.tsa.ar_model import AR
 from pandas import Series, DataFrame
 from statsmodels.tools import Dataset
-from scipy import linspace, polyval, polyfit, sqrt, stats, randn
+from scipy import stats
 import math
 """
     This prediction models need a minimum range of input values of 15-20 to be able to make future predictions. 
@@ -60,12 +59,12 @@ class Prediction_Models:
         return forecast
     
     def vector_auto_regression(self, php_resp_time, cpu_load, num_predictions):
-        year = 1921     # year to be mapped with the values
+        #year = 1921     # year to be mapped with the values
         forecast = []   # predict array
         
         try: 
 
-            dates = sm.tsa.datetools.dates_from_range(str(year), length=len(php_resp_time)) #
+            #dates = sm.tsa.datetools.dates_from_range(str(year), length=len(php_resp_time)) #
             mdata = self.load_data(php_resp_time,cpu_load).data
             mdata = mdata[['value','value2']]
             data = np.array(mdata) #ndarray
@@ -77,8 +76,8 @@ class Prediction_Models:
             lag_order = results.k_ar
             pred = results.forecast(data[-lag_order:], num_predictions)
 
-            start_time = year + len(php_resp_time) #start time year of the prediction
-            dates_pred = sm.tsa.datetools.dates_from_range(str(start_time), length=num_predictions)
+            #start_time = year + len(php_resp_time) #start time year of the prediction
+            #dates_pred = sm.tsa.datetools.dates_from_range(str(start_time), length=num_predictions)
 
             for i in pred:
                 forecast.append(i[0]) #fisrt column
