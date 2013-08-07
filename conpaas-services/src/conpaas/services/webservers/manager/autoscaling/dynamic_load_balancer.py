@@ -2,7 +2,9 @@
 @author: fernandez
 """
 
-from conpaas.services.webservers.manager.autoscaling.performance import ServicePerformance, ServiceNodePerf, StatUtils
+import traceback
+
+from conpaas.services.webservers.manager.autoscaling.performance import StatUtils
 
 MAX_WEIGHT_VALUE = 3000
 STANDARD_WEIGHT_VALUE = 200
@@ -137,7 +139,7 @@ class Dynamic_Load_Balancer:
                 self.logger.debug('Updating weights for the nodes: %s ' % (str(self.updated_backend_weights)))
                 
                 try:      
-                    ret = self.client_manager.update_nodes_weight(self.manager_host, self.manager_port, web={}, backend=self.updated_backend_weights)
+                    self.client_manager.update_nodes_weight(self.manager_host, self.manager_port, web={}, backend=self.updated_backend_weights)
                 except Exception:
                     tb = traceback.format_exc()
                     self.logger.error('Could not update node weight, exception stack trace: %s' % tb)  
