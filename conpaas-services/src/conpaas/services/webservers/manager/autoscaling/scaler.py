@@ -5,18 +5,10 @@ Central component of this autoscaling system.
 @author: fernandez
 """
 
-import httplib, json
-import sys
-from subprocess import Popen, PIPE
-import memcache
 import math
-import socket
-from ConfigParser import ConfigParser
 from time import time, sleep
-import os
-from conpaas.core.https.client import conpaas_init_ssl_ctx, jsonrpc_get, jsonrpc_post, https_post, https_get
 from conpaas.services.webservers.manager.autoscaling import log 
-from conpaas.services.webservers.manager.autoscaling.performance import ServicePerformance, ServiceNodePerf, StatUtils
+from conpaas.services.webservers.manager.autoscaling.performance import StatUtils
 from conpaas.services.webservers.manager.autoscaling.cost_aware import Cost_Controller
 from conpaas.services.webservers.manager import client
 from conpaas.services.webservers.manager.autoscaling.dynamic_load_balancer import Dynamic_Load_Balancer
@@ -28,7 +20,6 @@ from conpaas.services.webservers.manager.autoscaling.strategy.adaptive_strategy 
 from conpaas.services.webservers.manager.autoscaling.monitoring import Monitoring_Controller
 
 from collections import deque
-import traceback
 from datetime import datetime
 from multiprocessing.pool import ThreadPool
 import itertools
@@ -210,7 +201,7 @@ class ProvisioningManager:
     forecast_list_aux = {}
     min_error_prediction = 1000000
     forecast_model = 0
-    forecast_resp = 0
+    #forecast_resp = 0
     try:    
              
            logger.debug("calculate_error_prediction: with ip: "+str(ip))
@@ -373,7 +364,7 @@ class ProvisioningManager:
                                 if self.optimal_scaling.get_compute_units(inst_type_check) > compute_units:
                                     return node.ip
        
-           except Exception as ex:
+           except Exception:
                 logger.critical("consolidate_vmes: ERROR when trying to remove a vm with ip: "+str(node.ip))
       
        ## There is not any possible vm to be released...
@@ -387,7 +378,7 @@ class ProvisioningManager:
     avg_web_req_rate_lb = avg_web_resp_time_lb = 0
     avg_backend_req_rate_lb = avg_backend_resp_time_lb = 0
     avg_cpu_user_backend = avg_cpu_web = 0
-    backends_req_rate = 0
+    #backends_req_rate = 0
     
     ret = {'add_web_nodes': 0, 'remove_web_nodes': 0, 'add_backend_nodes': 0, 'remove_backend_nodes': 0, 'vm_backend_instance': 'small', 'vm_web_instance': 'small', 'node_ip_remove':''}
     
@@ -624,7 +615,7 @@ class ProvisioningManager:
                 while not added_node and num_retries > 0:
                     try:
                         logger.info('Adding backend nodes, quantity: %s , vm_type: %s ' % (str(num), str(vm_type) ))
-                        nodes = client.add_nodes(MANAGER_HOST, MANAGER_PORT, web=0, backend=num, cloud='default', vm_backend_instance=vm_type, vm_web_instance=vm_web_type)
+                        client.add_nodes(MANAGER_HOST, MANAGER_PORT, web=0, backend=num, cloud='default', vm_backend_instance=vm_type, vm_web_instance=vm_web_type)
                         added_node = True
                     except Exception as ex:
                         logger.warning('Error when trying to add a node: '+str(ex))
@@ -646,8 +637,8 @@ class ProvisioningManager:
                     removed_node = False
                     while not removed_node and num_retries > 0:
                         try:
-                            nodes = client.remove_nodes(MANAGER_HOST, MANAGER_PORT, web=0, backend=1, node_ip=vm_ip)
-                            remove_node = True
+                            client.remove_nodes(MANAGER_HOST, MANAGER_PORT, web=0, backend=1, node_ip=vm_ip)
+                            #remove_node = True
 
                             server_id = self.dyc_load_balancer.get_updated_backend_weights_id(vm_ip)
                             self.killed_backends.append(server_id)
@@ -670,7 +661,7 @@ class ProvisioningManager:
               try:    
                   logger.info('Adding a web node: %d , inst type: %s ' % (n_web_to_add, str(vm_web_type) ))
                   vm_backend_type=self.optimal_scaling.get_vm_inst_types()[0]
-                  nodes = client.add_nodes(MANAGER_HOST, MANAGER_PORT, web=n_web_to_add, backend=0, cloud='default', vm_backend_instance=vm_backend_type, vm_web_instance=vm_web_type)
+                  client.add_nodes(MANAGER_HOST, MANAGER_PORT, web=n_web_to_add, backend=0, cloud='default', vm_backend_instance=vm_backend_type, vm_web_instance=vm_web_type)
                   added_node = True 
               except Exception as ex:         
                   logger.warning('Error when trying to add a web node: '+str(ex))
@@ -683,7 +674,7 @@ class ProvisioningManager:
           
     if ((n_backend_to_remove > 0 or n_web_to_remove > 0) and len(ip) > 0):
       logger.info('Removing web nodes: %d , backend nodes: %d ' % (n_web_to_remove, n_backend_to_remove))
-      nodes = client.remove_nodes(MANAGER_HOST, MANAGER_PORT, web=n_web_to_remove, backend=n_backend_to_remove, node_ip=ip)
+      client.remove_nodes(MANAGER_HOST, MANAGER_PORT, web=n_web_to_remove, backend=n_backend_to_remove, node_ip=ip)
       if n_backend_to_remove > 0:
         try:
           server_id = self.dyc_load_balancer.get_updated_backend_weights_id(ip)
