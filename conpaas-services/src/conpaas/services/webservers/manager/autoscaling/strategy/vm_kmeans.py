@@ -7,7 +7,7 @@ VM_Classification clusters the VM instance types based on their performance char
 @author: fernandez
 """
 
-import sys, math, random
+import math, random
 from operator import itemgetter
 try:
     import simplejson as json

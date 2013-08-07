@@ -3,8 +3,6 @@
 @author: fernandez
 """
 
-
-from conpaas.core.node import ServiceNode
 from conpaas.services.webservers.manager.autoscaling import log
 
 PATH_LOG_FILE = '/tmp/provisioning.log'
