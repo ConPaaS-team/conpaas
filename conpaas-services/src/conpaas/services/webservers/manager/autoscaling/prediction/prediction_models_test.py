@@ -36,7 +36,7 @@ class Prediction_Models:
         return forecast
     
     def vector_auto_regression(self, php_resp_time, cpu_load, num_predictions):
-        year = 1921     # year to be mapped with the values
+        #year = 1921     # year to be mapped with the values
         forecast = []   # predict array
                
         return forecast 

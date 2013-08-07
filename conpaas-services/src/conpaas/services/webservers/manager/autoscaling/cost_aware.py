@@ -4,13 +4,8 @@ Cost_controller is responsible for the management of the cost related activities
 @author: fernandez
 """
 
-import sys
-from subprocess import Popen, PIPE
-import math
-from time import time, sleep
-from os import path, listdir
+from time import time
 from datetime import datetime, timedelta
-from conpaas.core import log
 try:
     import simplejson as json
 except ImportError:
@@ -100,9 +95,7 @@ class Cost_Controller:
     def get_time_usage(self, time_secs):
         sec = timedelta(seconds=int(time_secs))
         d = datetime(1,1,1) + sec    
-        time = "%d:%d:%d:%d" % (d.day-1, d.hour, d.minute, d.second)
-        
-        return time
+        return "%d:%d:%d:%d" % (d.day-1, d.hour, d.minute, d.second)
     
     def cost_shutdown_constraint(self,ip):
         self.logger.info("cost_shutdown_constraint: Checking if it is possible to release "+str(ip)+" vm ")
