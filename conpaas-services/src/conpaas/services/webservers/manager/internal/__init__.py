@@ -453,7 +453,7 @@ class BasicWebserversManager(BaseManager):
     if config.backend_count - backend < 0:
       return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_INVALID, detail='Cannot remove_nodes that many backend nodes').message)
     
-    dstate = self._state_get()
+    #dstate = self._state_get()
     #FIXME: Problem with the states
    # if dstate != self.S_RUNNING:
     #  return HttpErrorResponse(ManagerException(ManagerException.E_STATE_ERROR).message)
@@ -541,7 +541,7 @@ class BasicWebserversManager(BaseManager):
         #  config.update_mappings()
         self.logger.info("Remove_nodes "+str(config.serviceNodes))
     
-    except Exception as ex:
+    except Exception:
        self.logger.critical('Error when trying to remove ')    
     
     self._state_set(self.S_RUNNING)
@@ -750,7 +750,6 @@ class BasicWebserversManager(BaseManager):
       return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
 
     config = self._configuration_get()
-    webServiceNodes = config.getWebServiceNodes()
 
     repo = git.DEFAULT_CODE_REPO
     codeVersionId = git.git_code_version(repo)
