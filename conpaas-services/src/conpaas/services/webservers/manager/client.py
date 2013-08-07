@@ -114,16 +114,6 @@ def list_nodes(host, port):
   method = 'list_nodes'
   return _check(https.client.jsonrpc_get(host, port, '/', method))
   
-def on_autoscaling(host, port, cool_down, response_time):
-  method = 'on_autoscaling'
-  params = {'cool_down': cool_down, 'response_time': response_time }
-  return _check(https.client.jsonrpc_post(host, port, '/', method, params))
-
-def off_autoscaling(host, port):
-  method = 'off_autoscaling'
-  params = {}
-  return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
-
 def get_node_info(host, port, serviceNodeId):
   method = 'get_node_info'
   params = {'serviceNodeId': serviceNodeId}
