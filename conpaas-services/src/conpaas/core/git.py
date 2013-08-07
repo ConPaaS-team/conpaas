@@ -73,11 +73,14 @@ def git_create_tmp_repo():
     cmd = 'git add %s' % tempfile.mkstemp(dir=repo_path)[1]
     run_cmd(cmd, repo_path)
 
-    cmd = 'git commit --author "ConPaaS <info@conpaas.eu>" -am "Initial commit"' 
-    res = run_cmd(cmd, repo_path)
+    cmd = 'git config user.email "info@conpaas.eu"'
+    run_cmd(cmd, repo_path)
 
-    if res[1]:
-        raise Exception("While issuing %s:\n%s" % (cmd, res[1]))
+    cmd = 'git config user.name "ConPaaS"'
+    run_cmd(cmd, repo_path)
+
+    cmd = 'git commit -am "Initial commit"' 
+    run_cmd(cmd, repo_path)
 
     return repo_path
 
