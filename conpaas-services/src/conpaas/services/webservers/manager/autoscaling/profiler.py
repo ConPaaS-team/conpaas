@@ -1,7 +1,6 @@
 """
 @author: fernandez
 """
-from conpaas.services.webservers.manager.autoscaling.performance import ServicePerformance, ServiceNodePerf, StatUtils
 import itertools
 
 class Profiler:
@@ -54,13 +53,13 @@ class Profiler:
               cpu_user_avg = 0
               #cpu_sys_avg = 0
               req_rate_avg = 0
-              resp_time_avg = 0
+              #resp_time_avg = 0
               if len(resp_times_filtered) == 0 or len(cpu_user_values_filtered)==0 or len(req_rates_filtered)==0:
                    
                  try:
                     if self.vm_type_ideal_throughput[inst_type]:
                       max_throughput = self.vm_type_ideal_throughput[inst_type]
-                 except Exception as ex:
+                 except Exception:
                       self.logger.error("calculate_ideal_throughput: ERROR cannot find inst_type in "+ str(self.vm_type_ideal_throughput))
                       max_throughput = 0
                       
@@ -95,14 +94,14 @@ class Profiler:
                                max_cpu = cpu_usage
                                max_req_rate = req_rate 
               
-              if max_resp_time == 0 or max_cpu or max_req_rate==0:
+              #if max_resp_time == 0 or max_cpu or max_req_rate==0:
                    
-                 try:
-                    if self.vm_type_max_throughput[inst_type]:
-                      max_throughput = self.vm_type_max_throughput[inst_type]
-                 except Exception as ex:
-                      self.logger.error("calculate_max_instance_throughput: ERROR cannot find inst_type in "+ str(self.vm_type_max_throughput))
-                      max_throughput = 0
+              #   try:
+              #      if self.vm_type_max_throughput[inst_type]:
+              #        max_throughput = self.vm_type_max_throughput[inst_type]
+              #   except Exception:
+              #        self.logger.error("calculate_max_instance_throughput: ERROR cannot find inst_type in "+ str(self.vm_type_max_throughput))
+              #        max_throughput = 0
                       
               else:
                   try:
