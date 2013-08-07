@@ -5,27 +5,16 @@ Monitoring Controller collects all the informantion extracted using Ganglia moni
 @author: fernandez
 """
 
-import httplib, json
 import sys
 from subprocess import Popen, PIPE
 import memcache
-import math
 import socket
-from ConfigParser import ConfigParser
-from time import time, sleep
+from time import time
 from os import path, listdir
-from conpaas.core.https.client import conpaas_init_ssl_ctx, jsonrpc_get, jsonrpc_post, https_post, https_get
-from conpaas.core import log 
 from conpaas.services.webservers.manager.autoscaling.performance import ServicePerformance, ServiceNodePerf, StatUtils
-from conpaas.services.webservers.manager.autoscaling.cost_aware import Cost_Controller
 from conpaas.services.webservers.manager import client
 
 
-from collections import deque
-import traceback
-from datetime import datetime
-from multiprocessing.pool import ThreadPool
-import itertools
 
 DEFAULT_NUM_CPU = 1.0
 DEFAULT_RAM_MEMORY = '1034524.0'
