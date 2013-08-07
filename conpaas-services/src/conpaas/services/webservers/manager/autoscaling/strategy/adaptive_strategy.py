@@ -8,20 +8,11 @@ Strategy_Finder is in charge of the discovery of a proper scaling plan according
 """
 
 import math
-from conpaas.services.webservers.manager.autoscaling.performance import ServicePerformance, ServiceNodePerf, StatUtils
-from conpaas.services.webservers.manager.autoscaling.cost_aware import Cost_Controller
-from conpaas.core import log
+
+from conpaas.services.webservers.manager.autoscaling.performance import StatUtils
 from conpaas.services.webservers.manager.autoscaling.strategy.counter import Counter
-#from conpaas.services.webservers.manager.autoscaling.prediction.prediction_models_test import Prediction_Models
-from conpaas.services.webservers.manager.autoscaling.prediction.prediction_models import Prediction_Models
 from conpaas.services.webservers.manager.autoscaling.strategy.vm_kmeans import VM_Classification
-
-
-from conpaas.services.webservers.manager.autoscaling.performance import ServicePerformance, ServiceNodePerf, StatUtils
-
-
-from decimal import Decimal 
-import itertools
+from conpaas.services.webservers.manager.autoscaling.prediction.prediction_models import Prediction_Models
 
 from multiprocessing.pool import ThreadPool
 
@@ -326,8 +317,7 @@ class Strategy_Finder:
                 self.logger.warning("OptimalScaler: Warning trying to predict the req_rate error estimate for LR." + str(e))
        
            try:
-               
-               php_resp_data = [x for x in req_rate[0:12]]
+               #php_resp_data = [x for x in req_rate[0:12]]
                weight_avg_predictions = self.stat_utils.compute_weight_average(self.forecast_list_req_rate[2])
                prediction_error = math.fabs( weight_avg_current - weight_avg_predictions )
                if min_error_prediction > prediction_error and prediction_error > 0:
@@ -387,7 +377,6 @@ class Strategy_Finder:
       diff_combo = Counter(proposed_combination)
       diff_combo.subtract(current_combination)
           
-      reject_strategy = False
       if self.cost_policy:
         for vm_type, count in diff_combo.items():
             if count < 0 :
@@ -543,7 +532,6 @@ class Strategy_Finder:
  # This function determine the type of instance to be added depending of the PERFORMANCE IMPROVEMENT + COST of a new VM.
   def remove_backend_vm_candidate(self, backend_nodes, backend_monitoring_data):
       vm_candidate = ''
-      min_performance_index = 100000
       max_performance_index = 0
       vmes_perf = {}
       vmes_inst_types = []  
@@ -572,25 +560,23 @@ class Strategy_Finder:
           if 'high' in self.slo_fulfillment_degree or 'medium' in self.slo_fulfillment_degree:  
               if self.cost_controller.cost_shutdown_constraint(ip) and performance_idx < max_performance_index and cp_units < min_cp_units:
                   vm_candidate = ip
-                  min_performance_index = performance_idx
           else:
               if self.cost_controller.cost_shutdown_constraint(ip) and performance_idx < max_performance_index:
                   vm_candidate = ip
-                  min_performance_index = performance_idx
                       
        # Remove the VM from the cost controller data
        if (len(vm_candidate) > 0):
            self.cost_controller.remove_vm_usage(vm_candidate)
        else:
            return vm_candidate      
-      except Exception as e:
+      except Exception:
           self.logger.error("remove_backend_vm_candidate: ERROR removing a VM ")      
       return vm_candidate
   
 
   def remove_vmes_type_candidate(self, backend_nodes, backend_monitoring_data, inst_type_to_remove, num_vmes_to_remove ):
       self.logger.info("remove_vm_type_candidate: Starting to remove several vmes "+str(num_vmes_to_remove)+" VMES with instance type: "+str(inst_type_to_remove))  
-      vm_candidate = backend_nodes[0].ip
+      backend_nodes[0].ip
       
       vmes_candidate = []
       try:
@@ -623,7 +609,7 @@ class Strategy_Finder:
             self.cost_controller.remove_vm_usage(ip)
         
        return vmes_candidate    
-      except Exception as e:
+      except Exception:
           self.logger.error("remove_vm_type_candidate: ERROR removing "+str(num_vmes_to_remove)+" VMES with instance type: "+str(inst_type_to_remove))       
           return vmes_candidate
   
@@ -652,7 +638,7 @@ class Strategy_Finder:
       
         # Remove the VM from the cost controller data
         self.cost_controller.remove_vm_usage(vm_candidate)
-      except Exception as e:
+      except Exception:
           self.logger.error("remove_vm_type_candidate: ERROR removing a VM "+str(inst_type_to_remove))       
       return vm_candidate
   
@@ -745,7 +731,7 @@ class Strategy_Finder:
       """ Classification of the vm instance type by analizing or establishing 
           its max throughput from the monitoring data or compute_units * capacity_previous_vm
         """ 
-      vm_clusters = self.classification.clustering_vmes(self.iaas_driver, capacity_inst_type)
+      self.classification.clustering_vmes(self.iaas_driver, capacity_inst_type)
       self.capacity_inst_type = self.classification.get_capacities_vmes()
       self.logger.info( "calculate_adaptive_scaling: capacity_inst_types "+str(self.capacity_inst_type))
       
