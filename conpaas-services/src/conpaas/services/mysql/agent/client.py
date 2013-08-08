@@ -4,11 +4,15 @@
     :copyright: (C) 2010-2013 by Contrail Consortium.
 """
 
-import httplib, json
+import httplib
+import json
 
 from conpaas.core import https
 
-class AgentException(Exception): pass
+
+class AgentException(Exception):
+    pass
+
 
 def _check(response):
     code, body = response
@@ -23,8 +27,9 @@ def _check(response):
     else:
         return True
 
-# TODO: with dump ?
+
 def create_master(host, port, master_server_id):
+    """TODO: with dump?"""
     method = 'create_master'
     params = {
         'master_server_id': master_server_id
@@ -35,17 +40,21 @@ def create_master(host, port, master_server_id):
 '''
     Methods called by the manager and executed on a master agent
 '''
+
+
 def create_slave(host, port, slaves):
     method = 'create_slave'
     params = {'slaves': slaves}
     return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
+
 
 def configure_user(host, port, username, password):
     method = 'configure_user'
     params = {'username': username,
               'password': password}
     return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
-        
+
+
 def get_all_users(host, port):
     method = 'get_all_users'
     result = https.client.jsonrpc_get(host, port, '/', method)
@@ -54,37 +63,40 @@ def get_all_users(host, port):
     else:
         return False
 
+
 def set_password(host, port, username, password):
     method = 'set_password'
     params = {'username': username,
               'password': password}
     return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
 
-def remove_user(host,port,name):
+
+def remove_user(host, port, name):
     method = 'remove_user'
     params = {'username': name}
     return _check(https.client.jsonrpc_get(host, port, '/', method, params=params))
+
 
 def check_agent_process(host, port):
     method = 'check_agent_process'
     return _check(https.client.jsonrpc_get(host, port, '/', method))
 
+
 def load_dump(host, port, mysqldump_path):
     params = {'method': 'load_dump'}
     f = open(mysqldump_path, 'r')
-    filecontent = f.read() 
+    filecontent = f.read()
     f.close()
     files = [('mysqldump_file', mysqldump_path, filecontent)]
     return _check(https.client.https_post(host, port, '/', params, files=files))
 
 
-'''
+def setup_slave(host, port, slave_server_id, master_host, master_log_file,
+                master_log_pos, mysqldump_path):
+    '''
     Method called by a master agent to configure a slave agent
     (is executed inside the slave)
-'''
-def setup_slave(host, port, slave_server_id, master_host, \
-                 master_log_file, master_log_pos, \
-                 mysqldump_path):
+    '''
     params = {
         'method': 'setup_slave',
         'master_host': master_host,
@@ -93,7 +105,7 @@ def setup_slave(host, port, slave_server_id, master_host, \
         'slave_server_id': slave_server_id
     }
     f = open(mysqldump_path, 'r')
-    filecontent = f.read() 
+    filecontent = f.read()
     f.close()
     files = [('mysqldump_file', mysqldump_path, filecontent)]
     return _check(https.client.https_post(host, port, '/', params, files=files))
