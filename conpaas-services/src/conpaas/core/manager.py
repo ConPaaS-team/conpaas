@@ -61,22 +61,26 @@ class BaseManager(object):
         self.config_parser = config_parser
         self.state = self.S_INIT
 
+        self.volumes = []
+
         # IPOP setup
         ipop.configure_conpaas_node(config_parser)
 
         # Ganglia setup
-        ganglia = ManagerGanglia(config_parser)
+        self.ganglia = ManagerGanglia(config_parser)
 
         try:
-            ganglia.configure()
+            self.ganglia.configure()
         except Exception, err:
             self.logger.exception('Error configuring Ganglia: %s' % err)
+            self.ganglia = None
             return
 
-        err = ganglia.start()
+        err = self.ganglia.start()
 
         if err:
             self.logger.exception(err)
+            self.ganglia = None
         else:
             self.logger.info('Ganglia started successfully')
 
@@ -158,7 +162,7 @@ class BaseManager(object):
             # Something went wrong. Return the error
             return ret
 
-        # Rebuild context script
+        # Rebuild context script 
         self.controller.generate_context("web")
 
         # All is good. Return the filename of the uploaded script
@@ -174,6 +178,51 @@ class BaseManager(object):
             return HttpJsonResponse(open(fullpath).read())
         except IOError:
             return HttpErrorResponse('No startup script')
+
+    def create_volume(self, size, name, cloud=None):
+        self.logger.info('Creating a volume named %s (%s MBs)' % (
+            name, size))
+
+        # If cloud is None, the controller will create this volume on the
+        # default cloud
+        volume = self.controller.create_volume(size, name, cloud)
+
+        # Keep track of the cloud this volume has been created on
+        volume.cloud = cloud
+
+        # Keep track of this volume
+        self.volumes.append(volume)
+
+        return volume
+
+    def get_volume(self, volume_id):
+        for vol in self.volumes:
+            if volume_id == vol.id:
+                return vol
+
+        raise Exception("Volume %s not found by %s" % (volume_id, self))
+
+    def destroy_volume(self, volume_id):
+        self.logger.info("Destroying volume with id %s" % volume_id)
+
+        volume = self.get_volume(volume_id)
+
+        if self.controller.destroy_volume(volume, volume.cloud):
+            self.volumes.remove(volume)
+        else:
+            raise Exception("Error destroying volume %s" % volume_id)
+
+    def attach_volume(self, volume_id, vm_id, device_name):
+        self.logger.info("Attaching volume %s to VM %s as %s" % (volume_id,
+            vm_id, device_name))
+
+        volume = self.get_volume(volume_id)
+
+        class node:
+            id = vm_id
+
+        return self.controller.attach_volume(node, volume, device_name,
+                volume.cloud)
 
     def _init_cloud(self, cloud):
         if cloud == 'default':
