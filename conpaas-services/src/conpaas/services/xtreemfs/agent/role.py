@@ -4,11 +4,12 @@
     :copyright: (C) 2010-2013 by Contrail Consortium.
 """
 
-from os.path import join, devnull
+from os.path import join, devnull, lexists
 from subprocess import Popen
 from Cheetah.Template import Template
 from conpaas.core.log import create_logger
 import uuid
+import time
 
 S_INIT        = 'INIT'
 S_STARTING    = 'STARTING'
@@ -112,6 +113,24 @@ class OSD:
 
     def start(self):
         self.state = S_STARTING
+
+        # waiting for our block device to be available
+        dev_name = "sdb"
+        dev_found = False
+
+        for attempt in range(1, 11):
+            logger.info("OSD node waiting for block device %s" % dev_name)
+            if lexists("/dev/%s" % dev_name):
+                dev_found = True
+                break
+
+            time.sleep(10)
+
+        if dev_found:
+            logger.info("OSD node has now access to %s" % dev_name)
+        else:
+            logger.critical("Block device %s unavailable" % dev_name)
+
         devnull_fd = open(devnull,'w')
         proc = Popen(self.start_args, stdout = devnull_fd, stderr = devnull_fd, close_fds = True)
         if proc.wait() != 0:

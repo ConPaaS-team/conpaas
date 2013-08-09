@@ -37,6 +37,12 @@ class XtreemFSManager(BaseManager):
         self.mrcCount = 0
         self.osdCount = 0
 
+        # wether we want to keep storage volumes upon OSD nodes deletion
+        self.persistent = False
+
+        # dictionary mapping osd node IDs with volume IDs
+        self.osd_volume_map = {}
+
         # Setup the clouds' controller
         self.controller.generate_context('xtreemfs')
 
@@ -58,8 +64,17 @@ class XtreemFSManager(BaseManager):
                 self.state = self.S_ERROR
                 raise
 
-    def _start_osd(self, nodes):
-        for node in nodes:
+    def _start_osd(self, nodes, cloud=None):
+        for idx, node in enumerate(nodes):
+            # we need a storage volume for each OSD node
+            volume_name = "osd-%s" % node.id
+
+            volume = self.create_volume(1000, volume_name, cloud)
+
+            self.attach_volume(volume.id, node.id, "sdb")
+
+            self.osd_volume_map[node.id] = volume.id
+
             try:
                 client.createOSD(node.ip, 5555, self.dirNodes[0].ip)
             except client.AgentException:
@@ -75,6 +90,15 @@ class XtreemFSManager(BaseManager):
                 self.logger.exception('Failed to stop OSD at node %s' % node)
                 self.state = self.S_ERROR
                 raise
+
+            volume_id = self.osd_volume_map[node.id]
+            self.detach_volume(volume_id)
+
+            # if the service is not persistent, delete the storage volume
+            # associated with this node
+            if not self.persistent:
+                self.destroy_volume(volume_id)
+
 
     def _do_startup(self, cloud):
         ''' Starts up the service. The firstnodes will contain all services
@@ -106,7 +130,7 @@ class XtreemFSManager(BaseManager):
             # start DIR, MRC, OSD
             self._start_dir(self.dirNodes)
             self._start_mrc(self.mrcNodes)
-            self._start_osd(self.osdNodes)
+            self._start_osd(self.osdNodes, startCloud)
 
             # at the startup the DIR node will have all the services
             self.dirCount = 1
@@ -129,6 +153,7 @@ class XtreemFSManager(BaseManager):
         return HttpJsonResponse()
 
     def _do_shutdown(self):
+        self._stop_osd(self.osdNodes)
         self.controller.delete_nodes(self.nodes)
         self.nodes = []
         self.dirNodes = []          
