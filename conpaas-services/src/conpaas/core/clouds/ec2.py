@@ -103,3 +103,7 @@ class EC2Cloud(Cloud):
             return nodes
 
         return [ nodes ]
+
+    def create_volume(self, size, name):
+        location = self.driver.list_locations()[0]
+        return self.driver.create_volume(size, name, location)

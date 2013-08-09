@@ -465,7 +465,7 @@ class Controller(object):
         self.__logger.debug("create_volume(cloud=%s, size=%s, name='%s')" % 
                 (cloud.cloud_name, size, name))
 
-        return cloud.driver.create_volume(size=size, name=name)
+        return cloud.create_volume(size, name)
 
     def attach_volume(self, node, volume, device, cloud=None):
         if cloud is None:

@@ -190,3 +190,6 @@ class Cloud:
         if self.connected is False:
             self._connect()
         return self.driver.destroy_node(node.as_libcloud_node())
+
+    def create_volume(self, size, name):
+        return self.driver.create_volume(size, name)
