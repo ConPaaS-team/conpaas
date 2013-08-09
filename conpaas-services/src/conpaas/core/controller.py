@@ -454,6 +454,34 @@ class Controller(object):
                             % str(done))
         return (done, [])
 
+    def create_volume(self, size, name, cloud=None):
+        """Create a new volume with the given name and size (in MBs)."""
+        if cloud is None:
+            cloud = self.__default_cloud
+
+        if cloud.connected is False:
+            cloud._connect()
+
+        self.__logger.debug("create_volume(cloud=%s, size=%s, name='%s')" % 
+                (cloud.cloud_name, size, name))
+
+        return cloud.driver.create_volume(size=size, name=name)
+
+    def attach_volume(self, node, volume, device, cloud=None):
+        if cloud is None:
+            cloud = self.__default_cloud
+
+        self.__logger.debug("attach_volume(node=%s, volume=%s, device=%s)" % 
+                (node, volume, device))
+        return cloud.driver.attach_volume(node, volume, device)
+
+    def destroy_volume(self, volume, cloud=None):
+        if cloud is None:
+            cloud = self.__default_cloud
+
+        self.__logger.debug("destroy_volume(volume=%s)" % volume)
+        return cloud.driver.destroy_volume(volume)
+
     def _get_context_file(self, service_name, cloud_type):
         '''
         the context file runs the scripts necessary on each node created
