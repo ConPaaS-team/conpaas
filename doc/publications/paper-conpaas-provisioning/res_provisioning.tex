@@ -1,8 +1,9 @@
 We evaluate three resource provisioning algorithms: a trigger-based
 algorithm representing a baseline comparable to systems currently in
-production, and two new algorithms based on\ldots
-
-\fixme{We need to explain the principle behind our algorithms here.}
+production, and two new algorithms based on feedback techniques that alleviate
+the drawbacks of trigger-based systems by reacting in advance to traffic changes. 
+Moreover, one of these new algorithms provides a weighted load balancing mechanism to
+handle the resource heterogeneity of cloud infrastructures.
 
 
 %\subsection{Load-based provisioning}
@@ -31,9 +32,9 @@ RightScale~\cite{right-scale} or OpenShift~\cite{openshift}.
 
 For the sake of comparison, we designed and implemented a
 trigger-based provisioning mechanism in ConPaaS. This technique
-monitors CPU usage and application response time metrics, and assigns
+monitors the percentage of CPU usage and application response time metrics, and assigns
 a lower and upper threshold for each metric. It then creates or
-deletes VMs whenever one of the threshold is crossed. The thresholds
+deletes VMs whenever one of the threshold is crossed, as described in Algorithm~\ref{}. Analogous to traditional trigger-based systems, the thresholds
 are statically defined by the user before execution.
 
 \begin{algorithm}[t]
@@ -48,15 +49,15 @@ are statically defined by the user before execution.
 Collect monitoring data of each metric, \emph{data$_i$}\;
 \BlankLine
 \If{ no recent scaling operation}{
-\uIf{ avg(data$_i$) $>=$ \emph{SLO\_threshold\_min}$_i$ for at least one metric }{
+\uIf{ avg(data$_i$) $>=$ \emph{SLO\_threshold\_max}$_i$ for at least one metric }{
 ADD resources\;
 }
-\ElseIf{ avg(data$_i$) $<$ \emph{SLO\_threshold\_max}$_i$ for all metrics }{
+\ElseIf{ avg(data$_i$) $<$ \emph{SLO\_threshold\_min}$_i$ for all metrics }{
 REMOVE resources\;
 } 
 %}\Else{ Sleep during 5minutes \;}
 } 
-Wait for 5 minutes \; 
+Wait until the next reporting periond (5 minutes) \; 
 }
 }
 \caption{Trigger-based provisioning}
@@ -87,9 +88,10 @@ main factors:
   short traffic spikes. An excessively reactive algorithm cannot
   handle these situations well, and will cause frequent fluctuations
   in the number of allocated resources; this has negative effects on
-  the stability and performance of the system. It also increases the
-  infrastructure cost because it frequently stops machines very
-  shortly after starting them.
+  the stability and performance of the system. Considering the pricing 
+model of cloud providers that charges users on a per-hour basis, trigger-based systems also increase the infrastructure cost because they frequently terminate resources before this hour price boundary. 
+
+%machines very shortly after starting them.
 
 %Obviously, a reactive algorithm can be seen a good choice for resource provisioning, however. The system %performance of an application change in time if the type of workload changes.
 
@@ -167,17 +169,19 @@ of two levels of threshold ranges instead of one.
 
 \textbf{Weighted metrics:} As pointed out
 in~\cite{singh_autonomic_2010}, provisioning decisions solely made on
-the basis of request rate or CPU usage can incur errors by under- or
+the basis of request rate or percentage of CPU usage can incur errors by under- or
 over-provisioning an application. We propose instead to use a
-collection of metrics likely to indicate the need to scale the system
-up or down. Our algorithm continuously measures the correlation
-between each metric's values and the actual scaling decisions. We thus
-assign a weight to each metric according to its predictiveness. For
+collection of metrics (e.g. response time, request rate and cpu usage) likely to indicate the need to scale the system
+out or back. Our algorithm continuously measures the correlation
+between each metric's values and the actual scaling decisions. This method enables to better adapt the scaling decisions to the current workload requirements by identifying how metrics affect to the processing time. We thus
+assign a weight to each metric (correlation coefficient) according to its predictiveness. For
 example, when hosting the MediaWiki application, the hosting system
 needs to deal with requests having a wide diversity of computing
 complexity, and with significant variations in the ratios of simple
 vs.\ complex requests. Our algorithm therefore associates a higher
-weight to the CPU usage metric than to the request rate.
+weight to the CPU usage metric than to the request rate, as it affects to the response times.
+
+%This method enables to identify the metric that higher affect to the processing time based on the workload requirements. 
 
 % As pointed out in~\cite{singh_autonomic_2010} and \cite{roy_capacity_2011},
 
@@ -197,15 +201,15 @@ weight to the CPU usage metric than to the request rate.
 \KwResult{Scaling decisions}
 \BlankLine
 Create a queue to store historical workload, \emph{q}\;
-Establish flexible thresholds: \emph{pred\_thr} and \emph{reac\_thr} \;
+Establish two-level thresholds: \emph{pred\_thr} and \emph{reac\_thr} \;
 \BlankLine
 
 \While{auto-scaling is ON}{
-Initialize \emph{s\_bck} and\emph{s\_out} to 0\;
+Initialize variables \emph{s\_bck} and\emph{s\_out} to 0\;
 Collect monitoring data (last $\sim$5min), \emph{data}\;
 \BlankLine
 Add the most recent \emph{response\_time} value to \emph{q}\; \label{alg:esti1}
-Estimate historical workload trends (last $\sim$30min), \emph{td}\;
+Estimate workload trend (last $\sim$30min) of \emph{q}, \emph{td}\;
 \hspace{3mm}	- Increasing, \emph{td} = 1\;
 \hspace{3mm}	- Decreasing, \emph{td} = 0\;
 \hspace{3mm}	- Stable, \emph{td} = -1\;	\label{alg:esti2}
@@ -237,7 +241,7 @@ Estimate historical workload trends (last $\sim$30min), \emph{td}\;
 }
 Reset \emph{s\_bck} and\emph{s\_out} to 0 \;
 }
-Wait for 5 minutes\;
+Wait until next reporting period (5 minutes)\;
 }
 }
 }
@@ -258,7 +262,7 @@ decision has a delayed effect. Provisioning extra resources can take a
 couple of minutes before they are ready to process traffic. Besides,
 cloud computing resources are usually charged at a 1-hour granularity
 so the scaling decision has consequences at least during the first
-hours after provisioning. If is therefore important to estimate the
+hours after provisioning. It is therefore important to estimate the
 medium-term trend of response times in addition to any short-term
 bursts. We therefore estimate the response time trend using past values
 over a period of the same order of magnitude (30\ minutes in our
@@ -294,16 +298,16 @@ stable, increasing or decreasing.
 
 \textbf{Two-level thresholds:} Initially, the users define a fixed
 threshold range based on the performance requirements of their
-applications, denoted by SLO thresholds (Service Level Objective)
+applications, denoted by \emph{SLO thresholds} (Service Level Objective)
 thresholds in Figure~\ref{flexibleThresholds}. However, these upper
-and lower bounds only indicate when a SLO violation occurs. Thus, to
-prevent SLO violations, additional boundaries have to be defined. This
+and lower bounds only indicate the resource under-utilization or when a SLO violation occurs. Thus, to
+prevent these performance degradations, additional boundaries have to be defined. This
 mechanism establishes two levels of threshold ranges for each metric
 based on the bounds defined in the SLO. In
 Figure~\ref{flexibleThresholds}, these two extra thresholds called
 \emph{predictive} and \emph{reactive}, both with upper and lower
 bounds, create two "head-rooms" between the SLO threshold and
-them. The predictive head-room $H_1$ is intended to alert of possible
+them. The predictive head-room $H_1$ is intended to alert of future
 workload alterations when a metric exceeds its predictive bounds, thus
 increasing proportionally to its weight the chances to trigger scaling
 actions (denoted by \emph{s\_bck} and \emph{s\_out} in
@@ -311,11 +315,11 @@ Algorithm~\ref{history_prov} lines
 \ref{alg:thr1}-\ref{alg:thr2}). Otherwise, the scaling chances will
 drop in the same proportion (Line \ref{alg:thr3}). The reactive
 head-room $H_2$ is used to trigger scaling actions if the workload
-presents a \emph{constant} variation (Lines
-\ref{alg:thr4}-\ref{alg:thr5}). This mechanism in conjunction with the
+presents a \emph{increasing or decreasing} variation (Lines
+\ref{alg:thr4}-\ref{alg:thr5}), which may cause SLO violations if it keeps such a trend. This mechanism in conjunction with the
 workload trend estimation allow to better analyze the evolution of
 performance fluctuations, and as a consequence improves the accuracy
-of our decisions. In the future, these two-levels of thresholds could
+of our decisions by reacting in advance. In the future, these two-levels of thresholds could
 be adjusted depending on the hardware configuration of each
 provisioned VM, as introduced in~\cite{beloglazov_adaptive_2010}.
 
@@ -369,7 +373,7 @@ patterns, or due to changes related to the hosting of the virtual servers
 
 In order to address these issues in ConPaaS we implemented a weighted 
 load balancing system in which the weights of the servers are 
-periodically re-adjusted automatically, based on the monitoring data.  
+periodically re-adjusted automatically, based on the monitoring data (e.g. response time, request rate and cpu usage).  
 This method assigns the same weight to each backend server at the 
 beginning of the process. The weights are then periodically
 adjusted (in our experiments, every $\sim$ 15min) proportionally 
