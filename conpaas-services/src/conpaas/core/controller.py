@@ -454,7 +454,7 @@ class Controller(object):
                             % str(done))
         return (done, [])
 
-    def create_volume(self, size, name, cloud=None):
+    def create_volume(self, size, name, vm_id, cloud=None):
         """Create a new volume with the given name and size (in MBs)."""
         if cloud is None:
             cloud = self.__default_cloud
@@ -465,7 +465,7 @@ class Controller(object):
         self.__logger.debug("create_volume(cloud=%s, size=%s, name='%s')" % 
                 (cloud.cloud_name, size, name))
 
-        return cloud.create_volume(size, name)
+        return cloud.create_volume(size, name, vm_id)
 
     def attach_volume(self, node, volume, device, cloud=None):
         if cloud is None:

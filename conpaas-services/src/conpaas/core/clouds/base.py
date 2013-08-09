@@ -191,7 +191,8 @@ class Cloud:
             self._connect()
         return self.driver.destroy_node(node.as_libcloud_node())
 
-    def create_volume(self, size, name):
+    def create_volume(self, size, name, vm_id=None):
+        # We can ignore vm_id. It is only needed by EC2.
         return self.driver.create_volume(size, name)
 
     def attach_volume(self, node, volume, device):

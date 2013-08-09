@@ -106,15 +106,24 @@ class EC2Cloud(Cloud):
 
         return [ nodes ]
 
-    def create_volume(self, size, name):
-        location = self.driver.list_locations()[0]
+    def create_volume(self, size, name, vm_id):
+        node = [ node for node in self.driver.list_nodes() 
+                if node.id == vm_id ][0]
+
+        # We have to create the volume in the same availability zone as the
+        # instance we want to attach it to. Let's find out the availability
+        # zone we need to create this volume into.
+        location = [ location for location in self.driver.list_locations() 
+                if location.name == node.extra['availability'] ][0]
+
         return self.driver.create_volume(size, name, location)
 
     def attach_volume(self, node, volume, device):
         for _ in range(10):
             try:
                 return self.driver.attach_volume(node, volume, device)
-            except Exception:
+            except Exception, err:
+                self.logger.exception(str(err))
                 self.logger.info("Volume %s not available yet" % volume)
                 time.sleep(10)
 

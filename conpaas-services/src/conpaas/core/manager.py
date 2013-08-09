@@ -179,13 +179,13 @@ class BaseManager(object):
         except IOError:
             return HttpErrorResponse('No startup script')
 
-    def create_volume(self, size, name, cloud=None):
+    def create_volume(self, size, name, vm_id, cloud=None):
         self.logger.info('Creating a volume named %s (%s MBs)' % (
             name, size))
 
         # If cloud is None, the controller will create this volume on the
         # default cloud
-        volume = self.controller.create_volume(size, name, cloud)
+        volume = self.controller.create_volume(size, name, vm_id, cloud)
 
         # Keep track of the cloud this volume has been created on
         volume.cloud = cloud

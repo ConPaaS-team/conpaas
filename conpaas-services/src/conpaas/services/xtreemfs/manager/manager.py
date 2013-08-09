@@ -69,7 +69,7 @@ class XtreemFSManager(BaseManager):
             # we need a storage volume for each OSD node
             volume_name = "osd-%s" % node.id
 
-            volume = self.create_volume(1000, volume_name, cloud)
+            volume = self.create_volume(1000, volume_name, node.id, cloud)
 
             self.attach_volume(volume.id, node.id, "sdb")
 
