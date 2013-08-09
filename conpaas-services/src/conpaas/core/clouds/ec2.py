@@ -9,6 +9,8 @@
     :copyright: (C) 2010-2013 by Contrail Consortium.
 """
 
+import time
+
 from libcloud.compute.types import Provider
 from libcloud.compute.providers import get_driver
 from libcloud.compute.base import NodeImage
@@ -107,3 +109,15 @@ class EC2Cloud(Cloud):
     def create_volume(self, size, name):
         location = self.driver.list_locations()[0]
         return self.driver.create_volume(size, name, location)
+
+    def attach_volume(self, node, volume, device):
+        for _ in range(10):
+            try:
+                return self.driver.attach_volume(node, volume, device)
+            except Exception:
+                self.logger.info("Volume %s not available yet" % volume)
+                time.sleep(10)
+
+        self.logger.exception("Volume %s NOT available after timeout" %
+                volume)
+

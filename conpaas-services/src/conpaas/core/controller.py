@@ -473,7 +473,7 @@ class Controller(object):
 
         self.__logger.debug("attach_volume(node=%s, volume=%s, device=%s)" % 
                 (node, volume, device))
-        return cloud.driver.attach_volume(node, volume, device)
+        return cloud.attach_volume(node, volume, device)
 
     def detach_volume(self, volume, cloud=None):
         if cloud is None:

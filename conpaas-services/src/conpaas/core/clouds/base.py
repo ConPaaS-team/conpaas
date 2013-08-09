@@ -193,3 +193,6 @@ class Cloud:
 
     def create_volume(self, size, name):
         return self.driver.create_volume(size, name)
+
+    def attach_volume(self, node, volume, device):
+        return self.driver.attach_volume(node, volume, device)
