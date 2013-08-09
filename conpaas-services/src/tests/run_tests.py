@@ -2,6 +2,7 @@ import sys
 import unittest
 
 from core import test_agent
+from core import test_manager
 from core import test_git
 from core import test_clouds
 from core import test_ipop
@@ -9,6 +10,7 @@ from core import test_controller
 
 suites = [
     unittest.TestLoader().loadTestsFromTestCase(test_agent.TestAgent),
+    unittest.TestLoader().loadTestsFromTestCase(test_manager.TestManager),
     unittest.TestLoader().loadTestsFromTestCase(test_git.TestGit),
     unittest.TestLoader().loadTestsFromTestCase(test_clouds.TestCloudsBase),
     unittest.TestLoader().loadTestsFromTestCase(test_clouds.TestCloudDummy),
