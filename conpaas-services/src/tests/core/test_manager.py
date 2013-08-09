@@ -4,9 +4,6 @@ from ConfigParser import ConfigParser
 from conpaas.core import manager
 from conpaas.core import ganglia
 
-from conpaas.core.https.server import HttpJsonResponse
-from conpaas.core.https.server import HttpErrorResponse
-
 import mock
 
 def config_parser():
