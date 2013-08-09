@@ -200,7 +200,10 @@ class BaseManager(object):
             if volume_id == vol.id:
                 return vol
 
-        raise Exception("Volume %s not found by %s" % (volume_id, self))
+        known_volumes = [ vol.id for vol in self.volumes ]
+
+        raise Exception("Volume '%s' not found. Known volumes: %s" %
+                (volume_id, known_volumes))
 
     def destroy_volume(self, volume_id):
         self.logger.info("Destroying volume with id %s" % volume_id)
@@ -223,6 +226,15 @@ class BaseManager(object):
 
         return self.controller.attach_volume(node, volume, device_name,
                 volume.cloud)
+
+    def detach_volume(self, volume_id):
+        self.logger.info("Detaching volume %s..." % volume_id)
+
+        volume = self.get_volume(volume_id)
+        ret = self.controller.detach_volume(volume, volume.cloud)
+
+        self.logger.info("Volume %s detached" % volume_id)
+        return ret
 
     def _init_cloud(self, cloud):
         if cloud == 'default':

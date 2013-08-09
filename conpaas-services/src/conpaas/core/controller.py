@@ -475,6 +475,13 @@ class Controller(object):
                 (node, volume, device))
         return cloud.driver.attach_volume(node, volume, device)
 
+    def detach_volume(self, volume, cloud=None):
+        if cloud is None:
+            cloud = self.__default_cloud
+
+        self.__logger.debug("detach_volume(volume=%s)" % volume)
+        return cloud.driver.detach_volume(volume)
+
     def destroy_volume(self, volume, cloud=None):
         if cloud is None:
             cloud = self.__default_cloud
