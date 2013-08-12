@@ -6,7 +6,10 @@ class Client(BaseClient):
 
     def info(self, service_id):
         service = BaseClient.info(self, service_id)
-        
+
+        print 'persistent:', service['persistent']
+        print 'osd_volume_size:', service['osd_volume_size']
+
         nodes = self.callmanager(service['sid'], "list_nodes", False, {})
         if 'error' in nodes:
             return
@@ -44,6 +47,8 @@ class Client(BaseClient):
         print "    delete_volume     serviceid vol_name"
         print "    list_policies     serviceid policy_type # [ osd_sel | replica_sel | replication ]"
         print "    set_policy        serviceid policy_type vol_name policy [factor]"
+        print "    toggle_persistent serviceid"
+        print "    set_osd_size      serviceid vol_size"
 # TODO: add when there is more than one striping policy
 #        print "    list_striping_policies     serviceid"
 #        print "    set_striping_policy        serviceid vol_name policy width stripe-size"
@@ -51,9 +56,9 @@ class Client(BaseClient):
     def main(self, argv):
         command = argv[1]
 
-        if command in ( 'add_nodes', 'remove_nodes', 'list_volumes', 
-                        'create_volume', 'delete_volume', 
-                        'list_policies', 'set_policy' ):
+        if command in ( 'add_nodes', 'remove_nodes', 'list_volumes',
+                'create_volume', 'delete_volume', 'list_policies',
+                'set_policy', 'toggle_persistent', 'set_osd_size' ):
             try:
                 sid = int(argv[2])
             except (IndexError, ValueError):
@@ -180,6 +185,27 @@ class Client(BaseClient):
             else:
                 print res['stdout']
                 print "Policy set." 
+
+        if command == 'toggle_persistent':
+            res = self.callmanager(sid, command, True, {})
+
+            print "This service is now",
+
+            if not res['persistent']:
+                print "not",
+
+            print "persistent"
+
+        if command == 'set_osd_size':
+            params = {}
+            try:
+                params['size'] = int(argv[3])
+            except (IndexError, ValueError):
+                self.usage(argv[0])
+                sys.exit(0)
+
+            res = self.callmanager(sid, command, True, params)
+            print "OSD volume size is now %s MBs" % res['osd_volume_size']
 
 #        if command in 'set_striping_policy':
 #            try:

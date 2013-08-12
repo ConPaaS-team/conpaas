@@ -125,10 +125,9 @@ class EC2Cloud(Cloud):
         for _ in range(10):
             try:
                 return self.driver.attach_volume(node, volume, device)
-            except Exception, err:
+            except Exception:
                 self.logger.info("Volume %s not available yet" % volume)
                 time.sleep(10)
 
         self.logger.exception("Volume %s NOT available after timeout" %
                 volume)
-

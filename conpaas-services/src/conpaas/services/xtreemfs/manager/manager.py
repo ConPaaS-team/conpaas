@@ -40,6 +40,9 @@ class XtreemFSManager(BaseManager):
         # wether we want to keep storage volumes upon OSD nodes deletion
         self.persistent = False
 
+        # default value for OSD volume size
+        self.osd_volume_size = 1024
+
         # dictionary mapping osd node IDs with volume IDs
         self.osd_volume_map = {}
 
@@ -69,7 +72,8 @@ class XtreemFSManager(BaseManager):
             # we need a storage volume for each OSD node
             volume_name = "osd-%s" % node.id
 
-            volume = self.create_volume(1000, volume_name, node.id, cloud)
+            volume = self.create_volume(self.osd_volume_size, volume_name,
+                    node.id, cloud)
 
             self.attach_volume(volume.id, node.id, "sdb")
 
@@ -286,7 +290,12 @@ class XtreemFSManager(BaseManager):
     def get_service_info(self, kwargs):
         if len(kwargs) != 0:
             return HttpErrorResponse('ERROR: Arguments unexpected')
-        return HttpJsonResponse({'state': self.state, 'type': 'xtreemfs'})
+        return HttpJsonResponse({
+            'state': self.state, 
+            'type': 'xtreemfs',
+            'persistent': self.persistent,
+            'osd_volume_size': self.osd_volume_size
+        })
 
     @expose('GET')
     def get_node_info(self, kwargs):
@@ -698,3 +707,20 @@ class XtreemFSManager(BaseManager):
         
         return self.set_policy(volumeName, 'Striping', args)
 
+    @expose('POST')
+    def toggle_persistent(self, kwargs):
+        self.persistent = not self.persistent
+        self.logger.debug('toggle_persistent: %s' % self.persistent)
+        return self.get_service_info({})
+
+    @expose('POST')
+    def set_osd_size(self, kwargs):
+        if not 'size' in kwargs:
+            return HttpErrorResponse("ERROR: Required argument (size) doesn't exist")
+
+        try:
+            self.osd_volume_size = int(kwargs['size'])
+            self.logger.debug('set_osd_size: %s' % self.osd_volume_size)
+            return self.get_service_info({})
+        except ValueError:
+            return HttpErrorResponse("ERROR: Required argument (size) should be an integer")

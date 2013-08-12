@@ -231,6 +231,9 @@ class BaseClient(object):
         res = self.callmanager(service['sid'], "get_service_info", False, {})
         print "state:", res['state']
 
+        for key, value in res.items():
+            service[key] = value
+
         return service
 
     def logs(self, service_id):
