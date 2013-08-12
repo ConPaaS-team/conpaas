@@ -116,6 +116,9 @@ class EC2Cloud(Cloud):
         location = [ location for location in self.driver.list_locations() 
                 if location.name == node.extra['availability'] ][0]
 
+        # EBS expects volume size in GiB.
+        size /= 1024.0
+
         return self.driver.create_volume(size, name, location)
 
     def attach_volume(self, node, volume, device):
@@ -123,7 +126,6 @@ class EC2Cloud(Cloud):
             try:
                 return self.driver.attach_volume(node, volume, device)
             except Exception, err:
-                self.logger.exception(str(err))
                 self.logger.info("Volume %s not available yet" % volume)
                 time.sleep(10)
 
