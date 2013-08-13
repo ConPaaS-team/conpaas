@@ -17,7 +17,7 @@ The first problem in autoscaling systems is choosing the scaling plan that bette
 Consequently, and regarding the cloud infrastructures, another problem in autoscaling comes up when deciding the right hardware configuration that will enforce these requirements over time. Cloud infrastructures are highly heterogeneous offering distinct server configurations, where the cost/hour per-server increases linearly with the number of cores and memory, as illustrated in Table~\ref{EC2instances} and Table~\ref{DAS4instances}. According to this resource classification, autoscaling systems can dynamically allocate and de-allocate servers based on their prices but not on their performance capacity, which depends on the application. 
 To adapt the computing capacity to the service demand, autoscaling systems need to measure the computing capacity of the different resources to know which hardware configuration to choose over time. For instance, gradually increasing workload volume can be handled by choosing a new configuration that minimizes the infrastructure cost of servers. In contrast, a sudden variations in workload caused by a flash crowd or outage will require additional capacity to be brought online as quickly as possible. 
 
-\begin{table}
+\begin{table}[t]
   {\scriptsize 
 \begin{center}
     \begin{tabular}{  | c | c | c | c | c |}
@@ -29,13 +29,12 @@ To adapt the computing capacity to the service demand, autoscaling systems need 
 \textit{m1.large} & 4-ECU -- 8Gb RAM& 0.24\$   \\ \hline
  \end{tabular}
 \end{center}
-\vspace{-5mm}
 \caption{EC2 instance type characteristics.}
 \label{EC2instances}
 }
 \end{table}
 
-\begin{table}
+\begin{table}[t]
   {\scriptsize 
 \begin{center}
     \begin{tabular}{  | c | c | c | c | }
@@ -48,7 +47,6 @@ To adapt the computing capacity to the service demand, autoscaling systems need 
 
  \end{tabular}
 \end{center}
-\vspace{-5mm}
 \caption{DAS4 instance type characteristics.}
 \label{DAS4instances}
 }

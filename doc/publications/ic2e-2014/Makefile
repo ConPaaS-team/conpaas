@@ -1,4 +1,4 @@
-PRJ=socc2013
+PRJ=main
 
 STYS := $(shell find . $(COMMON) -name '*.sty')
 BIBS := $(shell find . $(COMMON) -name '*.bib')

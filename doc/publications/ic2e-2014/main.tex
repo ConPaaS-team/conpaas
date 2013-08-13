@@ -1,0 +1,80 @@
+\documentclass[conference]{IEEEtran}
+
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage[ruled,vlined,linesnumbered]{algorithm2e}
+\usepackage{boxedminipage}
+\usepackage{caption}
+
+% the fixme command
+\newcommand{\fixme}[1]
+{
+  \noindent
+  \begin{boxedminipage}{\linewidth}
+    \textsl{{\bf FIXME: #1}}
+  \end{boxedminipage}
+}
+
+
+\begin{document}
+
+\title{Autoscaling in heterogeneous Cloud infrastructures}
+
+\author{\IEEEauthorblockN{Hector Fernandez}
+\IEEEauthorblockA{VU University Amsterdam\\
+Email: hector.fernandez@vu.nl}
+\and
+\IEEEauthorblockN{Guillaume Pierre}
+\IEEEauthorblockA{IRISA / Rennes 1 University\\
+Email: guillaume.pierre@irisa.fr}
+\and
+\IEEEauthorblockN{Thilo Kielmann}
+\IEEEauthorblockA{VU University Amsterdam\\
+Email: hector.fernandez@vu.nl}}
+
+\maketitle
+
+\begin{abstract}
+  The abstract goes here.
+\end{abstract}
+
+
+\section{Introduction}
+\input{introduction}
+\label{sec:introduction}
+
+\section{Problem statement}
+\input{motivation}
+\label{sec:motivation}
+
+\section{Autoscaling system}
+\label{sec:proposed_approach}
+\input{scaling_sys}
+
+\section{Evaluation}
+\label{sec:evaluation}
+\input{experiments}
+
+\section{Related work}
+\label{sec:relatedWorks}
+\input{relatedWorks}
+
+
+\section{Conclusion}
+\label{sec:conclusion}
+\input{conclusion}
+
+
+\section*{Acknowledgments}
+
+This work was partially funded by the FP7 Programme of the European
+Commission in the context of the Contrail project under Grant
+Agreement FP7-ICT-257438 and the Harness project under Grant Agreement
+318521.
+
+
+\bibliographystyle{IEEEtran}
+\bibliography{main}
+
+
+\end{document}
