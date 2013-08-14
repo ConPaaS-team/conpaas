@@ -59,4 +59,5 @@ CONTEXT_TARGET = hdc
 [director]
 DEBUG = true
 DATABASE_URI = sqlite:////etc/cpsdirector/director.db
+USERDATA_DIR = /etc/cpsdirector/data
 DIRECTOR_URL = https://director.example.org:5555

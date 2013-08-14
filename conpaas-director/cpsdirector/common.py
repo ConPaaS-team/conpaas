@@ -29,6 +29,12 @@ if os.getenv('DIRECTOR_TESTING'):
     config_parser.set("director", "DATABASE_URI", "sqlite:///director-test.db")
     config_parser.set("director", "DIRECTOR_URL", "")
 
+def get_director_url():
+    return config_parser.get("director", "DIRECTOR_URL")
+
+def get_userdata_dir():
+    return config_parser.get("director", "USERDATA_DIR")
+
 def chown(path, username, groupname):
     os.chown(path, getpwnam(username).pw_uid, getgrnam(groupname).gr_gid)
 

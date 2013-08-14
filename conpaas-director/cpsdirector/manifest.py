@@ -68,6 +68,63 @@ def upload_manifest():
     log('Manifest created')
     return simplejson.dumps(True)
 
+from cpsdirector.service import callmanager
+def get_list_nodes(sid):
+    nodes = callmanager(sid, "list_nodes", False, {})
+    if 'error' in nodes:
+        return ''
+
+    tmp = {}
+    for node in nodes:
+        tmp[node] = len(nodes[node])
+
+    return tmp
+
+from tempfile import mkstemp
+from cpsdirector.common import get_director_url
+from cpsdirector.common import get_userdata_dir
+from os.path import basename
+def get_startup_script(sid):
+    script = callmanager(sid, "get_startup_script", False, {})
+    if 'error' in script:
+        return ''
+
+    _, temp_path = mkstemp(prefix='startup', dir=get_userdata_dir())
+    open(temp_path, 'w').write(script)
+
+    return '%s/download_data/%s' % (get_director_url(), basename(temp_path))
+
+def get_service_state(sid):
+    res = callmanager(sid, "get_service_info", False, {})
+    return res['state']
+
+def get_archive(sid):
+    res = callmanager(sid, 'list_code_versions', False, {})
+    if 'error' in res:
+        return ''
+
+    version = ''
+    filename = ''
+    for row in res['codeVersions']:
+        if 'current' in row:
+            version = row['codeVersionId']
+            filename = row['filename']
+            break
+
+    if version == '' or filename == '':
+        return ''
+
+    params = { 'codeVersionId': version }
+
+    res = callmanager(sid, "download_code_version", False, params)
+    if 'error' in res:
+        return ''
+
+    _, temp_path = mkstemp(suffix=filename, dir=get_userdata_dir())
+    open(temp_path, 'w').write(res)
+
+    return '%s/download_data/%s' % (get_director_url(), basename(temp_path))
+
 from cpsdirector.service import Service
 from cpsdirector.application import get_app_by_id
 @manifest_page.route("/download_manifest/<appid>", methods=['POST'])
@@ -89,11 +146,35 @@ def download_manifest(appid):
         tmp['Type'] = service.type
         tmp['ServiceName'] = service.name
         tmp['Cloud'] = service.cloud
+
+        ret = get_service_state(service.sid)
+        if ret == "RUNNING":
+            tmp['Start'] = 1
+
+        ret = get_list_nodes(service.sid)
+        if ret != '':
+            tmp['StartupInstances'] = ret
+
+        ret = get_startup_script(service.sid)
+        if ret != '':
+            tmp['StartupScript'] = ret
+
+        ret = get_archive(service.sid)
+        if ret != '':
+            tmp['Archive'] = ret
+
         manifest['Services'].append(tmp)
 
     return simplejson.dumps(manifest)
 
-from cpsdirector.service import callmanager
+from os.path import exists
+from flask import helpers
+@manifest_page.route("/download_data/<fileid>", methods=['GET'])
+def download_data(fileid):
+    if not exists('%s/%s' % (get_userdata_dir(), fileid)):
+        return ''
+
+    return helpers.send_from_directory(get_userdata_dir(), fileid)
 
 class MGeneral():
     def check_error(self, ret):

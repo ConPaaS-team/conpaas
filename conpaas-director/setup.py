@@ -56,9 +56,20 @@ if __name__ == "__main__" and sys.argv[1] == "install":
     if not os.path.exists(os.path.join(CONFDIR, "certs")):
         os.mkdir(os.path.join(CONFDIR, "certs"))
 
+    # create user data dir
+    if not os.path.exists(os.path.join(CONFDIR, "data")):
+        os.mkdir(os.path.join(CONFDIR, "data"))
+
     # set www-data as the owner of CONFDIR
     try:
         os.chown(CONFDIR, getpwnam('www-data').pw_uid, 
             getgrnam('www-data').gr_gid)
     except OSError:
         print "W: 'chown www-data:www-data %s' failed" % CONFDIR
+
+    # set www-data as the owner of CONFDIR/data
+    try:
+        os.chown('%s/data' % CONFDIR, getpwnam('www-data').pw_uid, 
+            getgrnam('www-data').gr_gid)
+    except OSError:
+        print "W: 'chown www-data:www-data %s' failed" % CONFDIR + '/data'

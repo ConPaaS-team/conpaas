@@ -131,6 +131,8 @@ class OSD:
         else:
             logger.critical("Block device %s unavailable" % dev_name)
 
+        logger.debug(str(self.start_args))
+
         devnull_fd = open(devnull,'w')
         proc = Popen(self.start_args, stdout = devnull_fd, stderr = devnull_fd, close_fds = True)
         if proc.wait() != 0:
