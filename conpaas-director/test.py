@@ -703,7 +703,7 @@ class DirectorTest(Common):
         self.assertEquals(True, simplejson.loads(response.data))
 
     def mock_callmanager(service_id, method, post, data, files=[]):
-        return { 'state': 'RUNNING', 'error': False }
+        return { 'state': 'RUNNING' }
 
     def mock_service_start(service_type, cloud, appid):
         class ret:
@@ -761,22 +761,43 @@ class DirectorTest(Common):
         self.assertEquals(False, simplejson.loads(response.data))
 
     def mock_callmanager(service_id, method, post, data, files=[]):
-        return { 'state': 'STOPPED', 'error': False }
+        if method == "list_nodes":
+            return { 'state': 'RUNNING', 'osd': [], 'dir': [], 'mrc': [] }
+
+        return { 'state': 'RUNNING', 'error': False }
 
     @mock.patch('cpsdirector.manifest.callmanager', mock_callmanager)
     def test_download_manifest(self):
         self.create_user()
-        self.app.post('/start/php', data={ 'uid': 1 })
+        self.app.post('/start/xtreemfs', data={ 'uid': 1 })
 
         data = {
             'uid': 1
         }
 
-        result = '{"Services": [{"ServiceName": "New php service", "Type": "php", "Cloud": "iaas"}], "Application": "New Application"}'
+        expected_result = '{"Services": [{"Start": 1, "ServiceName": "New xtreemfs service", "Type": "xtreemfs", "StartupInstances": {"state": 7, "osd": 0, "dir": 0, "mrc": 0}, "Cloud": "iaas"}], "Application": "New Application"}'
 
         response = self.app.post('/download_manifest/1', data=data)
         self.assertEquals(200, response.status_code)
-        self.assertEquals(result, response.data)
+        self.assertEquals(expected_result, response.data)
+
+    def mock_callmanager(service_id, method, post, data, files=[]):
+        return { 'state': 'RUNNING', 'error': False }
+
+    @mock.patch('cpsdirector.manifest.callmanager', mock_callmanager)
+    def test_download_manifest_list_nodes_error(self):
+        self.create_user()
+        self.app.post('/start/xtreemfs', data={ 'uid': 1 })
+
+        data = {
+            'uid': 1
+        }
+
+        expected_result = '{"Services": [{"Start": 1, "ServiceName": "New xtreemfs service", "Type": "xtreemfs", "Cloud": "iaas"}], "Application": "New Application"}'
+
+        response = self.app.post('/download_manifest/1', data=data)
+        self.assertEquals(200, response.status_code)
+        self.assertEquals(expected_result, response.data)
 
     def _init_vpn(self):
         self.create_user()
