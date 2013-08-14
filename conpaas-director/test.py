@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import mock
 import urllib
 import hashlib
 import unittest
@@ -722,6 +723,10 @@ class DirectorTest(Common):
         self.assertEquals(200, response.status_code)
         self.assertEquals(False, simplejson.loads(response.data))
 
+    def mock_callmanager(service_id, method, post, data, files=[]):
+        return { 'state': 'STOPPED', 'error': False }
+
+    @mock.patch('cpsdirector.manifest.callmanager', mock_callmanager)
     def test_download_manifest(self):
         self.create_user()
         self.app.post('/start/php', data={ 'uid': 1 })
