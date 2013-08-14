@@ -702,6 +702,43 @@ class DirectorTest(Common):
         self.assertEquals(200, response.status_code)
         self.assertEquals(True, simplejson.loads(response.data))
 
+    def mock_callmanager(service_id, method, post, data, files=[]):
+        return { 'state': 'RUNNING', 'error': False }
+
+    def mock_service_start(service_type, cloud, appid):
+        class ret:
+            data = '{"msg": "ok"}'
+        return ret
+
+    @mock.patch('cpsdirector.manifest.callmanager', mock_callmanager)
+    @mock.patch('cpsdirector.manifest.service_start', mock_service_start)
+    def test_upload_manifest_ok(self):
+        self.create_user()
+        
+        manifest = """
+        {
+         "Application" : "Sudoku",
+
+         "Services" : [
+          {
+           "ServiceName" : "PHP sudoku backend",
+           "Type" : "php",
+           "Start" : 0,
+           "Archive" : "http://www.conpaas.eu/wp-content/uploads/2011/09/sudoku.tar.gz"
+          }
+         ]
+        }
+        """
+
+        data = {
+            'uid': 1,
+            'manifest': manifest,
+        }
+
+        response = self.app.post('/upload_manifest', data=data)
+        self.assertEquals(200, response.status_code)
+        self.assertEquals(True, simplejson.loads(response.data))
+
     def test_download_manifest_missing(self):
         self.create_user()
 
