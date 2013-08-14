@@ -60,7 +60,7 @@ def upload_manifest():
 
     msg = new_manifest(json)
 
-    if msg is not 'ok':
+    if msg != 'ok':
         return build_response(jsonify({
             'error' : True,
             'msg' : msg }))
