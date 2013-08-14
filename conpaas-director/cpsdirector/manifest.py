@@ -796,6 +796,26 @@ class MTaskFarm(MGeneral):
 
         return 'ok'
 
+def get_manifest_class(service_type):
+    if service_type == 'php':
+        return MPhp
+    elif service_type == 'java':
+        return MJava
+    elif service_type == 'mysql':
+        return MMySql
+    elif service_type == 'scalaris':
+        return MScalaris
+    elif service_type == 'hadoop':
+        return MHadoop
+    elif service_type == 'selenium':
+        return MSelenium
+    elif service_type == 'xtreemfs':
+        return MXTreemFS
+    elif service_type == 'taskfarm':
+        return MTaskFarm
+    else:
+        raise Exception('Service type %s does not exists' % service_type)
+
 from cpsdirector.application import check_app_exists
 from cpsdirector.application import _createapp as createapp
 def new_manifest(json):
@@ -830,24 +850,12 @@ def new_manifest(json):
         return 'ok'
 
     for service in parse.get('Services'):
-        if service.get('Type') == 'php':
-            msg = MPhp().start(service, appid)
-        elif service.get('Type') == 'java':
-            msg = MJava().start(service, appid)
-        elif service.get('Type') == 'mysql':
-            msg = MMySql().start(service, appid)
-        elif service.get('Type') == 'scalaris':
-            msg = MScalaris().start(service, appid)
-        elif service.get('Type') == 'hadoop':
-            msg = MHadoop().start(service, appid)
-        elif service.get('Type') == 'selenium':
-            msg = MSelenium().start(service, appid)
-        elif service.get('Type') == 'xtreemfs':
-            msg = MXTreemFS().start(service, appid)
-        elif service.get('Type') == 'taskfarm':
-            msg = MTaskFarm().start(service, appid)
-        else:
+        try:
+            cls = get_manifest_class(service.get('Type'))
+        except Exception:
             return 'Service %s does not exists' % service.get('Type')
+
+        msg = cls().start(service, appid)
 
         if msg is not 'ok':
             return msg
