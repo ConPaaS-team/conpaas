@@ -176,7 +176,7 @@ def download_data(fileid):
 
     return helpers.send_from_directory(get_userdata_dir(), fileid)
 
-class MGeneral():
+class MGeneral(object):
     def check_error(self, ret):
         try:
             return simplejson.loads(ret.data).get('msg')
@@ -261,6 +261,51 @@ class MGeneral():
 
         return res
 
+    def start(self, json, appid):
+        """Start the given service. Return service id upon successful
+        termination."""
+        servicetype = json.get('Type')
+        cloud = 'default'
+
+        if json.get('Cloud'):
+            cloud = json.get('Cloud')
+
+        res = service_start(servicetype, cloud, appid)
+        error = self.check_error(res)
+        if error:
+            return error
+
+        sid = simplejson.loads(res.data).get('sid')
+
+        self.wait_for_state(sid, 'INIT')
+
+        if json.get('ServiceName'):
+            res = service_rename(sid, json.get('ServiceName'))
+            error = self.check_error(res)
+            if error:
+                return error
+
+        env = self.update_environment(appid)
+        url = ''
+
+        if json.get('StartupScript'):
+            url = json.get('StartupScript')
+
+        res = self.upload_startup_script(sid, url, env)
+        if 'error' in res:
+            return res['error']
+
+        if not json.get('Start') or json.get('Start') == 0:
+            return sid
+
+        # Start == 1
+        res = self.startup(sid)
+        if 'error' in res:
+            return res['error']
+
+        self.wait_for_state(sid, 'RUNNING')
+        return sid
+
 from cpsdirector.service import _start as service_start
 from cpsdirector.service import _rename as service_rename
 class MPhp(MGeneral):
@@ -282,26 +327,11 @@ class MPhp(MGeneral):
         return res
 
     def start(self, json, appid):
-        servicetype = json.get('Type')
-        cloud = 'default'
+        sid = MGeneral.start(self, json, appid)
 
-        if json.get('Cloud'):
-            cloud = json.get('Cloud')
-
-        res = service_start(servicetype, cloud, appid)
-        error = self.check_error(res)
-        if error:
-            return error
-
-        sid = simplejson.loads(res.data).get('sid')
-
-        self.wait_for_state(sid, 'INIT')
-
-        if json.get('ServiceName'):
-            res = service_rename(sid, json.get('ServiceName'))
-            error = self.check_error(res)
-            if error:
-                return error
+        if type(sid) != int:
+            # Error!
+            return sid
 
         if json.get('Archive'):
             res = self.upload_code(sid, json.get('Archive'))
@@ -311,26 +341,6 @@ class MPhp(MGeneral):
             res = self.enable_code(sid, res['codeVersionId']);
             if 'error' in res:
                 return res['error']
-
-        env = self.update_environment(appid)
-        url = ''
-
-        if json.get('StartupScript'):
-            url = json.get('StartupScript')
-
-        res = self.upload_startup_script(sid, url, env)
-        if 'error' in res:
-            return res['error']
-
-        if not json.get('Start') or json.get('Start') == 0:
-            return 'ok'
-
-        # Start == 1
-        res = self.startup(sid)
-        if 'error' in res:
-            return res['error']
-
-        self.wait_for_state(sid, 'RUNNING')
 
         if json.get('StartupInstances'):
             params = {
@@ -352,89 +362,14 @@ class MPhp(MGeneral):
 
         return 'ok'
 
-class MJava(MGeneral):
-    def upload_code(self, service_id, url):
-        contents = urllib2.urlopen(url).read()
-        filename = url.split('/')[-1]
-
-        files = [ ( 'code', filename, contents ) ]
-
-        res = callmanager(service_id, "/", True, { 'method': "upload_code_version",  }, files)
-
-        return res
+class MJava(MPhp):
 
     def enable_code(self, service_id, code_version):
         params = { 'codeVersionId': code_version }
 
-        res = callmanager(service_id, "update_php_configuration", True, params)
+        res = callmanager(service_id, "update_java_configuration", True, params)
 
         return res
-
-    def start(self, json, appid):
-        servicetype = json.get('Type')
-        cloud = 'default'
-
-        if json.get('Cloud'):
-            cloud = json.get('Cloud')
-
-        res = service_start(servicetype, cloud, appid)
-        error = self.check_error(res)
-        if error:
-            return error
-
-        sid = simplejson.loads(res.data).get('sid')
-
-        self.wait_for_state(sid, 'INIT')
-
-        if json.get('ServiceName'):
-            res = service_rename(sid, json.get('ServiceName'))
-            error = self.check_error(res)
-            if error:
-                return error
-
-        if json.get('Archive'):
-            res = self.upload_code(sid, json.get('Archive'))
-            if 'error' in res:
-                return res['error']
-
-            res = self.enable_code(sid, res['codeVersionId']);
-            if 'error' in res:
-                return res['error']
-
-        if json.get('StartupScript'):
-            res = self.upload_startup_script(sid, json.get('StartupScript'))
-            if 'error' in res:
-                return res['error']
-
-        if not json.get('Start') or json.get('Start') == 0:
-            return 'ok'
-
-        # Start == 1
-        res = self.startup(sid)
-        if 'error' in res:
-            return res['error']
-
-        self.wait_for_state(sid, 'RUNNING')
-
-        if json.get('StartupInstances'):
-            params = {
-                    'proxy': 1,
-                    'web': 1,
-                    'backend': 1
-            }
-
-            if json.get('StartupInstances').get('proxy'):
-                params['proxy'] = int(json.get('StartupInstances').get('proxy'))
-            if json.get('StartupInstances').get('web'):
-                params['web'] = int(json.get('StartupInstances').get('web'))
-            if json.get('StartupInstances').get('backend'):
-                params['backend'] = int(json.get('StartupInstances').get('backend'))
-
-            res = self.add_nodes(sid, params)
-            if 'error' in res:
-                return res['error']
-
-        return 'ok'
 
 class MMySql(MGeneral):
     def load_dump(self, sid, url):
@@ -454,41 +389,11 @@ class MMySql(MGeneral):
         return res
 
     def start(self, json, appid):
-        servicetype = json.get('Type')
-        cloud = 'default'
+        sid = MGeneral.start(self, json, appid)
 
-        if json.get('Cloud'):
-            cloud = json.get('Cloud')
-
-        res = service_start(servicetype, cloud, appid)
-        error = self.check_error(res)
-        if error:
-            return error
-
-        sid = simplejson.loads(res.data).get('sid')
-
-        self.wait_for_state(sid, 'INIT')
-
-        if json.get('ServiceName'):
-            res = service_rename(sid, json.get('ServiceName'))
-            error = self.check_error(res)
-            if error:
-                return error
-
-        if json.get('StartupScript'):
-            res = self.upload_startup_script(sid, json.get('StartupScript'))
-            if 'error' in res:
-                return res['error']
-
-        if not json.get('Start') or json.get('Start') == 0:
-            return 'ok'
-
-        # Start == 1
-        res = self.startup(sid)
-        if 'error' in res:
-            return res['error']
-
-        self.wait_for_state(sid, 'RUNNING')
+        if type(sid) != int:
+            # Error!
+            return sid
 
         if json.get('Password'):
             res = self.set_password(sid, json.get('Password'))
@@ -516,41 +421,11 @@ class MMySql(MGeneral):
 
 class MScalaris(MGeneral):
     def start(self, json, appid):
-        servicetype = json.get('Type')
-        cloud = 'default'
+        sid = MGeneral.start(self, json, appid)
 
-        if json.get('Cloud'):
-            cloud = json.get('Cloud')
-
-        res = service_start(servicetype, cloud, appid)
-        error = self.check_error(res)
-        if error:
-            return error
-
-        sid = simplejson.loads(res.data).get('sid')
-
-        self.wait_for_state(sid, 'INIT')
-
-        if json.get('ServiceName'):
-            res = service_rename(sid, json.get('ServiceName'))
-            error = self.check_error(res)
-            if error:
-                return error
-
-        if json.get('StartupScript'):
-            res = self.upload_startup_script(sid, json.get('StartupScript'))
-            if 'error' in res:
-                return res['error']
-
-        if not json.get('Start') or json.get('Start') == 0:
-            return 'ok'
-
-        # Start == 1
-        res = self.startup(sid)
-        if 'error' in res:
-            return res['error']
-
-        self.wait_for_state(sid, 'RUNNING')
+        if type(sid) != int:
+            # Error!
+            return sid
 
         if json.get('StartupInstances'):
             params = {
@@ -568,41 +443,11 @@ class MScalaris(MGeneral):
 
 class MHadoop(MGeneral):
     def start(self, json, appid):
-        servicetype = json.get('Type')
-        cloud = 'default'
+        sid = MGeneral.start(self, json, appid)
 
-        if json.get('Cloud'):
-            cloud = json.get('Cloud')
-
-        res = service_start(servicetype, cloud, appid)
-        error = self.check_error(res)
-        if error:
-            return error
-
-        sid = simplejson.loads(res.data).get('sid')
-
-        self.wait_for_state(sid, 'INIT')
-
-        if json.get('ServiceName'):
-            res = service_rename(sid, json.get('ServiceName'))
-            error = self.check_error(res)
-            if error:
-                return error
-
-        if json.get('StartupScript'):
-            res = self.upload_startup_script(sid, json.get('StartupScript'))
-            if 'error' in res:
-                return res['error']
-
-        if not json.get('Start') or json.get('Start') == 0:
-            return 'ok'
-
-        # Start == 1
-        res = self.startup(sid)
-        if 'error' in res:
-            return res['error']
-
-        self.wait_for_state(sid, 'RUNNING')
+        if type(sid) != int:
+            # Error!
+            return sid
 
         if json.get('StartupInstances'):
             params = {
@@ -620,41 +465,11 @@ class MHadoop(MGeneral):
 
 class MSelenium(MGeneral):
     def start(self, json, appid):
-        servicetype = json.get('Type')
-        cloud = 'default'
+        sid = MGeneral.start(self, json, appid)
 
-        if json.get('Cloud'):
-            cloud = json.get('Cloud')
-
-        res = service_start(servicetype, cloud, appid)
-        error = self.check_error(res)
-        if error:
-            return error
-
-        sid = simplejson.loads(res.data).get('sid')
-
-        self.wait_for_state(sid, 'INIT')
-
-        if json.get('ServiceName'):
-            res = service_rename(sid, json.get('ServiceName'))
-            error = self.check_error(res)
-            if error:
-                return error
-
-        if json.get('StartupScript'):
-            res = self.upload_startup_script(sid, json.get('StartupScript'))
-            if 'error' in res:
-                return res['error']
-
-        if not json.get('Start') or json.get('Start') == 0:
-            return 'ok'
-
-        # Start == 1
-        res = self.startup(sid)
-        if 'error' in res:
-            return res['error']
-
-        self.wait_for_state(sid, 'RUNNING')
+        if type(sid) != int:
+            # Error!
+            return sid
 
         if json.get('StartupInstances'):
             params = {
@@ -682,41 +497,11 @@ class MXTreemFS(MGeneral):
         return res
 
     def start(self, json, appid):
-        servicetype = json.get('Type')
-        cloud = 'default'
+        sid = MGeneral.start(self, json, appid)
 
-        if json.get('Cloud'):
-            cloud = json.get('Cloud')
-
-        res = service_start(servicetype, cloud, appid)
-        error = self.check_error(res)
-        if error:
-            return error
-
-        sid = simplejson.loads(res.data).get('sid')
-
-        self.wait_for_state(sid, 'INIT')
-
-        if json.get('ServiceName'):
-            res = service_rename(sid, json.get('ServiceName'))
-            error = self.check_error(res)
-            if error:
-                return error
-
-        if json.get('StartupScript'):
-            res = self.upload_startup_script(sid, json.get('StartupScript'))
-            if 'error' in res:
-                return res['error']
-
-        if not json.get('Start') or json.get('Start') == 0:
-            return 'ok'
-
-        # Start == 1
-        res = self.startup(sid)
-        if 'error' in res:
-            return res['error']
-
-        self.wait_for_state(sid, 'RUNNING')
+        if type(sid) != int:
+            # Error!
+            return sid
 
         if json.get('VolumeStartup'):
             name = json.get('VolumeStartup').get('volumeName')
@@ -746,41 +531,11 @@ class MXTreemFS(MGeneral):
 
 class MTaskFarm(MGeneral):
     def start(self, json, appid):
-        servicetype = json.get('Type')
-        cloud = 'default'
+        sid = MGeneral.start(self, json, appid)
 
-        if json.get('Cloud'):
-            cloud = json.get('Cloud')
-
-        res = service_start(servicetype, cloud, appid)
-        error = self.check_error(res)
-        if error:
-            return error
-
-        sid = simplejson.loads(res.data).get('sid')
-
-        self.wait_for_state(sid, 'INIT')
-
-        if json.get('ServiceName'):
-            res = service_rename(sid, json.get('ServiceName'))
-            error = self.check_error(res)
-            if error:
-                return error
-
-        if json.get('StartupScript'):
-            res = self.upload_startup_script(sid, json.get('StartupScript'))
-            if 'error' in res:
-                return res['error']
-
-        if not json.get('Start') or json.get('Start') == 0:
-            return 'ok'
-
-        # Start == 1
-        res = self.startup(sid)
-        if 'error' in res:
-            return res['error']
-
-        self.wait_for_state(sid, 'RUNNING')
+        if type(sid) != int:
+            # Error!
+            return sid
 
         if json.get('StartupInstances'):
             params = {
