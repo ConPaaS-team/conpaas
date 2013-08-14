@@ -30,7 +30,7 @@ The sudoku application needs to have just one PHP service and the
 following is the simplest manifest file::
 
    {
-    "Description" : "Sudoku example",
+    "Application" : "Sudoku example",
 
     "Services" : [
      {
@@ -69,7 +69,7 @@ exactly the same MediaWiki application shown in the video::
 
 
    {
-    "Description" : "Wiki in the Cloud",
+    "Application" : "Wiki in the Cloud",
 
     "Services" : [
      {
