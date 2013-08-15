@@ -27,6 +27,7 @@ mkdir -p cpsdirectorconf/certs
 
 # We cannot use system-wide directories
 sed -i s#/etc/cpsdirector#$PWD/cpsdirectorconf# director.cfg.example
+mkdir -p $PWD/cpsdirectorconf/data
 
 python setup.py install || true
 
