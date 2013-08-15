@@ -812,6 +812,38 @@ class DirectorTest(Common):
         self.assertEquals(200, response.status_code)
         self.assertEquals(expected_result, response.data)
 
+    def mock_callmanager(service_id, method, post, data, files=[]):
+        if method == "list_code_versions" :
+            return { 'state': 'RUNNING', 
+                     'codeVersions': [ { 'current': True, 'codeVersionId': 42,
+                                         'filename': 'test.tar.gz' } ] }
+
+        if method == "download_code_version":
+            return ""
+
+        return { 'state': 'RUNNING', 'error': False }
+
+    @mock.patch('cpsdirector.manifest.callmanager', mock_callmanager)
+    def test_download_manifest_get_archive(self):
+        self.create_user()
+        self.app.post('/start/php', data={ 'uid': 1 })
+
+        data = {
+            'uid': 1
+        }
+
+        response = self.app.post('/download_manifest/1', data=data)
+        self.assertEquals(200, response.status_code)
+
+        result = simplejson.loads(response.data)
+
+        self.assertEquals(1, len(result['Services']))
+
+        service = result['Services'][0]
+        self.assertEquals('New php service', service['ServiceName'])
+
+        self.failUnless('Archive' in service)
+
     def _init_vpn(self):
         self.create_user()
         cpsdirector.common.config_parser.set('conpaas', 'VPN_BASE_NETWORK', 
