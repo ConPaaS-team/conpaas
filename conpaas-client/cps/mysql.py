@@ -1,6 +1,11 @@
 import sys
 import getpass
 
+import codecs
+import locale
+
+sys.stdout = codecs.getwriter(locale.getpreferredencoding())(sys.stdout)
+
 from cps.base import BaseClient
 
 class Client(BaseClient):
@@ -21,8 +26,17 @@ class Client(BaseClient):
         res = self.callmanager(service_id, "set_password", True, data)
         if 'error' in res:
             print res['error']
+            sys.exit(1)
         else:
             print "Password updated successfully"
+
+    def sqldump(self, service_id):
+        res = self.callmanager(service_id, "sqldump", False, {})
+        if type('error') is dict and 'error' in res:
+            print res['error']
+            sys.exit(1)
+        else:
+            print res
 
     def info(self, service_id):
         service = BaseClient.info(self, service_id)
@@ -44,9 +58,20 @@ class Client(BaseClient):
         print "    set_password      serviceid password"
         print "    add_nodes         serviceid count [cloud]"
         print "    remove_nodes      serviceid count"
+        print "    sqldump           serviceid"
 
     def main(self, argv):
         command = argv[1]
+
+        if command == 'sqldump':
+            try:
+                sid = int(argv[2])
+            except (IndexError, ValueError):
+                self.usage(argv[0])
+                sys.exit(0)
+                
+            self.check_service_id(sid)
+            self.sqldump(sid)
 
         if command == 'set_password':
             try:

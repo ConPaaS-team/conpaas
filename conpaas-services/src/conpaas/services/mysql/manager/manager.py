@@ -13,6 +13,7 @@ from random import choice
 from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse, \
                                       FileUploadField
 from conpaas.core.expose import expose
+from conpaas.core.misc import run_cmd
 from conpaas.core.manager import BaseManager, ManagerException
 
 from conpaas.services.mysql.agent import client
@@ -40,6 +41,8 @@ class MySQLManager(BaseManager):
 
         # The unique id that is used to start the master/slave
         self.id = 0
+
+        self.root_pass = None
 
     def _do_startup(self, cloud):
         ''' Starts up the service. The first node will be the MYSQL master.
@@ -290,7 +293,23 @@ class MySQLManager(BaseManager):
             self.state = self.S_ERROR
             return HttpErrorResponse('Failed to set password')
         else:
+            self.root_pass = kwargs['password']
             return HttpJsonResponse()
+
+    @expose('GET')
+    def sqldump(self, kwargs):
+        if self.state != self.S_RUNNING:
+            return HttpErrorResponse('ERROR: Wrong state to call sqldump')
+
+        master_ip = self.config.getMySQLmasters()[0].ip
+        cmd = 'mysqldump -u mysqldb -h %s --password=%s -A' % (master_ip,
+                self.root_pass)
+        out, err = run_cmd(cmd)
+
+        if err:
+            return HttpErrorResponse(err)
+
+        return HttpJsonResponse(out)
 
     @expose('UPLOAD')
     def load_dump(self, kwargs):
