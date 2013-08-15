@@ -4,6 +4,8 @@
     :copyright: (C) 2010-2013 by Contrail Consortium.
 """
 
+from os import chown
+from pwd import getpwnam
 from os.path import join, devnull, lexists
 from subprocess import Popen, PIPE
 from Cheetah.Template import Template
@@ -152,6 +154,10 @@ class OSD:
                     logger.info("OSD node has prepared and mounted %s" % self.dev_name)
         else:
             logger.critical("Block device %s unavailable, falling back to image space" % self.dev_name)
+
+        # must be owned by xtreemfs:xtreemfs
+        xtreemfs_user = getpwnam("xtreemfs")
+        chown(self.mount_point, xtreemfs_user.pw_uid, xtreemfs_user.pw_gid)
 
         logger.debug(str(self.start_args))
 
