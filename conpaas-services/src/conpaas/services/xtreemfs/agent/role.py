@@ -5,10 +5,10 @@
 """
 
 from os.path import join, devnull, lexists
-from subprocess import Popen
+from subprocess import Popen, PIPE
 from Cheetah.Template import Template
 from conpaas.core.log import create_logger
-import uuid
+from conpaas.core.misc import run_cmd
 import time
 
 S_INIT        = 'INIT'
@@ -34,15 +34,45 @@ def init(config_parser):
     global ETC
     ETC = config_parser.get('agent','ETC')
 
+class DIR():
+    def __init__(self, uuid):
+        self.state = S_INIT         
+        self.start_args = [DIR_STARTUP,'start']
+        self.config_template = join(ETC,'dirconfig.properties')
+        logger.info('DIR server initialized')
+        self.uuid = uuid
+        self.configure()
+        self.start()
+
+    def start(self):
+        self.state = S_STARTING
+        devnull_fd = open(devnull,'w')
+        proc = Popen(self.start_args, stdout = devnull_fd, stderr = devnull_fd, close_fds = True)
+        if proc.wait() != 0:
+            logger.critical('Failed to start dir service:(code=%d)' %proc.returncode)
+        logger.info('DIR Service started:') 
+        self.state = S_RUNNING
+
+    def configure(self):
+        self._write_config()
+
+    def _write_config(self):
+        tmpl = open(self.config_template).read()
+        template = Template(tmpl,{
+                            'uuid' : self.uuid
+                        })
+        conf_fd = open('/etc/xos/xtreemfs/dirconfig.properties','w')
+        conf_fd.write(str(template))
+        conf_fd.close()
 
 class MRC:
-    def __init__(self,dir_serviceHost = None):
+    def __init__(self, dir_serviceHost, uuid):
         self.state = S_INIT         
         self.start_args = [MRC_STARTUP,'start']        
         self.config_template = join(ETC,'mrcconfig.properties')
         logger = create_logger(__name__)
         logger.info('MRC server initialized')
-        self.uuid_nr = uuid.uuid1()
+        self.uuid = uuid
         self.configure(dir_serviceHost)
         self.start()
 
@@ -54,82 +84,74 @@ class MRC:
             logger.critical('Failed to start mrc service:(code=%d)' %proc.returncode)
         logger.info('MRC Service started:') 
         self.state = S_RUNNING
-    def configure(self,dir_serviceHost):
-        if dir_serviceHost == None: raise TypeError('Dir service host required')
         
+    def configure(self, dir_serviceHost):
         self.dir_serviceHost = dir_serviceHost    
         self._write_config()
+        
     def _write_config(self):
         tmpl = open(self.config_template).read()
         template = Template(tmpl,{
                             'dir_serviceHost' : self.dir_serviceHost,
-                            'uuid' : self.uuid_nr
+                            'uuid' : self.uuid
                         })
         conf_fd = open('/etc/xos/xtreemfs/mrcconfig.properties','w')
         conf_fd.write(str(template))
         conf_fd.close()
 
-class DIR():
-    def __init__(self):
+class OSD:
+    def __init__(self, dir_serviceHost, uuid):
         self.state = S_INIT         
-        self.start_args = [DIR_STARTUP,'start']
-        self.config_template = join(ETC,'dirconfig.properties')
-        logger.info('DIR server initialized')
-        self.uuid_nr = uuid.uuid1()
-        self.configure()
+        self.uuid = uuid
+        self.dir_serviceHost = dir_serviceHost
+        self.config_template = join(ETC, 'osdconfig.properties')
+        self.dir_servicePort = 32638
+        self.dev_name = "/dev/sdb"
+        self.mount_point = "/media/xtreemfs-objs"
+        self.prepare_args = ['mkfs.ext4', '-q', '-m0', self.dev_name]
+#        self.mkdir_args = ['mkdir', '-p', self.mount_point]
+        self.mkdir_cmd = "mkdir -p %s" % self.mount_point
+        self.mount_args = ['mount', self.dev_name, self.mount_point]
+        self.umount_args = ['umount', self.mount_point]
+        self.start_args = [OSD_STARTUP, 'start']
+        self.stop_args = [OSD_STARTUP, 'stop']
+        self.remove_args = [OSD_REMOVE, '-dir ' + str(self.dir_serviceHost) + ':' + str(self.dir_servicePort), 'uuid:' + str(self.uuid)]
+        self._write_config()
+        logger.info('OSD server initialized')
         self.start()
+
     def start(self):
         self.state = S_STARTING
         devnull_fd = open(devnull,'w')
-        proc = Popen(self.start_args, stdout = devnull_fd, stderr = devnull_fd, close_fds = True)
-        
-        if proc.wait() != 0:
-            logger.critical('Failed to start dir service:(code=%d)' %proc.returncode)
-        logger.info('DIR Service started:') 
-        self.state = S_RUNNING
-    def configure(self):
-        self._write_config()
-    def _write_config(self):
-        tmpl = open(self.config_template).read()
-        template = Template(tmpl,{
-                            'uuid' : self.uuid_nr
-                        })
-        conf_fd = open('/etc/xos/xtreemfs/dirconfig.properties','w')
-        conf_fd.write(str(template))
-        conf_fd.close()
-
-class OSD:
-    def __init__(self,dir_serviceHost = None):
-        self.state = S_INIT         
-        self.config_template = join(ETC,'osdconfig.properties')
-        logger.info('OSD server initialized')
-        self.uuid_nr = uuid.uuid1()
-        self.configure(dir_serviceHost)
-        self.dir_servicePort = 32638
-        self.start_args = [OSD_STARTUP,'start']
-        self.stop_args = [OSD_STARTUP,'stop']
-        self.remove_args = [OSD_REMOVE, '-dir ' + str(self.dir_serviceHost) + ':' + str(self.dir_servicePort), 'uuid:' + str(self.uuid_nr)]
-        self.start()
-
-    def start(self):
-        self.state = S_STARTING
-
         # waiting for our block device to be available
-        dev_name = "sdb"
         dev_found = False
 
         for attempt in range(1, 11):
-            logger.info("OSD node waiting for block device %s" % dev_name)
-            if lexists("/dev/%s" % dev_name):
+            logger.info("OSD node waiting for block device %s" % self.dev_name)
+            if lexists(self.dev_name):
                 dev_found = True
                 break
-
             time.sleep(10)
 
         if dev_found:
-            logger.info("OSD node has now access to %s" % dev_name)
+            # create mount point
+            run_cmd(self.mkdir_cmd)
+
+            # prepare block device
+            logger.info("OSD node has now access to %s" % self.dev_name)
+            proc = Popen(self.prepare_args, stdin=PIPE, stdout = devnull_fd, stderr = devnull_fd, close_fds = True)
+            proc.communicate(input="y") # answer interactive question with y
+            if proc.wait() != 0:
+                logger.critical('Failed to prepare storage device:(code=%d)' %proc.returncode)
+            else:
+                # mount
+                proc = Popen(self.mount_args, stdout = devnull_fd, stderr = devnull_fd, close_fds = True)
+                if proc.wait() != 0:
+                    logger.critical('Failed to mount storage device:(code=%d)' %proc.returncode)
+                else:
+                    logger.info("OSD node has prepared and mounted %s" % self.dev_name)
         else:
-            logger.critical("Block device %s unavailable" % dev_name)
+            logger.critical("Block device %s unavailable, falling back to image space" % self.dev_name)
 
         logger.debug(str(self.start_args))
 
@@ -139,19 +161,18 @@ class OSD:
             logger.critical('Failed to start osd service:(code=%d)' %proc.returncode)
         logger.info('OSD Service started:') 
         self.state = S_RUNNING
-    def configure(self,dir_serviceHost):
-        if dir_serviceHost == None: raise TypeError('Dir service host required')
-        self.dir_serviceHost = dir_serviceHost    
-        self._write_config()
+
     def _write_config(self):
         tmpl = open(self.config_template).read()
         template = Template(tmpl,{
                             'dir_serviceHost' : self.dir_serviceHost,
-                            'uuid' : self.uuid_nr
+                            'uuid' : self.uuid,
+                            'object_dir' : self.mount_point
                         })
         conf_fd = open('/etc/xos/xtreemfs/osdconfig.properties','w')
         conf_fd.write(str(template))
         conf_fd.close()
+
     def stop(self):
         if self.state == S_RUNNING:
             self.state = S_STOPPING
@@ -168,6 +189,12 @@ class OSD:
             if proc.wait() != 0:
                 logger.critical('Failed to stop osd service:(code=%d)' %proc.returncode)
             logger.info('OSD Service stopped:') 
+            # unmount storage block device
+            proc = Popen(self.umount_args, stdout = devnull_fd, stderr = devnull_fd, close_fds = True)
+            if proc.wait() != 0:
+                logger.critical('Failed to unmount storage device:(code=%d)' %proc.returncode)
+            logger.info('Storage block device unmounted.') 
+
             self.state = S_STOPPED
         else:
             logger.warning('Request to stop OSD service while it is not running')      

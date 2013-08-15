@@ -93,6 +93,14 @@ class XtreemFSAgent(BaseAgent):
             self.logger.exception(e)
             return HttpErrorResponse(ex.message)
 
+    @expose('POST')
+    def createDIR(self, kwargs):
+        try:
+            kwargs = self._DIR_get_params(kwargs)
+        except AgentException as e:
+            return HttpErrorResponse(e.message)
+        with self.dir_lock:
+            return self._create(kwargs, self.dir_file, self.DIR)
 
     @expose('POST')
     def createMRC(self, kwargs):
@@ -103,12 +111,6 @@ class XtreemFSAgent(BaseAgent):
         else:
             with self.mrc_lock:
                 return self._create(kwargs, self.mrc_file, self.MRC)
-
-    @expose('POST')
-    def createDIR(self, kwargs):
-        with self.dir_lock:
-            return self._create(kwargs, self.dir_file, self.DIR)
-    
 
     @expose('POST')
     def createOSD(self, kwargs):
@@ -126,12 +128,25 @@ class XtreemFSAgent(BaseAgent):
         with self.osd_lock:
             return self._stop(kwargs, self.osd_file, self.OSD)       
 
+    def _DIR_get_params(self, kwargs):
+        ret = {}
+        if 'uuid' not in kwargs:
+            raise AgentException(
+                AgentException.E_ARGS_MISSING, 'uuid')
+        ret['uuid'] = kwargs.pop('uuid')
+        return ret
+
+
     def _MRC_get_params(self, kwargs):
         ret = {}
         if 'dir_serviceHost' not in kwargs:
             raise AgentException(
                 AgentException.E_ARGS_MISSING, 'dir service host')
         ret['dir_serviceHost'] = kwargs.pop('dir_serviceHost')
+        if 'uuid' not in kwargs:
+            raise AgentException(
+                AgentException.E_ARGS_MISSING, 'uuid')
+        ret['uuid'] = kwargs.pop('uuid')
         return ret
  
     def _OSD_get_params(self, kwargs):
@@ -140,6 +155,10 @@ class XtreemFSAgent(BaseAgent):
             raise AgentException(
                 AgentException.E_ARGS_MISSING, 'dir service host')
         ret['dir_serviceHost'] = kwargs.pop('dir_serviceHost')
+        if 'uuid' not in kwargs:
+            raise AgentException(
+                AgentException.E_ARGS_MISSING, 'uuid')
+        ret['uuid'] = kwargs.pop('uuid')
         return ret    
 
     @expose('POST')

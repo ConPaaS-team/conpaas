@@ -25,21 +25,26 @@ def startup(host, port):
   method = 'startup'
   return _check(https.client.jsonrpc_post(host, port, '/', method))
 
-def createMRC(host,port,dir_serviceHost):
+def createMRC(host, port, dir_serviceHost, uuid):
   method = 'createMRC'
   params = {
-    'dir_serviceHost':dir_serviceHost            
+    'dir_serviceHost' : dir_serviceHost,
+    'uuid' : uuid
   }
   return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
 
-def createDIR(host, port):
+def createDIR(host, port, uuid):
   method = 'createDIR'
-  return _check(https.client.jsonrpc_post(host, port, '/', method))
+  params = {
+    'uuid' : uuid
+  }
+  return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
 
-def createOSD(host, port, dir_serviceHost):
+def createOSD(host, port, dir_serviceHost, uuid):
   method = 'createOSD'
   params = {
-      'dir_serviceHost':dir_serviceHost
+      'dir_serviceHost':dir_serviceHost,
+      'uuid' : uuid
   }
   return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
 

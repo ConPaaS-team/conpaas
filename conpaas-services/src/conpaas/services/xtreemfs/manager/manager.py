@@ -16,6 +16,7 @@ from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse
 from conpaas.services.xtreemfs.agent import client
 
 import subprocess
+import uuid
 
 def invalid_arg(msg):
     return HttpErrorResponse(ManagerException(
@@ -43,8 +44,12 @@ class XtreemFSManager(BaseManager):
         # default value for OSD volume size
         self.osd_volume_size = 1024
 
-        # dictionary mapping osd node IDs with volume IDs
-        self.osd_volume_map = {}
+        # dictionary mapping node IDs with uuids
+        self.dir_node_uuid_map = {}
+        self.mrc_node_uuid_map = {}
+        self.osd_node_uuid_map = {}
+        # dictionary mapping osd uuids to volume IDs
+        self.osd_uuid_volume_map = {}
 
         # Setup the clouds' controller
         self.controller.generate_context('xtreemfs')
@@ -52,7 +57,9 @@ class XtreemFSManager(BaseManager):
     def _start_dir(self, nodes):
         for node in nodes:
             try:
-                client.createDIR(node.ip, 5555)
+                dir_uuid = str(uuid.uuid1())
+                self.dir_node_uuid_map[node.id] = dir_uuid
+                client.createDIR(node.ip, 5555, dir_uuid)
             except client.AgentException:
                 self.logger.exception('Failed to start DIR at node %s' % node)
                 self.state = self.S_ERROR
@@ -61,7 +68,9 @@ class XtreemFSManager(BaseManager):
     def _start_mrc(self, nodes):
         for node in nodes:
             try:
-                client.createMRC(node.ip, 5555, self.dirNodes[0].ip)
+                mrc_uuid = str(uuid.uuid1())
+                self.mrc_node_uuid_map[node.id] = mrc_uuid
+                client.createMRC(node.ip, 5555, self.dirNodes[0].ip, mrc_uuid)
             except client.AgentException:
                 self.logger.exception('Failed to start MRC at node %s' % node)
                 self.state = self.S_ERROR
@@ -69,18 +78,18 @@ class XtreemFSManager(BaseManager):
 
     def _start_osd(self, nodes, cloud=None):
         for idx, node in enumerate(nodes):
-            # we need a storage volume for each OSD node
-            volume_name = "osd-%s" % node.id
+            osd_uuid = str(uuid.uuid1())
+            self.osd_node_uuid_map[node.id] = osd_uuid
 
+            # we need a storage volume for each OSD node
+            volume_name = "osd-%s" % osd_uuid
             volume = self.create_volume(self.osd_volume_size, volume_name,
                     node.id, cloud)
-
             self.attach_volume(volume.id, node.id, "sdb")
-
-            self.osd_volume_map[node.id] = volume.id
+            self.osd_uuid_volume_map[osd_uuid] = volume.id
 
             try:
-                client.createOSD(node.ip, 5555, self.dirNodes[0].ip)
+                client.createOSD(node.ip, 5555, self.dirNodes[0].ip, osd_uuid)
             except client.AgentException:
                 self.logger.exception('Failed to start OSD at node %s' % node)
                 self.state = self.S_ERROR
@@ -95,7 +104,7 @@ class XtreemFSManager(BaseManager):
                 self.state = self.S_ERROR
                 raise
 
-            volume_id = self.osd_volume_map[node.id]
+            volume_id = self.osd_uuid_volume_map[self.osd_node_uuid_map[node.id]]
             self.detach_volume(volume_id)
 
             # if the service is not persistent, delete the storage volume
@@ -115,11 +124,6 @@ class XtreemFSManager(BaseManager):
             #       - added DIR, MRC and OSD services will all run
             #         on exclusive nodes
             #       - all explicitly added services can be removed
-            #
-            # TODO: Currently, only OSDs can be removed, which might
-            #       result in data loss depending on the replication
-            #       policy. Removing a node in ConPaaS is the same to
-            #       XtreemFS as node failure.
 
             # create 1 node
             node_instances = self.controller.create_nodes(1,
@@ -570,9 +574,9 @@ class XtreemFSManager(BaseManager):
 
 #        # with python 2.7
 #        try: 
-#	        # mkdir -p <mountpoint>
+#            # mkdir -p <mountpoint>
 #            subprocess.check_output(['mkdir', '-p', mountPoint])
-#	        # mount.xtreemfs <dir_ip>:32638/<volumename> <mountpoint>
+#            # mount.xtreemfs <dir_ip>:32638/<volumename> <mountpoint>
 #            subprocess.check_output(['mount.xtreemfs',
 #                                     '%s:32638/%s' % (self.dirNodes[0].ip, volumeName),
 #                                     mountPoint],  
@@ -612,7 +616,7 @@ class XtreemFSManager(BaseManager):
 #            subprocess.check_output(['umount', mountPoint])
 #            # fusermount -u <mountpoint>
 #            #subprocess.check_output(['fusermount', '-u', mountPoint])
-#      	     # rmdir <mountpoint>
+#               # rmdir <mountpoint>
 #            subprocess.check_output(['rmdir', mountPoint])
 #        except subprocess.CalledProcessError as e:
 #            return HttpErrorResponse('ERROR: could not unmount volume: ' + e.output)
