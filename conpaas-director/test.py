@@ -5,6 +5,7 @@ import mock
 import urllib
 import hashlib
 import unittest
+import tempfile
 import simplejson
 
 os.environ['DIRECTOR_TESTING'] = "true"
@@ -149,6 +150,10 @@ class DirectorTest(Common):
 
     def test_200_on_downloadmanifest(self):
         response = self.app.post('/download_manifest/1', data={ 'uid': 1 })
+        self.assertEquals(200, response.status_code)
+
+    def test_200_on_download_data(self):
+        response = self.app.get('/download_data/file', data={ 'uid': 1 })
         self.assertEquals(200, response.status_code)
 
     def test_false_start_wrong_credentials(self):
@@ -843,6 +848,21 @@ class DirectorTest(Common):
         self.assertEquals('New php service', service['ServiceName'])
 
         self.failUnless('Archive' in service)
+
+    def test_download_data(self):
+        _, temp_path = tempfile.mkstemp(
+                dir=cpsdirector.common.get_userdata_dir())
+
+        open(temp_path, 'w').write("42")
+
+        response = self.app.get('/download_data/%s' %
+                os.path.basename(temp_path))
+
+        self.assertEquals(200, response.status_code)
+
+        self.assertEquals("42", response.data)
+
+        os.unlink(temp_path)
 
     def _init_vpn(self):
         self.create_user()
