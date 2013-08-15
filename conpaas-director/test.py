@@ -761,8 +761,11 @@ class DirectorTest(Common):
         self.assertEquals(False, simplejson.loads(response.data))
 
     def mock_callmanager(service_id, method, post, data, files=[]):
-        if method == "list_nodes":
+        if method == "list_nodes" :
             return { 'state': 'RUNNING', 'osd': [], 'dir': [], 'mrc': [] }
+
+        if method == "get_startup_script":
+            return "/bin/echo 'hello world'"
 
         return { 'state': 'RUNNING', 'error': False }
 
@@ -775,11 +778,21 @@ class DirectorTest(Common):
             'uid': 1
         }
 
-        expected_result = '{"Services": [{"Start": 1, "ServiceName": "New xtreemfs service", "Type": "xtreemfs", "StartupInstances": {"state": 7, "osd": 0, "dir": 0, "mrc": 0}, "Cloud": "iaas"}], "Application": "New Application"}'
-
         response = self.app.post('/download_manifest/1', data=data)
         self.assertEquals(200, response.status_code)
-        self.assertEquals(expected_result, response.data)
+
+        result = simplejson.loads(response.data)
+
+        self.assertEquals('New Application', result['Application'])
+
+        # Our application should have one service
+        self.assertEquals(1, len(result['Services']))
+
+        service = result['Services'][0]
+        self.assertEquals('New xtreemfs service', service['ServiceName'])
+        self.assertEquals('xtreemfs', service['Type'])
+
+        self.failUnless('StartupScript' in service)
 
     def mock_callmanager(service_id, method, post, data, files=[]):
         return { 'state': 'RUNNING', 'error': False }
