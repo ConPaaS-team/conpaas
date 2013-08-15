@@ -237,7 +237,7 @@ class MGeneral(object):
 
         return res
 
-    def start(self, json, appid):
+    def start(self, json, appid, need_env=False):
         """Start the given service. Return service id upon successful
         termination."""
         servicetype = json.get('Type')
@@ -261,15 +261,20 @@ class MGeneral(object):
             if error:
                 return error
 
-        env = self.update_environment(appid)
+        env = ''
+        if need_env:
+            env = self.update_environment(appid)
+
         url = ''
 
         if json.get('StartupScript'):
             url = json.get('StartupScript')
 
-        res = self.upload_startup_script(sid, url, env)
-        if 'error' in res:
-            return res['error']
+        if url or env:
+            # Only upload startup script if necessary
+            res = self.upload_startup_script(sid, url, env)
+            if 'error' in res:
+                return res['error']
 
         if not json.get('Start') or json.get('Start') == 0:
             return sid
@@ -340,7 +345,7 @@ class MPhp(MGeneral):
         return res
 
     def start(self, json, appid):
-        sid = MGeneral.start(self, json, appid)
+        sid = MGeneral.start(self, json, appid, need_env=True)
 
         if type(sid) != int:
             # Error!
@@ -385,6 +390,27 @@ class MJava(MPhp):
         return res
 
 class MMySql(MGeneral):
+
+    def get_service_manifest(self, service):
+        tmp = MGeneral.get_service_manifest(self, service)
+
+        ret = self.save_dump(service.sid)
+        if ret != '':
+            tmp['Dump'] = ret
+
+        return tmp
+
+    def save_dump(self, service_id):
+        res = callmanager(service_id, 'sqldump', False, {})
+        if type(res) is dict and 'error' in res:
+            log(res['error'])
+            return ''
+
+        _, temp_path = mkstemp(dir=get_userdata_dir())
+        open(temp_path, 'w').write(res)
+
+        return '%s/download_data/%s' % (get_director_url(), basename(temp_path))
+
     def load_dump(self, sid, url):
         contents = urllib2.urlopen(url).read()
         filename = url.split('/')[-1]
