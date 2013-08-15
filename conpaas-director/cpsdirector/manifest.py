@@ -98,33 +98,6 @@ def get_service_state(sid):
     res = callmanager(sid, "get_service_info", False, {})
     return res['state']
 
-def get_archive(sid):
-    res = callmanager(sid, 'list_code_versions', False, {})
-    if 'error' in res:
-        return ''
-
-    version = ''
-    filename = ''
-    for row in res['codeVersions']:
-        if 'current' in row:
-            version = row['codeVersionId']
-            filename = row['filename']
-            break
-
-    if version == '' or filename == '':
-        return ''
-
-    params = { 'codeVersionId': version }
-
-    res = callmanager(sid, "download_code_version", False, params)
-    if 'error' in res:
-        return ''
-
-    _, temp_path = mkstemp(suffix=filename, dir=get_userdata_dir())
-    open(temp_path, 'w').write(res)
-
-    return '%s/download_data/%s' % (get_director_url(), basename(temp_path))
-
 from cpsdirector.service import Service
 from cpsdirector.application import get_app_by_id
 @manifest_page.route("/download_manifest/<appid>", methods=['POST'])
@@ -316,11 +289,38 @@ class MPhp(MGeneral):
     def get_service_manifest(self, service):
         tmp = MGeneral.get_service_manifest(self, service)
 
-        ret = get_archive(service.sid)
+        ret = self.get_archive(service.sid)
         if ret != '':
             tmp['Archive'] = ret
 
         return tmp
+
+    def get_archive(self, service_id):
+        res = callmanager(service_id, 'list_code_versions', False, {})
+        if 'error' in res:
+            return ''
+
+        version = ''
+        filename = ''
+        for row in res['codeVersions']:
+            if 'current' in row:
+                version = row['codeVersionId']
+                filename = row['filename']
+                break
+
+        if version == '' or filename == '':
+            return ''
+
+        params = { 'codeVersionId': version }
+
+        res = callmanager(service_id, "download_code_version", False, params)
+        if 'error' in res:
+            return ''
+
+        _, temp_path = mkstemp(suffix=filename, dir=get_userdata_dir())
+        open(temp_path, 'w').write(res)
+
+        return '%s/download_data/%s' % (get_director_url(), basename(temp_path))
 
     def upload_code(self, service_id, url):
         contents = urllib2.urlopen(url).read()
