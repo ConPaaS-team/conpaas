@@ -417,7 +417,7 @@ class BaseClient(object):
     def download_manifest(self, appid):
         res = self.callapi("download_manifest/%s" % appid, True, {})
         if res:
-            print res
+            print simplejson.dumps(res)
         else:
             print "E: Failed downloading manifest file"
 
