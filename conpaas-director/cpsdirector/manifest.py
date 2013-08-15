@@ -142,6 +142,25 @@ def download_manifest(appid):
     manifest['Application'] = app.name
 
     for service in Service.query.filter_by(application_id=appid):
+        svc_manifest = get_manifest_class(
+                service.type)().get_service_manifest(service)
+
+        manifest['Services'].append(svc_manifest)
+
+    return simplejson.dumps(manifest)
+
+from os.path import exists
+from flask import helpers
+@manifest_page.route("/download_data/<fileid>", methods=['GET'])
+def download_data(fileid):
+    if not exists('%s/%s' % (get_userdata_dir(), fileid)):
+        return ''
+
+    return helpers.send_from_directory(get_userdata_dir(), fileid)
+
+class MGeneral(object):
+
+    def get_service_manifest(self, service):
         tmp = {}
         tmp['Type'] = service.type
         tmp['ServiceName'] = service.name
@@ -159,24 +178,8 @@ def download_manifest(appid):
         if ret != '':
             tmp['StartupScript'] = ret
 
-        ret = get_archive(service.sid)
-        if ret != '':
-            tmp['Archive'] = ret
+        return tmp
 
-        manifest['Services'].append(tmp)
-
-    return simplejson.dumps(manifest)
-
-from os.path import exists
-from flask import helpers
-@manifest_page.route("/download_data/<fileid>", methods=['GET'])
-def download_data(fileid):
-    if not exists('%s/%s' % (get_userdata_dir(), fileid)):
-        return ''
-
-    return helpers.send_from_directory(get_userdata_dir(), fileid)
-
-class MGeneral(object):
     def check_error(self, ret):
         try:
             return simplejson.loads(ret.data).get('msg')
@@ -309,6 +312,16 @@ class MGeneral(object):
 from cpsdirector.service import _start as service_start
 from cpsdirector.service import _rename as service_rename
 class MPhp(MGeneral):
+    
+    def get_service_manifest(self, service):
+        tmp = MGeneral.get_service_manifest(self, service)
+
+        ret = get_archive(service.sid)
+        if ret != '':
+            tmp['Archive'] = ret
+
+        return tmp
+
     def upload_code(self, service_id, url):
         contents = urllib2.urlopen(url).read()
         filename = url.split('/')[-1]
