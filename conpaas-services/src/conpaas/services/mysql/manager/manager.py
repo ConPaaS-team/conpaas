@@ -268,6 +268,11 @@ class MySQLManager(BaseManager):
         self.config.serviceNodes = {}
         self.state = self.S_STOPPED
 
+    @expose('GET')
+    def get_password(self, kwargs):
+        if len(kwargs) != 0:
+            return HttpErrorResponse('ERROR: Arguments unexpected')
+        return HttpJsonResponse(self.root_pass)
 
     @expose('POST')
     def set_password(self, kwargs):

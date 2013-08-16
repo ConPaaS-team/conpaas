@@ -398,6 +398,10 @@ class MMySql(MGeneral):
         if ret != '':
             tmp['Dump'] = ret
 
+        password = callmanager(service.sid, "get_password", False, {})
+        if password:
+            tmp['Password'] = password
+
         return tmp
 
     def save_dump(self, service_id):
