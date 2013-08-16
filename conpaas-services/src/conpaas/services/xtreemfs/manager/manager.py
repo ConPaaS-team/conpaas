@@ -5,6 +5,7 @@
 """
 
 from threading import Thread
+from collections import defaultdict
 
 from conpaas.core.expose import expose
 
@@ -44,10 +45,11 @@ class XtreemFSManager(BaseManager):
         # default value for OSD volume size
         self.osd_volume_size = 1024
 
-        # dictionary mapping node IDs with uuids
+        # dictionaries mapping node IDs to uuids
         self.dir_node_uuid_map = {}
         self.mrc_node_uuid_map = {}
         self.osd_node_uuid_map = {}
+        
         # dictionary mapping osd uuids to volume IDs
         self.osd_uuid_volume_map = {}
 
@@ -728,3 +730,57 @@ class XtreemFSManager(BaseManager):
             return self.get_service_info({})
         except ValueError:
             return HttpErrorResponse("ERROR: Required argument (size) should be an integer")
+
+    @expose('POST')
+    def get_service_snapshot():
+        # TODO: stop agents first (backend for DIR and MRC is at work)
+        
+        # get snapshot from all agent nodes (this is independent of what XtreemFS services are running there)
+        node_snapshot_map = {}
+        node_ids = []
+        for node in self.nodes:
+            # build a list of all unique node ids
+            if node.id not in node_ids:
+                node_ids.append(node.id);
+            try:
+                node_snapshot_map[node.id] = client.get_snapshot(node.ip, 5555)
+            except client.AgentException:
+                self.logger.exception('Failed to get snapshot from node %s' % node)
+                self.state = self.S_ERROR
+                raise
+        
+        # dictionary mapping node IDs to tuples of uuids/None (DIR, MRC, OSD)
+        node_uuid_tuple_map = {}        
+        dir_uuid = None
+        if id in self.dir_node_uuid_map:
+            dir_uuid = self.dir_node_uuid_map[id]
+        mrc_uuid = None
+        if id in self.mrc_node_uuid_map:
+            mrc_uuid = self.mrc_node_uuid_map[id]
+        osd_uuid = None
+        if id in self.osd_node_uuid_map:
+            osd_uuid = self.osd_node_uuid_map[id]
+        node_uuid_tuple_map[id] = (dir_uuid, mrc_uuid, osd_uuid)
+           
+        # TODO: pack everything together and return it
+        # node_uuid_tuple_map, contains:
+        #     - how many agent nodes (size)
+        #     - what XtreemFS services with which uuid ran on that node
+        # node_snapshot_map, contains:
+        #     - agent data snapshot from each agent node
+        # osd_uuid_volume_map, contains:
+        #     - the cloud storage volume for each OSD uuid
+
+    # TODO: add restore method 
+    #       restore service from snapshot (reuse as much of the existing code
+    #       as possible, generalise methods)
+    #
+    # Algorithm:
+    # for every value in node_uuid_tuple_map
+    #   add a node 
+    #   if the third tuple value is not None
+    #     attach the volume from osd_uuid_volume_map, using third tuple value as key
+    #   restore the agent data from node_snapshot_map
+    #   start DIR, MRC, OSD on node if uuid was given in tuple
+    #     pass uuid, add a flag to prevent the OSD from preparing the storage
+

@@ -167,3 +167,11 @@ class XtreemFSAgent(BaseAgent):
         self.logger.info('Agent started up')
         return HttpJsonResponse()
 
+    @expose('POST')
+    def get_snapshot():
+        ret = {}
+        # TODO: pack data from:
+        #     /etc/xos/xtreemfs/
+        #     /var/lib/xtreemfs/*
+        # ret['fs_data'] = ...
+        return ret

@@ -51,3 +51,7 @@ def createOSD(host, port, dir_serviceHost, uuid):
 def stopOSD(host, port):
   method = 'stopOSD'
   return _check(https.client.jsonrpc_post(host, port, '/', method))
+  
+def get_snapshot(host, port):
+  method = 'get_snapshot'
+  return _check(https.client.jsonrpc_post(host, port, '/', method))
