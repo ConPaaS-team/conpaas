@@ -125,7 +125,10 @@ class OpenNebulaCloud(Cloud):
             inst_type = self.inst_type
 
         # available sizes
+        self.logger.debug('new_instances: calling self.driver.list_sizes')
         sizes = self.driver.list_sizes()
+        self.logger.debug('new_instances: self.driver.list_sizes returned %s' %
+                sizes)
 
         # available size names
         size_names = [ size.name for size in sizes ]

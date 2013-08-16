@@ -205,11 +205,12 @@ class Controller(object):
                                 newinst.private_ip = vpn_ip
 
                             self.__partially_created_nodes.append(newinst)
-
-                        self.__logger.debug("cloud.new_instances: %s" % poll)
                 else:
                     self.__partially_created_nodes = cloud.new_instances(
                         count - len(ready), name, inst_type)
+
+                self.__logger.debug("cloud.new_instances returned %s" %
+                        self.__partially_created_nodes)
 
             except Exception as e:
                 self.__logger.exception(
