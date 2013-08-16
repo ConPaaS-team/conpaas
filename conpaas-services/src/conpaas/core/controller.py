@@ -159,6 +159,9 @@ class Controller(object):
         poll = []
         iteration = 0
 
+        if count == 0:
+            return []
+
         if cloud is None:
             cloud = self.__default_cloud
 
