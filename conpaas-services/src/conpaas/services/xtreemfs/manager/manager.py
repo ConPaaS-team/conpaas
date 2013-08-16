@@ -5,7 +5,6 @@
 """
 
 from threading import Thread
-from collections import defaultdict
 
 from conpaas.core.expose import expose
 
@@ -732,7 +731,7 @@ class XtreemFSManager(BaseManager):
             return HttpErrorResponse("ERROR: Required argument (size) should be an integer")
 
     @expose('POST')
-    def get_service_snapshot():
+    def get_service_snapshot(self, kwargs):
         # TODO: stop agents first (backend for DIR and MRC is at work)
         
         # get snapshot from all agent nodes (this is independent of what XtreemFS services are running there)
