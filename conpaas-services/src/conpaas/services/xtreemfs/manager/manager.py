@@ -66,6 +66,15 @@ class XtreemFSManager(BaseManager):
                 self.state = self.S_ERROR
                 raise
 
+    def _stop_dir(self, nodes):
+        for node in nodes:
+            try:
+                client.stopDIR(node.ip, 5555)
+            except client.AgentException:
+                self.logger.exception('Failed to stop DIR at node %s' % node)
+                self.state = self.S_ERROR
+                raise
+
     def _start_mrc(self, nodes):
         for node in nodes:
             try:
@@ -74,6 +83,15 @@ class XtreemFSManager(BaseManager):
                 client.createMRC(node.ip, 5555, self.dirNodes[0].ip, mrc_uuid)
             except client.AgentException:
                 self.logger.exception('Failed to start MRC at node %s' % node)
+                self.state = self.S_ERROR
+                raise
+
+    def _stop_mrc(self, nodes):
+        for node in nodes:
+            try:
+                client.stopMRC(node.ip, 5555)
+            except client.AgentException:
+                self.logger.exception('Failed to stop MRC at node %s' % node)
                 self.state = self.S_ERROR
                 raise
 
@@ -96,10 +114,10 @@ class XtreemFSManager(BaseManager):
                 self.state = self.S_ERROR
                 raise
 
-    def _stop_osd(self, nodes):
+    def _stop_osd(self, nodes, drain = True):
         for node in nodes:
             try:
-                client.stopOSD(node.ip, 5555)
+                client.stopOSD(node.ip, 5555, drain)
             except client.AgentException:
                 self.logger.exception('Failed to stop OSD at node %s' % node)
                 self.state = self.S_ERROR
@@ -161,8 +179,16 @@ class XtreemFSManager(BaseManager):
         Thread(target=self._do_shutdown, args=[]).start()
         return HttpJsonResponse()
 
+    def _stop_all():
+        # stop all xtreemfs services on all agents (first osd, then mrc, then dir)
+        _stop_osd(self.osdNodes, False) # do not drain (move data to other OSDs), since we stop all
+        _stop_mrc(self.mrcNodes)
+        _stop_dir(self.dirNodes)
+
+    # TODO: maybe add a parameter to skip _stop_all in case we are coming from get_snapshot
     def _do_shutdown(self):
-        self._stop_osd(self.osdNodes)
+        self._stop_all()
+
         self.controller.delete_nodes(self.nodes)
         self.nodes = []
         self.dirNodes = []          
@@ -373,7 +399,10 @@ class XtreemFSManager(BaseManager):
         return HttpJsonResponse()
 
     def _do_remove_nodes(self, nr_dir, nr_mrc, nr_osd):
-        
+    # TODO: update data structures for snapshots (check all stop, and remove methods)
+    # what if a service is scaled down, then snapshotted? we can only snapshot the current state...
+    # so everything about removed nodes can be forgotten
+
         # NOTE: the logically unremovable first node which contains all
         #       services is ignored by using 1 instead of 0 in:
         #   for _ in range(1, nr_[dir|mrc|osd]):
@@ -722,7 +751,6 @@ class XtreemFSManager(BaseManager):
     def set_osd_size(self, kwargs):
         if not 'size' in kwargs:
             return HttpErrorResponse("ERROR: Required argument (size) doesn't exist")
-
         try:
             self.osd_volume_size = int(kwargs['size'])
             self.logger.debug('set_osd_size: %s' % self.osd_volume_size)
@@ -732,8 +760,8 @@ class XtreemFSManager(BaseManager):
 
     @expose('POST')
     def get_service_snapshot(self, kwargs):
-        # TODO: stop agents first (backend for DIR and MRC is at work)
-        
+        # stop all agent services        
+        _stop_all()
         # get snapshot from all agent nodes (this is independent of what XtreemFS services are running there)
         node_snapshot_map = {}
         node_ids = []

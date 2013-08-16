@@ -11,6 +11,7 @@ from conpaas.core.expose import expose
 from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse
 from conpaas.services.xtreemfs.agent import role    
 from conpaas.core.agent import BaseAgent, AgentException
+from conpaas.core.misc import run_cmd, file_get_contents
 
 from threading import Lock
 import pickle
@@ -85,7 +86,10 @@ class XtreemFSAgent(BaseAgent):
                     AgentException.E_CONFIG_READ_FAILED, detail=e)
                 self.logger.exception(ex.message)
                 return HttpErrorResponse(ex.message)
-            p.stop()
+            if 'drain' in kwargs:
+                p.stop(kwargs['drain'])
+            else:
+                p.stop()
             remove(class_file)
             return HttpJsonResponse()
         except Exception as e:
@@ -121,6 +125,18 @@ class XtreemFSAgent(BaseAgent):
         else:
             with self.osd_lock:
                 return self._create(kwargs, self.osd_file, self.OSD)
+
+    @expose('POST')
+    def stopDIR(self, kwargs):
+        """Kill the DIR service"""
+        with self.dir_lock:
+            return self._stop(kwargs, self.dir_file, self.DIR)       
+
+    @expose('POST')
+    def stopMRC(self, kwargs):
+        """Kill the MRC service"""
+        with self.mrc_lock:
+            return self._stop(kwargs, self.mrc_file, self.MRC)
 
     @expose('POST')
     def stopOSD(self, kwargs):
@@ -170,8 +186,10 @@ class XtreemFSAgent(BaseAgent):
     @expose('POST')
     def get_snapshot():
         ret = {}
-        # TODO: pack data from:
-        #     /etc/xos/xtreemfs/
-        #     /var/lib/xtreemfs/*
-        # ret['fs_data'] = ...
-        return ret
+        # pack data from:
+        #     /etc/xos/xtreemfs/ (some files later for certificates)
+        #     /var/lib/xtreemfs/ (everything, after shutting down the services)
+        filename = "/root/snapshot.tar.gz"
+        run_cmd("tar -czf %s var/log/xtreemfs/" % filename, "/")
+        ret['fs_data'] = file_get_contents(filename)
+        return HttpJsonResponse({'result' : ret})

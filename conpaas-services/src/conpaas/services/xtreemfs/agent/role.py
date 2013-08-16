@@ -40,8 +40,9 @@ class DIR():
     def __init__(self, uuid):
         self.state = S_INIT         
         self.start_args = [DIR_STARTUP,'start']
+        self.stop_args = [DIR_STARTUP, 'stop']
         self.config_template = join(ETC,'dirconfig.properties')
-        logger.info('DIR server initialized')
+        logger.info('DIR server initialized.')
         self.uuid = uuid
         self.configure()
         self.start()
@@ -51,9 +52,22 @@ class DIR():
         devnull_fd = open(devnull,'w')
         proc = Popen(self.start_args, stdout = devnull_fd, stderr = devnull_fd, close_fds = True)
         if proc.wait() != 0:
-            logger.critical('Failed to start dir service:(code=%d)' %proc.returncode)
-        logger.info('DIR Service started:') 
+            logger.critical('Failed to start DIR service:(code=%d)' %proc.returncode)
+        logger.info('DIR Service started.') 
         self.state = S_RUNNING
+
+    def stop(self):
+        if self.state == S_RUNNING:
+            self.state = S_STOPPING
+            devnull_fd = open(devnull,'w')
+            # stop MRC
+            proc = Popen(self.stop_args, stdout = devnull_fd, stderr = devnull_fd, close_fds = True)
+            if proc.wait() != 0:
+                logger.critical('Failed to stop DIR service:(code=%d)' %proc.returncode)
+            logger.info('DIR Service stopped.') 
+            self.state = S_STOPPED
+        else:
+            logger.warning('Request to stop DIR service while it is not running')      
 
     def configure(self):
         self._write_config()
@@ -71,9 +85,10 @@ class MRC:
     def __init__(self, dir_serviceHost, uuid):
         self.state = S_INIT         
         self.start_args = [MRC_STARTUP,'start']        
+        self.stop_args = [MRC_STARTUP, 'stop']
         self.config_template = join(ETC,'mrcconfig.properties')
         logger = create_logger(__name__)
-        logger.info('MRC server initialized')
+        logger.info('MRC server initialized.')
         self.uuid = uuid
         self.configure(dir_serviceHost)
         self.start()
@@ -84,8 +99,21 @@ class MRC:
         proc = Popen(self.start_args, stdout = devnull_fd, stderr = devnull_fd, close_fds = True)
         if proc.wait() != 0:
             logger.critical('Failed to start mrc service:(code=%d)' %proc.returncode)
-        logger.info('MRC Service started:') 
+        logger.info('MRC Service started.') 
         self.state = S_RUNNING
+    
+    def stop(self):
+        if self.state == S_RUNNING:
+            self.state = S_STOPPING
+            devnull_fd = open(devnull,'w')
+            # stop MRC
+            proc = Popen(self.stop_args, stdout = devnull_fd, stderr = devnull_fd, close_fds = True)
+            if proc.wait() != 0:
+                logger.critical('Failed to stop mrc service:(code=%d)' %proc.returncode)
+            logger.info('MRC Service stopped.') 
+            self.state = S_STOPPED
+        else:
+            logger.warning('Request to stop MRC service while it is not running')      
         
     def configure(self, dir_serviceHost):
         self.dir_serviceHost = dir_serviceHost    
@@ -119,7 +147,7 @@ class OSD:
         self.stop_args = [OSD_STARTUP, 'stop']
         self.remove_args = [OSD_REMOVE, '-dir ' + str(self.dir_serviceHost) + ':' + str(self.dir_servicePort), 'uuid:' + str(self.uuid)]
         self._write_config()
-        logger.info('OSD server initialized')
+        logger.info('OSD server initialized.')
         self.start()
 
     def start(self):
@@ -165,7 +193,7 @@ class OSD:
         proc = Popen(self.start_args, stdout = devnull_fd, stderr = devnull_fd, close_fds = True)
         if proc.wait() != 0:
             logger.critical('Failed to start osd service:(code=%d)' %proc.returncode)
-        logger.info('OSD Service started:') 
+        logger.info('OSD Service started.') 
         self.state = S_RUNNING
 
     def _write_config(self):
@@ -179,22 +207,23 @@ class OSD:
         conf_fd.write(str(template))
         conf_fd.close()
 
-    def stop(self):
+    def stop(self, drain = True):
         if self.state == S_RUNNING:
             self.state = S_STOPPING
             devnull_fd = open(devnull,'w')
-            # remove (drain) OSD to avoid data loss
-            logger.info('OSD Service remove commandline: ' + str(self.remove_args))
-            logger.info('OSD Service stop commandline: ' + str(self.stop_args))  
-            proc = Popen(self.remove_args, stdout = devnull_fd, stderr = devnull_fd, close_fds = True)
-            if proc.wait() != 0:
-                logger.critical('Failed to remove osd service:(code=%d)' %proc.returncode)
-            logger.info('OSD Service removed:') 
+            if drain:
+                # remove (drain) OSD to avoid data loss
+                logger.info('OSD Service remove commandline: ' + str(self.remove_args))
+                logger.info('OSD Service stop commandline: ' + str(self.stop_args))  
+                proc = Popen(self.remove_args, stdout = devnull_fd, stderr = devnull_fd, close_fds = True)
+                if proc.wait() != 0:
+                    logger.critical('Failed to remove OSD service:(code=%d)' %proc.returncode)
+                logger.info('OSD Service removed.') 
             # stop OSD
             proc = Popen(self.stop_args, stdout = devnull_fd, stderr = devnull_fd, close_fds = True)
             if proc.wait() != 0:
-                logger.critical('Failed to stop osd service:(code=%d)' %proc.returncode)
-            logger.info('OSD Service stopped:') 
+                logger.critical('Failed to stop OSD service:(code=%d)' %proc.returncode)
+            logger.info('OSD Service stopped.') 
             # unmount storage block device
             proc = Popen(self.umount_args, stdout = devnull_fd, stderr = devnull_fd, close_fds = True)
             if proc.wait() != 0:

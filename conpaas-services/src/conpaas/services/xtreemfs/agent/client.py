@@ -43,15 +43,27 @@ def createDIR(host, port, uuid):
 def createOSD(host, port, dir_serviceHost, uuid):
   method = 'createOSD'
   params = {
-      'dir_serviceHost':dir_serviceHost,
+      'dir_serviceHost' : dir_serviceHost,
       'uuid' : uuid
   }
   return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
 
-def stopOSD(host, port):
-  method = 'stopOSD'
+def stopDIR(host, port):
+  method = 'stopDIR'
   return _check(https.client.jsonrpc_post(host, port, '/', method))
+
+def stopMRC(host, port):
+  method = 'stopMRC'
+  return _check(https.client.jsonrpc_post(host, port, '/', method))
+
+def stopOSD(host, port, drain = True):
+  method = 'stopOSD'
+  params = {
+      'drain': drain
+  }
+  return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
   
 def get_snapshot(host, port):
   method = 'get_snapshot'
   return _check(https.client.jsonrpc_post(host, port, '/', method))
+
