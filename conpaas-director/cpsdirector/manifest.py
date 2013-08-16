@@ -446,7 +446,7 @@ class MMySql(MGeneral):
 
         if json.get('StartupInstances'):
             params = {
-                    'slaves': 1
+                    'slaves': 0
             }
 
             if json.get('StartupInstances').get('slaves'):
