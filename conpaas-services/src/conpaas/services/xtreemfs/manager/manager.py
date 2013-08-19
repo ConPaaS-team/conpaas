@@ -179,11 +179,11 @@ class XtreemFSManager(BaseManager):
         Thread(target=self._do_shutdown, args=[]).start()
         return HttpJsonResponse()
 
-    def _stop_all():
+    def _stop_all(self):
         # stop all xtreemfs services on all agents (first osd, then mrc, then dir)
-        _stop_osd(self.osdNodes, False) # do not drain (move data to other OSDs), since we stop all
-        _stop_mrc(self.mrcNodes)
-        _stop_dir(self.dirNodes)
+        self._stop_osd(self.osdNodes, False) # do not drain (move data to other OSDs), since we stop all
+        self._stop_mrc(self.mrcNodes)
+        self._stop_dir(self.dirNodes)
 
     # TODO: maybe add a parameter to skip _stop_all in case we are coming from get_snapshot
     def _do_shutdown(self):
@@ -761,7 +761,7 @@ class XtreemFSManager(BaseManager):
     @expose('POST')
     def get_service_snapshot(self, kwargs):
         # stop all agent services        
-        _stop_all()
+        self._stop_all()
         # get snapshot from all agent nodes (this is independent of what XtreemFS services are running there)
         node_snapshot_map = {}
         node_ids = []

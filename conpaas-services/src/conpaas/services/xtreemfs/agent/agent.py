@@ -71,7 +71,7 @@ class XtreemFSAgent(BaseAgent):
                 self.logger.debug('Created class file')
                 return HttpJsonResponse()
 
-    def _stop(self, get_params, class_file, pClass):
+    def _stop(self, kwargs, class_file, pClass):
         if not exists(class_file):
             return HttpErrorResponse(AgentException(
                 AgentException.E_CONFIG_NOT_EXIST).message)
