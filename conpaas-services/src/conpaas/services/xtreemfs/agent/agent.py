@@ -72,9 +72,15 @@ class XtreemFSAgent(BaseAgent):
                 return HttpJsonResponse()
 
     def _stop(self, kwargs, class_file, pClass):
+        self.logger.debug("_stop(kwargs=%s, class_file=%s, pClass=%s)" %
+                (kwargs, class_file, pClass))
+
         if not exists(class_file):
+            self.logger.error("class_file '%s' does not exist" % class_file)
+
             return HttpErrorResponse(AgentException(
                 AgentException.E_CONFIG_NOT_EXIST).message)
+
         try:
             try:
                 fd = open(class_file, 'r')
@@ -86,12 +92,16 @@ class XtreemFSAgent(BaseAgent):
                     AgentException.E_CONFIG_READ_FAILED, detail=e)
                 self.logger.exception(ex.message)
                 return HttpErrorResponse(ex.message)
+
             if 'drain' in kwargs:
                 p.stop(kwargs['drain'])
             else:
                 p.stop()
+
+            self.logger.debug("Removing class_file '%s'" % class_file)
             remove(class_file)
             return HttpJsonResponse()
+
         except Exception as e:
             ex = AgentException(AgentException.E_UNKNOWN, detail=e)
             self.logger.exception(e)
@@ -184,12 +194,16 @@ class XtreemFSAgent(BaseAgent):
         return HttpJsonResponse()
 
     @expose('POST')
-    def get_snapshot():
+    def get_snapshot(self, kwargs):
         ret = {}
         # pack data from:
         #     /etc/xos/xtreemfs/ (some files later for certificates)
         #     /var/lib/xtreemfs/ (everything, after shutting down the services)
         filename = "/root/snapshot.tar.gz"
-        run_cmd("tar -czf %s var/log/xtreemfs/" % filename, "/")
+        err, out = run_cmd("tar -czf %s var/log/xtreemfs/" % filename, "/")
+        if err:
+            self.logger.exception(err)
+            return HttpErrorResponse(err)
+
         ret['fs_data'] = file_get_contents(filename)
         return HttpJsonResponse({'result' : ret})

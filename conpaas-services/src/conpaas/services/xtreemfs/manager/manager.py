@@ -181,7 +181,8 @@ class XtreemFSManager(BaseManager):
 
     def _stop_all(self):
         # stop all xtreemfs services on all agents (first osd, then mrc, then dir)
-        self._stop_osd(self.osdNodes, False) # do not drain (move data to other OSDs), since we stop all
+        self._stop_osd(self.osdNodes, False) # do not drain (move data to other
+                                             # OSDs), since we stop all
         self._stop_mrc(self.mrcNodes)
         self._stop_dir(self.dirNodes)
 
@@ -764,6 +765,8 @@ class XtreemFSManager(BaseManager):
         self.logger.debug("Stopping all agent services")
         self._stop_all()
 
+        self.logger.debug("Calling get_snapshot on agents")
+
         # get snapshot from all agent nodes (this is independent of what
         # XtreemFS services are running there)
         node_snapshot_map = {}
@@ -773,7 +776,12 @@ class XtreemFSManager(BaseManager):
             if node.id not in node_ids:
                 node_ids.append(node.id);
             try:
+                self.logger.debug("get_snapshot(%s)" % node.ip)
                 node_snapshot_map[node.id] = client.get_snapshot(node.ip, 5555)
+
+                self.logger.debug("node_snapshot_map update to %s" %
+                        node_snapshot_map)
+
             except client.AgentException:
                 self.logger.exception('Failed to get snapshot from node %s' % node)
                 self.state = self.S_ERROR
