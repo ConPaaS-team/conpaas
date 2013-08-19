@@ -761,8 +761,11 @@ class XtreemFSManager(BaseManager):
     @expose('POST')
     def get_service_snapshot(self, kwargs):
         # stop all agent services        
+        self.logger.debug("Stopping all agent services")
         self._stop_all()
-        # get snapshot from all agent nodes (this is independent of what XtreemFS services are running there)
+
+        # get snapshot from all agent nodes (this is independent of what
+        # XtreemFS services are running there)
         node_snapshot_map = {}
         node_ids = []
         for node in self.nodes:
@@ -777,18 +780,29 @@ class XtreemFSManager(BaseManager):
                 raise
         
         # dictionary mapping node IDs to tuples of uuids/None (DIR, MRC, OSD)
+        self.logger.debug("dir_node_uuid_map: %s" % self.dir_node_uuid_map)
+
         node_uuid_tuple_map = {}        
         dir_uuid = None
-        if id in self.dir_node_uuid_map:
-            dir_uuid = self.dir_node_uuid_map[id]
+        if 'id' in self.dir_node_uuid_map:
+            dir_uuid = self.dir_node_uuid_map['id']
+
+        self.logger.debug("mrc_node_uuid_map: %s" % self.mrc_node_uuid_map)
+
         mrc_uuid = None
-        if id in self.mrc_node_uuid_map:
-            mrc_uuid = self.mrc_node_uuid_map[id]
+        if 'id' in self.mrc_node_uuid_map:
+            mrc_uuid = self.mrc_node_uuid_map['id']
+
+
+        self.logger.debug("osd_node_uuid_map: %s" % self.osd_node_uuid_map)
+
         osd_uuid = None
-        if id in self.osd_node_uuid_map:
-            osd_uuid = self.osd_node_uuid_map[id]
-        node_uuid_tuple_map[id] = (dir_uuid, mrc_uuid, osd_uuid)
-           
+        if 'id' in self.osd_node_uuid_map:
+            osd_uuid = self.osd_node_uuid_map['id']
+
+        # setting id in node_uuid_tuple_map
+        node_uuid_tuple_map['id'] = (dir_uuid, mrc_uuid, osd_uuid)
+
         # TODO: pack everything together and return it
         # node_uuid_tuple_map, contains:
         #     - how many agent nodes (size)
