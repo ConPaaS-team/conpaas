@@ -185,6 +185,7 @@ class XtreemFSAgent(BaseAgent):
             raise AgentException(
                 AgentException.E_ARGS_MISSING, 'uuid')
         ret['uuid'] = kwargs.pop('uuid')
+        ret['mkfs'] = kwargs['mkfs']
         return ret    
 
     @expose('POST')

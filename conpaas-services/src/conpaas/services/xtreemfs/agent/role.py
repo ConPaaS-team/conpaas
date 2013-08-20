@@ -130,7 +130,7 @@ class MRC:
         conf_fd.close()
 
 class OSD:
-    def __init__(self, dir_serviceHost, uuid):
+    def __init__(self, dir_serviceHost, uuid, mkfs):
         self.state = S_INIT         
         self.uuid = uuid
         self.dir_serviceHost = dir_serviceHost
@@ -148,9 +148,9 @@ class OSD:
         self.remove_args = [OSD_REMOVE, '-dir ' + str(self.dir_serviceHost) + ':' + str(self.dir_servicePort), 'uuid:' + str(self.uuid)]
         self._write_config()
         logger.info('OSD server initialized.')
-        self.start()
+        self.start(mkfs)
 
-    def start(self):
+    def start(self, mkfs):
         self.state = S_STARTING
         devnull_fd = open(devnull,'w')
         # waiting for our block device to be available
@@ -164,24 +164,36 @@ class OSD:
             time.sleep(10)
 
         if dev_found:
+            logger.info("OSD node has now access to %s" % self.dev_name)
+
             # create mount point
             run_cmd(self.mkdir_cmd)
 
             # prepare block device
-            logger.info("OSD node has now access to %s" % self.dev_name)
-            proc = Popen(self.prepare_args, stdin=PIPE, stdout = devnull_fd, stderr = devnull_fd, close_fds = True)
-            proc.communicate(input="y") # answer interactive question with y
-            if proc.wait() != 0:
-                logger.critical('Failed to prepare storage device:(code=%d)' %proc.returncode)
-            else:
-                # mount
-                proc = Popen(self.mount_args, stdout = devnull_fd, stderr = devnull_fd, close_fds = True)
+            if mkfs:
+                logger.info("Creating new file system on %s" % self.dev_name)
+                proc = Popen(self.prepare_args, stdin=PIPE, stdout=devnull_fd,
+                        stderr=devnull_fd, close_fds=True)
+
+                proc.communicate(input="y") # answer interactive question with y
                 if proc.wait() != 0:
-                    logger.critical('Failed to mount storage device:(code=%d)' %proc.returncode)
+                    logger.critical('Failed to prepare storage device:(code=%d)' %
+                            proc.returncode)
                 else:
-                    logger.info("OSD node has prepared and mounted %s" % self.dev_name)
+                    logger.info('File system created successfully')
+
+            # mount
+            proc = Popen(self.mount_args, stdout=devnull_fd, stderr=devnull_fd,
+                    close_fds=True)
+
+            if proc.wait() != 0:
+                logger.critical('Failed to mount storage device:(code=%d)' % 
+                        proc.returncode)
+            else:
+                logger.info("OSD node has prepared and mounted %s" % self.dev_name)
         else:
-            logger.critical("Block device %s unavailable, falling back to image space" % self.dev_name)
+            logger.critical("Block device %s unavailable, falling back to image space" 
+                    % self.dev_name)
 
         # must be owned by xtreemfs:xtreemfs
         xtreemfs_user = getpwnam("xtreemfs")

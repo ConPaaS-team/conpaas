@@ -40,11 +40,12 @@ def createDIR(host, port, uuid):
   }
   return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
 
-def createOSD(host, port, dir_serviceHost, uuid):
+def createOSD(host, port, dir_serviceHost, uuid, mkfs=True):
   method = 'createOSD'
   params = {
       'dir_serviceHost' : dir_serviceHost,
-      'uuid' : uuid
+      'uuid' : uuid,
+      'mkfs': mkfs
   }
   return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
 
