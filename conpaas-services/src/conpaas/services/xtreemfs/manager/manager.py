@@ -55,11 +55,36 @@ class XtreemFSManager(BaseManager):
         # Setup the clouds' controller
         self.controller.generate_context('xtreemfs')
 
+    def __get__uuid(self, node_id, node_type):
+        if node_type == 'dir':
+            node_map = self.dir_node_uuid_map
+        elif node_type == 'mrc':
+            node_map = self.mrc_node_uuid_map
+        elif node_type == 'osd':
+            node_map = self.osd_node_uuid_map
+        else:
+            raise Exception("Unknown node type: %s" % node_type)
+        
+        node_uuid = node_map.get(node_id)
+
+        if node_uuid:
+            self.logger.debug("%s already has a uuid (%s) -> %s" % (node_id,
+                node_type, node_uuid))
+        else:
+            node_uuid = str(uuid.uuid1())
+            node_map[node_id] = node_uuid
+            self.logger.debug("New uuid for %s (%s) -> %s" % (node_id,
+                node_type, node_uuid))
+            
+        return node_uuid
+
+
     def _start_dir(self, nodes):
+        self.logger.debug("_start_dir(%s)" % nodes)
+
         for node in nodes:
             try:
-                dir_uuid = str(uuid.uuid1())
-                self.dir_node_uuid_map[node.id] = dir_uuid
+                dir_uuid = self.__get__uuid(node.id, 'dir')
                 client.createDIR(node.ip, 5555, dir_uuid)
             except client.AgentException:
                 self.logger.exception('Failed to start DIR at node %s' % node)
@@ -78,8 +103,7 @@ class XtreemFSManager(BaseManager):
     def _start_mrc(self, nodes):
         for node in nodes:
             try:
-                mrc_uuid = str(uuid.uuid1())
-                self.mrc_node_uuid_map[node.id] = mrc_uuid
+                mrc_uuid = self.__get__uuid(node.id, 'mrc')
                 client.createMRC(node.ip, 5555, self.dirNodes[0].ip, mrc_uuid)
             except client.AgentException:
                 self.logger.exception('Failed to start MRC at node %s' % node)
@@ -97,24 +121,46 @@ class XtreemFSManager(BaseManager):
 
     def _start_osd(self, nodes, cloud=None):
         for idx, node in enumerate(nodes):
-            osd_uuid = str(uuid.uuid1())
-            self.osd_node_uuid_map[node.id] = osd_uuid
+            osd_uuid = self.__get__uuid(node.id, 'osd')
 
-            # we need a storage volume for each OSD node
-            volume_name = "osd-%s" % osd_uuid
-            volume = self.create_volume(self.osd_volume_size, volume_name,
-                    node.id, cloud)
-            self.attach_volume(volume.id, node.id, "sdb")
-            self.osd_uuid_volume_map[osd_uuid] = volume.id
+            volume_associated = osd_uuid in self.osd_uuid_volume_map
+
+            # We need a storage volume for each OSD node. Check if this OSD
+            # node needs a new volume to be created.
+            if volume_associated:
+                # No need to create a new volume.
+                volume = self.get_volume(self.osd_uuid_volume_map[osd_uuid])
+
+                self.logger.debug(
+                    '%s already has an associated storage volume (%s)' %
+                        (osd_uuid, volume.id))
+            else:
+                # We need to create a new volume.
+                volume_name = "osd-%s" % osd_uuid
+                volume = self.create_volume(self.osd_volume_size, volume_name,
+                        node.id, cloud)
+                self.osd_uuid_volume_map[osd_uuid] = volume.id
 
             try:
-                client.createOSD(node.ip, 5555, self.dirNodes[0].ip, osd_uuid)
+                self.attach_volume(volume.id, node.id, "sdb")
+            except Exception, err:
+                self.logger.error("attach_volume: %s" % err)
+
+            try:
+                client.createOSD(node.ip, 5555, self.dirNodes[0].ip, osd_uuid,
+                        mkfs=not volume_associated)
             except client.AgentException:
                 self.logger.exception('Failed to start OSD at node %s' % node)
                 self.state = self.S_ERROR
                 raise
 
-    def _stop_osd(self, nodes, drain = True):
+    def _stop_osd(self, nodes, drain=True, detach=True):
+        """Stop OSD service on the given nodes.
+
+        If drain is True, move data to other OSDs.
+
+        If detach is True, detach associated storage volumes. If the service is
+        set as not persistent, the volumes will also be permanently removed."""
         for node in nodes:
             try:
                 client.stopOSD(node.ip, 5555, drain)
@@ -124,13 +170,17 @@ class XtreemFSManager(BaseManager):
                 raise
 
             volume_id = self.osd_uuid_volume_map[self.osd_node_uuid_map[node.id]]
+
+            if not detach:
+                self.logger.debug('Not detaching volume %s' % volume_id)
+                continue
+
             self.detach_volume(volume_id)
 
             # if the service is not persistent, delete the storage volume
             # associated with this node
             if not self.persistent:
                 self.destroy_volume(volume_id)
-
 
     def _do_startup(self, cloud):
         ''' Starts up the service. The firstnodes will contain all services
@@ -179,14 +229,19 @@ class XtreemFSManager(BaseManager):
         Thread(target=self._do_shutdown, args=[]).start()
         return HttpJsonResponse()
 
-    def _stop_all(self):
-        # stop all xtreemfs services on all agents (first osd, then mrc, then dir)
-        self._stop_osd(self.osdNodes, False) # do not drain (move data to other
-                                             # OSDs), since we stop all
+    def _start_all(self):
+        self._start_dir(self.dirNodes)
+        self._start_mrc(self.mrcNodes)
+        self._start_osd(self.osdNodes)
+
+    def _stop_all(self, detach=True):
+        """Stop all xtreemfs services on all agents (first osd, then mrc, then
+        dir)."""
+        # do not drain (move data to other OSDs), since we stop all
+        self._stop_osd(self.osdNodes, drain=False, detach=detach) 
         self._stop_mrc(self.mrcNodes)
         self._stop_dir(self.dirNodes)
 
-    # TODO: maybe add a parameter to skip _stop_all in case we are coming from get_snapshot
     def _do_shutdown(self):
         self._stop_all()
 
@@ -273,7 +328,6 @@ class XtreemFSManager(BaseManager):
         osdNodesAdded = node_instances[nr_mrc+nr_dir:] 
         self.osdNodes += osdNodesAdded
 
-
         # TODO: maybe re-enable when OSD-removal moves data to another node before shutting down the service.
         #KilledOsdNodes = []
         # The first node will contain the OSD service so it will be removed
@@ -297,11 +351,14 @@ class XtreemFSManager(BaseManager):
             self.mrcCount += 1
 
         # Startup OSD agents
-        for node in osdNodesAdded:
-            client.startup(node.ip, 5555)
-            data = client.createOSD(node.ip, 5555, self.dirNodes[0].ip)
-            self.logger.info('Received %s from %s', data, node.id)         
-            self.osdCount += 1
+        self._start_osd(osdNodesAdded, startCloud)
+        self.osdCount += len(osdNodesAdded)
+
+        #for node in osdNodesAdded:
+        #    client.startup(node.ip, 5555)
+        #    data = client.createOSD(node.ip, 5555, self.dirNodes[0].ip)
+        #    self.logger.info('Received %s from %s', data, node.id)         
+        #    self.osdCount += 1
 
         self.state = self.S_RUNNING
         return HttpJsonResponse()
@@ -763,53 +820,43 @@ class XtreemFSManager(BaseManager):
     def get_service_snapshot(self, kwargs):
         # stop all agent services        
         self.logger.debug("Stopping all agent services")
-        self._stop_all()
+        self._stop_all(detach=False)
 
         self.logger.debug("Calling get_snapshot on agents")
 
-        # get snapshot from all agent nodes (this is independent of what
-        # XtreemFS services are running there)
-        node_snapshot_map = {}
-        node_ids = []
+        # dictionary mapping node IDs to tuples of uuids/None (DIR, MRC, OSD)
+        nodes_snapshot = {}        
+
         for node in self.nodes:
-            # build a list of all unique node ids
-            if node.id not in node_ids:
-                node_ids.append(node.id);
+            if node.id not in nodes_snapshot:
+                nodes_snapshot[node.id] = { 
+                        'data': None, 
+                        'dir_uuid': self.dir_node_uuid_map.get(node.id),
+                        'mrc_uuid': self.mrc_node_uuid_map.get(node.id),
+                        'osd_uuid': self.osd_node_uuid_map.get(node.id)
+                }
+
             try:
-                self.logger.debug("get_snapshot(%s)" % node.ip)
-                node_snapshot_map[node.id] = client.get_snapshot(node.ip, 5555)
-
-                self.logger.debug("node_snapshot_map update to %s" %
-                        node_snapshot_map)
-
+                # get snapshot from this agent node, independent of what
+                # XtreemFS services are running there
+                nodes_snapshot[node.id]['data'] = client.get_snapshot(node.ip,
+                        5555)
             except client.AgentException:
-                self.logger.exception('Failed to get snapshot from node %s' % node)
+                self.logger.exception('Failed to get snapshot from node %s' %
+                        node)
                 self.state = self.S_ERROR
                 raise
+
+            nodes_snapshot[node.id]['volume'] = self.osd_uuid_volume_map.get(
+                    nodes_snapshot[node.id]['osd_uuid'])
         
-        # dictionary mapping node IDs to tuples of uuids/None (DIR, MRC, OSD)
-        self.logger.debug("dir_node_uuid_map: %s" % self.dir_node_uuid_map)
+            for key in 'dir_uuid', 'mrc_uuid', 'osd_uuid', 'volume':
+                self.logger.debug("nodes_snapshot[%s]['%s']: %s" % (node.id,
+                    key, nodes_snapshot[node.id][key]))
 
-        node_uuid_tuple_map = {}        
-        dir_uuid = None
-        if 'id' in self.dir_node_uuid_map:
-            dir_uuid = self.dir_node_uuid_map['id']
-
-        self.logger.debug("mrc_node_uuid_map: %s" % self.mrc_node_uuid_map)
-
-        mrc_uuid = None
-        if 'id' in self.mrc_node_uuid_map:
-            mrc_uuid = self.mrc_node_uuid_map['id']
-
-
-        self.logger.debug("osd_node_uuid_map: %s" % self.osd_node_uuid_map)
-
-        osd_uuid = None
-        if 'id' in self.osd_node_uuid_map:
-            osd_uuid = self.osd_node_uuid_map['id']
-
-        # setting id in node_uuid_tuple_map
-        node_uuid_tuple_map['id'] = (dir_uuid, mrc_uuid, osd_uuid)
+        self.logger.debug("Re-starting all agent services")
+        self._start_all()
+        return HttpJsonResponse(nodes_snapshot)
 
         # TODO: pack everything together and return it
         # node_uuid_tuple_map, contains:
