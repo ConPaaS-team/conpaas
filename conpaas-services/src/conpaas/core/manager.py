@@ -208,7 +208,11 @@ class BaseManager(object):
     def destroy_volume(self, volume_id):
         self.logger.info("Destroying volume with id %s" % volume_id)
 
-        volume = self.get_volume(volume_id)
+        try:
+            volume = self.get_volume(volume_id)
+        except Exception:
+            self.logger.info("Volume %s not attached" % volume_id)
+            return
 
         if self.controller.destroy_volume(volume, volume.cloud):
             self.volumes.remove(volume)
