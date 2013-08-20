@@ -195,15 +195,16 @@ class XtreemFSAgent(BaseAgent):
 
     @expose('POST')
     def get_snapshot(self, kwargs):
-        ret = {}
         # pack data from:
         #     /etc/xos/xtreemfs/ (some files later for certificates)
         #     /var/lib/xtreemfs/ (everything, after shutting down the services)
         filename = "/root/snapshot.tar.gz"
-        err, out = run_cmd("tar -czf %s var/log/xtreemfs/" % filename, "/")
+        dirs = "var/lib/xtreemfs/ etc/xos/xtreemfs/ var/log/xtreemfs/"
+
+        err, out = run_cmd("tar -czf %s %s" % (filename, dirs), "/")
         if err:
             self.logger.exception(err)
             return HttpErrorResponse(err)
 
-        ret['fs_data'] = file_get_contents(filename)
-        return HttpJsonResponse({'result' : ret})
+        archive = unicode(file_get_contents(filename), "ISO-8859-1")
+        return HttpJsonResponse(archive)
