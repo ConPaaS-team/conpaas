@@ -9,9 +9,10 @@ from os import remove
 
 from conpaas.core.expose import expose
 from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse
+from conpaas.core.https.server import HttpFileDownloadResponse
 from conpaas.services.xtreemfs.agent import role    
 from conpaas.core.agent import BaseAgent, AgentException
-from conpaas.core.misc import run_cmd, file_get_contents
+from conpaas.core.misc import run_cmd
 
 from threading import Lock
 import pickle
@@ -207,5 +208,4 @@ class XtreemFSAgent(BaseAgent):
             self.logger.exception(err)
             return HttpErrorResponse(err)
 
-        archive = unicode(file_get_contents(filename), "ISO-8859-1")
-        return HttpJsonResponse(archive)
+        return HttpFileDownloadResponse("snapshot.tar.gz", filename)
