@@ -556,6 +556,9 @@ class MXTreemFS(MGeneral):
         log('Calling get_service_snapshot')
         snapshot = callmanager(service.sid, 'get_service_snapshot', True, {})
 
+        if 'StartupInstances' not in tmp:
+            tmp['StartupInstances'] = {}
+
         tmp['StartupInstances']['resume'] = []
 
         for node in snapshot:

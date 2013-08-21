@@ -772,7 +772,13 @@ class DirectorTest(Common):
         if method == "get_startup_script":
             return "/bin/echo 'hello world'"
 
-        return { 'state': 'RUNNING', 'error': False }
+        if method == "get_service_snapshot":
+            return [ { 'data': '', 
+                       'osd_uuid': 42, 
+                       'dir_uuid': None,
+                       'mrc_uuid': None } ]
+
+        return { 'state': 'RUNNING', 'error': False, 'persistent': False }
 
     @mock.patch('cpsdirector.manifest.callmanager', mock_callmanager)
     def test_download_manifest(self):
@@ -800,18 +806,18 @@ class DirectorTest(Common):
         self.failUnless('StartupScript' in service)
 
     def mock_callmanager(service_id, method, post, data, files=[]):
-        return { 'state': 'RUNNING', 'error': False }
+        return { 'state': 'RUNNING', 'error': False, }
 
     @mock.patch('cpsdirector.manifest.callmanager', mock_callmanager)
     def test_download_manifest_list_nodes_error(self):
         self.create_user()
-        self.app.post('/start/xtreemfs', data={ 'uid': 1 })
+        self.app.post('/start/selenium', data={ 'uid': 1 })
 
         data = {
             'uid': 1
         }
 
-        expected_result = '{"Services": [{"Start": 1, "ServiceName": "New xtreemfs service", "Type": "xtreemfs", "Cloud": "iaas"}], "Application": "New Application"}'
+        expected_result = '{"Services": [{"Start": 1, "ServiceName": "New selenium service", "Type": "selenium", "Cloud": "iaas"}], "Application": "New Application"}'
 
         response = self.app.post('/download_manifest/1', data=data)
         self.assertEquals(200, response.status_code)
