@@ -15,8 +15,9 @@ from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse
 
 from conpaas.services.xtreemfs.agent import client
 
-import subprocess
 import uuid
+import base64
+import subprocess
 
 def invalid_arg(msg):
     return HttpErrorResponse(ManagerException(
@@ -839,8 +840,10 @@ class XtreemFSManager(BaseManager):
             try:
                 # get snapshot from this agent node, independent of what
                 # XtreemFS services are running there
-                nodes_snapshot[node.id]['data'] = client.get_snapshot(node.ip,
-                        5555)
+                data = client.get_snapshot(node.ip, 5555)
+                self.logger.debug('get_snapshot(%s) HTTP code: %s' % (node.ip,
+                    data[0]))
+                nodes_snapshot[node.id]['data'] = base64.b64encode(data[1])
             except client.AgentException:
                 self.logger.exception('Failed to get snapshot from node %s' %
                         node)
@@ -856,7 +859,8 @@ class XtreemFSManager(BaseManager):
 
         self.logger.debug("Re-starting all agent services")
         self._start_all()
-        return HttpJsonResponse(nodes_snapshot)
+
+        return HttpJsonResponse(nodes_snapshot.values())
 
         # TODO: pack everything together and return it
         # node_uuid_tuple_map, contains:
