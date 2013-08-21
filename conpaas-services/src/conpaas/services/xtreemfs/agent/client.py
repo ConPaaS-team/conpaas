@@ -66,5 +66,5 @@ def stopOSD(host, port, drain = True):
   
 def get_snapshot(host, port):
   method = 'get_snapshot'
-  return _check(https.client.jsonrpc_post(host, port, '/', method))
+  return https.client.jsonrpc_post(host, port, '/', method)
 
