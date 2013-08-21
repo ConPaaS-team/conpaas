@@ -12,10 +12,12 @@
 from flask import Blueprint
 from flask import jsonify, request, g
 
-import simplejson
+import os
 import time
+import base64
 import socket
 import urllib2
+import simplejson
 
 from cpsdirector.common import log
 from cpsdirector.common import build_response
@@ -529,6 +531,43 @@ class MSelenium(MGeneral):
         return 'ok'
 
 class MXTreemFS(MGeneral):
+
+    def set_persistent(self, service_id):
+        res = callmanager(service_id, 'get_service_info', False, {})
+
+        if res['persistent']:
+            log('Service %s is already persistent' % service_id)
+        else:
+            res = callmanager(service_id, 'toggle_persistent', True, {})
+            log('Service %s is now persistent' % service_id)
+
+        return res['persistent']
+
+    def __get_node_archive_filename(self, node):
+        node_id = "%s_%s_%s" % (node['osd_uuid'], node['dir_uuid'],
+                node['mrc_uuid'])
+        return os.path.join(get_userdata_dir(), node_id + '.tar.gz')
+
+    def get_service_manifest(self, service):
+        tmp = MGeneral.get_service_manifest(self, service)
+
+        self.set_persistent(service.sid)
+        
+        log('Calling get_service_snapshot')
+        snapshot = callmanager(service.sid, 'get_service_snapshot', True, {})
+
+        tmp['StartupInstances']['resume'] = []
+
+        for node in snapshot:
+            node_filename = self.__get_node_archive_filename(node)
+            data = base64.b64decode(node.pop('data'))
+            open(node_filename, 'wb').write(data)
+            log('%s created' % node_filename)
+
+            tmp['StartupInstances']['resume'].append(node)
+
+        return tmp
+
     def createvolume(self, service_id, name, owner):
         params = {
                 'volumeName': name,
