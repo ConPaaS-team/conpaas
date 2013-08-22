@@ -956,26 +956,3 @@ class XtreemFSManager(BaseManager):
         self.logger.info("set_service_snapshot: restarting all agent services")
         self._start_all()
         return HttpJsonResponse()
-
-        # TODO: pack everything together and return it
-        # node_uuid_tuple_map, contains:
-        #     - how many agent nodes (size)
-        #     - what XtreemFS services with which uuid ran on that node
-        # node_snapshot_map, contains:
-        #     - agent data snapshot from each agent node
-        # osd_uuid_volume_map, contains:
-        #     - the cloud storage volume for each OSD uuid
-
-    # TODO: add restore method 
-    #       restore service from snapshot (reuse as much of the existing code
-    #       as possible, generalise methods)
-    #
-    # Algorithm:
-    # for every value in node_uuid_tuple_map
-    #   add a node 
-    #   if the third tuple value is not None
-    #     attach the volume from osd_uuid_volume_map, using third tuple value as key
-    #   restore the agent data from node_snapshot_map
-    #   start DIR, MRC, OSD on node if uuid was given in tuple
-    #     pass uuid, add a flag to prevent the OSD from preparing the storage
-
