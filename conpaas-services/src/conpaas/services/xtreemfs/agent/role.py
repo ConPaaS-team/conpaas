@@ -181,14 +181,18 @@ class OSD:
                             proc.returncode)
                 else:
                     logger.info('File system created successfully')
+            else:
+                logger.info(
+                  "Not creating a new file system on %s" % self.dev_name)
+                time.sleep(10)
 
             # mount
-            proc = Popen(self.mount_args, stdout=devnull_fd, stderr=devnull_fd,
-                    close_fds=True)
+            mount_cmd = ' '.join(self.mount_args)
+            logger.debug('Running command %s' % mount_cmd)
+            _, err = run_cmd(mount_cmd)
 
-            if proc.wait() != 0:
-                logger.critical('Failed to mount storage device:(code=%d)' % 
-                        proc.returncode)
+            if err:
+                logger.critical('Failed to mount storage device: %s' % err)
             else:
                 logger.info("OSD node has prepared and mounted %s" % self.dev_name)
         else:
