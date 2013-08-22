@@ -16,6 +16,7 @@ from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse
 from conpaas.services.xtreemfs.agent import client
 
 import uuid
+import json
 import base64
 import subprocess
 
@@ -819,6 +820,10 @@ class XtreemFSManager(BaseManager):
 
     @expose('POST')
     def get_service_snapshot(self, kwargs):
+        if self.state != self.S_RUNNING:
+            return HttpErrorResponse(
+                'ERROR: Wrong state to get service snapshot.')
+
         # stop all agent services        
         self.logger.debug("Stopping all agent services")
         self._stop_all(detach=False)
@@ -850,8 +855,14 @@ class XtreemFSManager(BaseManager):
                 self.state = self.S_ERROR
                 raise
 
-            nodes_snapshot[node.id]['volume'] = self.osd_uuid_volume_map.get(
+            # Get ID of attached volume
+            volume_id = self.osd_uuid_volume_map.get(
                     nodes_snapshot[node.id]['osd_uuid'])
+            nodes_snapshot[node.id]['volume'] = volume_id
+
+            if volume_id:
+                volume = self.get_volume(volume_id)
+                nodes_snapshot[node.id]['cloud'] = volume.cloud
         
             for key in 'dir_uuid', 'mrc_uuid', 'osd_uuid', 'volume':
                 self.logger.debug("nodes_snapshot[%s]['%s']: %s" % (node.id,
@@ -861,6 +872,84 @@ class XtreemFSManager(BaseManager):
         self._start_all()
 
         return HttpJsonResponse(nodes_snapshot.values())
+
+    @expose('POST')
+    def set_service_snapshot(self, kwargs):
+        if self.state != self.S_RUNNING:
+            return HttpErrorResponse(
+                'ERROR: Wrong state to set service snapshot.')
+
+        if not 'nodes' in kwargs:
+            return HttpErrorResponse(
+               "ERROR: Required argument (nodes) doesn't exist")
+
+        nodes = json.loads(kwargs['nodes'])
+
+        if len(nodes) != len(self.nodes):
+            err = "set_service_snapshot: len(nodes) != len(self.nodes)"
+            self.logger.error(err)
+            return HttpErrorResponse(err)
+                    
+        self.logger.debug("Stopping all agent services and removing volumes")
+
+        # By temporarily setting the service to non-persistent, stopping all
+        # the services will remove associated volumes.
+        was_persistent = self.persistent
+        self.persistent = False
+        self._stop_all(detach=True)
+
+        # rewriting state
+        self.osdNodes = []
+        self.mrcNodes = []
+        self.dirNodes = []
+
+        self.dir_node_uuid_map = {}
+        self.mrc_node_uuid_map = {}
+        self.osd_node_uuid_map = {}
+
+        self.osd_uuid_volume_map = {}
+
+        for node, data in zip(self.nodes, nodes):
+            volumeid = data.get('volume')
+            osd_uuid = data.get('osd_uuid')
+            mrc_uuid = data.get('mrc_uuid')
+            dir_uuid = data.get('dir_uuid')
+
+            # If this is a dir node
+            if dir_uuid:
+                self.dir_node_uuid_map[node.id] = dir_uuid
+                self.dirNodes.append(node)
+
+            # If this is a mrc node
+            if mrc_uuid:
+                self.mrc_node_uuid_map[node.id] = mrc_uuid
+                self.mrcNodes.append(node)
+
+            # If this is an OSD node
+            if osd_uuid:
+                self.osd_node_uuid_map[node.id] = osd_uuid
+                self.osdNodes.append(node)
+
+                if volumeid:
+                    self.osd_uuid_volume_map[osd_uuid] = volumeid
+
+                    try:
+                        self.get_volume(volumeid)
+                    except Exception:
+                        # This volume is not in the list of known ones.
+                        volumeCloud = self._init_cloud(data.get('cloud'))
+                        class volume:
+                            id = volumeid
+                            cloud = volumeCloud
+
+                        self.volumes.append(volume)
+
+        # TODO: also restore archive
+
+        self.persistent = was_persistent
+        self.logger.debug("Re-starting all agent services")
+        self._start_all()
+        return HttpJsonResponse()
 
         # TODO: pack everything together and return it
         # node_uuid_tuple_map, contains:
