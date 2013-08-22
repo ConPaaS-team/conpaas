@@ -567,6 +567,9 @@ class MXTreemFS(MGeneral):
             open(node_filename, 'wb').write(data)
             log('%s created' % node_filename)
 
+            node['archive'] = '%s/download_data/%s' % (get_director_url(),
+                    basename(node_filename))
+
             tmp['StartupInstances']['resume'].append(node)
 
         return tmp
