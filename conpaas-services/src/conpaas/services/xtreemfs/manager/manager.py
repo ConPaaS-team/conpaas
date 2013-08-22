@@ -16,7 +16,6 @@ from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse
 from conpaas.services.xtreemfs.agent import client
 
 import uuid
-import json
 import base64
 import subprocess
 
@@ -883,7 +882,7 @@ class XtreemFSManager(BaseManager):
             return HttpErrorResponse(
                "ERROR: Required argument (nodes) doesn't exist")
 
-        nodes = json.loads(kwargs['nodes'])
+        nodes = kwargs['nodes']
 
         if len(nodes) != len(self.nodes):
             err = "set_service_snapshot: len(nodes) != len(self.nodes)"

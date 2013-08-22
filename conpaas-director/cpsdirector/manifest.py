@@ -611,9 +611,24 @@ class MXTreemFS(MGeneral):
             if json.get('StartupInstances').get('osd'):
                 params['osd'] = int(json.get('StartupInstances').get('osd'))
 
+            # We have started the service already, so one OSD node is there
+            # for sure.
+            params['osd'] -= 1
+
             res = self.add_nodes(sid, params)
             if 'error' in res:
                 return res['error']
+
+            to_resume = { 'nodes': json['StartupInstances'].get('resume') }
+            if to_resume:
+                log('Resuming the following xtreemfs nodes: %s' % to_resume)
+                res = callmanager(sid, "set_service_snapshot", True,
+                        to_resume)
+
+                if 'error' in res:
+                    return res['error']
+            else:
+                log('No xtreemfs node to be resumed')
 
         return 'ok'
 
