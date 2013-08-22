@@ -68,3 +68,8 @@ def get_snapshot(host, port):
   method = 'get_snapshot'
   return https.client.jsonrpc_post(host, port, '/', method)
 
+def set_snapshot(host, port, archive_url):
+  method = 'set_snapshot'
+  params = { 'archive_url': archive_url }
+  return _check(https.client.jsonrpc_post(host, port, '/', method,
+      params=params))

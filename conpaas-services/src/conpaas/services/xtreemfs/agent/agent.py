@@ -196,6 +196,27 @@ class XtreemFSAgent(BaseAgent):
         return HttpJsonResponse()
 
     @expose('POST')
+    def set_snapshot(self, kwargs):
+        if 'archive_url' not in kwargs:
+            raise AgentException(
+                AgentException.E_ARGS_MISSING, 'archive_url')
+
+        self.logger.info('set_snapshot: restoring archive')
+
+        archive_cmd = "wget --ca-certificate /etc/cpsagent/certs/ca_cert.pem "
+        archive_cmd += kwargs['archive_url'] + " -O - | tar xz -C /"
+
+        self.logger.debug('set_snapshot: %s' % archive_cmd)
+
+        out, err = run_cmd(archive_cmd)
+
+        self.logger.debug('set_snapshot: stdout %s' % out)
+        self.logger.debug('set_snapshot: stderr %s' % err)
+
+        self.logger.info('set_snapshot: archive restored successfully')
+        return HttpJsonResponse()
+
+    @expose('POST')
     def get_snapshot(self, kwargs):
         # pack data from:
         #     /etc/xos/xtreemfs/ (some files later for certificates)

@@ -862,7 +862,7 @@ class XtreemFSManager(BaseManager):
 
             if volume_id:
                 volume = self.get_volume(volume_id)
-                nodes_snapshot[node.id]['cloud'] = volume.cloud
+                nodes_snapshot[node.id]['cloud'] = volume.cloud.cloud_name
         
             for key in 'dir_uuid', 'mrc_uuid', 'osd_uuid', 'volume':
                 self.logger.debug("nodes_snapshot[%s]['%s']: %s" % (node.id,
@@ -890,7 +890,7 @@ class XtreemFSManager(BaseManager):
             self.logger.error(err)
             return HttpErrorResponse(err)
                     
-        self.logger.debug("Stopping all agent services and removing volumes")
+        self.logger.info("set_service_snapshot: stopping all agent services")
 
         # By temporarily setting the service to non-persistent, stopping all
         # the services will remove associated volumes.
@@ -944,10 +944,17 @@ class XtreemFSManager(BaseManager):
 
                         self.volumes.append(volume)
 
-        # TODO: also restore archive
+            # Regardless of node type, restore metadata
+            try:
+                self.logger.info('set_service_snapshot: restoring %s' %
+                        node.ip)
+                data = client.set_snapshot(node.ip, 5555, data['archive'])
+            except client.AgentException, err:
+                self.logger.exception(err)
+                raise err
 
         self.persistent = was_persistent
-        self.logger.debug("Re-starting all agent services")
+        self.logger.info("set_service_snapshot: restarting all agent services")
         self._start_all()
         return HttpJsonResponse()
 
