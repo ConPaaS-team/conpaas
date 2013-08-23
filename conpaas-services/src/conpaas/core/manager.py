@@ -215,13 +215,14 @@ class BaseManager(object):
             self.logger.info("Volume %s not known" % volume_id)
             return
 
-        try:
-            ret = self.controller.destroy_volume(volume, volume.cloud)
-        except Exception:
-            # It might take a bit for the volume to actually be
-            # detached. Let's wait a little and try again once more.
-            time.sleep(10)
-            ret = self.controller.destroy_volume(volume, volume.cloud)
+        for attempt in range(1, 11):
+            try:
+                ret = self.controller.destroy_volume(volume, volume.cloud)
+            except Exception, err:
+                self.logger.info("Attempt %s: %s" % (attempt, err))
+                # It might take a bit for the volume to actually be
+                # detached. Let's wait a little and try again.
+                time.sleep(10)
 
         if ret:
             self.volumes.remove(volume)

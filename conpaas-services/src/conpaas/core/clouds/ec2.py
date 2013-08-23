@@ -90,14 +90,18 @@ class EC2Cloud(Cloud):
         size = sizes[size_idx]
 
         img = NodeImage(self.img_id, '', None)
-        kwargs = {'size': size,
-                  'image': img,
-                  'name': name}
-        kwargs['ex_mincount'] = str(count)
-        kwargs['ex_maxcount'] = str(count)
-        kwargs['ex_securitygroup'] = self.sg
-        kwargs['ex_keyname'] = self.key_name
-        kwargs['ex_userdata'] = self.get_context()
+
+        kwargs = {
+            'size': size,
+            'image': img,
+            'name': name,
+            'location': self.driver.list_locations()[0],
+            'ex_mincount': str(count),
+            'ex_maxcount': str(count),
+            'ex_securitygroup': self.sg,
+            'ex_keyname': self.key_name,
+            'ex_userdata': self.get_context(),
+        }
 
         nodes = self._create_service_nodes(self.driver.create_node(**kwargs))
 
