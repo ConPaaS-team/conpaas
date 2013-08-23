@@ -11,6 +11,7 @@
 
 from threading import Thread
 
+import time
 import os.path
 from conpaas.core.log import create_logger
 from conpaas.core.expose import expose
@@ -211,10 +212,18 @@ class BaseManager(object):
         try:
             volume = self.get_volume(volume_id)
         except Exception:
-            self.logger.info("Volume %s not attached" % volume_id)
+            self.logger.info("Volume %s not known" % volume_id)
             return
 
-        if self.controller.destroy_volume(volume, volume.cloud):
+        try:
+            ret = self.controller.destroy_volume(volume, volume.cloud)
+        except Exception:
+            # It might take a bit for the volume to actually be
+            # detached. Let's wait a little and try again once more.
+            time.sleep(10)
+            ret = self.controller.destroy_volume(volume, volume.cloud)
+
+        if ret:
             self.volumes.remove(volume)
         else:
             raise Exception("Error destroying volume %s" % volume_id)
