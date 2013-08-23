@@ -119,6 +119,11 @@ class EC2Cloud(Cloud):
         # EBS expects volume size in GiB.
         size /= 1024.0
 
+        size = int(round(size))
+
+        self.logger.debug("self.driver.create_volume(%s, %s, %s)" % (size,
+            name, location))
+
         return self.driver.create_volume(size, name, location)
 
     def attach_volume(self, node, volume, device):
