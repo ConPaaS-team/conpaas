@@ -955,4 +955,5 @@ class XtreemFSManager(BaseManager):
         self.persistent = was_persistent
         self.logger.info("set_service_snapshot: restarting all agent services")
         self._start_all()
+        self.logger.info("set_service_snapshot: all agent services restarted")
         return HttpJsonResponse()
