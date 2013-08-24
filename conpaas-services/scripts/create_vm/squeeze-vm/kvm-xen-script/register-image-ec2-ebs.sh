@@ -1,7 +1,19 @@
-#!/bin/bash
+#/bin/bash
 # Register EBS backed AMI.
-#set -x
 
+# Stop execution if any command fails.
+#set -e
+
+txtdef="\e[0m" # revert to default color
+txtbld="\e[1m"    # bold
+txtgreen="\e[0;32m"
+errcolor="\e[1;31m" # bold red
+logcolor="\e[0;34m" # blue
+
+mandatory_arguments=""
+
+# Requires: $img_file
+# Output: $logfile, $errfile, $work_dir, $volume_size, $EC2_ACCESS_KEY, $EC2_SECRET_KEY
 function init_variables {
     logfile="out.log"
     errfile="out.err"
@@ -10,31 +22,51 @@ function init_variables {
     : > $logfile
     : > $errfile
 
-    txtdef="\e[0m" # revert to default color
-    txtbld="\e[1m"    # bold
-    txtgreen="\e[0;32m"
-    errcolor="\e[1;31m" # bold red
-    logcolor="\e[0;34m" # blue
-
     rm -rf $work_dir
     mkdir $work_dir
 
     local size=`du -B M $img_file | awk -F M '{print $1}'`
     volume_size=$((size / 1024))
     if [ $((size % 1024)) -ne 0 ]; then
-        $((volume_size += 1))
+        (( volume_size += 1 ))
     fi
 
+    : ${EC2_ACCESS_KEY:?"You need to set env variable: 'EC2_ACCESS_KEY'."}
+    : ${EC2_SECRET_KEY:?"You need to set env variable: 'EC2_SECRET_KEY'."}
+}
+
+
+function install_pkgs {
+    # euca2ools dependencies.
+    host_pkgs=('python-boto')
+    host_pkgs+=('python-m2crypto')
+    host_pkgs+=('build-essential')
+
+    # Other tools.
+    host_pkgs+=('mount')        # losetup, mount, umount
+    host_pkgs+=('kpartx')       # kpartx
+    host_pkgs+=('parted')       # parted
+    host_pkgs+=('e2fsprogs')    # tune2fs
+    host_pkgs+=('grub2')        # grub-install
+
+    # Other tools
+    host_pkgs+=('grub-pc')
+
+    apt-get update
+    apt-get install -y ${host_pkgs[*]} | spin
+    [ $PIPESTATUS == 0 ] || die "Installing host packages failed!"
+
+    modprobe dm-mod
 }
 
 
 function usage {
     echo -e "Usage:\n$0
-\t-a | --arch <amd64 | i386>
+\t[-a | --arch <amd64 | i386>]
 \t[-d | --description <description>]
 \t[-h | --help]
-\t-n | --name <ami-name>
-\t$txtbld<image-file>$txtdef"
+\t[-n | --name <ami-name>]
+\t<image-file>"
 }
 
 
@@ -78,40 +110,120 @@ function parse_script_arguments {
         esac
     done
 
-    if ! silent_check arch description ami_name; then
-        echo -e "${errcolor}ERROR: At least one of of the mandatory arguments \
-is missing or at list one argument specified on the command line is misused.\n${txtdef}" >&2
-        usage >&2
-        exit 1
-    fi
-
-    if [ $# -ne 1 ]; then
+    # The image file.
+    if [ $# -ne 1 ] || [[ $1 != *.img ]]; then
         echo -e "${errcolor}ERROR: Script must be called with just one parameter \
-(excluding options), which is the 'image-file'.\n${txtdef}" >&2
+(excluding options), which is the image file: 'file-name.img'.\nAll options must \
+preced the image file name.\n${txtdef}" >&2
         usage >&2
         exit 1
     fi
 
     img_file="$1"
+
+    # Some checks.
+    if ! silent_check arch; then
+        arch=$(parse_cfg_file xen_arch)
+    fi
+    [ $arch == "i386" ] || [ $arch == "amd64" ] || {
+        echo -e "${errcolor}ERROR: 'arch' option is not properly set. It can be \
+specified on the command line or in a file called '${cfg_file}'.\n${txtdef}" >&2
+        usage >&2
+        exit 1
+    }
+
+    if ! silent_check description; then
+        echo -e "${errcolor}ERROR: 'description' option is not properly set.\n${txtdef}" >&2
+        usage >&2
+        exit 1
+    fi
+
+    if ! silent_check ami_name; then
+        ami_name=${img_file%.img}
+    fi
+}
+
+
+cfg_file=create-img-script.cfg
+# Requires: $1 = name of configuratio option to search for.
+# Output: The option if it is found in the configuratio file.
+function parse_cfg_file {
+    if ! [ -f $cfg_file ]; then
+        echo -n ""
+        return
+    fi
+
+    local re="^[[:space:]]*${1}[[:space:]]*="
+    while read line; do
+        if [[ "$line" =~ $re ]]; then
+            echo -n ${line#*=}
+            return
+        fi
+    done < $cfg_file
+    echo -n ""
 }
 
 
 # Requires: $work_dir
 # Output: --
-function download_and_install_euca2ools {
+function check_euca2ools {
     check work_dir
 
-    # Download sources for versions 1.3
-    if [ ! -d $work_dir/euca2ools ]; then
-        wget -qO $work_dir/euca2ools-1.3.2.tar.gz https://github.com/eucalyptus/euca2ools/archive/1.3.2.tar.gz
-        tar zxf $work_dir/euca2ools-1.3.2.tar.gz
-    fi
-
-    # Make the euca2ools if they are not installed or the version is wrong
+    # Install the euca2ools if they are not installed or the version is wrong
     if ! command -v euca-version > /dev/null 2>&1; then
         install_euca2ools
-    elif [[ ! "`euca-version`" =~ euca2ools\ 1.3.* ]]; then
+    elif [[ ! "`euca-version`" =~ euca2ools\ 2.0.* ]]; then
         install_euca2ools
+    fi
+}
+
+
+# Requires: $work_dir
+# Output: --
+function install_euca2ools {
+    # We want to fail if make fails, so don't start a subshell with ()
+    # Remember the old dir
+    local orig_pwd=$(pwd)
+
+#    cd $work_dir
+#
+#    out "${txtgreen}Installing boto...\n${txtdef}"
+#    # Install boto dependency with specific version.
+#    # Download sources for versions 2.0b3
+#    wget -qO boto-2.0b3 https://github.com/boto/boto/archive/2.0b3.tar.gz
+#    tar xzf boto-2.0b3
+#
+#    cd boto-2.0b3
+#    python setup.py install | spin
+#    [ $PIPESTATUS == 0 ] || die "Installation of boto failed!"
+#    cd ..
+
+    out "${txtgreen}Installing euca2ools...\n${txtdef}"
+    # Install euca2ools.
+    # Download sources for versions 2.0.2
+    wget -qO euca2ools-1.3.2.tar.gz https://github.com/eucalyptus/euca2ools/archive/1.3.2.tar.gz
+    tar zxf euca2ools-1.3.2.tar.gz
+
+    cd euca2ools-1.3.2
+    make | spin
+    [ $PIPESTATUS == 0 ] || die "Installation of euca2ools failed!"
+    cd $orig_pwd
+
+    apply_boto_patch
+}
+
+
+function apply_boto_patch {
+    local boto_ec2_dir='/usr/share/pyshared/boto/ec2'
+    local patch_url='https://bugzilla.redhat.com/attachment.cgi?id=455857'
+    if [ -r "$boto_ec2_dir/blockdevicemapping.py" ]; then
+        local result=$(
+            grep -q "pre = '%sBlockDeviceMapping.%d' % (pre, i)" $boto_ec2_dir/blockdevicemapping.py
+            echo $?)
+        if [ $result -eq 0 ]; then
+            wget -qO - $patch_url | patch -sfr - -d $boto_ec2_dir
+            [ $PIPESTATUS == 0 ] || die "Unable to patch boto."
+        fi
     fi
 }
 
@@ -155,6 +267,7 @@ function create_ebs_volume {
     volume_id=`euca-create-volume --size $volume_size --zone "$availability_zone" | awk '{print $2}'`
 
     [ -z "$volume_id" ] && die "Unable to create volume."
+    dotdot "euca-describe-volumes $volume_id | grep available > /dev/null && echo available"
     log "The EBS volume id is $volume_id"
 }
 
@@ -178,34 +291,99 @@ function attach_ebs_volume {
 }
 
 
-# Requires: $work_dir, $volume_id, $device_path
-# Output: $imagedir
-function mount_ebs_volume {
-    check work_dir volume_id device_path
-
-    imagedir=$work_dir/${volume_id}
-
-    # Fail if the imagedir exists, it should be quite unique.
-    # This guarantees that we later on can delete it without having to check for anything.
-    if [ -d "$imagedir" ]; then
-        die "The mount location $imagedir already exists."
-    fi
-    # Create the dir we are going to mount the volume onto
-    mkdir -p $imagedir
-
-    [ -n "`mount | grep "$imagedir"`" ] && die "Something is already mounted on $imagedir"
-
-    mount $device_path $imagedir
-    log "The volume is mounted at ${imagedir}."
-}
-
-
 # Requires: $img_file, $device_path
 # Output: --
-function cp_img_to_ebs_volume {
+function cp3_img_to_ebs_volume {
     check img_file device_path
 
-    dd if=$img_file of=$device_path conv=fsync
+    mkfs.ext3 $device_path
+    tune2fs -i 0 $device_path
+
+    # Mounting dst.
+    local dst_dir=$(mktemp -d)
+    mount $device_path $dst_dir
+    log "The volume is mounted at $dst_dir"
+
+    # Mounting source image.
+    local src_loop=$(losetup -f)
+    losetup $src_loop $img_file
+
+    partition=$(kpartx -l $src_loop | awk '{ print $1 }')
+    partition=/dev/mapper/$partition
+    kpartx -a $src_loop
+
+    local src_dir=$(mktemp -d)
+    mount -o loop $partition $src_dir
+
+    # Copy files.
+    ( cd $src_dir && tar -cf - . ) | ( cd $dst_dir && tar -xpf - )
+
+    # Mount all the different special devices, other installers depend on their existence
+    mount --bind /dev $dst_dir/dev
+    chroot $dst_dir mount -t proc none /proc
+    chroot $dst_dir mount -t sysfs none /sys
+    chroot $dst_dir mount -t devpts none /dev/pts
+
+    # Grub
+    chmod -x $dst_dir/etc/grub.d/*
+    cp 40_custom  $dst_dir/etc/grub.d/40_custom
+    chmod 755 $dst_dir/etc/grub.d/40_custom
+
+    sed -i "s/^GRUB_TIMEOUT=[0-9]\+/GRUB_TIMEOUT=0\nGRUB_HIDDEN_TIMEOUT=true/" $dst_dir/etc/default/grub
+
+    # Update grub.cfg using the script
+    chroot $dst_dir update-grub
+
+    # Alias grub.cfg as menu.lst
+    chroot $dst_dir rm -rf /boot/grub/menu.lst
+    chroot $dst_dir ln -s /boot/grub/grub.cfg /boot/grub/menu.lst
+
+
+    # Create the fstab
+
+    # Add some mount options depending on the filesystem
+#    mountoptions=',barrier=0'
+#
+#    cat > $dst_dir/etc/fstab <<EOF
+#/dev/xvda1 /     ext3    defaults$mountoptions 1 1
+#EOF
+
+    # Unmount special devices
+
+    # We unmount from inside the image, otherwise the system won't boot
+    chroot $dst_dir umount /dev/pts
+    chroot $dst_dir umount /sys
+    chroot $dst_dir umount /proc
+    umount $dst_dir/dev
+
+    umount $dst_dir
+#    rm -rf "$dst_dir"
+    rmdir $dst_dir
+
+
+
+    umount $src_dir
+    kpartx -d $src_loop
+    losetup -d $src_loop
+    rmdir $src_dir
+
+}
+
+function write_fstab {
+    check device_path
+
+    # Mounting dst.
+    local dst_dir=$(mktemp -d)
+    mount $device_path $dst_dir
+
+    local mountoptions=',barrier=0'
+    cat > $dst_dir/etc/fstab <<EOF
+/dev/xvda1 /     ext3    defaults$mountoptions 1 1
+EOF
+
+    umount $dst_dir
+    rmdir $dst_dir
+
 }
 
 
@@ -215,7 +393,7 @@ function detach_ebs_volume {
     check volume_id
 
     euca-detach-volume $volume_id
-    dotdot "euca-describe-volumes $volume_id | grep 'available'"
+    dotdot "euca-describe-volumes $volume_id | grep 'available' > /dev/null && echo Detached."
 }
 
 
@@ -250,6 +428,7 @@ function delete_ebs_volume {
 function set_aki {
     check region arch
 
+    log "Set aki"
     # Figure out which pvGrub kernel ID we need.
     case $region in
         us-east-1)
@@ -310,6 +489,7 @@ function register_ebs_ami {
     ami_id=`euca-register \
         --name "$ami_name" --description "$description" \
         --architecture "$ami_arch" --kernel "$aki" \
+        #--root-device-name  /dev/sda1 \
         --snapshot "$snapshot_id:$volume_size:true:standard" \
         | awk '{print $2}'`
 
@@ -319,6 +499,7 @@ function register_ebs_ami {
         die \
             "Unable to register an AMI." \
             "You can do it manually with:" \
+            "export EC2_URL=\"$EC2_URL\"" \
             "`which euca-register` \\\\" \
             "--name '$ami_name' --description '$description' \\\\" \
             "--architecture '$ami_arch' --kernel '$aki' \\\\" \
@@ -328,18 +509,12 @@ function register_ebs_ami {
 }
 
 
-# # # # # # # # # # # # # # # # # # # # # # # #
-
-
-function install_euca2ools {
-    # We want to fail if make fails, so don't start a subshell with ()
-    # Remember the old dir
-    local orig_pwd=$(pwd)
-    cd euca2ools-1.3.2
-    make | spin
-    [ $PIPESTATUS == 0 ] || die "Installation of euca2ools failed!"
-    cd $orig_pwd
+function clean {
+    rm -rf $work_dir
 }
+
+
+# # # # # # # # # # # # # # # # # # # # # # # #
 
 
 # Each arg of log is a line.
@@ -422,37 +597,22 @@ function check {
     :
 }
 
-
 # # # # # # # # # # # # # # # # # # # # # # # #
 
-
 parse_script_arguments "$@"
-out "${txtgreen}Finished parse_script_arguments.\n${txtdef}"
-init_variables
-out "${txtgreen}Finished init_variables.\n${txtdef}"
+init_variables "$@"
 get_host_info
-out "${txtgreen}Finished get_host_info.\n${txtdef}"
-exit 0
-download_and_install_euca2ools
-out "${txtgreen}Finished download_and_install_euca2ools.\n${txtdef}"
+install_pkgs
+check_euca2ools
 create_ebs_volume
-out "${txtgreen}Finished create_ebs_volume.\n${txtdef}"
 attach_ebs_volume
-out "${txtgreen}Finished attach_ebs_volume.\n${txtdef}"
-#mount_ebs_volume
-#out "${txtgreen}Finished mount_ebs_volume.\n${txtdef}"
-cp_img_to_ebs_volume
-out "${txtgreen}Finished cp_img_to_ebs_volume.\n${txtdef}"
+cp3_img_to_ebs_volume
+write_fstab
 detach_ebs_volume
-out "${txtgreen}Finished detach_ebs_volume.\n${txtdef}"
 create_ebs_snapshot
-out "${txtgreen}Finished create_ebs_snapshot.\n${txtdef}"
 delete_ebs_volume
-out "${txtgreen}Finished delete_ebs_volume.\n${txtdef}"
 set_aki
-out "${txtgreen}Finished set_aki.\n${txtdef}"
 register_ebs_ami
-out "${txtgreen}Finished register_ebs_ami.\n${txtdef}"
-
+clean
 
 
