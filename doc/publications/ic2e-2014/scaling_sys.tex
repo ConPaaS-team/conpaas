@@ -376,7 +376,7 @@ Note that, the search space of possible strategies can be as large as the number
 
 %can be calculated either based on the Amazon EC2 recommendations ( CPU values always lower than 75\%), or based on the CPU values at which the application starts to experience SLO violations (or performance degradations). 
 
-\item Include a cost policy to avoid choosing wasteful scaling strategies. Considering the pricing model of cloud providers that charges users on a per-hour basis, the \emph{Scaler} includes a cost policy that rejects strategies releasing resources which have been recently started ( 5min < time to the end of its hour < 20). The \emph{Scaler} releases resources which are closed to the hour are free under the cloud pricing model, and there is no gain from terminating them before this hour price boundary.
+\item Include a cost policy to avoid choosing wasteful scaling strategies. Considering the pricing model of cloud providers that charges users on a per-hour basis, the \emph{Scaler} includes a cost policy that rejects strategies releasing resources which have been recently started ( 5min $<$ time to the end of its hour $<$ 20). The \emph{Scaler} releases resources which are closed to the hour are free under the cloud pricing model, and there is no gain from terminating them before this hour price boundary.
 
 \end{itemize}
 
