@@ -14,7 +14,12 @@ from . import BasicWebserversManager, ManagerException
 from conpaas.core.expose import expose
 
 from conpaas.core import git
-from conpaas.services.webservers.manager.autoscaling.scaler import ProvisioningManager 
+
+try:
+    from conpaas.services.webservers.manager.autoscaling.scaler import ProvisioningManager 
+except ImportError:
+    ProvisioningManager = None
+
 from multiprocessing.pool import ThreadPool
 
 class PHPManager(BasicWebserversManager):
@@ -25,10 +30,14 @@ class PHPManager(BasicWebserversManager):
         self._create_initial_configuration()
       self._register_scalaris(kwargs['scalaris'])
       
-      try:
-          self.scaler = ProvisioningManager(config_parser)
-      except Exception as ex:
-          self.logger.exception('Failed to initialize the Provisioning Manager %s' % str(ex))
+      if ProvisioningManager is None:
+          self.logger.info('Provisioning Manager can not be initialized')
+          self.scaler = None
+      else:
+          try:
+              self.scaler = ProvisioningManager(config_parser)
+          except Exception as ex:
+              self.logger.exception('Failed to initialize the Provisioning Manager %s' % str(ex))
   
     def _update_code(self, config, nodes):
       for serviceNode in nodes:
@@ -134,7 +143,11 @@ class PHPManager(BasicWebserversManager):
 
     @expose('POST')
     def on_autoscaling(self, kwargs):
-      self.logger.info('on_autoscaling entering')  
+      self.logger.info('on_autoscaling entering') 
+      if not self.scaler:
+          return HttpErrorResponse(
+                  'Provisioning Manager has not been initialized')
+
       try:
          self.autoscaling_threads = ThreadPool(processes=1)
          if isinstance(int(kwargs['cool_down']), int) and isinstance(int(kwargs['response_time']), int) and kwargs['strategy']:
@@ -151,6 +164,10 @@ class PHPManager(BasicWebserversManager):
     @expose('POST')
     def off_autoscaling(self, kwargs):
       self.logger.info('off_autoscaling entering')  
+      if not self.scaler:
+          return HttpErrorResponse(
+                  'Provisioning Manager has not been initialized')
+
       try:
         self.autoscaling_threads.terminate()
         self.scaler.stop_provisioning()
