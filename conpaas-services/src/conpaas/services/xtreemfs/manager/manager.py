@@ -183,9 +183,12 @@ class XtreemFSManager(BaseManager):
             if not self.persistent:
                 self.destroy_volume(volume_id)
 
-    def _do_startup(self, cloud):
-        ''' Starts up the service. The firstnodes will contain all services
-        '''
+    def _do_startup(self, cloud, resuming=False):
+        """Starts up the service. The first nodes will contain all services. 
+        
+        If 'resuming' is set to True, we do not start XtreemFS services now.
+        set_service_snapshot will do that.
+        """
         startCloud = self._init_cloud(cloud)
         try:
             # NOTE: The following service structure is enforce:
@@ -206,9 +209,10 @@ class XtreemFSManager(BaseManager):
             self.osdNodes += node_instances
             
             # start DIR, MRC, OSD
-            self._start_dir(self.dirNodes)
-            self._start_mrc(self.mrcNodes)
-            self._start_osd(self.osdNodes, startCloud)
+            if not resuming:
+                self._start_dir(self.dirNodes)
+                self._start_mrc(self.mrcNodes)
+                self._start_osd(self.osdNodes, startCloud)
 
             # at the startup the DIR node will have all the services
             self.dirCount = 1
@@ -891,12 +895,6 @@ class XtreemFSManager(BaseManager):
                     
         self.logger.info("set_service_snapshot: stopping all agent services")
 
-        # By temporarily setting the service to non-persistent, stopping all
-        # the services will remove associated volumes.
-        was_persistent = self.persistent
-        self.persistent = False
-        self._stop_all(detach=True)
-
         # rewriting state
         self.osdNodes = []
         self.mrcNodes = []
@@ -952,8 +950,7 @@ class XtreemFSManager(BaseManager):
                 self.logger.exception(err)
                 raise err
 
-        self.persistent = was_persistent
-        self.logger.info("set_service_snapshot: restarting all agent services")
+        self.logger.info("set_service_snapshot: starting all agent services")
         self._start_all()
-        self.logger.info("set_service_snapshot: all agent services restarted")
+        self.logger.info("set_service_snapshot: all agent services started")
         return HttpJsonResponse()

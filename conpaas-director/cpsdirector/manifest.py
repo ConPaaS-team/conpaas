@@ -426,7 +426,7 @@ class MMySql(MGeneral):
     def save_dump(self, service_id):
         res = callmanager(service_id, 'sqldump', False, {})
         if type(res) is dict and 'error' in res:
-            log(res['error'])
+            log('Error getting SQL dump: %s' % res['error'])
             return ''
 
         _, temp_path = mkstemp(dir=get_userdata_dir())
@@ -549,6 +549,9 @@ class MSelenium(MGeneral):
 
 class MXTreemFS(MGeneral):
 
+    def __init__(self):
+        self.resuming = False
+
     def set_persistent(self, service_id):
         res = callmanager(service_id, 'get_service_info', False, {})
 
@@ -601,7 +604,23 @@ class MXTreemFS(MGeneral):
 
         return res
 
+    def startup(self, service_id, cloud='default'):
+        data = {'cloud': cloud }
+
+        if self.resuming:
+            data['resuming'] = True
+
+        return callmanager(service_id, "startup", True, data)
+
     def start(self, json, appid):
+        try:
+            to_resume = { 'nodes': json['StartupInstances']['resume'] }
+        except KeyError:
+            to_resume = {}
+            
+        # Set the resuming flag if necessary
+        self.resuming = to_resume != {}
+
         sid = MGeneral.start(self, json, appid)
 
         if type(sid) != int:
@@ -636,7 +655,6 @@ class MXTreemFS(MGeneral):
             if 'error' in res:
                 return res['error']
 
-            to_resume = { 'nodes': json['StartupInstances'].get('resume') }
             if to_resume:
                 log('Resuming the following xtreemfs nodes: %s' % to_resume)
                 res = callmanager(sid, "set_service_snapshot", True,
