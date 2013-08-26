@@ -275,11 +275,13 @@ ssh into your manager VM as root and:
 Command line tool installation
 ================================
 
-The command line tool, called ``cpsclient``, can be installed as root
-or as a regular user.
+The command line tool, called ``cpsclient``, can be installed as root or as a
+regular user. Please note that libcurl development files (binary package
+:file:`libcurl4-openssl-dev` on Debian/Ubuntu systems) need to be installed on
+your system.
 
 As root::
-
+    
     $ sudo easy_install http://www.conpaas.eu/dl/cpsclient-1.2.1.tar.gz
 
 Or, if you do not have root privileges, ``cpsclient`` can also be installed in
