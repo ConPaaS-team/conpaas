@@ -86,9 +86,26 @@ from tempfile import mkstemp
 from cpsdirector.common import get_director_url
 from cpsdirector.common import get_userdata_dir
 from os.path import basename
-def get_startup_script(sid):
+def create_startup_script(sid):
     script = callmanager(sid, "get_startup_script", False, {})
     if 'error' in script:
+        return ''
+
+    # We need to get rid of environment variables, they will get overwritten
+    # with new values anyways.
+    script_start = False
+    new_script = []
+    for line in script.split('\n'):
+        if script_start or '/bin/bash' in line:
+            new_script.append(line)
+            script_start = True
+
+    return '\n'.join(new_script)
+
+def get_startup_script(sid):
+    script = create_startup_script(sid)
+    
+    if not script:
         return ''
 
     _, temp_path = mkstemp(prefix='startup', dir=get_userdata_dir())

@@ -770,7 +770,14 @@ class DirectorTest(Common):
             return { 'state': 'RUNNING', 'osd': [], 'dir': [], 'mrc': [] }
 
         if method == "get_startup_script":
-            return "/bin/echo 'hello world'"
+            return """echo "env[MYSQL_IP]='192.168.122.7'" >> /root/ConPaaS/src/conpaas/services/webservers/etc/fpm.tmpl
+export MYSQL_IP='192.168.122.7'
+echo "env[XTREEMFS_IP]='192.168.122.5'" >> /root/ConPaaS/src/conpaas/services/webservers/etc/fpm.tmpl
+export XTREEMFS_IP='192.168.122.5'
+#!/bin/bash
+
+echo 'hello world'
+"""
 
         if method == "get_service_snapshot":
             return [ { 'data': '', 
@@ -779,6 +786,12 @@ class DirectorTest(Common):
                        'mrc_uuid': None } ]
 
         return { 'state': 'RUNNING', 'error': False, 'persistent': False }
+
+    @mock.patch('cpsdirector.manifest.callmanager', mock_callmanager)
+    def test_create_startup_script(self):
+        result = cpsdirector.manifest.create_startup_script(1)
+        expected = "#!/bin/bash\n\necho 'hello world'\n"
+        self.assertEquals(expected, result)
 
     @mock.patch('cpsdirector.manifest.callmanager', mock_callmanager)
     def test_download_manifest(self):
