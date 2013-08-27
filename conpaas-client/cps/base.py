@@ -447,6 +447,10 @@ class BaseClient(object):
         else:
             print "No running services"
 
+    def version(self):
+        version = self.callapi("version", False, {})
+        print "ConPaaS director version %s" % version
+
     def usage(self, service_id):
         """Print client usage. Extend it with your client commands"""
         print "Usage: %s COMMAND [params]" % sys.argv[0]
@@ -471,6 +475,7 @@ class BaseClient(object):
         print "    rename            serviceid newname   # rename the specified service"
         print "    startup_script    serviceid filename  # upload a startup script"
         print "    usage             serviceid           # show service-specific options"
+        print "    version                               # show director's version"
 
     def main(self, argv):
         """What to do when invoked from the command line. Clients should extend
@@ -482,6 +487,9 @@ class BaseClient(object):
         except IndexError:
             self.usage(argv[0])
             sys.exit(0)
+
+        if command == "version":
+            return getattr(self, command)()
 
         # Service and application generic commands
         if command in ( "listapp", "createapp", "manifest",
