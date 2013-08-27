@@ -102,7 +102,7 @@ class Client(BaseClient):
         """
         mode = self.get_mode(service_id)
         if mode == 'NA':
-            return { 'result' : { 'error' : 'ERROR: to upload bag of task, first specify run mode DEMO or REAL \n\tcpsclient.py serviceid set_mode [ DEMO | REAL ] ' }}
+            return { 'result' : { 'error' : 'ERROR: to upload bag of task, first specify run mode DEMO or REAL \n\tcpsclient.py set_mode serviceid [ DEMO | REAL ] ' }}
         service = self.service_dict(service_id)
         params = { 'uriLocation': xtreemfs_location, 'method': 'start_sampling' }
         filecontents = open(filename).read()
