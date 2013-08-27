@@ -114,7 +114,7 @@ class Client(BaseClient):
         mode = self.get_mode(service_id)
         if mode == 'NA':
             return { 'result' : { 'error' : 'ERROR: to select a schedule, first specify run mode DEMO or REAL, then upload a bag of tasks ' }}
-        service = self.service_dict(service_id)
+        #service = self.service_dict(service_id)
         # check schedule availability
         res = self.callmanager(service_id, "get_service_info", False, {})
         if res['noCompletedTasks'] == 0:     # 
@@ -129,8 +129,8 @@ class Client(BaseClient):
             ts = sdata['timestamp']
             print strftime("Bag sampled on %a %d %b %Y at %H:%M:%S %Z", localtime(ts/1000))
             if 'schedules' in sdata:
-                sch = sdata['schedules']
-                ss = simplejson.dumps(sch)
+                #sch = sdata['schedules']
+                #ss = simplejson.dumps(sch)
                 # print "schedules: ", ss
                 numscheds = len(sdata['schedules']) 
                 if numscheds == 0:
@@ -153,7 +153,7 @@ class Client(BaseClient):
         # often...
         res = self.callmanager(service['sid'], "get_service_info", False, {})
 
-        data = simplejson.dumps(res);
+        #data = simplejson.dumps(res);
         # print "data:", data 
         print "mode:", res['mode']
         print "phase:", res['phase']
@@ -171,8 +171,8 @@ class Client(BaseClient):
                 ts = sdata['timestamp']
                 print strftime("Bag sampled on %a %d %b %Y at %H:%M:%S %Z", localtime(ts/1000))
                 if 'schedules' in sdata:
-                    sch = sdata['schedules']
-                    ss = simplejson.dumps(sch)
+                    #sch = sdata['schedules']
+                    #ss = simplejson.dumps(sch)
                     # print "schedules: ", ss
                     if len(sdata['schedules']) == 0:
                         print "Bag finished during sampling phase"
