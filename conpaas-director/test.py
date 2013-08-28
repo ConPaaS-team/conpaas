@@ -632,6 +632,23 @@ class DirectorTest(Common):
         self.assertEquals(200, response.status_code)
         self.assertEquals(["default"], simplejson.loads(response.data))
 
+    class Mock_require:
+
+        def __init__(self, arg):
+            pass
+
+        class Mock_version:
+            version = "0.0.0-test_version"
+
+        def __getitem__(self, index):
+            return self.Mock_version()
+
+    @mock.patch('pkg_resources.require', Mock_require)
+    def test_version(self):
+        response = self.app.get('/version')
+        self.assertEquals(200, response.status_code)
+        self.assertEquals(response.data, self.Mock_require.Mock_version.version)
+
     # Manifest tests
     def test_missing_manifest_argument(self):
         self.create_user()
