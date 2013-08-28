@@ -379,6 +379,8 @@ class MPhp(MGeneral):
             if 'error' in res:
                 return res['error']
 
+            self.wait_for_state(sid, 'RUNNING')
+
         if json.get('StartupInstances'):
             params = {
                     'proxy': 1,
@@ -388,14 +390,21 @@ class MPhp(MGeneral):
 
             if json.get('StartupInstances').get('proxy'):
                 params['proxy'] = int(json.get('StartupInstances').get('proxy'))
+                params['proxy'] -= 1
             if json.get('StartupInstances').get('web'):
                 params['web'] = int(json.get('StartupInstances').get('web'))
+                params['web'] -= 1
             if json.get('StartupInstances').get('backend'):
                 params['backend'] = int(json.get('StartupInstances').get('backend'))
+                params['backend'] -= 1
 
-            res = self.add_nodes(sid, params)
-            if 'error' in res:
-                return res['error']
+            if params['proxy'] or params['web'] or params['backend']:
+                # Add nodes only if at least one additional node has been
+                # requested
+                res = self.add_nodes(sid, params)
+                if 'error' in res:
+                    log('PHP.start: error calling add_nodes -> %s' % res)
+                    return res['error']
 
         return 'ok'
 
@@ -751,6 +760,8 @@ def new_manifest(json):
         msg = cls().start(service, appid)
 
         if msg is not 'ok':
+            log('new_manifest: error starting %s service -> %s' % (service,
+                msg))
             return msg
 
     return 'ok'
