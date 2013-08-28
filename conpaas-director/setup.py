@@ -9,7 +9,7 @@ from grp import getgrnam
 from setuptools import setup
 from pkg_resources import Requirement, resource_filename
 
-CPSVERSION = '1.3.0-rc1'
+CPSVERSION = '1.3.0-rc2'
 
 CONFDIR = '/etc/cpsdirector'
 
