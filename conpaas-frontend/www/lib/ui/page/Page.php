@@ -6,6 +6,7 @@
 
 require_module('user');
 require_module('ui');
+require_module('director');
 
 class Page {
 
@@ -208,7 +209,7 @@ class Page {
 	public function renderFooter() {
 		return
 			'<div class="footer">'.
-				'Copyright &copy;2011-'.date('Y').' Contrail consortium - <a href="http://www.conpaas.eu/">ConPaaS</a> is the PaaS component of <a href="http://contrail-project.eu/">Contrail</a>'.
+				'Copyright &copy;2011-'.date('Y').' Contrail consortium - <a href="http://www.conpaas.eu/">ConPaaS</a> is the PaaS component of <a href="http://contrail-project.eu/">Contrail</a>. ConPaaS '.Director::getVersion().'.'.
 			'</div>';
 	}
 
