@@ -457,6 +457,7 @@ class BaseClient(object):
         print "COMMAND is one of the following"
         print
         print "    credentials                           # set your ConPaaS credentials"
+        print "    version                               # show director's version"
         print "    listapp                               # list all applications"
         print "    available                             # list supported services"
         print "    clouds                                # list available clouds"
@@ -475,7 +476,6 @@ class BaseClient(object):
         print "    rename            serviceid newname   # rename the specified service"
         print "    startup_script    serviceid filename  # upload a startup script"
         print "    usage             serviceid           # show service-specific options"
-        print "    version                               # show director's version"
 
     def main(self, argv):
         """What to do when invoked from the command line. Clients should extend
