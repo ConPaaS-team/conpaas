@@ -10,17 +10,16 @@ txtgreen="\e[0;32m"
 errcolor="\e[1;31m" # bold red
 logcolor="\e[0;34m" # blue
 
-mandatory_arguments=""
+logfile="out.log"
+errfile="out.err"
+: > $logfile
+: > $errfile
+
 
 # Requires: $img_file
 # Output: $logfile, $errfile, $work_dir, $volume_size, $EC2_ACCESS_KEY, $EC2_SECRET_KEY
 function init_variables {
-    logfile="out.log"
-    errfile="out.err"
     work_dir="work-dir"
-
-    : > $logfile
-    : > $errfile
 
     rm -rf $work_dir
     mkdir $work_dir
@@ -185,19 +184,6 @@ function install_euca2ools {
     # Remember the old dir
     local orig_pwd=$(pwd)
 
-#    cd $work_dir
-#
-#    out "${txtgreen}Installing boto...\n${txtdef}"
-#    # Install boto dependency with specific version.
-#    # Download sources for versions 2.0b3
-#    wget -qO boto-2.0b3 https://github.com/boto/boto/archive/2.0b3.tar.gz
-#    tar xzf boto-2.0b3
-#
-#    cd boto-2.0b3
-#    python setup.py install | spin
-#    [ $PIPESTATUS == 0 ] || die "Installation of boto failed!"
-#    cd ..
-
     out "${txtgreen}Installing euca2ools...\n${txtdef}"
     # Install euca2ools.
     # Download sources for versions 2.0.2
@@ -338,18 +324,6 @@ function cp3_img_to_ebs_volume {
     chroot $dst_dir rm -rf /boot/grub/menu.lst
     chroot $dst_dir ln -s /boot/grub/grub.cfg /boot/grub/menu.lst
 
-
-    # Create the fstab
-
-    # Add some mount options depending on the filesystem
-#    mountoptions=',barrier=0'
-#
-#    cat > $dst_dir/etc/fstab <<EOF
-#/dev/xvda1 /     ext3    defaults$mountoptions 1 1
-#EOF
-
-    # Unmount special devices
-
     # We unmount from inside the image, otherwise the system won't boot
     chroot $dst_dir umount /dev/pts
     chroot $dst_dir umount /sys
@@ -357,10 +331,7 @@ function cp3_img_to_ebs_volume {
     umount $dst_dir/dev
 
     umount $dst_dir
-#    rm -rf "$dst_dir"
     rmdir $dst_dir
-
-
 
     umount $src_dir
     kpartx -d $src_loop
@@ -484,7 +455,6 @@ function register_ebs_ami {
     # The AMI has to start with "debian", otherwise we won't get a nice icon
     # The ":N:true:standard" is necessary so that the root volume
     # will be deleted on termination of the instance (specifically the "true" part)
-#    ami_name="$distribution-$codename-$arch-$name_suffix"
     log "Registering an AMI with the snapshot '$snapshot_id'"
     ami_id=`euca-register \
         --name "$ami_name" --description "$description" \
