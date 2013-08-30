@@ -331,5 +331,3 @@ vm_template=$(mk_vm_template_file)
 create_vm $img_template $vm_template
 rm $img_template $vm_template
 
-#echo $img_template
-#echo $vm_template
