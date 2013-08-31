@@ -24,9 +24,12 @@ apt-get -f -y update
 echo "debconf shared/accepted-sun-dlj-v1-1 boolean true" | debconf-set-selections
 DEBIAN_FRONTEND=noninteractive apt-get -y --force-yes --no-install-recommends --no-upgrade \
         install openssh-server \
-				python python-pycurl python-openssl python-m2crypto \
-				python-cheetah libxslt1-dev yaws subversion unzip less
+                python python-pycurl python-openssl python-m2crypto \
+                ganglia-monitor gmetad rrdtool logtail \
+                python-cheetah python-netaddr libxslt1-dev yaws subversion unzip less
 update-rc.d yaws disable
+update-rc.d gmetad disable
+update-rc.d ganglia-monitor disable
 
 cecho "===== install IPOP package ====="
 echo "deb http://www.grid-appliance.org/files/packages/deb/ stable contrib" >> /etc/apt/sources.list

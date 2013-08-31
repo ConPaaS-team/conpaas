@@ -1,7 +1,7 @@
 # Section: 503-condor
 
 cat <<EOF >> $ROOT_DIR/conpaas_install
-cecho "===== install HTCondor package ====="
+cecho "===== install packages required by HTCondor ====="
 mkdir -p /var/lib/condor
 chown condor /var/lib/condor
 chgrp condor /var/lib/condor
