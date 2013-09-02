@@ -49,6 +49,13 @@ a:hover {
 	text-align: right;
 }
 
+.serviceheader {
+	color: #999;
+	padding: 10px;
+	background-color: #eee;
+	text-align: left;
+}
+
 #logo {
 	width: 100px;
 	height: 32px;
@@ -553,6 +560,7 @@ tr.service {
 	padding: 5px;
 	text-align: right;
 	line-height: 20px;
+	width: 80px;
 }
 
 .createpage .form .service {
@@ -619,6 +627,7 @@ tr.service {
 	font-weight: bold;
 	vertical-align: middle;
 	padding-left: 10px;
+	width: 150px;
 }
 
 .form {
@@ -630,6 +639,7 @@ tr.service {
 	font-weight: normal;
 	font-size: 12px;
 	padding: 10px;
+	width:480px;
 }
 
 .form .input {

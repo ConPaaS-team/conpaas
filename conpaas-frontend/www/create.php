@@ -32,16 +32,24 @@ $page = new Page();
             please select one of the services below <img width="12px" src="images/lookdown.png" />
         </div>
           <table class="form" cellspacing="0" cellpading="0">
+              <div class="serviceheader">
+                 Web Hosting
+              </div>
               <tr class="service">
                   <td class="description"> <img src="images/php.png" height="32" /></td>
-                  <td class="radio" width="150px"><input type="radio" name="type" value="php" /> php</td>
-                  <td class="info" width="480px"> PHP version 5.2 under Nginx </td>
+                  <td class="radio"><input type="radio" name="type" value="php" /> php</td>
+                  <td class="info"> PHP version 5.2 under Nginx </td>
               </tr>
               <tr class="service">
                   <td class="description"> <img src="images/java.png" height="32" /></td>
                   <td class="radio"><input type="radio" name="type" value="java" /> java</td>
                   <td class="info"> Java Servlet container using Apache Tomcat 7.2</td>
               </tr>
+          </table>
+          <table class="form" cellspacing="0" cellpading="0">
+              <div class="serviceheader">
+                  Data Storage
+              </div>
               <tr class="service">
                   <td class="description"> <img src="images/mysql.png" height="32" /></td>
                   <td class="radio"><input type="radio" name="type" value="mysql" /> mysql</td>
@@ -53,20 +61,37 @@ $page = new Page();
                   <td class="info"> In-memory key-value store </td>
               </tr>
               <tr class="service">
+                  <td class="description"> <img src="images/xtreemfs.png" height="32" /></td>
+                  <td class="radio"><input type="radio" name="type" value="xtreemfs" /> xtreemfs</td>
+                  <td class="info"> Distributed file system </td>
+              </tr>
+          </table>
+          <table class="form" cellspacing="0" cellpading="0">
+              <div class="serviceheader">
+                  High-performance computing
+              </div>
+              <tr class="service">
                   <td class="description"> <img src="images/hadoop.png" height="32" /></td>
                   <td class="radio"><input type="radio" name="type" value="hadoop" /> map-reduce</td>
                   <td class="info"> Hadoop MapReduce cluster </td>
-              </tr>
+	      </tr>
+	      <tr class="service">
+                  <td class="description"> <img src="images/taskfarm.png" height="32" /></td>
+                  <td class="radio"><input type="radio" name="type" value="taskfarm" /> task farm</td>
+                  <td class="info"> Service for running bags of tasks </td>
+	      </tr>
+          </table>
+          <table class="form" cellspacing="0" cellpading="0">
+              <div class="serviceheader">
+                  Miscellaneous
+              </div>
               <tr class="service">
                   <td class="description"> <img src="images/selenium.png" height="32" /></td>
                   <td class="radio"><input type="radio" name="type" value="selenium" /> selenium</td>
                   <td class="info"> Selenium functional testing service </td>
               </tr>
-               <tr class="service">
-                  <td class="description"> <img src="images/xtreemfs.png" height="32" /></td>
-                  <td class="radio"><input type="radio" name="type" value="xtreemfs" /> xtreemfs</td>
-                  <td class="info"> Distributed file system </td>
-              </tr>
+          </table>
+          <table class="form" cellspacing="0" cellpading="0">
             <!--
                <tr class="service">
                    <td class="description"> <img src="images/cds.png" height="32" /></td>
@@ -74,11 +99,6 @@ $page = new Page();
                    <td class="info"> Content-delivery service for offloading static content </td>
                </tr>
             -->
-	   		<tr class="service">
-	   			<td class="description"> <img src="images/taskfarm.png" height="32" /></td>
-	   			<td class="radio"><input type="radio" name="type" value="taskfarm" /> task farm</td>
-	   			<td class="info"> Service for running bags of tasks </td>
-	   		</tr>
 <!--
 			<tr class="service">
 	   			<td class="description"> <img src="images/htcondor.png" height="32" /></td>
