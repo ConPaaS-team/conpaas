@@ -132,7 +132,7 @@ if __name__ == '__main__':
         sys.exit(1)
 
     # Write message about the selected services
-    print 'Setting up image for', hypervisor.upper()
+    print 'Setting up image for', hypervisor.upper(), ', with services:',
 
     # Write general scripts
     filenames = config.get('SCRIPT_FILE_NAMES', 'general_scripts')
@@ -144,6 +144,8 @@ if __name__ == '__main__':
         if 'true' == should_include:
             filename = config.get('SCRIPT_FILE_NAMES', servicename + '_script')
             append_file_to_output(root_dir + filename)
+            print servicename.replace('_service', '').upper(),
+    print
 
     # Write user script
     filename = config.get('SCRIPT_FILE_NAMES', 'user_script')
