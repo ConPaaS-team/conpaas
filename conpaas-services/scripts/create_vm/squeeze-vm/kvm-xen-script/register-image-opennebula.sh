@@ -10,6 +10,8 @@ errfile="out.err"
 # Takes as parameter "$@".
 function parse_script_arguments {
     arch=
+    start_instance=false
+    cfg_file=
     datastore=
     description="no-description"
     vm_name=
@@ -21,6 +23,17 @@ function parse_script_arguments {
         case $1 in
             -a | --arch)
                 arch=$2
+                shift 2
+                ;;
+            -b | --boot-instance)
+                start_instance=true
+                shift
+                ;;
+            -c | --config)
+                cfg_file=$2
+                if [[ $cfg_file != *.cfg ]]; then
+                    error "File $cfg_file has an unusual extension. It should end in '.cfg'."
+                fi
                 shift 2
                 ;;
             -d | --description)
@@ -58,18 +71,20 @@ function parse_script_arguments {
     done
 
     ## The image file ##
-    if [ $# -ne 1 ] || [[ $1 != *.img ]]; then
+    if [ $# -ne 1 ] ; then
         error_no_exit "Script must be called with just one parameter \
 (excluding options), which is the image file: '<file-name>.img'.\nAll options must \
 preced the image file name.\n"
         usage >&2
         exit 1
+    elif [[ $1 != *.img ]] ; then
+        error "File $1 has an unusual extension. It should end in '.img'."
     fi
 
     img_file="$1"
 
     ## Some checks ##
-    if ! silent_check arch; then
+    if ! silent_check arch && silent_check cfg_file; then
         xen_arch=$(parse_cfg_file xen_arch)
         kvm_arch=$(parse_cfg_file kvm_arch)
         hypervisor=$(parse_cfg_file hypervisor)
@@ -84,9 +99,8 @@ preced the image file name.\n"
     fi
     [ $arch == "i386" ] || [ $arch == "amd64" ] || {
         error_no_exit "'arch' option is not properly set. It can be \
-specified on the command line or read from the configuration file \
-used to create the image, '$cfg_file', if this file exists in the \
-current directory.\n"
+specified on the command line ('-a' option) or read from the configuration file \
+used to create the image ('-c' option).\n"
         usage >&2
         exit 1
     }
@@ -112,6 +126,8 @@ current directory.\n"
 function usage {
     out "Usage:\n$0
 \t[-a | --arch <amd64 | i386>]
+\t[-b | --boot-instance]
+\t[-c | --config <filename>.cfg]
 \t[-d | --description <description>]
 \t[-h | --help]
 \t[-l | --logging]
@@ -121,10 +137,11 @@ function usage {
 }
 
 
-cfg_file=create-img-script.cfg
 # Requires: $1 = name of configuratio option to search for.
+            $cfg_file
 # Output: The option if it is found in the configuratio file.
 function parse_cfg_file {
+    check cfg_file
     if ! [ -f $cfg_file ]; then
         echo -n ""
         return
@@ -222,9 +239,8 @@ EOF
 
 
 # Requires: $1 = the filename with the image template.
-#           $2 = the filename with the vm template.
 #           $datastore
-function create_vm {
+function register_img {
     check datastore
     local out=$(oneimage create $1 -d $datastore)
     local rc=$?
@@ -232,8 +248,20 @@ function create_vm {
     [ $rc != 0 ] && exit $rc
     [[ $out =~ Error ]] && exit 1
 
-    local img_id=$(echo $out | awk '{print $2}')
+    img_id=$(echo $out | awk '{print $2}')
     sed -i "s/^  image_id =.*/  image_id = $img_id,/g" $2
+    echo img id: $img_id
+}
+
+
+# Requires: $1 = the filename with the image template.
+#           $2 = the filename with the vm template.
+#           $datastore
+function create_vm {
+    check datastore
+    local out=
+    local rc=
+    register_img $1
 
     while :
     do
@@ -328,6 +356,10 @@ function out {
 parse_script_arguments "$@"
 img_template=$(mk_img_template_file)
 vm_template=$(mk_vm_template_file)
-create_vm $img_template $vm_template
+if [ $start_instance == true ]; then
+    create_vm $img_template $vm_template
+else
+    register_img $img_template
+fi
 rm $img_template $vm_template
 
