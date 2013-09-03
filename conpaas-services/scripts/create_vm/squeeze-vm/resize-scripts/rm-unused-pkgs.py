@@ -19,12 +19,14 @@ debian_pkgs = ['linux-image-2.6.32-5-xen-amd64', 'linux-image-2.6.32-5-amd64',
 
 core_pkgs = ['openssh-server', 'python', 'python-pycurl', 'python-openssl',
              'python-m2crypto', 'python-cheetah', 'libxslt1-dev', 'yaws',
-             'subversion', 'unzip', 'less', 'ipop']
+             'subversion', 'unzip', 'less', 'ipop',
+             'ganglia-monitor', 'gmetad', 'rrdtool', 'logtail', 'python-netaddr']
 
 php_pkgs = ['php5-fpm', 'php5-curl', 'php5-mcrypt', 'php5-mysql', 'php5-odbc',
             'php5-pgsql', 'php5-sqlite', 'php5-sybase', 'php5-xmlrpc',
             'php5-xsl', 'php5-adodb', 'php5-memcache', 'php5-gd', 'nginx',
-            'git', 'tomcat6-user', 'memcached','python-scipy']
+            'git', 'tomcat6-user', 'memcached','python-scipy',
+            'libatlas-base-dev', 'libatlas3gf-base', 'python-dev', 'python-setuptools']
 
 mysql_pkgs = ['mysql-server', 'python-mysqldb']
 
@@ -45,7 +47,8 @@ xtreemfs_pkgs = ['xtreemfs-server', 'xtreemfs-client', 'xtreemfs-tools']
 cds_pkgs = ['php5-fpm', 'php5-curl', 'php5-mcrypt', 'php5-mysql', 'php5-odbc',
             'php5-pgsql', 'php5-sqlite', 'php5-sybase', 'php5-xmlrpc',
             'php5-xsl', 'php5-adodb', 'php5-memcache', 'php5-gd git',
-            'tomcat6-user', 'memcached']
+            'tomcat6-user', 'memcached',
+            'libpcre3-dev', 'libssl-dev', 'libgeoip-dev', 'libperl-dev']
 
 
 # Execute shell command
