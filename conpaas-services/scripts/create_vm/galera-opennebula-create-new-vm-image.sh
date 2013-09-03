@@ -497,6 +497,14 @@ wget https://launchpad.net/galera/2.x/23.2.4/+download/galera-23.2.4-amd64.deb 2
 dpkg -i galera-23.2.4-amd64.deb
 wget https://launchpad.net/codership-mysql/5.5/5.5.29-23.7.3/+download/mysql-server-wsrep-5.5.29-23.7.3-amd64.deb 2>/dev/null
 dpkg -i mysql-server-wsrep-5.5.29-23.7.3-amd64.deb
+
+cecho "===== install Galera Load Balancer ====="
+wget http://www.codership.com/files/glb/glb-1.0.0rc1.tar.gz
+tar xvfz glb-1.0.0rc1.tar.gz
+cd glb-1.0.0rc1
+./configure; make; make install
+cd ..
+rm -fr glb-1.0.0rc1
 EOF
 
 # BLUE_PRINT_INSERT_SOFTWARE		do not remove this line: it is a placeholder for installing new services
