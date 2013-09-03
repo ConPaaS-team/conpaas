@@ -239,6 +239,7 @@ EOF
 
 
 # Requires: $1 = the filename with the image template.
+#           $2 = the filename with the vm template.
 #           $datastore
 function register_img {
     check datastore
@@ -261,7 +262,7 @@ function create_vm {
     check datastore
     local out=
     local rc=
-    register_img $1
+    register_img "$@"
 
     while :
     do
@@ -359,7 +360,7 @@ vm_template=$(mk_vm_template_file)
 if [ $start_instance == true ]; then
     create_vm $img_template $vm_template
 else
-    register_img $img_template
+    register_img $img_template $vm_template
 fi
 rm $img_template $vm_template
 
