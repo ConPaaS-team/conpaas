@@ -88,6 +88,7 @@ Initially, our experiments on EC2 used \emph{m1.small} instances for the PHP ser
 Figure~\ref{fig:EC2ResponseTime} represents the degree of SLO fulfillment of three different classes of customers, indicating the response time data-points obtained during the execution of the Wikipedia workload trace. In particular, Figure~\ref{fig:EC2ResponseTime} focus on the interval of time in which the outage occurred. The results show how the system scales back when the request volume drops, and quickly scales in when the load increases suddenly. As shown on Figure~\ref{fig:EC2ResponseTime},  the degree of SLO fulfillment gradually improves depending on the tradeoff performance/cost of each customer chosen to handle this traffic variation. Thus, the \emph{Bronze} and \emph{Silver} customers need between 150 and 200 minutes to reach the performance stability,  but a \emph{Bronze} customer experiences more SLO violations. While the \emph{Gold} customer requires less time to handle this traffic spike reducing at the maximum the number of violations, as detailed in Table~\ref{summaryEC2}. The selection of different performance/cost configurations, and consequently different classes of customer, has important consequences, specially when a non-fulfillment of the requirements affects to the revenues of the customer.
 
 \begin{figure*}[htb]
+\vspace{-5mm}
 	\begin{minipage}[b]{0.32\linewidth}
 		\captionof*{figure}{{\scriptsize \textbf{Bronze}}}
 		\includegraphics[height=4cm]{images/exps2011/low/ec2/proxyDataPoints_output_filtered.eps}	
@@ -102,6 +103,7 @@ Figure~\ref{fig:EC2ResponseTime} represents the degree of SLO fulfillment of thr
 		\captionof*{figure}{{\scriptsize \textbf{Gold}}}
 		\includegraphics[height=4cm]{images/exps2011/high/ec2/proxyDataPoints_output_filtered.eps}
 	\end{minipage}
+\vspace{-3mm}
 \caption{EC2: Response time values during the outage.}
 \label{fig:EC2ResponseTime}
 \end{figure*}
@@ -113,6 +115,7 @@ To better understand the impact of selecting a scaling plan adapted to the custo
 %The system's unstability is clearly shown in the planB where the resource combination changes from 1800-2000m till find an optimal resource combination to handle the traffic.
 
 \begin{figure*}[htb]
+\vspace{-5mm}
 	\begin{minipage}[b]{0.32\linewidth}
 		\captionof*{figure}{{\scriptsize \textbf{Bronze}}}
 		\includegraphics[height=4cm]{images/exps2011/low/ec2/inst_type_machines_filtered.eps}	
@@ -127,6 +130,7 @@ To better understand the impact of selecting a scaling plan adapted to the custo
 		\captionof*{figure}{{\scriptsize \textbf{Gold}}}
 		\includegraphics[height=4cm]{images/exps2011/high/ec2/inst_type_machines_filtered.eps}
 	\end{minipage}
+\vspace{-3mm}
 \caption{EC2: Cloud instances provisioned to handle the outage.}
 \label{fig:EC2Instances}
 \end{figure*}
@@ -136,7 +140,7 @@ The results of the three runs are summarized in Table~\ref{summaryEC2}, where we
 
 As depicted on Figure~\ref{fig:EC2ResponseTime} and Figure~\ref{fig:EC2Instances}, the selection of one hardware configuration or another has a direct effect in the performance. The use of \emph{Bronze} settings shows the vulnerability of selecting a configuration with low operational cost, as it easily becomes unstable when handling bursty workloads. Hence, poor hardware configurations increase the probability of experiencing SLO violations under sudden traffic spikes, outages or other traffic anomalies. 
 
-When using a mixed configuration like \emph{Silver}, the \emph{Scaler} explores the tradeoff between performance capacity and cost by combining different hardware configurations to handle the load with an acceptable cost. However, the discovery of such resource combination can be hard-to-find, affecting to the stability of the application due to frequent scaling actions, as shown on Figure~\ref{fig:EC2ResponseTime}(center). Finally, with a \emph{Gold} customer, the Scaler provisions resources that offer better performance in exchange for a higher infrastructure cost. With little over-provisioning, this class of customer configuration enforces the QoS requirements and improves considerably the stability and performance of the system by distributing the new request volume across the most powerful resources. Unfortunately, as illustrated in Table~\ref{summaryEC2}, the \emph{Gold} settings also experiences few SLO violations due to scheduling and booting operations when provisioning EC2 resources. These operations can take around 3-6min to be completed, thus causing SLO violations during this period of time.
+When using a mixed configuration like \emph{Silver}, the \emph{Scaler} explores the tradeoff between performance capacity and cost by combining different hardware configurations to handle the load with an acceptable cost. However, the discovery of such resource combination can be hard-to-find, affecting to the stability of the application due to frequent scaling actions, as shown on Figure~\ref{fig:EC2ResponseTime}(center). Finally, with a \emph{Gold} customer, the Scaler provisions resources that offer better performance in exchange for a higher infrastructure cost. With little over-provisioning, this class of customer configuration enforces the QoS requirements and improves considerably the stability and performance of the system by distributing the new request volume across the most powerful resources. Unfortunately, as illustrated in Table~\ref{summaryEC2}, the \emph{Gold} settings also experiences few SLO violations due to scheduling and booting operations (e.g. turning machines ON/OFF) when provisioning new EC2 resources. These operations can take around 3-6min to be completed, thus causing SLO violations during this period of time.
 
 Note that due to synchronization time lag between the scaling actions and the displayed information in the logs, time values are shifted for a few minutes during the whole execution, as shown in Figure~\ref{fig:EC2ResponseTime} and Figure~\ref{fig:EC2Instances}.
 
@@ -198,7 +202,7 @@ Note that due to synchronization time lag between the scaling actions and the di
 
 \subsection{Private Cloud}
 
-Our experiments on DAS-4 rely on OpenNebula as IaaS~\cite{sotomayor_virtual_2009}. To deploy the Wikipedia services, we initially provisioned \emph{small} instances for the PHP service and one \emph{large} instance for the MySQL service. Additionally, for these experiments, we specified a cost per-hour for each one of the available resources, and extended from three to five the initial customer classification: \emph{Platinum, Gold, Silver, Bronze} and \emph{Copper}. Table~\ref{DAS4instances} detailed the hardware configurations of the different VM sizes in DAS-4.
+Our experiments on DAS-4 rely on OpenNebula as IaaS~\cite{sotomayor_virtual_2009}. To deploy the Wikipedia services, we initially provisioned \emph{small} instances for the PHP service and one \emph{large} instance for the MySQL service. Additionally, for these experiments, we specified a cost per-hour for each one of the available resources, and extended from three to five the initial customer classification: \emph{Platinum, Gold, Silver, Bronze} and \emph{Copper}. To select the strategies of these new five customer types, the \emph{Scaler} additionaly calculates the 25th and 75th percentiles of the list of possible strategies. Table~\ref{DAS4instances} detailed the hardware configurations of the different VM sizes in DAS-4.
 
 %following the same criteria of SLO fulfillment and infrastructure cost
 
@@ -242,6 +246,7 @@ Regarding the traffic spikes caused by the new workload, it is clear how custome
 		\captionof*{figure}{{\scriptsize \textbf{Platinum}}}
 		\includegraphics[width=\linewidth,height=4cm]{images/exps2011/high/das/proxyDataPoints_output.eps}
 	\end{minipage}
+\vspace{-3mm}
 \caption{DAS4: Response time values during the outage.}
 \label{fig:DAS4ResponseTime}
 \end{figure*}
@@ -282,6 +287,7 @@ On the other hand, it is remarkable to point out that the amount of allocated re
 		\captionof*{figure}{{\scriptsize \textbf{Platinum}}}
 		\includegraphics[width=\linewidth,height=4cm]{images/exps2011/high/das/inst_type_machines.eps}
 	\end{minipage}
+\vspace{-3mm}
 \caption{DAS4: Cloud instances provisioned to handle the outage.}
 \label{fig:DAS4Instances}
 \end{figure*}

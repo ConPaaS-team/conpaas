@@ -372,10 +372,10 @@ $RU\_Strategy_{i} = \dfrac{ \sum_{k=1}^N \bigg( \bigg( \dfrac{ Num\_reqs_{total}
 
 %As an example, Figure~\ref{fig:scalingTree} shows three scaling plans that propose three different resource combinations: (left) a strategy is selected by adding two new \emph{small} instances, (center) a strategy proposes to replace one \emph{small} instance by one \emph{large}, and (right) both operations are combined by replacing one \emph{small} instance by one \emph{medium} and then adding one \emph{small}. 
 
-Note that, the search space of possible strategies can be as large as the number of available hardware configurations, and allocated resources of the current scaling plan. It makes it difficult to find the best resource combinations in a reasonable short period of time, so that the \emph{Scaler} filters the possible strategies based on the following criteria:
+Note that, the search space of possible strategies can be as large as the number of available hardware configurations, and allocated resources of the current scaling plan. It makes it difficult to find the best resource combinations in a reasonable short period of time, so that the \emph{Scaler} defines two policies to filter the pausibles strategies based on the following criteria:
 
 \begin{itemize}
-\item Define the maximum resource utilization consumed  by a strategy when processing a particular workload (denoted by \emph{$Max\_RU\_Strategy$}). It limits the number of possible plans where \emph{$RU\_Strategy_{i} \leq Max\_RU\_Strategy$}. \emph{$Max\_RU\_Strategy$} specifies the maximum resource utilization at which the application starts to experience SLO violations or over-utilization of the resources. Its value can be extracted either from the Amazon EC2 recommendations for the maximum percentage of cpu usage (cpu usage always lower than 75\%), or based on the monitoring data at which the application starts to experience SLO violations. As a result of this policy, the proposed scaling plans optimizes the current performance below values causing performance degradations. 
+\item Define the maximum resource utilization consumed  by a strategy when processing a particular workload (denoted by \emph{$Max\_RU\_Strategy$}). It limits the number of possible plans where \emph{$RU\_Strategy_{i} \leq Max\_RU\_Strategy$}. \emph{$Max\_RU\_Strategy$} specifies the maximum resource utilization at which the application starts to experience SLO violations or over-utilization of the resources. Its value can be extracted either from the Amazon EC2 recommendations for the maximum percentage of cpu usage (cpu usage always lower than 75\%), or based on the monitoring data (gathered by the monitoring engine) at which the application starts to experience SLO violations. As a result of this policy, the proposed scaling plans optimizes the current performance below values causing performance degradations. 
 
 %can be calculated either based on the Amazon EC2 recommendations ( CPU values always lower than 75\%), or based on the CPU values at which the application starts to experience SLO violations (or performance degradations). 
 
@@ -437,9 +437,9 @@ The criteria for the selection of the optimal scaling plan is configurable, and 
 To facilitate the specification of the performance/cost preferences to the customers, our system provides different pre-defined criteria that adapt the scaling decisions to these requirements. These selection criteria are defined thanks to a \emph{metal classification} that classifies  the different type of customers based on their performance/cost preferences. Initially, we define three different classes of customers following this \emph{metal classification}. These three classes of customers namely, Gold, Silver and Bronze minimize the SLA violations with a different infrastructure cost. 
 
 \begin{itemize}
-\item A \emph{Gold customer} identifies those customers that pay more in order to get the best service at the cost of some extra over-provisioning. 
-\item A \emph{Silver customer} includes those customers that prefer to get good availability but with a reasonable operational cost.
-\item A  \emph{Bronze customer} represents those customers who are willing to obtain a reduced, but acceptable, SLO fulfillment but with very little over-provisioning; and thereby a low operational cost. 
+\item A \emph{Gold customer} identifies those customers that pay more in order to get the best service at the cost of some extra over-provisioning. The \emph{Scaler} then selects the strategy that has the highest \emph{Cost\_strategy}.
+\item A \emph{Silver customer} includes those customers that prefer to get good availability but with a reasonable operational cost. As such, the \emph{Scaler} calculates the median \emph{Cost\_strategy} of all the possible strategies, and uses it as the strategy to provision.
+\item A  \emph{Bronze customer} represents those customers who are willing to obtain a reduced, but acceptable, SLO fulfillment but with very little over-provisioning; and thereby a low operational cost. The \emph{Scaler} uses as the optimal strategy that one with the lowest \emph{Cost\_strategy}.
 
 \end{itemize}
 
