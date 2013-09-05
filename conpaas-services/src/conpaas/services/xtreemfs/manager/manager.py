@@ -92,14 +92,17 @@ class XtreemFSManager(BaseManager):
                 self.state = self.S_ERROR
                 raise
 
-    def _stop_dir(self, nodes):
+    def _stop_dir(self, nodes, remove):
         for node in nodes:
             try:
                 client.stopDIR(node.ip, 5555)
+                del self.dir_node_uuid_map[node.id]
             except client.AgentException:
                 self.logger.exception('Failed to stop DIR at node %s' % node)
                 self.state = self.S_ERROR
                 raise
+            if remove:
+                del self.dir_node_uuid_map[node.id]
 
     def _start_mrc(self, nodes):
         for node in nodes:
@@ -111,14 +114,17 @@ class XtreemFSManager(BaseManager):
                 self.state = self.S_ERROR
                 raise
 
-    def _stop_mrc(self, nodes):
+    def _stop_mrc(self, nodes, remove):
         for node in nodes:
             try:
                 client.stopMRC(node.ip, 5555)
+                del self.mrc_node_uuid_map[node.id]
             except client.AgentException:
                 self.logger.exception('Failed to stop MRC at node %s' % node)
                 self.state = self.S_ERROR
                 raise
+            if remove:
+                del self.mrc_node_uuid_map[node.id]
 
     def _start_osd(self, nodes, cloud=None):
         for idx, node in enumerate(nodes):
@@ -155,13 +161,16 @@ class XtreemFSManager(BaseManager):
                 self.state = self.S_ERROR
                 raise
 
-    def _stop_osd(self, nodes, drain=True, detach=True):
+    def _stop_osd(self, nodes, remove, drain):
         """Stop OSD service on the given nodes.
+        
+        The volume is always detached.
+        
+        If remove is True, the volume is destroyed and node and volume are 
+        deleted from internal data structures.
+        
+        If drain is True, data is moved to other OSDs."""
 
-        If drain is True, move data to other OSDs.
-
-        If detach is True, detach associated storage volumes. If the service is
-        set as not persistent, the volumes will also be permanently removed."""
         for node in nodes:
             try:
                 client.stopOSD(node.ip, 5555, drain)
@@ -171,17 +180,15 @@ class XtreemFSManager(BaseManager):
                 raise
 
             volume_id = self.osd_uuid_volume_map[self.osd_node_uuid_map[node.id]]
-
-            if not detach:
-                self.logger.debug('Not detaching volume %s' % volume_id)
-                continue
-
             self.detach_volume(volume_id)
 
-            # if the service is not persistent, delete the storage volume
-            # associated with this node
-            if not self.persistent:
+            # destroy volumes and delete entries from internal state 
+            if remove:
                 self.destroy_volume(volume_id)
+                del self.osd_uuid_volume_map[self.osd_node_uuid_map[node.id]]
+                del self.osd_node_uuid_map[node.id]
+            else:
+                self.logger.debug('Not detaching volume %s' % volume_id)
 
     def _do_startup(self, cloud, resuming=False):
         """Starts up the service. The first nodes will contain all services. 
@@ -231,7 +238,8 @@ class XtreemFSManager(BaseManager):
     @expose('POST')
     def shutdown(self, kwargs):
         self.state = self.S_EPILOGUE
-        Thread(target=self._do_shutdown, args=[]).start()
+        # start _do_shutdown(stop_services=True) in a thread
+        Thread(target=self._do_shutdown, args=(True)).start()
         return HttpJsonResponse()
 
     def _start_all(self):
@@ -239,16 +247,19 @@ class XtreemFSManager(BaseManager):
         self._start_mrc(self.mrcNodes)
         self._start_osd(self.osdNodes)
 
-    def _stop_all(self, detach=True):
+    def _stop_all(self, remove=True):
         """Stop all xtreemfs services on all agents (first osd, then mrc, then
         dir)."""
         # do not drain (move data to other OSDs), since we stop all
-        self._stop_osd(self.osdNodes, drain=False, detach=detach) 
-        self._stop_mrc(self.mrcNodes)
-        self._stop_dir(self.dirNodes)
+        self._stop_osd(self.osdNodes, remove=remove, drain=False) 
+        self._stop_mrc(self.mrcNodes, remove=remove)
+        self._stop_dir(self.dirNodes, remove=remove)
 
-    def _do_shutdown(self):
-        self._stop_all()
+    def _do_shutdown(self, stop_services=False):
+        # check if we need to stop the services or not, i.e. when called at 
+        # the end of get_snapshot()
+        if stop_services:
+            self._stop_all(remove=True)
 
         self.controller.delete_nodes(self.nodes)
         self.nodes = []
@@ -259,6 +270,12 @@ class XtreemFSManager(BaseManager):
         self.dirCount = 0
         self.mrcCount = 0
         self.osdCount = 0
+
+        self.dir_node_uuid_map = {}
+        self.mrc_node_uuid_map = {}
+        self.osd_node_uuid_map = {}
+
+        self.osd_uuid_volume_map = {}
 
         self.state = self.S_STOPPED
         return HttpJsonResponse()
@@ -462,18 +479,15 @@ class XtreemFSManager(BaseManager):
         return HttpJsonResponse()
 
     def _do_remove_nodes(self, nr_dir, nr_mrc, nr_osd):
-    # TODO: update data structures for snapshots (check all stop, and remove methods)
-    # what if a service is scaled down, then snapshotted? we can only snapshot the current state...
-    # so everything about removed nodes can be forgotten
-
         # NOTE: the logically unremovable first node which contains all
         #       services is ignored by using 1 instead of 0 in:
-        #   for _ in range(1, nr_[dir|mrc|osd]):
+        #   for _ in range(0, nr_[dir|mrc|osd]):
         #        node = self.[dir|mrc|osd]Nodes.pop(1)
 
         if nr_dir > 0:
             for _ in range(0, nr_dir):
                 node = self.dirNodes.pop(1)
+                self._stop_dir([node], remove=True)
                 self.controller.delete_nodes([node])
                 self.nodes.remove(node)
             self.dirCount -= nr_osd
@@ -481,6 +495,7 @@ class XtreemFSManager(BaseManager):
         if nr_mrc > 0:
             for _ in range(0, nr_mrc):
                 node = self.mrcNodes.pop(1)
+                self._stop_mrc([node], remove=True)
                 self.controller.delete_nodes([node])
                 self.nodes.remove(node)
             self.mrcCount -= nr_mrc
@@ -488,7 +503,7 @@ class XtreemFSManager(BaseManager):
         if nr_osd > 0:
             for _ in range(0, nr_osd):
                 node = self.osdNodes.pop(1)
-                self._stop_osd([node])
+                self._stop_osd([node], remove=True, drain=True)
                 self.controller.delete_nodes([node])
                 self.nodes.remove(node)
             self.osdCount -= nr_osd
@@ -827,9 +842,11 @@ class XtreemFSManager(BaseManager):
             return HttpErrorResponse(
                 'ERROR: Wrong state to get service snapshot.')
 
+        self.state = self.S_EPILOGUE
+
         # stop all agent services        
         self.logger.debug("Stopping all agent services")
-        self._stop_all(detach=False)
+        self._stop_all(remove=False)
 
         self.logger.debug("Calling get_snapshot on agents")
 
@@ -871,8 +888,8 @@ class XtreemFSManager(BaseManager):
                 self.logger.debug("nodes_snapshot[%s]['%s']: %s" % (node.id,
                     key, nodes_snapshot[node.id][key]))
 
-        self.logger.debug("Re-starting all agent services")
-        self._start_all()
+        self.logger.debug("Shutting all agents down")
+        _do_shutdown(stop_services=False)
 
         return HttpJsonResponse(nodes_snapshot.values())
 
