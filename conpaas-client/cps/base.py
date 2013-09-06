@@ -174,7 +174,7 @@ class BaseClient(object):
         if 'error' in res:
             print res['error']
         else:
-            print "Your service is starting up.",
+            print "Your service is starting up."
 
     def stop(self, service_id):
         print "Stopping service... "
@@ -494,8 +494,23 @@ class BaseClient(object):
         # Service and application generic commands
         if command in ( "listapp", "createapp", "manifest",
                         "download_manifest", "list", "credentials", 
-                        "available", "clouds", "create",
+                        "available", "clouds", "create", "st_usage",
                         "deleteapp", "renameapp", "getcerts" ):
+
+            if command == "st_usage":
+                try:
+                    # St_usage wants a service type. Check if we got one, and if
+                    # it is acceptable.
+                    service_type = argv[2]
+                    if service_type not in self.available_services():
+                        raise IndexError
+                    # normal service usage
+                    module = getattr(__import__('cps.' + service_type), service_type)
+                    client = module.Client()
+                    return getattr(client, 'usage')(service_type)
+                except IndexError:
+                    self.usage(argv[0])
+                    sys.exit(0)
 
             if command == "create":
                 try:
@@ -581,7 +596,13 @@ class BaseClient(object):
         # Commands requiring a service id. We want it to be an integer.
         try:
             sid = int(argv[2])
-        except (IndexError, ValueError):
+        except (ValueError):
+            if command == "usage":
+                self.main([ argv[0], 'st_usage', argv[2] ])
+            else:
+                self.usage(argv[0])
+            sys.exit(0)
+        except (IndexError):
             self.usage(argv[0])
             sys.exit(0)
 
@@ -618,8 +639,13 @@ class BaseClient(object):
                     cloud = 'default'
                 else:
                     cloud = argv[3]
-                return getattr(self, command)(sid, cloud)
+                #return getattr(self, command)(sid, cloud)
+                return getattr(client, command)(sid, cloud)
+
             return getattr(client, command)(sid)
+
+        if command == "st_usage":
+            return getattr(client, command)()
 
         client.main(sys.argv)
 
