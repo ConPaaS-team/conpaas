@@ -1,0 +1,33 @@
+#!/bin/bash
+
+# This script is part of the agent contextualization file. It 
+# starts a python script that parses the given arguments
+# and starts the agent server, which in turn will start
+# the agent service. 
+
+echo "DAEMON_LIST = MASTER, STARTD
+CONDOR_HOST = master.htc
+ALLOW_WRITE = *.htc
+TRUST_UID_DOMAIN = TRUE
+" >> /etc/condor/condor_config.local
+# add CLOUD specifics in the Agent's Condor Config
+# for details see 
+#    https://nmi.cs.wisc.edu/node/1470  
+#    How to insert custom ClassAd attributes into a machine ad
+grep CLOUD_NAME $ROOT_DIR/config.cfg | sed 's/CLOUD_NAME = \(.*\)/CloudName = "\1"/' >> /etc/condor/condor_config.local
+grep CLOUD_TYPE $ROOT_DIR/config.cfg | sed 's/CLOUD_TYPE = \(.*\)/CloudType = "\1"/' >> /etc/condor/condor_config.local
+grep CLOUD_MACHINE_TYPE $ROOT_DIR/config.cfg | sed 's/CLOUD_MACHINE_TYPE = \(.*\)/CloudMachineType = "\1"/' >> /etc/condor/condor_config.local
+grep CLOUD_COST_PER_TIME $ROOT_DIR/config.cfg | sed 's/CLOUD_COST_PER_TIME = \(.*\)/CloudCostPerTime = "\1"/' >> /etc/condor/condor_config.local
+grep CLOUD_MAX_VMS_ALL_CLOUDS $ROOT_DIR/config.cfg | sed 's/CLOUD_MAX_VMS_ALL_CLOUDS = \(.*\)/CloudMaxVmsAllClouds = \1/' >> /etc/condor/condor_config.local
+grep CLOUD_MAX_VMS.= $ROOT_DIR/config.cfg | sed 's/CLOUD_MAX_VMS = \(.*\)/CloudMaxVms = \1/' >> /etc/condor/condor_config.local
+echo 'STARTD_ATTRS = $(STARTD_ATTRS) CloudName CloudType CloudMachineType CloudCostPerTime CloudMaxVms CloudMaxVmsAllClouds' >>  /etc/condor/condor_config.local
+
+grep IP_WHITE_LIST $ROOT_DIR/config.cfg | sed 's/.*= //;s/$/	master.htc/' >> /etc/hosts
+# TODO: run everything as user condor, for now make the execute directory writable for world
+chmod 777 /var/lib/condor/execute
+condor_restart
+
+# setup and run local agent
+$CPS_HOME/sbin/agent/default-cpsagent -c $ROOT_DIR/config.cfg 1>$ROOT_DIR/agent.out 2>$ROOT_DIR/agent.err &
+agent_pid=$!
+echo $agent_pid > $ROOT_DIR/agent.pid

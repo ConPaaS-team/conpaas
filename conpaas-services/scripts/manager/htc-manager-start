@@ -1,0 +1,45 @@
+#!/bin/bash
+
+# This script is part of the manager contextualization file. It 
+# starts a python script that parses the given arguments
+# and starts the manager server, which in turn will start
+# the manager service. 
+
+echo "DAEMON_LIST = MASTER, COLLECTOR, NEGOTIATOR, SCHEDD
+CONDOR_HOST = master.htc
+ALLOW_WRITE = *.htc
+NEGOCIATOR_HOST = \$(CONDOR_HOST)
+TRUST_UID_DOMAIN = TRUE
+" >> /etc/condor/condor_config.local
+# add CLOUD specifics in the Manager's Condor Config
+# set up for Machine info in Job ClassAd
+# for details see 
+#    https://nmi.cs.wisc.edu/node/1469
+#    How to insert custom ClassAd attributes into a job
+echo 'MachineCloudMachineType = "$$$$([CloudMachineType])"
+SUBMIT_EXPRS = $(SUBMIT_EXPRS) MachineCloudMachineType
+' >> /etc/condor/condor_config.local
+
+grep MY_IP $ROOT_DIR/config.cfg | sed 's/.*= //;s/$/	master.htc/' >> /etc/hosts
+condor_restart
+
+# TODO put following commands in the standard IMG setup
+apt-get update -y >> $ROOT_DIR/bert.tmp 2>&1
+echo ==== python-setuptools  >> $ROOT_DIR/bert.tmp
+apt-get install python-setuptools -y >> $ROOT_DIR/bert.tmp 2>&1
+sleep 2
+echo ==== pip  >> $ROOT_DIR/bert.tmp
+easy_install pip >> $ROOT_DIR/bert.tmp 2>&1
+sleep 2
+echo PATH=$PATH >> $ROOT_DIR/bert.tmp
+export PATH=$PATH:/usr/local/bin
+echo PATH=$PATH >> $ROOT_DIR/bert.tmp
+echo ==== xmltodict  >> $ROOT_DIR/bert.tmp
+pip install xmltodict >> $ROOT_DIR/bert.tmp 2>&1
+
+# This file is the default manager-start file. It can be
+# customized as needed by the sevice.  
+
+$CPS_HOME/sbin/manager/default-cpsmanager -c $ROOT_DIR/config.cfg 1>$ROOT_DIR/manager.out 2>$ROOT_DIR/manager.err &
+manager_pid=$!
+echo $manager_pid > $ROOT_DIR/manager.pid
