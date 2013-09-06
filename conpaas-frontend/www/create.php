@@ -106,6 +106,11 @@ $page = new Page();
 	   			<td class="info"> High Throughput Computing: Condor Pool Service </td>
 			</tr> 
 -->
+			<tr class="service">
+	   			<td class="description"> <img src="images/htc.png" height="32" /></td>
+	   			<td class="radio"><input type="radio" name="type" value="htc" /> HTC </td>
+	   			<td class="info"> High Throughput Computing Service </td>
+			</tr> 
 <!--    BLUE_PRINT_INSERT    do not remove this line: it is a placeholder for installing new services -->
 
               <tr>
