@@ -32,6 +32,8 @@ manager_services = {'php'    : {'class' : 'PHPManager',
 
 #                    'htcondor' : {'class' : 'HTCondorManager',
 #                                  'module': 'conpaas.services.htcondor.manager.manager'},
+                    'htc' : {'class' : 'HTCManager',
+                                  'module': 'conpaas.services.htc.manager.manager'},
 #""" BLUE_PRINT_INSERT_MANAGER 		do not remove this line: it is a placeholder for installing new services """
 		    }
 
@@ -54,5 +56,7 @@ agent_services = {'web' : {'class' : 'WebServersAgent',
 
 #                  'htcondor' : {'class' : 'HTCondorAgent',
 #                                'module': 'conpaas.services.htcondor.agent.agent'},
+                  'htc' : {'class' : 'HTCAgent',
+                                'module': 'conpaas.services.htc.agent.agent'},
 #""" BLUE_PRINT_INSERT_AGENT 		do not remove this line: it is a placeholder for installing new services """
 		  }

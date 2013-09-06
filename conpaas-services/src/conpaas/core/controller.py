@@ -189,6 +189,17 @@ class Controller(object):
                 name = "conpaas-%s-%s-u%s-s%s" % (self.role, service_type,
                        self.__conpaas_user_id, self.__conpaas_service_id)
 
+                if (service_type == 'htc'):
+                    # If HTC is used we need to update here as well (as I see no way to do this elsewhere)
+                    self.add_context_replacement({
+                        # 'CLOUD_VMID': cloud.cloud_vmid,
+                        'CLOUD_NAME': cloud.cloud_name,
+                        'CLOUD_MACHINE_TYPE': self.config_parser.get(cloud.cloud_name, 'INST_TYPE') ,
+                        'CLOUD_COST_PER_TIME': self.config_parser.get(cloud.cloud_name, 'COST_PER_TIME'),
+                        'CLOUD_MAX_VMS_ALL_CLOUDS': self.config_parser.get('iaas', 'MAX_VMS_ALL_CLOUDS'),
+                        'CLOUD_MAX_VMS': self.config_parser.get(cloud.cloud_name, 'MAX_VMS')
+                        }, cloud)
+
                 if self.__ipop_base_ip and self.__ipop_netmask:
                     # If IPOP has to be used we need to update VMs
                     # contextualization data for each new instance
@@ -526,6 +537,7 @@ class Controller(object):
             CONPAAS_USER_ID=self.__conpaas_user_id,
             CONPAAS_SERVICE_ID=self.__conpaas_service_id,
             CONPAAS_APP_ID=self.__conpaas_app_id,
+            CLOUD_TYPE=cloud_type,
             IPOP_BASE_NAMESPACE=self.__ipop_base_namespace)
 
         # Add IPOP_BASE_IP, IPOP_NETMASK and IPOP_IP_ADDRESS if necessary
@@ -539,7 +551,9 @@ class Controller(object):
         if os.path.isfile(agent_cfg_dir + '/' + service_name + '-agent.cfg'):
             agent_cfg_file = open(agent_cfg_dir +
                                   '/' + service_name + '-agent.cfg')
-            agent_cfg += '\n' + agent_cfg_file.read()
+            agent_cfg += '\n' + Template(agent_cfg_file.read()).safe_substitute(
+                CLOUD_TYPE=cloud_type,
+            )
 
         # Get agent start file - if none for this service, use the default one
         if os.path.isfile(agent_scripts_dir +
