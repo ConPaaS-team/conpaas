@@ -12,3 +12,9 @@ rm -f $ROOT_DIR/conpaas_install
 
 rm -f $ROOT_DIR/usr/sbin/policy-rc.d
 
+# Execute the script to remove unneeded pkgs.
+if [ -f $ROOT_DIR/conpaas_rm ] ; then
+    chmod a+x $ROOT_DIR/conpaas_rm
+    chroot $ROOT_DIR /usr/bin/python /conpaas_rm $RM_SCRIPT_ARGS
+    rm -f $ROOT_DIR/conpaas_rm
+fi

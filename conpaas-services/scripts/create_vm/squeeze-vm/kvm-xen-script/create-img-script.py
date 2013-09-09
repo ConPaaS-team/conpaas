@@ -2,7 +2,7 @@
 # Copyright (c) 2010-2012, Contrail consortium.
 # All rights reserved.
 #
-# Redistribution and use in source and binary forms, 
+# Redistribution and use in source and binary forms,
 # with or without modification, are permitted provided
 # that the following conditions are met:
 #
@@ -10,13 +10,13 @@
 #     above copyright notice, this list of conditions
 #     and the following disclaimer.
 #  2. Redistributions in binary form must reproduce
-#     the above copyright notice, this list of 
+#     the above copyright notice, this list of
 #     conditions and the following disclaimer in the
 #     documentation and/or other materials provided
 #     with the distribution.
 #  3. Neither the name of the Contrail consortium nor the
 #     names of its contributors may be used to endorse
-#     or promote products derived from this software 
+#     or promote products derived from this software
 #     without specific prior written permission.
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
@@ -25,9 +25,9 @@
 # MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
 # DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
 # CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
-# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
 # INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
 # WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
@@ -40,7 +40,7 @@
 
 import sys, os, ConfigParser, stat
 
-output_filename = 'create-img.sh'
+output_filename = None
 
 def get_cfg_file_handle():
     configname = os.path.basename(__file__)
@@ -83,6 +83,7 @@ if __name__ == '__main__':
 
     config = get_cfg_file_handle()
 
+    output_filename = 'create-img-' + config.get('CUSTOMIZABLE', 'filename')[:-4] + '.sh'
     create_output_file()
 
     # Write head script
@@ -108,6 +109,7 @@ if __name__ == '__main__':
 
     cloud = config.get('CUSTOMIZABLE', 'cloud')
     hypervisor = config.get('CUSTOMIZABLE', 'hypervisor')
+    optimize = config.get('CUSTOMIZABLE', 'optimize')
 
     if cloud == 'opennebula':
         pass
@@ -140,12 +142,20 @@ if __name__ == '__main__':
         append_file_to_output(root_dir + filename)
 
     # Write service scripts
+    rm_script_args=''
     for servicename, should_include in config.items('SERVICES'):
         if 'true' == should_include:
+            rm_script_args += ' --' + servicename[:-8]
             filename = config.get('SCRIPT_FILE_NAMES', servicename + '_script')
             append_file_to_output(root_dir + filename)
             print servicename.replace('_service', '').upper(),
     print
+
+    # Write rm script
+    if optimize == 'true':
+        filename = config.get('SCRIPT_FILE_NAMES', 'rm_script')
+        append_file_to_output(root_dir + filename)
+        append_str_to_output("RM_SCRIPT_ARGS=" + "'" + rm_script_args + "'\n\n")
 
     # Write user script
     filename = config.get('SCRIPT_FILE_NAMES', 'user_script')
@@ -161,6 +171,11 @@ if __name__ == '__main__':
     elif cloud == 'ec2':
         filename = config.get('SCRIPT_FILE_NAMES', 'ec2_script')
     append_file_to_output(root_dir + filename)
+
+    # Write resize script
+    if optimize == 'true':
+        filename = config.get('SCRIPT_FILE_NAMES', 'resize_script')
+        append_file_to_output(root_dir + filename)
 
     close_output_file()
 
