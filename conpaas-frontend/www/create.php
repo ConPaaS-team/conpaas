@@ -74,12 +74,17 @@ $page = new Page();
                   <td class="description"> <img src="images/hadoop.png" height="32" /></td>
                   <td class="radio"><input type="radio" name="type" value="hadoop" /> map-reduce</td>
                   <td class="info"> Hadoop MapReduce cluster </td>
-	      </tr>
-	      <tr class="service">
+              </tr>
+              <tr class="service">
                   <td class="description"> <img src="images/taskfarm.png" height="32" /></td>
                   <td class="radio"><input type="radio" name="type" value="taskfarm" /> task farm</td>
                   <td class="info"> Service for running bags of tasks </td>
-	      </tr>
+              </tr>
+              <tr class="service">
+                  <td class="description"> <img src="images/htc.png" height="32" /></td>
+                  <td class="radio"><input type="radio" name="type" value="htc" /> HTC </td>
+                  <td class="info"> High Throughput Computing Service </td>
+              </tr> 
           </table>
           <table class="form" cellspacing="0" cellpading="0">
               <div class="serviceheader">
@@ -90,28 +95,23 @@ $page = new Page();
                   <td class="radio"><input type="radio" name="type" value="selenium" /> selenium</td>
                   <td class="info"> Selenium functional testing service </td>
               </tr>
+<!--
+              <tr class="service">
+                  <td class="description"> <img src="images/cds.png" height="32" /></td>
+                  <td class="radio"><input type="radio" name="type" value="cds" /> content delivery</td>
+                  <td class="info"> Content-delivery service for offloading static content </td>
+              </tr>
+-->
+<!--
+              <tr class="service">
+                  <td class="description"> <img src="images/htcondor.png" height="32" /></td>
+                  <td class="radio"><input type="radio" name="type" value="htcondor" /> HTCondor </td>
+                  <td class="info"> High Throughput Computing: Condor Pool Service </td>
+              </tr> 
+-->
+<!--    BLUE_PRINT_INSERT    do not remove this line: it is a placeholder for installing new services -->
           </table>
           <table class="form" cellspacing="0" cellpading="0">
-            <!--
-               <tr class="service">
-                   <td class="description"> <img src="images/cds.png" height="32" /></td>
-                   <td class="radio"><input type="radio" name="type" value="cds" /> content delivery</td>
-                   <td class="info"> Content-delivery service for offloading static content </td>
-               </tr>
-            -->
-<!--
-			<tr class="service">
-	   			<td class="description"> <img src="images/htcondor.png" height="32" /></td>
-	   			<td class="radio"><input type="radio" name="type" value="htcondor" /> HTCondor </td>
-	   			<td class="info"> High Throughput Computing: Condor Pool Service </td>
-			</tr> 
--->
-			<tr class="service">
-	   			<td class="description"> <img src="images/htc.png" height="32" /></td>
-	   			<td class="radio"><input type="radio" name="type" value="htc" /> HTC </td>
-	   			<td class="info"> High Throughput Computing Service </td>
-			</tr> 
-<!--    BLUE_PRINT_INSERT    do not remove this line: it is a placeholder for installing new services -->
 
               <tr>
                   <td>&nbsp;</td>
