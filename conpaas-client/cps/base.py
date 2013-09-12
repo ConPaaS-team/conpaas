@@ -541,7 +541,7 @@ class BaseClient(object):
                     # taskfarm-specific service creation
                     if service_type == 'taskfarm':
                         from cps.taskfarm import Client
-                        return Client().create(service_type, appid)
+                        return Client().create(service_type, cloud, appid)
 
                     # normal service creation
                     return getattr(self, command)(service_type, cloud, appid)

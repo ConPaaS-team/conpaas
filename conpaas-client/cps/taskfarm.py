@@ -54,9 +54,9 @@ class Client(BaseClient):
 
         return data.get('result', data)
 
-    def create(self, service_type, application_id=None):
+    def create(self, service_type, cloud, application_id=None):
         # TaskFarm's initial state is not INIT but RUNNING 
-        BaseClient.create(self, service_type, application_id, 
+        BaseClient.create(self, service_type, cloud, application_id,
             initial_state='RUNNING')
 
     def start(self, service_id):
