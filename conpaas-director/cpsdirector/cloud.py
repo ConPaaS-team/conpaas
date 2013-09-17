@@ -104,8 +104,9 @@ class ManagerController(Controller):
         mngr_cfg = mngr_cfg.replace('%CLOUD_TYPE%',
                 self.config_parser.get(self.cloud_name, 'DRIVER'))  
 
-        mngr_cfg = mngr_cfg.replace('%CLOUD_MACHINE_TYPE%',
-                self.config_parser.get(self.cloud_name, 'INST_TYPE'))
+        if self.config_parser.has_option(self.cloud_name, 'INST_TYPE'):
+            mngr_cfg = mngr_cfg.replace('%CLOUD_MACHINE_TYPE%',
+                    self.config_parser.get(self.cloud_name, 'INST_TYPE'))
 
         if self.config_parser.has_option(self.cloud_name, 'COST_PER_TIME'):
             mngr_cfg = mngr_cfg.replace('%CLOUD_COST_PER_TIME%',
