@@ -63,7 +63,6 @@ DST_SIZE=`python -c "print ($USED_SPACE + $FS_SPACE + $FREE_SPACE)"`
 #gb_size="1024.0"
 #DST_SIZE=`python -c "import math; print int(math.ceil($DST_SIZE/$gb_size) * $gb_size)"`
 
-cecho "Clean."	# TODO: I need to find out why this is needed and fix it.
 umount $SRC_DIR
 sleep 1s
 kpartx -d $SRC_LOOP
