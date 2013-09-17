@@ -62,7 +62,7 @@ def append_file_to_output(filename):
     src = open(filename, 'r')
     dst = output_file
 
-    data = src.read();
+    data = src.read()
     dst.write(data)
 
     src.close()
@@ -142,7 +142,7 @@ if __name__ == '__main__':
         append_file_to_output(root_dir + filename)
 
     # Write service scripts
-    rm_script_args=''
+    rm_script_args = ''
     for servicename, should_include in config.items('SERVICES'):
         if 'true' == should_include:
             rm_script_args += ' --' + servicename[:-8]
