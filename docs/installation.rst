@@ -366,7 +366,7 @@ a specialized VM image, then you can skip this section and proceed to
 Configuring your VM image
 -------------------------
 The configuration file for customizing your VM image is located at 
-*conpaas/scripts/create_vm/create-img-script.cfg*. 
+*conpaas-services/scripts/create_vm/create-img-script.cfg*. 
 
 In the **CUSTOMIZABLE** section of the configuration file, you can define
 whether you plan to run ConPaaS on Amazon EC2 or OpenNebula. Depending on the
