@@ -94,6 +94,9 @@ class DirectorTest(Common):
         Common.setUp(self)
         self.app = cpsdirector.app.test_client()
 
+        cpsdirector.common.config_parser.set('iaas', 'DRIVER', 'dummy')
+        cpsdirector.common.config_parser.set('iaas', 'INST_TYPE', 'small')
+
     def test_404_on_root(self):
         response = self.app.get("/")
         self.assertEquals(404, response.status_code)

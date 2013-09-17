@@ -95,17 +95,29 @@ class ManagerController(Controller):
         # Modify manager config file setting the required variables
         mngr_cfg = mngr_cfg.replace('%DIRECTOR_URL%', director)
         mngr_cfg = mngr_cfg.replace('%CONPAAS_SERVICE_TYPE%', service_name)
-        mngr_cfg = mngr_cfg.replace('%CLOUD_NAME%', cloud_name);
+
+        mngr_cfg = mngr_cfg.replace('%CLOUD_NAME%', self.cloud_name);
         # mngr_cfg = mngr_cfg.replace('%CLOUD_TYPE%', cloud_type);
         cloud = self.get_cloud_by_name(self.cloud_name)
-        mngr_cfg = mngr_cfg.replace('%CLOUD_TYPE%', self.config_parser.get(cloud_name, 'DRIVER'))  # OpenNebula, EC2. etc
-        mngr_cfg = mngr_cfg.replace('%CLOUD_MACHINE_TYPE%', self.config_parser.get(cloud_name, 'INST_TYPE'))
-        if (self.config_parser.has_option(cloud_name, 'COST_PER_TIME')):
-            mngr_cfg = mngr_cfg.replace('%CLOUD_COST_PER_TIME%', self.config_parser.get(cloud_name, 'COST_PER_TIME'))
-        if (self.config_parser.has_option(cloud_name, 'MAX_VMS')):
-            mngr_cfg = mngr_cfg.replace('%CLOUD_MAX_VMS%', self.config_parser.get(cloud_name, 'MAX_VMS'))
-        if (self.config_parser.has_option('iaas', 'MAX_VMS_ALL_CLOUDS')):
-            mngr_cfg = mngr_cfg.replace('%CLOUD_MAX_VMS_ALL_CLOUDS%', self.config_parser.get('iaas', 'MAX_VMS_ALL_CLOUDS'))
+
+        # OpenNebula, EC2. etc
+        mngr_cfg = mngr_cfg.replace('%CLOUD_TYPE%',
+                self.config_parser.get(self.cloud_name, 'DRIVER'))  
+
+        mngr_cfg = mngr_cfg.replace('%CLOUD_MACHINE_TYPE%',
+                self.config_parser.get(self.cloud_name, 'INST_TYPE'))
+
+        if self.config_parser.has_option(self.cloud_name, 'COST_PER_TIME'):
+            mngr_cfg = mngr_cfg.replace('%CLOUD_COST_PER_TIME%',
+                    self.config_parser.get(self.cloud_name, 'COST_PER_TIME'))
+
+        if self.config_parser.has_option(self.cloud_name, 'MAX_VMS'):
+            mngr_cfg = mngr_cfg.replace('%CLOUD_MAX_VMS%',
+                    self.config_parser.get(self.cloud_name, 'MAX_VMS'))
+
+        if self.config_parser.has_option('iaas', 'MAX_VMS_ALL_CLOUDS'):
+            mngr_cfg = mngr_cfg.replace('%CLOUD_MAX_VMS_ALL_CLOUDS%',
+                    self.config_parser.get('iaas', 'MAX_VMS_ALL_CLOUDS'))
         # mngr_cfg = mngr_cfg.replace('%CLOUD_COST_PER_TIME%', cloud_cost_per_time);
 
         for option_name in 'SERVICE_ID', 'USER_ID', 'APP_ID':
