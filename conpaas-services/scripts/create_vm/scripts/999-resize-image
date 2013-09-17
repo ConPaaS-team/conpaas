@@ -2,7 +2,7 @@
 
 conpaas_resize=$(mktemp)
 
-cat <<EOF > $conpaas_resize
+cat <<"EOF" > $conpaas_resize
 #!/bin/bash
 
 # Customizable
@@ -145,6 +145,7 @@ losetup -d $DST_LOOP
 sleep 1s
 rmdir $DST_DIR
 
+rm -f $SRC_IMG
 cecho "Done."
 
 EOF
