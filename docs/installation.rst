@@ -354,10 +354,10 @@ At this point, your front-end should be working!
 .. _image-creation:
 
 Creating A ConPaaS Services VM Image
-==================================================
+====================================
 Various services require certain packages and configurations to be present in
 the VM image. ConPaaS provides facilities for creating specialized VM images
-that contain these dependencies. Furthermore, for the convenience of the users,
+that contain these dependencies. Furthermore, for the convenience of users,
 there are prebuilt Amazon AMIs that contain the dependencies for *all*
 available services. If you intend to run ConPaaS on Amazon EC2 and do not need
 a specialized VM image, then you can skip this section and proceed to
@@ -368,18 +368,18 @@ Configuring your VM image
 The configuration file for customizing your VM image is located at 
 *conpaas/scripts/create_vm/create-img-script.cfg*. 
 
-In the **CUSTOMIZABLE** section of the configuration file, you can define whether
-you plan to run ConPaaS on Amazon EC2 or OpenNebula. Depending on the
+In the **CUSTOMIZABLE** section of the configuration file, you can define
+whether you plan to run ConPaaS on Amazon EC2 or OpenNebula. Depending on the
 virtualization technology that your target cloud uses, you should choose either
-KVM or Xen for the hypervisor. Note that for Amazone EC2, this variable needs
-to be set to Xen. Please do not make the recommended size for the image file
-smaller than default. The *optimize* flag if set, enables certain
-optimizations to reduce the necessary packages and disk size. These
-optimizations allow for smaller VM images and faster VM startup.
+KVM or Xen for the hypervisor. Note that for Amazon EC2 this variable needs to
+be set to Xen. Please do not make the recommended size for the image file
+smaller than the default. The *optimize* flag enables certain optimizations to
+reduce the necessary packages and disk size. These optimizations allow for
+smaller VM images and faster VM startup.
 
 In the **SERVICES** section of the configuration file, you have the opportunity
 to disable any service that you do not need in your VM image. If a service is
-disable, its package dependencies are not installed in the VM image. Paired
+disabled, its package dependencies are not installed in the VM image. Paired
 with the *optimize* flag, the end result will be a minimal VM image that runs
 only what you need.
 
@@ -392,8 +392,8 @@ This program generates a script file named *create-img-conpaas.sh*. This script
 is based on your specific configurations.
 
 Creating your VM image
----------------------
-To create the image for you can execute *create-img-conpaas.sh* in any 64-bit
+----------------------
+To create the image you can execute *create-img-conpaas.sh* in any 64-bit
 Debian or Ubuntu machine. Please note that you will need to have root
 privileges on such a system. In case you do not have root access to a Debian or
 Ubuntu machine please consider installing a virtual machine using your favorite
@@ -419,7 +419,7 @@ is stored as *conpaas.img*. This file is later registered to your target IaaS
 cloud as your ConPaaS services image.
 
 If things go wrong
------------------------------------------------
+------------------
 Note that if anything fails during the image file creation, the script
 will stop and it will try to revert any change it has done. However, it
 might not always reset your system to its original state. To undo
