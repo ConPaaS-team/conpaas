@@ -1,6 +1,6 @@
 # Section: 995-rm-unused-pkgs
 
-cat <<EOF > $ROOT_DIR/conpaas_rm
+cat <<"EOF" > $ROOT_DIR/conpaas_rm
 #!/usr/bin/python
 
 from subprocess import Popen

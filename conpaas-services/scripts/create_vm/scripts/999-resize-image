@@ -43,7 +43,6 @@ else
 	exit 1
 fi
 
-apt-get -y install mount kpartx parted e2fsprogs grub2
 
 cecho "Mounting old image."
 SRC_LOOP=`losetup -f`
@@ -151,6 +150,9 @@ cecho "Done."
 EOF
 
 
+trap ":" EXIT
+set +e
+cleanup
 chmod a+x $conpaas_resize
 /bin/bash $conpaas_resize $FILENAME
 

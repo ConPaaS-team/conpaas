@@ -17,7 +17,7 @@ function cleanup() {
       if [ -d $mpoint ]
       then
         cecho "Umounting $mpoint"
-        umount $mpoint || true
+        umount -l $mpoint || true
       fi
     done
 
@@ -28,7 +28,7 @@ function cleanup() {
     sleep 1s
     losetup -d $LOOP_DEV
     sleep 1s
-    rm -r $ROOT_DIR
+    rmdir $ROOT_DIR
     # Print "Done" on success, $errormsg otherwise
     cecho "${errormsg:-Done}"
 }
