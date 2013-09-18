@@ -13,6 +13,9 @@ from threading import Thread
 
 import time
 import os.path
+
+import libcloud
+
 from conpaas.core.log import create_logger
 from conpaas.core.expose import expose
 from conpaas.core.controller import Controller
@@ -57,6 +60,8 @@ class BaseManager(object):
 
     def __init__(self, config_parser):
         self.logger = create_logger(__name__)
+        self.logger.debug('Using libcloud version %s' % libcloud.__version__)
+
         self.controller = Controller(config_parser)
         self.logfile = config_parser.get('manager', 'LOG_FILE')
         self.config_parser = config_parser
