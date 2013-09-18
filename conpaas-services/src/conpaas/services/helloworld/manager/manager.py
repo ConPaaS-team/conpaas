@@ -14,7 +14,7 @@ class HelloWorldManager(BaseManager):
     S_PROLOGUE = 'PROLOGUE' # manager is starting up
     S_RUNNING = 'RUNNING'   # manager is running
     S_ADAPTING = 'ADAPTING' # manager is in a transient state - frontend will keep
-                            # polling until manager out of transient state 
+                            # polling until manager out of transient state
     S_EPILOGUE = 'EPILOGUE' # manager is shutting down
     S_STOPPED = 'STOPPED'   # manager stopped
     S_ERROR = 'ERROR'       # manager is in error state
@@ -49,24 +49,30 @@ class HelloWorldManager(BaseManager):
     @expose('POST')
     def add_nodes(self, kwargs):
         self.controller.add_context_replacement(dict(STRING='helloworld'))
+
         if self.state != self.S_RUNNING:
             return HttpErrorResponse('ERROR: Wrong state to add_nodes')
+
         if not 'count' in kwargs:
-            return HttpErrorResponse('ERROR: Required argument doesn\'t exist')
+            return HttpErrorResponse("ERROR: Required argument doesn't exist")
+
         if not isinstance(kwargs['count'], int):
             return HttpErrorResponse('ERROR: Expected an integer value for "count"')
+
         count = int(kwargs.pop('count'))
         self.state = self.S_ADAPTING
         Thread(target=self._do_add_nodes, args=[count]).start()
         return HttpJsonResponse()
 
     def _do_add_nodes(self, count):
-        node_instances = self.controller.create_nodes(count, \
-                                           client.check_agent_process, 5555)
+        node_instances = self.controller.create_nodes(count,
+                client.check_agent_process, 5555)
+
         self.nodes += node_instances
         # Startup agents
         for node in node_instances:
-           client.startup(node.ip, 5555)
+            client.startup(node.ip, 5555)
+
         self.state = self.S_RUNNING
         return HttpJsonResponse()
 
@@ -74,8 +80,10 @@ class HelloWorldManager(BaseManager):
     def list_nodes(self, kwargs):
         if len(kwargs) != 0:
             return HttpErrorResponse('ERROR: Arguments unexpected')
+
         if self.state != self.S_RUNNING:
             return HttpErrorResponse('ERROR: Wrong state to list_nodes')
+
         return HttpJsonResponse({
               'helloworld': [ node.id for node in self.nodes ],
               })
@@ -84,22 +92,28 @@ class HelloWorldManager(BaseManager):
     def get_service_info(self, kwargs):
         if len(kwargs) != 0:
             return HttpErrorResponse('ERROR: Arguments unexpected')
+
         return HttpJsonResponse({'state': self.state, 'type': 'helloworld'})
 
     @expose('GET')
     def get_node_info(self, kwargs):
         if 'serviceNodeId' not in kwargs:
             return HttpErrorResponse('ERROR: Missing arguments')
+
         serviceNodeId = kwargs.pop('serviceNodeId')
+
         if len(kwargs) != 0:
             return HttpErrorResponse('ERROR: Arguments unexpected')
+
         serviceNode = None
         for node in self.nodes:
             if serviceNodeId == node.id:
                 serviceNode = node
                 break
+
         if serviceNode is None:
             return HttpErrorResponse('ERROR: Invalid arguments')
+
         return HttpJsonResponse({
             'serviceNode': {
                             'id': serviceNode.id,
@@ -111,18 +125,22 @@ class HelloWorldManager(BaseManager):
     def remove_nodes(self, kwargs):
         if self.state != self.S_RUNNING:
             return HttpErrorResponse('ERROR: Wrong state to remove_nodes')
+
         if not 'count' in kwargs:
-            return HttpErrorResponse('ERROR: Required argument doesn\'t exist')
+            return HttpErrorResponse("ERROR: Required argument doesn't exist")
+
         if not isinstance(kwargs['count'], int):
             return HttpErrorResponse('ERROR: Expected an integer value for "count"')
+
         count = int(kwargs.pop('count'))
         self.state = self.S_ADAPTING
         Thread(target=self._do_remove_nodes, args=[count]).start()
         return HttpJsonResponse()
 
     def _do_remove_nodes(self, count):
-        for i in range(0, count):
-            self.controller.delete_nodes([self.nodes.pop(0)])
+        for _ in range(0, count):
+            self.controller.delete_nodes([ self.nodes.pop() ])
+
         self.state = self.S_RUNNING
         return HttpJsonResponse()
 
@@ -130,10 +148,14 @@ class HelloWorldManager(BaseManager):
     def get_helloworld(self, kwargs):
         if self.state != self.S_RUNNING:
             return HttpErrorResponse('ERROR: Wrong state to get_helloworld')
+
+        messages = []
+
         # Just get_helloworld from all the agents
         for node in self.nodes:
             data = client.get_helloworld(node.ip, 5555)
-            self.logger.info('Received %s from %s', data, node.id)
-        return HttpJsonResponse({
-            'helloworld': [ node.id for node in self.nodes ],
-            })
+            message = 'Received %s from %s' % (data, node.id)
+            self.logger.info(message)
+            messages.append(message)
+
+        return HttpJsonResponse({ 'helloworld': "\n".join(messages) })
