@@ -616,4 +616,20 @@ OpenNebula cluster.
 
        sudo occi-server start
 
- 
+Please note that, by default, OpenNebula's OCCI server performs a reverse DNS
+lookup for each and every request it handles. This can lead to very poor
+performances in case of lookup issues. It is recommended *not* to install
+**avahi-daemon** on the host where your OCCI server is running. If it is
+installed, you can remove it as follows::
+    
+       sudo apt-get remove avahi-daemon
+
+If your OCCI server still performs badly after removing **avahi-daemon**, we
+suggest to disable reverse lookups on your OCCI server by editing
+``/usr/lib/ruby/$YOUR_RUBY_VERSION/webrick/config.rb`` and replacing the line::
+
+    :DoNotReverseLookup => nil,
+
+with::
+
+    :DoNotReverseLookup => true,
