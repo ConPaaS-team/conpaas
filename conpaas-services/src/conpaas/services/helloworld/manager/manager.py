@@ -9,7 +9,7 @@ from conpaas.services.helloworld.agent import client
 
 class HelloWorldManager(BaseManager):
 
-    # Manager states - Used by the frontend
+    # Manager states - Used by the Director
     S_INIT = 'INIT'         # manager initialized but not yet started
     S_PROLOGUE = 'PROLOGUE' # manager is starting up
     S_RUNNING = 'RUNNING'   # manager is running
@@ -19,21 +19,32 @@ class HelloWorldManager(BaseManager):
     S_STOPPED = 'STOPPED'   # manager stopped
     S_ERROR = 'ERROR'       # manager is in error state
 
-    def __init__(self,
-                 config_parser, # config file
-                 **kwargs):     # anything you can't send in config_parser
-                                # (hopefully the new service won't need anything extra)
+    def __init__(self, config_parser, **kwargs):
         BaseManager.__init__(self, config_parser)
         self.nodes = []
         # Setup the clouds' controller
         self.controller.generate_context('helloworld')
         self.state = self.S_INIT
 
-    @expose('POST')
-    def startup(self, kwargs):
-        self.logger.info('Manager started up')
-        self.state = self.S_RUNNING
-        return HttpJsonResponse()
+    def _do_startup(self, cloud):
+        startCloud = self._init_cloud(cloud)
+
+        self.controller.add_context_replacement(dict(STRING='helloworld'))
+
+        try:
+            nodes = self.controller.create_nodes(1,
+                client.check_agent_process, self.AGENT_PORT, startCloud)
+
+            node = nodes[0]
+
+            client.startup(node.ip, 5555)
+
+            # Extend the nodes list with the newly created one
+            self.nodes += nodes
+            self.state = self.S_RUNNING
+        except Exception, err:
+            self.logger.exception('_do_startup: Failed to create node: %s' % err)
+            self.state = self.S_ERROR
 
     @expose('POST')
     def shutdown(self, kwargs):
@@ -48,8 +59,6 @@ class HelloWorldManager(BaseManager):
 
     @expose('POST')
     def add_nodes(self, kwargs):
-        self.controller.add_context_replacement(dict(STRING='helloworld'))
-
         if self.state != self.S_RUNNING:
             return HttpErrorResponse('ERROR: Wrong state to add_nodes')
 
@@ -59,7 +68,7 @@ class HelloWorldManager(BaseManager):
         if not isinstance(kwargs['count'], int):
             return HttpErrorResponse('ERROR: Expected an integer value for "count"')
 
-        count = int(kwargs.pop('count'))
+        count = int(kwargs['count'])
         self.state = self.S_ADAPTING
         Thread(target=self._do_add_nodes, args=[count]).start()
         return HttpJsonResponse()
@@ -100,7 +109,7 @@ class HelloWorldManager(BaseManager):
         if 'serviceNodeId' not in kwargs:
             return HttpErrorResponse('ERROR: Missing arguments')
 
-        serviceNodeId = kwargs.pop('serviceNodeId')
+        serviceNodeId = kwargs['serviceNodeId']
 
         if len(kwargs) != 0:
             return HttpErrorResponse('ERROR: Arguments unexpected')
@@ -132,7 +141,7 @@ class HelloWorldManager(BaseManager):
         if not isinstance(kwargs['count'], int):
             return HttpErrorResponse('ERROR: Expected an integer value for "count"')
 
-        count = int(kwargs.pop('count'))
+        count = int(kwargs['count'])
         self.state = self.S_ADAPTING
         Thread(target=self._do_remove_nodes, args=[count]).start()
         return HttpJsonResponse()
