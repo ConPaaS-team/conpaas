@@ -23,7 +23,7 @@ apt-get -f -y update
 # pre-accept sun-java6 licence
 echo "debconf shared/accepted-sun-dlj-v1-1 boolean true" | debconf-set-selections
 DEBIAN_FRONTEND=noninteractive apt-get -y --force-yes --no-install-recommends --no-upgrade \
-        install openssh-server \
+        install openssh-server wget \
                 python python-pycurl python-openssl python-m2crypto \
                 ganglia-monitor gmetad rrdtool logtail \
                 python-cheetah python-netaddr libxslt1-dev yaws subversion unzip less
