@@ -97,7 +97,7 @@ preced the image file name.\n"
             error "The hypervisor option is not properly set in '$cfg_file'.\n"
         fi
     fi
-    [ $arch == "i386" ] || [ $arch == "amd64" ] || {
+    [ "$arch" == "i386" ] || [ "$arch" == "amd64" ] || {
         error_no_exit "'arch' option is not properly set. It can be \
 specified on the command line ('-a' option) or read from the configuration file \
 used to create the image ('-c' option).\n"
