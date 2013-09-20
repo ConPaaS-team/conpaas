@@ -187,6 +187,10 @@ class GaleraManager(BaseManager):
         # Configure the nodes as slaves
         #TODO: modify this when multiple masters
         try:
+            self.controller.add_context_replacement(
+                                        dict(mysql_username='mysqldb',
+                                             mysql_password=self.root_pass),
+                                        cloud=startCloud)
             node_instances = self.controller.create_nodes(count,
                                            client.check_agent_process,
                                            self.config.AGENT_PORT, startCloud)
