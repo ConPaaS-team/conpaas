@@ -38,7 +38,7 @@ galera_pkgs = ['galera', 'mysql-server-wsrep', 'python-mysqldb']
 
 condor_pkgs = ['sun-java6-jdk', 'ant', 'condor']
 
-selenium_pkgs = ['iceweasel', 'xvfb', 'xinit', 'google-chrome-stable']
+selenium_pkgs = ['iceweasel', 'xvfb', 'xinit', 'chromium-browser','sun-java6-jdk']
 
 hadoop_pkgs =   ['hadoop-0.20', 'hadoop-0.20-namenode', 'hadoop-0.20-datanode',
                 'hadoop-0.20-secondarynamenode', 'hadoop-0.20-jobtracker',
