@@ -4,7 +4,7 @@ cat <<EOF >> $ROOT_DIR/conpaas_install
 
 apt-get -f -y update
 DEBIAN_FRONTEND=noninteractive apt-get -y --force-yes --no-install-recommends --no-upgrade install \
-		psmisc libaio1 libdbi-perl libdbd-mysql-perl mysql-client rsync python-mysqldb
+		psmisc libaio1 libdbi-perl libdbd-mysql-perl mysql-client rsync python-mysqldb make
 
 wget https://launchpad.net/galera/2.x/23.2.4/+download/galera-23.2.4-amd64.deb 2>/dev/null
 dpkg -i galera-23.2.4-amd64.deb
