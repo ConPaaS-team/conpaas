@@ -1,0 +1,22 @@
+# Section: 502-galera
+
+cat <<EOF >> $ROOT_DIR/conpaas_install
+
+apt-get -f -y update
+DEBIAN_FRONTEND=noninteractive apt-get -y --force-yes --no-install-recommends --no-upgrade install \
+		psmisc libaio1 libdbi-perl libdbd-mysql-perl mysql-client rsync
+
+wget https://launchpad.net/galera/2.x/23.2.4/+download/galera-23.2.4-amd64.deb 2>/dev/null
+dpkg -i galera-23.2.4-amd64.deb
+
+wget https://launchpad.net/codership-mysql/5.5/5.5.29-23.7.3/+download/mysql-server-wsrep-5.5.29-23.7.3-amd64.deb 2>/dev/null
+dpkg -i mysql-server-wsrep-5.5.29-23.7.3-amd64.deb
+
+wget http://www.codership.com/files/glb/glb-1.0.0rc1.tar.gz 2>/dev/null
+tar xvfz glb-1.0.0rc1.tar.gz
+cd glb-1.0.0rc1
+./configure; make; make install
+cd ..
+rm -fr glb-1.0.0rc1
+
+EOF
