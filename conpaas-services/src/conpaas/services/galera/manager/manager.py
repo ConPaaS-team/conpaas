@@ -73,8 +73,10 @@ class GaleraManager(BaseManager):
                                                     startCloud)
             self._start_master(node_instances)
             self.config.addMySQLServiceNodes(nodes=node_instances, isMaster=True)
-        except:
-            self.logger.exception('do_startup: Failed to request a new node on cloud %s' % cloud)
+        except Exception, ex:
+            # rollback
+            self.controller.delete_nodes(node_instances)
+            self.logger.exception('do_startup: Failed to request a new node on cloud %s: %s.' % (cloud, ex))
             self.state = self.S_STOPPED
             return
         self.state = self.S_RUNNING
@@ -84,8 +86,8 @@ class GaleraManager(BaseManager):
             try:
                 client.create_master(serviceNode.ip, self.config.AGENT_PORT,
                                     self._get_server_id())
-            except client.AgentException:
-                self.logger.exception('Failed to start Galera Master at node %s' % str(serviceNode))
+            except client.AgentException, ex:
+                self.logger.exception('Failed to start Galera Master at node %s: %s' % (str(serviceNode), ex))
                 self.state = self.S_ERROR
                 raise
 
@@ -191,8 +193,10 @@ class GaleraManager(BaseManager):
             for master in masters:
                 self._start_slave(node_instances, master)
             self.config.addMySQLServiceNodes(nodes=node_instances, isSlave=True)
-        except:
-            self.logger.exception('_do_add_nodes: Could not start slave')
+        except Exception, ex:
+            # rollback
+            self.controller.delete_nodes(node_instances)
+            self.logger.exception('_do_add_nodes: Could not start slave: %s' % ex)
             self.state = self.S_ERROR
             return
         self.state = self.S_RUNNING
