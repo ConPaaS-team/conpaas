@@ -6,7 +6,7 @@ cat <<"EOF" > $conpaas_resize
 #!/bin/bash
 
 # Customizable
-DEFAULT_FREE_SPACE=64 #MB
+DEFAULT_FREE_SPACE=256 #MB
 
 
 # Function for displaying highlighted messages.
