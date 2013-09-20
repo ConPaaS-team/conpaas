@@ -19,7 +19,7 @@ debian_pkgs = ['linux-image-2.6.32-5-xen-amd64', 'linux-image-2.6.32-5-amd64',
                'iputils-ping', 'rsyslog', 'binfmt-support', 'dbus',
                'avahi-daemon', 'libavahi-core7', 'libdaemon0', 'libnss-mdns',
                'bsdmainutils', 'resolvconf', 'netbase', 'iproute', 'ifupdown',
-               'isc-dhcp-common', 'isc-dhcp-client']
+               'isc-dhcp-common', 'isc-dhcp-client', 'wget']
 
 core_pkgs = ['openssh-server', 'python', 'python-pycurl', 'python-openssl',
              'python-m2crypto', 'python-cheetah', 'libxslt1-dev', 'yaws',
@@ -33,6 +33,8 @@ php_pkgs = ['php5-fpm', 'php5-curl', 'php5-mcrypt', 'php5-mysql', 'php5-odbc',
             'libatlas-base-dev', 'libatlas3gf-base', 'python-dev', 'python-setuptools']
 
 mysql_pkgs = ['mysql-server', 'python-mysqldb']
+
+galera_pkgs = ['galera', 'mysql-server-wsrep', 'python-mysqldb']
 
 condor_pkgs = ['sun-java6-jdk', 'ant', 'condor']
 
@@ -148,6 +150,9 @@ else:
     if '--mysql' in args:
         pkgs.extend(mysql_pkgs)
         args.remove('--mysql')
+    if '--galera' in args:
+        pkgs.extend(galera_pkgs)
+        args.remove('--galera')
     if '--condor' in args:
         pkgs.extend(condor_pkgs)
         args.remove('--condor')
