@@ -28,15 +28,6 @@ class GaleraManager(BaseManager):
 
     """
 
-    # TODO: move this in core !!!!
-    S_INIT = 'INIT'
-    S_PROLOGUE = 'PROLOGUE'
-    S_RUNNING = 'RUNNING'
-    S_ADAPTING = 'ADAPTING'
-    S_EPILOGUE = 'EPILOGUE'
-    S_STOPPED = 'STOPPED'
-    S_ERROR = 'ERROR'
-
     def __init__(self, conf, **kwargs):
         BaseManager.__init__(self, conf)
 
