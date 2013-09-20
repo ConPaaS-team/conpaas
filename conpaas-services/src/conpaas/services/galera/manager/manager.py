@@ -247,7 +247,7 @@ class GaleraManager(BaseManager):
     def get_service_info(self, kwargs):
         if len(kwargs) != 0:
             return HttpErrorResponse('ERROR: Arguments unexpected')
-        return HttpJsonResponse({'state': self.state, 'type': 'mysql'})
+        return HttpJsonResponse({'state': self.state, 'type': 'galera'})
 
     @expose('POST')
     def shutdown(self, kwargs):
