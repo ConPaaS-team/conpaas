@@ -134,7 +134,7 @@ if __name__ == '__main__':
         sys.exit(1)
 
     # Write message about the selected services
-    print 'Setting up image for', hypervisor.upper(), ', with services:',
+    print 'Setting up image for %s, with services:' % hypervisor.upper(),
 
     # Write general scripts
     filenames = config.get('SCRIPT_FILE_NAMES', 'general_scripts')
@@ -179,3 +179,4 @@ if __name__ == '__main__':
 
     close_output_file()
 
+    print "\nPlease run create-img-conpaas.sh as root"
