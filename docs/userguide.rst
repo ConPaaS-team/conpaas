@@ -456,6 +456,54 @@ different schedules for the given set of tasks.fter the choice is made
 the service enters the execution phase and completes the execution of
 the rest of the tasks according to the user’s choice.
 
+The XtreemFS service
+====================
+
+The XtreemFS service provides POSIX compatible storage for ConPaaS. Users can
+create volumes that can be mounted remotely or used by other ConPaaS services,
+or inside applications. An XtreemFS instance consists of multiple DIR, MRC and 
+OSD servers. The OSDs contain the actual storage, while the DIR is a directory 
+service and the MRC contains meta data. By default, one instance of each runs 
+inside the first agent virtual machine and the service can be scaled up and 
+down by adding and removing additional OSD nodes. The XtreemFS documentation 
+can be found at http://xtreemfs.org/userguide.php.
+
+Accessing volumes directly
+--------------------------
+
+Once a volume has been created, it can be directly mounted on a remote site by
+using the mount.xtreemfs command. A mounted volume can be used like any local
+POSIX-compatible filesystem.
+
+Policies
+--------
+
+Different aspects of XtreemFS (e.g. replica- and OSD-selection) can be 
+customised by setting certain policies. Those policies can be set via the 
+ConPaaS command line client (recommended) or directly via xtfsutil (see the
+XtreemFS user guide).
+
+Persistency
+-----------
+
+If the XtreemFS service is shut down, all its data is permanently lost. If 
+persistency beyond the service runtime is needed, the XtreemFS service can be
+moved into a snapshot by using the download_manifest operation of the command
+line client. This operation will automatically shut down the service. 
+The service and all of its stored volumes with their data can be moved back
+into a running ConPaaS service by using the manifest operation.
+
+Important notes
+---------------
+
+When a service is scaled down by removing OSDs, the data of those OSDs is
+migrated to the remaining OSDs. Always make sure there is enough free space 
+for this operation to succeed. Otherwise you risk data loss.
+The download_manifest operation of the XtreemFS service will also shut the 
+service down. This behaviour might differ from other ConPaaS services, but is 
+neccessary to avoid copying the whole filesystem (which would be a very 
+expensive operation). This might change in future releases.
+
 Preparing the ConPaaS services image
 ------------------------------------
 
