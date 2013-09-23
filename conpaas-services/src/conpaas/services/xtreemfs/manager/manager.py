@@ -96,7 +96,6 @@ class XtreemFSManager(BaseManager):
         for node in nodes:
             try:
                 client.stopDIR(node.ip, 5555)
-                del self.dir_node_uuid_map[node.id]
             except client.AgentException:
                 self.logger.exception('Failed to stop DIR at node %s' % node)
                 self.state = self.S_ERROR
@@ -118,7 +117,6 @@ class XtreemFSManager(BaseManager):
         for node in nodes:
             try:
                 client.stopMRC(node.ip, 5555)
-                del self.mrc_node_uuid_map[node.id]
             except client.AgentException:
                 self.logger.exception('Failed to stop MRC at node %s' % node)
                 self.state = self.S_ERROR
@@ -239,7 +237,7 @@ class XtreemFSManager(BaseManager):
     def shutdown(self, kwargs):
         self.state = self.S_EPILOGUE
         # start _do_shutdown(stop_services=True) in a thread
-        Thread(target=self._do_shutdown, args=(True)).start()
+        Thread(target=self._do_shutdown, args=[True,]).start()
         return HttpJsonResponse()
 
     def _start_all(self):
@@ -890,7 +888,7 @@ class XtreemFSManager(BaseManager):
                     key, nodes_snapshot[node.id][key]))
 
         self.logger.debug("Shutting all agents down")
-        _do_shutdown(stop_services=False)
+        self._do_shutdown(stop_services=False)
 
         return HttpJsonResponse(nodes_snapshot.values())
 
