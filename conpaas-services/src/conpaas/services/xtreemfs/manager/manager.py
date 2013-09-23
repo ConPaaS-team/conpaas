@@ -599,6 +599,7 @@ class XtreemFSManager(BaseManager):
         volumeName = kwargs.pop('volumeName')
 
         args = [ 'rmfs.xtreemfs',
+                 '-f',
                  '%s:32636/%s' % (self.mrcNodes[0].ip, volumeName) ]
 
         process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
