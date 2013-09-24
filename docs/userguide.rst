@@ -456,6 +456,52 @@ different schedules for the given set of tasks.fter the choice is made
 the service enters the execution phase and completes the execution of
 the rest of the tasks according to the user’s choice.
 
+Preparing the ConPaaS services image
+------------------------------------
+
+By default, the TaskFarm service can execute the user code that is
+supported by the default ConPaaS services image. If user’s tasks depend
+on specific libraries and/or applications that do not ship with the
+default ConPaaS services image, the user needs to configure the ConPaaS
+services image accordingly and use the customized image ID in ConPaaS
+configuration files.
+
+The bag of tasks file
+---------------------
+
+The bag of tasks file is a simple plain text file that contains the list
+of tasks along with their arguments to be executed. The tasks are
+separated by new lines. This file needs to be uploaded to the service,
+before the service can start sampling. Below is an example of a simple
+bag of tasks file containing three tasks:
+
+::
+
+    /bin/sleep 1 && echo "slept for 1 seconds" >> /mnt/xtreemfs/log
+    /bin/sleep 2 && echo "slept for 2 seconds" >> /mnt/xtreemfs/log
+    /bin/sleep 3 && echo "slept for 3 seconds" >> /mnt/xtreemfs/log
+
+The minimum number of tasks required by the service to start sampling is
+depending on the number of tasks itself, but a bag with more than thirty
+tasks is large enough.
+
+The filesystem location
+-----------------------
+
+TaskFarm service uses XtreemFS for data input/output. The actual task
+code can also reside in the XtreemFS. The user can optionally provide an
+XtreemFS location which is then mounted on TaskFarm agents.
+
+The demo mode
+-------------
+
+With large bags of tasks and/or with long running tasks, the TaskFarm
+service can take a long time to execute the given bag. The service
+provides its users with a progress bar and reports the amount of money
+spent so far. TaskFarm service also provides a “demo” mode where the
+users can try the service with custom bags without spending time and
+money.
+
 The XtreemFS service
 ====================
 
@@ -504,51 +550,6 @@ service down. This behaviour might differ from other ConPaaS services, but is
 neccessary to avoid copying the whole filesystem (which would be a very 
 expensive operation). This might change in future releases.
 
-Preparing the ConPaaS services image
-------------------------------------
-
-By default, the TaskFarm service can execute the user code that is
-supported by the default ConPaaS services image. If user’s tasks depend
-on specific libraries and/or applications that do not ship with the
-default ConPaaS services image, the user needs to configure the ConPaaS
-services image accordingly and use the customized image ID in ConPaaS
-configuration files.
-
-The bag of tasks file
----------------------
-
-The bag of tasks file is a simple plain text file that contains the list
-of tasks along with their arguments to be executed. The tasks are
-separated by new lines. This file needs to be uploaded to the service,
-before the service can start sampling. Below is an example of a simple
-bag of tasks file containing three tasks:
-
-::
-
-    /bin/sleep 1 && echo "slept for 1 seconds" >> /mnt/xtreemfs/log
-    /bin/sleep 2 && echo "slept for 2 seconds" >> /mnt/xtreemfs/log
-    /bin/sleep 3 && echo "slept for 3 seconds" >> /mnt/xtreemfs/log
-
-The minimum number of tasks required by the service to start sampling is
-depending on the number of tasks itself, but a bag with more than thirty
-tasks is large enough.
-
-The filesystem location
------------------------
-
-TaskFarm service uses XtreemFS for data input/output. The actual task
-code can also reside in the XtreemFS. The user can optionally provide an
-XtreemFS location which is then mounted on TaskFarm agents.
-
-The demo mode
--------------
-
-With large bags of tasks and/or with long running tasks, the TaskFarm
-service can take a long time to execute the given bag. The service
-provides its users with a progress bar and reports the amount of money
-spent so far. TaskFarm service also provides a “demo” mode where the
-users can try the service with custom bags without spending time and
-money.
 
 Building new types of services
 ==============================
