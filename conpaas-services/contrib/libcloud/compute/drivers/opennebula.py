@@ -914,6 +914,8 @@ class OpenNebula_2_0_NodeDriver(OpenNebulaNodeDriver):
         @return: Node type of compute node.
         """
         instance_type = compute.find('INSTANCE_TYPE')
+        if instance_type is None:
+            return None
 
         try:
             return next((node_size for node_size in self.list_sizes()
