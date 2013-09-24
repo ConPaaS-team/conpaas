@@ -559,13 +559,13 @@ The HTC service provides a throughput-oriented scheduler for bags of tasks
 submitted on demand for ConPaaS. An inial bag of tasks is sampled generating a
 throughput = f(cost) function.  The user is allowed at any point, including
 upon new tasks submission,to request the latest throughput = f(cost) function
-and insert his target throughput.  After the first bag is sample and submitted
+and insert his target throughput.  After the first bag is sampled and submitted
 for execution the user is allowed to add tasks to the job with the
 corresponding identifier. The user is allowed at any point, including upon new
 tasks submission,to request the latest throughput = f(cost) function and adjust
-his target throughput.  All tasks that are added on are immediately submitted
-for execution using the latest configuration requested by the user,
-corresponding to the target throughput.
+his target throughput.  All tasks that are added are immediately submitted for
+execution using the latest configuration requested by the user, corresponding
+to the target throughput.
 
 Available commands
 ------------------
