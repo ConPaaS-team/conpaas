@@ -24,7 +24,7 @@ can dynamically increase or decrease its processing capacity by
 requesting it to reconfigure itself with a different number of virtual
 machines.
 
-ConPaaS currently contains eight services:
+ConPaaS currently contains nine services:
 
 -  **Two Web hosting services** respectively specialized for hosting PHP
    and JSP applications;
@@ -41,7 +41,10 @@ ConPaaS currently contains eight services:
 -  **Selenium service** for functional testing of web applications;
 
 -  **XtreemFS service** offering a distributed and replicated file
-   system.
+   system;
+
+-  **HTC service** providing a throughput-oriented scheduler for bags of tasks
+  submitted on demand.
 
 ConPaaS applications can be composed of any number of services. For
 example, a bio-informatics application may make use of a PHP and a MySQL
@@ -550,10 +553,60 @@ service down. This behaviour might differ from other ConPaaS services, but is
 neccessary to avoid copying the whole filesystem (which would be a very 
 expensive operation). This might change in future releases.
 
+The HTC service
+===============
+The HTC service provides a throughput-oriented scheduler for bags of tasks
+submitted on demand for ConPaaS. An inial bag of tasks is sampled generating a
+throughput = f(cost) function.  The user is allowed at any point, including
+upon new tasks submission,to request the latest throughput = f(cost) function
+and insert his target throughput.  After the first bag is sample and submitted
+for execution the user is allowed to add tasks to the job with the
+corresponding identifier. The user is allowed at any point, including upon new
+tasks submission,to request the latest throughput = f(cost) function and adjust
+his target throughput.  All tasks that are added on are immediately submitted
+for execution using the latest configuration requested by the user,
+corresponding to the target throughput.
 
-Building new types of services
-==============================
+Available commands
+------------------
+start service_id - prompts the user to specify a mode (’real’ or ’demo’) and
+type (’batch’, ’online’ or ’workflow’) for the service. Starts the service
+under the selected context and intializes all the internal data structures for
+running the service.
 
-The architecture of ConPaaS allows developers to build new types of
-services. To learn how to do this, please check the “” ConPaaS
-documentation.
+``stop service_id``: stops and releases all running VMs that exist in the pool
+of workers regardless of the tasks running.
+
+``terminate service_id``: stops and releases the manager VM along with the
+running algorithm and existing data structures.
+
+``create_worker service_id type count``: adds count workers to the pool returns
+the worker_ids. The worker is added to the table. The manager starts the worker
+on a VM requested of the selected type.
+
+``remove_worker service_id worker_id``: removes a worker from the condor pool.
+The worker_id is removed from the table.
+
+``create_job service_id .bot_file``: creates a new job on the manager and
+returns a job_id. It uploads the .bot_file on the manager and assign a queue to
+the job which will contain the path of all .bot_files submitted to this job_id.
+
+``sample service_id job_id``: samples the job on all available machine types in
+the cloud according to the HTC model.
+
+``throughput service_id``: prompts the user to select a target throughput
+within [0,TMAX] and returns the cost for that throughput.
+
+``configuration service_id``: prompts the user to select a target throughput
+within [0,TMAX] and returns the machine configuration required for that
+throughput. At this point the user can manually create the pool of workers
+using create_worker and remove_worker.
+
+``select service_id``: prompts the user to select a target throughput within
+[0,TMAX] and creates the pool of workers needed to obtain that throughput. 
+
+``submit service_id job_id``: submits all the bags in this job_id for execution
+with the current configuration of workers.
+
+``add service_id job_id .bot_file``: submits a .bot_file for execution on
+demand.  The bag is executed with the existing configuration.
