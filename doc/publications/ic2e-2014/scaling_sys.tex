@@ -29,8 +29,9 @@ The proposed autoscaling system scales a web application in response to change i
 
 \begin{figure}[t]
   \begin{center}
-    \includegraphics[width=.85\linewidth]{images/monitoringSchema}
+    \includegraphics[width=.75\linewidth, height=3cm]{images/monitoringSchema}
   \end{center}
+\vspace{-3mm}
   \caption{Autoscaling system.}
   \label{autoScalingSys}
 \end{figure}
@@ -53,8 +54,9 @@ In order to decide when to trigger a scaling action, our system uses the followi
 
 \begin{figure}[t]
   \begin{center}
-    \includegraphics[width=.85\linewidth]{images/thresholdGraphic}
+    \includegraphics[width=.75\linewidth,height=3cm]{images/thresholdGraphic}
   \end{center}
+\vspace{-3mm}
   \caption{Reactive threshold.}
   \label{thr}
 \end{figure}
@@ -206,7 +208,7 @@ As an example in Figure~\ref{fig:vm_performance1} and Figure~\ref{fig:vm_perform
 
 \begin{figure}[t]
   \begin{center}
-    \includegraphics[width=\linewidth]{images/idealSmallRemark.pdf}
+    \includegraphics[width=0.8\linewidth, height=5cm]{images/idealSmallRemark.pdf}
   \end{center}
   \caption{Profiling data and percentiles of m1.small.}
   \label{fig:vm_performance1}
@@ -214,7 +216,7 @@ As an example in Figure~\ref{fig:vm_performance1} and Figure~\ref{fig:vm_perform
 
 \begin{figure}[t]
   \begin{center}
-    \includegraphics[width=\linewidth]{images/idealc1MediumRemark.pdf}
+    \includegraphics[width=0.8\linewidth, height=5cm]{images/idealc1MediumRemark.pdf}
   \end{center}
   \caption{Profiling data and percentiles of c1.medium.}
   \label{fig:vm_performance2}
@@ -328,8 +330,9 @@ Additionally, the future service demand of the application, in terms of total pe
 
 \begin{figure}[t]
   \begin{center}
-    \includegraphics[width=\linewidth,height=6cm]{images/prediction_conpaas_30min}
+    \includegraphics[width=0.8\linewidth,height=5cm]{images/prediction_conpaas_30min}
   \end{center}
+\vspace{-3mm}
   \caption{Predictor component: forecasting results for 30min ahead.}
   \label{fig:forecast}
 \end{figure}
@@ -341,8 +344,9 @@ To decide which type and amount of VM instances to add or release, the \emph{Sca
 
 \begin{figure}[t]
   \begin{center}
-    \includegraphics[width=0.85\linewidth,height=4cm]{images/optimalTree_initial}
+    \includegraphics[width=0.75\linewidth,height=3cm]{images/optimalTree_initial}
   \end{center}
+\vspace{-3mm}
   \caption{Example of a decision tree created from an existing resource combination.}
   \label{fig:scalingTree}
 \end{figure}
@@ -393,8 +397,9 @@ These two policies avoid to trigger new scaling actions in short time intervals 
 
 \begin{figure}[t]
   \begin{center}
-    \includegraphics[width=\linewidth,height=4.5cm]{images/optimalTree_selection}
+    \includegraphics[width=0.8\linewidth,height=3.5cm]{images/optimalTree_selection}
   \end{center}
+\vspace{-3mm}
   \caption{Example of three selected scaling plans that satisfy the filtering criteria.}
   \label{fig:scalingTreeSelection}
 \end{figure}
@@ -483,8 +488,9 @@ patterns, or due to changes related to the hosting of the virtual servers
 
 \begin{figure}[t]
   \begin{center}
-    \includegraphics[height=5cm]{images/load_balancing}
+    \includegraphics[height=4cm]{images/load_balancing}
   \end{center}
+\vspace{-3mm}
   \caption{Weighted load balancing flow.}
   \label{fig:load_balancing}
 \end{figure}
