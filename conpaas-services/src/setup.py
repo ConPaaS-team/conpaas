@@ -18,5 +18,5 @@ setup(name='cpslib',
       url='http://www.conpaas.eu/',
       download_url='http://www.conpaas.eu/download/',
       license='BSD',
-      packages=find_packages(exclude=["*taskfarm"]),
+      packages=find_packages(), # exclude=["*taskfarm"]),
       install_requires=[ 'simplejson', 'pycurl', 'pyopenssl' ])
