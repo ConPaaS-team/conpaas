@@ -138,7 +138,7 @@ specified on the command line or in a file called '${cfg_file}'.\n${txtdef}" >&2
     fi
 
     if ! silent_check ami_name; then
-        ami_name=${img_file%.img}
+        ami_name="${img_file%.img}-`date +%s`"
     fi
 }
 
@@ -456,18 +456,18 @@ function register_ebs_ami {
     # The ":N:true:standard" is necessary so that the root volume
     # will be deleted on termination of the instance (specifically the "true" part)
     log "Registering an AMI with the snapshot '$snapshot_id'"
-    ami_id=`euca-register \
+    register=`euca-register \
         --name "$ami_name" --description "$description" \
         --architecture "$ami_arch" --kernel "$aki" \
-        #--root-device-name  /dev/sda1 \
-        --snapshot "$snapshot_id:$volume_size:true:standard" \
-        | awk '{print $2}'`
+        --snapshot "$snapshot_id:$volume_size:true:standard"`
+
+    ami_id=`echo $register | awk '{print $2}'`
 
     # If the user has already created an unnamed AMI today,
     # this will fail, so give the AMI registration command to the user
     if [[ ! "$ami_id" =~ ^ami-[0-9a-z]{8}$ ]]; then
         die \
-            "Unable to register an AMI." \
+            "Unable to register an AMI: $register" \
             "You can do it manually with:" \
             "export EC2_URL=\"$EC2_URL\"" \
             "`which euca-register` \\\\" \
