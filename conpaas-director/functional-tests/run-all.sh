@@ -2,7 +2,17 @@
 
 set -e
 
-[ -x "/usr/bin/lynx" ] || exit 1
+if [ ! -x "/usr/bin/lynx" ]
+then
+    echo "lynx not found. Exiting" > /dev/stderr
+    exit 1
+fi
+
+if [ ! -x "/usr/bin/ts" ]
+then
+    echo "ts not found. Please install debian-goodies Exiting" > /dev/stderr
+    exit 1
+fi
 
 for service in `find -mindepth 1 -maxdepth 1 -type d | grep -v .svn`
 do
