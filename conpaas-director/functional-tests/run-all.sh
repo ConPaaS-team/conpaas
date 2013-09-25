@@ -10,7 +10,7 @@ fi
 
 if [ ! -x "/usr/bin/ts" ]
 then
-    echo "ts not found. Please install debian-goodies Exiting" > /dev/stderr
+    echo "ts not found. Please install moreutils. Exiting" > /dev/stderr
     exit 1
 fi
 
