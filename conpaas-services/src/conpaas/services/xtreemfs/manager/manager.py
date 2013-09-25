@@ -186,7 +186,7 @@ class XtreemFSManager(BaseManager):
                 del self.osd_uuid_volume_map[self.osd_node_uuid_map[node.id]]
                 del self.osd_node_uuid_map[node.id]
             else:
-                self.logger.debug('Not detaching volume %s' % volume_id)
+                self.logger.debug('Not destroying volume %s' % volume_id)
 
     def _do_startup(self, cloud, resuming=False):
         """Starts up the service. The first nodes will contain all services. 
@@ -237,7 +237,7 @@ class XtreemFSManager(BaseManager):
     def shutdown(self, kwargs):
         self.state = self.S_EPILOGUE
         # start _do_shutdown(stop_services=True) in a thread
-        Thread(target=self._do_shutdown, args=[True,]).start()
+        Thread(target=self._do_shutdown, args=[True]).start()
         return HttpJsonResponse()
 
     def _start_all(self):
@@ -288,6 +288,12 @@ class XtreemFSManager(BaseManager):
         nr_mrc = 0 
         nr_osd = 0
         
+        resuming = False;
+        
+        if 'resuming' in kwargs:
+            resuming = kwargs['resuming']
+        
+        
         # Adding DIR Nodes
         if 'dir' in kwargs:
             if not isinstance(kwargs['dir'], int):
@@ -315,7 +321,7 @@ class XtreemFSManager(BaseManager):
             return invalid_arg('Expected a positive integer value for "nr osd"')
 
         self.state = self.S_ADAPTING
-        Thread(target=self._do_add_nodes, args=[nr_dir, nr_mrc, nr_osd, kwargs['cloud']]).start()
+        Thread(target=self._do_add_nodes, args=[nr_dir, nr_mrc, nr_osd, kwargs['cloud'], resuming]).start()
         return HttpJsonResponse()
     
     # TODO: currently not used
@@ -324,7 +330,7 @@ class XtreemFSManager(BaseManager):
             client.stopOSD(node.ip, 5555)
             self.osdNodes.remove(node)
 
-    def _do_add_nodes(self, nr_dir, nr_mrc, nr_osd, cloud):
+    def _do_add_nodes(self, nr_dir, nr_mrc, nr_osd, cloud, resuming=False):
         startCloud = self._init_cloud(cloud)
         totalNodes = nr_dir + nr_mrc + nr_osd
 
@@ -370,8 +376,10 @@ class XtreemFSManager(BaseManager):
             self.logger.info('Received %s from %s', data, node.id)
             self.mrcCount += 1
 
-        # Startup OSD agents
-        self._start_osd(osdNodesAdded, startCloud)
+        # Startup OSD agents (if not resuming)
+        if not resuming:
+            self._start_osd(osdNodesAdded, startCloud)
+      
         self.osdCount += len(osdNodesAdded)
 
         #for node in osdNodesAdded:

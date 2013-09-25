@@ -659,6 +659,8 @@ class MXTreemFS(MGeneral):
             # We have started the service already, so one OSD node is there
             # for sure.
             params['osd'] -= 1
+            
+            params['resuming'] = to_resume
 
             res = self.add_nodes(sid, params)
             if 'error' in res:
@@ -666,6 +668,7 @@ class MXTreemFS(MGeneral):
 
             if to_resume:
                 log('Resuming the following xtreemfs nodes: %s' % to_resume)
+                self.wait_for_state(sid, 'RUNNING')
                 res = callmanager(sid, "set_service_snapshot", True,
                         to_resume)
 
