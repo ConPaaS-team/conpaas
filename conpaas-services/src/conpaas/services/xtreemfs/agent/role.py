@@ -138,10 +138,13 @@ class OSD:
         self.dir_servicePort = 32638
         self.dev_name = "/dev/sdb"
         self.mount_point = "/media/xtreemfs-objs"
-        self.prepare_args = ['mkfs.ext4', '-q', '-m0', self.dev_name]
+
+        # To be filled once we get a dev_name
+        self.prepare_args = [] 
+        self.mount_args = [] 
+
 #        self.mkdir_args = ['mkdir', '-p', self.mount_point]
         self.mkdir_cmd = "mkdir -p %s" % self.mount_point
-        self.mount_args = ['mount', self.dev_name, self.mount_point]
         self.umount_args = ['umount', self.mount_point]
         self.start_args = [OSD_STARTUP, 'start']
         self.stop_args = [OSD_STARTUP, 'stop']
@@ -161,17 +164,28 @@ class OSD:
             if lexists(self.dev_name):
                 dev_found = True
                 break
+            else:
+                # On EC2 the device name gets changed 
+                # from /dev/sd[a-z] to /dev/xvd[a-z]
+                self.dev_name = self.dev_name.replace('sd', 'xvd')
+                if lexists(self.dev_name):
+                    dev_found = True
+                    break
+                else:
+                    self.dev_name = self.dev_name.replace('xvd', 'sd')
+
             time.sleep(10)
+
+        # create mount point
+        run_cmd(self.mkdir_cmd)
 
         if dev_found:
             logger.info("OSD node has now access to %s" % self.dev_name)
 
-            # create mount point
-            run_cmd(self.mkdir_cmd)
-
             # prepare block device
             if mkfs:
                 logger.info("Creating new file system on %s" % self.dev_name)
+                self.prepare_args = ['mkfs.ext4', '-q', '-m0', self.dev_name]
                 proc = Popen(self.prepare_args, stdin=PIPE, stdout=devnull_fd,
                         stderr=devnull_fd, close_fds=True)
 
@@ -187,6 +201,7 @@ class OSD:
                 time.sleep(10)
 
             # mount
+            self.mount_args = ['mount', self.dev_name, self.mount_point]
             mount_cmd = ' '.join(self.mount_args)
             logger.debug('Running command %s' % mount_cmd)
             _, err = run_cmd(mount_cmd)
