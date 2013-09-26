@@ -124,6 +124,21 @@ def _createapp(app_name):
     log('Application %s created properly' % (a.aid))
     return jsonify(a.to_dict())
 
+def deleteapp(user_id, app_id):
+    app = get_app_by_id(user_id, app_id)
+    if not app:
+        return False
+
+    # If an application with id 'app_id' exists and user is the owner
+    for service in Service.query.filter_by(application_id=app_id):
+        callmanager(service.sid, "shutdown", True, {})
+        stop(service.sid)
+
+    db.session.delete(app)
+    db.session.commit()
+
+    return True
+
 from cpsdirector.user import cert_required
 @application_page.route("/createapp", methods=['POST'])
 @cert_required(role='user')
@@ -150,20 +165,7 @@ def delete(appid):
     proper service termination. False otherwise.
     """
     log('User %s attempting to delete application %s' % (g.user.uid, appid))
-
-    app = get_app_by_id(g.user.uid, appid)
-    if not app:
-        return build_response(simplejson.dumps(False))
-
-    # If an application with id 'appid' exists and user is the owner
-    for service in Service.query.filter_by(application_id=appid):
-        callmanager(service.sid, "shutdown", True, {})
-        stop(service.sid)
-
-    db.session.delete(app)
-    db.session.commit()
-
-    return build_response(simplejson.dumps(True))
+    return build_response(simplejson.dumps(deleteapp(g.user.uid, appid)))
 
 def _renameapp(appid, newname):
     log('User %s attempting to rename application %s' % (g.user.uid, appid))
