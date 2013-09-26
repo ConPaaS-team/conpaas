@@ -4,8 +4,8 @@ on two infrastructures: a private one (the DAS-4, a multi-cluster system
 hosted by universities in The Netherlands~\cite{das4}) and a public
 one (the Amazon EC2 cloud~\cite{amazonEC2}). The goal of our experiments
 was to evaluate and compare different scaling plans by how well they react under sudden
-workload changes (e.g. a sudden rise in requests received after a network outage). These scaling plans are chosen by our system to satisfy different customer preferences according to the \emph{metal classification}. In particular, our evaluation focus on
-the SLO fulfillment, performance stability and amount and type of resources allocated to handle
+workload changes (e.g. a sudden rise in requests received after a network outage). These scaling plans are chosen by our system to satisfy different customer preferences according to the \emph{metal classification}. In particular, our evaluation focuses on
+SLO fulfillment, performance stability and amount and type of resources allocated to handle
 a traffic anomaly. 
 
 %In this section we conducted our experiments on a heterogeneous infrastructure like Amazon EC2~\cite{amazonEC2}, and on a homogeneous infrastructure like DAS-4 (the Distributed ASCI Supercomputer 4)~\cite{das4}. In our experiment campaign, we compared the degree of SLO enforcement and resource consumption for each provisioning algorithm implemented in ConPaaS. 
@@ -59,7 +59,7 @@ For monitoring-data analysis, ConPaaS provides a monitoring component based on G
 
 %In this article, we therefore focus on how the automatic scaling system behaves when experiencing these workload variations and adapted to different customer preferences. 
 
-In this article, we therefore focus on how the automatic scaling system handles workload variations when adapted to different classes of customers. 
+In the following, we therefore focus on how the automatic scaling system handles workload variations when adapted to different classes of customers. 
 
 %of the PHP tier during these workload variations.
 
@@ -88,6 +88,10 @@ Initially, our experiments on EC2 used \emph{m1.small} instances for the PHP ser
 \subsubsection{Performance stability and SLO fulfillment} 
 Figure~\ref{fig:EC2ResponseTime} represents the degree of SLO fulfillment of three different classes of customers, indicating the response time data-points obtained during the execution of the Wikipedia workload trace. In particular, Figure~\ref{fig:EC2ResponseTime} focus on the interval of time in which the outage occurred. The results show how the system scales back when the request volume drops, and quickly scales in when the load increases suddenly. As shown on Figure~\ref{fig:EC2ResponseTime},  the degree of SLO fulfillment gradually improves depending on the tradeoff performance/cost of each customer chosen to handle this traffic variation. Thus, the \emph{Bronze} and \emph{Silver} customers need between 150 and 200 minutes to reach the performance stability,  but a \emph{Bronze} customer experiences more SLO violations. While the \emph{Gold} customer requires less time to handle this traffic spike reducing at the maximum the number of violations, as detailed in Table~\ref{summaryEC2}. The selection of different performance/cost configurations, and consequently different classes of customer, has important consequences, specially when a non-fulfillment of the requirements affects to the revenues of the customer.
 
+%%% Tricky to fix the Figures numbering %%%
+\setcounter{figure}{6}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 \begin{figure*}[htb]
 \vspace{-5mm}
 	\begin{minipage}[b]{0.32\linewidth}
@@ -96,12 +100,12 @@ Figure~\ref{fig:EC2ResponseTime} represents the degree of SLO fulfillment of thr
 	\end{minipage}
 	\hfill
 	\begin{minipage}[b]{0.32\linewidth}
-		\captionof*{figure}{{\scriptsize \textbf{Silver}}}
+		\captionof*{figure}[]{{\scriptsize \textbf{Silver}}}
 		\includegraphics[height=4cm]{images/exps2011/medium/ec2/proxyDataPoints_output_filtered.eps}
 	\end{minipage}
 \hfill
 \begin{minipage}[b]{0.32\linewidth}
-		\captionof*{figure}{{\scriptsize \textbf{Gold}}}
+		\captionof*{figure}[]{{\scriptsize \textbf{Gold}}}
 		\includegraphics[height=4cm]{images/exps2011/high/ec2/proxyDataPoints_output_filtered.eps}
 	\end{minipage}
 \vspace{-3mm}
@@ -114,6 +118,10 @@ Figure~\ref{fig:EC2ResponseTime} represents the degree of SLO fulfillment of thr
 To better understand the impact of selecting a scaling plan adapted to the customer preferences, we shall also focus on the resource consumption illustrated on Figure~\ref{fig:EC2Instances}. While satisfying the requirements, the allocation of poor hardware configurations can easily expose the system to performance degradations, and consequently increases the time required to stabilize the system performance. This can be seen on  Figure~\ref{fig:EC2Instances}(left), in the time interval between t=338min and t=400min. The \emph{Bronze} customer provisions a low-cost configuration, that compromises the performance and raises an important amount of SLO violations during a long period of time. Unlike the \emph{Silver} and \emph{Gold} customer utilizes along the whole execution powerful configurations that enables to minimize these degradations. Specifically, the \emph{Gold} customer allocates a costly resource combination (mainly composed of \emph{m1.large} instance types) which is able to handle such traffic changes while avoiding the under-utilization of the resources. This lack of under-utilization can be depicted in Figure~\ref{fig:EC2ResponseTime}, where the processing time remains close to the SLO after the new scaling plan is provisioned.
 
 %The system's unstability is clearly shown in the planB where the resource combination changes from 1800-2000m till find an optimal resource combination to handle the traffic.
+
+%%% Tricky to fix the Figures numbering %%%
+\setcounter{figure}{7}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \begin{figure*}[htb]
 \vspace{-5mm}
@@ -225,7 +233,9 @@ Regarding the traffic spikes caused by the new workload, it is clear how custome
 %On the other hand, when using the copper and bronze configurations, the system becomes vulnerable to traffic fluctuations. In this case, it can be seen in the interval of time t=ms and t=ms for the copper and bronze customers.
 
 
-
+%%% Tricky to fix the Figures numbering %%%
+\setcounter{figure}{6}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \begin{figure*}[htb]
 	\begin{minipage}[b]{0.19\linewidth}
@@ -267,6 +277,9 @@ On the other hand, it is remarkable to point out that the amount of allocated re
 
 %In this case, the combination of one highcpu-medium and two small vm instances were enough to handle the new request volume without causing SLO violations.
 
+%%% Tricky to fix the Figures numbering %%%
+\setcounter{figure}{7}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \begin{figure*}[htb]
 	\begin{minipage}[b]{0.19\linewidth}

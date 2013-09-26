@@ -86,12 +86,12 @@ combination.
 
 %This manner to proceed may lead to periods of unsatisfactory performance, specifically for applications that need to provide high availability to their clients.  
 
-Furthermore, traditional autoscaling systems do not allow to adapt the
+Traditional autoscaling systems do not allow to adapt the
 selection criteria of scaling plans to customer preferences like
 service availability, cost or performance. From one customer to
 another, the tradeoff between cost and SLA fulfillment vary,
-especially when handling flash crowds or other traffic anomalies, so
-therefore autoscaling systems have to choose the scaling plan that
+especially when handling flash crowds or other traffic anomalies.
+Therefore autoscaling systems have to choose the scaling plan that
 better match to the customer preferences. As an example, large
 enterprises willing to pay more will provision powerful resources to
 absorb traffic spikes, while small enterprises prefer to fine-tune
@@ -114,10 +114,9 @@ no SLO (Service Level Objective) violation will occur.
 
 %We believe that by exploiting the heterogeneity of cloud infrastructure the performance degradations caused by outages could be mitigated.
 
-\paragraph{Contribution.}  
 
 This paper presents an autoscaling system that benefits from the
-heterogeneity of cloud infrastructures to better enforce the customer
+heterogeneity of cloud infrastructures to better enforce customer
 requirements, even under large and temporary workload variations. The
 selection of an appropriate combination of resources provides enough
 computing capacity to handle the traffic variations without
@@ -137,12 +136,10 @@ replaying a fraction of the real access traces to its official web
 site. This evaluation was conducted on both private and public clouds
 using different cost/SLA fulfillment configurations.
 
-
-\paragraph{Outline.} 
-
-Section~\ref{sec:motivation} identifies the problem statement and
+This paper is organized as follows: Section~\ref{sec:motivation} identifies the problem statement and
 motivation; Section~\ref{sec:proposed_approach} presents our
-autoscaling system approach; Section~\ref{sec:evaluation} discusses
+autoscaling system approach; Section~\ref{sec:decisionMaking} explains
+how our system works; Section~\ref{sec:evaluation} discusses
 our experimental evaluation; Section~\ref{sec:relatedWorks} reviews
 the related work; and Section~\ref{sec:conclusion} presents concluding
 remarks.
