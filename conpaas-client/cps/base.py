@@ -415,6 +415,21 @@ class BaseClient(object):
             print "failed."
 
     def download_manifest(self, appid):
+        services = self.callapi("list/%s" % appid, True, {})
+        for service in services:
+            if service['type'] == 'xtreemfs':
+                warning = """WARNING: this application contains an XtreemFS service
+After downloading the manifest, the application will be deleted
+Do you want to continue? (y/N): """
+
+                sys.stderr.write(warning)
+                sys.stderr.flush()
+
+                confirm = ''
+                confirm = rlinput('', confirm)
+                if confirm != 'y':
+                    sys.exit(1)
+
         res = self.callapi("download_manifest/%s" % appid, True, {})
         if res:
             print simplejson.dumps(res)

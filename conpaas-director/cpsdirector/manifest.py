@@ -118,7 +118,7 @@ def get_service_state(sid):
     return res['state']
 
 from cpsdirector.service import Service
-from cpsdirector.application import get_app_by_id
+from cpsdirector.application import get_app_by_id, deleteapp
 @manifest_page.route("/download_manifest/<appid>", methods=['POST'])
 @cert_required(role='user')
 def download_manifest(appid):
@@ -133,11 +133,20 @@ def download_manifest(appid):
     manifest['Services'] = []
     manifest['Application'] = app.name
 
+    do_delete = False
     for service in Service.query.filter_by(application_id=appid):
+        if service.type == "xtreemfs":
+            do_delete = True
+
         svc_manifest = get_manifest_class(
                 service.type)().get_service_manifest(service)
 
         manifest['Services'].append(svc_manifest)
+    
+    if do_delete:
+        log("Deleting application %s, it contains an XtreemFS service" %
+                appid)
+        deleteapp(g.user.uid, appid)
 
     return simplejson.dumps(manifest)
 
