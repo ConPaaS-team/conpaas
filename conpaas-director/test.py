@@ -814,6 +814,7 @@ echo 'hello world'
         self.assertEquals(expected, result)
 
     @mock.patch('cpsdirector.manifest.callmanager', mock_callmanager)
+    @mock.patch('cpsdirector.application.callmanager', mock_callmanager)
     def test_download_manifest(self):
         self.create_user()
         self.app.post('/start/xtreemfs', data={ 'uid': 1 })
