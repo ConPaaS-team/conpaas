@@ -24,30 +24,30 @@ In the past few years, more and more cloud providers designed and integrated dyn
 
 
 
-\begin{table*}
-  {\scriptsize 
-    \begin{tabular}{  | p{0.3cm} | p{3.9cm} | p{3.2cm} | p{3.6cm} | p{1.4cm} | p{3.2cm} |}
-    \hline
-\textbf{Ref} & \textbf{Autoscaling technique}   & \textbf{Scaling metrics} & \multicolumn{2}{|c|}{\textbf{Measuring resource performance}}    & \textbf{Experimental platform} \\ 
- &   &    & \textbf{Technique} & \textbf{Analysis}  &  \\ \hline
-\textit{\cite{urgaonkar_agile_2008}}   & Queuing theory and thresholds  & Request rate and response time &  No  & No & Custom testbed. \newline Real traces (FIFA'98) \\ \hline
-\textit{\cite{roy_efficient_2011}}   & Look-ahead and customer behavior analysis  & Response time &  No  & No & Custom testbed. \newline Real traces (FIFA'98)  \\ \hline
-\textit{\cite{ali-eldin_2012}}   & Closed loop with two controllers: reactive and one proactive   & Request rate and response time  & No & No & Simulation. \newline Real traces (FIFA'98)  \\ \hline
-\textit{\cite{bunch_2012}}   & Queuing theory, workload forecasting and thresholds  & Request rate and response time  & No &  No  & Custom testbed and EC2. \newline No real traces. (Apache benchmark tool)\\ \hline
-\textit{\cite{roy_2011}}   & Queuing theory, forecasting and thresholds   &  CPU usage and response time  & Offline profiling: CPU & Homogeneous &  Custom testbed. (RUBiS)  \\ \hline
-\textit{\cite{smartscale_2012}}   &  Workload forecasting and classifier  &  CPU usage, memory and response time & Offline profiling: CPU and memory under a fixed workload; & Homogeneous &  Custom  testbed. \newline No real traces (Olio).  \\ \hline
-\textit{\cite{sharma_cost-aware_2011}}   & Workload forecasting and thresholds   & Request rate and response time  & Offline profiling: max request rate under a gradually increasing synthetic workload & Heterogeneous &  EC2 and OpenNebula. \newline No real traces. (TPC-W) \\ \hline
-\textit{\cite{dejavu2012}}   & Queuing theory and workload classifier  &  Request rate and response time  & Online profiling: CPU, memory and I/O rate under a fixed workload & Homogeneous &  Custom testbed. \newline Real traces. (HotMail'09)  \\ \hline
+%\begin{table*}
+%  {\scriptsize 
+%    \begin{tabular}{  | p{0.3cm} | p{3.9cm} | p{3.2cm} | p{3.6cm} | p{1.4cm} | p{3.2cm} |}
+%    \hline
+%\textbf{Ref} & \textbf{Autoscaling technique}   & \textbf{Scaling metrics} & \multicolumn{2}{|c|}{\textbf{Measuring resource performance}}    & \textbf{Experimental platform} \\ 
+% &   &    & \textbf{Technique} & \textbf{Analysis}  &  \\ \hline
+%\textit{\cite{urgaonkar_agile_2008}}   & Queuing theory and thresholds  & Request rate and response time &  No  & No & Custom testbed. \newline Real traces (FIFA'98) \\ \hline
+%\textit{\cite{roy_efficient_2011}}   & Look-ahead and customer behavior analysis  & Response time &  No  & No & Custom testbed. \newline Real traces (FIFA'98)  \\ \hline
+%\textit{\cite{ali-eldin_2012}}   & Closed loop with two controllers: reactive and one proactive   & Request rate and response time  & No & No & Simulation. \newline Real traces (FIFA'98)  \\ \hline
+%\textit{\cite{bunch_2012}}   & Queuing theory, workload forecasting and thresholds  & Request rate and response time  & No &  No  & Custom testbed and EC2. \newline No real traces. (Apache benchmark tool)\\ \hline
+%\textit{\cite{roy_2011}}   & Queuing theory, forecasting and thresholds   &  CPU usage and response time  & Offline profiling: CPU & Homogeneous &  Custom testbed. (RUBiS)  \\ \hline
+%\textit{\cite{smartscale_2012}}   &  Workload forecasting and classifier  &  CPU usage, memory and response time & Offline profiling: CPU and memory under a fixed workload; & Homogeneous &  Custom  testbed. \newline No real traces (Olio).  \\ \hline
+%\textit{\cite{sharma_cost-aware_2011}}   & Workload forecasting and thresholds   & Request rate and response time  & Offline profiling: max request rate under a gradually increasing synthetic workload & Heterogeneous &  EC2 and OpenNebula. \newline No real traces. (TPC-W) \\ \hline
+%\textit{\cite{dejavu2012}}   & Queuing theory and workload classifier  &  Request rate and response time  & Online profiling: CPU, memory and I/O rate under a fixed workload & Homogeneous &  Custom testbed. \newline Real traces. (HotMail'09)  \\ \hline
 %\textit{ConPaaS}   & Closed loop, thresholds and workload forecasting  &  Response time, request rate and cpu usage & Online profiling: Ideal cpu and request rate  under current workload & Heterogeneous &  EC2 and OpenNebula. \newline Real traces. (English Wikipedia'11)  \\ \hline
- \end{tabular}
+% \end{tabular}
 
-\caption{Summary of references about performance capacity measurement.}
-\label{Ref_summary}
-}
-\end{table*}
+%\caption{Summary of references about performance capacity measurement.}
+%\label{Ref_summary}
+%}
+%\end{table*}
 
 %%% RESOURCE HOMOGENEOUS %%%%
-As a consequence, and shown in Table~\ref{Ref_summary}, more realistic academic approaches have been proposed. For instance, work~\cite{urgaonkar_agile_2008} designed and implemented a predictive and reactive mechanism using a queuing model to decide the amount of resources to be provisioned, and an admission control mechanism to face extreme workload oscillations. More recently, a look-ahead provisioning systems was proposed to horizontally scale web applications for minimizing SLO violations and operational cost \cite{roy_efficient_2011}. In this system, the application's response time was used as the unique metric to trigger scaling actions, thus reducing the accuracy of their decisions when hosting complex web applications. Differently,~\cite{ali-eldin_2012} and~\cite{bunch_2012} designed scaling mechanisms that predict the future service demand depending on other metrics such as the request volume. Specifically, \cite{bunch_2012} designed a pluggable and cost-aware autoscaling system for PaaS that supports horizontal and vertical scaling of web applications by analyzing application metrics. The scalability of a web application is determined through the analysis of numerous factors such as request volume, cpu usage and response time; so thereby an exhaustive analysis of the application metrics allows to improve the accuracy of the decisions. However, even though these approaches proved to efficiently answer to the question \emph{"When to provision?"}, resource heterogeneity in cloud infrastructures emerged as a new limitation when answering to the question \emph{"How and which type of VM instance to provision?"}.
+As a consequence, more realistic academic approaches have been proposed. For instance, work~\cite{urgaonkar_agile_2008} designed and implemented a predictive and reactive mechanism using a queuing model to decide the amount of resources to be provisioned, and an admission control mechanism to face extreme workload oscillations. More recently, a look-ahead provisioning systems was proposed to horizontally scale web applications for minimizing SLO violations and operational cost \cite{roy_efficient_2011}. In this system, the application's response time was used as the unique metric to trigger scaling actions, thus reducing the accuracy of their decisions when hosting complex web applications. Differently,~\cite{ali-eldin_2012} and~\cite{bunch_2012} designed scaling mechanisms that predict the future service demand depending on other metrics such as the request volume. Specifically, \cite{bunch_2012} designed a pluggable and cost-aware autoscaling system for PaaS that supports horizontal and vertical scaling of web applications by analyzing application metrics. The scalability of a web application is determined through the analysis of numerous factors such as request volume, cpu usage and response time; so thereby an exhaustive analysis of the application metrics allows to improve the accuracy of the decisions. However, even though these approaches proved to efficiently answer to the question \emph{"When to provision?"}, resource heterogeneity in cloud infrastructures emerged as a new limitation when answering to the question \emph{"How and which type of VM instance to provision?"}.
 %according to the customer preferences.
 
 %\fixme{This paragraph can be omitted or reduced at the maximum, as it mentions approaches related to answer the question, when to provision?}

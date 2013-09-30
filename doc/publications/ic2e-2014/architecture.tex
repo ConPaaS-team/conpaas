@@ -22,14 +22,14 @@ The proposed autoscaling system scales a web application in response to change i
 
 
 
-\textbf{Dynamic load balancer: } In order to adapt our system to the heterogeneity of requests and cloud resources, this component dynamically assigns weights to the backend servers to proportionally distribute the incoming traffic based on the performance characteristics of each backend. As an example, a server with four cores is able to process a higher number of requests, thus its weight is usually greater than a server with only one core.
+\textbf{Dynamic load balancer: } In order to adapt our system to the heterogeneity of requests and cloud resources, this component dynamically adjusts weights to the backend servers to proportionally distribute the incoming traffic based on the performance capacities of each provisioned resource. As an example, a server with four cores is able to process a higher number of requests, thus its weight is usually greater than a server with only one core.
 
 
 \textbf{Scaler:} This component governs our autoscaling system. As illustrated in Figure~\ref{autoScalingSys}, Scaler uses the \emph{Predictor} and \emph{Profiler} components to find the provisioning strategy that fulfills a pre-established SLO (Service Level Objective), and consequently better enforces customer preferences. Furthermore, this component constantly analyzes the behavior of each provisioned VM, triggering the \emph{Dynamic load balancer} component when necessary.
 
 \begin{figure}[t]
   \begin{center}
-    \includegraphics[width=.75\linewidth, height=3cm]{images/monitoringSchema}
+    \includegraphics[width=.71\linewidth, height=3cm]{images/monitoringSchema}
   \end{center}
 \vspace{-3mm}
   \caption{Autoscaling system.}
