@@ -16,7 +16,7 @@ a traffic anomaly.
 
 Given such a scenario, ConPaaS provides support for all the required services to host a copy of Wikipedia: a PHP web hosting and a MySQL service. The MySQL service is loaded with a full copy of the English Wikipedia articles as of 2011, which has a size of approximately 40GB.  In the PHP service, the configuration was composed of one load balancer, one or more static web server and one or more PHP servers. For these experiments, we focus on the elasticity of the PHP tier, and in particular how the number and type of VM'es hosting PHP servers will change on demand.
 
-For monitoring-data analysis, ConPaaS provides a monitoring component based on Ganglia~\cite{ganglia}, a scalable distributed monitoring system. Moreover, for these experiments, we configured a monitoring window of 5minutes, a minimum interval of 10 minutes for cool down between scaling actions and a fixed SLO of 700 milliseconds at the service's side.
+For monitoring-data analysis, ConPaaS provides a monitoring component based on Ganglia~\cite{ganglia}, a scalable distributed monitoring system. Moreover, for these experiments, we configured a monitoring window of 5 minutes, a minimum interval of 10 minutes for cool down between scaling actions and a fixed SLO of 700 milliseconds at the service's side.
 
 %We implemented modules that extend Ganglia's standard set of monitoring metrics by adding a number of service-specific metric for measuring the request rate and response times of static and dynamic requests.
 
