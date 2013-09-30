@@ -30,20 +30,18 @@ class Configuration:
         self.m = {}
     
     def relevant_time_unit(self):
-        rk = random.choice(self.averages.keys())
         t=60
-        self.throughput[rk] = round(t / self.averages[rk])
         self.unit = t
-        
         for k in self.costs:
             self.costs[k] *= float(self.unit)/3600
         self.compute_throughput()
         
         return self.unit
-    
+   
     def compute_throughput(self):
         for k in self.averages:
-            self.throughput[k] = round(self.unit / self.rav[k])
+            if(self.notasks>0):
+                self.throughput[k] = round(self.unit / self.rav[k])
     
     def set_average(self,m_type,value, count):
         if self.keys[m_type] in self.averages.keys():
