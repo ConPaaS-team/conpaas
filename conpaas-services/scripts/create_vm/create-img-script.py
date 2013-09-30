@@ -151,6 +151,9 @@ if __name__ == '__main__':
             print servicename.replace('_service', '').upper(),
     print
 
+    if rm_script_args == '':
+        rm_script_args = ' --none'
+
     # Write rm script
     if optimize == 'true':
         filename = config.get('SCRIPT_FILE_NAMES', 'rm_script')
