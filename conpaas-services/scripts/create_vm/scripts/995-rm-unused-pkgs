@@ -36,7 +36,7 @@ mysql_pkgs = ['mysql-server', 'python-mysqldb']
 
 galera_pkgs = ['galera', 'mysql-server-wsrep', 'python-mysqldb']
 
-condor_pkgs = ['sun-java6-jdk', 'ant', 'condor']
+condor_pkgs = ['sun-java6-jdk', 'ant', 'condor', 'sudo', 'xvfb']
 
 selenium_pkgs = ['iceweasel', 'xvfb', 'xinit', 'chromium-browser','sun-java6-jdk']
 
