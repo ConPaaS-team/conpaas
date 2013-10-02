@@ -1,6 +1,6 @@
 env:
   global:
-    - REPO="ema/conpaas"
+    - REPO="ConPaaS-team/conpaas"
     - CI_HOME=`pwd`/$REPO
 language: python
 python:
@@ -13,6 +13,6 @@ after_success:
   - coveralls
 notifications:
   email:
-    - ema@linux.it
+    - yann.radenac@inria.fr
   on_success: always
   on_failure: always
