@@ -710,6 +710,14 @@ class MTaskFarm(MGeneral):
 
         return 'ok'
 
+class MHtc(MGeneral):
+
+    def get_service_manifest(self, service):
+        tmp = MGeneral.get_service_manifest(self, service)
+
+        tmp['ManifestStatus'] = 'Under Construction'
+        return tmp
+
 def get_manifest_class(service_type):
     if service_type == 'php':
         return MPhp
@@ -727,6 +735,8 @@ def get_manifest_class(service_type):
         return MXTreemFS
     elif service_type == 'taskfarm':
         return MTaskFarm
+    elif service_type == 'htc':
+        return MHtc
     else:
         raise Exception('Service type %s does not exists' % service_type)
 
