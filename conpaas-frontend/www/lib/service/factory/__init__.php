@@ -53,7 +53,7 @@ class ServiceFactory {
 				return new HTCService($service_data, $manager);
 /* BLUE_PRINT_INSERT		do not remove this line: it is a placeholder for installing new services */
 			default:
-				throw new Exception('Unknown service type');
+                                throw new Exception('ServiceFactory: Unknown service type "' . $type . '"');
 		}
 	}
 }

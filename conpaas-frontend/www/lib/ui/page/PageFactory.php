@@ -46,7 +46,7 @@ class PageFactory {
 				return new HTCPage($service);
 /* BLUE_PRINT_INSERT		do not remove this line: it is a placeholder for installing new services */
 			default:
-				throw new Exception('Unknown service type');
+                                throw new Exception('PageFactory: Unknown service type "' . $type . '"');
 		}
 	}
 }
