@@ -43,8 +43,8 @@ As a central component of our autoscaling system, the \emph{Scaler} component is
 In order to decide which scaling plan to provision, our system uses the following procedure:
 \begin{enumerate}
 \item \emph{Measure the VM instance performance} to know the capacities of cloud resources when running my application.
-\item \emph{Monitor workload and generate medium-term predictions} to devise all the possible scaling plans.
-\item \emph{Select the optimal scaling plan} based on the tradeoff cost/SLO guarantee defined by the customer.
+\item \emph{Monitor workload and generate medium-term predictions} to devise all the plausible scaling plans.
+\item \emph{Select the optimal scaling plan} based on the tradeoff cost/SLO guarantee defined by the QoS level selected by the customer.
 \end{enumerate}
 %\subsubsection{Response time analysis - Time-series smoothing}
 
@@ -187,7 +187,7 @@ Figure~\ref{fig:vm_performance1} shows the profiling data and percentiles for on
   \begin{center}
     \includegraphics[width=0.8\linewidth, height=5.5cm]{images/idealSmallRemark.pdf}
   \end{center}
-\vspace{-3mm}
+\vspace{-4mm}
   \caption{Profiling data and percentiles of m1.small.}
   \label{fig:vm_performance1}
 \end{figure}
@@ -220,7 +220,7 @@ Figure~\ref{fig:vm_performance1} shows the profiling data and percentiles for on
 
 %\fixme{Explain how we get the cpu usage.}
 
-
+\vspace{-5mm}
 {\scriptsize
 \begin{equation}\label{cpu_speed}
 \begin{split}
@@ -289,7 +289,7 @@ The \emph{workload complexity} is a factor that identifies how much the current 
 
 
 %\fixme{We could include in the Equation some additional information to define each factor.}
-
+\vspace{-5mm}
 {\scriptsize
 \begin{equation}\label{workload_complexity}
 \begin{split}
@@ -327,7 +327,7 @@ To decide which type and amount of VM instances to add or release, the \emph{Sca
   \begin{center}
     \includegraphics[width=0.7\linewidth,height=2.5cm]{images/optimalTree_initial}
   \end{center}
-\vspace{-3mm}
+\vspace{-4mm}
   \caption{Example of a decision tree created from an existing resource combination.}
   \label{fig:scalingTree}
 \end{figure}
@@ -340,7 +340,7 @@ During the selection process of possible scaling strategies, the \emph{Scaler} u
 
 %To calculate the different combinations of VM instances that enforce the performance requirements, we used the next
 
-
+\vspace{-5mm}
 {\scriptsize
 \begin{equation}\label{resource_combination}
 \resizebox{\linewidth}{!}{
@@ -382,7 +382,7 @@ These two policies avoid to trigger new scaling actions in short time intervals 
   \begin{center}
     \includegraphics[width=0.7\linewidth,height=3cm]{images/optimalTree_selection}
   \end{center}
-\vspace{-3mm}
+\vspace{-4mm}
   \caption{Example of three selected scaling plans that satisfy the filtering criteria.}
   \label{fig:scalingTreeSelection}
 \end{figure}
@@ -406,7 +406,7 @@ As defined in the Equation~\ref{strategy_cost}, the \emph{SLO\_guarantee} cost i
 %As defined in the Equation~\ref{strategy_cost}, the \emph{slo\_fulfillment} cost is calculated given the percentage of \emph{$CPU_{strategy}$} and the \emph{$CPU_{SLO}$}, multiply by a SLO penalty (in \$)  pre-established between the customer and provider. Obviously, higher values in the percentage of \emph{$CPU_{strategy}$} imply an increment in the probability of having SLO violations under traffic spikes, so the \emph{slo\_fulfillment} will increase as well. 
 
 %Therefore, according to the customer preferences, the Scaler can select one strategy with the lowest, highest or medium cost.
-
+\vspace{-5mm}
 {\scriptsize
 \begin{equation}\label{strategy_cost}
 \begin{split}
