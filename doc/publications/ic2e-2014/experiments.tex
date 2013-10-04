@@ -4,7 +4,7 @@ on two infrastructures: a private one (the DAS-4, a multi-cluster system
 hosted by universities in The Netherlands~\cite{das4}) and a public
 one (the Amazon EC2 cloud\footnote{http://aws.amazon.com/ec2}). The goal of our experiments
 was to evaluate and compare different scaling plans by how well they react under sudden
-workload changes (e.g. a sudden rise in requests received after a network outage). These scaling plans are chosen by our system to satisfy different customer preferences according to the \emph{metal classification}. In particular, our evaluation focuses on
+workload changes (e.g. a sudden rise in requests received after a network outage). These scaling plans are chosen by our system to satisfy different QoS levels according to the \emph{metal classification}. In particular, our evaluation focuses on
 SLO fulfillment, performance stability and amount and type of resources allocated to handle
 a traffic anomaly. 
 
@@ -14,9 +14,7 @@ a traffic anomaly.
 
 \textbf{Testbed configuration:}  As a representative scenario, we deployed the MediaWiki~\cite{mediawiki} application using ConPaaS, on both public and private environments. To run the MediaWiki application, we used the WikiBench benchmark~\cite{wikibench}. This benchmark uses a full copy of Wikipedia as the web application, and replays a fraction of the actual Wikipedia's access traces. 
 
-Given such a scenario, ConPaaS provides support for all the required services to host a copy of Wikipedia: a PHP web hosting and a MySQL service. The MySQL service is loaded with a full copy of the English Wikipedia articles as of 2011, which has a size of approximately 40GB.  In the PHP service, the configuration was composed of one load balancer, one or more static web server and one or more PHP servers. For these experiments, we focus on the elasticity of the PHP tier, and in particular how the number and type of VM'es hosting PHP servers will change on demand.
-
-For monitoring-data analysis, ConPaaS provides a monitoring component based on Ganglia~\cite{ganglia}, a scalable distributed monitoring system. Moreover, for these experiments, we configured a monitoring window of 5 minutes, a minimum interval of 10 minutes for cool down between scaling actions and a fixed SLO of 700 milliseconds at the service's side.
+Given such a scenario, ConPaaS provides support for all the required services to host a copy of Wikipedia: a PHP web hosting and a MySQL service. The MySQL service is loaded with a full copy of the English Wikipedia articles as of 2011, which has a size of approximately 40GB.  In the PHP service, the configuration was composed of one load balancer, one or more static web server and one or more PHP servers. For these experiments, we focus on the elasticity of the PHP tier, and in particular how the number and type of VM'es hosting PHP servers will change on demand. For monitoring-data analysis, ConPaaS provides a monitoring component based on Ganglia~\cite{ganglia}, a scalable distributed monitoring system. Moreover, for these experiments, we configured a monitoring window of 5 minutes, a minimum interval of 10 minutes for cool down between scaling actions and a fixed SLO of 700 milliseconds at the service's side.
 
 %We implemented modules that extend Ganglia's standard set of monitoring metrics by adding a number of service-specific metric for measuring the request rate and response times of static and dynamic requests.
 
@@ -59,7 +57,7 @@ For monitoring-data analysis, ConPaaS provides a monitoring component based on G
 
 %In this article, we therefore focus on how the automatic scaling system behaves when experiencing these workload variations and adapted to different customer preferences. 
 
-In the following, we therefore focus on how the automatic scaling system handles workload variations when adapted to different classes of customers. 
+%In the following, we therefore focus on how the automatic scaling system handles workload variations when adapted to different classes of customers. 
 
 %of the PHP tier during these workload variations.
 
@@ -110,7 +108,7 @@ Initially, our experiments on EC2 used \emph{m1.small} instances for the PHP ser
 
 
 \subsubsection{Performance stability and SLO fulfillment} 
-Figure~\ref{fig:EC2ResponseTime} represents the degree of SLO fulfillment of three different classes of customers, indicating the response time data-points obtained during the execution of the Wikipedia workload trace. In particular, Figure~\ref{fig:EC2ResponseTime} focus on the interval of time in which the outage occurred. The results show how the system scales back when the request volume drops, and quickly scales in when the load increases suddenly. As shown on Figure~\ref{fig:EC2ResponseTime},  the degree of SLO fulfillment gradually improves depending on the tradeoff performance/cost of each customer chosen to handle this traffic variation. Thus, the \emph{Bronze} and \emph{Silver} customers need between 150 and 200 minutes to reach the performance stability,  but a \emph{Bronze} customer experiences more SLO violations. While the \emph{Gold} customer requires less time to handle this traffic spike reducing at the maximum the number of violations, as detailed in Table~\ref{summaryEC2}. The selection of different performance/cost configurations, and consequently different classes of customer, has important consequences, specially when a non-fulfillment of the requirements affects to the revenues of the customer.
+Figure~\ref{fig:EC2ResponseTime} represents the degree of SLO fulfillment of three different QoS levels, indicating the response time data-points obtained during the execution of the Wikipedia workload trace. In particular, Figure~\ref{fig:EC2ResponseTime} focus on the interval of time in which the outage occurred. The results show how the system scales back when the request volume drops, and quickly scales in when the load increases suddenly. As shown on Figure~\ref{fig:EC2ResponseTime},  the degree of SLO fulfillment gradually improves depending on the tradeoff performance/cost of each customer chosen to handle this traffic variation. Thus, the \emph{Bronze} and \emph{Silver} QoS levels need between 150 and 200 minutes to reach the performance stability,  but a \emph{Bronze} level experiences more SLO violations. While the \emph{Gold} level requires less time to handle this traffic spike reducing at the maximum the number of violations, as detailed in Table~\ref{summaryEC2}. The selection of different performance/cost configurations, and consequently different QoS levels, has important consequences, specially when a non-fulfillment of the requirements affects to the revenues of the customer.
 
 %%% Tricky to fix the Figures numbering %%%
 \setcounter{figure}{6}
@@ -136,13 +134,13 @@ Figure~\ref{fig:EC2ResponseTime} represents the degree of SLO fulfillment of thr
 		\includegraphics[height=4cm]{images/exps2011/high/ec2/proxyDataPoints_output_filtered.eps}
 	\end{minipage}
 \vspace{-3mm}
-\caption{EC2: Response time values during the outage.}
+\caption{EC2: Response time values during the workload variation.}
 \label{fig:EC2ResponseTime}
 \end{figure*}
 
 
 \subsubsection{Resource utilization} 
-To better understand the impact of selecting a scaling plan adapted to the customer preferences, we shall also focus on the resource consumption illustrated on Figure~\ref{fig:EC2Instances}. While satisfying the requirements, the allocation of poor hardware configurations can easily expose the system to performance degradations, and consequently increases the time required to stabilize the system performance. This can be seen on  Figure~\ref{fig:EC2Instances}(left), in the time interval between t=338min and t=400min. The \emph{Bronze} customer provisions a low-cost configuration, that compromises the performance and raises an important amount of SLO violations during a long period of time. Unlike the \emph{Silver} and \emph{Gold} customer utilizes along the whole execution powerful configurations that enables to minimize these degradations. Specifically, the \emph{Gold} customer allocates a costly resource combination (mainly composed of \emph{m1.large} instance types) which is able to handle such traffic changes while avoiding the under-utilization of the resources. This lack of under-utilization can be depicted in Figure~\ref{fig:EC2ResponseTime}, where the processing time remains close to the SLO after the new scaling plan is provisioned.
+To better understand the impact of selecting a scaling plan adapted to the customer QoS preferences, we shall also focus on the resource consumption illustrated on Figure~\ref{fig:EC2Instances}. While satisfying the requirements, the allocation of poor hardware configurations can easily expose the system to performance degradations, and consequently increases the time required to stabilize the system performance. This can be seen on  Figure~\ref{fig:EC2Instances}(left), in the time interval between t=338min and t=400min. The \emph{Bronze} level provisions a low-cost configuration, that compromises the performance and raises an important amount of SLO violations during a long period of time. Unlike the \emph{Silver} and \emph{Gold} levels utilize along the whole execution powerful configurations that enables to minimize these degradations. Specifically, the \emph{Gold} level allocates a costly resource combination (mainly composed of \emph{m1.large} instance types) which is able to handle such traffic changes while avoiding the under-utilization of the resources. This lack of under-utilization can be depicted in Figure~\ref{fig:EC2ResponseTime}, where the processing time remains close to the SLO after the new scaling plan is provisioned.
 
 %The system's unstability is clearly shown in the planB where the resource combination changes from 1800-2000m till find an optimal resource combination to handle the traffic.
 
@@ -170,7 +168,7 @@ To better understand the impact of selecting a scaling plan adapted to the custo
 		\includegraphics[height=4cm]{images/exps2011/high/ec2/inst_type_machines_filtered.eps}
 	\end{minipage}
 \vspace{-4mm}
-\caption{EC2: Cloud instances provisioned to handle the outage.}
+\caption{EC2: Cloud instances provisioned to handle the workload variation.}
 \label{fig:EC2Instances}
 \end{figure*}
 
@@ -179,7 +177,7 @@ The results of the three runs are summarized in Table~\ref{summaryEC2}, where we
 
 As depicted on Figure~\ref{fig:EC2ResponseTime} and Figure~\ref{fig:EC2Instances}, the use of \emph{Bronze} settings shows the vulnerability of selecting a configuration with low operational cost, as it easily becomes unstable when handling bursty workloads. Hence, poor hardware configurations increase the probability of experiencing SLO violations under sudden traffic spikes, outages or other traffic anomalies. 
 
-When using a mixed configuration like \emph{Silver}, the \emph{Scaler} explores the tradeoff between performance capacity and cost by combining different hardware configurations to handle the load with an acceptable cost. However, the discovery of such resource combination can be hard-to-find, affecting to the stability of the application due to frequent scaling actions, as shown on Figure~\ref{fig:EC2ResponseTime}(center). Finally, with a \emph{Gold} customer, the Scaler provisions resources that offer better performance in exchange for a higher infrastructure cost. With little over-provisioning, this class of customer configuration enforces the QoS requirements and improves considerably the stability and performance of the system by distributing the new request volume across the most powerful resources. Unfortunately, as illustrated in Table~\ref{summaryEC2}, the \emph{Gold} settings also experiences few SLO violations due to scheduling and booting operations (e.g. turning machines ON/OFF) when provisioning new EC2 resources. These operations can take around 3-6min to be completed, thus causing SLO violations during this period of time.
+When using a mixed configuration like \emph{Silver}, the \emph{Scaler} explores the tradeoff between performance capacity and cost by combining different hardware configurations to handle the load with an acceptable cost. However, the discovery of such resource combination can be hard-to-find, affecting to the stability of the application due to frequent scaling actions, as shown on Figure~\ref{fig:EC2ResponseTime}(center). Finally, with a \emph{Gold} level, the Scaler provisions resources that offer better performance in exchange for a higher infrastructure cost. With little over-provisioning, this class of customer configuration enforces the QoS requirements and improves considerably the stability and performance of the system by distributing the new request volume across the most powerful resources. Unfortunately, as illustrated in Table~\ref{summaryEC2}, the \emph{Gold} settings also experiences few SLO violations due to scheduling and booting operations (e.g. turning machines ON/OFF) when provisioning new EC2 resources. These operations can take around 3-6min to be completed, thus causing SLO violations during this period of time.
 
 Note that due to synchronization time lag between the scaling actions and the displayed information in the logs, time values are shifted for a few minutes during the whole execution, as shown in Figure~\ref{fig:EC2ResponseTime} and Figure~\ref{fig:EC2Instances}.
 
@@ -242,7 +240,7 @@ Note that due to synchronization time lag between the scaling actions and the di
 
 \subsection{Private Cloud}
 
-Our experiments on DAS-4 rely on OpenNebula as IaaS~\cite{sotomayor_virtual_2009}. To deploy the Wikipedia services, we initially provisioned \emph{small} instances for the PHP service and one \emph{large} instance for the MySQL service. Additionally, for these experiments, we specified a cost per-hour for each one of the available resources, and extended from three to five the initial customer classification: \emph{Platinum, Gold, Silver, Bronze} and \emph{Copper}. To select the strategies of these new five customer types, the \emph{Scaler} additionaly calculates the 25th and 75th percentiles of the list of possible strategies. Table~\ref{EC2DAS4instances} detailed the hardware configurations of the different VM sizes in DAS-4.
+Our experiments on DAS-4 rely on OpenNebula as IaaS~\cite{sotomayor_virtual_2009}. To deploy the Wikipedia services, we initially provisioned \emph{small} instances for the PHP service and one \emph{large} instance for the MySQL service. Additionally, for these experiments, we specified a cost per-hour for each one of the available resources, and extended from three to five the initial QoS levels classification: \emph{Platinum, Gold, Silver, Bronze} and \emph{Copper}. To select the strategies of these new five QoS levels, the \emph{Scaler} additionaly calculates the 25th and 75th percentiles of the list of possible strategies. Table~\ref{EC2DAS4instances} detailed the hardware configurations of the different VM sizes in DAS-4.
 
 %following the same criteria of SLO fulfillment and infrastructure cost
 
@@ -251,12 +249,12 @@ Our experiments on DAS-4 rely on OpenNebula as IaaS~\cite{sotomayor_virtual_2009
 %\subsubsection{Performance impact of the outage}
 \subsubsection{Performance stability and SLO fulfillment}
 
-Figure~\ref{fig:DAS4ResponseTime} shows the performance behavior of the scaling plans selected for five types of customers. As depicted in Figure~\ref{fig:DAS4ResponseTime}, the performance stability is mainly affected by two aspects: frequent scalings operations and traffic spikes. Thus, the \emph{Platinum} customer presents an unstable performance pattern, due to numerous provisioning actions aiming to find the optimal scaling plan. In contrast, the performance behavior of the \emph{Gold} customer shows no oscillations even during the outage, which can be explained by the selection of an appropriate resource combination that do not under-utilizes the resources.
+Figure~\ref{fig:DAS4ResponseTime} shows the performance behavior of the scaling plans selected for five types of QoS levels. As depicted in Figure~\ref{fig:DAS4ResponseTime}, the performance stability is mainly affected by two aspects: frequent scalings operations and traffic spikes. Thus, the \emph{Platinum} level presents an unstable performance pattern, due to numerous provisioning actions aiming to find the optimal scaling plan. In contrast, the performance behavior of the \emph{Gold} level shows no oscillations even during the outage, which can be explained by the selection of an appropriate resource combination that do not under-utilizes the resources.
 
 %an optimal combination of resources that stabilizes the performance even during the outage. 
 
 
-Regarding the traffic spikes caused by the new workload, it is clear how customer configurations, like \emph{Copper, Bronze and Silver}, are vulnerable to traffic changes, thus causing SLO violations. As shown on Figure~\ref{fig:DAS4ResponseTime},  the scaling decisions that prioritizes the infrastructure cost than performance are directly affected by the effects of the request volume increment. This can be seen in the time interval between t=510min and t=536min for the \emph{Copper} customer, and between t=498min and t=519min for the \emph{Bronze} customer, respectively. By selecting an appropriate scaling plan, the performance stability and SLO fulfillment can be better enforced without dramatically raising the cost.
+Regarding the traffic spikes caused by the new workload, it is clear how QoS level configurations, like \emph{Copper, Bronze and Silver}, are vulnerable to traffic changes, thus causing SLO violations. As shown on Figure~\ref{fig:DAS4ResponseTime},  the scaling decisions that prioritizes the infrastructure cost than performance are directly affected by the effects of the request volume increment. This can be seen in the time interval between t=510min and t=536min for the \emph{Copper} level, and between t=498min and t=519min for the \emph{Bronze} level, respectively. By selecting an appropriate scaling plan, the performance stability and SLO fulfillment can be better enforced without dramatically raising the cost.
 
 %In this case, the combination of one highcpu-medium and two small vm instances were enough to handle the new request volume without causing SLO violations.
 
@@ -294,20 +292,20 @@ Regarding the traffic spikes caused by the new workload, it is clear how custome
 		\includegraphics[width=\linewidth,height=3.8cm]{images/exps2011/high/das/proxyDataPoints_output.eps}
 	\end{minipage}
 \vspace{-4mm}
-\caption{DAS4: Response time values during the outage.}
+\caption{DAS4: Response time values during the workload variation.}
 \label{fig:DAS4ResponseTime}
 \end{figure*}
 
 
 \subsubsection{Resource utilization}
 
-As explained above, frequent scaling actions can affect to the performance stability, but also inappropriate scaling decisions. This can be seen in Figure~\ref{fig:DAS4Instances}, where the \emph{Copper} and \emph{Bronze} customers attempt to scale back the system when the load drops, but the resulting resource combinations cannot handle the new request volume, and the system is scaled up again.  At difference, the \emph{Gold} customer only de-provisions low-powered resources during the outage, which enables to distribute the new load among the current resources, while new resources are allocated to avoid future resource over-utilization. 
+As explained above, frequent scaling actions can affect to the performance stability, but also inappropriate scaling decisions. This can be seen in Figure~\ref{fig:DAS4Instances}, where the \emph{Copper} and \emph{Bronze} levels attempt to scale back the system when the load drops, but the resulting resource combinations cannot handle the new request volume, and the system is scaled up again.  At difference, the \emph{Gold} level only de-provisions low-powered resources during the outage, which enables to distribute the new load among the current resources, while new resources are allocated to avoid future resource over-utilization. 
 
-Once the outage occurred, another interesting aspect to notice is the type of resources employed to minimize the number of SLO violations. While the \emph{Silver} customer provisions powerful machines (e.g. \emph{highcpu-medium}) that quickly mitigate the degradations, the \emph{Copper} customer allocates \emph{small} resources that employ more time to handle the workload. When using the \emph{Gold} or \emph{Platinum} settings, the system barely appreciates the changes in the workload, as shown on Figure~\ref{fig:DAS4ResponseTime}. It demonstrates the importance of using autoscaling system that exploits the resource heterogeneity of cloud infrastructures to satisfy customer preferences.
+Once the outage occurred, another interesting aspect to notice is the type of resources employed to minimize the number of SLO violations. While the \emph{Silver} level provisions powerful machines (e.g. \emph{highcpu-medium}) that quickly mitigate the degradations, the \emph{Copper} level allocates \emph{small} resources that employ more time to handle the workload. When using the \emph{Gold} or \emph{Platinum} settings, the system barely appreciates the changes in the workload, as shown on Figure~\ref{fig:DAS4ResponseTime}. It demonstrates the importance of using autoscaling system that exploits the resource heterogeneity of cloud infrastructures to satisfy customer QoS preferences.
 
 % thus justifying the use of different sizes of resources to better enforce the QoS requirements. 
 
-On the other hand, it is remarkable to point out that the amount of allocated resources may not be a subject of comparison between customer configurations. The poor performance isolation and the variable network bandwidth can affect to the performance of the resources, and consequently the amount of allocated resources can vary even for the same customer.
+On the other hand, it is remarkable to point out that the amount of allocated resources may not be a subject of comparison between QoS configurations. The poor performance isolation and the variable network bandwidth can affect to the performance of the resources, and consequently the amount of allocated resources can vary even for the same QoS level.
 
 
 %In this case, the combination of one highcpu-medium and two small vm instances were enough to handle the new request volume without causing SLO violations.
@@ -343,7 +341,7 @@ On the other hand, it is remarkable to point out that the amount of allocated re
 		\includegraphics[width=\linewidth,height=3.8cm]{images/exps2011/high/das/inst_type_machines.eps}
 	\end{minipage}
 \vspace{-4mm}
-\caption{DAS4: Cloud instances provisioned to handle the outage.}
+\caption{DAS4: Cloud instances provisioned to handle the workload variation.}
 \label{fig:DAS4Instances}
 \end{figure*}
 
@@ -392,9 +390,9 @@ On the other hand, it is remarkable to point out that the amount of allocated re
 
 Table~\ref{summaryDAS4} summarizes the results of these experiments, where we show the amount of SLO violations, provisioning decisions and total infrastructure cost of the allocated resources. 
 
-Firstly, we noticed a progressive minimization of the SLO violations related to the class of customer, and therefore due to the hardware configuration provisioned at the moment of the traffic increased. During the outage, the \emph{Copper} and \emph{Bronze} customers used poor hardware configurations which were unabled to handle the new workload. In contrast, the \emph{Gold}  and \emph{Platinum} customers allocated powerful and suited resources that handled the new load successfully.
+Firstly, we noticed a progressive minimization of the SLO violations related to the QoS level, and therefore due to the hardware configuration provisioned at the moment of the traffic increased. During the outage, the \emph{Copper} and \emph{Bronze} levels used poor hardware configurations which were unabled to handle the new workload. In contrast, the \emph{Gold}  and \emph{Platinum} levels allocated powerful and suited resources that handled the new load successfully.
 
-Secondly, it is remarkable how depending of the scaling plan the required time to stabilize the system vary, and as a consequence the amount of SLO violations. An explanation comes from the quickly allocation of powerful resources, instead of a gradual allocation of standard or less-powered resources. This decision has special importance in cloud platforms aiming to reduce the penalties paid due to SLO violations or server errors. Finally, we also note some performance unstability with the \emph{Platinum} customer that was provoked in some situations due to wrong or delay balancing of the incoming traffic across the heterogeneous resources.
+Secondly, it is remarkable how depending of the scaling plan the required time to stabilize the system vary, and as a consequence the amount of SLO violations. An explanation comes from the quickly allocation of powerful resources, instead of a gradual allocation of standard or less-powered resources. This decision has special importance in cloud platforms aiming to reduce the penalties paid due to SLO violations or server errors. Finally, we also note some performance unstability with the \emph{Platinum} level that was provoked in some situations due to wrong or delay balancing of the incoming traffic across the heterogeneous resources.
 %For instance, RackSpace~\cite{rackspace} guarantees 100\% availability of the hosted services, with a penalty equal to 5\% of the fees for each 30 minutes of network or data center downtime. Therefore, the minimization of the penalties affects to the revenues but also to the user base.
 
 Note that due to synchronization time lag between the scaling actions and the displayed information in the logs, time values shown in Figure~\ref{fig:DAS4Instances} and Figure~\ref{fig:DAS4ResponseTime} are shifted for a few minutes during the whole execution.
