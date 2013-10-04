@@ -42,7 +42,7 @@ these requirements are specified by the enterprise (customer) and
 affirmed by cloud provider in the form of a \emph{service level
 agreement} (SLA), and vary depending on the size of the
 enterprise. Thus, large enterprises such as Animoto, \emph{The
-guardian} and Spotify, pay more to provide high assurance of
+Guardian} and Spotify, pay more to provide high assurance of
 availability and performance to their clients \cite{casestudiescloud};
 while small enterprises pay less to obtain an acceptable performance
 but with weaker service availability.
@@ -59,24 +59,24 @@ outages~\cite{outagesTimes}. These sudden traffic fluctuations are
 specifically difficult to handle by traditional resource management
 systems, thus causing long periods of violations of the SLA
 requirements~\cite{trafficCongestion}. Failure to comply with these
-requirements are often associated with significant financial penalties
+requirements is often associated with significant financial penalties
 or other forms of loss of revenue such as decreases in the user base.
 Therefore, it is crucial to use resource provisioning systems that
 scale an application on demand while meeting the requirements.
 
 Nowadays, cloud infrastructures provide elastic provisioning by
-supporting a variety of scaling mechanisms and diverse list of
+supporting a variety of scaling mechanisms and 
 different hardware configurations for rent, each with a different
 infrastructure cost. Even though the diversity of hardware
-configurations is common in cloud infrastructures, the majority of
+configurations is common in cloud infrastructures, most
 resource provisioning systems focus on minimizing the infrastructure
-cost rather than selecting a right combination of
+cost rather than selecting a suitable combination of
 resources~\cite{urgaonkar_agile_2008,dejavu2012}. Moreover,
 when using these systems to scale in response to changing conditions,
 most of them restrict themselves to a single type of hardware
 configuration, ignoring the important avenues for cost/performance
-optimization. We believe that the selection of multiple resources with
-different performance capacity/cost characteristics mitigate the
+optimization. We believe that the selection of multiple types of resources with
+different performance capacity/cost characteristics can mitigate the
 degradations due to sudden workload demand fluctuations. As a
 consequence, a new challenge arises to autoscaling systems, as they
 have to decide which type of resources to choose for a particular
@@ -89,13 +89,13 @@ combination.
 Traditional autoscaling systems do not allow to adapt the
 selection criteria of scaling plans to customer preferences like
 service availability, cost or performance. From one customer to
-another, the tradeoff between cost and SLA fulfillment vary,
+another, the tradeoff between cost and SLA fulfillment may vary,
 especially when handling flash crowds or other traffic anomalies.
 Therefore autoscaling systems have to choose the scaling plan that
-better match to the customer preferences. As an example, large
-enterprises willing to pay more will provision powerful resources to
+matches a customer's preferences best. As an example, large
+enterprises, able to pay more, will provision powerful resources to
 absorb traffic spikes, while small enterprises prefer to fine-tune
-their budgets provisioning cheapest resources that have less slack to
+their budgets by provisioning cheaper resources that have less slack to
 handle any eventual spike. There is a necessary tradeoff between the
 cost one customer is ready to spend and the performance guarantee that
 no SLO (Service Level Objective) violation will occur.
@@ -118,23 +118,25 @@ no SLO (Service Level Objective) violation will occur.
 This paper presents an autoscaling system that benefits from the
 heterogeneity of cloud infrastructures to better enforce customer
 requirements, even under large and temporary workload variations. The
-selection of an appropriate combination of resources provides enough
+selection of an appropriate combination of resources provides sufficient
 computing capacity to handle the traffic variations without
 drastically raising the cost. To achieve that, our system profiles
 each type of allocated resources to measure their capacity, and in
 conjunction with a medium-term traffic predictor devises
 the \emph{scaling plan} matching the workload
 requirements. In this system, each customer can tune its own cost/SLA
-fulfillment tradeoff thanks to the metal classification, which
-pre-defines different criteria for the selection of scaling plans
-based on the customer preferences. To handle resource heterogeneity,
+fulfillment tradeoff using a "metal" classification scheme (for {\em gold}, {\em silver}, 
+and {\em bronze} customers), which
+defines different criteria for the selection of scaling plans
+based on the respective customer's preferences. To handle resource heterogeneity,
 the proposed system provides a weighted load balancing mechanism that
 enables the distribution of the incoming traffic across resources depending
-on their performance capacities. We evaluated our system in realistic
+on their performance capacities. We evaluated our system using realistic,
 unstable workload situations by deploying a copy of Wikipedia and
-replaying a fraction of the real access traces to its official web
+replaying a fraction of the real access traces to its 
 site. This evaluation was conducted on both private and public clouds
-using different cost/SLA fulfillment configurations.
+using different cost/SLA fulfillment configurations. Our results show significant
+reductions in SLA violations using our approach.
 
 This paper is organized as follows: Section~\ref{sec:relatedWorks} discusses
 the related work; Section~\ref{sec:proposed_approach} presents our
