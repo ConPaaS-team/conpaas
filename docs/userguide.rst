@@ -538,7 +538,7 @@ Persistency
 If the XtreemFS service is shut down, all its data is permanently lost. If 
 persistency beyond the service runtime is needed, the XtreemFS service can be
 moved into a snapshot by using the download_manifest operation of the command
-line client. This operation will automatically shut down the service. 
+line client. WARNING: This operation will automatically shut down the service. 
 The service and all of its stored volumes with their data can be moved back
 into a running ConPaaS service by using the manifest operation.
 
