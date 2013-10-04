@@ -5,7 +5,7 @@ Manifest Guide
 What is a manifest file
 =======================
 
-When a user wants to create new services in ConPaaS_ there are two
+When a user wants to create new services in ConPaaS there are two
 options available: the first one is to create every single service using
 the ConPaaS frontend or the ConPaaS client, while the second one is to
 upload a manifest file that describes which services the application
@@ -18,7 +18,7 @@ manifest file.
 How to structure a manifest file
 ================================
 
-A manifest file is a plain json file where users need to fill all the
+A manifest file is a plain JSON file where users need to fill all the
 necessary information to start the services.
 In the next section we are going to describe how to setup a manifest file
 for the sudoku example in the ConPaaS website.
@@ -42,7 +42,7 @@ following is the simplest manifest file::
     ]
    }
 
-The understanding of the file is quite straightforward. First of all the
+The understanding of the file is quite straightforward. First of all, the
 user needs to specify a description of the application because if more
 applications are running on ConPaaS it is easier to differentiate between
 them.
@@ -96,17 +96,17 @@ Even if the application is more complicated than the sudoku, the
 manifest file is not very different.
 In this case the file specifies two different services: Java and
 Scalaris (which is a NoSQL database). Also, given that the service might
-receive lots of traffic, 5 instances of the java backend are started.
-In the presentation the java instances are added later, but in this
+receive lots of traffic, 5 instances of the Java backend are started.
+In the presentation the Java instances are added later, but in this
 example to show how the *StartupInstances* works, 5 Java virtual
 machines are started from the beginning.
-Unfortunately the option of choosing a static ip for the database is not
-yet available, so we can not specify it in the java service at startup.
+Unfortunately the option of choosing a static IP for the database is not
+yet available, so we cannot specify it in the Java service at startup.
 
 Complete description of the manifest fields
 ===========================================
 
-In this section we present a complete description of all the possible
+In this section, we present the complete description of all the possible
 fields that can be used in the manifest. We will also distinguish
 between required and optional fields.
 Currently, the available service types are:
@@ -138,18 +138,16 @@ The following fields are optional and are available in all the services.
 
 -  *Cloud*: Specify which cloud your service needs to run on
 
--  *Start*: Specify if the service should be started or not (0 or 1)
+-  *Start*: Specify if the service should be started or not (1 or 0)
 
--  *ServiceName*: Specify the name of the service displayed in the
-   frontend
+-  *ServiceName*: Specify the name of the service
 
--  *StartupScript*: Specify an URL of a script that will be executed at
+-  *StartupScript*: Specify a URL of a script that will be executed at
    the startup of the agents
 
 It is not required to define how many instances the service needs. By
-default if the user starts a service 1 instance will be created. If the
-user wants to create more instances this option in the manifest needs to
-be used.
+default if the user starts a service, one instance will be created. If the
+user wants to create more instances, then the user can use this option in the manifest.
 
 -  *StartupInstances*: Specify how many instances of each type needs to
    be created at startup.

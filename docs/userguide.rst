@@ -550,19 +550,19 @@ migrated to the remaining OSDs. Always make sure there is enough free space
 for this operation to succeed. Otherwise you risk data loss.
 The download_manifest operation of the XtreemFS service will also shut the 
 service down. This behaviour might differ from other ConPaaS services, but is 
-neccessary to avoid copying the whole filesystem (which would be a very 
+necessary to avoid copying the whole filesystem (which would be a very 
 expensive operation). This might change in future releases.
 
 The HTC service
 ===============
 The HTC service provides a throughput-oriented scheduler for bags of tasks
-submitted on demand for ConPaaS. An inial bag of tasks is sampled generating a
+submitted on demand for ConPaaS. An initial bag of tasks is sampled generating a
 throughput = f(cost) function.  The user is allowed at any point, including
-upon new tasks submission,to request the latest throughput = f(cost) function
+upon new tasks submission, to request the latest throughput = f(cost) function
 and insert his target throughput.  After the first bag is sampled and submitted
 for execution the user is allowed to add tasks to the job with the
 corresponding identifier. The user is allowed at any point, including upon new
-tasks submission,to request the latest throughput = f(cost) function and adjust
+tasks submission, to request the latest throughput = f(cost) function and adjust
 his target throughput.  All tasks that are added are immediately submitted for
 execution using the latest configuration requested by the user, corresponding
 to the target throughput.
@@ -571,7 +571,7 @@ Available commands
 ------------------
 start service_id - prompts the user to specify a mode (’real’ or ’demo’) and
 type (’batch’, ’online’ or ’workflow’) for the service. Starts the service
-under the selected context and intializes all the internal data structures for
+under the selected context and initializes all the internal data structures for
 running the service.
 
 ``stop service_id``: stops and releases all running VMs that exist in the pool

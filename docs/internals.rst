@@ -232,7 +232,7 @@ integration is not available.
 
 The last step is to register the new service to the conpaas core. One
 entry must be added to file *conpaas/core/services.py*, as it is
-indicated in Listing [lst:helloworldservices]. Because the java and php
+indicated in Listing [lst:helloworldservices]. Because the Java and PHP
 services use the same code for the agent, there is only one entry in the
 agent services, called *web* which is used by both webservices.
 

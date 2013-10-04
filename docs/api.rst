@@ -9,7 +9,7 @@ ConPaaS agents, which in turn provide the functionality offered by a specific
 service.
 
 ConPaaS services are created and administered exclusively through an HTTP /
-JSON Application Programing Interface exposed by a web service called ConPaaS
+JSON Application Programming Interface exposed by a web service called ConPaaS
 Director. This document provides a description of such an API.
 
 Python API
@@ -40,7 +40,7 @@ of their behavior.
 
         {
          'error': True,
-         'msg': 'An explainatory error message' 
+         'msg': 'An explanatory error message' 
         }
 
     POST /login
