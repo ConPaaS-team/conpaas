@@ -66,11 +66,14 @@ class Client(BaseClient):
     
     def create_job(self, service_id, filename=None) :
         if filename:
+            if not os.path.isfile(filename):
+                return "No such file: %s" % filename
             contents = open(filename).read()
             files = [ ( filename, filename, contents) ]
             res = self.callmanager(service_id, "/", True,{'method':'create_job', },files)
         else:
-            res = self.callmanager(service_id, "/", True,{'method':'create_job', },[])
+            return "No file specified"
+            # res = self.callmanager(service_id, "/", True,{'method':'create_job', },[])
         if 'error' in res:
             return res['error']
         
@@ -83,7 +86,7 @@ class Client(BaseClient):
         if 'error' in res:
             return res['error']
 
-        return res['id']
+        return res['out']
 
     def add(self, service_id, job_id,filename=None):
         if filename:
@@ -195,6 +198,8 @@ class Client(BaseClient):
         for n in nodes:
             print n + "	:	" +str(nodes[n])
 
+        if 'dict' in service:
+            print service['dict']
 
     def usage(self, cmdname):
         BaseClient.usage(self, cmdname)
@@ -286,7 +291,7 @@ class Client(BaseClient):
                 if command == 'create_job':
                     print self.create_job(sid,argv[3])
                 else:
-                    self.upload_file(sid,argv[3])
+                    print self.upload_file(sid,argv[3])
             else:
                 self.usage(argv[0])
                 sys.exit(0)
