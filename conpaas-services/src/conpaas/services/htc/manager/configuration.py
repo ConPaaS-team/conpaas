@@ -40,7 +40,7 @@ class Configuration:
    
     def compute_throughput(self):
         for k in self.averages:
-            if(self.notasks>0):
+            if(self.notasks[k]>0):
                 self.throughput[k] = round(self.unit / self.rav[k])
     
     def set_average(self,m_type,value, count):
