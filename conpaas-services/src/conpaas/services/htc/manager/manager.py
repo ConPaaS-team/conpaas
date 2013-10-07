@@ -330,6 +330,7 @@ class HTCManager(BaseManager):
         self.files.append(fullpath)
         self.logger.info(str(self.files))
 
+        return HttpJsonResponse({ 'out': "file uploaded" })
 
     @expose('UPLOAD')
     def add(self, kwargs):
