@@ -29,7 +29,7 @@ if [ -z "$1" ] ; then
 fi
 
 SRC_IMG=$1
-DST_IMG=squeezed-$1
+DST_IMG=optimized-$1
 
 
 FS_SPACE=40 #MB
@@ -99,6 +99,8 @@ losetup $DST_LOOP $DST_IMG
 PARTITION=`kpartx -l $DST_LOOP | awk '{ print $1 }'`
 PARTITION=/dev/mapper/$PARTITION
 kpartx -a $DST_LOOP
+DST_LOOP_P=`losetup -f`
+losetup $DST_LOOP_P $PARTITION
 
 cecho "Creating ext3 filesystem."
 echo 'y' | mkfs.ext3 $PARTITION
@@ -124,7 +126,14 @@ mount -o loop $PARTITION $SRC_DIR
 cecho "Copying files."
 ( cd $SRC_DIR && tar -cf - . ) | ( cd $DST_DIR && tar -xpf -)
 
+
 cecho "Running grub-install"
+
+cat <<DEVICEMAP > $DST_DIR/boot/grub/device.map 
+(hd0)   $DST_LOOP
+(hd0,1) $DST_LOOP_P
+DEVICEMAP
+
 grub-install --no-floppy --grub-mkdevicemap=$DST_DIR/boot/grub/device.map --root-directory=$DST_DIR $DST_LOOP
 
 cecho "Clean."
@@ -137,6 +146,8 @@ sleep 1s
 rmdir $SRC_DIR
 
 umount $DST_DIR
+sleep 1s
+losetup -d $DST_LOOP_P
 sleep 1s
 kpartx -d $DST_LOOP
 sleep 1s
