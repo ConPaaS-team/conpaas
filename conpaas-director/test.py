@@ -12,6 +12,8 @@ os.environ['DIRECTOR_TESTING'] = "true"
 
 import cpsdirector 
 
+USER_CREDIT = 50
+
 TEST_USER_DATA = { 
     'username': 'testuser', 
     'fname': 'TestName', 
@@ -19,7 +21,7 @@ TEST_USER_DATA = {
     'email': 'test@example.org',
     'affiliation': 'Test Institution', 
     'password': 'properpass', 
-    'credit': 120 
+    'credit': USER_CREDIT
 }
 
 class Common(unittest.TestCase):
@@ -61,7 +63,7 @@ class DbTest(Common):
         cpsdirector.db.session.commit()
 
         # Testing service->user backref
-        self.assertEquals(120, service.user.credit)
+        self.assertEquals(USER_CREDIT, service.user.credit)
 
         # Test application->name backref
         self.assertEquals("New Application", service.application.name)
@@ -76,7 +78,7 @@ class DbTest(Common):
             cpsdirector.db.session.rollback()
 
         user = cpsdirector.user.get_user(TEST_USER_DATA['username'], TEST_USER_DATA['password'])
-        self.assertEquals(110, user.credit)
+        self.assertEquals(USER_CREDIT - 10, user.credit)
 
         user.credit -= 5000
 
@@ -86,7 +88,7 @@ class DbTest(Common):
             cpsdirector.db.session.rollback()
 
         user = cpsdirector.user.get_user(TEST_USER_DATA['username'], TEST_USER_DATA['password'])
-        self.assertEquals(110, user.credit)
+        self.assertEquals(USER_CREDIT - 10, user.credit)
 
 class DirectorTest(Common):
 
@@ -261,7 +263,7 @@ class DirectorTest(Common):
             'email': 'test_other@example.org',
             'affiliation': 'Test Institution',
             'password': 'properpass',
-            'credit': 120
+            'credit': USER_CREDIT - 10
         }
         self.create_user(other_user)
 
@@ -338,7 +340,7 @@ class DirectorTest(Common):
     def test_credit_right_sid_enough_credit(self):
         self.__new_service()
 
-        data = { 'sid': 1, 'decrement': 119, 'uid': 1, 'role': 'manager' }
+        data = { 'sid': 1, 'decrement': USER_CREDIT - 1, 'uid': 1, 'role': 'manager' }
         response = self.app.post('/callback/decrementUserCredit.php', data=data)
         self.assertEquals({ 'error': False }, simplejson.loads(response.data))
 
@@ -426,7 +428,7 @@ class DirectorTest(Common):
         data = { 
             'username': 'namà', 'fname': 'Namé', 'lname': 'Surnàme',
                 'email': 'test@example.org', 'affiliation': 'Our Affiliàtion', 
-                    'password': 'properpàss', 'credit': 120 
+                    'password': 'properpàss', 'credit': USER_CREDIT
         }
         self.__test_new_user(data)
 
@@ -440,7 +442,7 @@ class DirectorTest(Common):
             'email': 'test@example.org', 
             'affiliation': 'whatever',
             'password': TEST_USER_DATA['password'], 
-            'credit': 50 
+            'credit': USER_CREDIT
         }
 
         response = self.app.post('/new_user', data=data)
@@ -459,7 +461,7 @@ class DirectorTest(Common):
             'email': TEST_USER_DATA['email'], 
             'affiliation': 'whatever',
             'password': TEST_USER_DATA['password'], 
-            'credit': 50 
+            'credit': USER_CREDIT 
         }
 
         response = self.app.post('/new_user', data=data)
@@ -468,6 +470,46 @@ class DirectorTest(Common):
         user = simplejson.loads(response.data)
         self.assertEquals('E-mail "%s" already registered' % data['email'], user.get('msg'))
 
+    def test_new_user_exceed_max_credit(self):
+        too_much_credit = 100
+        data = {
+            'username': 'new_username',
+            'fname': 'Firstname',
+            'lname': 'Lastname',
+            'email': TEST_USER_DATA['email'],
+            'affiliation': 'whatever',
+            'password': TEST_USER_DATA['password'],
+            'credit': too_much_credit,
+        }
+
+        response = self.app.post('/new_user', data=data)
+        print "%s" % response.status_code
+        self.assertEquals(200, response.status_code)
+
+        user = simplejson.loads(response.data)
+        self.assertEquals(True, user.get('error'))
+        self.assertEquals('Cannot allocate %s credit for a new user (max credit 50).' % too_much_credit,
+                          user.get('msg'))
+
+    def test_new_user_set_max_credit(self):
+        cpsdirector.common.config_parser.set('conpaas', 'MAX_CREDIT', '100')
+        more_credit = 99
+        data = {
+            'username': 'new_username',
+            'fname': 'Firstname',
+            'lname': 'Lastname',
+            'email': TEST_USER_DATA['email'],
+            'affiliation': 'whatever',
+            'password': TEST_USER_DATA['password'],
+            'credit': more_credit,
+        }
+        response = self.app.post('/new_user', data=data)
+        print "%s" % response.status_code
+        self.assertEquals(200, response.status_code)
+
+        user = simplejson.loads(response.data)
+        self.assertEquals(None, user.get('error'))
+
     def test_new_user_missing_field(self):
         data = {
             'fname': 'Firstname',
@@ -475,7 +517,7 @@ class DirectorTest(Common):
             'email': TEST_USER_DATA['email'], 
             'affiliation': 'whatever',
             'password': TEST_USER_DATA['password'], 
-            'credit': 50 
+            'credit': USER_CREDIT,
         }
 
         response = self.app.post('/new_user', data=data)

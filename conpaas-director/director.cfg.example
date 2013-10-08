@@ -23,6 +23,12 @@ CERT_DIR = /etc/cpsdirector/certs
 #    tcp://eee.fff.ggg.hhh:port2
 #    ...
 
+
+# Maximum credit for new users created through the director's interface /new_user
+#
+# MAX_CREDIT = 50
+
+
 [iaas]
 ##############
 # Amazon EC2 #

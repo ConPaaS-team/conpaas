@@ -26,6 +26,8 @@ from cpsdirector.common import log, config_parser, build_response
 
 from conpaas.core import https
 
+default_max_credit = 50
+
 user_page = Blueprint('user_page', __name__)
 
 class cert_required(object):
@@ -196,6 +198,36 @@ def new_user():
         return build_response(jsonify({
             'error': True,
             'msg': 'E-mail "%s" already registered' % values['email'] }))
+
+    # check that the requested credit does not exceed the maximum
+    if config_parser.has_option('conpaas', 'MAX_CREDIT'):
+        max_credit = config_parser.get('conpaas', 'MAX_CREDIT')
+        try:
+            max_credit = int(max_credit)
+        except ValueError:
+            log('ERROR: Parameter MAX_CREDIT "%s" is not a valid integer.' \
+                ' Defaulting to maximum credit %s.' % (max_credit, default_max_credit))
+            max_credit = default_max_credit
+        if max_credit < 0:
+            log('ERROR: Parameter MAX_CREDIT "%s" cannot be a negative number.' \
+                ' Defaulting to maximum credit %s.' % (max_credit, default_max_credit))
+            max_credit = default_max_credit
+    else:
+        max_credit = default_max_credit
+    try:
+        req_credit = int(values['credit'])
+    except ValueError:
+        return build_response(jsonify({
+            'error': True,
+            'msg': 'Required credit "%s" is not a valid integer.' % values['credit']}))
+    if req_credit < 0:
+        return build_response(jsonify({
+            'error': True,
+            'msg': 'Required credit "%s" cannot be a negative integer.' % values['credit']}))
+    if req_credit > max_credit:
+        return build_response(jsonify({
+            'error': True,
+            'msg': 'Cannot allocate %s credit for a new user (max credit %s).' % (values['credit'], max_credit)}))
 
     try:
         user = create_user(**values)
