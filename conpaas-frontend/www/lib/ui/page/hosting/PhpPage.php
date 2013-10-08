@@ -308,7 +308,7 @@ class PhpPage extends HostingPage {
 		return $this->renderInstancesSection()
 			.$this->renderCdsSection()
 			.$this->renderCodeSection()
-			.$this->renderAutoscalingSettingsSection()
+/*			.$this->renderAutoscalingSettingsSection() */
 			.$this->renderSettingsSection();
 	}
 }
