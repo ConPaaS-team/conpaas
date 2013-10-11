@@ -8,6 +8,7 @@ from collections import deque
 import os
 import sys
 import time
+import random
 import submit_a_task
 import get_run_time
 import xmltodict
@@ -166,14 +167,12 @@ class TaskFarm:
         if not self.tf_job_dict.has_key(jb_key):
                 self.tf_job_dict[jb_key] = {}
         replication_size = 7
-        print job_id
+        print "Job ID = %d" % job_id
         bag_path = self.jobs[job_id].popleft()
         lines = open(bag_path,'r').read().splitlines()
         N = len(lines)
-        print N
         size = int((N* 1.96*1.96)//((1.96*1.96)+(2*(N-1))*(0.2*0.2)))
-
-        # def submit_a_task(jobnr, bagnr, tasknr, commandline, workerlist, thedict={}):
+        print "take %d samples from %d tasks" % (size, N)
 
         # first: find all available workertypes
         type_list=[] 
@@ -181,23 +180,34 @@ class TaskFarm:
             workertype = self.registered_workers[w].type
             if workertype not in type_list:
                 type_list.append(workertype)
-        # second: submit all tasks in separate commands
+
+        # second: randomly split the tasks (lines) into 2 lists: 
+        #       1) list for immediate processing, called sampling
+        #       2) rest, to be processed at a later stage
+        sample_list = list()
+        for _ in range(size):
+            take = random.randrange(0, N-_)     # randomly pick a number out of the list
+            taken = lines.pop(take)             # remove from original list
+            sample_list.append(taken)           # add to sample list
+
+        # third: submit all tasks in separate commands
         self.tf_job_dict[jb_key]['SamplingReady'] = False
         # TODO  to use condor more efficiently, create just one ClassAd file
         for i in range(0,size):
             #function that submits on each worker type
-            print >> sys.stderr, 'sample_job sampling ', job_id, i, lines[i]
+            print >> sys.stderr, 'sample_job sampling ', job_id, i, sample_list[i]
             if i < replication_size:   # to replicate job on all worker types, use type_list
-                submit_a_task.submit_a_task( job_id, bag_id, i, lines[i], type_list ) 
+                submit_a_task.submit_a_task( job_id, bag_id, i, sample_list[i], type_list ) 
             else:
-                submit_a_task.submit_a_task( job_id, bag_id, i, lines[i], [] ) 
+                submit_a_task.submit_a_task( job_id, bag_id, i, sample_list[i], [] ) 
 
-        # TODO  Put all lines that were not yet submitted in a file for later execution, and put the filename "in front of" the queue
+        # Put all lines that were not yet submitted in a file for later execution, and put the filename "in front of" the queue
         filename_leftovers = "%s/lo-j%d-b%d" % ( os.path.dirname(bag_path), job_id, bag_id )
-        print >> sys.stderr, "leftovers go in ", filename_leftovers
+        print "leftovers go in ", filename_leftovers
         fd = open ( filename_leftovers, "w" )
-        for i in range(size, N):
-            fd.write(lines[i] + "\n")
+        # sample tasks were taken away, so just save the remaining lines
+        for _ in lines:
+            fd.write(_ + "\n")
         fd.close()
         self.add_on( filename_leftovers, job_id, False )
                 
@@ -210,6 +220,8 @@ class TaskFarm:
         self.tf_dict['submitted_tasks'] += self.tf_job_dict[jb_key]['SubmittedTasks'] 
         self.tf_dict['job_dict'] = self.tf_job_dict
         # TODO  wait for all jobs to complete and return the run-times
+        print "Wait for job completion in a Thread"
+        sys.stdout.flush()
         Thread(target=self._do_poll, args=[job_id,bag_id]).start()
         #       should return list of leftover tasks
         return size
