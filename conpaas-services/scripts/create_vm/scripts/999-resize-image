@@ -100,7 +100,6 @@ PARTITION=`kpartx -l $DST_LOOP | awk '{ print $1 }'`
 PARTITION=/dev/mapper/$PARTITION
 kpartx -a $DST_LOOP
 DST_LOOP_P=`losetup -f`
-losetup $DST_LOOP_P $PARTITION
 
 cecho "Creating ext3 filesystem."
 echo 'y' | mkfs.ext3 $PARTITION
@@ -146,8 +145,6 @@ sleep 1s
 rmdir $SRC_DIR
 
 umount $DST_DIR
-sleep 1s
-losetup -d $DST_LOOP_P
 sleep 1s
 kpartx -d $DST_LOOP
 sleep 1s
