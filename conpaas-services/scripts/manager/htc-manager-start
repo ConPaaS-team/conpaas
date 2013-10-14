@@ -32,6 +32,7 @@ then
     apt-get install python-setuptools -y >> $ROOT_DIR/bert.tmp 2>&1
     sleep 2
     echo ==== pip  >> $ROOT_DIR/bert.tmp
+    easy_install -U distribute >> $ROOT_DIR/bert.tmp 2>&1
     easy_install pip >> $ROOT_DIR/bert.tmp 2>&1
     sleep 2
     echo PATH=$PATH >> $ROOT_DIR/bert.tmp
