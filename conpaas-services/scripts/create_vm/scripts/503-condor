@@ -21,6 +21,7 @@ echo ==== python-setuptools
 apt-get install python-setuptools -y 
 sleep 2
 echo ==== pip  
+easy_install -U distribute
 easy_install pip 
 sleep 2
 echo PATH=$PATH 
