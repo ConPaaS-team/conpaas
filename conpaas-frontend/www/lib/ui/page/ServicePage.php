@@ -71,10 +71,12 @@ class ServicePage extends Page {
             $radio = Radio($cloud);
             $radio->setTitle("available_clouds");
 
-            if ($cloud === 'default')
+            if ($cloud === 'default') {
                 $radio->setDefault();
-
-            $radios = $radios.$radio;
+                $radios = $radio;
+            } else {
+                $radios = $radios.'<br>'.$radio;
+            }
         }
         $cloudChoice = Tag();
         $cloudChoice->setHTML($radios);

@@ -33,6 +33,7 @@ $backendType = $service->getType();
   </head>
 <body class="<?php echo $page->getBrowserClass(); ?>">
 	<?php echo $page->renderHeader(); ?>
+                <hr>
 	<div class="pagecontent">
 		<?php echo $page->renderTopMenu(); ?>
 		<?php echo $page->renderContent(); ?>
