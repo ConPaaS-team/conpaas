@@ -10,7 +10,7 @@ class TaskFarmPage extends ServicePage {
 
 	public function __construct(Service $service) {
 		parent::__construct($service);
-		$this->addJS('http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/jquery-ui.min.js');
+		$this->addJS('https://ajax.googleapis.com/ajax/libs/jqueryui/1.8/jquery-ui.min.js');
 		$this->addJS('https://www.google.com/jsapi');
 		$this->addJS('js/jquery.form.js');
 		$this->addJS('js/taskfarm.js');
