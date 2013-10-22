@@ -226,6 +226,7 @@ class XtreemFSManager(BaseManager):
 
             self.logger.info('Created 1 node with DIR, MRC and OSD services')
         except:
+            self.controller.delete_nodes(node_instances)
             self.logger.exception('do_startup: Failed to request a new node')
             self.state = self.S_STOPPED
             return

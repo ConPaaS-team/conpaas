@@ -65,6 +65,7 @@ class MySQLManager(BaseManager):
             self._start_master(node_instances)
             self.config.addMySQLServiceNodes(nodes=node_instances, isMaster=True)
         except:
+            self.controller.delete_nodes(node_instances)
             self.logger.exception('do_startup: Failed to request a new node on cloud %s' % cloud)
             self.state = self.S_STOPPED
             return
