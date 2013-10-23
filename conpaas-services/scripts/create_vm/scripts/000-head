@@ -35,6 +35,9 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 ##
+# THIS SCRIPT HAS BEEN __GENERATED__ from the configuration file 'create-img-script.cfg'
+# running command 'python create-img-script.py'.
+#
 # This script generates a VM image for ConPaaS, to be used for OpenNebula with KVM.
 # The script should be run on a Debian or Ubuntu system.
 # Before running this script, please make sure that you have the following
