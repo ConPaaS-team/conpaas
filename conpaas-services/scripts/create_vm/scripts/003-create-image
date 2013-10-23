@@ -49,7 +49,7 @@ do
 done
 
 cecho "Creating empty disk image at" $FILENAME
-dd if=/dev/zero of=$FILENAME bs=1M count=$FILESIZE
+dd if=/dev/zero of=$FILENAME bs=1M count=1 seek=$FILESIZE
 
 cecho "Writing partition table"
 parted -s $FILENAME mklabel msdos

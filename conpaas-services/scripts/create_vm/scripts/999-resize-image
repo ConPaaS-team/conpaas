@@ -72,7 +72,7 @@ rmdir $SRC_DIR
 
 
 # Create new image
-dd if=/dev/zero of=$DST_IMG bs=1M count=$DST_SIZE
+dd if=/dev/zero of=$DST_IMG bs=1M count=1 seek=$DST_SIZE
 
 PART_OFFSET_IN_BYTES=`parted -s $SRC_IMG unit B print | awk \
 	'/Number.*Start.*End/ { getline; print $2 }' | tr -d 'B'`
