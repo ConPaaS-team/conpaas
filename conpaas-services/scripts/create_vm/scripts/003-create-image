@@ -183,7 +183,7 @@ EOF
 fi
 
 cecho "Running grub-install"
-grub-install --no-floppy --grub-mkdevicemap=$ROOT_DIR/boot/grub/device.map --root-directory=$ROOT_DIR $LOOP_DEV
+grub-install --no-floppy --recheck --root-directory=$ROOT_DIR --modules=part_msdos  $LOOP_DEV
 
 # disable auto start after package install
 cat <<EOF > $ROOT_DIR/usr/sbin/policy-rc.d

@@ -133,7 +133,7 @@ cat <<DEVICEMAP > $DST_DIR/boot/grub/device.map
 (hd0,1) $DST_LOOP_P
 DEVICEMAP
 
-grub-install --no-floppy --grub-mkdevicemap=$DST_DIR/boot/grub/device.map --root-directory=$DST_DIR $DST_LOOP
+grub-install --no-floppy --recheck --root-directory=$DST_DIR --modules=part_msdos  $DST_LOOP
 
 cecho "Clean."
 umount $SRC_DIR
