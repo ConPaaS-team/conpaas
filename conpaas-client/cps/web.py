@@ -117,9 +117,6 @@ class WebClient(BaseClient):
         if command in ( 'enable_code', 'download_code' ):
             try:
                 code_version = argv[3]
-                if not code_version.startswith('code-'):
-                    print "E: Please provide a valid version id"
-                    raise IndexError()
             except IndexError:
                 self.usage(argv[0])
                 sys.exit(0)
