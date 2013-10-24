@@ -10,11 +10,11 @@ cat <<EOF>~git/code/hooks/post-update
 #!/bin/sh
 export PYTHONPATH=$CPS_HOME/src/:$CPS_HOME/contrib/ 
 export CONPAAS_CERTS_DIR=$CERT_DIR 
-python $CPS_HOME/bin/cpsclient.web http://127.0.0.1 git_push_hook
+python $CPS_HOME/scripts/manager/notify_git_push.py
 EOF
 
 # Make it executable
 chmod +x ~git/code/hooks/post-update
 
-# Allow $ROOT_DIR traversal: cpsclient.web has to be accessed by the git user
+# Allow $ROOT_DIR traversal: notify_git_push.py has to be accessed by the git user
 chmod o+x $ROOT_DIR
