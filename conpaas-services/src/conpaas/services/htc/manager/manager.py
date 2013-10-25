@@ -88,7 +88,7 @@ class HTCManager(BaseManager):
     @expose('POST')
     def startup(self, kwargs):
         self.logger.info("HTC Manager starting up")
-        self.logger.info(str(kwargs))
+        self.logger.info("... with kwargs = " + str(kwargs))
         if self.state != self.S_INIT and self.state != self.S_STOPPED:
             vals = { 'curstate': self.state, 'action': 'startup' }
             return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
@@ -99,9 +99,21 @@ class HTCManager(BaseManager):
                 return HttpErrorResponse(
                     "A cloud named '%s' could not be found" % kwargs['cloud'])        
         #self.logger.info('Get service TaskFarm')
+        if 'mode' not in kwargs and 'type' not in kwargs:
+            return HttpErrorResponse("mode and type not defined")
+        if 'mode' not in kwargs:
+            return HttpErrorResponse("mode not defined")
+        if 'type' not in kwargs:
+            return HttpErrorResponse("type not defined")
         try:
             self.service = TaskFarm(kwargs['mode'], kwargs['type'])
         except (UnknownHtcTypeError, UnimplementedHtcCombinationError) as e:
+            print e.__str__()
+            sys.stdout.flush()
+            sys.stderr.flush()
+            return HttpErrorResponse(e.__str__())
+            return HttpErrorResponse({ 'error': e.__str__() })
+        except Exception as e:
             return HttpErrorResponse({ 'error': e.__str__() })
         #self.logger.info('Got service TaskFarm, delete some kwargs entries')
         self.state = self.S_PROLOGUE
@@ -493,6 +505,12 @@ class HTCManager(BaseManager):
             return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
         
         print str(self.service.registered_workers)
+        htc_agent = [ 
+            node.id for node in self.nodes# if self.__is_hub(node) 
+        ]
+        return HttpJsonResponse({
+            'agent': htc_agent
+        })
 
         return HttpJsonResponse(self.service.s_registered_workers)
         

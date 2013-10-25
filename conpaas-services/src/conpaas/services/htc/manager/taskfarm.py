@@ -83,7 +83,7 @@ class TaskFarm:
         self.registered_workers = {}
         self.s_registered_workers = {}
         self.mode = mode
-        if tf_type not in ('batch', 'online', 'workflow') and mode not in ('demo', 'real'):
+        if tf_type not in ('batch', 'online', 'workflow') or mode not in ('demo', 'real'):
             raise UnknownHtcTypeError(tf_type, mode)
         if tf_type in ('batch', 'workflow') or mode == 'demo':
             raise UnimplementedHtcCombinationError(tf_type, mode)
@@ -193,6 +193,7 @@ class TaskFarm:
         # third: submit all tasks in separate commands
         self.tf_job_dict[jb_key]['SamplingReady'] = False
         # TODO  to use condor more efficiently, create just one ClassAd file
+        sys.stdout.flush()
         for i in range(0,size):
             #function that submits on each worker type
             print >> sys.stderr, 'sample_job sampling ', job_id, i, sample_list[i]
