@@ -33,7 +33,7 @@ class HTCService extends Service {
 	}
 
 	public function getInstanceRoles() {
-		return array('hub', 'node');
+		return array('agent');
 	}
 
 	public function fetchStateLog() {
@@ -46,7 +46,7 @@ class HTCService extends Service {
 	}
 
 	public function getMasterAddr() {
-		$master_node = $this->getNodeInfo($this->nodesLists['hub'][0]);
+		$master_node = $this->getNodeInfo($this->nodesLists['agent'][0]);
 		return $master_node['ip'];
 	}
 
