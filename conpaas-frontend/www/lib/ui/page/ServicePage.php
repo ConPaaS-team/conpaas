@@ -81,6 +81,12 @@ class ServicePage extends Page {
         $cloudChoice = Tag();
         $cloudChoice->setHTML($radios);
 
+                $serviceSelector = $this->renderServiceSelection();
+                if ($serviceSelector != '') {
+                        $serviceSelection = Tag();
+                        $serviceSelection->setHTML($serviceSelector);
+                }
+
 		switch ($this->service->getState()) {
 			case Service::STATE_INIT:
 				$stopButton->setVisible(false);
@@ -88,6 +94,9 @@ class ServicePage extends Page {
 			case Service::STATE_RUNNING:
 				$startButton->setVisible(false);
 				$terminateButton->setVisible(false);
+                                if ($serviceSelector != '') {
+                                        $serviceSelection->setVisible(false);
+                                }
 				break;
 			case Service::STATE_STOPPED:
 				$stopButton->setVisible(false);
@@ -99,7 +108,7 @@ class ServicePage extends Page {
 			$stopButton->setVisible(false);
 		}
 
-		return $startButton.' '.$stopButton.' '.$terminateButton.' '.$cloudChoice;
+		return $startButton.' '.$stopButton.' '.$terminateButton.' '.$cloudChoice.$serviceSelection;
 	}
 
 	public function renderStateClass($state) {
@@ -255,9 +264,17 @@ class ServicePage extends Page {
 	  	.'</div>';
 	}
 
+        protected function renderServiceSelection() {
+                return '';
+        }
+
 	protected function renderInstanceActions() {
 		return '';
 	}
+
+        protected function renderIncompleteGUI() {
+                return '';
+        }
 
 	private function renderInstanceActionsSection() {
 		if (!$this->service->isRunning()) {
@@ -307,6 +324,7 @@ class ServicePage extends Page {
 			'<div class="form-section">'
 				.$this->renderInstances()
 				.$this->renderInstanceActionsSection()
+                                .$this->renderIncompleteGUI()
 			.'</div>';
 	}
 }
