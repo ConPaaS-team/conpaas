@@ -23,7 +23,7 @@ class Tag {
         return $this;
     }
 
-    public function setVisible($bool) {
+    public function setVisible($visible) {
         $this->visible = $visible ? '' : ' invisible';
     }
 
