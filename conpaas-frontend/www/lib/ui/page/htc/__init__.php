@@ -22,18 +22,60 @@ class HTCPage extends ServicePage {
 
         if ($this->service->isRunning()) {
             $console_url = $this->service->getAccessLocation();
-            $links .= ' &middot; ' .LinkUI('hub', $console_url)->setExternal(true);
+            $links .= ' &middot; ' .LinkUI('agent', $console_url)->setExternal(true);
         }
 
-        return '<div class="rightmenu">'.$links.'</div>';
+        return "\n".'<div class="rightmenu">'.$links.'</div>';
     }
 
     protected function renderInstanceActions() {
-        return EditableTag()->setColor('purple')->setID('node')->setValue('0')->setText('HTC Nodes');
+        return EditableTag()->setColor('purple')->setID('node')->setValue('0')->setText('HTC Agents');
     }
 
     public function renderContent() {
         return $this->renderInstancesSection();
+    }
+
+    protected function renderIncompleteGUI() {
+        return "\n".'<div class="info">This GUI is under construction. In the mean time please use the CLI for features missing in this GUI.</div>';
+    }
+
+    protected function renderServiceSelection() {
+        $_modes = array( "demo", "real" );
+        $radios = '';
+        foreach($_modes as $_mode){
+            $radio = Radio($_mode);
+            $radio->setTitle("available_modes");
+
+            if ($_mode === 'demo') {
+                #$radio->setDefault();
+                $radios = "\n".$radio;
+            } else {
+                $radios = $radios.'<br>'."\n".$radio;
+            }
+        }
+        $_modeChoice = Tag();
+        $_modeChoice->setHTML($radios);
+
+        $_types = array( "batch", "online", "workflow";
+        $radios = '';
+        foreach($_types as $_type){
+            $radio = Radio($_type);
+            $radio->setTitle("available_types");
+
+            if ($_type === 'batch') {
+                #$radio->setDefault();
+                $radios = "\n".$radio;
+            } else {
+                $radios = $radios.'<br>'."\n".$radio;
+            }
+        }
+        $_typeChoice = Tag();
+        $_typeChoice->setHTML($radios);
+
+
+
+        return $_modeChoice . ' ' . $_typeChoice;
     }
 }
 ?>
