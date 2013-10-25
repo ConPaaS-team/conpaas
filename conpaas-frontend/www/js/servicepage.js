@@ -95,7 +95,10 @@ conpaas.ui = (function (this_module) {
     start: function (onSuccess, onError) {
         this.server.req('ajax/requestStartup.php',
                 {sid: this.service.sid,
-                 cloud: $('input[name=available_clouds]:checked').val()},
+                 cloud: $('input[name=available_clouds]:checked').val(),
+                 mode: $('input[name=available_modes]:checked').val(),
+                 type: $('input[name=available_types]:checked').val()
+                 },
                 'post', onSuccess, onError);
     },
     stop: function (onSuccess, onError) {
