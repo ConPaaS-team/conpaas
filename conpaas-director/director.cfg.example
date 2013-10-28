@@ -96,9 +96,9 @@ CERT_DIR = /etc/cpsdirector/certs
 #
 # ConPaaS official AMI ids are: 
 #
-# - ami-8e33acbe United States West (Oregon)
-# - ami-dfb6e3b6 United States East (Northern Virginia)
-# - ami-54ec0b23 Europe West (Ireland)
+# - ami-f4c75fc4 United States West (Oregon)
+# - ami-c3045aaa United States East (Northern Virginia)
+# - ami-b79271c0 Europe West (Ireland)
 
 # IMAGE_ID = ami-8e33acbe
 
