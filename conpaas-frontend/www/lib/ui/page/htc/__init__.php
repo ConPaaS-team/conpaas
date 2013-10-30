@@ -57,7 +57,7 @@ class HTCPage extends ServicePage {
         $_modeChoice = Tag();
         $_modeChoice->setHTML($radios);
 
-        $_types = array( "batch", "online", "workflow";
+        $_types = array( "batch", "online", "workflow" );
         $radios = '';
         foreach($_types as $_type){
             $radio = Radio($_type);
