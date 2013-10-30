@@ -81,6 +81,7 @@ class ServicePage extends Page {
         $cloudChoice = Tag();
         $cloudChoice->setHTML($radios);
 
+                $serviceSelection = '';
                 $serviceSelector = $this->renderServiceSelection();
                 if ($serviceSelector != '') {
                         $serviceSelection = Tag();
