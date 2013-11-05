@@ -4,4 +4,7 @@ include director.wsgi
 include ConPaaS.tar.gz
 include ConPaaS.pdf
 include install.sh
+include Makefile
 recursive-include conpaas *
+recursive-exclude conpaas *~
+
