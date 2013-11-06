@@ -50,7 +50,7 @@ losetup $SRC_LOOP $SRC_IMG
 
 PARTITION=`kpartx -l $SRC_LOOP | awk '{ print $1 }'`
 PARTITION=/dev/mapper/$PARTITION
-kpartx -a $SRC_LOOP
+kpartx -as $SRC_LOOP
 
 SRC_DIR=`mktemp -d`
 mount -o loop $PARTITION $SRC_DIR
@@ -64,7 +64,7 @@ DST_SIZE=`python -c "print ($USED_SPACE + $FS_SPACE + $FREE_SPACE)"`
 
 umount $SRC_DIR
 sleep 1s
-kpartx -d $SRC_LOOP
+kpartx -ds $SRC_LOOP
 sleep 1s
 losetup -d $SRC_LOOP
 sleep 1s
@@ -98,7 +98,7 @@ losetup $DST_LOOP $DST_IMG
 
 PARTITION=`kpartx -l $DST_LOOP | awk '{ print $1 }'`
 PARTITION=/dev/mapper/$PARTITION
-kpartx -a $DST_LOOP
+kpartx -as $DST_LOOP
 DST_LOOP_P=`losetup -f`
 
 cecho "Creating ext3 filesystem."
@@ -116,7 +116,7 @@ losetup $SRC_LOOP $SRC_IMG
 
 PARTITION=`kpartx -l $SRC_LOOP | awk '{ print $1 }'`
 PARTITION=/dev/mapper/$PARTITION
-kpartx -a $SRC_LOOP
+kpartx -as $SRC_LOOP
 
 SRC_DIR=`mktemp -d`
 mount -o loop $PARTITION $SRC_DIR
@@ -138,7 +138,7 @@ grub-install --no-floppy --recheck --root-directory=$DST_DIR --modules=part_msdo
 cecho "Clean."
 umount $SRC_DIR
 sleep 1s
-kpartx -d $SRC_LOOP
+kpartx -ds $SRC_LOOP
 sleep 1s
 losetup -d $SRC_LOOP
 sleep 1s
@@ -146,7 +146,7 @@ rmdir $SRC_DIR
 
 umount $DST_DIR
 sleep 1s
-kpartx -d $DST_LOOP
+kpartx -ds $DST_LOOP
 sleep 1s
 losetup -d $DST_LOOP
 sleep 1s

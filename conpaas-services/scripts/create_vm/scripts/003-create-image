@@ -24,7 +24,7 @@ function cleanup() {
     sleep 1s
     losetup -d $LOOP_DEV_P
     sleep 1s
-    kpartx -d $LOOP_DEV
+    kpartx -ds $LOOP_DEV
     sleep 1s
     losetup -d $LOOP_DEV
     sleep 1s
@@ -69,7 +69,7 @@ losetup $LOOP_DEV $FILENAME
 dname=`kpartx -l $LOOP_DEV | awk '{print $1}'`
 PART_DEV=/dev/mapper/$dname
 cecho "Mapping partition to device"
-kpartx -a $LOOP_DEV
+kpartx -as $LOOP_DEV
 
 cecho "Creating ext3 filesystem"
 echo 'y' | mkfs.ext3 $PART_DEV
