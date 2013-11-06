@@ -57,7 +57,7 @@ parted -s $FILENAME mklabel msdos
 cecho "Creating primary partition"
 cyl_total=`parted -s $FILENAME unit s print | awk '{if (NF > 2 && $1 == "Disk") print $0}' | sed 's/Disk .* \([0-9]\+\)s/\1/'`
 cyl_partition=`expr $cyl_total - 2048`
-parted -s $FILENAME unit s mkpart primary 2048 $cyl_partition
+parted -s $FILENAME unit s mkpart primary ext3 2048 $cyl_partition
 
 cecho "Setting boot flag"
 parted -s $FILENAME set 1 boot on
