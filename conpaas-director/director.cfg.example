@@ -1,6 +1,7 @@
 [conpaas]
 # Path to ConPaaS conf dir
 CONF_DIR = /etc/cpsdirector
+
 # Path to certificates
 CERT_DIR = /etc/cpsdirector/certs
 
@@ -53,19 +54,24 @@ CERT_DIR = /etc/cpsdirector/certs
 # USER should be set to your EC2 user name. Beware: this is not the
 # email address you normally use to login at the AWS management console. 
 # An EC2 user name is a long opaque string. It can be found at
-# https://portal.aws.amazon.com/gp/aws/securityCredentials#access_credentials
-# under the name "Access key ID"
+# https://console.aws.amazon.com/iam/home?#users
+# under the name "Access key ID" in the 3security Credentials" tab 
+# at the bottom of the page after you select one of the users in the
+# list. If the list is empty, then you must create a new one.
 
 # USER = 
 
 # PASSWORD should be set to the corresponding password.
-# Again, this is a long opaque string. You can find it next to your
-# Access Key ID by clicking "Show Secret Access Key".
+# Again, this is a long opaque string (longer than the USER). You should
+# normally have saved this information when you created a user. If you
+# have lost this information then the only thing you can do is create a 
+# new access key for this user (by clicking "Manage Access Keys").
 
 # PASSWORD = 
 
 # This variable contains the created security group from the Web hosting
-# service. Your security groups can be found under "NETWORK & SECURITY" on
+# service. Your security groups can be found under "NETWORK & SECURITY" 
+# in the left-side column of
 # https://console.aws.amazon.com/ec2/.
 # Please make sure that the security group you specify here exists in the
 # region you want to use.
@@ -83,11 +89,11 @@ CERT_DIR = /etc/cpsdirector/certs
 # 
 # Valid values are:
 #
-# - ec2.us-west-2.amazonaws.com # United States West (Oregon)
 # - ec2.us-east-1.amazonaws.com # United States East (Northern Virginia) 
+# - ec2.us-west-2.amazonaws.com # United States West (Oregon)
 # - ec2.eu-west-1.amazonaws.com # Europe West (Ireland)
 
-# REGION = ec2.us-west-2.amazonaws.com
+# REGION = ec2.us-east-1.amazonaws.com
 
 # This variable contains the identifier of the ConPaaS Amazon Machine Image.
 # 
@@ -96,11 +102,11 @@ CERT_DIR = /etc/cpsdirector/certs
 #
 # ConPaaS official AMI ids are: 
 #
-# - ami-f4c75fc4 United States West (Oregon)
 # - ami-c3045aaa United States East (Northern Virginia)
+# - ami-f4c75fc4 United States West (Oregon)
 # - ami-b79271c0 Europe West (Ireland)
 
-# IMAGE_ID = ami-8e33acbe
+# IMAGE_ID = ami-c3045aaa
 
 # This variable contains the type of EC2 instances to use. A good value to use
 # inexpensive, low-performance instances is "t1.micro".
