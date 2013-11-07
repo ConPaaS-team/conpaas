@@ -19,4 +19,4 @@ setup(name='cpsclient',
       packages=['cps',],
       scripts=['cpsclient.py'],
       install_requires=['cpslib'],
-      dependency_links=[ 'http://www.linux.it/~ema/conpaas/cpslib-%s.tar.gz' % CPSVERSION, ],)
+      dependency_links=[ 'http://www.conpaas.eu/dl/cpslib-%s.tar.gz' % CPSVERSION, ],)

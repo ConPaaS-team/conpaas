@@ -35,7 +35,7 @@ setup(name='cpsdirector',
       data_files=[ ( CONFDIR, [ 'director.cfg.example', 'director.cfg.multicloud-example', 'ConPaaS.tar.gz' ] ), ],
       scripts=[ 'cpsadduser.py', 'director.wsgi', 'cpsconf.py', 'cpscheck.py' ],
       install_requires=[ 'cpslib', 'flask-sqlalchemy', 'apache-libcloud', 'netaddr' ],
-      dependency_links=[ 'http://www.linux.it/~ema/conpaas/cpslib-%s.tar.gz' % CPSVERSION, ],)
+      dependency_links=[ 'http://www.conpaas.eu/dl/cpslib-%s.tar.gz' % CPSVERSION, ],)
 
 if __name__ == "__main__" and sys.argv[1] == "install":
     # overwrite /etc/cpsdirector/{config,scripts}
