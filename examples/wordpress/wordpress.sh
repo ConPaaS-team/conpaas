@@ -1,6 +1,6 @@
 #!/bin/bash
 
-TARBALL="http://carambolier.irisa.fr/wordpress/wp-content.tar.gz"
+TARBALL="http://online.conpaas.eu/wordpress/wp-content.tar.gz"
 
 [ -d "/var/tmp/data" ] || mkdir /var/tmp/data
 chown www-data: /var/tmp/data

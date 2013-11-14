@@ -21,7 +21,7 @@ $(document).ready(function() {
 				$('#file').val('');
 				return;
 			}
-			alert("Manifest uploaded correctly, now it can take a while to startup everything")
+			alert("The manifest was correctly uploaded. Now it can take a while to start everything.")
 			window.location = 'index.php';
 		},
 		error: function(response) {
@@ -46,7 +46,7 @@ $(document).ready(function() {
 	$('#deploy').click(function() {
 		type = $('input[name=type]:checked').val();
 		if (manifest[type] == '') {
-			alert("There is no manifest for such an application");
+			alert("There is no manifest for this application.");
 			return;
 		}
 
@@ -61,7 +61,7 @@ $(document).ready(function() {
 				$('#file').val('');
 				return;
 			}
-			alert("Manifest uploaded correctly, now it can take a while to startup everything")
+			alert("The manifest was correctly uploaded. Now it can take a while to start everything.")
 			window.location = 'index.php';
 		});
 
