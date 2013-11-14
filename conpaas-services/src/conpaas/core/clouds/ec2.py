@@ -95,7 +95,6 @@ class EC2Cloud(Cloud):
             'size': size,
             'image': img,
             'name': name,
-            'location': self.driver.list_locations()[0],
             'ex_mincount': str(count),
             'ex_maxcount': str(count),
             'ex_securitygroup': self.sg,
