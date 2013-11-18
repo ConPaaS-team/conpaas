@@ -17,6 +17,9 @@ if __name__ == "__main__":
     credit = 50
     try:
         args = sys.argv[1:]
+        if '-h' in args or '--help' in args:
+            print "Usage: %s email username password [credit=%s]" % (sys.argv[0], credit)
+            exit(0)
         if len(args) == 3:
             email, username, password = args
         else:
