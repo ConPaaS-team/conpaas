@@ -168,6 +168,7 @@ CERT_DIR = /etc/cpsdirector/certs
 # The URL of the OCCI interface at OpenNebula. Note: ConPaaS currently supports
 # only the default OCCI implementation that comes together with OpenNebula. It
 # does not yet support the full OCCI-0.2 and later versions.
+# Example:  URL = http://opennebula.frontend.com:4567
 
 # URL =
 
