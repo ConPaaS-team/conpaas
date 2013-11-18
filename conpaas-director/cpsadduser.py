@@ -14,8 +14,13 @@ from conpaas.core.misc import rlinput
 
 if __name__ == "__main__":
     db.create_all()
+    credit = 50
     try:
-        email, username, password = sys.argv[1:]
+        args = sys.argv[1:]
+        if len(args) == 3:
+            email, username, password = args
+        else:
+            email, username, password, credit = args
     except ValueError:
         print "\nAdd new ConPaaS user"
         email = rlinput('E-mail: ')
@@ -30,7 +35,7 @@ if __name__ == "__main__":
             password, p2 = pprompt()
 
     try:
-        create_user(username, "", "", email, "", password, 50)
+        create_user(username, "", "", email, "", password, credit)
     except sqlalchemy.exc.IntegrityError:
         print "User %s already present" % username
 
