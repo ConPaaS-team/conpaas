@@ -325,6 +325,51 @@ let PHP display errors.
 
     $ cpsclient.py toggle_debug serviceid
 
+Adding and removing nodes
+-------------------------
+
+Like all ConPaaS service, the PHP service is elastic:
+service owner can add or remove nodes.
+The PHP service (like the Java service) belongs to a class of web services
+that deals with three types of nodes:
+
+proxy
+  a node that is used as an entry point for the web application and as a load balancer
+web
+  a node that deals with static pages only
+backend
+  a node that deals with PHP requests only
+
+When a proxy node receives a request, it redirects it to 
+a web node if it is a request for a static page,
+or a backend node if it is a request for a PHP page.
+
+If your PHP service has a slow response time, increase the number of backend nodes.
+
+On command line, you can use ``cpsclient.py`` to add nodes.
+The ``add_nodes`` sub-command takes 4 arguments in that order: the PHP service identifier,
+the number of backend nodes, the number of web nodes and the number of proxy nodes to add.
+It also take a 5th optional argument that specify in which cloud nodes will be created.
+For example, adding two backend nodes to PHP service id 1::
+  cpsclient.py add_nodes 1 2 0 0
+Adding one backend node and one web node in a cloud provider called ``mycloud``:
+::
+  cpsclient.py add_nodes 1 1 1 0 mycloud
+
+You can also remove nodes using ``cpsclient.py``.
+For example, the following command will remove one backend node::
+  cpsclient.py remove_nodes 1 1 0 0
+
+
+.. warning::
+  Initially, an instance of each node is running on one single VM.
+  Then, when adding a backend node, ConPaaS will move the backend
+  node running on the first VM to a new VM.
+  So, actually, it will *not* add a new backend node the first time.
+  Requesting for one more backend node will create a new VM that will
+  run an additional backend.
+
+
 The Java Web hosting service
 ============================
 
