@@ -33,9 +33,11 @@ class BaseClient(object):
             pass
 
     def write_conf_to_file(self, key, value):
+        oldmask = os.umask(077)
         targetfile = open(os.path.join(self.confdir, key), 'w')
         targetfile.write(value)
         targetfile.close()
+        os.umask(oldmask)
 
     def read_conf_value(self, key):
         return open(os.path.join(self.confdir, key)).read()
@@ -243,9 +245,11 @@ class BaseClient(object):
     def getcerts(self):
         res = self.callapi("getcerts", True, {}, use_certs=False)
 
+        oldmask = os.umask(077)
         zipdata = zipfile.ZipFile(StringIO.StringIO(res))
         zipdata.extractall(path=self.confdir)
         https.client.conpaas_init_ssl_ctx(self.confdir, 'user')
+        os.umask(oldmask)
 
         #for name in zipdata.namelist():
         #    print os.path.join(self.confdir, name)
