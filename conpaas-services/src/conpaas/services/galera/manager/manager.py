@@ -193,34 +193,34 @@ class GaleraManager(BaseManager):
             return HttpErrorResponse('ERROR: Expected an integer value for "count"')
         self.state = self.S_ADAPTING
         if 'slaves' in kwargs:
-			count = int(kwargs.pop('slaves'))			
-			Thread(target=self._do_add_nodes, args=['slaves',count, kwargs['cloud']]).start()
-		if 'glb_nodes' in kwargs:
-			count = int(kwargs.pop('glb_nodes'))        
-			Thread(target=self._do_add_nodes, args=['glbs',count, kwargs['cloud']]).start()
+            count = int(kwargs.pop('slaves'))
+            Thread(target=self._do_add_nodes, args=['slaves',count, kwargs['cloud']]).start()
+        if 'glb_nodes' in kwargs:
+            count = int(kwargs.pop('glb_nodes'))
+            Thread(target=self._do_add_nodes, args=['glbs',count, kwargs['cloud']]).start()
         return HttpJsonResponse()
 
     # TODO: also specify the master for which to add slaves
     def _do_add_nodes(self, node_type, count, cloud):
         # Get the master
         masters = self.config.getMySQLmasters()
-        startCloud = self._init_cloud(cloud)
+        start_cloud = self._init_cloud(cloud)
         # Configure the nodes as slaves
         try:
             self.controller.add_context_replacement(
                                         dict(mysql_username='mysqldb',
                                              mysql_password=self.root_pass),
-                                        cloud=startCloud)
+                                        cloud=start_cloud)
             node_instances = self.controller.create_nodes(count,
                                            client.check_agent_process,
-                                           self.config.AGENT_PORT, startCloud)
+                                           self.config.AGENT_PORT, start_cloud)
             for master in masters:
-				if(node_type = 'slaves'):
-					self._start_slave(node_instances, master)
-					self.config.addMySQLServiceNodes(nodes=node_instances, isSlave=True)
-				else if(node_type = 'glbs')::
-					self._start_glb_node(node_instances, master)
-					self.config.addGLBServiceNodes(nodes=node_instances)
+                if node_type == 'slaves':
+                    self._start_slave(node_instances, master)
+                    self.config.addMySQLServiceNodes(nodes=node_instances, isSlave=True)
+                elif node_type == 'glbs':
+                    self._start_glb_node(node_instances, master)
+                    self.config.addGLBServiceNodes(nodes=node_instances)
         except Exception, ex:
             # rollback
             self.controller.delete_nodes(node_instances)

@@ -86,15 +86,14 @@ class GLBServiceNode(ServiceNode):
 class Configuration(object):
 
     MYSQL_PORT = 3306
-	GLB_PORT = 3307
-	
+    GLB_PORT = 3307
+
     # The port on which the agent listents
     AGENT_PORT = 5555
-    
 
-	'''Galera Load Balancer Nodes'''
-	glb_service_nodes = {}
-	serviceNodes = {}
+    '''Galera Load Balancer Nodes'''
+    glb_service_nodes = {}
+    serviceNodes = {}
 
     '''Representation of the deployment configuration'''
     def __init__(self, configuration):

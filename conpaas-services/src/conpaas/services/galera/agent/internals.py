@@ -19,19 +19,19 @@ from conpaas.core.expose import expose
 class GaleraAgent(BaseAgent):
 
     def __init__(self, config_parser):
-      BaseAgent.__init__(self, config_parser)
-      self.config_parser = config_parser
+        BaseAgent.__init__(self, config_parser)
+        self.config_parser = config_parser
 
-      self.my_ip = config_parser.get('agent', 'MY_IP')
-      self.VAR_TMP = config_parser.get('agent', 'VAR_TMP')
-      self.VAR_CACHE = config_parser.get('agent', 'VAR_CACHE')
-      self.VAR_RUN = config_parser.get('agent', 'VAR_RUN')
+        self.my_ip = config_parser.get('agent', 'MY_IP')
+        self.VAR_TMP = config_parser.get('agent', 'VAR_TMP')
+        self.VAR_CACHE = config_parser.get('agent', 'VAR_CACHE')
+        self.VAR_RUN = config_parser.get('agent', 'VAR_RUN')
 
-      self.master_file = join(self.VAR_TMP, 'master.pickle')
-      self.slave_file = join(self.VAR_TMP, 'slave.pickle')
+        self.master_file = join(self.VAR_TMP, 'master.pickle')
+        self.slave_file = join(self.VAR_TMP, 'slave.pickle')
      
-      self.master_lock = Lock()
-      self.slave_lock = Lock()
+        self.master_lock = Lock()
+        self.slave_lock = Lock()
      
     def _get(self, get_params, class_file, pClass):
         if not exists(class_file):
@@ -81,7 +81,7 @@ class GaleraAgent(BaseAgent):
             else:
                 self.logger.debug('Created class file')
                 return HttpJsonResponse()
-	    
+
     def _stop(self, get_params, class_file, pClass):
         if not exists(class_file):
             return HttpErrorResponse(AgentException(
@@ -127,13 +127,13 @@ class GaleraAgent(BaseAgent):
 
         return ret
 
-	def _glb_get_params(self, kwargs):
+    def _glb_get_params(self, kwargs):
         ret = {}
         ret['slaves'] = {}
         ret['galera_nodes'] = {}
         if 'slaves' not in kwargs:
             raise AgentException(AgentException.E_ARGS_MISSING, 'slaves')
-		if 'galera_nodes' not in kwargs:
+        if 'galera_nodes' not in kwargs:
             raise AgentException(AgentException.E_ARGS_MISSING, 'galera_nodes')
         ret['slaves'] = kwargs.pop('slaves')
         ret['galera_nodes'] = kwargs.pop('galera_nodes')
@@ -152,7 +152,7 @@ class GaleraAgent(BaseAgent):
             fd.close()
         except Exception as e:
             ex = AgentException(AgentException.E_CONFIG_READ_FAILED, 
-			    role.MySQLMaster.__name__, self.master_file, detail=e)
+            role.MySQLMaster.__name__, self.master_file, detail=e)
             self.logger.exception(ex.message)
             raise
 
@@ -167,7 +167,7 @@ class GaleraAgent(BaseAgent):
             fd.close()
         except Exception as e:
             ex = AgentException(AgentException.E_CONFIG_READ_FAILED, 
-			    role.MySQLMaster.__name__, self.master_file, detail=e)
+    		    role.MySQLMaster.__name__, self.master_file, detail=e)
             self.logger.exception(ex.message)
             raise
         
@@ -237,7 +237,7 @@ class GaleraAgent(BaseAgent):
         except AgentException as e:
             return HttpErrorResponse(e.message)
             
-	@expose('POST')
+    @expose('POST')
     def create_glb_node(self, kwargs):
         self.logger.debug('master in create_glb_node ')
         try: 
@@ -268,7 +268,7 @@ class GaleraAgent(BaseAgent):
         self.logger.debug('slave in setup_glb_node ') 
         if 'master_host' not in kwargs:
             raise AgentException(AgentException.E_ARGS_MISSING, 'master_host')
-		if 'galera_nodes' not in kwargs:
+        if 'galera_nodes' not in kwargs:
             raise AgentException(AgentException.E_ARGS_MISSING, 'galera_nodes')
         params = {"master_host" : kwargs["master_host"], "config":self.config_parser, 'galera_nodes': kwargs["galera_nodes"]}
         self.logger.debug(params)
