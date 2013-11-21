@@ -71,6 +71,9 @@ class MySQLServer(object):
             self.wsrep_password = config.get("Galera_configuration","wsrep_sst_password")
             self.wsrep_provider = config.get("Galera_configuration", "wsrep_provider")
             self.wsrep_sst_method = config.get("Galera_configuration","wsrep_sst_method")
+            
+            self.glbd_location = config.get("Galera_configuration","glbd_location")
+            
             self.wsrepconfig = ConfigParser.ConfigParser()
             self.wsrepconfig.optionxform=str # to preserve case in option names
             self.wsrepconfig.read(self.wsrep_filepath)
@@ -314,14 +317,90 @@ class MySQLSlave(MySQLServer):
                 'port': self.port 
                }
 
+class GLBNode(MySQLServer):
+		
+    '''
+    galera_nodes should be in this format:
+    [{'host': '10.1.0.33', 'port': '3307'},
+	{'host': '10.1.0.33', 'port': '3301'},
+	{'host': '10.1.0.34', 'port': '3302'}]
+    '''
+	galera_nodes = {} 
+	
+    ''' Class describing a Galera Load Balancer Node. 
+    '''
+    def __init__(self, config = None, master_host = None, galera_nodes = None):
+        MySQLServer.__init__(self, config)
+        self.galera_nodes = galera_nodes
+        
+    def status(self):
+        return {'state': self.state,
+                'port': self.port 
+               }
+
+	def start(self, galera_hosts = []):
+        self.state = S_STARTING
+        devnull_fd = open(devnull, 'w')
+        command = [self.glbd_location, "-b", "0.0.0.0:3307", ]
+        for host in galera_hosts:
+			command.append(host)
+        proc = Popen(command, stdout=devnull_fd, stderr=devnull_fd, close_fds=True)
+        proc.wait()
+        sql_logger.debug('GLB node started')
+        self.state = S_RUNNING
+
+    def stop(self):
+        if self.state == S_RUNNING:
+            self.state = S_STOPPING
+            if exists(self.pid_file):
+                try:
+                    pid = int(open(self.pid_file, 'r').read().strip())
+                except IOError as e:
+                    sql_logger.exception('Failed to open PID file "%s"' % (self.pid_file))
+                    raise e
+                except (ValueError, TypeError) as e:
+                    sql_logger.exception('PID in "%s" is invalid' % (self.pid_file))
+                    raise e
+	    
+                try:
+                    kill(pid, self.stop_sig)
+                    self.state = S_STOPPED
+                    sql_logger.info('glb node stopped')
+                except (IOError, OSError) as e:
+                    sql_logger.exception('Failed to kill glb node PID=%d' % (pid))
+                    raise e
+            else:
+                sql_logger.critical('Could not find PID file %s to kill glb node' % (self.pid_file))
+                raise IOError('Could not find PID file %s to kill glb node' % (self.pid_file))
+        else:
+            sql_logger.warning('Request to kill glb node while it is not running')
+
+    def restart(self):
+        sql_logger.debug("Entering glb node restart")
+        try:
+            devnull_fd = open(devnull, 'w')
+            sql_logger.debug('Restarting with arguments:' + self.config.path_mysql_ssr + " restart")
+            proc = Popen([self.path_mysql_ssr, "restart"] , stdout=devnull_fd, stderr=devnull_fd, close_fds=True)
+            sql_logger.debug("Restarting glb node server")
+            proc.wait()                            
+            if exists(self.pid_file) == False:
+                sql_logger.critical('Failed to restart glb node server.)')
+                raise OSError('Failed to restart glb node server.')
+            self.state = S_RUNNING
+            sql_logger.info('MySQL restarted')          
+        except IOError as e:
+            sql_logger.exception('Failed to open PID file "%s"' % (self._current_pid_file(increment=-1)))
+            self.state = S_STOPPED
+            raise e
+        except (ValueError, TypeError) as e:
+            sql_logger.exception('PID in "%s" is invalid' % (self._current_pid_file(increment=-1)))
+            self.state = S_STOPPED
+            raise e    
+        sql_logger.debug("Leaving glb node restart")
+
 if __name__ == "__main__":
     config_file = "/home/miha/Desktop/agent.cfg"
     #config_file = "/home/miha/Desktop/manager.cfg"
     config = ConfigParser.ConfigParser()
     config.readfp(open(config_file))
     master = MySQLMaster(config)
-    
-    
-    
-    
-    

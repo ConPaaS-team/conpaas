@@ -126,6 +126,20 @@ class GaleraAgent(BaseAgent):
             raise AgentException(AgentException.E_ARGS_UNEXPECTED, kwargs.keys())
 
         return ret
+
+	def _glb_get_params(self, kwargs):
+        ret = {}
+        ret['slaves'] = {}
+        ret['galera_nodes'] = {}
+        if 'slaves' not in kwargs:
+            raise AgentException(AgentException.E_ARGS_MISSING, 'slaves')
+		if 'galera_nodes' not in kwargs:
+            raise AgentException(AgentException.E_ARGS_MISSING, 'galera_nodes')
+        ret['slaves'] = kwargs.pop('slaves')
+        ret['galera_nodes'] = kwargs.pop('galera_nodes')
+        if len(kwargs) != 0:
+            raise AgentException(AgentException.E_ARGS_UNEXPECTED, kwargs.keys())
+        return ret        
     
     def _set_password(self, username, password):
         if not exists(self.master_file):
@@ -222,6 +236,20 @@ class GaleraAgent(BaseAgent):
             return HttpJsonResponse()
         except AgentException as e:
             return HttpErrorResponse(e.message)
+            
+	@expose('POST')
+    def create_glb_node(self, kwargs):
+        self.logger.debug('master in create_glb_node ')
+        try: 
+            ret = self._glb_get_params(kwargs)
+            for server in ret['salves']:
+                # TODO: Why do I receive the slave_ip in unicode??  
+                from conpaas.services.galera.agent import client
+                client.setup_glb_node(str(slave['ip']), slave['port'], self.my_ip, ret['galera_nodes'])
+                self.logger.debug('Created setup_glb_node %s' % str(slave['ip']))
+            return HttpJsonResponse()
+        except AgentException as e:
+            return HttpErrorResponse(e.message)            
 
     @expose('UPLOAD')
     def setup_slave(self, kwargs):
@@ -234,4 +262,15 @@ class GaleraAgent(BaseAgent):
         with self.slave_lock:
             return self._create(params, self.slave_file, role.MySQLSlave)
 
-
+    @expose('POST')
+    def setup_glb_node(self, kwargs):
+        """Create a GLB node """
+        self.logger.debug('slave in setup_glb_node ') 
+        if 'master_host' not in kwargs:
+            raise AgentException(AgentException.E_ARGS_MISSING, 'master_host')
+		if 'galera_nodes' not in kwargs:
+            raise AgentException(AgentException.E_ARGS_MISSING, 'galera_nodes')
+        params = {"master_host" : kwargs["master_host"], "config":self.config_parser, 'galera_nodes': kwargs["galera_nodes"]}
+        self.logger.debug(params)
+        with self.slave_lock:
+            return self._create(params, self.slave_file, role.GLBNode)

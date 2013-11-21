@@ -72,6 +72,11 @@ def add_nodes(host, port, count):
     params = {'slaves': count}
     method = 'add_nodes'
     return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
+    
+def add_glb_nodes(host, port, count):
+    params = {'glb_nodes': count}
+    method = 'add_glb_nodes'
+    return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))    
 
 def get_log(host, port):
     method = 'getLog'
@@ -79,6 +84,12 @@ def get_log(host, port):
     
 def remove_nodes(host, port, serviceNodeId):
     method = 'remove_nodes'
+    params={}
+    params['serviceNodeId'] = serviceNodeId
+    return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
+
+def remove_glb_nodes(host, port, serviceNodeId):
+    method = 'remove_glb_nodes'
     params={}
     params['serviceNodeId'] = serviceNodeId
     return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
@@ -102,13 +113,20 @@ if __name__ == '__main__':
         if sys.argv[3] in ("add_nodes"):
             ret = add_nodes(host, port, sys.argv[4])
             print ret            
+		if sys.argv[3] in ("add_glb_nodes"):
+            ret = add_nodes(host, port, sys.argv[4])
+            print ret                        
         if sys.argv[3] in ("get_service_info"):
             ret = get_service_info(host, port)
             print ret            
         if sys.argv[3] in ("remove_nodes"):            
             id = sys.argv[4]
             ret = remove_nodes(host, port, id)
-            print ret            
+            print ret    
+		if sys.argv[3] in ("remove_glb_nodes"):            
+            id = sys.argv[4]
+            ret = remove_nodes(host, port, id)
+            print ret  
         if sys.argv[3] in ("list_nodes"):            
             ret = list_nodes(host, port)
             print ret

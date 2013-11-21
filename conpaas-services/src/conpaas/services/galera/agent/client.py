@@ -40,6 +40,11 @@ def create_slave(host, port, slaves):
     params = {'slaves': slaves}
     return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
 
+def create_glb_node(host, port, slaves, galera_nodes = None):
+    method = 'create_glb_node'
+    params = {'glb_nodes': slaves, 'galera_nodes' : galera_nodes}
+    return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
+
 def configure_user(host, port, username, password):
     method = 'configure_user'
     params = {'username': username,
@@ -83,5 +88,11 @@ def setup_slave(host, port, master_host):
         'master_host': master_host
     }
     return _check(https.client.https_post(host, port, '/', params))
-
-
+    
+def setup_glb_node(host, port, master_host, galera_nodes):
+    params = {
+        'method': 'setup_glb_node',
+        'master_host': master_host, 
+        'galera_nodes': galera_nodes
+    }
+    return _check(https.client.https_post(host, port, '/', params))

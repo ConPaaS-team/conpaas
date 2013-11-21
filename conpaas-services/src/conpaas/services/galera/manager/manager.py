@@ -104,6 +104,22 @@ class GaleraManager(BaseManager):
             self.logger.exception('Failed to start Galera Slave at node %s' % str(serviceNode))
             self.state = self.S_ERROR
             raise
+            
+	def _start_glb_node(self, nodes, master):
+        slaves = {}
+        for serviceNode in nodes:
+            slaves[str(self._get_server_id())] = {'ip':serviceNode.ip,
+                                                  'port':self.config.AGENT_PORT}
+        try:
+			galera_nodes = [ {"host":node.ip, "port":self.config.AGENT_PORT} for node in self.getMySQLServiceNodes()]
+			self.logger.debug('create_glb_node all galera nodes = %s' % str(galera_nodes))
+            self.logger.debug('create_glb_node for master.ip  = %s' % master)
+            client.create_glb_node(master.ip,
+                                self.config.AGENT_PORT, slaves, galera_nodes)
+        except client.AgentException:
+            self.logger.exception('Failed to start Galera GLB Node at node %s' % str(serviceNode))
+            self.state = self.S_ERROR
+            raise
 
     @expose('GET')
     def list_nodes(self, kwargs):
@@ -123,6 +139,7 @@ class GaleraManager(BaseManager):
 
         return HttpJsonResponse({
             'masters': [ node.id for node in self.config.getMySQLmasters() ],
+            'glb_nodes': [ node.id for node in self.config.get_glb_nodes() ],
             'slaves': [ node.id for node in self.config.getMySQLslaves() ]
             })
 
@@ -170,22 +187,25 @@ class GaleraManager(BaseManager):
 
         if self.state != self.S_RUNNING:
             return HttpErrorResponse('ERROR: Wrong state to add_nodes')
-        if not 'slaves' in kwargs:
+        if (not 'slaves' in kwargs) or (not 'glb_nodes' in kwargs):
             return HttpErrorResponse('ERROR: Required argument doesn\'t exist')
-        if not isinstance(kwargs['slaves'], int):
+        if (not isinstance(kwargs['slaves'], int)) or (not isinstance(kwargs['glb_nodes'], int)):
             return HttpErrorResponse('ERROR: Expected an integer value for "count"')
-        count = int(kwargs.pop('slaves'))
         self.state = self.S_ADAPTING
-        Thread(target=self._do_add_nodes, args=[count, kwargs['cloud']]).start()
+        if 'slaves' in kwargs:
+			count = int(kwargs.pop('slaves'))			
+			Thread(target=self._do_add_nodes, args=['slaves',count, kwargs['cloud']]).start()
+		if 'glb_nodes' in kwargs:
+			count = int(kwargs.pop('glb_nodes'))        
+			Thread(target=self._do_add_nodes, args=['glbs',count, kwargs['cloud']]).start()
         return HttpJsonResponse()
 
     # TODO: also specify the master for which to add slaves
-    def _do_add_nodes(self, count, cloud):
+    def _do_add_nodes(self, node_type, count, cloud):
         # Get the master
         masters = self.config.getMySQLmasters()
         startCloud = self._init_cloud(cloud)
         # Configure the nodes as slaves
-        #TODO: modify this when multiple masters
         try:
             self.controller.add_context_replacement(
                                         dict(mysql_username='mysqldb',
@@ -195,8 +215,12 @@ class GaleraManager(BaseManager):
                                            client.check_agent_process,
                                            self.config.AGENT_PORT, startCloud)
             for master in masters:
-                self._start_slave(node_instances, master)
-            self.config.addMySQLServiceNodes(nodes=node_instances, isSlave=True)
+				if(node_type = 'slaves'):
+					self._start_slave(node_instances, master)
+					self.config.addMySQLServiceNodes(nodes=node_instances, isSlave=True)
+				else if(node_type = 'glbs')::
+					self._start_glb_node(node_instances, master)
+					self.config.addGLBServiceNodes(nodes=node_instances)
         except Exception, ex:
             # rollback
             self.controller.delete_nodes(node_instances)

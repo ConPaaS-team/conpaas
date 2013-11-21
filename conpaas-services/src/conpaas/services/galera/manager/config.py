@@ -53,19 +53,55 @@ class SQLServiceNode(ServiceNode):
 
     def __repr__(self):
         return 'ServiceNode(id=%s, ip=%s, master=%s)' % (str(self.id), self.ip, str(self.isMaster))
+
+'''
+Holds information on Galera Balancer nodes.
+'''
+class GLBServiceNode(ServiceNode):
+    ''' Initializes service node.
+
+    :param vm: Service node id
+    :type vm: array
+    :param runMySQL: Indicator if service node is running MySQL
+    :type runMySQL: boolean
+
+    '''
+
+    def __init__(self, node, isMaster=False, isSlave=False):
+        ServiceNode.__init__(self, node.id,
+                             node.ip, node.private_ip,
+                             node.cloud_name)
+        #self.name = vm['name']
+        #self.state = vm['state']
+        self.isMaster = isMaster
+        self.isSlave = isSlave
+        self.port = 5555
+
+    '''String representation of the ServiceNode.
+    @return: returns service nodes information. Id ip and if mysql is running on this service node.'''
+
+    def __repr__(self):
+        return 'GLBServiceNode(id=%s, ip=%s, master=%s)' % (str(self.id), self.ip, str(self.isMaster))
   
 class Configuration(object):
 
     MYSQL_PORT = 3306
-
+	GLB_PORT = 3307
+	
     # The port on which the agent listents
     AGENT_PORT = 5555
+    
+
+	'''Galera Load Balancer Nodes'''
+	glb_service_nodes = {}
+	serviceNodes = {}
 
     '''Representation of the deployment configuration'''
     def __init__(self, configuration):
         self.logger = create_logger(__name__)
         self.mysql_count = 0
-        self.serviceNodes = {}        
+        self.serviceNodes = {}
+        self.glb_service_nodes = {}
       
     '''Returns the list of service nodes which are registered in the configuration.'''
     def getMySQLServiceNodes(self):
@@ -81,7 +117,11 @@ class Configuration(object):
 
     ''' Returns the list of MySQL masters'''
     def getMySQLmasters(self):
-        return [ serviceNode for serviceNode in self.serviceNodes.values() if serviceNode.isMaster ]    
+        return [ serviceNode for serviceNode in self.serviceNodes.values() if serviceNode.isMaster ]
+        
+	''' Returns the list of GLB nodes'''
+    def get_glb_nodes(self):
+        return [ serviceNode for serviceNode in self.glb_service_nodes.values() ]         
 
     ''' Returns the list of MySQL slaves'''
     def getMySQLslaves(self):
@@ -89,6 +129,26 @@ class Configuration(object):
 
     def getMySQLNode(self, id):
         return self.serviceNodes[id]
+
+	'''
+      Add new GLB Node to the server (configuration).
+      @param accesspoint: new VM
+    '''
+    def addGLBServiceNodes(self, nodes, isMaster=False, isSlave=False):
+        self.logger.debug('Entering addGLBServiceNodes')
+        for node in nodes:
+            self.glb_service_nodes[node.id] = GLBServiceNode(node, isMaster, isSlave)
+        self.logger.debug('Exiting addGLBServiceNodes')
+
+    '''
+      Remove GLB Node to the server (configuration).
+    '''
+    def removeGLBServiceNode(self, id):
+        del self.glb_service_nodes[id]
+
+    def remove_glb_nodes(self, nodes):
+        for node in nodes:
+            del self.glb_service_nodes[node.id]
 
     '''
       Add new Service Node to the server (configuration).
