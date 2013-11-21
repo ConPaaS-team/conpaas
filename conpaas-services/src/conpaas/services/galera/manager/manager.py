@@ -84,8 +84,7 @@ class GaleraManager(BaseManager):
     def _start_master(self, nodes):
         for serviceNode in nodes:
             try:
-                client.create_master(serviceNode.ip, self.config.AGENT_PORT,
-                                    self._get_server_id())
+                client.create_master(serviceNode.ip, self.config.AGENT_PORT, self._get_server_id())
             except client.AgentException, ex:
                 self.logger.exception('Failed to start Galera Master at node %s: %s' % (str(serviceNode), ex))
                 self.state = self.S_ERROR
@@ -94,28 +93,26 @@ class GaleraManager(BaseManager):
     def _start_slave(self, nodes, master):
         slaves = {}
         for serviceNode in nodes:
-            slaves[str(self._get_server_id())] = {'ip':serviceNode.ip,
-                                                  'port':self.config.AGENT_PORT}
+            slaves[str(self._get_server_id())] = {'ip': serviceNode.ip,
+                                                  'port': self.config.AGENT_PORT}
         try:
             self.logger.debug('create_slave for master.ip  = %s' % master)
-            client.create_slave(master.ip,
-                                self.config.AGENT_PORT, slaves)
+            client.create_slave(master.ip, self.config.AGENT_PORT, slaves)
         except client.AgentException:
             self.logger.exception('Failed to start Galera Slave at node %s' % str(serviceNode))
             self.state = self.S_ERROR
             raise
             
-	def _start_glb_node(self, nodes, master):
+    def _start_glb_node(self, nodes, master):
         slaves = {}
         for serviceNode in nodes:
-            slaves[str(self._get_server_id())] = {'ip':serviceNode.ip,
-                                                  'port':self.config.AGENT_PORT}
+            slaves[str(self._get_server_id())] = {'ip': serviceNode.ip,
+                                                  'port': self.config.AGENT_PORT}
         try:
-			galera_nodes = [ {"host":node.ip, "port":self.config.AGENT_PORT} for node in self.getMySQLServiceNodes()]
-			self.logger.debug('create_glb_node all galera nodes = %s' % str(galera_nodes))
+            galera_nodes = [{"host": node.ip, "port": self.config.AGENT_PORT} for node in self.getMySQLServiceNodes()]
+            self.logger.debug('create_glb_node all galera nodes = %s' % str(galera_nodes))
             self.logger.debug('create_glb_node for master.ip  = %s' % master)
-            client.create_glb_node(master.ip,
-                                self.config.AGENT_PORT, slaves, galera_nodes)
+            client.create_glb_node(master.ip, self.config.AGENT_PORT, slaves, galera_nodes)
         except client.AgentException:
             self.logger.exception('Failed to start Galera GLB Node at node %s' % str(serviceNode))
             self.state = self.S_ERROR
