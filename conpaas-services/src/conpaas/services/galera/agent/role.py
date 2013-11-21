@@ -325,7 +325,7 @@ class GLBNode(MySQLServer):
 	{'host': '10.1.0.33', 'port': '3301'},
 	{'host': '10.1.0.34', 'port': '3302'}]
     '''
-	galera_nodes = {} 
+    galera_nodes = {}
 	
     ''' Class describing a Galera Load Balancer Node. 
     '''
