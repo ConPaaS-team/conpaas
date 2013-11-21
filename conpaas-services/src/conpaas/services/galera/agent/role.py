@@ -124,7 +124,6 @@ class MySQLServer(object):
                 except (ValueError, TypeError) as e:
                     sql_logger.exception('PID in "%s" is invalid' % (self.pid_file))
                     raise e
-	    
                 try:
                     kill(pid, self.stop_sig)
                     self.state = S_STOPPED
@@ -187,12 +186,11 @@ class MySQLMaster(MySQLServer):
         # Change root password - not set as installation
         os.system("mysqladmin -u root password "  + self.conn_password)
 
-	    #TODO: add user conn_userame and grant privileges to it from any host 
+        #TODO: add user conn_userame and grant privileges to it from any host
         self.add_user(self.conn_username, self.conn_password)
         self.add_user(self.wsrep_user, self.wsrep_password)
 
-
-    '''Before creating a data snapshot or starting 
+    """Before creating a data snapshot or starting
     the replication process, you should record the 
     position of the binary log on the master. You will 
     need this information when configuring the slave so 
@@ -214,17 +212,15 @@ class MySQLMaster(MySQLServer):
 
     1st session
     mysql>UNLOCK TABLES;
-
-    '''
+    """
 
     def take_snapshot(self):
-        '''1st session
-        '''
+        """1st session
+        """
         db1 = MySQLdb.connect(self.conn_location, 'root', self.conn_password)
         exc = db1.cursor()
         exc.execute("FLUSH TABLES WITH READ LOCK;")
-        '''2nd session
-        '''
+        #2nd session
         db2 = MySQLdb.connect(self.conn_location, 'root', self.conn_password)
         exc = db2.cursor()
         exc.execute("SHOW MASTER STATUS;")
@@ -234,9 +230,9 @@ class MySQLMaster(MySQLServer):
         ret = {}
         for row in rows:
             i = i+1
-	    ret['position' + str(i)] = {'binfile': row[0], 'position': row[1], 'mysqldump_path': self.mysqldump_path}
+        ret['position' + str(i)] = {'binfile': row[0], 'position': row[1], 'mysqldump_path': self.mysqldump_path}
 
-	# dump everything except test?
+    # dump everything except test?
         os.system("mysql --user=root --password=" + self.conn_password + \
                   " --batch --skip-column-names " + \
                   "--execute=\"SHOW DATABASES\" | egrep -v \"information_schema|test\" " + \
@@ -293,9 +289,10 @@ class MySQLMaster(MySQLServer):
                 'port': self.port 
                }
 
+
 class MySQLSlave(MySQLServer):
-    ''' Class describing a MySQL replication slave. 
-    '''
+    """ Class describing a MySQL replication slave.
+    """
     def __init__(self, config = None, master_host = None):
         MySQLServer.__init__(self, config)
         
@@ -317,16 +314,16 @@ class MySQLSlave(MySQLServer):
                 'port': self.port 
                }
 
+
 class GLBNode(MySQLServer):
-		
-    '''
+    """
     galera_nodes should be in this format:
     [{'host': '10.1.0.33', 'port': '3307'},
-	{'host': '10.1.0.33', 'port': '3301'},
-	{'host': '10.1.0.34', 'port': '3302'}]
-    '''
+    {'host': '10.1.0.33', 'port': '3301'},
+    {'host': '10.1.0.34', 'port': '3302'}]
+    """
     galera_nodes = {}
-	
+
     ''' Class describing a Galera Load Balancer Node. 
     '''
     def __init__(self, config = None, master_host = None, galera_nodes = None):
@@ -338,12 +335,12 @@ class GLBNode(MySQLServer):
                 'port': self.port 
                }
 
-	def start(self, galera_hosts = []):
+    def start(self, galera_hosts=[]):
         self.state = S_STARTING
         devnull_fd = open(devnull, 'w')
         command = [self.glbd_location, "-b", "0.0.0.0:3307", ]
         for host in galera_hosts:
-			command.append(host)
+            command.append(host)
         proc = Popen(command, stdout=devnull_fd, stderr=devnull_fd, close_fds=True)
         proc.wait()
         sql_logger.debug('GLB node started')
@@ -361,7 +358,6 @@ class GLBNode(MySQLServer):
                 except (ValueError, TypeError) as e:
                     sql_logger.exception('PID in "%s" is invalid' % (self.pid_file))
                     raise e
-	    
                 try:
                     kill(pid, self.stop_sig)
                     self.state = S_STOPPED
@@ -397,10 +393,3 @@ class GLBNode(MySQLServer):
             self.state = S_STOPPED
             raise e    
         sql_logger.debug("Leaving glb node restart")
-
-if __name__ == "__main__":
-    config_file = "/home/miha/Desktop/agent.cfg"
-    #config_file = "/home/miha/Desktop/manager.cfg"
-    config = ConfigParser.ConfigParser()
-    config.readfp(open(config_file))
-    master = MySQLMaster(config)
