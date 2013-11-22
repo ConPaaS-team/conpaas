@@ -113,7 +113,7 @@ if __name__ == '__main__':
         if sys.argv[3] in ("add_nodes"):
             ret = add_nodes(host, port, sys.argv[4])
             print ret            
-		if sys.argv[3] in ("add_glb_nodes"):
+        if sys.argv[3] in ("add_glb_nodes"):
             ret = add_nodes(host, port, sys.argv[4])
             print ret                        
         if sys.argv[3] in ("get_service_info"):
@@ -123,7 +123,7 @@ if __name__ == '__main__':
             id = sys.argv[4]
             ret = remove_nodes(host, port, id)
             print ret    
-		if sys.argv[3] in ("remove_glb_nodes"):            
+        if sys.argv[3] in ("remove_glb_nodes"):
             id = sys.argv[4]
             ret = remove_nodes(host, port, id)
             print ret  

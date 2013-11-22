@@ -90,7 +90,7 @@ class Client(BaseClient):
             except IndexError:
                 getattr(self, command)(sid)
 
-        if command in ( 'add_nodes', 'add_glb_nodes', 'remove_nodes', 'remove_glb_nodes' ):
+        if command in ('add_nodes', 'add_glb_nodes', 'remove_nodes', 'remove_glb_nodes'):
             try:
                 sid = int(argv[2])
             except (IndexError, ValueError):
@@ -117,10 +117,10 @@ class Client(BaseClient):
                 except IndexError:
                     print 'Cloud name must be one of ' + self.available_clouds()
                     sys.exit(0)
-                res = self.callmanager(sid, command, True, { 'slaves': count,
-                    'cloud': cloud})
+                res = self.callmanager(sid, command, True, {'slaves': count,
+                                                            'cloud': cloud})
             else:
-                res = self.callmanager(sid, command, True, { 'slaves': count })
+                res = self.callmanager(sid, command, True, {'slaves': count})
             if 'error' in res:
                 print res['error']
             else:

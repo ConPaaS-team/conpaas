@@ -42,8 +42,8 @@ class GaleraAgent(BaseAgent):
             p = pickle.load(fd)
             fd.close()
         except Exception as e:
-            ex = AgentException(AgentException.E_CONFIG_READ_FAILED, 
-                pClass.__name__, class_file, detail=e)
+            ex = AgentException(AgentException.E_CONFIG_READ_FAILED,
+                                pClass.__name__, class_file, detail=e)
             self.logger.exception(ex.message)
             return HttpErrorResponse(ex.message)
         else:
@@ -74,8 +74,8 @@ class GaleraAgent(BaseAgent):
                 pickle.dump(p, fd)
                 fd.close()
             except Exception as e:
-                ex = AgentException(AgentException.E_CONFIG_COMMIT_FAILED, 
-                    detail=e)
+                ex = AgentException(AgentException.E_CONFIG_COMMIT_FAILED,
+                                    detail=e)
                 self.logger.exception(ex.message)
                 return HttpErrorResponse(ex.message)
             else:
@@ -151,8 +151,10 @@ class GaleraAgent(BaseAgent):
             p.set_password(username, password)
             fd.close()
         except Exception as e:
-            ex = AgentException(AgentException.E_CONFIG_READ_FAILED, 
-            role.MySQLMaster.__name__, self.master_file, detail=e)
+            ex = AgentException(AgentException.E_CONFIG_READ_FAILED,
+                                role.MySQLMaster.__name__,
+                                self.master_file,
+                                detail=e)
             self.logger.exception(ex.message)
             raise
 
@@ -166,8 +168,10 @@ class GaleraAgent(BaseAgent):
             p.load_dump(f)
             fd.close()
         except Exception as e:
-            ex = AgentException(AgentException.E_CONFIG_READ_FAILED, 
-    		    role.MySQLMaster.__name__, self.master_file, detail=e)
+            ex = AgentException(AgentException.E_CONFIG_READ_FAILED,
+                                role.MySQLMaster.__name__,
+                                self.master_file,
+                                detail=e)
             self.logger.exception(ex.message)
             raise
         
@@ -186,21 +190,21 @@ class GaleraAgent(BaseAgent):
 
     @expose('POST')
     def set_password(self, kwargs):
-      """Create a replication master"""
-      self.logger.debug('Updating password')
-      try:
-        if 'username' not in kwargs:
-            raise AgentException(AgentException.E_ARGS_MISSING, 'username')
-        username = kwargs.pop('username')
-        if 'password' not in kwargs:
-            raise AgentException(AgentException.E_ARGS_MISSING, 'password')
-        password = kwargs.pop('password')
-        if len(kwargs) != 0:
-            raise AgentException(AgentException.E_ARGS_UNEXPECTED, kwargs.keys())
-        self._set_password(username, password)
-        return HttpJsonResponse()
-      except AgentException as e:
-        return HttpErrorResponse(e.message)
+        """Create a replication master"""
+        self.logger.debug('Updating password')
+        try:
+            if 'username' not in kwargs:
+                raise AgentException(AgentException.E_ARGS_MISSING, 'username')
+            username = kwargs.pop('username')
+            if 'password' not in kwargs:
+                raise AgentException(AgentException.E_ARGS_MISSING, 'password')
+            password = kwargs.pop('password')
+            if len(kwargs) != 0:
+                raise AgentException(AgentException.E_ARGS_UNEXPECTED, kwargs.keys())
+            self._set_password(username, password)
+            return HttpJsonResponse()
+        except AgentException as e:
+            return HttpErrorResponse(e.message)
  
     @expose('UPLOAD')
     def load_dump(self, kwargs):
@@ -257,7 +261,7 @@ class GaleraAgent(BaseAgent):
         self.logger.debug('slave in setup_slave ') 
         if 'master_host' not in kwargs:
             raise AgentException(AgentException.E_ARGS_MISSING, 'master_host')
-        params = {"master_host" : kwargs["master_host"], "config":self.config_parser}
+        params = {"master_host": kwargs["master_host"], "config": self.config_parser}
         self.logger.debug(params)
         with self.slave_lock:
             return self._create(params, self.slave_file, role.MySQLSlave)

@@ -43,7 +43,7 @@ class GaleraManager(BaseManager):
 
     @expose('POST')
     def startup(self, kwargs):
-        ''' Starts the service - it will start and configure a Galera master '''
+        """ Starts the service - it will start and configure a Galera master """
         self.logger.debug("Entering GaleraServerManager startup")
 
         if self.state != self.S_INIT and self.state != self.S_STOPPED:
@@ -54,25 +54,26 @@ class GaleraManager(BaseManager):
         return HttpJsonResponse({'state': self.S_PROLOGUE})
 
     def _do_startup(self, cloud):
-        ''' Starts up the service. The first node will be the MYSQL master.
-            The next nodes will be slaves to this master. '''
+        """ Starts up the galera service. """
 
-        startCloud = self._init_cloud(cloud)
+        start_cloud = self._init_cloud(cloud)
         #TODO: Get any existing configuration (if the service was stopped and restarted)
         self.logger.debug('do_startup: Going to request one new node')
 
         # Generate a password for root
         # TODO: send a username?
         self.root_pass = ''.join([choice(string.letters + string.digits) for i in range(10)])
-        self.controller.add_context_replacement(dict(mysql_username='mysqldb', \
-                                mysql_password=self.root_pass),cloud=startCloud)
+        self.controller.add_context_replacement(dict(mysql_username='mysqldb',
+                                                     mysql_password=self.root_pass),
+                                                cloud=start_cloud)
         try:
             node_instances = self.controller.create_nodes(1,
-                                                    client.check_agent_process,
-                                                    self.config.AGENT_PORT,
-                                                    startCloud)
+                                                          client.check_agent_process,
+                                                          self.config.AGENT_PORT,
+                                                          start_cloud)
             self._start_master(node_instances)
-            self.config.addMySQLServiceNodes(nodes=node_instances, isMaster=True)
+            self.config.addMySQLServiceNodes(nodes=node_instances,
+                                             isMaster=True)
         except Exception, ex:
             # rollback
             self.controller.delete_nodes(node_instances)
@@ -84,9 +85,11 @@ class GaleraManager(BaseManager):
     def _start_master(self, nodes):
         for serviceNode in nodes:
             try:
-                client.create_master(serviceNode.ip, self.config.AGENT_PORT, self._get_server_id())
+                client.create_master(serviceNode.ip,
+                                     self.config.AGENT_PORT,
+                                     self._get_server_id())
             except client.AgentException, ex:
-                self.logger.exception('Failed to start Galera Master at node %s: %s' % (str(serviceNode), ex))
+                self.logger.exception('Failed to start Galera node %s: %s' % (str(serviceNode), ex))
                 self.state = self.S_ERROR
                 raise
 
@@ -184,7 +187,7 @@ class GaleraManager(BaseManager):
 
         if self.state != self.S_RUNNING:
             return HttpErrorResponse('ERROR: Wrong state to add_nodes')
-        if (not 'slaves' in kwargs) or (not 'glb_nodes' in kwargs):
+        if (not 'slaves' in kwargs) and (not 'glb_nodes' in kwargs):
             return HttpErrorResponse('ERROR: Required argument doesn\'t exist')
         if (not isinstance(kwargs['slaves'], int)) or (not isinstance(kwargs['glb_nodes'], int)):
             return HttpErrorResponse('ERROR: Expected an integer value for "count"')
