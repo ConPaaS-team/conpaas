@@ -203,7 +203,7 @@ class PHPManager(BasicWebserversManager):
         return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_MISSING, 'at least one of "codeVersionId" or "phpconf"').message)
     
       if codeVersionId and codeVersionId not in config.codeVersions:
-        return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_INVALID, detail='Invalid codeVersionId').message)
+        return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_INVALID, detail='Unknown code version identifier "%s"' % codeVersionId).message)
     
       dstate = self._state_get()
       if dstate == self.S_INIT or dstate == self.S_STOPPED:
