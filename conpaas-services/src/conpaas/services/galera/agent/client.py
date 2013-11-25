@@ -32,9 +32,9 @@ def create_master(host, port, master_server_id):
     return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
 
 
-'''
+"""
     Methods called by the manager and executed on a master agent
-'''
+"""
 def create_slave(host, port, slaves):
     method = 'create_slave'
     params = {'slaves': slaves}
@@ -42,7 +42,7 @@ def create_slave(host, port, slaves):
 
 def create_glb_node(host, port, slaves, galera_nodes = None):
     method = 'create_glb_node'
-    params = {'glb_nodes': slaves, 'galera_nodes' : galera_nodes}
+    params = {'glb_nodes': slaves, 'galera_nodes': galera_nodes}
     return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
 
 def configure_user(host, port, username, password):

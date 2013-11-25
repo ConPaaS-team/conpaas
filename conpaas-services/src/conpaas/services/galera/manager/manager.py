@@ -197,7 +197,7 @@ class GaleraManager(BaseManager):
             Thread(target=self._do_add_nodes, args=['slaves', count, kwargs['cloud']]).start()
         if 'glb_nodes' in kwargs:
             count = int(kwargs.pop('glb_nodes'))
-            Thread(target=self._do_add_nodes, args=['glbs',count, kwargs['cloud']]).start()
+            Thread(target=self._do_add_nodes, args=['glb_nodes', count, kwargs['cloud']]).start()
         return HttpJsonResponse()
 
     # TODO: also specify the master for which to add slaves
@@ -218,7 +218,7 @@ class GaleraManager(BaseManager):
                 if node_type == 'slaves':
                     self._start_slave(node_instances, master)
                     self.config.addMySQLServiceNodes(nodes=node_instances, isSlave=True)
-                elif node_type == 'glbs':
+                elif node_type == 'glb_nodes':
                     self._start_glb_node(node_instances, master)
                     self.config.addGLBServiceNodes(nodes=node_instances)
         except Exception, ex:
@@ -235,13 +235,13 @@ class GaleraManager(BaseManager):
 
     @expose('GET')
     def get_service_performance(self, kwargs):
-        ''' HTTP GET method. Placeholder for obtaining performance metrics.
+        """HTTP GET method. Placeholder for obtaining performance metrics.
 
         :param kwargs: Additional parameters.
         :type kwargs: dict
         :returns:  HttpJsonResponse -- returns metrics
 
-        '''
+        """
 
         if len(kwargs) != 0:
             return HttpErrorResponse(ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message)

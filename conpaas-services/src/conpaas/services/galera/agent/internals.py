@@ -128,6 +128,9 @@ class GaleraAgent(BaseAgent):
         return ret
 
     def _glb_get_params(self, kwargs):
+        """
+        Checks whether slaves and galera nodes are within the kwargs.
+        """
         ret = {}
         ret['slaves'] = {}
         ret['galera_nodes'] = {}
@@ -248,9 +251,9 @@ class GaleraAgent(BaseAgent):
             ret = self._glb_get_params(kwargs)
             for server in ret['salves']:
                 # TODO: Why do I receive the slave_ip in unicode??  
-                from conpaas.services.galera.agent import client
-                client.setup_glb_node(str(slave['ip']), slave['port'], self.my_ip, ret['galera_nodes'])
-                self.logger.debug('Created setup_glb_node %s' % str(slave['ip']))
+                #from conpaas.services.galera.agent import client
+                self.setup_glb_node(str(server['ip']), server['port'], self.my_ip, ret['galera_nodes'])
+                self.logger.debug('Created setup_glb_node %s' % str(server['ip']))
             return HttpJsonResponse()
         except AgentException as e:
             return HttpErrorResponse(e.message)            
@@ -274,7 +277,7 @@ class GaleraAgent(BaseAgent):
             raise AgentException(AgentException.E_ARGS_MISSING, 'master_host')
         if 'galera_nodes' not in kwargs:
             raise AgentException(AgentException.E_ARGS_MISSING, 'galera_nodes')
-        params = {"master_host" : kwargs["master_host"], "config":self.config_parser, 'galera_nodes': kwargs["galera_nodes"]}
+        params = {"master_host": kwargs["master_host"], "config": self.config_parser, 'galera_nodes': kwargs["galera_nodes"]}
         self.logger.debug(params)
         with self.slave_lock:
             return self._create(params, self.slave_file, role.GLBNode)

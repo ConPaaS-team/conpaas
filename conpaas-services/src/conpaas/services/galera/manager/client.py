@@ -75,7 +75,7 @@ def add_nodes(host, port, count):
     
 def add_glb_nodes(host, port, count):
     params = {'glb_nodes': count}
-    method = 'add_glb_nodes'
+    method = 'add_nodes'
     return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))    
 
 def get_log(host, port):

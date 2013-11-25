@@ -326,14 +326,13 @@ class GLBNode(MySQLServer):
 
     ''' Class describing a Galera Load Balancer Node. 
     '''
-    def __init__(self, config = None, master_host = None, galera_nodes = None):
+    def __init__(self, config=None, master_host=None, galera_nodes=None):
         MySQLServer.__init__(self, config)
         self.galera_nodes = galera_nodes
         
     def status(self):
         return {'state': self.state,
-                'port': self.port 
-               }
+                'port': self.port}
 
     def start(self, galera_hosts=[]):
         self.state = S_STARTING
