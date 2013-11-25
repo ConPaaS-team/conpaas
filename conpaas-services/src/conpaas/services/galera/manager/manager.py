@@ -189,12 +189,12 @@ class GaleraManager(BaseManager):
             return HttpErrorResponse('ERROR: Wrong state to add_nodes')
         if (not 'slaves' in kwargs) and (not 'glb_nodes' in kwargs):
             return HttpErrorResponse('ERROR: Required argument doesn\'t exist')
-        if (not isinstance(kwargs['slaves'], int)) or (not isinstance(kwargs['glb_nodes'], int)):
+        if (not isinstance(kwargs['slaves'], int)) and (not isinstance(kwargs['glb_nodes'], int)):
             return HttpErrorResponse('ERROR: Expected an integer value for "count"')
         self.state = self.S_ADAPTING
         if 'slaves' in kwargs:
             count = int(kwargs.pop('slaves'))
-            Thread(target=self._do_add_nodes, args=['slaves',count, kwargs['cloud']]).start()
+            Thread(target=self._do_add_nodes, args=['slaves', count, kwargs['cloud']]).start()
         if 'glb_nodes' in kwargs:
             count = int(kwargs.pop('glb_nodes'))
             Thread(target=self._do_add_nodes, args=['glbs',count, kwargs['cloud']]).start()
