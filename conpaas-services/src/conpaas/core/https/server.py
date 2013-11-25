@@ -33,6 +33,7 @@ import json
 import cgi
 import os 
 import sys
+import traceback
 
 from SocketServer import BaseServer
 from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
@@ -375,9 +376,13 @@ class ConpaasRequestHandler(BaseHTTPRequestHandler):
                 elif isinstance(response, HttpJsonResponse):
                     self.send_custom_response(httplib.OK,
                                     json.dumps({'result': response.obj, 'error': None, 'id': request_id}))
-            except Exception as e:
-                print e
-                sys.stdout.flush()
+            except:
+                errmsg = 'Error when calling method %s with params %s: %s' \
+                        % (callback_name, callback_params, traceback.format_exc())
+                self.send_custom_response(httplib.OK,
+                                          json.dumps({'error': errmsg}))
+                sys.stderr.write(errmsg + '\n')
+                sys.stderr.flush()
 
     def _do_dispatch(self, callback_type, callback_name, params):
         return self.server.callback_dict[callback_type][callback_name](self.server.instance, params)
