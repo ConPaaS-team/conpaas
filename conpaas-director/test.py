@@ -192,7 +192,7 @@ class DirectorTest(Common):
         self.assertEquals(subnet, servicedict['subnet'])
 
         # Values returned by libcloud's dummy driver
-        self.assertEquals('3', servicedict['vmid'])
+        self.assertEquals('iaas3', servicedict['vmid'])
         self.assertEquals('127.0.0.3', servicedict['manager'])
 
     def test_proper_start_vpn(self):
