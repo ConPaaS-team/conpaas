@@ -26,7 +26,7 @@ class WebServiceNode(ServiceNode):
     def __init__(self, node, weightWeb=DEFAULT_WEIGHT,
                  weightBackend=DEFAULT_WEIGHT, runProxy=False, runWeb=False,
                  runBackend=False):
-        ServiceNode.__init__(self, node.id,
+        ServiceNode.__init__(self, node.vmid,
                              node.ip, node.private_ip,
                              node.cloud_name, weightBackend)
         self.isRunningProxy = runProxy
