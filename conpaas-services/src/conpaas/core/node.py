@@ -19,7 +19,7 @@ class ServiceNode(object):
     '''
 
     def __init__(self, vmid, ip, private_ip, cloud_name, weightBackend=DEFAULT_WEIGHT):
-        self.id = cloud_name + vmid
+        self.id = "%s%s" % (cloud_name, vmid)
         self.vmid = vmid
         self.ip = ip
         self.private_ip = private_ip
