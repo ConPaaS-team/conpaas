@@ -7,6 +7,7 @@ from core import test_git
 from core import test_clouds
 from core import test_ipop
 from core import test_controller
+from core import test_misc
 
 suites = [
     unittest.TestLoader().loadTestsFromTestCase(test_agent.TestAgent),
@@ -17,6 +18,7 @@ suites = [
     unittest.TestLoader().loadTestsFromTestCase(test_ipop.TestIPOP),
     unittest.TestLoader().loadTestsFromTestCase(test_controller.TestController),
     unittest.TestLoader().loadTestsFromTestCase(test_controller.TestReservationTimer),
+    unittest.TestLoader().loadTestsFromTestCase(test_misc.TestMisc),
 ]
 
 alltests = unittest.TestSuite(suites)

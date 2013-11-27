@@ -90,8 +90,31 @@ def get_ip_address(ifname):
 def run_cmd(cmd, directory='/'):
     pipe = Popen(cmd, shell=True, cwd=directory, stdout=PIPE, stderr=PIPE)
     out, error = pipe.communicate()
-    pipe.wait()
+    _return_code = pipe.wait()
     return out, error
+
+
+def run_cmd_code(cmd, directory='/'):
+    """Same as run_cmd but it returns also the return code.
+    Parameters
+    ----------
+    cmd : string
+        command to run in a shell
+    directory : string, default to '/'
+        directory where to run the command
+    Returns
+    -------
+    std_out, std_err, return_code
+        a triplet with standard output, standard error output and return code.
+    std_out : string
+    std_err : string
+    return_code : int
+    """
+    pipe = Popen(cmd, shell=True, cwd=directory, stdout=PIPE, stderr=PIPE)
+    out, error = pipe.communicate()
+    return_code = pipe.wait()
+    return out, error, return_code
+
 
 def rlinput(prompt, prefill=''):
     readline.set_startup_hook(lambda: readline.insert_text(prefill))
@@ -108,3 +131,150 @@ def list_lines(lines):
     """
     return list(filter(None, (x.strip() for x in lines.splitlines())))
 
+
+def is_constraint(constraint, filter_res, errmsg):
+    def filter_constraint(arg):
+        if constraint(arg):
+            return filter_res(arg)
+        else:
+            raise Exception(errmsg(arg))
+    return filter_constraint
+
+
+def is_int(argument):
+    return is_constraint(lambda arg: isinstance(arg, int),
+                         lambda arg: int(arg),
+                         lambda arg: "'%s' is not an integer." % arg)(argument)
+
+
+def is_more_than(minval):
+    return is_constraint(lambda arg: arg > minval,
+                         lambda arg: arg,
+                         lambda arg: "'%s' is not more than '%s'." % (arg, minval))
+
+
+def is_more_or_eq_than(minval):
+    return is_constraint(lambda arg: arg >= minval,
+                         lambda arg: arg,
+                         lambda arg: "'%s' is not more or equal than '%s'." % (arg, minval))
+
+
+def is_pos_int(argument):
+    argint = is_int(argument)
+    return is_more_than(0)(argint)
+
+
+def is_pos_nul_int(argument):
+    argint = is_int(argument)
+    return is_more_or_eq_than(0)(argint)
+
+
+def is_in_list(exp_list):
+    return is_constraint(lambda arg: arg in exp_list,
+                         lambda arg: arg,
+                         lambda arg: "'%s' must be one of '%s'." % (arg, exp_list))
+
+
+def is_string(argument):
+    return is_constraint(lambda arg: isinstance(arg, str),
+                         lambda arg: arg,
+                         lambda arg: "'%s' is not a string." % arg)(argument)
+
+
+def is_list(argument):
+    return is_constraint(lambda arg: isinstance(arg, list),
+                         lambda arg: arg,
+                         lambda arg: "'%s' is not a list." % arg)(argument)
+
+
+def is_dict(argument):
+    return is_constraint(lambda arg: isinstance(arg, dict),
+                         lambda arg: arg,
+                         lambda arg: "'%s' is not a dict." % arg)(argument)
+
+
+def is_dict2(mandatory_keys, optional_keys=[]):
+    def _dict2(argument):
+        argdict = is_dict(argument)
+        keys = argument.keys()
+        for mand_key in mandatory_keys:
+            try:
+                keys.remove(mand_key)
+            except:
+                raise Exception("Was expecting key %s in dict %s" \
+                                % (mand_key, argdict))
+        for opt_key in optional_keys:
+            try:
+                keys.remove(opt_key)
+            except:
+                continue
+        if len(keys) > 0:
+            raise Exception("Unexpected key in dict %s: %s." % (argdict, keys))
+        return argdict
+    return _dict2
+
+
+def is_list_dict(argument):
+    mylist = is_list(argument)
+    for arg in mylist:
+        _dict = is_dict(arg)
+    return mylist
+
+
+def is_list_dict2(mandatory_keys, optional_keys=[]):
+    def _list_dict2(argument):
+        mylist = is_list_dict(argument)
+        for arg in mylist:
+            _dict = is_dict2(mandatory_keys, optional_keys)(arg)
+        return mylist
+    return _list_dict2
+
+
+def check_arguments(expected_params, args):
+    """ Check, convert POST arguments provided as dict.
+
+    Parameter
+    ---------
+    expected_params: list
+        list of expected parameters where a parameter is a tuple
+        (name, constraint)                 for mandatory argument
+        (name, constraint, default_value)  for optional parameter
+        where constraint is 'string', 'int', 'posint', 'posnulint', 'list'
+
+    args: dict
+        args[name] = value
+
+    Returns
+    -------
+    A list of all correct and converted parameters in the same order
+    as the expected_params argument.
+    Or raise an exception if one of the expected arguments is not there,
+    or does not respect the corresponding constraint, or was not expected.
+    """
+    parsed_args = []
+    for param in expected_params:
+        if len(param) >= 2:
+            name = param[0]
+            constraint = param[1]
+            if name in args:
+                value = args.pop(name)
+                try:
+                    parsed_value = constraint(value)
+                    parsed_args.append(parsed_value)
+                except Exception as ex:
+                    raise Exception("Parameter %s: %s." % (name, ex))
+            else:
+                if len(param) >= 3:
+                    default_value = param[2]
+                    # TODO: decide whether the default value should satisfy the constraint
+                    parsed_args.append(default_value)
+                else:
+                    raise Exception("Missing the mandatory parameter %s." % name)
+        else:
+            raise Exception("Unexpected number of arguments describing a parameter: %s" % param)
+    if len(args) > 0:
+        raise Exception("Unexpected parameters: %s." % args)
+    if len(parsed_args) == 1:
+        return parsed_args[0]
+    else:
+        return parsed_args
