@@ -39,7 +39,7 @@ class SQLServiceNode(ServiceNode):
     '''
 
     def __init__(self, node, isMaster=False, isSlave=False):
-        ServiceNode.__init__(self, node.id,
+        ServiceNode.__init__(self, node.vmid,
                              node.ip, node.private_ip,
                              node.cloud_name)
         #self.name = vm['name']

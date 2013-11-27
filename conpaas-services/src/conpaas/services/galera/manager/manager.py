@@ -160,9 +160,8 @@ class GaleraManager(BaseManager):
         if len(kwargs) != 0:
             return HttpErrorResponse(ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
         if serviceNodeId not in self.config.serviceNodes:
-            return HttpErrorResponse(ManagerException(E_ARGS_INVALID , \
-                                                      "serviceNodeId" ,\
-                                                      detail='Invalid "serviceNodeId"').message)
+            return HttpErrorResponse('Unknown "serviceNodeId" %s, should be one of %s.'\
+                                     % (serviceNodeId, self.config.serviceNodes.keys()))
         serviceNode = self.config.getMySQLNode(serviceNodeId)
         return HttpJsonResponse({
             'serviceNode': {

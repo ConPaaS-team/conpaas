@@ -10,15 +10,27 @@
 """
 DEFAULT_WEIGHT = 100
 
-class ServiceNode(object):
-    '''
-        This class represents the abstraction of a node. A basic node is
-        represented by a vmid and an ip address. This class can be extented
-        with more information about the node, specific to each service.
 
-    '''
+class ServiceNode(object):
+    """
+    This class represents the abstraction of a node.
+    """
 
     def __init__(self, vmid, ip, private_ip, cloud_name, weightBackend=DEFAULT_WEIGHT):
+        """
+        Parameters
+        ----------
+        vmid : string
+            virtual machine (VM) identifier provided by the cloud provider
+        ip : string
+            public IP address of the VM
+        private_ip : string
+            private IP address of the VM in a VPN
+        cloud_name : string
+            name of the cloud provider
+        weightBackend : int
+            weight of the VM representing the efficiency of this VM
+        """
         self.id = "%s%s" % (cloud_name, vmid)
         self.vmid = vmid
         self.ip = ip
