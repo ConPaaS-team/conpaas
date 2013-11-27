@@ -88,14 +88,6 @@ class BasicWebserversManager(BaseManager):
     # Default load balancing weight for nodes.
     DEFAULT_NODE_WEIGHT = 100
 
-    S_INIT = 'INIT'
-    S_PROLOGUE = 'PROLOGUE'
-    S_RUNNING = 'RUNNING'
-    S_ADAPTING = 'ADAPTING'
-    S_EPILOGUE = 'EPILOGUE'
-    S_STOPPED = 'STOPPED'
-    S_ERROR = 'ERROR'
-
     def __init__(self, config_parser):
         BaseManager.__init__(self, config_parser)
 
@@ -134,7 +126,7 @@ class BasicWebserversManager(BaseManager):
     def _stop_proxy(self, config, nodes):
         for serviceNode in nodes:
             try:
-                client.stopHttpProxy(serviceNode.ip, 5555)
+                client.stopHttpProxy(serviceNode.ip, self.AGENT_PORT)
             except client.AgentException:
                 self.logger.exception(
                     'Failed to stop proxy at node %s' % str(serviceNode))
@@ -149,7 +141,7 @@ class BasicWebserversManager(BaseManager):
             code_versions = [config.currentCodeVersion, config.prevCodeVersion]
         for serviceNode in nodes:
             try:
-                client.createWebServer(serviceNode.ip, 5555,
+                client.createWebServer(serviceNode.ip, self.AGENT_PORT,
                                        config.web_config.port,
                                        code_versions)
             except client.AgentException:
@@ -166,7 +158,7 @@ class BasicWebserversManager(BaseManager):
             code_versions = [config.currentCodeVersion, config.prevCodeVersion]
         for webNode in nodes:
             try:
-                client.updateWebServer(webNode.ip, 5555,
+                client.updateWebServer(webNode.ip, self.AGENT_PORT,
                                        config.web_config.port,
                                        code_versions)
             except client.AgentException:
@@ -179,7 +171,7 @@ class BasicWebserversManager(BaseManager):
     def _stop_web(self, config, nodes):
         for serviceNode in nodes:
             try:
-                client.stopWebServer(serviceNode.ip, 5555)
+                client.stopWebServer(serviceNode.ip, self.AGENT_PORT)
             except client.AgentException:
                 self.logger.exception('Failed to stop web at node %s'
                                       % str(serviceNode))
@@ -259,7 +251,7 @@ class BasicWebserversManager(BaseManager):
             self._adapting_set_count(len(serviceNodeKwargs))
             node_instances = self.controller.create_nodes(
                 len(serviceNodeKwargs),
-                client.check_agent_process, 5555, cloud)
+                client.check_agent_process, self.AGENT_PORT, cloud)
         except:
             self.logger.exception(
                 'do_startup: Failed to request new nodes. Needed %d' % (len(serviceNodeKwargs)))
@@ -429,20 +421,20 @@ class BasicWebserversManager(BaseManager):
                 len(proxyNodesNew) + len(webNodesNew) + len(backendNodesNew))
             if proxy > 0:
                 node_instances = self.controller.create_nodes(
-                    len(proxyNodesNew), client.check_agent_process, 5555, cloud)
+                    len(proxyNodesNew), client.check_agent_process, self.AGENT_PORT, cloud)
             if web > 0 and vm_web_type is None:
                 node_instances = self.controller.create_nodes(
-                    len(webNodesNew), client.check_agent_process, 5555, cloud)
+                    len(webNodesNew), client.check_agent_process, self.AGENT_PORT, cloud)
             elif web > 0:
                 node_instances = self.controller.create_nodes(
-                    len(webNodesNew), client.check_agent_process, 5555, cloud, inst_type=vm_web_type)
+                    len(webNodesNew), client.check_agent_process, self.AGENT_PORT, cloud, inst_type=vm_web_type)
 
             if backend > 0 and vm_backend_type is None:
                 node_instances = self.controller.create_nodes(
-                    len(backendNodesNew), client.check_agent_process, 5555, cloud)
+                    len(backendNodesNew), client.check_agent_process, self.AGENT_PORT, cloud)
             elif backend > 0:
                 node_instances = self.controller.create_nodes(
-                    len(backendNodesNew), client.check_agent_process, 5555, cloud, inst_type=vm_backend_type)
+                    len(backendNodesNew), client.check_agent_process, self.AGENT_PORT, cloud, inst_type=vm_backend_type)
         except:
             self.logger.exception(
                 'do_add_nodes: Failed to request new nodes. Needed %d' %
