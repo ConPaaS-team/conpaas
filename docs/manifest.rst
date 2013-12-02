@@ -2,32 +2,19 @@
 Manifest Guide
 ==============
 
-What is a manifest file
-=======================
+A manifest is a JSON file that describes a ConPaaS application. It can be
+written with your favourite text editor, or automatically generated from a
+running ConPaaS application.
 
-When a user wants to create new services in ConPaaS there are two
-options available: the first one is to create every single service using
-the ConPaaS frontend or the ConPaaS client, while the second one is to
-upload a manifest file that describes which services the application
-needs. Using the ConPaaS frontend and the ConPaaS client is possible to
-upload the manifest file to the director which will automatically parse
-the file and create all the desired services.
-In this guide we are going to describe all the options available in the
-manifest file.
+---------------------------------------
+Creating an application from a manifest
+---------------------------------------
 
-How to structure a manifest file
-================================
+Sudoku example
+--------------
 
-A manifest file is a plain JSON file where users need to fill all the
-necessary information to start the services.
-In the next section we are going to describe how to setup a manifest file
-for the sudoku example in the ConPaaS website.
-
-Manifest file for Sudoku
-========================
-
-The sudoku application needs to have just one PHP service and the
-following is the simplest manifest file::
+Here is manifest for an application that will run a simple PHP program (a free
+sudoku PHP program). File ``sudoku.mnf``::
 
    {
     "Application" : "Sudoku example",
@@ -42,24 +29,30 @@ following is the simplest manifest file::
     ]
    }
 
-The understanding of the file is quite straightforward. First of all, the
-user needs to specify a description of the application because if more
-applications are running on ConPaaS it is easier to differentiate between
-them.
-Then all the services are specified. In this case the sudoku needs only
-one service: PHP, so we setup a PHP service.
-To setup a PHP service the user needs to provide few informations: the
-service name shown in the frontend (otherwise the default will be just
-"New PHP service"), the cloud where the service needs to run and
-optionally the URL of the archive containing the application.
-One more field that can be specified is the *Start* field, where the
-user can specify if the service only needs to be created or if it should
-also be started automatically.
-The ConPaaS director will then automatically create all the needed
-instances and start the service.
+This simple example states the application name and the service list which is
+here a single PHP service. It gives the name of the service, its type, whether
+it should be automatically started (1 for autostart, 0 otherwise), and it gives
+the path to the PHP program that will be uploaded into the created PHP service.
 
-Manifest file for a MediaWiki
-=============================
+To create an application from a manifest, you can use either the web client or
+the command line client.
+
+ * On the web client, after login, press button "deploy ready-made application",
+   then press button "Browse..." and select your ``sudoku.mnf``. A popup will
+   appear to confirm that the creation of the application has started.
+
+ * On the command line, you can simply run:
+   ::
+     cpsclient.py manifest sudoku.mnf
+
+In this example, once the application has been created, you will have to start
+the PHP service either with the web client (button start on the PHP service
+page) or with command line client (``cpsclient.py start <php_serv_id>``).
+
+
+
+MediaWiki example
+-----------------
 
 On the ConPaaS website there is a short video
 (http://www.youtube.com/watch?v=kMzx8sgr96I) that shows how to setup a
@@ -76,11 +69,12 @@ exactly the same MediaWiki application shown in the video::
       "ServiceName" : "Wiki-Webserver",
       "Type" : "java",
       "Archive" : "http://mywebsite.com/scalaris-wiki.war",
-      "StartupInstances" : {
-       "proxy" : "1",
-       "web" : "1",
-       "backend" : "5"
-      },
+      "StartupInstances" :
+       {
+        "proxy" : "1",
+        "web" : "1",
+        "backend" : "5"
+       },
       "Start" : 1
      },
      {
@@ -103,8 +97,27 @@ machines are started from the beginning.
 Unfortunately the option of choosing a static IP for the database is not
 yet available, so we cannot specify it in the Java service at startup.
 
+------------------------------------------------
+Generating a manifest from a created application
+------------------------------------------------
+
+You can generate a manifest from an existing ConPaaS application with command line client:
+::
+  cpsclient.py download_manifest appl_id > myappl.mnf
+
+You can edit the generated manifest ``myappl.mnf`` to your liking.
+Then you can create a new application with this manifest::
+  cpslient.py manifest myappl.mnf
+
+
+Note: in ConPaaS 1.3.1, you cannot get a manifest of an existing application
+through the web client. It's only available through the command line client or
+through the API.
+
+
+-------------------------------------------
 Complete description of the manifest fields
-===========================================
+-------------------------------------------
 
 In this section, we present the complete description of all the possible
 fields that can be used in the manifest. We will also distinguish
