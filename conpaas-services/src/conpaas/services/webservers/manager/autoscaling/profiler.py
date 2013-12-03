@@ -2,6 +2,7 @@
 @author: fernandez
 """
 import itertools
+from conpaas.services.webservers.manager.autoscaling.performance import StatUtils
 
 
 class Profiler:
@@ -21,6 +22,8 @@ class Profiler:
         self.max_iterations = 6
 
         self.cost_controller = cost_controller
+
+        self.stat_utils = StatUtils()
 
     def get_vm_type_ideal_throughput(self, inst_type):
         return self.vm_type_ideal_throughput[inst_type]

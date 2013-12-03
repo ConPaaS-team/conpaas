@@ -4,6 +4,8 @@ The Predictor module estimates future values using the monitoring data.
 @author: fernandez
 """
 
+# pylint: disable=E0611,E1101
+
 import numpy as np
 import statsmodels.api as sm
 from pandas import Series, DataFrame

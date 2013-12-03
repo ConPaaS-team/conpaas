@@ -66,7 +66,8 @@ class Queue:
         self.size = size
 
     def push(self, seq):
-        if self.q.__len__() <= self.size:
+        # FIXME: use Python 2.7 deque(lst, maxlen=size) in __init__
+        if len(self.q) <= self.size:
             self.q.append(seq)
         else:
             self.q.popleft()
@@ -587,7 +588,6 @@ class ProvisioningManager:
         vm_web_type = actions['vm_web_instance']
         ip = actions['node_ip_remove']
 
-        strategy = []
         strategy = actions['vm_backend_instance']
 
         if (n_backend_to_add > 0 and len(strategy) > 0 or n_web_to_add > 0):

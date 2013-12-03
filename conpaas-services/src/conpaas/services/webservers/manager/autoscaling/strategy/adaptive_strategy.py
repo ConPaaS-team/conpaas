@@ -638,21 +638,21 @@ class Strategy_Finder:
         return vm_candidate
 
         # This function determine the type of instance to be added depending of the PERFORMANCE IMPROVEMENT + COST of a new VM.
-    def add_backend_vm_candidate(self, backend_nodes):
-        instance_candidate = self.vm_inst_types[0]
-        avg_cpu_backends = avg_req_rate_backends = avg_resp_time_backends = 0
-
-        for backend_node in backend_nodes:
-            avg_cpu_user_node = self.stat_utils.compute_weight_average(self.backend_monitoring_data[backend_node.ip]['cpu_user'])
-            avg_cpu_backends += avg_cpu_user_node
-
-            avg_resp_time_user_node = self.stat_utils.compute_weight_average(self.backend_monitoring_data[backend_node.ip]['php_response_time'])
-            avg_resp_time_backends += avg_resp_time_user_node
-
-            avg_req_rate_user_node = self.stat_utils.compute_weight_average(self.backend_monitoring_data[backend_node.ip]['php_request_rate'])
-            avg_req_rate_backends += avg_req_rate_user_node
-
-        return instance_candidate
+#     def add_backend_vm_candidate(self, backend_nodes):
+#         instance_candidate = self.vm_inst_types[0]
+#         avg_cpu_backends = avg_req_rate_backends = avg_resp_time_backends = 0
+#
+#         for backend_node in backend_nodes:
+#             avg_cpu_user_node = self.stat_utils.compute_weight_average(self.backend_monitoring_data[backend_node.ip]['cpu_user'])
+#             avg_cpu_backends += avg_cpu_user_node
+#
+#             avg_resp_time_user_node = self.stat_utils.compute_weight_average(self.backend_monitoring_data[backend_node.ip]['php_response_time'])
+#             avg_resp_time_backends += avg_resp_time_user_node
+#
+#             avg_req_rate_user_node = self.stat_utils.compute_weight_average(self.backend_monitoring_data[backend_node.ip]['php_request_rate'])
+#             avg_req_rate_backends += avg_req_rate_user_node
+#
+#         return instance_candidate
 
     def obtain_cpu_forecast(self):
         # If not data for prediction, we use linear regression model
