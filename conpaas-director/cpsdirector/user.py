@@ -30,6 +30,7 @@ default_max_credit = 50
 
 user_page = Blueprint('user_page', __name__)
 
+
 class cert_required(object):
 
     def __init__(self, role):
@@ -86,9 +87,10 @@ class cert_required(object):
             return fn(*args, **kwargs)
         return decorated
 
+
 class User(db.Model):
     uid = db.Column(db.Integer, primary_key=True,
-        autoincrement=True)
+                    autoincrement=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     fname = db.Column(db.String(256))
     lname = db.Column(db.String(256))
@@ -107,7 +109,7 @@ class User(db.Model):
             setattr(self, key, val)
 
     def to_dict(self):
-        return  {
+        return {
             'uid': self.uid, 'username': self.username,
             'fname': self.fname, 'lname': self.lname,
             'email': self.email, 'affiliation': self.affiliation,
@@ -115,24 +117,26 @@ class User(db.Model):
             'created': self.created.isoformat(),
         }
 
+
 def get_user(username, password):
     """Return a User object if the specified (username, password) combination
     is valid."""
     return User.query.filter_by(username=username,
-        password=hashlib.md5(password).hexdigest()).first()
+                                password=hashlib.md5(password).hexdigest()).first()
 
 from cpsdirector.application import Application
+
 
 def create_user(username, fname, lname, email, affiliation, password, credit):
     """Create a new user with the given attributes. Return a new User object
     in case of successful creation. None otherwise."""
     new_user = User(username=username,
-                fname=fname,
-                lname=lname,
-                email=email,
-                affiliation=affiliation,
-                password=hashlib.md5(password).hexdigest(),
-                credit=credit)
+                    fname=fname,
+                    lname=lname,
+                    email=email,
+                    affiliation=affiliation,
+                    password=hashlib.md5(password).hexdigest(),
+                    credit=credit)
 
     app = Application(user=new_user)
 
@@ -145,6 +149,7 @@ def create_user(username, fname, lname, email, affiliation, password, credit):
     except Exception, err:
         db.session.rollback()
         raise err
+
 
 def login_required(fn):
     @wraps(fn)
@@ -164,11 +169,12 @@ def login_required(fn):
 
     return decorated_view
 
+
 @user_page.route("/new_user", methods=['POST'])
 def new_user():
     values = {}
-    required_fields = ( 'username', 'fname', 'lname', 'email',
-                        'affiliation', 'password', 'credit' )
+    required_fields = ('username', 'fname', 'lname', 'email',
+                       'affiliation', 'password', 'credit')
 
     log('New user "%s <%s>" creation attempt' % (
         request.values.get('username'), request.values.get('email')))
@@ -181,7 +187,8 @@ def new_user():
             log('Missing required field: %s' % field)
 
             return build_response(jsonify({
-                'error': True, 'msg': '%s is a required field' % field }))
+                'error': True, 'msg': '%s is a required field' % field,
+            }))
 
     # check if the provided username already exists
     if User.query.filter_by(username=values['username']).first():
@@ -189,7 +196,8 @@ def new_user():
 
         return build_response(jsonify({
             'error': True,
-            'msg': 'Username "%s" already taken' % values['username'] }))
+            'msg': 'Username "%s" already taken' % values['username'],
+        }))
 
     # check if the provided email already exists
     if User.query.filter_by(email=values['email']).first():
@@ -197,7 +205,8 @@ def new_user():
 
         return build_response(jsonify({
             'error': True,
-            'msg': 'E-mail "%s" already registered' % values['email'] }))
+            'msg': 'E-mail "%s" already registered' % values['email'],
+        }))
 
     # check that the requested credit does not exceed the maximum
     if config_parser.has_option('conpaas', 'MAX_CREDIT'):
@@ -205,11 +214,11 @@ def new_user():
         try:
             max_credit = int(max_credit)
         except ValueError:
-            log('ERROR: Parameter MAX_CREDIT "%s" is not a valid integer.' \
+            log('ERROR: Parameter MAX_CREDIT "%s" is not a valid integer.'
                 ' Defaulting to maximum credit %s.' % (max_credit, default_max_credit))
             max_credit = default_max_credit
         if max_credit < 0:
-            log('ERROR: Parameter MAX_CREDIT "%s" cannot be a negative number.' \
+            log('ERROR: Parameter MAX_CREDIT "%s" cannot be a negative number.'
                 ' Defaulting to maximum credit %s.' % (max_credit, default_max_credit))
             max_credit = default_max_credit
     else:
@@ -238,7 +247,8 @@ def new_user():
         # something went wrong
         error_msg = 'Error upon user creation: %s -> %s' % (type(err), err)
         log(error_msg)
-        return build_response(jsonify({ 'error': True, 'msg': error_msg }))
+        return build_response(jsonify({'error': True, 'msg': error_msg}))
+
 
 @user_page.route("/login", methods=['POST'])
 @login_required
@@ -247,7 +257,8 @@ def login():
     # return user data
     return build_response(simplejson.dumps(g.user.to_dict()))
 
-@user_page.route("/getcerts", methods=['POST','GET'])
+
+@user_page.route("/getcerts", methods=['POST', 'GET'])
 @login_required
 def get_user_certs():
     # Creates new certificates for this user
@@ -276,7 +287,8 @@ def get_user_certs():
 
     # Send zip archive to the client
     return helpers.send_file(zipdata, mimetype="application/zip",
-        as_attachment=True, attachment_filename='certs.zip')
+                             as_attachment=True, attachment_filename='certs.zip')
+
 
 @user_page.route("/ca/get_cert.php", methods=['POST'])
 @cert_required(role='manager')
@@ -285,9 +297,10 @@ def get_manager_cert():
         g.cert['serviceLocator'], g.cert['UID']))
 
     csr = crypto.load_certificate_request(crypto.FILETYPE_PEM,
-        request.files['csr'].read())
+                                          request.files['csr'].read())
     return x509cert.create_x509_cert(
         config_parser.get('conpaas', 'CERT_DIR'), csr)
+
 
 @user_page.route("/callback/decrementUserCredit.php", methods=['POST'])
 @cert_required(role='manager')
@@ -300,7 +313,7 @@ def credit():
     had enough credit, True otherwise.
     """
     service_id = int(request.values.get('sid', -1))
-    decrement  = int(request.values.get('decrement', 0))
+    decrement = int(request.values.get('decrement', 0))
 
     log('Decrement user credit: sid=%s, old_credit=%s, decrement=%s' % (
         service_id, g.service.user.credit, decrement))
@@ -311,11 +324,11 @@ def credit():
     if g.service.user.credit > -1:
         # User has enough credit
         db.session.commit()
-        log('New credit for user %s: %s' % (g.service.user.uid, g.service.user.credit))
-        return jsonify({ 'error': False })
+        log('New credit for user %s: %s' %
+            (g.service.user.uid, g.service.user.credit))
+        return jsonify({'error': False})
 
     # User does not have enough credit
     db.session.rollback()
     log('User %s does not have enough credit' % g.service.user.uid)
-    return jsonify({ 'error': True })
-
+    return jsonify({'error': True})
