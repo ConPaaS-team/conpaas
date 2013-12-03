@@ -193,7 +193,7 @@ def is_dict(argument):
                          lambda arg: "'%s' is not a dict." % arg)(argument)
 
 
-def is_dict2(mandatory_keys, optional_keys=[]):
+def is_dict2(mandatory_keys, optional_keys=None):
     def _dict2(argument):
         argdict = is_dict(argument)
         keys = argument.keys()
@@ -203,7 +203,11 @@ def is_dict2(mandatory_keys, optional_keys=[]):
             except:
                 raise Exception("Was expecting key %s in dict %s" \
                                 % (mand_key, argdict))
-        for opt_key in optional_keys:
+        if optional_keys is None:
+            _optional_keys = []
+        else:
+            _optional_keys = optional_keys
+        for opt_key in _optional_keys:
             try:
                 keys.remove(opt_key)
             except:
@@ -221,7 +225,7 @@ def is_list_dict(argument):
     return mylist
 
 
-def is_list_dict2(mandatory_keys, optional_keys=[]):
+def is_list_dict2(mandatory_keys, optional_keys=None):
     def _list_dict2(argument):
         mylist = is_list_dict(argument)
         for arg in mylist:
