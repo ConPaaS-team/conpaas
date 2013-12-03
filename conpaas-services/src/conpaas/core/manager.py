@@ -90,6 +90,24 @@ class BaseManager(object):
         else:
             self.logger.info('Ganglia started successfully')
 
+    def _check_state(self, expected_states):
+        if self.state not in expected_states:
+            raise Exception("ERROR: wrong state, was expecting one of %s"\
+                            " but current state is %s" \
+                            % (expected_states, self.state))
+
+    def _wait_state(self, expected_states, timeout=10 * 60):
+        polling_interval = 10   # seconds
+        while self.state not in expected_states and timeout >= 0:
+            self.logger.debug('Current state is %s, waiting for state to change to one of %s'
+                              % (self.state, expected_states))
+            time.sleep(polling_interval)
+            timeout -= polling_interval
+        if timeout < 0:
+            raise Exception("Timeout after %s seconds with a polling interval of %s seconds"
+                            " while waiting for manager state to become one of %s."
+                            % (timeout, polling_interval, expected_states))
+
     @expose('POST')
     def startup(self, kwargs):
         """Start the given service"""
