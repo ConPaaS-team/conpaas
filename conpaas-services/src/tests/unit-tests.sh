@@ -70,5 +70,12 @@ done
 # pyunit tests with code coverage statistics
 #
 export PYTHONPATH=..
-coverage run --source=conpaas run_tests.py
+COVERAGE="`which python-coverage || true`"
+if [ -z "$COVERAGE" ]
+then
+    COVERAGE="`which coverage`"
+fi
+
+$COVERAGE run --source=conpaas run_tests.py
+$COVERAGE report -m
 

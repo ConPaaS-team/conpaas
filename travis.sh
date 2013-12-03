@@ -40,7 +40,12 @@ touch cpsdirectorconf/ConPaaS.tar.gz
 $COVERAGE run --source=cpsdirector test.py
 $COVERAGE report -m
 
-cd ../conpaas-services/src/tests/ 
+cd ..
+# end of conpaas director unit tests
 
-$COVERAGE run --source=conpaas run_tests.py
-$COVERAGE report -m
+# conpaas-services unit tests
+cd conpaas-services/src/tests/
+./unit-tests.sh
+cd ../../..
+
+

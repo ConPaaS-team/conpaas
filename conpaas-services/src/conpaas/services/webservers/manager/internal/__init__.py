@@ -123,6 +123,12 @@ class BasicWebserversManager(BaseManager):
     def _adapting_get_count(self):
         return self.memcache.get('adapting_count')
 
+    def _start_proxy(self, config, nodes):
+        raise Exception("BasicWebservicesManager._start_proxy(...) must be overridden by extending classes.")
+
+    def _update_proxy(self, config, nodes):
+        raise Exception("BasicWebservicesManager._update_proxy(...) must be overridden by extending classes.")
+
     def _stop_proxy(self, config, nodes):
         for serviceNode in nodes:
             try:
@@ -178,6 +184,12 @@ class BasicWebserversManager(BaseManager):
                 self._state_set(self.S_ERROR, msg='Failed to stop web at node %s'
                                 % str(serviceNode))
                 raise
+
+    def _start_backend(self, config, nodes):
+        raise Exception("BasicWebservicesManager._start_backend(...) must be overridden by extending classes.")
+
+    def _stop_backend(self, config, nodes):
+        raise Exception("BasicWebservicesManager._stop_backend(...) must be overridden by extending classes.")
 
     @expose('POST')
     def startup(self, kwargs):
@@ -242,6 +254,9 @@ class BasicWebserversManager(BaseManager):
         self._state_set(self.S_EPILOGUE, msg='Shutting down')
         Thread(target=self.do_shutdown, args=[config]).start()
         return HttpJsonResponse({'state': self.S_EPILOGUE})
+
+    def _update_code(self, config, nodes):
+        raise Exception("BasicWebservicesManager._update_code(...) must be overridden by extending classes.")
 
     def do_startup(self, config, serviceNodeKwargs, cloud):
         self.logger.debug(
