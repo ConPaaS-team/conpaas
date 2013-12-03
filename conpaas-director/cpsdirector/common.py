@@ -7,6 +7,7 @@ from grp import getgrnam
 
 from ConfigParser import ConfigParser
 
+# TODO: why not use SafeConfigParser() ??
 config_parser = ConfigParser()
 
 CONFFILE = os.getenv('DIRECTOR_CFG')
@@ -28,6 +29,9 @@ if os.getenv('DIRECTOR_TESTING'):
     # separate database
     config_parser.set("director", "DATABASE_URI", "sqlite:///director-test.db")
     config_parser.set("director", "DIRECTOR_URL", "")
+
+    # dummy data dir for manifests
+    config_parser.set("director", "USERDATA_DIR", "/tmp/")
 
 def get_director_url():
     return config_parser.get("director", "DIRECTOR_URL")
