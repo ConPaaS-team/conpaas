@@ -7,7 +7,9 @@ python:
   - 2.7
 install:
   - sudo apt-get install libblas-dev liblapack-dev gfortran
-  - pip install coveralls flask-sqlalchemy apache-libcloud netaddr mock cheetah pep8 pylint numpy pandas scipy
+  - pip install coveralls flask-sqlalchemy apache-libcloud netaddr mock cheetah
+  - pip install pep8 pylint
+  - pip install numpy pandas scipy patsy
   - pip install statsmodels
 script: 
   - ./travis.sh
