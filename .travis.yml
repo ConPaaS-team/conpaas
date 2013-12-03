@@ -6,7 +6,7 @@ language: python
 python:
   - 2.7
 install:
-  - pip install coveralls flask-sqlalchemy apache-libcloud netaddr mock cheetah pep8 pylint
+  - pip install coveralls flask-sqlalchemy apache-libcloud netaddr mock cheetah pep8 pylint statsmodels numpy scipy pandas
 script: 
   - ./travis.sh
 after_success: 
