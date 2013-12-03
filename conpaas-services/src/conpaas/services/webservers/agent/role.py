@@ -4,6 +4,10 @@
     :copyright: (C) 2010-2013 by Contrail Consortium.
 """
 
+## FIXME:  disabling pylint error 1101 as a quick workaround a bad class
+##   design with classes Nginx, NginxStatic and NginxProxy
+# pylint: disable=E1101
+
 from os.path import join, devnull, exists
 from os import kill, chown, setuid, setgid
 from pwd import getpwnam
