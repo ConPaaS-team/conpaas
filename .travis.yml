@@ -6,6 +6,7 @@ language: python
 python:
   - 2.7
 install:
+  - apt-get install python-numpy
   - pip install coveralls flask-sqlalchemy apache-libcloud netaddr mock cheetah pep8 pylint numpy pandas scipy
   - pip install statsmodels
 script: 
