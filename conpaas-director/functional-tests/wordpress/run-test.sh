@@ -18,6 +18,19 @@ then
     exit 1
 fi
 
+if [ ! -x "`which mkpasswd`" ]
+then
+    echo "E: Please install the 'whois' Debian package."
+    exit 1
+fi
+
+if [ ! -x "`which mysql`" ]
+then
+    echo "E: Please install the 'mysql-client' Debian package."
+    exit 1
+fi
+
+
 wget "http://www.linux.it/~ema/conpaas/wordpress-test-code.tar.bz2"
 
 tar xfj "wordpress-test-code.tar.bz2" > /dev/null
