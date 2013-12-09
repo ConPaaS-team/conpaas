@@ -90,6 +90,51 @@ class DbTest(Common):
         user = cpsdirector.user.get_user(TEST_USER_DATA['username'], TEST_USER_DATA['password'])
         self.assertEquals(USER_CREDIT - 10, user.credit)
 
+
+def mock_callmanager(service_id, method, post, data, files=[]):
+    return {'state': 'RUNNING'}
+
+
+class MockServiceStart(mock.Mock):
+    data = '{"msg": "ok"}'
+
+
+def mock_callmanager_download(service_id, method, post, data, files=[]):
+    if method == "list_nodes":
+        return {'state': 'RUNNING', 'osd': [], 'dir': [], 'mrc': []}
+    if method == "get_startup_script":
+        return """echo "env[MYSQL_IP]='192.168.122.7'" >> /root/ConPaaS/src/conpaas/services/webservers/etc/fpm.tmpl
+export MYSQL_IP='192.168.122.7'
+echo "env[XTREEMFS_IP]='192.168.122.5'" >> /root/ConPaaS/src/conpaas/services/webservers/etc/fpm.tmpl
+export XTREEMFS_IP='192.168.122.5'
+#!/bin/bash
+
+echo 'hello world'
+"""
+    if method == "get_service_snapshot":
+        return [{'data': '',
+                 'osd_uuid': 42,
+                 'dir_uuid': None,
+                 'mrc_uuid': None}]
+
+    return {'state': 'RUNNING', 'error': False, 'persistent': False}
+
+
+def mock_callmanager_down_selenium(service_id, method, post, data, files=[]):
+    return {'state': 'RUNNING', 'error': False}
+
+
+def mock_callmanager_down_archive(service_id, method, post, data, files=[]):
+    if method == "list_code_versions":
+        return {'state': 'RUNNING',
+                 'codeVersions': [{'current': True, 'codeVersionId': 42,
+                                   'filename': 'test.tar.gz'}]
+                }
+    if method == "download_code_version":
+        return ""
+    return {'state': 'RUNNING', 'error': False}
+
+
 class DirectorTest(Common):
 
     def setUp(self):
@@ -770,16 +815,8 @@ class DirectorTest(Common):
         self.assertEquals(200, response.status_code)
         self.assertEquals(True, simplejson.loads(response.data))
 
-    def mock_callmanager(service_id, method, post, data, files=[]):
-        return { 'state': 'RUNNING' }
-
-    def mock_service_start(service_type, cloud, appid):
-        class ret:
-            data = '{"msg": "ok"}'
-        return ret
-
-    @mock.patch('cpsdirector.manifest.callmanager', mock_callmanager)
-    @mock.patch('cpsdirector.manifest.service_start', mock_service_start)
+    @mock.patch('cpsdirector.manifest.callmanager', {'state': 'RUNNING'})
+    @mock.patch('cpsdirector.manifest.service_start', MockServiceStart())
     def test_upload_manifest_ok(self):
         self.create_user()
         
@@ -828,36 +865,14 @@ class DirectorTest(Common):
         self.assertEquals(200, response.status_code)
         self.assertEquals(False, simplejson.loads(response.data))
 
-    def mock_callmanager(service_id, method, post, data, files=[]):
-        if method == "list_nodes" :
-            return { 'state': 'RUNNING', 'osd': [], 'dir': [], 'mrc': [] }
-
-        if method == "get_startup_script":
-            return """echo "env[MYSQL_IP]='192.168.122.7'" >> /root/ConPaaS/src/conpaas/services/webservers/etc/fpm.tmpl
-export MYSQL_IP='192.168.122.7'
-echo "env[XTREEMFS_IP]='192.168.122.5'" >> /root/ConPaaS/src/conpaas/services/webservers/etc/fpm.tmpl
-export XTREEMFS_IP='192.168.122.5'
-#!/bin/bash
-
-echo 'hello world'
-"""
-
-        if method == "get_service_snapshot":
-            return [ { 'data': '', 
-                       'osd_uuid': 42, 
-                       'dir_uuid': None,
-                       'mrc_uuid': None } ]
-
-        return { 'state': 'RUNNING', 'error': False, 'persistent': False }
-
-    @mock.patch('cpsdirector.manifest.callmanager', mock_callmanager)
+    @mock.patch('cpsdirector.manifest.callmanager', mock_callmanager_download)
     def test_create_startup_script(self):
         result = cpsdirector.manifest.create_startup_script(1)
         expected = "#!/bin/bash\n\necho 'hello world'\n"
         self.assertEquals(expected, result)
 
-    @mock.patch('cpsdirector.manifest.callmanager', mock_callmanager)
-    @mock.patch('cpsdirector.application.callmanager', mock_callmanager)
+    @mock.patch('cpsdirector.manifest.callmanager', mock_callmanager_download)
+    @mock.patch('cpsdirector.application.callmanager', mock_callmanager_download)
     def test_download_manifest(self):
         self.create_user()
         self.app.post('/start/xtreemfs', data={ 'uid': 1 })
@@ -882,11 +897,8 @@ echo 'hello world'
 
         self.failUnless('StartupScript' in service)
 
-    def mock_callmanager(service_id, method, post, data, files=[]):
-        return { 'state': 'RUNNING', 'error': False, }
-
-    @mock.patch('cpsdirector.manifest.callmanager', mock_callmanager)
-    def test_download_manifest_list_nodes_error(self):
+    @mock.patch('cpsdirector.manifest.callmanager', mock_callmanager_down_selenium)
+    def test_download_manifest_selenium(self):
         self.create_user()
         self.app.post('/start/selenium', data={ 'uid': 1 })
 
@@ -900,18 +912,7 @@ echo 'hello world'
         self.assertEquals(200, response.status_code)
         self.assertEquals(expected_result, response.data)
 
-    def mock_callmanager(service_id, method, post, data, files=[]):
-        if method == "list_code_versions" :
-            return { 'state': 'RUNNING', 
-                     'codeVersions': [ { 'current': True, 'codeVersionId': 42,
-                                         'filename': 'test.tar.gz' } ] }
-
-        if method == "download_code_version":
-            return ""
-
-        return { 'state': 'RUNNING', 'error': False }
-
-    @mock.patch('cpsdirector.manifest.callmanager', mock_callmanager)
+    @mock.patch('cpsdirector.manifest.callmanager', mock_callmanager_down_archive)
     def test_download_manifest_get_archive(self):
         self.create_user()
         self.app.post('/start/php', data={ 'uid': 1 })
