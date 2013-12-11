@@ -6,17 +6,83 @@ apt-get -f -y update
 DEBIAN_FRONTEND=noninteractive apt-get -y --force-yes --no-install-recommends --no-upgrade install \
 		psmisc libaio1 libdbi-perl libdbd-mysql-perl mysql-client rsync python-mysqldb make
 
-wget https://launchpad.net/galera/2.x/23.2.4/+download/galera-23.2.4-amd64.deb 2>/dev/null
-dpkg -i galera-23.2.4-amd64.deb
+if [ $DEBIAN_DIST == "squeeze" ]
+then
+    cd /root/
+#    wget https://launchpad.net/galera/2.x/23.2.4/+download/galera-23.2.4-amd64.deb 2>/dev/null
+#    dpkg -i galera-23.2.4-amd64.deb
 
-wget https://launchpad.net/codership-mysql/5.5/5.5.29-23.7.3/+download/mysql-server-wsrep-5.5.29-23.7.3-amd64.deb 2>/dev/null
-dpkg -i mysql-server-wsrep-5.5.29-23.7.3-amd64.deb
+    wget https://launchpad.net/galera/2.x/25.2.8/+download/galera-25.2.8-$ARCH.deb 2>/dev/null
+    dpkg -i galera-25.2.8-$ARCH.deb
 
-wget http://www.codership.com/files/glb/glb-1.0.0rc1.tar.gz 2>/dev/null
-tar xvfz glb-1.0.0rc1.tar.gz
-cd glb-1.0.0rc1
+#    wget https://launchpad.net/codership-mysql/5.5/5.5.29-23.7.3/+download/mysql-server-wsrep-5.5.29-23.7.3-amd64.deb 2>/dev/null
+#    dpkg -i mysql-server-wsrep-5.5.29-23.7.3-amd64.deb
+
+    wget https://launchpad.net/codership-mysql/5.5/5.5.34-25.9/+download/mysql-server-wsrep-5.5.34-25.9-$ARCH.deb 2>/dev/null
+    dpkg -i mysql-server-wsrep-5.5.34-25.9-$ARCH.deb
+
+    rm -f mysql-server-wsrep-5.5.34-25.9-$ARCH.deb
+    rm -f galera-25.2.8-$ARCH.deb
+    
+    ## Fixing a bug in MySQL Galera (actually fixed in MySQL Galera 5.5.31-23.7.5 in June 2013)
+#    sed 's.>>/dev/stderr.>\&2.' /usr/bin/wsrep_sst_common
+
+elif [ $DEBIAN_DIST == "wheezy" ]
+then
+    cd /root/
+#    # Galera version 3.x
+#    wget https://launchpad.net/galera/3.x/25.3.1/+download/galera-25.3.1-$ARCH.deb 2>/dev/null
+#    dpkg -i galera-25.3.1-$ARCH.deb
+
+    # Pre-build package depends on libssl0.9.8 whereas wheezy ships with libssl1.0.0
+    # Building and installing from source to link with libssl1.0.0
+    DEBIAN_FRONTEND=noninteractive apt-get -y --force-yes --no-install-recommends --no-upgrade install \
+        scons libssl-dev libboost-dev libboost-program-options-dev check
+    wget https://launchpad.net/galera/3.x/25.3.1/+download/galera-25.3.1-src.tar.gz 2> /dev/null
+    tar -xaf galera-25.3.1-src.tar.gz
+    cd galera-25.3.1-src
+    scons /
+    cd ..
+    rm -rf galera-25.3.1-src
+
+#    # Galera version 2.x
+#    DEBIAN_FRONTEND=noninteractive apt-get -y --force-yes --no-install-recommends --no-upgrade install libssl0.9.8
+#    wget https://launchpad.net/galera/2.x/25.2.8/+download/galera-25.2.8-$ARCH.deb 2> /dev/null
+#    dpkg -i galera-25.2.8-$ARCH.deb
+    
+    wget https://launchpad.net/codership-mysql/5.5/5.5.34-25.9/+download/mysql-server-wsrep-5.5.34-25.9-$ARCH.deb 2>/dev/null
+    dpkg -i mysql-server-wsrep-5.5.34-25.9-$ARCH.deb
+
+    rm -f mysql-server-wsrep-5.5.34-25.9-$ARCH.deb
+    rm -f galera-25.3.1-src.tar.gz
+
+else
+    echo "ERROR: unknown Debian distribution '$DEBIAN_DIST': cannot select correct MySQL Galera packages."
+    exit 1
+fi
+
+
+# Added more wait time before deciding whether the mysql daemon has failed to start (idem for stopping)
+sed -i 's/1 2 3 4 5 6.*;/\$(seq 60);/' /etc/init.d/mysql
+
+
+# Install Galera Load Balancer (glb)
+
+glb_version=1.0.1
+wget http://www.codership.com/files/glb/glb-\${glb_version}.tar.gz 2>/dev/null
+tar xvfz glb-\${glb_version}.tar.gz
+cd glb-\${glb_version}
 ./configure; make; make install
+cp -a ./files/glbd.sh /etc/init.d/glbd
+cp -a ./files/glbd.cfg /etc/default/glbd
+# using default listen port 8010
+sed -i 's/#LISTEN_ADDR/LISTEN_ADDR/' /etc/default/glbd
+# using default listen port 8011
+## wait 1 second after EOF to close nc
+sed -i 's/#CONTROL_ADDR/CONTROL_ADDR/' /etc/default/glbd
+sed -i 's/nc \$CONTROL_IP/nc -q 1 \$CONTROL_IP/' /etc/init.d/glbd
 cd ..
-rm -fr glb-1.0.0rc1
+rm -fr glb-\${glb_version} glb-\${glb_version}.tar.gz
+
 
 EOF

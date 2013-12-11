@@ -1,6 +1,6 @@
 # Section: 995-rm-unused-pkgs
 
-cat <<"EOF" > $ROOT_DIR/conpaas_rm
+cat <<EOF > $ROOT_DIR/conpaas_rm
 #!/usr/bin/python
 
 from subprocess import Popen
@@ -13,7 +13,7 @@ import sys
 
 print "rm unused packages script starting ..."
 
-debian_pkgs = ['linux-image-2.6.32-5-xen-amd64', 'linux-image-2.6.32-5-amd64',
+debian_pkgs = ['linux-image-xen-amd64', 'linux-image-amd64', 'linux-image-xen-686', 'linux-image-686',
                'initramfs-tools', 'bash', 'apt', 'apt-utils', 'cron',
                'vim-tiny', 'grub-common', 'grub', 'grub-pc', 'net-tools',
                'iputils-ping', 'rsyslog', 'binfmt-support', 'dbus',
@@ -23,7 +23,7 @@ debian_pkgs = ['linux-image-2.6.32-5-xen-amd64', 'linux-image-2.6.32-5-amd64',
 
 core_pkgs = ['openssh-server', 'python', 'python-pycurl', 'python-openssl',
              'python-m2crypto', 'python-cheetah', 'libxslt1-dev', 'yaws',
-             'subversion', 'unzip', 'less', 'ipop',
+             'subversion', 'unzip', 'less', 'ipop', 'ntp', 'curl',
              'ganglia-monitor', 'gmetad', 'rrdtool', 'logtail', 'python-netaddr']
 
 php_pkgs = ['php5-fpm', 'php5-curl', 'php5-mcrypt', 'php5-mysql', 'php5-odbc',
@@ -34,11 +34,17 @@ php_pkgs = ['php5-fpm', 'php5-curl', 'php5-mcrypt', 'php5-mysql', 'php5-odbc',
 
 mysql_pkgs = ['mysql-server', 'python-mysqldb']
 
-galera_pkgs = ['galera', 'mysql-server-wsrep', 'python-mysqldb']
+galera_pkgs = ['galera', 'mysql-server-wsrep', 'python-mysqldb', 'rsync']
 
-condor_pkgs = ['sun-java6-jdk', 'ant', 'condor', 'sudo', 'xvfb']
+if "$DEBIAN_DIST" == "squeeze":
+    condor_pkgs = ['sun-java6-jdk', 'ant', 'condor', 'sudo', 'xvfb']
+else:
+    condor_pkgs = ['openjdk-7-jre-headless', 'ant', 'condor', 'sudo', 'xvfb']
 
-selenium_pkgs = ['iceweasel', 'xvfb', 'xinit', 'chromium-browser','sun-java6-jdk']
+if "$DEBIAN_DIST" == "squeeze":
+    selenium_pkgs = ['iceweasel', 'xvfb', 'xinit', 'chromium-browser','sun-java6-jdk']
+else:
+    selenium_pkgs = ['iceweasel', 'xvfb', 'xinit', 'chromium-browser','openjdk-7-jre-headless']
 
 hadoop_pkgs =   ['hadoop-0.20', 'hadoop-0.20-namenode', 'hadoop-0.20-datanode',
                 'hadoop-0.20-secondarynamenode', 'hadoop-0.20-jobtracker',
@@ -183,7 +189,7 @@ needed_pkgs = set([])
 for pkg in pkgs:
     print 'Processing ' + pkg
     needed_pkgs.add(pkg)
-    dependencies = shell_cmd('apt-rdepends %s 2>&1 | awk -F"Depends:|PreDepends:" \'/Depends: / || /PreDepends: / { print $2 }\' | awk \'{print $1}\'| sort -u' % pkg)
+    dependencies = shell_cmd('apt-rdepends %s 2>&1 | awk -F"Depends:|PreDepends:" \'/Depends: / || /PreDepends: / { print \$2 }\' | awk \'{print \$1}\'| sort -u' % pkg)
 
     needed_pkgs.update(string_to_list(dependencies))
 
@@ -195,10 +201,10 @@ if (dbg):
     write_to_file('needed_pkgs', needed_pkgs)
 
 # Useful
-# shell_cmd("dpkg-query -Wf '${Installed-Size}\t\t${Package}\t\t${Priority}\n' | sort -u")
+# shell_cmd("dpkg-query -Wf '\${Installed-Size}\t\t\${Package}\t\t\${Priority}\n' | sort -u")
 
 # Make a list of installed packages
-installed_pkgs = shell_cmd("dpkg-query -Wf '${Package}\n' | sort -u")
+installed_pkgs = shell_cmd("dpkg-query -Wf '\${Package}\n' | sort -u")
 installed_pkgs = string_to_list(installed_pkgs)
 installed_pkgs = set(installed_pkgs)
 

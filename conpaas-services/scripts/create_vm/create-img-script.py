@@ -78,6 +78,10 @@ def close_output_file():
             stat.S_IRGRP | stat.S_IXGRP |
             stat.S_IXOTH)
 
+def error(error_msg):
+    print 'ERROR: %s' % error_msg
+    sys.exit(1)
+
 if __name__ == '__main__':
     root_dir = 'scripts/'
 
@@ -101,16 +105,19 @@ if __name__ == '__main__':
     append_str_to_output('# The Debian distribution that you would '\
             'like to have installed (we recommend squeeze).\n')
     append_str_to_output('DEBIAN_DIST=' + config.get('RECOMMENDED', 'debian_dist') + '\n')
-    append_str_to_output('DEBIAN_MIRROR=' + config.get('RECOMMENDED', 'kvm_debian_mirror') + '\n\n')
+    append_str_to_output('DEBIAN_MIRROR=' + config.get('RECOMMENDED', 'debian_mirror') + '\n\n')
 
     append_str_to_output('# The architecture and kernel version for '\
             'the OS that will be installed (please make\n')
     append_str_to_output('# sure to modify the kernel version name accordingly if you modify the architecture).\n')
 
-    cloud = config.get('CUSTOMIZABLE', 'cloud')
-    hypervisor = config.get('CUSTOMIZABLE', 'hypervisor')
     optimize = config.get('CUSTOMIZABLE', 'optimize')
 
+    hypervisor = config.get('CUSTOMIZABLE', 'hypervisor')
+    if hypervisor != 'kvm' and hypervisor != 'xen':
+        error('Unknown hypervisor "%s".' % hypervisor)
+    
+    cloud = config.get('CUSTOMIZABLE', 'cloud')
     if cloud == 'opennebula':
         pass
     elif cloud == 'ec2':
@@ -118,20 +125,33 @@ if __name__ == '__main__':
             print 'WARNING: Your choice of hypervisor is not compatible with Amazon EC2. Xen will be used instead.'
             hypervisor = 'xen'
     else:
-        print 'Choose a cloud.'
-        sys.exit(1)
-
+        error('Unknown cloud "%s".' % cloud)
     append_str_to_output('CLOUD=' + cloud + '\n')
 
-    if hypervisor == 'kvm':
-        append_str_to_output('ARCH=' + config.get('RECOMMENDED', 'kvm_arch') + '\n')
-        append_str_to_output('KERNEL_VERSION=' + config.get('RECOMMENDED', 'kvm_kernel_version') + '\n\n')
-    elif hypervisor == 'xen':
-        append_str_to_output('ARCH=' + config.get('RECOMMENDED', 'xen_arch') + '\n')
-        append_str_to_output('KERNEL_VERSION="' + config.get('RECOMMENDED', 'xen_kernel_version') + '"\n\n')
+    arch = config.get('RECOMMENDED', 'arch')
+    if arch == 'i386':
+        kernel_arch = '686'   # yes not 'i386'
+    elif arch == 'amd64':
+        kernel_arch = 'amd64'
     else:
-        print 'Choose a hypervisor.'
-        sys.exit(1)
+        error('Unknown arch "%s".' % arch)
+    append_str_to_output('ARCH=%s\n' % arch)
+    
+    debian_dist = config.get('RECOMMENDED', 'debian_dist')
+    if debian_dist == 'squeeze':
+        if hypervisor == 'kvm':
+            kernel_version = 'linux-image-%s' % kernel_arch
+        elif hypervisor == 'xen':
+            kernel_version = 'linux-image-xen-%s' % kernel_arch
+    elif debian_dist == 'wheezy':
+        # Debian wheezy use the same kernel image both for kvm and xen
+        kernel_version = 'linux-image-%s' % kernel_arch
+    else:
+        error('Unknown Debian distribution "%s".' % debian_dist)
+    append_str_to_output('KERNEL=%s\n' % kernel_version)
+    
+    append_str_to_output('\n\n')
+
 
     # Write message about the selected services
     print 'Setting up image for %s, with services:' % hypervisor.upper(),

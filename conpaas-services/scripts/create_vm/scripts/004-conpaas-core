@@ -18,6 +18,15 @@ echo "root:contrail" | chpasswd
 # fix apt sources
 sed --in-place 's/main/main contrib non-free/' /etc/apt/sources.list
 
+export DEBIAN_FRONTEND=noninteractive
+
+# install NTP to get the corret date for generated certificate
+apt-get -q -y install ntp
+
+# install curl that works better than wget in some scenarios
+apt-get -q -y install curl
+
+
 # install dependencies
 apt-get -f -y update
 # pre-accept sun-java6 licence

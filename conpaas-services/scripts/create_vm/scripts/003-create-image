@@ -144,8 +144,8 @@ chroot $ROOT_DIR /bin/bash -c 'update-locale LANG=en_US.UTF-8'
 
 cecho "Running apt-get update"
 chroot $ROOT_DIR /bin/bash -c 'apt-get -y update'
-cecho "Installing linux-image-$KERNEL_VERSION"
-chroot $ROOT_DIR /bin/bash -c "apt-get -y install linux-image-$KERNEL_VERSION"
+cecho "Installing $KERNEL"
+chroot $ROOT_DIR /bin/bash -c "apt-get -y install $KERNEL"
 cecho "Installing grub package"
 chroot $ROOT_DIR /bin/bash -c 'DEBIAN_FRONTEND=noninteractive apt-get -y --force-yes install grub'
 
@@ -157,15 +157,18 @@ EOF
 
 chroot $ROOT_DIR grub-mkconfig -o /boot/grub/grub.cfg
 
+VMLINUZ=/boot/$(chroot $ROOT_DIR ls /boot/ | grep vmlinuz | head -n 1)
+INITRD=/boot/$(chroot $ROOT_DIR ls /boot/ | grep initrd | head -n 1)
+
 cecho "Writing /boot/grub/grub.cfg"
 cat <<EOF > $ROOT_DIR/boot/grub/grub.cfg
 set default=0
 set timeout=0
-menuentry 'linux-image-$KERNEL_VERSION' {
+menuentry '$(basename $VMLINUZ)' {
   insmod ext2
   set root='(hd0,1)'
-  linux  /boot/vmlinuz-$KERNEL_VERSION root=/dev/sda1
-  initrd /boot/initrd.img-$KERNEL_VERSION
+  linux  $VMLINUZ root=/dev/sda1
+  initrd $INITRD
 }
 EOF
 
@@ -175,10 +178,10 @@ if [ "$CLOUD" == "ec2" ] ; then
 default 0
 timeout 0
 
-title linux-image-2.6.32-5-xen-amd64
+title $(basename $VMLINUZ)
   root (hd0,0)
-  kernel /boot/vmlinuz-2.6.32-5-xen-amd64 root=/dev/xvda1 ro
-  initrd /boot/initrd.img-2.6.32-5-xen-amd64
+  kernel $VMLINUZ root=/dev/xvda1 ro
+  initrd $INITRD
 EOF
 fi
 

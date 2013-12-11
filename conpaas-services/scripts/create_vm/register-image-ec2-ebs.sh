@@ -2,7 +2,9 @@
 # Register EBS backed AMI.
 
 # Stop execution if any command fails.
-#set -e
+set -e
+
+set -x
 
 txtdef="\e[0m" # revert to default color
 txtbld="\e[1m"    # bold
@@ -122,7 +124,7 @@ preced the image file name.\n${txtdef}" >&2
 
     # Some checks.
     if ! silent_check arch; then
-        arch=$(parse_cfg_file xen_arch)
+        arch=$(parse_cfg_file arch)
     fi
     [ $arch == "i386" ] || [ $arch == "amd64" ] || {
         echo -e "${errcolor}ERROR: 'arch' option is not properly set. It can be \
@@ -144,8 +146,8 @@ specified on the command line or in a file called '${cfg_file}'.\n${txtdef}" >&2
 
 
 cfg_file=create-img-script.cfg
-# Requires: $1 = name of configuratio option to search for.
-# Output: The option if it is found in the configuratio file.
+# Requires: $1 = name of configuration option to search for.
+# Output: The option if it is found in the configuration file.
 function parse_cfg_file {
     if ! [ -f $cfg_file ]; then
         echo -n ""

@@ -13,7 +13,18 @@ wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add
 # added [arch=amd64 trusted=yes] to avoid authentication warning
 echo "deb [arch=amd64 trusted=yes] http://research.cs.wisc.edu/htcondor/debian/stable/ $DEBIAN_DIST contrib" >> /etc/apt/sources.list
 apt-get update
-apt-get -f -y --force-yes install sun-java6-jdk ant condor sudo xvfb
+if [ $DEBIAN_DIST == "squeeze" ]
+then
+    DEBIAN_FRONTEND=noninteractive apt-get -y --force-yes --no-install-recommends --no-upgrade \
+        install sun-java6-jdk ant condor sudo xvfb
+elif [ $DEBIAN_DIST == "wheezy" ]
+then
+    DEBIAN_FRONTEND=noninteractive apt-get -y --force-yes --no-install-recommends --no-upgrade \
+        install openjdk-7-jre-headless ant condor sudo xvfb
+else
+    echo "Error: unknown Debian distribution '$DEBIAN_DIST': cannot select correct Condor packages."
+    exit 1
+fi
 
 # next 12 lines moved here from conpaas-services/scripts/manager/htc-manager-start
 apt-get update -y 
