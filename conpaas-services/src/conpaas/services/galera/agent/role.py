@@ -5,6 +5,7 @@
 """
 
 import os, socket
+import time
 import ConfigParser
 import MySQLdb
 
@@ -13,6 +14,7 @@ from os import kill
 from subprocess import Popen
 
 from conpaas.core.log import create_logger
+from conpaas.core.misc import run_cmd_code
 
 S_INIT        = 'INIT'
 S_STARTING    = 'STARTING'
@@ -100,6 +102,23 @@ class MySQLServer(object):
             sql_logger.exception('Failed to load dump')
             raise e
 
+    def _wait_daemon_started(self):
+        code = 1
+        while code != 0:
+            poll_cmd = "mysql -u mysql" \
+                        + " -BN" \
+                        + " -e \"SHOW STATUS LIKE 'wsrep_local_state_comment';\""
+            sql_logger.debug("Polling mysql daemon: %s" % poll_cmd)
+            out, error, code = run_cmd_code(poll_cmd)
+            if code != 0:
+                wait_time = 5
+                sql_logger.info("MySQL daemon is not ready yet: %s %s." \
+                                " Retrying in %s seconds." \
+                                % (out, error, wait_time))
+                time.sleep(wait_time)
+            else:
+                sql_logger.info("MySQL daemon is ready with state: %s" % out)
+
     def start(self):
         # Note: There seems to be a bug in the debian/mysql package. Sometimes, mysql says it
         # failed to start, even though it started - mysql conpaas service tries to restart myql server
@@ -109,6 +128,7 @@ class MySQLServer(object):
         devnull_fd = open(devnull, 'w')
         proc = Popen([self.path_mysql_ssr, "start"], stdout=devnull_fd, stderr=devnull_fd, close_fds=True)
         proc.wait()
+        self._wait_daemon_started()
         sql_logger.debug('Mysql server started')
         self.state = S_RUNNING
 

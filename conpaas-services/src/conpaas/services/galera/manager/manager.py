@@ -4,10 +4,12 @@
     :copyright: (C) 2010-2013 by Contrail Consortium.
 """
 
-from threading import Thread
-import os, tempfile
+from threading import Thread, Lock, Event, Timer
+import os
+import tempfile
 import string
 from random import choice
+import collections
 
 from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse, \
                                       FileUploadField
@@ -17,6 +19,7 @@ from conpaas.core.manager import BaseManager, ManagerException
 from conpaas.services.galera.agent import client
 from conpaas.services.galera.manager.config import Configuration, E_ARGS_INVALID, \
                               E_ARGS_MISSING, E_STATE_ERROR, E_ARGS_UNEXPECTED
+
 
 class GaleraManager(BaseManager):
     """
@@ -37,9 +40,23 @@ class GaleraManager(BaseManager):
         self.state = self.S_INIT
         self.config = Configuration(conf)
         self.logger.debug("Leaving GaleraServer initialization")
-
         # The unique id that is used to start the master/slave
         self.id = 0
+
+    # TODO: move to BaseManager
+    def _check_state(self, expected_states):
+        if self.state not in expected_states:
+            raise Exception("ERROR: wrong state, was expecting one of %s"\
+                            " but current state is %s" \
+                            % (expected_states, self.state))
+
+    # TODO: move to BaseManager
+    def _check_arguments(self, kwargs, expected_args):
+        for param, ptype in expected_args:
+            if param not in kwargs:
+                raise Exception("ERROR: missing required parameter %s" % param)
+            arg_value = kwargs[param]
+        # TODO: finish this generic argument checker, including ptype checks
 
     @expose('POST')
     def startup(self, kwargs):
@@ -168,7 +185,8 @@ class GaleraManager(BaseManager):
                             'id': serviceNode.id,
                             'ip': serviceNode.ip,
                             'isMaster': serviceNode.isMaster,
-                            'isSlave': serviceNode.isSlave
+                            'isSlave': serviceNode.isSlave,
+                            'cloud_name': serviceNode.cloud_name,
                             }
             })
 
@@ -191,6 +209,8 @@ class GaleraManager(BaseManager):
         if (not isinstance(kwargs['slaves'], int)) and (not isinstance(kwargs['glb_nodes'], int)):
             return HttpErrorResponse('ERROR: Expected an integer value for "count"')
         self.state = self.S_ADAPTING
+
+        # TODO: check if argument "cloud" is an known cloud
         if 'slaves' in kwargs:
             count = int(kwargs.pop('slaves'))
             Thread(target=self._do_add_nodes, args=['slaves', count, kwargs['cloud']]).start()
@@ -273,6 +293,160 @@ class GaleraManager(BaseManager):
         self.config.remove_nodes(nodes)
         self.state = self.S_RUNNING
         return HttpJsonResponse()
+
+    @expose('POST')
+    def migrate_nodes(self, kwargs):
+        """
+        Migrate nodes from one cloud to another.
+
+        Parameters:
+         *  'nodes' is a comma-separated list of colon-separated triplets
+                    origin_cloud:vmid:destination_cloud. For example:
+                    "default:1:mycloud,default:3:mycloud,mycloud:i-728af315:default"
+                    will migrate three nodes: nodes 1 and 3 of cloud 'default'
+                    to cloud 'mycloud' and node i-728af315 of mycloud to cloud
+                    'default'.
+
+         * 'delay' (optional with default value to 0) time in seconds to delay
+                    the removal of the old node. 0 means "remove old node as
+                    soon as the new node is up", 60 means "remove old node
+                    after 60 seconds after the new node is up". Useful to keep
+                    the old node active while the DNS and its caches that
+                    still have the IP address of the old node are updated
+                    to the IP address of the new node.
+        """
+        try:
+            self._check_state([self.S_RUNNING])
+        except Exception, ex:
+            return HttpErrorResponse('%s' % ex)
+
+        if not 'nodes' in kwargs:
+            return HttpErrorResponse('ERROR: Missing required "nodes" argument.')
+        migrate_nodes_str = kwargs.pop('nodes').split(',')
+        service_nodes = self.config.getMySQLServiceNodes()
+        self.logger.debug("While migrate_nodes, service_nodes = %s." % service_nodes)
+        migration_plan = []
+        for migrate_node in migrate_nodes_str:
+            try:
+                from_cloud_name, node_id, dest_cloud_name = migrate_node.split(':')
+                # TODO: check that cloud name cannot contain a column ':'
+                if from_cloud_name == '' or dest_cloud_name == '':
+                    raise Exception('Missing cloud name in parameter "nodes".' \
+                                    % migrate_nodes_str)
+            except Exception, ex:
+                return HttpErrorResponse('ERROR: argument "nodes" does not' \
+                    ' respect the expected format, a comma-separated list of'\
+                    ' "from_cloud:node_id:dest_cloud": %s\n%s' % (migrate_nodes_str, ex))
+            try:
+                candidate_nodes = [node for node in service_nodes
+                                   if node.cloud_name == from_cloud_name
+                                       and node.id == node_id]
+                if candidate_nodes == []:
+                    avail_nodes = ', '.join([node.cloud_name + ':' + node.id
+                                             for node in service_nodes])
+                    raise Exception("Node %s in cloud %s is not a valid node" \
+                                    " of this service. It should be one of %s" \
+                                    % (node_id, from_cloud_name, avail_nodes))
+#                node = self.controller.get_node(node_id, from_cloud_name)
+#                if node not in service_nodes:
+#                    raise Exception("Node %s from cloud %s is not a MySQL service node." \
+#                                    % (node.id, node.cloud_name))
+                node = candidate_nodes[0]
+                dest_cloud = self.controller.get_cloud_by_name(dest_cloud_name)
+            except Exception, ex:
+                return HttpErrorResponse('ERROR: %s' % (ex))
+            migration_plan.append((node, dest_cloud))
+
+        if migration_plan == []:
+            return HttpErrorResponse('ERROR: argument is missing the nodes to migrate.')
+
+        # optional 'delay' argument: time in seconds to delay the removing of old nodes
+        if 'delay' not in kwargs:
+            delay = 0
+        else:
+            delay = kwargs.pop('delay')
+            try:
+                delay = int(delay)
+            except ValueError, ex:
+                return HttpErrorResponse('ERROR: argument "delay" must be an integer,' \
+                                         'it cannot be %s.' % delay)
+            if delay < 0:
+                return HttpErrorResponse('ERROR: argument "delay" must be a positive or null integer,' \
+                                         'it cannot be %s.' % delay)
+
+        if len(kwargs) > 0:
+            return HttpErrorResponse('ERROR: Unknown arguments %s' % kwargs)
+
+        self.state = self.S_ADAPTING
+        Thread(target=self._do_migration_nodes, args=[migration_plan, delay]).start()
+        return HttpJsonResponse()
+
+    def _do_migration_nodes(self, migration_plan, delay):
+        self.logger.info("Migration: starting with plan %s and delay %s." \
+                          % (migration_plan, delay))
+        # TODO: use instead collections.Counter with Python 2.7
+        clouds = [dest_cloud for (_node, dest_cloud) in migration_plan]
+        new_vm_nb = collections.defaultdict(int)
+        for cloud in clouds:
+            new_vm_nb[cloud] += 1
+        try:
+            new_nodes = []
+            # TODO: make it parallel
+            masters = self.config.getMySQLmasters()
+            for cloud, count in new_vm_nb.iteritems():
+                self.controller.add_context_replacement(
+                                        dict(mysql_username='mysqldb',
+                                             mysql_password=self.root_pass),
+                                        cloud=cloud)
+
+                new_nodes.extend(
+                    self.controller.create_nodes(count,
+                                                 client.check_agent_process,
+                                                 self.config.AGENT_PORT,
+                                                 cloud))
+                # TODO: no masters anymore in Galera
+                for master in masters:
+                    self._start_slave(new_nodes, master)
+                self.config.addMySQLServiceNodes(nodes=new_nodes, isSlave=True)
+        except Exception, ex:
+            # error happened: rolling back...
+            self.controller.delete_nodes(new_nodes)
+            self.config.remove_nodes(new_nodes)
+            self.logger.exception('_do_migration_nodes: Could not' \
+                                  ' start nodes: %s' % ex)
+            self.state = self.S_RUNNING
+            raise ex
+
+        self.logger.debug("Migration: new nodes %s created and" \
+                          " configured successfully." % (new_nodes))
+
+        # TODO: wait for SYNCED state
+        #    mysql -h 10.144.0.2 -u mysqldb -pwQe6KxqJvk -B -N -e 'SHOW global STATUS LIKE "wsrep_local_state_comment";'
+        #  ==> better in services.galera.agent.role.MySQLServer.start()
+
+        # New nodes successfully created
+        # Now scheduling the removing of old nodes
+        old_nodes = [node for node, _dest_cloud in migration_plan]
+        if delay == 0:
+            self.logger.debug("Migration: removing immediately" \
+                              " the old nodes: %s." % old_nodes)
+            self._do_migrate_finalize(old_nodes)
+        else:
+            self.logger.debug("Migration: setting a timer to remove" \
+                              " the old nodes %s after %d seconds." \
+                              % (old_nodes, delay))
+            self._start_timer(delay, self._do_migrate_finalize, old_nodes)
+
+    def _do_migrate_finalize(self, old_nodes):
+        self.controller.delete_nodes(old_nodes)
+        self.config.remove_nodes(old_nodes)
+        self.state = self.S_RUNNING
+        self.logger.info("Migration: old nodes %s have been removed." \
+                         " END of migration." % old_nodes)
+
+    def _start_timer(self, delay, callback, nodes):
+        timer = Timer(delay, callback, args=[nodes])
+        timer.start()
 
     @expose('GET')
     def get_service_info(self, kwargs):
