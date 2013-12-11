@@ -1,7 +1,9 @@
 #!/bin/bash
 
 UNIT_TEST_LOG_DIR="./unit-tests-logs"
-MODULES="../conpaas/services/webservers"
+MODULES=""
+MODULES="$MODULES ../conpaas/services/webservers"
+MODULES="$MODULES ../conpaas/services/galera"
 
 export PYTHONPATH=".."
 
