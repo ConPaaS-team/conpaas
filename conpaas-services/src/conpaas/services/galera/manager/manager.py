@@ -378,10 +378,10 @@ class GaleraManager(BaseManager):
             return HttpErrorResponse('ERROR: Unknown arguments %s' % kwargs)
 
         self.state = self.S_ADAPTING
-        Thread(target=self._do_migration_nodes, args=[migration_plan, delay]).start()
+        Thread(target=self._do_migrate_nodes, args=[migration_plan, delay]).start()
         return HttpJsonResponse()
 
-    def _do_migration_nodes(self, migration_plan, delay):
+    def _do_migrate_nodes(self, migration_plan, delay):
         self.logger.info("Migration: starting with plan %s and delay %s." \
                           % (migration_plan, delay))
         # TODO: use instead collections.Counter with Python 2.7
@@ -412,7 +412,7 @@ class GaleraManager(BaseManager):
             # error happened: rolling back...
             self.controller.delete_nodes(new_nodes)
             self.config.remove_nodes(new_nodes)
-            self.logger.exception('_do_migration_nodes: Could not' \
+            self.logger.exception('_do_migrate_nodes: Could not' \
                                   ' start nodes: %s' % ex)
             self.state = self.S_RUNNING
             raise ex
