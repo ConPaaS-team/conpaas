@@ -8,6 +8,7 @@ python:
 install:
   - sudo apt-get install libblas-dev liblapack-dev gfortran
   - pip install python-memcached
+  - pip install MySQL-python
   - pip install coveralls flask-sqlalchemy apache-libcloud netaddr mock cheetah
   - pip install pep8 pylint
   - pip install numpy pandas scipy patsy
