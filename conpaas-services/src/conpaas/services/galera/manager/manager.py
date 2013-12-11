@@ -420,10 +420,6 @@ class GaleraManager(BaseManager):
         self.logger.debug("Migration: new nodes %s created and" \
                           " configured successfully." % (new_nodes))
 
-        # TODO: wait for SYNCED state
-        #    mysql -h 10.144.0.2 -u mysqldb -pwQe6KxqJvk -B -N -e 'SHOW global STATUS LIKE "wsrep_local_state_comment";'
-        #  ==> better in services.galera.agent.role.MySQLServer.start()
-
         # New nodes successfully created
         # Now scheduling the removing of old nodes
         old_nodes = [node for node, _dest_cloud in migration_plan]
