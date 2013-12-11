@@ -450,6 +450,52 @@ regular ``mysql`` command for this:
 
     $ mysql mysql-ip-address -u mysqldb -p < dumpfile.sql
 
+Migrating MySQL agents from one cloud to another
+------------------------------------------------
+
+MySQL Galera nodes can be migrated from one cloud to another.
+The interface exists only on command line for now.
+
+Here is a possible scenario.
+Get the list of clouds:
+::
+    $ cpsclient.py clouds
+    default
+    amazon
+
+Get the list of current MySQL Galera nodes:
+::
+    $ cpsclient.py info 1
+    subnet: None
+    user_id: 1
+    name: New galera service
+    created: 2013-12-11T13:13:46.661778
+    vmid: 3
+    manager: 10.158.4.4
+    sid: 2
+    application_id: 1
+    type: galera
+    cloud: iaas
+    state: RUNNING
+    node: ip=10.158.4.5 cloud=iaas vmid=4
+
+Migrate a node from cloud 'default' to cloud 'amazon'.
+The migrate_nodes arguments are the service identifier
+and a description of the migration to perform.
+That description contains three parts: the origin cloud,
+the node identifier in that cloud, and the destination cloud
+(``origin_cloud:node_id:dest_cloud``):
+::
+    $ cpsclient.py migrate_nodes 1 default:4:amazon
+    Migration started...
+
+The command may also migrate several nodes at once,
+with potentially different origin clouds and different destination clouds:
+::
+    $ cpsclient.py migrate_nodes 1 default:1:amazon,amazon:i-4abc915e:default
+    Migration started...
+
+
 The Scalarix key-value store service
 ====================================
 
