@@ -127,6 +127,13 @@ def get_user(username, password):
 from cpsdirector.application import Application
 
 
+def list_users():
+    """
+    List all known users.
+    """
+    return User.query.all()
+
+
 def create_user(username, fname, lname, email, affiliation, password, credit):
     """Create a new user with the given attributes. Return a new User object
     in case of successful creation. None otherwise."""
@@ -332,3 +339,24 @@ def credit():
     db.session.rollback()
     log('User %s does not have enough credit' % g.service.user.uid)
     return jsonify({'error': True})
+
+
+@user_page.route("/user_config", methods=['GET'])
+@cert_required(role="user")
+def user_config():
+    """
+    Returns all information about a user identified by a certificate.
+    """
+    user = g.user.to_dict()
+    user.pop('password', None)
+    res = build_response(simplejson.dumps(user))
+    return res
+
+
+@user_page.route("/user_credit", methods=['GET'])
+@cert_required(role="user")
+def user_credit():
+    """
+    Returns the remaining credit of a user identified by a certificate.
+    """
+    return build_response(simplejson.dumps(g.user.credit))
