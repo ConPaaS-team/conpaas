@@ -127,7 +127,10 @@ class MySQLServer(object):
         self.state = S_STARTING
         devnull_fd = open(devnull, 'w')
         proc = Popen([self.path_mysql_ssr, "start"], stdout=devnull_fd, stderr=devnull_fd, close_fds=True)
-        proc.wait()
+        return_code = proc.wait()
+        if return_code != 0:
+            self.state = S_STOPPED
+            raise Exception('Failed to start MySQL Galera daemon.')
         self._wait_daemon_started()
         sql_logger.debug('Mysql server started')
         self.state = S_RUNNING
