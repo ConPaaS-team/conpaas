@@ -9,7 +9,6 @@ from time import strftime, localtime
 
 from cps.base import BaseClient
 
-from conpaas.core import https
 from cps import taskfarm
 
 
