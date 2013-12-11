@@ -1,0 +1,203 @@
+#!/bin/bash
+
+
+_cps_user_complete()
+{
+   local cur prev special i
+
+    COMPREPLY=()
+    _get_comp_words_by_ref cur prev
+
+    for (( i=0; i < ${#COMP_WORDS[@]}-1; i++ )); do
+        case ${COMP_WORDS[i]} in
+            create)
+                COMPREPLY=( $( compgen -W '--name --email --credits' -- "$cur" ) )
+                return 0
+                ;;
+            get_certificate)
+                COMPREPLY=()
+                return 0
+                ;;
+            list)
+                COMPREPLY=()
+                return 0
+                ;;
+            help)
+                COMPREPLY=()
+                return 0
+                ;;
+        esac
+    done
+
+    COMPREPLY=( $( compgen -W 'create get_certificate list help' -- "$cur" ) )
+}
+
+
+
+_cps_application_complete()
+{
+   local cur prev special i
+
+    COMPREPLY=()
+    _get_comp_words_by_ref cur prev
+
+    for (( i=0; i < ${#COMP_WORDS[@]}-1; i++ )); do
+        case ${COMP_WORDS[i]} in
+            create)
+                COMPREPLY=( $( compgen -W '--name' -- "$cur" ) )
+                return 0
+                ;;
+            list)
+                COMPREPLY=()
+                return 0
+                ;;
+            rename)
+                COMPREPLY=()
+                return 0
+                ;;
+            delete)
+                COMPREPLY=()
+                return 0
+                ;;
+            help)
+                COMPREPLY=()
+                return 0
+                ;;
+        esac
+    done
+
+    COMPREPLY=( $( compgen -W 'create list rename delete help' -- "$cur" ) )
+}
+
+
+
+_cps_service_complete()
+{
+   local cur prev special i
+
+    COMPREPLY=()
+    _get_comp_words_by_ref cur prev
+
+    for (( i=0; i < ${#COMP_WORDS[@]}-1; i++ )); do
+        case ${COMP_WORDS[i]} in
+            create)
+                COMPREPLY=( $( compgen -W '--cloud --application' -- "$cur" ) )
+                return 0
+                ;;
+            list)
+                COMPREPLY=()
+                return 0
+                ;;
+            start)
+                COMPREPLY=()
+                return 0
+                ;;
+            stop)
+                COMPREPLY=()
+                return 0
+                ;;
+            status)
+                COMPREPLY=()
+                return 0
+                ;;
+            rename)
+                COMPREPLY=()
+                return 0
+                ;;
+            delete)
+                COMPREPLY=()
+                return 0
+                ;;
+            get_log)
+                COMPREPLY=()
+                return 0
+                ;;
+            get_types)
+                COMPREPLY=()
+                return 0
+                ;;
+            help)
+                COMPREPLY=()
+                return 0
+                ;;
+        esac
+    done
+
+    COMPREPLY=( $( compgen -W 'create list start stop status rename delete \
+         get_log get_types help' -- "$cur" ) )
+}
+
+
+_cps_galera_complete()
+{
+   _cps_service_complete
+}
+
+_cps_cloud_complete()
+{
+   local cur prev special i
+
+    COMPREPLY=()
+    _get_comp_words_by_ref cur prev
+
+    for (( i=0; i < ${#COMP_WORDS[@]}-1; i++ )); do
+        case ${COMP_WORDS[i]} in
+            list)
+                COMPREPLY=()
+                return 0
+                ;;
+            help)
+                COMPREPLY=()
+                return 0
+                ;;
+        esac
+    done
+
+    COMPREPLY=( $( compgen -W 'list help' -- "$cur" ) )
+}
+
+
+_cps_tools_complete()
+{
+    local cur prev special i
+
+    COMPREPLY=()
+    _get_comp_words_by_ref cur prev
+
+    for (( i=0; i < ${#COMP_WORDS[@]}-1; i++ )); do
+        case ${COMP_WORDS[i]} in
+            user)
+                _cps_user_complete
+                return 0
+                ;;
+            application)
+                _cps_application_complete
+                return 0
+                ;;
+            service)
+            	_cps_service_complete
+            	return 0
+            	;;
+            cloud)
+            	_cps_cloud_complete
+            	return 0
+            	;;
+            help)
+            	COMPREPLY=()
+            	return 0
+            	;;
+            galera)
+            	_cps_galera_complete
+            	return 0
+            	;;
+        esac
+    done
+
+    COMPREPLY=( $( compgen -W 'user application service cloud help galera' -- "$cur" ) )
+}
+
+complete -F _cps_tools_complete cps-tools
+complete -F _cps_user_complete cps-user
+complete -F _cps_application_complete cps-application
+complete -F _cps_service_complete cps-service
+complete -F _cps_cloud_complete cps-cloud

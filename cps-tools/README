@@ -1,0 +1,198 @@
+
+======================================
+cps-tools: ConPaaS command line client 
+======================================
+
+author
+  ConPaaS team
+web-site
+  http://www.conpaas.eu
+contact
+  info@conpaas.eu
+
+DESCRIPTION
+===========
+
+cps-tools is a command line client to ConPaaS.
+
+It uses sub-commands for different ConPaaS "objects":
+ * ``cps-tools user ...``  to manage users
+ * ``cps-tools application ...`` to manage applications
+ * ``cps-tools cloud ...`` to manage clouds
+ * ``cps-tools service ...`` to manage services
+
+Depending on services, there may be more sub-commands available. 
+For example, for a PHP service, you have the basic sub-commands through:
+::
+  cps-tools service -h
+but can get more sub-commands for a PHP service running:
+::
+  cps-tools php -h
+
+Some shortcuts are also available:
+::
+  cps-tool service create php
+can be shortcut to:
+::
+  cps-service create php
+Or
+::
+  cps-tools user get_certificate
+can be shortcut to:
+::
+  cps-user get_certificate
+
+
+PHILOSOPHY
+==========
+
+* The arguments are 'object oriented': the general scheme is "name/object command options".
+For example:  service create php
+Some command line tools follow this object-oriented like 'git'.
+
+* Calls are always blocking. For example, the command creating a service will not return
+until the service has been actually created (or an error occurred).
+
+
+USAGE
+=====
+
+Pass option '-h' or '--help' to get the list of sub-commands and options::
+    $ cps-tools -h
+    usage: cps-tools [-h] [-d] [--conf_file FILE] [--director_url URL]
+                     [--username USERNAME] [--password PASSWORD]
+                     <sub-command> ...
+
+    positional arguments:
+      <sub-command>
+        user               manage users
+        cloud              manage clouds
+        application        manage applications
+        service            manage services
+        mysql              manage MySQL services
+        galera             manage MySQL Galera services
+        htc                manage HTC services
+        php                manage PHP services
+        java               manage Java services
+        scalaris           manage Scalaris services
+        selenium           manage Selenium services
+        taskfarm           manage TaskFarm services
+        xtreemfs           manage XtreemFS services
+        help               display the help
+
+    optional arguments:
+      -h, --help           show this help message and exit
+      -d, --debug          Display debug messages.
+      --conf_file FILE     Specify a configuration file
+      --director_url URL   ConPaaS's director URL
+      --username USERNAME  ConPaaS user name
+      --password PASSWORD  ConPaaS user password
+
+    See cps-tools <command> -h' for more information on a specific command.
+
+
+To get the description of arguments for sub-commands, pass option '-h' to sub-commands.
+For example::
+    $ cps-tools service -h
+    usage: cps-tools service [-h] <sub-command>       ...
+
+    optional arguments:
+      -h, --help           show this help message and exit
+
+      <sub-command>      
+        create             create a new service
+        list               list services
+        start              start a service
+        stop               stop a service
+        get                get information about a service
+        status             display a service status
+        rename             rename a service
+        delete             delete a service
+        add_nodes          add nodes to a service
+        list_nodes         list nodes of a service
+        remove_nodes       remove nodes from a service
+        get_log            get service log
+        get_types          get available service types
+        help               show help
+
+
+CONFIGURATION
+=============
+
+A general configuration file is installed in ``/etc/cps-tools.conf``.
+To set your own configuration, copy and edit this file in your home directory::
+  cp /etc/cps-tools.conf $HOME/.conpaas/
+  vi $HOME/.conpaas/cps-tools.conf
+
+In section ``[cps-tools]``, set variable ``director_url`` to the director's URL.
+That URL can be just a hostname, or https://hostname, or https://hostname:port.
+Set variable ``username`` to your ConPaaS username.
+
+Do not set the variable ``password`` unless you want to write automatic tests.
+
+When you have set variables ``director_url`` and ``username``, retrieve a certificate from the director::
+  cps-tools user get_certificate
+then you should be able to use other cps-tools sub-commands.
+
+
+UNIT TESTS
+==========
+
+The script ``unit-tests.sh`` run the unit tests.
+It uses commands pep8 and pylint to detect syntax and other errors.
+They are required dependencies::
+  apt-get install pep8 pylint
+
+In script file ``unit-tests.sh``, update variables CPS_LIB and CPS_DIRECTOR to your locations.
+Then run it::
+  ./unit-tests.sh
+It will stop at the first error.
+Pylint outputs are stored in directory ``unit-test-logs``.
+
+
+BUILD and INSTALL
+=================
+
+Either with autotools, or with setuptools.
+
+With autotools
+--------------
+
+Version is set in file ``configure.ac``
+
+Tarball is built with::
+  make distcheck
+which creates a tarball in local directory ``./cps-tools-<version>.tar.gz``
+
+Requires:
+  * /usr/share/aclocal/ax_python_module.m4 (in package autoconf-archive for Debian/Ubuntu)::
+      apt-get install autoconf-archive
+  * cpslib
+
+Install::
+  tar -xaf cps-tools-<version>.tar.gz
+  cd cps-tools-<version>/
+  ./configure --sysconfdir=/etc
+  make install
+
+
+With setuptools
+---------------
+
+Version is set in file ``setup.py``.
+
+Tarball is built with::
+  python setup.py sdist 
+which create a tarball in directory ``dist``: ``./dist/cps-tools-<version>.tar.gz``
+
+
+Requires:
+  * cpslib python module
+  * easy_install
+    apt-get install python-pip
+
+Install::
+  easy_install cps-tools-<version>.tar.gz
+
+
+

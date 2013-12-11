@@ -1,0 +1,3 @@
+include cps-tools.conf
+include bash_completion.d/cps-tools
+
