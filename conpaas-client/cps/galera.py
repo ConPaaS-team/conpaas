@@ -32,16 +32,25 @@ class Client(BaseClient):
 
     def sqldump(self, service_id):
         res = self.callmanager(service_id, "sqldump", False, {})
-        if type('error') is dict and 'error' in res:
+        if type(res) is dict and 'error' in res:
             print res['error']
             sys.exit(1)
         else:
             print res
 
-    def migrate_nodes(self, service_id, migration_plan):
+    def load_dump(self, service_id, filename):
+        with open(filename) as dump_file:
+            contents = dump_file.read()
+        files = [('mysqldump_file', filename, contents)]
+        res = self.callmanager(service_id, "/", True, {'method': "load_dump", }, files)
+        if 'error' in res:
+            print res['error']
+
+    def migrate_nodes(self, service_id, migration_plan, delay=None):
         data = {}
         data['nodes'] = migration_plan
-        data['delay'] = 0
+        if delay is not None:
+            data['delay'] = delay
         res = self.callmanager(service_id, "migrate_nodes", True, data)
         return res
 
@@ -70,7 +79,8 @@ class Client(BaseClient):
         print "    remove_nodes      serviceid count"
         print "    remove_glb_nodes  serviceid count"
         print "    sqldump           serviceid"
-        print "    migrate_nodes     serviceid origin_cloud:node_id:dest_cloud[,o_cloud:node_id:d_cloud]*"
+        print "    load_dump         serviceid filename"
+        print "    migrate_nodes     serviceid origin_cloud:node_id:dest_cloud[,o_cloud:node_id:d_cloud]* [delay]"
 
     def main(self, argv):
         command = argv[1]
@@ -144,15 +154,49 @@ class Client(BaseClient):
                 sys.exit(1)
 
             self.check_service_id(sid)
+            delay = None
 
             if len(sys.argv) < 4:
                 print "ERROR: missing arguments to migrate_nodes sub-command."
                 sys.exit(1)
             elif len(sys.argv) > 4:
+                delay = sys.argv[4]
+                if not isinstance(delay, int) or int(delay) < 0:
+                    print "ERROR: delay argument must be a positive or null integer."
+                delay = int(delay)
+            elif len(sys.argv) > 5:
                 print "ERROR: too many arguments to migrate_nodes sub-command."
                 sys.exit(1)
-            res = self.migrate_nodes(sid, sys.argv[3])
+            migration_plan = []
+            migr_arg = sys.argv[3].split(',')
+            for migrate_node in migr_arg:
+                try:
+                    from_cloud, node_id, dest_cloud = migrate_node.split(':')
+                    migr_node = {'from_cloud': from_cloud, 'vmid': node_id, 'to_cloud': dest_cloud}
+                    migration_plan.append(migr_node)
+                except:
+                    print "ERROR: format error on migration argument '%s'." % migrate_node
+                    sys.exit(1)
+
+            res = self.migrate_nodes(sid, migration_plan, delay)
             if 'error' in res:
                 print "ERROR: %s" % (res['error'])
             else:
                 print "Migration started..."
+
+        if command == 'load_dump':
+            try:
+                sid = int(argv[2])
+            except (IndexError, ValueError):
+                print "ERROR: missing the service identifier argument after the sub-command name."
+                sys.exit(1)
+
+            self.check_service_id(sid)
+            if len(sys.argv) < 4:
+                print "ERROR: missing arguments to load_dump."
+                sys.exit(1)
+            elif len(sys.argv) > 5:
+                print "ERROR: too many arguments to migrate_nodes sub-command."
+                sys.exit(1)
+            filename = sys.argv[3]
+            self.load_dump(sid, filename)

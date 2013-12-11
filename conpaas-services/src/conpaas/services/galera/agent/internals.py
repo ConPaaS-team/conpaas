@@ -15,7 +15,7 @@ from conpaas.services.galera.agent import role
 
 from conpaas.core.https.server import HttpErrorResponse, HttpJsonResponse, FileUploadField
 from conpaas.core.expose import expose
-from conpaas.core.misc import check_arguments, is_list, is_string
+from conpaas.core.misc import check_arguments, is_list, is_string, is_uploaded_file
 
 
 # daemons identifier
@@ -93,10 +93,16 @@ class GaleraAgent(BaseAgent):
         """
         if len(kwargs) > 0:
             self.logger.warning('Galera agent "stop" was called with arguments that will be ignored: "%s"' % kwargs)
-        for role in self.running_roles:
-            self._stop(role)
-        self.running_roles = []
-        return HttpJsonResponse()
+        try:
+            exp_params = []
+            check_arguments(exp_params, kwargs)
+            for role in self.running_roles:
+                self._stop(role)
+            self.running_roles = []
+        except AgentException as ex:
+            return HttpErrorResponse("%s" % ex)
+        else:
+            return HttpJsonResponse()
 
     def _stop(self, roleClass):
         if not exists(roleClass.class_file):
@@ -162,11 +168,9 @@ class GaleraAgent(BaseAgent):
     @expose('UPLOAD')
     def load_dump(self, kwargs):
         #TODO: archive the dump?
-        exp_params = [('mysqldump_file', is_string)]
-        dump_file = check_arguments(exp_params, kwargs)
-        if not isinstance(dump_file, FileUploadField):
-            return HttpErrorResponse('"mysqldump_file" should be an uploaded file.')
         try:
+            exp_params = [('mysqldump_file', is_uploaded_file)]
+            dump_file = check_arguments(exp_params, kwargs)
             self._load_dump(dump_file.file)
         except AgentException as ex:
             return HttpErrorResponse("%s" % ex)

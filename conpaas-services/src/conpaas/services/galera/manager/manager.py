@@ -14,22 +14,15 @@ import collections
 from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse, FileUploadField
 from conpaas.core.expose import expose
 from conpaas.core.manager import BaseManager, ManagerException
-from conpaas.core.misc import check_arguments, is_pos_nul_int, is_string
+from conpaas.core.misc import check_arguments, is_pos_nul_int, is_string, is_list_dict2, is_uploaded_file
+from conpaas.core.misc import run_cmd_code
 
 import conpaas.services.galera.agent.client as agent
 from conpaas.services.galera.agent.client import AgentException
-from conpaas.services.galera.manager.config import Configuration, E_ARGS_MISSING, E_STATE_ERROR, E_ARGS_UNEXPECTED
+from conpaas.services.galera.manager.config import Configuration
 
 
 class GaleraManager(BaseManager):
-    """
-    Initializes :py:attr:`config` using Config and sets :py:attr:`state` to :py:attr:`S_INIT`
-
-    :param conf: Configuration file.
-    :type conf: str
-    :type conf: boolean
-
-    """
 
     # MySQL Galera node types
     REGULAR_NODE = 'node'  # regular node running a mysqld daemon
@@ -47,20 +40,33 @@ class GaleraManager(BaseManager):
 
     @expose('POST')
     def startup(self, kwargs):
-        """ Starts the service - it will start and configure a Galera node."""
-        self.logger.debug("Entering GaleraServerManager startup")
+        """
+        Starts this MySQL Galera service.
 
-        if self.state != self.S_INIT and self.state != self.S_STOPPED:
-            return HttpErrorResponse(ManagerException(E_STATE_ERROR).message)
+        Parameters
+        ----------
+        cloud : string
+            (optional)
+            name of cloud to start the service's manager
+            (select the default cloud by default).
+
+        Returns a dict with the single key 'state' with the new service state.
+        """
+        try:
+            self._check_state([self.S_INIT, self.S_STOPPED])
+            exp_params = [('cloud', is_string, None)]
+            cloud = check_arguments(exp_params, kwargs)
+            start_cloud = self._init_cloud(cloud)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
         self.state = self.S_PROLOGUE
-        Thread(target=self._do_startup, kwargs=kwargs).start()
-        return HttpJsonResponse({'state': self.S_PROLOGUE})
+        Thread(target=self._do_startup, args=(start_cloud, )).start()
+        return HttpJsonResponse({'state': self.state})
 
-    def _do_startup(self, cloud):
+    def _do_startup(self, start_cloud):
         """ Starts up the galera service. """
 
-        start_cloud = self._init_cloud(cloud)
         #TODO: Get any existing configuration (if the service was stopped and restarted)
         self.logger.debug('do_startup: Going to request one new node')
 
@@ -79,8 +85,8 @@ class GaleraManager(BaseManager):
             self.config.addMySQLServiceNodes(node_instances)
         except Exception, ex:
             # rollback
-#            self.controller.delete_nodes(node_instances)
-            self.logger.exception('do_startup: Failed to request a new node on cloud %s: %s.' % (cloud, ex))
+            self.controller.delete_nodes(node_instances)
+            self.logger.exception('do_startup: Failed to request a new node on cloud %s: %s.' % (start_cloud.get_cloud_name(), ex))
             self.state = self.S_STOPPED
             return
         self.state = self.S_RUNNING
@@ -116,18 +122,19 @@ class GaleraManager(BaseManager):
     @expose('GET')
     def list_nodes(self, kwargs):
         """
-        HTTP GET method.
-        Uses :py:meth:`IaaSClient.listVMs()` to get list of
-        all Service nodes. For each service node it gets it
-        checks if it is in servers list. If some of them are missing
-        they are removed from the list. Returns list of all service nodes.
+        List this MySQL Galera current agents.
 
-        :returns: HttpJsonResponse - JSON response with the list of services
-        :raises: HttpErrorResponse
+        No parameters.
 
+        Returns a dict with keys:
+        nodes : list of regular node identifiers
+        glb_nodes : lits of load balancing node identifiers
         """
-        if len(kwargs) != 0:
-            return HttpErrorResponse(ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
+        try:
+            exp_params = []
+            check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
         return HttpJsonResponse({'nodes': [node.id for node in self.config.get_nodes()],
                                  'glb_nodes': [node.id for node in self.config.get_glb_nodes()],
@@ -136,19 +143,30 @@ class GaleraManager(BaseManager):
     @expose('GET')
     def get_node_info(self, kwargs):
         """
-        HTTP GET method. Gets info of a specific node.
+        Gets info of a specific node.
 
-        :param param: serviceNodeId is a VMID of an existing service node.
-        :type param: str
-        :returns: HttpJsonResponse - JSON response with details about the node.
-        :raises: ManagerException
+        Parameters
+        ----------
+        serviceNodeId : string
+            identifier of node to query
 
+        Returns a dict with keys:
+        serviceNode : dict with keys:
+            id : string
+                node identifier
+            ip : string
+                node public IP address
+            vmid : string
+                unique identifier of the VM inside the cloud provider
+            cloud :string
+                name of cloud provider
         """
-        if 'serviceNodeId' not in kwargs:
-            return HttpErrorResponse(ManagerException(E_ARGS_MISSING, 'serviceNodeId').message)
-        serviceNodeId = kwargs.pop('serviceNodeId')
-        if len(kwargs) != 0:
-            return HttpErrorResponse(ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
+        try:
+            exp_params = [('serviceNodeId', is_string)]
+            serviceNodeId = check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
+
         if serviceNodeId not in self.config.serviceNodes:
             return HttpErrorResponse('Unknown "serviceNodeId" %s, should be one of %s.'
                                      % (serviceNodeId, self.config.serviceNodes.keys()))
@@ -223,16 +241,24 @@ class GaleraManager(BaseManager):
 
     @expose('GET')
     def get_service_performance(self, kwargs):
-        """HTTP GET method. Placeholder for obtaining performance metrics.
+        """
+        TODO: placeholder for obtaining performance metrics.
 
-        :param kwargs: Additional parameters.
-        :type kwargs: dict
-        :returns:  HttpJsonResponse -- returns metrics
+        No parameters.
 
+        Returns a dict with keys:
+            request_rate : int
+            error_rate : int
+            throughput : int
+            response_time : int
         """
 
-        if len(kwargs) != 0:
-            return HttpErrorResponse(ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
+        try:
+            exp_params = []
+            check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
+
         return HttpJsonResponse({'request_rate': 0,
                                  'error_rate': 0,
                                  'throughput': 0,
@@ -290,45 +316,44 @@ class GaleraManager(BaseManager):
         """
         Migrate nodes from one cloud to another.
 
-        Parameters:
-         *  'nodes' is a comma-separated list of colon-separated triplets
-                    origin_cloud:vmid:destination_cloud. For example:
-                    "default:1:mycloud,default:3:mycloud,mycloud:i-728af315:default"
-                    will migrate three nodes: nodes 1 and 3 of cloud 'default'
-                    to cloud 'mycloud' and node i-728af315 of mycloud to cloud
-                    'default'.
+        Parameters
+        ----------
+        nodes : list of dict with keys
+            from_cloud : string
+                name of origin cloud
+            vmid : string
+                identifier of the node to migrate inside the origin cloud
+            to_cloud : string
+                name of destination cloud
 
-         * 'delay' (optional with default value to 0) time in seconds to delay
-                    the removal of the old node. 0 means "remove old node as
-                    soon as the new node is up", 60 means "remove old node
-                    after 60 seconds after the new node is up". Useful to keep
-                    the old node active while the DNS and its caches that
-                    still have the IP address of the old node are updated
-                    to the IP address of the new node.
+         delay : int
+             (optional with default value to 0) time in seconds to delay
+             the removal of the old node. 0 means "remove old node as
+             soon as the new node is up", 60 means "remove old node
+             after 60 seconds after the new node is up". Useful to keep
+             the old node active while the DNS and its caches that
+             still have the IP address of the old node are updated
+             to the IP address of the new node.
         """
         try:
             self._check_state([self.S_RUNNING])
+            exp_keys = ['from_cloud', 'vmid', 'to_cloud']
+            exp_params = [('nodes', is_list_dict2(exp_keys)),
+                          ('delay', is_pos_nul_int, 0)]
+            nodes, delay = check_arguments(exp_params, kwargs)
         except Exception, ex:
             return HttpErrorResponse('%s' % ex)
 
-        if not 'nodes' in kwargs:
-            return HttpErrorResponse('ERROR: Missing required "nodes" argument.')
-        migrate_nodes_str = kwargs.pop('nodes').split(',')
         service_nodes = self.config.get_nodes()
         self.logger.debug("While migrate_nodes, service_nodes = %s." % service_nodes)
         migration_plan = []
-        for migrate_node in migrate_nodes_str:
-            try:
-                from_cloud_name, node_id, dest_cloud_name = migrate_node.split(':')
-                # TODO: check that cloud name cannot contain a column ':'
-                if from_cloud_name == '' or dest_cloud_name == '':
-                    raise Exception('Missing cloud name in parameter "nodes".'
-                                    % migrate_nodes_str)
-            except Exception, ex:
-                err_msg = 'Argument "nodes" does not' \
-                          ' respect the expected format, a comma-separated list of' \
-                          ' "from_cloud:node_id:dest_cloud": %s\n%s' % (migrate_nodes_str, ex)
-                return HttpErrorResponse(err_msg)
+        for migr in nodes:
+            from_cloud_name = migr['from_cloud']
+            node_id = migr['vmid']
+            dest_cloud_name = migr['to_cloud']
+            if from_cloud_name == '' or dest_cloud_name == '':
+                return HttpErrorResponse('Missing cloud name in parameter "nodes": from_cloud="%s" to_cloud="%s"'
+                                         % (from_cloud_name, dest_cloud_name))
             try:
                 candidate_nodes = [node for node in service_nodes
                                    if node.cloud_name == from_cloud_name
@@ -342,28 +367,11 @@ class GaleraManager(BaseManager):
                 node = candidate_nodes[0]
                 dest_cloud = self.controller.get_cloud_by_name(dest_cloud_name)
             except Exception, ex:
-                return HttpErrorResponse('ERROR: %s' % (ex))
+                return HttpErrorResponse("%s" % ex)
             migration_plan.append((node, dest_cloud))
 
         if migration_plan == []:
             return HttpErrorResponse('ERROR: argument is missing the nodes to migrate.')
-
-        # optional 'delay' argument: time in seconds to delay the removing of old nodes
-        if 'delay' not in kwargs:
-            delay = 0
-        else:
-            delay = kwargs.pop('delay')
-            try:
-                delay = int(delay)
-            except ValueError, ex:
-                return HttpErrorResponse('ERROR: argument "delay" must be an integer,'
-                                         'it cannot be %s.' % delay)
-            if delay < 0:
-                return HttpErrorResponse('ERROR: argument "delay" must be a positive or null integer,'
-                                         'it cannot be %s.' % delay)
-
-        if len(kwargs) > 0:
-            return HttpErrorResponse('ERROR: Unknown arguments %s' % kwargs)
 
         self.state = self.S_ADAPTING
         Thread(target=self._do_migrate_nodes, args=[migration_plan, delay]).start()
@@ -433,24 +441,36 @@ class GaleraManager(BaseManager):
 
     @expose('GET')
     def get_service_info(self, kwargs):
-        if len(kwargs) != 0:
-            return HttpErrorResponse('ERROR: Arguments unexpected')
+        """
+        Get service information.
+
+        No parameters.
+
+        Returns a dict with key 'state' containing the service current state,
+        and key 'type' containing this service type.
+        """
+        try:
+            exp_params = []
+            check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
         return HttpJsonResponse({'state': self.state, 'type': 'galera'})
 
     @expose('POST')
     def shutdown(self, kwargs):
         """
-        HTTP POST method. Shuts down the manager service.
+        Stop the service.
 
-        :returns: HttpJsonResponse - JSON response with details about the status of a manager node: . ManagerException if something went wrong.
-        :raises: ManagerException
+        No parameters.
 
+        Returns a dict with a key 'state' containing the new service state.
         """
-        if len(kwargs) != 0:
-            return HttpErrorResponse(ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
-
-        if self.state != self.S_RUNNING:
-            return HttpErrorResponse(ManagerException(E_STATE_ERROR).message)
+        try:
+            self._check_state([self.S_RUNNING])
+            exp_params = []
+            check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
         self.state = self.S_EPILOGUE
         Thread(target=self._do_shutdown, args=[]).start()
@@ -486,17 +506,22 @@ class GaleraManager(BaseManager):
 
     @expose('UPLOAD')
     def load_dump(self, kwargs):
+        """
+        Load a dump into the database.
+
+        Parameters
+        ----------
+        mysqldump_file : uploaded file
+            name of uploaded file containing the database dump.
+        """
         self.logger.debug('Uploading mysql dump')
-        if 'mysqldump_file' not in kwargs:
-            return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_MISSING,
-                                                      'mysqldump_file').message)
-        mysqldump_file = kwargs.pop('mysqldump_file')
-        if len(kwargs) != 0:
-            return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_UNEXPECTED,
-                                                      detail='invalid number of arguments ').message)
-        if not isinstance(mysqldump_file, FileUploadField):
-            return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_INVALID,
-                                                      detail='mysqldump_file should be a file').message)
+        try:
+            self._check_state([self.S_RUNNING])
+            exp_params = [('mysqldump_file', is_uploaded_file)]
+            mysqldump_file = check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
+
         fd, filename = tempfile.mkstemp(dir='/tmp')
         fd = os.fdopen(fd, 'w')
         upload = mysqldump_file.file
@@ -506,6 +531,7 @@ class GaleraManager(BaseManager):
             bytes = upload.read(2048)
         fd.close()
 
+        # at least one agent since state is S_RUNNING
         one_node = self.config.get_nodes()[0]
         try:
             agent.load_dump(one_node.ip, self.config.AGENT_PORT, filename)
@@ -514,3 +540,35 @@ class GaleraManager(BaseManager):
             self.logger.exception(err_msg)
             return HttpErrorResponse(err_msg)
         return HttpJsonResponse()
+
+    @expose('GET')
+    def sqldump(self, kwargs):
+        """
+        Dump the database.
+
+        No parameters.
+
+        Returns the dump of the database.
+        """
+        try:
+            self._check_state([self.S_RUNNING])
+            exp_params = []
+            check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
+
+        # at least one agent since state is S_RUNNING
+        one_node = self.config.get_nodes()[0]
+        # adding option '--skip-lock-tables' to avoid issue
+        #  mysqldump: Got error: 1142: SELECT,LOCK TABL command denied to user
+        #   'mysqldb'@'10.158.0.28' for table 'cond_instances'
+        #   when using LOCK TABLES
+        # FIXME: is it MySQL 5.1 only? does it still occur with MySQL 5.5?
+        cmd = 'mysqldump -u mysqldb -h %s --password=%s -A --skip-lock-tables' \
+              % (one_node.ip, self.root_pass)
+        out, error, return_code = run_cmd_code(cmd)
+
+        if return_code == 0:
+            return HttpJsonResponse(out)
+        else:
+            return HttpErrorResponse("Failed to run mysqldump: %s." % error)
