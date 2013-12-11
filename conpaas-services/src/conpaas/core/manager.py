@@ -273,8 +273,8 @@ class BaseManager(object):
         self.logger.info("Volume %s detached" % volume_id)
         return ret
 
-    def _init_cloud(self, cloud):
-        if cloud == 'default':
+    def _init_cloud(self, cloud=None):
+        if cloud is None or cloud == 'default':
             cloud = 'iaas'
         return self.controller.get_cloud_by_name(cloud)
 
