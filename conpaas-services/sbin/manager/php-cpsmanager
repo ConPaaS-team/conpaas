@@ -41,7 +41,7 @@ Created on Jul 4, 2011
 @author: ielhelw
 '''
 from os.path import exists
-from conpaas.core import https 
+from conpaas.core.https import client, server
 
 if __name__ == '__main__':
   from optparse import OptionParser
@@ -91,13 +91,13 @@ if __name__ == '__main__':
     sys.exit(1)
   
   # Initialize the context for the client   
-  https.client.conpaas_init_ssl_ctx(config_parser.get('manager', 'CERT_DIR'),
+  client.conpaas_init_ssl_ctx(config_parser.get('manager', 'CERT_DIR'),
                                     'manager', config_parser.get('manager', 'USER_ID'),
                                     config_parser.get('manager', 'SERVICE_ID'))
 
   # Start the manager server
   print options.address, options.port
-  d = https.server.ConpaasSecureServer((options.address, options.port),
+  d = server.ConpaasSecureServer((options.address, options.port),
                      config_parser,
 		     'manager',
                      reset_config=True, 

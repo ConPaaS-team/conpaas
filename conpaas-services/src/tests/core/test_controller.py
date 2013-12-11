@@ -164,7 +164,7 @@ class TestController(unittest.TestCase):
             1, lambda x,y: True, '5555') 
 
     # patch https_post to pretend we have enough credit
-    @mock.patch('conpaas.core.controller.https.client.https_post', mock_post)
+    @mock.patch('conpaas.core.https.client.https_post', mock_post)
     def test_create_nodes(self):
         self.config_parser.add_section('iaas')
         self.config_parser.set('iaas', 'DRIVER', 'dummy')
@@ -267,7 +267,7 @@ class TestController(unittest.TestCase):
         self.assertEquals(None, 
             self.controller.config_clouds({}))
 
-    @mock.patch('conpaas.core.controller.https.client.https_post', mock_post)
+    @mock.patch('conpaas.core.https.client.https_post', mock_post)
     def test_force_terminate_service(self):
         self.controller = self.__get_dummy_controller()
         self.controller._Controller__force_terminate_service()
