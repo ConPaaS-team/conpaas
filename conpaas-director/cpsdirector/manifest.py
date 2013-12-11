@@ -723,7 +723,7 @@ def get_manifest_class(service_type):
         return MPhp
     elif service_type == 'java':
         return MJava
-    elif service_type == 'mysql':
+    elif service_type == 'mysql' or service_type == 'galera':
         return MMySql
     elif service_type == 'scalaris':
         return MScalaris
