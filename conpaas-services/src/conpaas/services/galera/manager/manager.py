@@ -425,8 +425,10 @@ class GaleraManager(BaseManager):
                               " the old nodes %s after %d seconds."
                               % (old_nodes, delay))
             self._start_timer(delay, self._do_migrate_finalize, old_nodes)
+            self.state = self.S_RUNNING
 
     def _do_migrate_finalize(self, old_nodes):
+        self.state = self.S_ADAPTING
         for node in old_nodes:
             agent.stop(node.ip, self.config.AGENT_PORT)
         self.controller.delete_nodes(old_nodes)
