@@ -4,21 +4,21 @@
     :copyright: (C) 2010-2013 by Contrail Consortium.
 """
 
-from threading import Thread, Lock, Event, Timer
+from threading import Thread, Timer
 import os
 import tempfile
 import string
 from random import choice
 import collections
 
-from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse, \
-                                      FileUploadField
+from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse, FileUploadField
 from conpaas.core.expose import expose
 from conpaas.core.manager import BaseManager, ManagerException
+from conpaas.core.misc import check_arguments, is_pos_nul_int, is_string
 
-from conpaas.services.galera.agent import client
-from conpaas.services.galera.manager.config import Configuration, E_ARGS_INVALID, \
-                              E_ARGS_MISSING, E_STATE_ERROR, E_ARGS_UNEXPECTED
+import conpaas.services.galera.agent.client as agent
+from conpaas.services.galera.agent.client import AgentException
+from conpaas.services.galera.manager.config import Configuration, E_ARGS_MISSING, E_STATE_ERROR, E_ARGS_UNEXPECTED
 
 
 class GaleraManager(BaseManager):
@@ -31,36 +31,23 @@ class GaleraManager(BaseManager):
 
     """
 
+    # MySQL Galera node types
+    REGULAR_NODE = 'node'  # regular node running a mysqld daemon
+    GLB_NODE = 'glb_node'  # load balancer running a glbd daemon
+
     def __init__(self, conf, **kwargs):
         BaseManager.__init__(self, conf)
 
         self.logger.debug("Entering GaleraServerManager initialization")
         self.controller.generate_context('galera')
-        self.controller.config_clouds({ "mem" : "512", "cpu" : "1" })
+        self.controller.config_clouds({"mem": "512", "cpu": "1"})
         self.state = self.S_INIT
         self.config = Configuration(conf)
         self.logger.debug("Leaving GaleraServer initialization")
-        # The unique id that is used to start the master/slave
-        self.id = 0
-
-    # TODO: move to BaseManager
-    def _check_state(self, expected_states):
-        if self.state not in expected_states:
-            raise Exception("ERROR: wrong state, was expecting one of %s"\
-                            " but current state is %s" \
-                            % (expected_states, self.state))
-
-    # TODO: move to BaseManager
-    def _check_arguments(self, kwargs, expected_args):
-        for param, ptype in expected_args:
-            if param not in kwargs:
-                raise Exception("ERROR: missing required parameter %s" % param)
-            arg_value = kwargs[param]
-        # TODO: finish this generic argument checker, including ptype checks
 
     @expose('POST')
     def startup(self, kwargs):
-        """ Starts the service - it will start and configure a Galera master """
+        """ Starts the service - it will start and configure a Galera node."""
         self.logger.debug("Entering GaleraServerManager startup")
 
         if self.state != self.S_INIT and self.state != self.S_STOPPED:
@@ -85,58 +72,46 @@ class GaleraManager(BaseManager):
                                                 cloud=start_cloud)
         try:
             node_instances = self.controller.create_nodes(1,
-                                                          client.check_agent_process,
+                                                          agent.check_agent_process,
                                                           self.config.AGENT_PORT,
                                                           start_cloud)
-            self._start_master(node_instances)
-            self.config.addMySQLServiceNodes(nodes=node_instances,
-                                             isMaster=True)
+            self._start_mysqld(node_instances)
+            self.config.addMySQLServiceNodes(node_instances)
         except Exception, ex:
             # rollback
-            self.controller.delete_nodes(node_instances)
+#            self.controller.delete_nodes(node_instances)
             self.logger.exception('do_startup: Failed to request a new node on cloud %s: %s.' % (cloud, ex))
             self.state = self.S_STOPPED
             return
         self.state = self.S_RUNNING
 
-    def _start_master(self, nodes):
+    def _start_mysqld(self, nodes):
+        existing_nodes = self.config.get_nodes_addr()
         for serviceNode in nodes:
             try:
-                client.create_master(serviceNode.ip,
-                                     self.config.AGENT_PORT,
-                                     self._get_server_id())
-            except client.AgentException, ex:
+                agent.start_mysqld(serviceNode.ip, self.config.AGENT_PORT, existing_nodes)
+            except AgentException, ex:
                 self.logger.exception('Failed to start Galera node %s: %s' % (str(serviceNode), ex))
-                self.state = self.S_ERROR
                 raise
+        try:
+            glb_nodes = self.config.get_glb_nodes()
+            for glb in glb_nodes:
+                agent.add_glbd_nodes(glb.ip, self.config.AGENT_PORT, nodes)
+        except Exception as ex:
+            self.logger.exception('Failed to configure GLB nodes with new Galera nodes: %s' % ex)
+            raise
 
-    def _start_slave(self, nodes, master):
-        slaves = {}
-        for serviceNode in nodes:
-            slaves[str(self._get_server_id())] = {'ip': serviceNode.ip,
-                                                  'port': self.config.AGENT_PORT}
-        try:
-            self.logger.debug('create_slave for master.ip  = %s' % master)
-            client.create_slave(master.ip, self.config.AGENT_PORT, slaves)
-        except client.AgentException:
-            self.logger.exception('Failed to start Galera Slave at node %s' % str(serviceNode))
-            self.state = self.S_ERROR
-            raise
-            
-    def _start_glb_node(self, nodes, master):
-        slaves = {}
-        for serviceNode in nodes:
-            slaves[str(self._get_server_id())] = {'ip': serviceNode.ip,
-                                                  'port': self.config.AGENT_PORT}
-        try:
-            galera_nodes = [{"host": node.ip, "port": self.config.AGENT_PORT} for node in self.getMySQLServiceNodes()]
-            self.logger.debug('create_glb_node all galera nodes = %s' % str(galera_nodes))
-            self.logger.debug('create_glb_node for master.ip  = %s' % master)
-            client.create_glb_node(master.ip, self.config.AGENT_PORT, slaves, galera_nodes)
-        except client.AgentException:
-            self.logger.exception('Failed to start Galera GLB Node at node %s' % str(serviceNode))
-            self.state = self.S_ERROR
-            raise
+    def _start_glbd(self, new_glb_nodes):
+        for new_glb in new_glb_nodes:
+            try:
+                nodes = ["%s:%s" % (node.ip, 3306)  # FIXME: find real mysql port instead of default 3306
+                         for node in self.config.get_nodes()]
+                self.logger.debug('create_glb_node all galera nodes = %s' % nodes)
+                self.logger.debug('create_glb_node for new_glb.ip  = %s' % new_glb.ip)
+                agent.start_glbd(new_glb.ip, self.config.AGENT_PORT, nodes)
+            except AgentException:
+                self.logger.exception('Failed to start Galera GLB Node at node %s' % new_glb.ip)
+                raise
 
     @expose('GET')
     def list_nodes(self, kwargs):
@@ -154,11 +129,9 @@ class GaleraManager(BaseManager):
         if len(kwargs) != 0:
             return HttpErrorResponse(ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
 
-        return HttpJsonResponse({
-            'masters': [ node.id for node in self.config.getMySQLmasters() ],
-            'glb_nodes': [ node.id for node in self.config.get_glb_nodes() ],
-            'slaves': [ node.id for node in self.config.getMySQLslaves() ]
-            })
+        return HttpJsonResponse({'nodes': [node.id for node in self.config.get_nodes()],
+                                 'glb_nodes': [node.id for node in self.config.get_glb_nodes()],
+                                 })
 
     @expose('GET')
     def get_node_info(self, kwargs):
@@ -177,80 +150,76 @@ class GaleraManager(BaseManager):
         if len(kwargs) != 0:
             return HttpErrorResponse(ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
         if serviceNodeId not in self.config.serviceNodes:
-            return HttpErrorResponse('Unknown "serviceNodeId" %s, should be one of %s.'\
+            return HttpErrorResponse('Unknown "serviceNodeId" %s, should be one of %s.'
                                      % (serviceNodeId, self.config.serviceNodes.keys()))
         serviceNode = self.config.getMySQLNode(serviceNodeId)
-        return HttpJsonResponse({
-            'serviceNode': {
-                            'id': serviceNode.id,
-                            'ip': serviceNode.ip,
-                            'isMaster': serviceNode.isMaster,
-                            'isSlave': serviceNode.isSlave,
-                            'cloud_name': serviceNode.cloud_name,
-                            }
-            })
+        return HttpJsonResponse({'serviceNode': {'id': serviceNode.id,
+                                                 'ip': serviceNode.ip,
+                                                 'vmid': serviceNode.vmid,
+                                                 'cloud': serviceNode.cloud_name,
+                                                 }
+                                 })
 
     @expose('POST')
     def add_nodes(self, kwargs):
         """
-        HTTP POST method. Creates new node and adds it to the list of existing nodes in the manager. Makes internal call to :py:meth:`createServiceNodeThread`.
+        Add new nodes for this MySQL Galera service.
 
-        :param kwargs: number of nodes to add.
-        :type param: str
-        :returns: HttpJsonResponse - JSON response with details about the node.
-        :raises: ManagerException
+        Parameters
+        ----------
+        nodes : int
+            number of new regular nodes to add (default 0)
+        glb_nodes : int
+            number of new Galera Load Balancers nodes to add (default 0)
+        cloud : string
+            cloud name where to create nodes (default to default cloud)
 
+        Returns an error if nodes + glb_nodes == 0.
         """
+        try:
+            self._check_state([self.S_RUNNING])
+            exp_params = [('nodes', is_pos_nul_int, 0),
+                          ('glb_nodes', is_pos_nul_int, 0),
+                          ('cloud', is_string, None)]
+            nodes, glb_nodes, cloud = check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
-        if self.state != self.S_RUNNING:
-            return HttpErrorResponse('ERROR: Wrong state to add_nodes')
-        if (not 'slaves' in kwargs) and (not 'glb_nodes' in kwargs):
-            return HttpErrorResponse('ERROR: Required argument doesn\'t exist')
-        if (not isinstance(kwargs['slaves'], int)) and (not isinstance(kwargs['glb_nodes'], int)):
-            return HttpErrorResponse('ERROR: Expected an integer value for "count"')
+        if nodes + glb_nodes <= 0:
+            return HttpErrorResponse('Both arguments "nodes" and "glb_nodes" are null.')
+
         self.state = self.S_ADAPTING
 
         # TODO: check if argument "cloud" is an known cloud
-        if 'slaves' in kwargs:
-            count = int(kwargs.pop('slaves'))
-            Thread(target=self._do_add_nodes, args=['slaves', count, kwargs['cloud']]).start()
-        if 'glb_nodes' in kwargs:
-            count = int(kwargs.pop('glb_nodes'))
-            Thread(target=self._do_add_nodes, args=['glb_nodes', count, kwargs['cloud']]).start()
+        if nodes > 0:
+            Thread(target=self._do_add_nodes, args=[self.REGULAR_NODE, nodes, cloud]).start()
+        if glb_nodes > 0:
+            Thread(target=self._do_add_nodes, args=[self.GLB_NODE, glb_nodes, cloud]).start()
         return HttpJsonResponse()
 
-    # TODO: also specify the master for which to add slaves
-    def _do_add_nodes(self, node_type, count, cloud):
-        # Get the master
-        masters = self.config.getMySQLmasters()
-        start_cloud = self._init_cloud(cloud)
-        # Configure the nodes as slaves
+    def _do_add_nodes(self, node_type, count, cloud=None):
         try:
-            self.controller.add_context_replacement(
-                                        dict(mysql_username='mysqldb',
-                                             mysql_password=self.root_pass),
-                                        cloud=start_cloud)
+            start_cloud = self._init_cloud(cloud)
+            self.controller.add_context_replacement(dict(mysql_username='mysqldb',
+                                                         mysql_password=self.root_pass),
+                                                    cloud=start_cloud)
             node_instances = self.controller.create_nodes(count,
-                                           client.check_agent_process,
-                                           self.config.AGENT_PORT, start_cloud)
-            for master in masters:
-                if node_type == 'slaves':
-                    self._start_slave(node_instances, master)
-                    self.config.addMySQLServiceNodes(nodes=node_instances, isSlave=True)
-                elif node_type == 'glb_nodes':
-                    self._start_glb_node(node_instances, master)
-                    self.config.addGLBServiceNodes(nodes=node_instances)
+                                                          agent.check_agent_process,
+                                                          self.config.AGENT_PORT,
+                                                          start_cloud)
+            if node_type == self.REGULAR_NODE:
+                self._start_mysqld(node_instances)
+                self.config.addMySQLServiceNodes(node_instances)
+            elif node_type == self.GLB_NODE:
+                self._start_glbd(node_instances)
+                self.config.addGLBServiceNodes(node_instances)
         except Exception, ex:
             # rollback
+            for node in node_instances:
+                agent.stop(node.ip, self.config.AGENT_PORT)
             self.controller.delete_nodes(node_instances)
-            self.logger.exception('_do_add_nodes: Could not start slave: %s' % ex)
-            self.state = self.S_ERROR
-            return
+            self.logger.exception('Could not add nodes: %s' % ex)
         self.state = self.S_RUNNING
-
-    def _get_server_id(self):
-        self.id = self.id + 1
-        return self.id
 
     @expose('GET')
     def get_service_performance(self, kwargs):
@@ -264,35 +233,57 @@ class GaleraManager(BaseManager):
 
         if len(kwargs) != 0:
             return HttpErrorResponse(ManagerException(E_ARGS_UNEXPECTED, kwargs.keys()).message)
-        return HttpJsonResponse({
-                'request_rate': 0,
-                'error_rate': 0,
-                'throughput': 0,
-                'response_time': 0,
-        })
+        return HttpJsonResponse({'request_rate': 0,
+                                 'error_rate': 0,
+                                 'throughput': 0,
+                                 'response_time': 0,
+                                 })
 
     @expose('POST')
     def remove_nodes(self, kwargs):
-        if self.state != self.S_RUNNING:
-            self.logger.debug('Wrong state to remove nodes')
-            return HttpErrorResponse('ERROR: Wrong state to remove_nodes')
-        if not 'slaves' in kwargs:
-            return HttpErrorResponse('ERROR: Required argument doesn\'t exist')
-        if not isinstance(kwargs['slaves'], int):
-            return HttpErrorResponse('ERROR: Expected an integer value for "count"')
-        count = int(kwargs.pop('slaves'))
-        if count > len(self.config.getMySQLslaves()):
-            return HttpErrorResponse('ERROR: Cannot remove so many nodes')
+        """
+        Remove MySQL Galera nodes.
+
+        Parameters
+        ----------
+        nodes : int
+            number of regular nodes to remove (default 0)
+        glb_nodes : int
+            number of Galera Load Balancer nodes to remove (default 0)
+
+        Returns an error if "nodes + glb_nodes == 0".
+        """
+        try:
+            self._check_state([self.S_RUNNING])
+            exp_params = [('nodes', is_pos_nul_int, 0),
+                          ('glb_nodes', is_pos_nul_int, 0)]
+            nodes, glb_nodes = check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
+
+        if nodes + glb_nodes <= 0:
+            return HttpErrorResponse('Both arguments "nodes" and "glb_nodes" are null.')
+        total_nodes = len(self.config.get_nodes())
+        if nodes > 0 and nodes > total_nodes:
+            return HttpErrorResponse('Cannot remove %s nodes: %s nodes at most.'
+                                     % (nodes, total_nodes))
+        total_glb_nodes = len(self.config.get_glb_nodes())
+        if glb_nodes > 0 and glb_nodes > total_glb_nodes:
+            return HttpErrorResponse('Cannot remove %s nodes: %s nodes at most.'
+                                     % (glb_nodes, total_glb_nodes))
         self.state = self.S_ADAPTING
-        Thread(target=self._do_remove_nodes, args=[count]).start()
+        rm_reg_nodes = self.config.get_nodes()[:nodes]
+        rm_glb_nodes = self.config.get_glb_nodes()[:glb_nodes]
+        rm_nodes = rm_reg_nodes + rm_glb_nodes
+        Thread(target=self._do_remove_nodes, args=[rm_nodes]).start()
         return HttpJsonResponse()
 
-    def _do_remove_nodes(self, count):
-        nodes = self.config.getMySQLslaves()[:count]
+    def _do_remove_nodes(self, nodes):
+        for node in nodes:
+            agent.stop(node.ip, self.config.AGENT_PORT)
         self.controller.delete_nodes(nodes)
         self.config.remove_nodes(nodes)
         self.state = self.S_RUNNING
-        return HttpJsonResponse()
 
     @expose('POST')
     def migrate_nodes(self, kwargs):
@@ -323,7 +314,7 @@ class GaleraManager(BaseManager):
         if not 'nodes' in kwargs:
             return HttpErrorResponse('ERROR: Missing required "nodes" argument.')
         migrate_nodes_str = kwargs.pop('nodes').split(',')
-        service_nodes = self.config.getMySQLServiceNodes()
+        service_nodes = self.config.get_nodes()
         self.logger.debug("While migrate_nodes, service_nodes = %s." % service_nodes)
         migration_plan = []
         for migrate_node in migrate_nodes_str:
@@ -331,26 +322,23 @@ class GaleraManager(BaseManager):
                 from_cloud_name, node_id, dest_cloud_name = migrate_node.split(':')
                 # TODO: check that cloud name cannot contain a column ':'
                 if from_cloud_name == '' or dest_cloud_name == '':
-                    raise Exception('Missing cloud name in parameter "nodes".' \
+                    raise Exception('Missing cloud name in parameter "nodes".'
                                     % migrate_nodes_str)
             except Exception, ex:
-                return HttpErrorResponse('ERROR: argument "nodes" does not' \
-                    ' respect the expected format, a comma-separated list of'\
-                    ' "from_cloud:node_id:dest_cloud": %s\n%s' % (migrate_nodes_str, ex))
+                err_msg = 'Argument "nodes" does not' \
+                          ' respect the expected format, a comma-separated list of' \
+                          ' "from_cloud:node_id:dest_cloud": %s\n%s' % (migrate_nodes_str, ex)
+                return HttpErrorResponse(err_msg)
             try:
                 candidate_nodes = [node for node in service_nodes
                                    if node.cloud_name == from_cloud_name
-                                       and node.id == node_id]
+                                   and node.vmid == node_id]
                 if candidate_nodes == []:
-                    avail_nodes = ', '.join([node.cloud_name + ':' + node.id
+                    avail_nodes = ', '.join([node.cloud_name + ':' + node.vmid
                                              for node in service_nodes])
-                    raise Exception("Node %s in cloud %s is not a valid node" \
-                                    " of this service. It should be one of %s" \
+                    raise Exception("Node %s in cloud %s is not a valid node"
+                                    " of this service. It should be one of %s"
                                     % (node_id, from_cloud_name, avail_nodes))
-#                node = self.controller.get_node(node_id, from_cloud_name)
-#                if node not in service_nodes:
-#                    raise Exception("Node %s from cloud %s is not a MySQL service node." \
-#                                    % (node.id, node.cloud_name))
                 node = candidate_nodes[0]
                 dest_cloud = self.controller.get_cloud_by_name(dest_cloud_name)
             except Exception, ex:
@@ -368,10 +356,10 @@ class GaleraManager(BaseManager):
             try:
                 delay = int(delay)
             except ValueError, ex:
-                return HttpErrorResponse('ERROR: argument "delay" must be an integer,' \
+                return HttpErrorResponse('ERROR: argument "delay" must be an integer,'
                                          'it cannot be %s.' % delay)
             if delay < 0:
-                return HttpErrorResponse('ERROR: argument "delay" must be a positive or null integer,' \
+                return HttpErrorResponse('ERROR: argument "delay" must be a positive or null integer,'
                                          'it cannot be %s.' % delay)
 
         if len(kwargs) > 0:
@@ -382,8 +370,8 @@ class GaleraManager(BaseManager):
         return HttpJsonResponse()
 
     def _do_migrate_nodes(self, migration_plan, delay):
-        self.logger.info("Migration: starting with plan %s and delay %s." \
-                          % (migration_plan, delay))
+        self.logger.info("Migration: starting with plan %s and delay %s."
+                         % (migration_plan, delay))
         # TODO: use instead collections.Counter with Python 2.7
         clouds = [dest_cloud for (_node, dest_cloud) in migration_plan]
         new_vm_nb = collections.defaultdict(int)
@@ -393,54 +381,50 @@ class GaleraManager(BaseManager):
             new_nodes = []
             # TODO: make it parallel
             for cloud, count in new_vm_nb.iteritems():
-                self.controller.add_context_replacement(
-                                        dict(mysql_username='mysqldb',
-                                             mysql_password=self.root_pass),
-                                        cloud=cloud)
+                self.controller.add_context_replacement(dict(mysql_username='mysqldb',
+                                                             mysql_password=self.root_pass),
+                                                        cloud=cloud)
 
-                new_nodes.extend(
-                    self.controller.create_nodes(count,
-                                                 client.check_agent_process,
-                                                 self.config.AGENT_PORT,
-                                                 cloud))
-                # TODO: no masters anymore in Galera
-                #for master in masters:
-                masters = self.config.getMySQLmasters()
-                slaves = self.config.getMySQLslaves()
-                refnode = (masters + slaves)[0]
-                self.logger.debug("Using node %s to synchronize the new node" % refnode.ip)
-                self._start_slave(new_nodes, refnode)
-                self.config.addMySQLServiceNodes(nodes=new_nodes, isSlave=True)
+                new_nodes.extend(self.controller.create_nodes(count,
+                                                              agent.check_agent_process,
+                                                              self.config.AGENT_PORT,
+                                                              cloud))
+                self._start_mysqld(new_nodes)
+                self.config.addMySQLServiceNodes(new_nodes)
         except Exception, ex:
             # error happened: rolling back...
+            for node in new_nodes:
+                agent.stop(node.ip, self.config.AGENT_PORT)
             self.controller.delete_nodes(new_nodes)
             self.config.remove_nodes(new_nodes)
-            self.logger.exception('_do_migrate_nodes: Could not' \
+            self.logger.exception('_do_migrate_nodes: Could not'
                                   ' start nodes: %s' % ex)
             self.state = self.S_RUNNING
             raise ex
 
-        self.logger.debug("Migration: new nodes %s created and" \
+        self.logger.debug("Migration: new nodes %s created and"
                           " configured successfully." % (new_nodes))
 
         # New nodes successfully created
         # Now scheduling the removing of old nodes
         old_nodes = [node for node, _dest_cloud in migration_plan]
         if delay == 0:
-            self.logger.debug("Migration: removing immediately" \
+            self.logger.debug("Migration: removing immediately"
                               " the old nodes: %s." % old_nodes)
             self._do_migrate_finalize(old_nodes)
         else:
-            self.logger.debug("Migration: setting a timer to remove" \
-                              " the old nodes %s after %d seconds." \
+            self.logger.debug("Migration: setting a timer to remove"
+                              " the old nodes %s after %d seconds."
                               % (old_nodes, delay))
             self._start_timer(delay, self._do_migrate_finalize, old_nodes)
 
     def _do_migrate_finalize(self, old_nodes):
+        for node in old_nodes:
+            agent.stop(node.ip, self.config.AGENT_PORT)
         self.controller.delete_nodes(old_nodes)
         self.config.remove_nodes(old_nodes)
         self.state = self.S_RUNNING
-        self.logger.info("Migration: old nodes %s have been removed." \
+        self.logger.info("Migration: old nodes %s have been removed."
                          " END of migration." % old_nodes)
 
     def _start_timer(self, delay, callback, nodes):
@@ -470,40 +454,33 @@ class GaleraManager(BaseManager):
 
         self.state = self.S_EPILOGUE
         Thread(target=self._do_shutdown, args=[]).start()
-        return HttpJsonResponse({'state': self.S_EPILOGUE})
-
+        return HttpJsonResponse({'state': self.state})
 
     def _do_shutdown(self):
         ''' Shuts down the service. '''
-        #self._stop_slaves( config.getProxyServiceNodes())
-        #self._stop_masters(config, config.getWebServiceNodes())
-        self.controller.delete_nodes(self.config.serviceNodes.values())
+        self._do_remove_nodes(self.config.serviceNodes.values())
         self.config.serviceNodes = {}
         self.state = self.S_STOPPED
-
 
     @expose('POST')
     def set_password(self, kwargs):
         self.logger.debug('Setting password')
-        if self.state != self.S_RUNNING:
-            self.logger.debug('Service not runnning')
-            return HttpErrorResponse('ERROR: Service not running')
-        if not 'user' in kwargs:
-            return HttpErrorResponse('ERROR: Required argument \'user\' doesn\'t exist')
-        if not 'password' in kwargs:
-            return HttpErrorResponse('ERROR: Required argument \'password\' doesn\'t exist')
-
-        # Get the master
-        masters = self.config.getMySQLmasters()
-
-        #TODO: modify this when multiple masters
         try:
-            for master in masters:
-                client.set_password(master.ip, self.config.AGENT_PORT, kwargs['user'], kwargs['password'])
-        except:
-            self.logger.exception('set_password: Could not set password')
-            self.state = self.S_ERROR
-            return HttpErrorResponse('Failed to set password')
+            self._check_state([self.S_RUNNING])
+            exp_params = [('user', is_string),
+                          ('password', is_string)]
+            user, password = check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("Cannot set new password: %s." % ex)
+
+        one_node = self.config.get_nodes()[0]
+
+        try:
+            agent.set_password(one_node.ip, self.config.AGENT_PORT, user, password)
+            self.root_pass = password
+        except Exception as ex:
+            self.logger.exception()
+            return HttpErrorResponse('Failed to set new password: %s.' % ex)
         else:
             return HttpJsonResponse()
 
@@ -511,15 +488,15 @@ class GaleraManager(BaseManager):
     def load_dump(self, kwargs):
         self.logger.debug('Uploading mysql dump')
         if 'mysqldump_file' not in kwargs:
-            return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_MISSING, \
-                                                                     'mysqldump_file').message)
+            return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_MISSING,
+                                                      'mysqldump_file').message)
         mysqldump_file = kwargs.pop('mysqldump_file')
         if len(kwargs) != 0:
-            return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_UNEXPECTED, \
-                                               detail='invalid number of arguments ').message)
+            return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_UNEXPECTED,
+                                                      detail='invalid number of arguments ').message)
         if not isinstance(mysqldump_file, FileUploadField):
-            return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_INVALID, \
-                                               detail='mysqldump_file should be a file').message)
+            return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_INVALID,
+                                                      detail='mysqldump_file should be a file').message)
         fd, filename = tempfile.mkstemp(dir='/tmp')
         fd = os.fdopen(fd, 'w')
         upload = mysqldump_file.file
@@ -529,14 +506,11 @@ class GaleraManager(BaseManager):
             bytes = upload.read(2048)
         fd.close()
 
-        # Get master
-        # TODO: modify this when multiple masters
-        masters = self.config.getMySQLmasters()
+        one_node = self.config.get_nodes()[0]
         try:
-            for master in masters:
-                client.load_dump(master.ip, self.config.AGENT_PORT, filename)
-        except:
-            self.logger.exception('load_dump: could not upload mysqldump_file ')
-            self.state = self.S_ERROR
-            return
+            agent.load_dump(one_node.ip, self.config.AGENT_PORT, filename)
+        except Exception as ex:
+            err_msg = 'Could not upload mysqldump_file: %s.' % ex
+            self.logger.exception(err_msg)
+            return HttpErrorResponse(err_msg)
         return HttpJsonResponse()

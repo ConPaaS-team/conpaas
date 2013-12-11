@@ -10,11 +10,22 @@ from threading import Lock
 import pickle
 
 #from conpaas.core.misc import get_ip_address
-from conpaas.core.agent import BaseAgent, AgentException
-from conpaas.services.galera.agent import role 
+from conpaas.core.agent import BaseAgent
+from conpaas.services.galera.agent import role
 
 from conpaas.core.https.server import HttpErrorResponse, HttpJsonResponse, FileUploadField
 from conpaas.core.expose import expose
+from conpaas.core.misc import check_arguments, is_list, is_string
+
+
+# daemons identifier
+MYSQLD = 'mysqld'
+GLBD = 'glbd'
+
+
+class AgentException(Exception):
+    pass
+
 
 class GaleraAgent(BaseAgent):
 
@@ -27,257 +38,209 @@ class GaleraAgent(BaseAgent):
         self.VAR_CACHE = config_parser.get('agent', 'VAR_CACHE')
         self.VAR_RUN = config_parser.get('agent', 'VAR_RUN')
 
-        self.master_file = join(self.VAR_TMP, 'master.pickle')
-        self.slave_file = join(self.VAR_TMP, 'slave.pickle')
-     
-        self.master_lock = Lock()
-        self.slave_lock = Lock()
-     
-    def _get(self, get_params, class_file, pClass):
-        if not exists(class_file):
-            return HttpErrorResponse(AgentException(
-                AgentException.E_CONFIG_NOT_EXIST).message)
+        self.mysqld_file = join(self.VAR_TMP, 'mysqld.pickle')
+
+        self.lock = Lock()
+
+        # list of roles running in this agent
+        self.running_roles = []
+
+    @expose('POST')
+    def start_mysqld(self, kwargs):
+        """
+        Start a mysqld daemon.
+
+        Parameters
+        ----------
+        nodes : list of IP:port
+            list of IP addresses and port of other nodes of this
+            synchronization group. If empty or absent, then a new
+            synchronization group will be created by Galera.
+        """
         try:
-            fd = open(class_file, 'r')
+            exp_params = [('nodes', is_list, [])]
+            nodes = check_arguments(exp_params, kwargs)
+            with self.lock:
+                mysql_role = role.MySQLServer
+                self._start(mysql_role, nodes)
+                self.running_roles.append(mysql_role)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
+        else:
+            return HttpJsonResponse()
+
+    def _start(self, roleClass, nodes):
+        if exists(roleClass.class_file):
+            raise AgentException('Cannot start %s: file %s already exists.'
+                                 % (roleClass, roleClass.class_file))
+        p = roleClass(self.config_parser, nodes)
+        try:
+            fd = open(roleClass.class_file, 'w')
+            pickle.dump(p, fd)
+            fd.close()
+        except Exception as ex:
+            err_msg = "Failed to store file: %s" % ex
+            self.logger.exception(err_msg)
+            raise AgentException(err_msg)
+
+    @expose('POST')
+    def stop(self, kwargs):
+        """
+        Stop all daemons running in this agent (mysqld daemon and glbd daemon
+        if any).
+
+        No parameters.
+        """
+        if len(kwargs) > 0:
+            self.logger.warning('Galera agent "stop" was called with arguments that will be ignored: "%s"' % kwargs)
+        for role in self.running_roles:
+            self._stop(role)
+        self.running_roles = []
+        return HttpJsonResponse()
+
+    def _stop(self, roleClass):
+        if not exists(roleClass.class_file):
+            raise AgentException('Cannot stop daemon: file %s does not exist.'
+                                 % roleClass.class_file)
+        try:
+            fd = open(roleClass.class_file, 'r')
             p = pickle.load(fd)
             fd.close()
-        except Exception as e:
-            ex = AgentException(AgentException.E_CONFIG_READ_FAILED,
-                                pClass.__name__, class_file, detail=e)
-            self.logger.exception(ex.message)
-            return HttpErrorResponse(ex.message)
-        else:
-            return HttpJsonResponse({'return': p.status()})
-
-    def _create(self, post_params, class_file, pClass):
-        if exists(class_file):
-            return HttpErrorResponse(AgentException(
-                AgentException.E_CONFIG_EXISTS).message)
-        try:
-            if type(post_params) != dict:
-                raise TypeError()
-            self.logger.debug('Creating class')
-            p = pClass(**post_params)
-            self.logger.debug('Created class')
-        except (ValueError, TypeError) as e:
-            ex = AgentException(AgentException.E_ARGS_INVALID, detail=str(e))
-            self.logger.exception(e)
-            return HttpErrorResponse(ex.message)
-        except Exception as e:
-            ex = AgentException(AgentException.E_UNKNOWN, detail=e)
-            self.logger.exception(e)
-            return HttpErrorResponse(ex.message)
-        else:
-            try:
-                self.logger.debug('Openning file %s' % class_file)
-                fd = open(class_file, 'w')
-                pickle.dump(p, fd)
-                fd.close()
-            except Exception as e:
-                ex = AgentException(AgentException.E_CONFIG_COMMIT_FAILED,
-                                    detail=e)
-                self.logger.exception(ex.message)
-                return HttpErrorResponse(ex.message)
-            else:
-                self.logger.debug('Created class file')
-                return HttpJsonResponse()
-
-    def _stop(self, get_params, class_file, pClass):
-        if not exists(class_file):
-            return HttpErrorResponse(AgentException(
-                AgentException.E_CONFIG_NOT_EXIST).message)
-        try:
-            try:
-                fd = open(class_file, 'r')
-                p = pickle.load(fd)
-                fd.close()
-            except Exception as e:
-                ex = AgentException(AgentException.E_CONFIG_READ_FAILED, detail=e)
-                self.logger.exception(ex.message)
-                return HttpErrorResponse(ex.message)
             p.stop()
-            remove(class_file)
-            return HttpJsonResponse()
-        except Exception as e:
-            ex = AgentException(AgentException.E_UNKNOWN, detail=e)
-            self.logger.exception(e)
-            return HttpErrorResponse(ex.message)
+            remove(roleClass.class_file)
+        except Exception as ex:
+            err_msg = "Cannot stop daemon: %s" % ex
+            self.logger.exception(err_msg)
+            raise AgentException(err_msg)
 
-    ################################################################################
-    #                      methods executed on a MySQL Master                      #
-    ################################################################################
-    def _master_get_params(self, kwargs):
-        ret = {}
-        if 'master_server_id' not in kwargs:
-            raise AgentException(AgentException.E_ARGS_MISSING, 'master_server_id')
-        ret['master_server_id'] = kwargs.pop('master_server_id')
-        if len(kwargs) != 0:
-            raise AgentException(AgentException.E_ARGS_UNEXPECTED, kwargs.keys())
-        ret['config'] = self.config_parser
-        return ret
-     
-    def _slave_get_params(self, kwargs):
-        ret = {}
-        if 'slaves' not in kwargs:
-            raise AgentException(AgentException.E_ARGS_MISSING, 'slaves')
-        ret = kwargs.pop('slaves')
-
-        if len(kwargs) != 0:
-            raise AgentException(AgentException.E_ARGS_UNEXPECTED, kwargs.keys())
-
-        return ret
-
-    def _glb_get_params(self, kwargs):
-        """
-        Checks whether slaves and galera nodes are within the kwargs.
-        """
-        ret = {}
-        ret['slaves'] = {}
-        ret['galera_nodes'] = {}
-        if 'slaves' not in kwargs:
-            raise AgentException(AgentException.E_ARGS_MISSING, 'slaves')
-        if 'galera_nodes' not in kwargs:
-            raise AgentException(AgentException.E_ARGS_MISSING, 'galera_nodes')
-        ret['slaves'] = kwargs.pop('slaves')
-        ret['galera_nodes'] = kwargs.pop('galera_nodes')
-        if len(kwargs) != 0:
-            raise AgentException(AgentException.E_ARGS_UNEXPECTED, kwargs.keys())
-        return ret        
-    
     def _set_password(self, username, password):
-        if not exists(self.master_file):
-            return HttpErrorResponse(AgentException(
-                AgentException.E_CONFIG_NOT_EXIST).message)
+        if not role.MySQLServer in self.running_roles:
+            raise AgentException("Cannot set password: agent is not running a mysqld daemon.")
         try:
-            fd = open(self.master_file, 'r')
+            fd = open(role.MySQLServer.class_file, 'r')
             p = pickle.load(fd)
             p.set_password(username, password)
             fd.close()
-        except Exception as e:
-            ex = AgentException(AgentException.E_CONFIG_READ_FAILED,
-                                role.MySQLMaster.__name__,
-                                self.master_file,
-                                detail=e)
-            self.logger.exception(ex.message)
-            raise
+        except Exception as ex:
+            self.logger.exception()
+            raise AgentException("Cannot set password: %s" % ex)
 
-    def _load_dump(self, f):
-        if not exists(self.master_file):
-            return HttpErrorResponse(AgentException(
-                AgentException.E_CONFIG_NOT_EXIST).message)
+    def _load_dump(self, dump_file):
+        if not role.MySQLServer in self.running_roles:
+            raise AgentException("Cannot load dump: agent is not running a mysqld daemon.")
         try:
-            fd = open(self.master_file, 'r')
+            fd = open(role.MySQLServer.class_file, 'r')
             p = pickle.load(fd)
-            p.load_dump(f)
+            p.load_dump(dump_file)
             fd.close()
-        except Exception as e:
-            ex = AgentException(AgentException.E_CONFIG_READ_FAILED,
-                                role.MySQLMaster.__name__,
-                                self.master_file,
-                                detail=e)
-            self.logger.exception(ex.message)
-            raise
-        
-    @expose('POST')
-    def create_master(self, kwargs):
-        """Create a replication master"""
-        self.logger.debug('Creating master')
-        try: 
-            kwargs = self._master_get_params(kwargs)
-            self.logger.debug('master server id = %s' % kwargs['master_server_id']) 
-        except AgentException as e:
-            return HttpErrorResponse(e.message)
-        else:
-            with self.master_lock:
-                return self._create(kwargs, self.master_file, role.MySQLMaster)
+        except Exception as ex:
+            self.logger.exception()
+            raise AgentException("Cannot load file: %s" % ex)
 
     @expose('POST')
     def set_password(self, kwargs):
-        """Create a replication master"""
+        """
+        Set a new password.
+
+        Parameters
+        ----------
+        username : string
+            user's identifier
+        password : string
+            new password
+        """
         self.logger.debug('Updating password')
         try:
-            if 'username' not in kwargs:
-                raise AgentException(AgentException.E_ARGS_MISSING, 'username')
-            username = kwargs.pop('username')
-            if 'password' not in kwargs:
-                raise AgentException(AgentException.E_ARGS_MISSING, 'password')
-            password = kwargs.pop('password')
-            if len(kwargs) != 0:
-                raise AgentException(AgentException.E_ARGS_UNEXPECTED, kwargs.keys())
+            exp_params = [('username', is_string),
+                          ('password', is_string)]
+            username, password = check_arguments(exp_params, kwargs)
             self._set_password(username, password)
             return HttpJsonResponse()
-        except AgentException as e:
-            return HttpErrorResponse(e.message)
- 
+        except AgentException as ex:
+            return HttpErrorResponse("%s" % ex)
+
     @expose('UPLOAD')
     def load_dump(self, kwargs):
-        self.logger.debug('Uploading mysql dump ') 
-        self.logger.debug(kwargs) 
         #TODO: archive the dump?
-        if 'mysqldump_file' not in kwargs:
-             return HttpErrorResponse(AgentException(
-                AgentException.E_ARGS_MISSING, 'mysqldump_file').message)
-        file = kwargs.pop('mysqldump_file')
-        if not isinstance(file, FileUploadField):
-             return HttpErrorResponse(AgentException(
-                AgentException.E_ARGS_INVALID, 
-                    detail='"mysqldump_file" should be a file').message)
+        exp_params = [('mysqldump_file', is_string)]
+        dump_file = check_arguments(exp_params, kwargs)
+        if not isinstance(dump_file, FileUploadField):
+            return HttpErrorResponse('"mysqldump_file" should be an uploaded file.')
         try:
-            self._load_dump(file.file)
-        except AgentException as e:
-            return HttpErrorResponse(e.message)
+            self._load_dump(dump_file.file)
+        except AgentException as ex:
+            return HttpErrorResponse("%s" % ex)
         else:
             return HttpJsonResponse()
-        
-    @expose('POST')
-    def create_slave(self, kwargs):
-        self.logger.debug('master in create_slave ')
-        try: 
-            ret = self._slave_get_params(kwargs)
-            for server_id in ret:
-                slave = ret[server_id]
-                # TODO: Why do I receive the slave_ip in unicode??  
-                from conpaas.services.galera.agent import client
-                client.setup_slave(str(slave['ip']), slave['port'], self.my_ip)
-                self.logger.debug('Created slave %s' % str(slave['ip']))
-            return HttpJsonResponse()
-        except AgentException as e:
-            return HttpErrorResponse(e.message)
-            
-    @expose('POST')
-    def create_glb_node(self, kwargs):
-        self.logger.debug('master in create_glb_node ')
-        try: 
-            ret = self._glb_get_params(kwargs)
-            for server in ret['salves']:
-                # TODO: Why do I receive the slave_ip in unicode??  
-                #from conpaas.services.galera.agent import client
-                self.setup_glb_node(str(server['ip']), server['port'], self.my_ip, ret['galera_nodes'])
-                self.logger.debug('Created setup_glb_node %s' % str(server['ip']))
-            return HttpJsonResponse()
-        except AgentException as e:
-            return HttpErrorResponse(e.message)            
-
-    @expose('UPLOAD')
-    def setup_slave(self, kwargs):
-        """Create a replication Slave"""
-        self.logger.debug('slave in setup_slave ') 
-        if 'master_host' not in kwargs:
-            raise AgentException(AgentException.E_ARGS_MISSING, 'master_host')
-        params = {"master_host": kwargs["master_host"], "config": self.config_parser}
-        self.logger.debug(params)
-        with self.slave_lock:
-            return self._create(params, self.slave_file, role.MySQLSlave)
 
     @expose('POST')
-    def setup_glb_node(self, kwargs):
-        """Create a GLB node """
-        self.logger.debug('slave in setup_glb_node ') 
-        if 'master_host' not in kwargs:
-            raise AgentException(AgentException.E_ARGS_MISSING, 'master_host')
-        if 'galera_nodes' not in kwargs:
-            raise AgentException(AgentException.E_ARGS_MISSING, 'galera_nodes')
-        params = {"master_host": kwargs["master_host"], "config": self.config_parser, 'galera_nodes': kwargs["galera_nodes"]}
-        self.logger.debug(params)
-        with self.slave_lock:
-            return self._create(params, self.slave_file, role.GLBNode)
+    def start_glbd(self, kwargs):
+        """
+        Start a glbd daemon (Galera Load Balancer daemon).
+
+        Parameters
+        ----------
+        nodes : list of strings with format 'ip_addr:port'
+            list of nodes to balance.
+        """
+        try:
+            exp_params = [('nodes', is_list, [])]
+            nodes = check_arguments(exp_params, kwargs)
+            with self.lock:
+                glb_role = role.GLBNode
+                self._start(glb_role, nodes)
+                self.running_roles.append(glb_role)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
+        else:
+            return HttpJsonResponse()
+
+    @expose('POST')
+    def add_glbd_nodes(self, kwargs):
+        """
+        Add nodes to balance to the Galera Load Balancer.
+
+        Parameters
+        ----------
+        nodes : list of strings with format 'ip_addr:port'
+            list of nodes to balance.
+        """
+        if not role.GLBNode in self.running_roles:
+            raise AgentException("Cannot add nodes: agent is not running a glbd daemon.")
+        try:
+            exp_params = [('nodes', is_list, [])]
+            nodes = check_arguments(exp_params, kwargs)
+            with self.lock:
+                fd = open(role.GLBNode.class_file, 'r')
+                p = pickle.load(fd)
+                p.add(nodes)
+                fd.close()
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
+        else:
+            return HttpJsonResponse()
+
+    @expose('POST')
+    def remove_glbd_nodes(self, kwargs):
+        """
+        Remove nodes to balance to the Galera Load Balancer.
+
+        Parameters
+        ----------
+        nodes : list of strings with format 'ip_addr:port'
+            list of nodes to balance.
+        """
+        if not role.GLBNode in self.running_roles:
+            raise AgentException("Cannot remove nodes: agent is not running a glbd daemon.")
+        try:
+            exp_params = [('nodes', is_list, [])]
+            nodes = check_arguments(exp_params, kwargs)
+            with self.lock:
+                fd = open(role.GLBNode.class_file, 'r')
+                p = pickle.load(fd)
+                p.remove(nodes)
+                fd.close()
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
+        else:
+            return HttpJsonResponse()

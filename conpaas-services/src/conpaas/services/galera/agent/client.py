@@ -4,16 +4,20 @@
     :copyright: (C) 2010-2013 by Contrail Consortium.
 """
 
-import httplib, json
+import httplib
+import json
 
 from conpaas.core import https
 
-class AgentException(Exception): pass
+
+class AgentException(Exception):
+    pass
+
 
 def _check(response):
     code, body = response
     if code != httplib.OK:
-        raise AgentException('Received http response code %d' % (code))
+        raise AgentException('Received HTTP response code %d' % (code))
     try:
         data = json.loads(body)
     except Exception as e:
@@ -23,34 +27,21 @@ def _check(response):
     else:
         return True
 
-# TODO: with dump ?
-def create_master(host, port, master_server_id):
-    method = 'create_master'
-    params = {
-        'master_server_id': master_server_id
-    }
-    return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
 
+def start_mysqld(host, port, nodes=None):
+    method = 'start_mysqld'
+    nodes = nodes or []
+    params = {'nodes': nodes}
+    return _check(https.client.jsonrpc_post(host, port, '/', method, params))
 
-"""
-    Methods called by the manager and executed on a master agent
-"""
-def create_slave(host, port, slaves):
-    method = 'create_slave'
-    params = {'slaves': slaves}
-    return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
-
-def create_glb_node(host, port, slaves, galera_nodes = None):
-    method = 'create_glb_node'
-    params = {'glb_nodes': slaves, 'galera_nodes': galera_nodes}
-    return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
 
 def configure_user(host, port, username, password):
     method = 'configure_user'
     params = {'username': username,
               'password': password}
     return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
-        
+
+
 def get_all_users(host, port):
     method = 'get_all_users'
     result = https.client.jsonrpc_get(host, port, '/', method)
@@ -59,40 +50,52 @@ def get_all_users(host, port):
     else:
         return False
 
+
 def set_password(host, port, username, password):
     method = 'set_password'
     params = {'username': username,
               'password': password}
     return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
 
-def remove_user(host,port,name):
+
+def remove_user(host, port, name):
     method = 'remove_user'
     params = {'username': name}
     return _check(https.client.jsonrpc_get(host, port, '/', method, params=params))
+
 
 def check_agent_process(host, port):
     method = 'check_agent_process'
     return _check(https.client.jsonrpc_get(host, port, '/', method))
 
+
 def load_dump(host, port, mysqldump_path):
     params = {'method': 'load_dump'}
     f = open(mysqldump_path, 'r')
-    filecontent = f.read() 
+    filecontent = f.read()
     f.close()
     files = [('mysqldump_file', mysqldump_path, filecontent)]
     return _check(https.client.https_post(host, port, '/', params, files=files))
 
-def setup_slave(host, port, master_host):
-    params = {
-        'method': 'setup_slave',
-        'master_host': master_host
-    }
-    return _check(https.client.https_post(host, port, '/', params))
-    
-def setup_glb_node(host, port, master_host, galera_nodes):
-    params = {
-        'method': 'setup_glb_node',
-        'master_host': master_host, 
-        'galera_nodes': galera_nodes
-    }
-    return _check(https.client.https_post(host, port, '/', params))
+
+def stop(host, port):
+    method = 'stop'
+    return _check(https.client.jsonrpc_post(host, port, '/', method))
+
+
+def start_glbd(host, port, nodes):
+    method = 'start_glbd'
+    params = {'nodes': nodes}
+    return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
+
+
+def add_glbd_nodes(host, port, nodes):
+    method = 'add_glbd_nodes'
+    params = {'node': nodes}
+    return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
+
+
+def remove_glbd_nodes(host, port, nodes):
+    method = 'remove_glbd_nodes'
+    params = {'node': nodes}
+    return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
