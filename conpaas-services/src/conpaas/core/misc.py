@@ -7,6 +7,9 @@ import readline
 
 from subprocess import Popen, PIPE
 
+from conpaas.core.https.server import FileUploadField
+
+
 def file_get_contents(filepath):
     f = open(filepath, 'r')
     filecontent = f.read()
@@ -191,6 +194,12 @@ def is_dict(argument):
     return is_constraint(lambda arg: isinstance(arg, dict),
                          lambda arg: arg,
                          lambda arg: "'%s' is not a dict but a %s." % (arg, type(arg)))(argument)
+
+
+def is_uploaded_file(argument):
+    return is_constraint(lambda arg: isinstance(arg, FileUploadField),
+                         lambda arg: arg,
+                         lambda arg: "'%s' is not uploaded file but a %s." % (arg, type(arg)))(argument)
 
 
 def is_dict2(mandatory_keys, optional_keys=None):

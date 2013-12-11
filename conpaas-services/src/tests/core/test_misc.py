@@ -6,6 +6,8 @@ from conpaas.core.misc import check_arguments
 from conpaas.core.misc import is_int, is_string, is_pos_int, is_pos_nul_int
 from conpaas.core.misc import is_in_list, is_list, is_dict, is_dict2
 from conpaas.core.misc import is_list_dict, is_list_dict2
+from conpaas.core.misc import is_uploaded_file
+from conpaas.core.https.server import FileUploadField
 
 
 class TestMisc(unittest.TestCase):
@@ -99,6 +101,15 @@ class TestMisc(unittest.TestCase):
         name1, name2 = check_arguments(exp_params, args)
         self.assertEqual(name1, 5)
         self.assertEqual(name2, 7)
+
+        # Check uploaded file type
+        exp_params = [('uploaded_file', is_uploaded_file)]
+        filename = 'myfile.txt'
+        filecontent = 'file'
+        args = {'uploaded_file': FileUploadField(filename, filecontent)}
+        uploaded_file = check_arguments(exp_params, args)
+        self.assertEqual(uploaded_file.filename, filename)
+        self.assertEqual(uploaded_file.file, filecontent)
 
         # Check in_list constraint
         exp_params = [('name1', is_in_list([3, 5, 6]))]
