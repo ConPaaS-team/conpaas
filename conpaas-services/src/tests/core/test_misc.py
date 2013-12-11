@@ -39,6 +39,11 @@ class TestMisc(unittest.TestCase):
         name1 = check_arguments(exp_params, args)
         self.assertEqual(name1, 'value')
 
+        exp_params = [('name1', is_string)]
+        args = {'name1': u'value'}
+        name1 = check_arguments(exp_params, args)
+        self.assertEqual(name1, 'value')
+
         # An integer when a string was expected
         exp_params = [('name1', is_string)]
         args = {'name1': 3}
