@@ -48,4 +48,8 @@ cd conpaas-services/src/tests/
 ./unit-tests.sh
 cd ../../..
 
+# cps-tools unit tests
+cd cps-tools
+./unit-tests.sh
+cd ..
 

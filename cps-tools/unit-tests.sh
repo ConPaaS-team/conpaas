@@ -3,8 +3,8 @@
 PYFILE_ROOT="."
 SOURCE="./src"
 TEST_SOURCE="./test"
-CPS_LIB="/home/yradenac/Documents/conpaas-gitdev/conpaas/conpaas-services/src"
-CPS_DIRECTOR="/home/yradenac/Documents/conpaas-gitdev/conpaas/conpaas-director"
+CPS_LIB="../conpaas-services/src"
+CPS_DIRECTOR="../conpaas-director"
 
 UNIT_TEST_LOG_DIR="./unit-test-logs"
 

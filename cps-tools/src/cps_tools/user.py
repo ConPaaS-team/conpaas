@@ -180,7 +180,6 @@ class UserCmd:
             for user in users:
                 print("%s" % user.username)
 
-
     # ========== get_certificate
     def _add_get_certificate(self):
         subparser = self.add_parser('get_certificate',
