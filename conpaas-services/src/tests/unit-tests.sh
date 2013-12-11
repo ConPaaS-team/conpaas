@@ -34,6 +34,8 @@ PYLINT_OPTIONS="$PYLINT_OPTIONS --disable=R"
 # Syntax and basic checks with pep8 and pylint
 #
 
+echo "*** Running syntax and basis checks..."
+
 mkdir -p "$UNIT_TEST_LOG_DIR"
 
 for mod in $MODULES
@@ -71,6 +73,8 @@ done
 #
 # pyunit tests with code coverage statistics
 #
+echo "*** Running pyunit tests..."
+
 export PYTHONPATH=..
 COVERAGE="`which python-coverage || true`"
 if [ -z "$COVERAGE" ]
@@ -79,5 +83,10 @@ then
 fi
 
 $COVERAGE run --source=conpaas run_tests.py
+if [ $? -ne 0 ]
+then
+    echo "ERROR: when running pyunit tests."
+    exit 1
+fi
 $COVERAGE report -m
 
