@@ -12,7 +12,7 @@ import urlparse
 import StringIO
 import simplejson
 
-from conpaas.core import https
+from conpaas.core.https import client
 from conpaas.core.misc import rlinput
 
 class BaseClient(object):
@@ -26,7 +26,7 @@ class BaseClient(object):
             os.mkdir(self.confdir, 0700)
 
         try:
-            https.client.conpaas_init_ssl_ctx(self.confdir, 'user')
+            client.conpaas_init_ssl_ctx(self.confdir, 'user')
         except IOError:
             # We do not have the certificates yet. But we will get them soon: 
             # see getcerts()
@@ -112,13 +112,13 @@ class BaseClient(object):
 
         # File upload
         if files:
-            res = https.client.https_post(service['manager'], 443, '/', data, files)
+            res = client.https_post(service['manager'], 443, '/', data, files)
         # POST
         elif post:
-            res = https.client.jsonrpc_post(service['manager'], 443, '/', method, data)
+            res = client.jsonrpc_post(service['manager'], 443, '/', method, data)
         # GET
         else:
-            res = https.client.jsonrpc_get(service['manager'], 443, '/', method, data)
+            res = client.jsonrpc_get(service['manager'], 443, '/', method, data)
 
         if res[0] == 200:
             try:
@@ -248,7 +248,7 @@ class BaseClient(object):
         oldmask = os.umask(077)
         zipdata = zipfile.ZipFile(StringIO.StringIO(res))
         zipdata.extractall(path=self.confdir)
-        https.client.conpaas_init_ssl_ctx(self.confdir, 'user')
+        client.conpaas_init_ssl_ctx(self.confdir, 'user')
         os.umask(oldmask)
 
         #for name in zipdata.namelist():

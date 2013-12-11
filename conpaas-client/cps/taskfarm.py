@@ -7,7 +7,7 @@ from time import strftime, localtime
 
 from cps.base import BaseClient
 
-from conpaas.core import https
+from conpaas.core.https import client
 
 def http_jsonrpc_post(hostname, port, uri, method, params):
     """Perform a plain HTTP JSON RPC post (for task farming)"""
@@ -22,7 +22,7 @@ def http_jsonrpc_post(hostname, port, uri, method, params):
 
 def http_file_upload_post(host, port, uri, params={}, files=[]):
     """Perform a plain HTTP file upload post (for task farming)"""
-    content_type, body = https.client._encode_multipart_formdata(params, files)
+    content_type, body = client._encode_multipart_formdata(params, files)
     h = httplib.HTTP(host, port)
     h.putrequest('POST', uri)
     h.putheader('content-type', content_type)
