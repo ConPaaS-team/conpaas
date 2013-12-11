@@ -392,7 +392,6 @@ class GaleraManager(BaseManager):
         try:
             new_nodes = []
             # TODO: make it parallel
-            masters = self.config.getMySQLmasters()
             for cloud, count in new_vm_nb.iteritems():
                 self.controller.add_context_replacement(
                                         dict(mysql_username='mysqldb',
@@ -405,8 +404,12 @@ class GaleraManager(BaseManager):
                                                  self.config.AGENT_PORT,
                                                  cloud))
                 # TODO: no masters anymore in Galera
-                for master in masters:
-                    self._start_slave(new_nodes, master)
+                #for master in masters:
+                masters = self.config.getMySQLmasters()
+                slaves = self.config.getMySQLslaves()
+                refnode = (masters + slaves)[0]
+                self.logger.debug("Using node %s to synchronize the new node" % refnode.ip)
+                self._start_slave(new_nodes, refnode)
                 self.config.addMySQLServiceNodes(nodes=new_nodes, isSlave=True)
         except Exception, ex:
             # error happened: rolling back...
