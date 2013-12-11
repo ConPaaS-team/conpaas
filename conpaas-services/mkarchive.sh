@@ -17,6 +17,9 @@ cp -r config contrib misc sbin scripts src ConPaaS > /dev/null
 # Cleanup if taken from svn
 rm -Rf `find ConPaaS -name .svn`
 
+# Cleanup
+rm -f `find ConPaaS -name '*~'`
+
 tar -zcvf ConPaaS.tar.gz ConPaaS > /dev/null
 
 # Cleanup temp folder
