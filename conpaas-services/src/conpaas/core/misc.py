@@ -144,7 +144,7 @@ def is_constraint(constraint, filter_res, errmsg):
 def is_int(argument):
     return is_constraint(lambda arg: isinstance(arg, int),
                          lambda arg: int(arg),
-                         lambda arg: "'%s' is not an integer." % arg)(argument)
+                         lambda arg: "'%s' is not an integer but a %s." % (arg, type(arg)))(argument)
 
 
 def is_more_than(minval):
@@ -176,21 +176,21 @@ def is_in_list(exp_list):
 
 
 def is_string(argument):
-    return is_constraint(lambda arg: isinstance(arg, str),
+    return is_constraint(lambda arg: isinstance(arg, str) or isinstance(arg, unicode),
                          lambda arg: arg,
-                         lambda arg: "'%s' is not a string." % arg)(argument)
+                         lambda arg: "'%s' is not a string but a %s." % (arg, type(arg)))(argument)
 
 
 def is_list(argument):
     return is_constraint(lambda arg: isinstance(arg, list),
                          lambda arg: arg,
-                         lambda arg: "'%s' is not a list." % arg)(argument)
+                         lambda arg: "'%s' is not a list but a %s." % (arg, type(arg)))(argument)
 
 
 def is_dict(argument):
     return is_constraint(lambda arg: isinstance(arg, dict),
                          lambda arg: arg,
-                         lambda arg: "'%s' is not a dict." % arg)(argument)
+                         lambda arg: "'%s' is not a dict but a %s." % (arg, type(arg)))(argument)
 
 
 def is_dict2(mandatory_keys, optional_keys=None):
@@ -266,7 +266,7 @@ def check_arguments(expected_params, args):
                     parsed_value = constraint(value)
                     parsed_args.append(parsed_value)
                 except Exception as ex:
-                    raise Exception("Parameter %s: %s." % (name, ex))
+                    raise Exception("Parameter '%s': %s." % (name, ex))
             else:
                 if len(param) >= 3:
                     default_value = param[2]
