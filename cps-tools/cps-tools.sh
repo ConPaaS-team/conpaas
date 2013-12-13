@@ -1,6 +1,6 @@
 #!/bin/bash
 
-CPS_LIB="/home/yradenac/Documents/conpaas-gitdev/conpaas/conpaas-services/src"
+CPS_LIB="../conpaas-services/src"
 CPS_TOOLS="./src"
 
 export PYTHONPATH="$CPS_TOOLS:$CPS_LIB"
