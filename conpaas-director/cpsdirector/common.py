@@ -22,6 +22,11 @@ if os.getenv('DIRECTOR_TESTING'):
 config_parser.read(CONFFILE)
 
 if os.getenv('DIRECTOR_TESTING'):
+    if not config_parser.has_section('iaas'):
+        config_parser.add_section('iaas')
+    if not config_parser.has_section('director'):
+        config_parser.add_section('director')
+
     # dummy cloud
     config_parser.set("iaas", "DRIVER", "dummy")
     config_parser.set("iaas", "USER", "dummy")
