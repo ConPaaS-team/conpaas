@@ -25,6 +25,8 @@ export PYTHONPATH="$SOURCE:$TEST_SOURCE:$CPS_LIB:$CPS_DIRECTOR"
 # Syntax and basic checks with pep8 and pylint
 #
 
+echo "*** Running syntax and basis checks..."
+
 mkdir -p "$UNIT_TEST_LOG_DIR"
 
 pyfiles="$(find $PYFILE_ROOT -name '*.py' \! -empty)"
@@ -58,7 +60,7 @@ done
 #
 #  Basic checking whether the parser is correctly configured
 #
-echo -n "Get help"
+echo -n "*** Checking if argparse can build the arguments..."
 ./cps-tools.sh -h > /dev/null
 if [ $? -ne 0 ]
 then
@@ -70,7 +72,7 @@ echo " OK"
 #
 # Other unit tests
 #
-echo -n "Other unit tests"
+echo -n "*** Other unit tests..."
 python ./test/test_suite.py
 if [ $? -ne 0 ]
 then
