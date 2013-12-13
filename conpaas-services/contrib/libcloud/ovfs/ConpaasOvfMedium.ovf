@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns="http://schemas.dmtf.org/ovf/envelope/1" xmlns:ovf="http://schemas.dmtf.org/ovf/envelope/1"
+	xmlns:vssd="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_VirtualSystemSettingData"
+	xmlns:rasd="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData"> 
+    
+     <!-- References to all external files -->
+	<References>
+		<File ovf:id="ttylinux-gius" ovf:href="/home/giuseppe/ttylinux/ttylinux.img" ovf:size="180114671" />
+	</References>
+	
+	<!-- Describes meta-information about all virtual disks in the package. 
+		This example is encoded as a delta-disk hierarchy. -->
+	<DiskSection>
+		<Info>Describes the set of virtual disks</Info>
+		<Disk ovf:diskId="ubuntu1" ovf:fileRef="ttylinux-gius" ovf:capacity="4294967296"
+			ovf:populatedSize="1924967692"
+			ovf:format="http://www.vmware.com/specifications/vmdk.html#streamOptimized" />
+		<Disk ovf:diskId="ubuntu2" ovf:fileRef="ttylinux-gius" ovf:capacity="4294967296"
+			ovf:populatedSize="1924967692"
+			ovf:format="http://www.vmware.com/specifications/vmdk.html#streamOptimized" />
+	</DiskSection>
+	
+	<!-- Describes all networks used in the package -->
+	<NetworkSection>
+		<Info>List of logical networks used in the package</Info>
+		<Network ovf:name="conero-public-ranged-network">
+			<Description ovf:msgid="network.description">The network used to link the web server node and the engine frontend node.</Description>
+		</Network>
+		<Network ovf:name="conero-private-ranged-network">
+			<Description ovf:msgid="network.description">The network used to link the web server node and the engine frontend node.</Description>
+		</Network>
+	</NetworkSection>
+	 
+	<!-- Ubuntu double images Collection -->
+	<VirtualSystemCollection ovf:id="ContrailFed-MultipleVM">
+		<Info>The packaging of the double ubuntu multi-tier application</Info>
+		<Name>Contrail Test Application</Name>
+		<VirtualSystem ovf:id="VirtualSystem1">
+			<Info>Ubuntu image 11.10</Info>
+			<ProductSection>
+				<Property ovf:key="ip@conero-public-ranged-network@3" ovf:value="dhcp@public" ovf:type="string" />
+				<Property ovf:key="ip@conero-private-ranged-network@3" ovf:value="dhcp@public" ovf:type="string" />
+				<Property ovf:key="VNCAllowedIp" ovf:value="0.0.0.0" ovf:type="string" />
+			</ProductSection>
+			<VirtualHardwareSection>
+				<Info>256 MB, 1 CPU, 1 disk, 1 nic virtual machine</Info>
+				<System>
+					<vssd:ElementName>Virtual Hardware Family</vssd:ElementName>
+					<vssd:InstanceID>0</vssd:InstanceID>
+					<vssd:VirtualSystemType>vmx-04</vssd:VirtualSystemType>
+				</System>
+				<Item>
+					<rasd:Description>Number of virtual CPUs</rasd:Description>
+					<rasd:ElementName>1 virtual CPU</rasd:ElementName>
+					<rasd:InstanceID>1</rasd:InstanceID>
+					<rasd:ResourceType>3</rasd:ResourceType>
+					<rasd:VirtualQuantity>1</rasd:VirtualQuantity>
+				</Item>
+				<Item>
+					<rasd:AllocationUnits>byte * 2^20</rasd:AllocationUnits>
+					<rasd:Description>Memory Size</rasd:Description>
+					<rasd:ElementName>512 MB of memory</rasd:ElementName>
+					<rasd:InstanceID>2</rasd:InstanceID>
+					<rasd:ResourceType>4</rasd:ResourceType>
+					<rasd:VirtualQuantity>512</rasd:VirtualQuantity>
+				</Item>
+				<Item>
+					<rasd:AddressOnParent>0</rasd:AddressOnParent>
+					<rasd:ElementName>Harddisk 1</rasd:ElementName>
+					<rasd:HostResource>ovf:/disk/ubuntu1</rasd:HostResource>
+					<rasd:InstanceID>22001</rasd:InstanceID>
+					<rasd:Parent>1000</rasd:Parent>
+					<rasd:ResourceType>17</rasd:ResourceType>
+				</Item>
+				<Item>
+					<rasd:AutomaticAllocation>true</rasd:AutomaticAllocation>
+					<rasd:Connection>conero-public-ranged-network</rasd:Connection>
+					<rasd:ElementName>Ethernet adapter on "conero-public-ranged-network"</rasd:ElementName>
+					<rasd:InstanceID>3</rasd:InstanceID>
+					<rasd:ResourceSubType>PCNet32</rasd:ResourceSubType>
+					<rasd:ResourceType>10</rasd:ResourceType>
+				</Item>
+			</VirtualHardwareSection>
+		</VirtualSystem>
+		<VirtualSystem ovf:id="VirtualSystem2">
+			<Info>Ubuntu image 11.10</Info>
+			<ProductSection>
+				<Property ovf:key="ip@conero-public-ranged-network@3" ovf:value="dhcp@public" ovf:type="string" />
+				<Property ovf:key="ip@conero-private-ranged-network@3" ovf:value="dhcp@public" ovf:type="string" />
+				<Property ovf:key="VNCAllowedIp" ovf:value="0.0.0.0" ovf:type="string" />
+			</ProductSection>
+			<VirtualHardwareSection>
+				<Info>256 MB, 1 CPU, 1 disk, 1 nic virtual machine</Info>
+				<System>
+					<vssd:ElementName>Virtual Hardware Family</vssd:ElementName>
+					<vssd:InstanceID>0</vssd:InstanceID>
+					<vssd:VirtualSystemType>vmx-04</vssd:VirtualSystemType>
+				</System>
+				<Item>
+					<rasd:Description>Number of virtual CPUs</rasd:Description>
+					<rasd:ElementName>1 virtual CPU</rasd:ElementName>
+					<rasd:InstanceID>1</rasd:InstanceID>
+					<rasd:ResourceType>3</rasd:ResourceType>
+					<rasd:VirtualQuantity>1</rasd:VirtualQuantity>
+				</Item>
+				<Item>
+					<rasd:AllocationUnits>byte * 2^20</rasd:AllocationUnits>
+					<rasd:Description>Memory Size</rasd:Description>
+					<rasd:ElementName>512 MB of memory</rasd:ElementName>
+					<rasd:InstanceID>2</rasd:InstanceID>
+					<rasd:ResourceType>4</rasd:ResourceType>
+					<rasd:VirtualQuantity>512</rasd:VirtualQuantity>
+				</Item>
+				<Item>
+					<rasd:AddressOnParent>0</rasd:AddressOnParent>
+					<rasd:ElementName>Harddisk 1</rasd:ElementName>
+					<rasd:HostResource>ovf:/disk/ubuntu2</rasd:HostResource>
+					<rasd:InstanceID>22001</rasd:InstanceID>
+					<rasd:Parent>1000</rasd:Parent>
+					<rasd:ResourceType>17</rasd:ResourceType>
+				</Item>
+				<Item>
+					<rasd:AutomaticAllocation>true</rasd:AutomaticAllocation>
+					<rasd:Connection>conero-public-ranged-network</rasd:Connection>
+					<rasd:ElementName>Ethernet adapter on "conero-public-ranged-network"</rasd:ElementName>
+					<rasd:InstanceID>3</rasd:InstanceID>
+					<rasd:ResourceSubType>PCNet32</rasd:ResourceSubType>
+					<rasd:ResourceType>10</rasd:ResourceType>
+				</Item>
+			</VirtualHardwareSection>
+		</VirtualSystem>
+	</VirtualSystemCollection>
+</Envelope>
+

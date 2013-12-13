@@ -1,0 +1,739 @@
+<ns0:SLATemplate xmlns:ns0="http://www.slaatsoi.eu/slamodel" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.slaatsoi.eu/slamodel file:///C:/SLA@SOI/slasoi.xsd">
+	<ns0:Text />
+	<ns0:Properties>
+		<ns0:Entry>
+			<ns0:Key>ProvidersList</ns0:Key>
+			<ns0:Value>
+				{"ProvidersList": [
+					{"provider-uuid":"42", "p-slam-url":"http://10.15.8.2:8080/services/contrailNegotiation?wsdl"}
+				]}
+			</ns0:Value>
+		</ns0:Entry>
+	</ns0:Properties>
+	<ns0:UUID>Contrail-SLAT-NewFeatures-02</ns0:UUID>
+	<ns0:ModelVersion>sla_at_soi_sla_model_v1.0</ns0:ModelVersion>
+	<ns0:Party>
+		<ns0:Text />
+		<ns0:Properties>
+			<ns0:Entry>
+				<ns0:Key>http://www.slaatsoi.org/slamodel#gslam_epr</ns0:Key>
+				<ns0:Value>http://federationEndpoint.contrail.org:8080/services/contrailNegotiation?wsdl
+				</ns0:Value>
+			</ns0:Entry>
+		</ns0:Properties>
+		<ns0:ID>Contrailfederation</ns0:ID>
+		<ns0:Role>http://www.slaatsoi.org/slamodel#provider</ns0:Role>
+	</ns0:Party>
+	<ns0:Party>
+		<ns0:Text />
+		<ns0:Properties>
+			<ns0:Entry>
+				<ns0:Key>http://www.slaatsoi.org/slamodel#gslam_epr</ns0:Key>
+				<ns0:Value>http://customerEndpoint.contrail.org:8080/services/ISNegotiation?wsdl
+				</ns0:Value>
+			</ns0:Entry>
+		</ns0:Properties>
+		<ns0:ID>333</ns0:ID>
+		<ns0:Role>http://www.slaatsoi.org/slamodel#customer</ns0:Role>
+	</ns0:Party>
+	<ns0:InterfaceDeclr>
+		<ns0:Text>Interface to specific OVF item</ns0:Text>
+		<ns0:Properties>
+			<ns0:Entry>
+				<ns0:Key>OVF_URL</ns0:Key>
+				<ns0:Value>/users/caa6e102-8ff0-400f-a120-23149326a936/ovfs/1</ns0:Value>
+			</ns0:Entry>
+		</ns0:Properties>
+		<ns0:ID>OVF-Item-AppServer</ns0:ID>
+		<ns0:ProviderRef>ContrailProvider</ns0:ProviderRef>
+		<ns0:Endpoint>
+			<ns0:Text />
+			<ns0:Properties>
+				<ns0:Entry>
+					<ns0:Key>OVF_VirtualSystem_ID</ns0:Key>
+					<ns0:Value>AppServer</ns0:Value>
+				</ns0:Entry>
+			</ns0:Properties>
+			<ns0:ID>AppServer-VM-Type</ns0:ID>
+			<ns0:Location>VEP-ID</ns0:Location>
+			<ns0:Protocol>http://www.slaatsoi.org/slamodel#HTTP</ns0:Protocol>
+		</ns0:Endpoint>
+		<ns0:Interface>
+			<ns0:InterfaceResourceType>
+				<ns0:Text />
+				<ns0:Properties />
+				<ns0:Name>OVFAppliance</ns0:Name>
+			</ns0:InterfaceResourceType>
+		</ns0:Interface>
+	</ns0:InterfaceDeclr>
+	<ns0:InterfaceDeclr>
+		<ns0:Text>Interface to specific OVF item</ns0:Text>
+		<ns0:Properties>
+			<ns0:Entry>
+				<ns0:Key>OVF_URL</ns0:Key>
+				<ns0:Value>/users/caa6e102-8ff0-400f-a120-23149326a936/ovfs/1</ns0:Value>
+			</ns0:Entry>
+		</ns0:Properties>
+		<ns0:ID>OVF-Item-DBServer</ns0:ID>
+		<ns0:ProviderRef>ContrailProvider</ns0:ProviderRef>
+		<ns0:Endpoint>
+			<ns0:Text />
+			<ns0:Properties>
+				<ns0:Entry>
+					<ns0:Key>OVF_VirtualSystem_ID</ns0:Key>
+					<ns0:Value>DBServer</ns0:Value>
+				</ns0:Entry>
+			</ns0:Properties>
+			<ns0:ID>DBServer-VM-Type</ns0:ID>
+			<ns0:Location>VEP-ID</ns0:Location>
+			<ns0:Protocol>http://www.slaatsoi.org/slamodel#HTTP</ns0:Protocol>
+		</ns0:Endpoint>
+		<ns0:Interface>
+			<ns0:InterfaceResourceType>
+				<ns0:Text />
+				<ns0:Properties />
+				<ns0:Name>OVFAppliance</ns0:Name>
+			</ns0:InterfaceResourceType>
+		</ns0:Interface>
+	</ns0:InterfaceDeclr>
+	<ns0:AgreementTerm>
+		<ns0:Text />
+		<ns0:Properties />
+		<ns0:ID>DBServer_Guarantees</ns0:ID>
+		<ns0:VariableDeclr>
+			<ns0:Text />
+			<ns0:Properties />
+			<ns0:Var>VM_of_type_DBServer</ns0:Var>
+			<ns0:Expr>
+				<ns0:ValueExpr>
+					<ns0:FuncExpr>
+						<ns0:Text />
+						<ns0:Properties />
+						<ns0:Operator>http://www.slaatsoi.org/coremodel#subset_of
+						</ns0:Operator>
+						<ns0:Parameter>
+							<ns0:ID>OVF-Item-DBServer</ns0:ID>
+						</ns0:Parameter>
+					</ns0:FuncExpr>
+				</ns0:ValueExpr>
+			</ns0:Expr>
+		</ns0:VariableDeclr>
+		<ns0:Guaranteed>
+			<ns0:Text />
+			<ns0:Properties />
+			<ns0:State>
+				<ns0:ID>CPU_SPEED_for_DBServer</ns0:ID>
+				<ns0:Priority xsi:nil="true" />
+				<ns0:Constraint>
+					<ns0:TypeConstraintExpr>
+						<ns0:Value>
+							<ns0:FuncExpr>
+								<ns0:Text />
+								<ns0:Properties />
+								<ns0:Operator>http://www.slaatsoi.org/resources#cpu_speed
+								</ns0:Operator>
+								<ns0:Parameter>
+									<ns0:ID>VM_of_type_DBServer</ns0:ID>
+								</ns0:Parameter>
+							</ns0:FuncExpr>
+						</ns0:Value>
+						<ns0:Domain>
+							<ns0:SimpleDomainExpr>
+								<ns0:ComparisonOp>http://www.slaatsoi.org/coremodel#equals
+								</ns0:ComparisonOp>
+								<ns0:Value>
+									<ns0:CONST>
+										<ns0:Value>1800</ns0:Value>
+										<ns0:Datatype>http://www.slaatsoi.org/coremodel/units#MHz
+										</ns0:Datatype>
+									</ns0:CONST>
+								</ns0:Value>
+							</ns0:SimpleDomainExpr>
+						</ns0:Domain>
+					</ns0:TypeConstraintExpr>
+				</ns0:Constraint>
+			</ns0:State>
+		</ns0:Guaranteed>
+		<ns0:Guaranteed>
+			<ns0:Text />
+			<ns0:Properties />
+			<ns0:State>
+				<ns0:ID>CPU_CORES_for_DBServer</ns0:ID>
+				<ns0:Priority xsi:nil="true" />
+				<ns0:Constraint>
+					<ns0:TypeConstraintExpr>
+						<ns0:Value>
+							<ns0:FuncExpr>
+								<ns0:Text />
+								<ns0:Properties />
+								<ns0:Operator>http://www.slaatsoi.org/resources#vm_cores
+								</ns0:Operator>
+								<ns0:Parameter>
+									<ns0:ID>VM_of_type_DBServer</ns0:ID>
+								</ns0:Parameter>
+							</ns0:FuncExpr>
+						</ns0:Value>
+						<ns0:Domain>
+							<ns0:SimpleDomainExpr>
+								<ns0:ComparisonOp>http://www.slaatsoi.org/coremodel#equals
+								</ns0:ComparisonOp>
+								<ns0:Value>
+									<ns0:CONST>
+										<ns0:Value>2</ns0:Value>
+										<ns0:Datatype>http://www.w3.org/2001/XMLSchema#integer
+										</ns0:Datatype>
+									</ns0:CONST>
+								</ns0:Value>
+							</ns0:SimpleDomainExpr>
+						</ns0:Domain>
+					</ns0:TypeConstraintExpr>
+				</ns0:Constraint>
+			</ns0:State>
+		</ns0:Guaranteed>
+		<ns0:Guaranteed>
+			<ns0:Text />
+			<ns0:Properties />
+			<ns0:State>
+				<ns0:ID>MEMORY_for_DBServer</ns0:ID>
+				<ns0:Priority xsi:nil="true" />
+				<ns0:Constraint>
+					<ns0:TypeConstraintExpr>
+						<ns0:Value>
+							<ns0:FuncExpr>
+								<ns0:Text />
+								<ns0:Properties />
+								<ns0:Operator>http://www.slaatsoi.org/resources#memory
+								</ns0:Operator>
+								<ns0:Parameter>
+									<ns0:ID>VM_of_type_DBServer</ns0:ID>
+								</ns0:Parameter>
+							</ns0:FuncExpr>
+						</ns0:Value>
+						<ns0:Domain>
+							<ns0:SimpleDomainExpr>
+								<ns0:ComparisonOp>http://www.slaatsoi.org/coremodel#equals
+								</ns0:ComparisonOp>
+								<ns0:Value>
+									<ns0:CONST>
+										<ns0:Value>16384</ns0:Value>
+										<ns0:Datatype>http://www.slaatsoi.org/coremodel/units#MB
+										</ns0:Datatype>
+									</ns0:CONST>
+								</ns0:Value>
+							</ns0:SimpleDomainExpr>
+						</ns0:Domain>
+					</ns0:TypeConstraintExpr>
+				</ns0:Constraint>
+			</ns0:State>
+		</ns0:Guaranteed>
+		<ns0:Guaranteed>
+			<ns0:Text />
+			<ns0:Properties />
+			<ns0:State>
+				<ns0:ID>Co_Location_Rack_for_DBServer</ns0:ID>
+				<ns0:Priority xsi:nil="true" />
+				<ns0:Constraint>
+					<ns0:TypeConstraintExpr>
+						<ns0:Value>
+							<ns0:FuncExpr>
+								<ns0:Text />
+								<ns0:Properties />
+								<ns0:Operator>http://www.slaatsoi.org/resources#co_location_rack
+								</ns0:Operator>
+								<ns0:Parameter>
+									<ns0:ID>VM_of_type_DBServer</ns0:ID>
+								</ns0:Parameter>
+							</ns0:FuncExpr>
+						</ns0:Value>
+						<ns0:Domain>
+							<ns0:SimpleDomainExpr>
+								<ns0:ComparisonOp>http://www.slaatsoi.org/coremodel#equals
+								</ns0:ComparisonOp>
+								<ns0:Value>
+									<ns0:CONST>
+										<ns0:Value>true</ns0:Value>
+										<ns0:Datatype>http://www.w3.org/2001/XMLSchema#boolean
+										</ns0:Datatype>
+									</ns0:CONST>
+								</ns0:Value>
+							</ns0:SimpleDomainExpr>
+						</ns0:Domain>
+					</ns0:TypeConstraintExpr>
+				</ns0:Constraint>
+			</ns0:State>
+		</ns0:Guaranteed>
+		<ns0:Guaranteed>
+			<ns0:Text />
+			<ns0:Properties />
+			<ns0:State>
+				<ns0:ID>Location_for_DBServer</ns0:ID>
+				<ns0:Priority xsi:nil="true" />
+				<ns0:Constraint>
+					<ns0:TypeConstraintExpr>
+						<ns0:Value>
+							<ns0:FuncExpr>
+								<ns0:Text />
+								<ns0:Properties />
+								<ns0:Operator>http://www.slaatsoi.org/resources#location
+								</ns0:Operator>
+								<ns0:Parameter>
+									<ns0:ID>VM_of_type_DBServer</ns0:ID>
+								</ns0:Parameter>
+							</ns0:FuncExpr>
+						</ns0:Value>
+						<ns0:Domain>
+							<ns0:SimpleDomainExpr>
+								<ns0:ComparisonOp>http://www.slaatsoi.org/coremodel#not_equals
+								</ns0:ComparisonOp>
+								<ns0:Value>
+									<ns0:CONST>
+										<ns0:Value>CN</ns0:Value>
+										<ns0:Datatype>http://www.w3.org/2001/XMLSchema#string
+										</ns0:Datatype>
+									</ns0:CONST>
+								</ns0:Value>
+							</ns0:SimpleDomainExpr>
+						</ns0:Domain>
+					</ns0:TypeConstraintExpr>
+				</ns0:Constraint>
+			</ns0:State>
+		</ns0:Guaranteed>
+		<ns0:Guaranteed>
+			<ns0:Text />
+			<ns0:Properties />
+			<ns0:State>
+				<ns0:ID>Reservation_for_DBServer</ns0:ID>
+				<ns0:Priority xsi:nil="true" />
+				<ns0:Constraint>
+					<ns0:TypeConstraintExpr>
+						<ns0:Value>
+							<ns0:FuncExpr>
+								<ns0:Text />
+								<ns0:Properties />
+								<ns0:Operator>http://www.slaatsoi.org/resources#reserve
+								</ns0:Operator>
+								<ns0:Parameter>
+									<ns0:ID>VM_of_type_DBServer</ns0:ID>
+								</ns0:Parameter>
+							</ns0:FuncExpr>
+						</ns0:Value>
+						<ns0:Domain>
+							<ns0:SimpleDomainExpr>
+								<ns0:ComparisonOp>http://www.slaatsoi.org/coremodel#equals
+								</ns0:ComparisonOp>
+								<ns0:Value>
+									<ns0:CONST>
+										<ns0:Value>1</ns0:Value>
+										<ns0:Datatype>http://www.w3.org/2001/XMLSchema#integer
+										</ns0:Datatype>
+									</ns0:CONST>
+								</ns0:Value>
+							</ns0:SimpleDomainExpr>
+						</ns0:Domain>
+					</ns0:TypeConstraintExpr>
+				</ns0:Constraint>
+			</ns0:State>
+		</ns0:Guaranteed>
+	</ns0:AgreementTerm>
+	<ns0:AgreementTerm>
+		<ns0:Text />
+		<ns0:Properties />
+		<ns0:ID>AppServer_Guarantees</ns0:ID>
+		<ns0:VariableDeclr>
+			<ns0:Text />
+			<ns0:Properties />
+			<ns0:Var>VM_of_type_AppServer</ns0:Var>
+			<ns0:Expr>
+				<ns0:ValueExpr>
+					<ns0:FuncExpr>
+						<ns0:Text />
+						<ns0:Properties />
+						<ns0:Operator>http://www.slaatsoi.org/coremodel#subset_of
+						</ns0:Operator>
+						<ns0:Parameter>
+							<ns0:ID>OVF-Item-AppServer</ns0:ID>
+						</ns0:Parameter>
+					</ns0:FuncExpr>
+				</ns0:ValueExpr>
+			</ns0:Expr>
+		</ns0:VariableDeclr>
+		<ns0:VariableDeclr>
+			<ns0:Text />
+			<ns0:Properties />
+			<ns0:Customisable>
+				<ns0:Var>CPU_CORES_RANGE_1-4</ns0:Var>
+				<ns0:Value>
+					<ns0:Value>2</ns0:Value>
+					<ns0:Datatype>http://www.w3.org/2001/XMLSchema#integer
+					</ns0:Datatype>
+				</ns0:Value>
+				<ns0:Expr>
+					<ns0:CompoundDomainExpr>
+						<ns0:Subexpression>
+							<ns0:SimpleDomainExpr>
+								<ns0:ComparisonOp>http://www.slaatsoi.org/coremodel#greater_than
+								</ns0:ComparisonOp>
+								<ns0:Value>
+									<ns0:CONST>
+										<ns0:Value>0</ns0:Value>
+										<ns0:Datatype>http://www.w3.org/2001/XMLSchema#integer
+										</ns0:Datatype>
+									</ns0:CONST>
+								</ns0:Value>
+							</ns0:SimpleDomainExpr>
+						</ns0:Subexpression>
+						<ns0:Subexpression>
+							<ns0:SimpleDomainExpr>
+								<ns0:ComparisonOp>http://www.slaatsoi.org/coremodel#less_than_or_equals
+								</ns0:ComparisonOp>
+								<ns0:Value>
+									<ns0:CONST>
+										<ns0:Value>4</ns0:Value>
+										<ns0:Datatype>http://www.w3.org/2001/XMLSchema#integer
+										</ns0:Datatype>
+									</ns0:CONST>
+								</ns0:Value>
+							</ns0:SimpleDomainExpr>
+						</ns0:Subexpression>
+						<ns0:LogicalOp>http://www.slaatsoi.org/coremodel#and
+						</ns0:LogicalOp>
+					</ns0:CompoundDomainExpr>
+				</ns0:Expr>
+			</ns0:Customisable>
+		</ns0:VariableDeclr>
+		<ns0:Guaranteed>
+			<ns0:Text />
+			<ns0:Properties />
+			<ns0:State>
+				<ns0:ID>CPU_SPEED_for_AppServer</ns0:ID>
+				<ns0:Priority xsi:nil="true" />
+				<ns0:Constraint>
+					<ns0:TypeConstraintExpr>
+						<ns0:Value>
+							<ns0:FuncExpr>
+								<ns0:Text />
+								<ns0:Properties />
+								<ns0:Operator>http://www.slaatsoi.org/resources#cpu_speed
+								</ns0:Operator>
+								<ns0:Parameter>
+									<ns0:ID>VM_of_type_AppServer</ns0:ID>
+								</ns0:Parameter>
+							</ns0:FuncExpr>
+						</ns0:Value>
+						<ns0:Domain>
+							<ns0:SimpleDomainExpr>
+								<ns0:ComparisonOp>http://www.slaatsoi.org/coremodel#equals
+								</ns0:ComparisonOp>
+								<ns0:Value>
+									<ns0:CONST>
+										<ns0:Value>1800</ns0:Value>
+										<ns0:Datatype>http://www.slaatsoi.org/coremodel/units#MHz
+										</ns0:Datatype>
+									</ns0:CONST>
+								</ns0:Value>
+							</ns0:SimpleDomainExpr>
+						</ns0:Domain>
+					</ns0:TypeConstraintExpr>
+				</ns0:Constraint>
+			</ns0:State>
+		</ns0:Guaranteed>
+		<ns0:Guaranteed>
+			<ns0:Text />
+			<ns0:Properties />
+			<ns0:State>
+				<ns0:ID>CPU_CORES_for_AppServer</ns0:ID>
+				<ns0:Priority xsi:nil="true" />
+				<ns0:Constraint>
+					<ns0:TypeConstraintExpr>
+						<ns0:Value>
+							<ns0:FuncExpr>
+								<ns0:Text />
+								<ns0:Properties />
+								<ns0:Operator>http://www.slaatsoi.org/resources#vm_cores
+								</ns0:Operator>
+								<ns0:Parameter>
+									<ns0:ID>VM_of_type_AppServer</ns0:ID>
+								</ns0:Parameter>
+							</ns0:FuncExpr>
+						</ns0:Value>
+						<ns0:Domain>
+							<ns0:SimpleDomainExpr>
+								<ns0:ComparisonOp>http://www.slaatsoi.org/coremodel#equals
+								</ns0:ComparisonOp>
+								<ns0:Value>
+									<ns0:CONST>
+										<ns0:Value>4</ns0:Value>
+										<ns0:Datatype>http://www.w3.org/2001/XMLSchema#integer
+										</ns0:Datatype>
+									</ns0:CONST>
+								</ns0:Value>
+							</ns0:SimpleDomainExpr>
+						</ns0:Domain>
+					</ns0:TypeConstraintExpr>
+				</ns0:Constraint>
+			</ns0:State>
+		</ns0:Guaranteed>
+		<ns0:Guaranteed>
+			<ns0:Text />
+			<ns0:Properties />
+			<ns0:State>
+				<ns0:ID>MEMORY_for_AppServer</ns0:ID>
+				<ns0:Priority xsi:nil="true" />
+				<ns0:Constraint>
+					<ns0:TypeConstraintExpr>
+						<ns0:Value>
+							<ns0:FuncExpr>
+								<ns0:Text />
+								<ns0:Properties />
+								<ns0:Operator>http://www.slaatsoi.org/resources#memory
+								</ns0:Operator>
+								<ns0:Parameter>
+									<ns0:ID>VM_of_type_AppServer</ns0:ID>
+								</ns0:Parameter>
+							</ns0:FuncExpr>
+						</ns0:Value>
+						<ns0:Domain>
+							<ns0:SimpleDomainExpr>
+								<ns0:ComparisonOp>http://www.slaatsoi.org/coremodel#equals
+								</ns0:ComparisonOp>
+								<ns0:Value>
+									<ns0:CONST>
+										<ns0:Value>2048</ns0:Value>
+										<ns0:Datatype>http://www.slaatsoi.org/coremodel/units#MB
+										</ns0:Datatype>
+									</ns0:CONST>
+								</ns0:Value>
+							</ns0:SimpleDomainExpr>
+						</ns0:Domain>
+					</ns0:TypeConstraintExpr>
+				</ns0:Constraint>
+			</ns0:State>
+		</ns0:Guaranteed>
+		<ns0:Guaranteed>
+			<ns0:Text />
+			<ns0:Properties />
+			<ns0:State>
+				<ns0:ID>Not_Co_Location_Host_for_AppServer</ns0:ID>
+				<ns0:Priority xsi:nil="true" />
+				<ns0:Constraint>
+					<ns0:TypeConstraintExpr>
+						<ns0:Value>
+							<ns0:FuncExpr>
+								<ns0:Text />
+								<ns0:Properties />
+								<ns0:Operator>http://www.slaatsoi.org/resources#not_co_location_host
+								</ns0:Operator>
+								<ns0:Parameter>
+									<ns0:ID>VM_of_type_AppServer</ns0:ID>
+								</ns0:Parameter>
+							</ns0:FuncExpr>
+						</ns0:Value>
+						<ns0:Domain>
+							<ns0:SimpleDomainExpr>
+								<ns0:ComparisonOp>http://www.slaatsoi.org/coremodel#equals
+								</ns0:ComparisonOp>
+								<ns0:Value>
+									<ns0:CONST>
+										<ns0:Value>true</ns0:Value>
+										<ns0:Datatype>http://www.w3.org/2001/XMLSchema#boolean
+										</ns0:Datatype>
+									</ns0:CONST>
+								</ns0:Value>
+							</ns0:SimpleDomainExpr>
+						</ns0:Domain>
+					</ns0:TypeConstraintExpr>
+				</ns0:Constraint>
+			</ns0:State>
+		</ns0:Guaranteed>
+		<ns0:Guaranteed>
+			<ns0:Text />
+			<ns0:Properties />
+			<ns0:State>
+				<ns0:ID>Location_for_AppServer</ns0:ID>
+				<ns0:Priority xsi:nil="true" />
+				<ns0:Constraint>
+					<ns0:TypeConstraintExpr>
+						<ns0:Value>
+							<ns0:FuncExpr>
+								<ns0:Text />
+								<ns0:Properties />
+								<ns0:Operator>http://www.slaatsoi.org/resources#location
+								</ns0:Operator>
+								<ns0:Parameter>
+									<ns0:ID>VM_of_type_AppServer</ns0:ID>
+								</ns0:Parameter>
+							</ns0:FuncExpr>
+						</ns0:Value>
+						<ns0:Domain>
+							<ns0:CompoundDomainExpr>
+								<ns0:Subexpression>
+									<ns0:SimpleDomainExpr>
+										<ns0:ComparisonOp>http://www.slaatsoi.org/coremodel#equals
+										</ns0:ComparisonOp>
+										<ns0:Value>
+											<ns0:CONST>
+												<ns0:Value>SI</ns0:Value>
+												<ns0:Datatype>http://www.w3.org/2001/XMLSchema#string
+												</ns0:Datatype>
+											</ns0:CONST>
+										</ns0:Value>
+									</ns0:SimpleDomainExpr>
+								</ns0:Subexpression>
+								<ns0:Subexpression>
+									<ns0:SimpleDomainExpr>
+										<ns0:ComparisonOp>http://www.slaatsoi.org/coremodel#equals
+										</ns0:ComparisonOp>
+										<ns0:Value>
+											<ns0:CONST>
+												<ns0:Value>IT</ns0:Value>
+												<ns0:Datatype>http://www.w3.org/2001/XMLSchema#string
+												</ns0:Datatype>
+											</ns0:CONST>
+										</ns0:Value>
+									</ns0:SimpleDomainExpr>
+								</ns0:Subexpression>
+								<ns0:LogicalOp>http://www.slaatsoi.org/coremodel#or
+								</ns0:LogicalOp>
+							</ns0:CompoundDomainExpr>
+						</ns0:Domain>
+					</ns0:TypeConstraintExpr>
+				</ns0:Constraint>
+			</ns0:State>
+		</ns0:Guaranteed>
+	</ns0:AgreementTerm>
+	<ns0:AgreementTerm>
+		<ns0:Text />
+		<ns0:Properties />
+		<ns0:ID>Insfrastructure_Price_Of_DBServer</ns0:ID>
+		<ns0:Guaranteed>
+			<ns0:Text />
+			<ns0:Properties />
+			<ns0:Action>
+				<ns0:ID>Price_Of_VirtualSystem_DBServer</ns0:ID>
+				<ns0:ActorRef>http://www.slaatsoi.org/slamodel#provider
+				</ns0:ActorRef>
+				<ns0:Policy>http://www.slaatsoi.org/slamodel#mandatory
+				</ns0:Policy>
+				<ns0:Precondition>
+					<ns0:Text />
+					<ns0:Properties />
+					<ns0:Operator>http://www.slaatsoi.org/coremodel#invocation
+					</ns0:Operator>
+					<ns0:Parameter>
+						<ns0:ValueExpr>
+							<ns0:ID>DBServer</ns0:ID>
+						</ns0:ValueExpr>
+					</ns0:Parameter>
+				</ns0:Precondition>
+				<ns0:Postcondition>
+					<ns0:Text />
+					<ns0:Properties>
+						<ns0:Entry>
+							<ns0:Key>Guarantees applied:</ns0:Key>
+							<ns0:Value>co_location_rack, location, reserve</ns0:Value>
+						</ns0:Entry>
+					</ns0:Properties>
+					<ns0:ProductOfferingPrice>
+						<ns0:ID>Product_Offering_Price_Of_DBServer</ns0:ID>
+						<ns0:Name />
+						<ns0:Description />
+						<ns0:BillingFrequency>http://www.slaatsoi.org/business#per_month
+						</ns0:BillingFrequency>
+						<ns0:ValidFrom>2013-01-01T00:00:00.000+01:00</ns0:ValidFrom>
+						<ns0:ValidUntil>2014-12-31T00:00:00.000+01:00</ns0:ValidUntil>
+						<ns0:ComponentProdOfferingPrice>
+							<ns0:ID>Price for reservation of_DBServer</ns0:ID>
+							<ns0:PriceType>http://www.slaatsoi.org/business#one_time_charge
+							</ns0:PriceType>
+							<ns0:Price>
+								<ns0:Value>50.0</ns0:Value>
+								<ns0:Datatype>http://www.slaatsoi.org/coremodel/units#EUR
+								</ns0:Datatype>
+							</ns0:Price>
+							<ns0:Quantity>
+								<ns0:Value>1</ns0:Value>
+								<ns0:Datatype>http://www.slaatsoi.org/coremodel/units#vm
+								</ns0:Datatype>
+							</ns0:Quantity>
+						</ns0:ComponentProdOfferingPrice>
+						<ns0:ComponentProdOfferingPrice>
+							<ns0:ID>Price_OF_DBServer</ns0:ID>
+							<ns0:PriceType>http://www.slaatsoi.org/business#per_hour
+							</ns0:PriceType>
+							<ns0:Price>
+								<ns0:Value>2.048012</ns0:Value>
+								<ns0:Datatype>http://www.slaatsoi.org/coremodel/units#EUR
+								</ns0:Datatype>
+							</ns0:Price>
+							<ns0:Quantity>
+								<ns0:Value>1</ns0:Value>
+								<ns0:Datatype>http://www.slaatsoi.org/coremodel/units#vm
+								</ns0:Datatype>
+							</ns0:Quantity>
+						</ns0:ComponentProdOfferingPrice>
+					</ns0:ProductOfferingPrice>
+				</ns0:Postcondition>
+			</ns0:Action>
+		</ns0:Guaranteed>
+	</ns0:AgreementTerm>
+	<ns0:AgreementTerm>
+		<ns0:Text />
+		<ns0:Properties />
+		<ns0:ID>Insfrastructure_Price_Of_AppServer</ns0:ID>
+		<ns0:Guaranteed>
+			<ns0:Text />
+			<ns0:Properties />
+			<ns0:Action>
+				<ns0:ID>Price_Of_VirtualSystem_AppServer</ns0:ID>
+				<ns0:ActorRef>http://www.slaatsoi.org/slamodel#provider
+				</ns0:ActorRef>
+				<ns0:Policy>http://www.slaatsoi.org/slamodel#mandatory
+				</ns0:Policy>
+				<ns0:Precondition>
+					<ns0:Text />
+					<ns0:Properties />
+					<ns0:Operator>http://www.slaatsoi.org/coremodel#invocation
+					</ns0:Operator>
+					<ns0:Parameter>
+						<ns0:ValueExpr>
+							<ns0:ID>AppServer</ns0:ID>
+						</ns0:ValueExpr>
+					</ns0:Parameter>
+				</ns0:Precondition>
+				<ns0:Postcondition>
+					<ns0:Text />
+					<ns0:Properties>
+						<ns0:Entry>
+							<ns0:Key>Guarantees applied:</ns0:Key>
+							<ns0:Value>not_co_location_host, location</ns0:Value>
+						</ns0:Entry>
+					</ns0:Properties>
+					<ns0:ProductOfferingPrice>
+						<ns0:ID>Product_Offering_Price_Of_AppServer</ns0:ID>
+						<ns0:Name />
+						<ns0:Description />
+						<ns0:BillingFrequency>http://www.slaatsoi.org/business#per_month
+						</ns0:BillingFrequency>
+						<ns0:ValidFrom>2013-01-01T00:00:00.000+01:00</ns0:ValidFrom>
+						<ns0:ValidUntil>2014-12-31T00:00:00.000+01:00</ns0:ValidUntil>
+						<ns0:ComponentProdOfferingPrice>
+							<ns0:ID>Price_OF_AppServer</ns0:ID>
+							<ns0:PriceType>http://www.slaatsoi.org/business#per_hour
+							</ns0:PriceType>
+							<ns0:Price>
+								<ns0:Value>1.4717</ns0:Value>
+								<ns0:Datatype>http://www.slaatsoi.org/coremodel/units#EUR
+								</ns0:Datatype>
+							</ns0:Price>
+							<ns0:Quantity>
+								<ns0:Value>1</ns0:Value>
+								<ns0:Datatype>http://www.slaatsoi.org/coremodel/units#vm
+								</ns0:Datatype>
+							</ns0:Quantity>
+						</ns0:ComponentProdOfferingPrice>
+					</ns0:ProductOfferingPrice>
+				</ns0:Postcondition>
+			</ns0:Action>
+		</ns0:Guaranteed>
+	</ns0:AgreementTerm>
+</ns0:SLATemplate>
