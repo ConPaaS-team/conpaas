@@ -61,6 +61,13 @@ find cpsfrontend-$CPSVERSION -type d -name .svn | xargs rm -rf
 tar cfz cpsfrontend-$CPSVERSION.tar.gz cpsfrontend-$CPSVERSION
 rm -rf cpsfrontend-$CPSVERSION
 
+# build cps-tools
+echo '###### build cps-tools'
+cd cps-tools
+./configure && make distcheck
+mv cps-tools-$CPSVERSION.tar.gz ..
+cd ..
+
 for f in `find conpaas-{client,director,services/src}/dist -type f -name \*.tar.gz` 
 do 
     mv $f . 
