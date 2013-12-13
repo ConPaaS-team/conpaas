@@ -31,8 +31,10 @@ mkdir -p $PWD/cpsdirectorconf/data
 
 python setup.py install || true
 
+export DIRECTOR_TESTING=true
+
 # Create certificates
-DIRECTOR_TESTING=true python cpsconf.py localhost
+python cpsconf.py localhost
 
 # Fake tarball
 touch cpsdirectorconf/ConPaaS.tar.gz
