@@ -854,7 +854,10 @@ class BasicWebserversManager(BaseManager):
             with default instance type which can be "small" for example.
         """
         try:
-            self._check_state([BaseManager.S_RUNNING])
+            if self._state_get() != self.S_RUNNING:
+                raise Exception("Wrong service state: was expecting one of %s"
+                                " but current state is '%s'"
+                                % (self.S_RUNNING, self._state_get()))
             exp_keys = ['from_cloud', 'vmid', 'to_cloud']
             exp_params = [('migration_plan', is_list_dict2(exp_keys)),
                           ('delay', is_pos_nul_int, 0)]
@@ -864,6 +867,7 @@ class BasicWebserversManager(BaseManager):
             return HttpErrorResponse("%s" % ex)
         self._state_set(self.S_ADAPTING, msg='Going to migrate nodes %s' % migration_plan)
         Thread(target=self._do_migrate_nodes, args=[migration_plan, delay]).start()
+        return HttpJsonResponse()
 
     def _check_migrate_args(self, migration_plan):
         """Check that given cloud names and VM identifiers exist."""
@@ -879,33 +883,33 @@ class BasicWebserversManager(BaseManager):
             if len(serv_nodes) > 1:
                 raise Exception("Internal error: found %s nodes from cloud %s with VM identifier %s!"
                                 % (len(serv_nodes), migr['from_cloud'], migr['vmid']))
-            to_cloud = self._init_cloud(migr['to_cloud']).cloud_name
+            to_cloud = self._init_cloud(migr['to_cloud'])
             checked_migration_plan.append({'node': serv_nodes[0], 'to_cloud': to_cloud})
         return checked_migration_plan
 
     def _do_migrate_nodes(self, migration_plan, delay):
         self.logger.info("Migration: starting with plan %s and delay %s."
                          % (migration_plan, delay))
+        config = self._configuration_get()
+        new_nodes = {}
+        added_new_nodes = []
         try:
             # (1) create all new nodes on each destination cloud
             # TODO: make it parallel
-            clouds = [migr['dest_cloud'] for migr in migration_plan]
+            clouds = [migr['to_cloud'] for migr in migration_plan]
             # TODO: use collections.Counter with Python 2.7 instead
             new_vm_nb = collections.defaultdict(int)
             for cloud in clouds:
                 new_vm_nb[cloud] += 1
-            new_nodes = {}
             for cloud, count in new_vm_nb.iteritems():
                 new_nodes[cloud] = self.controller.create_nodes(count,
                                                                 client.check_agent_process,
                                                                 self.AGENT_PORT,
                                                                 cloud)
             # (2) configure new nodes according the initial corresponding node configuration
-            config = self._configuration_get()
-            added_new_nodes = []
             for migr in migration_plan:
                 src_node = migr['node']
-                dest_node = new_nodes[migr['dest_cloud']].pop()
+                dest_node = new_nodes[migr['to_cloud']].pop()
                 added_new_nodes.append(dest_node)
                 if src_node.isRunningProxy:
                     self._start_proxy(config, [dest_node])
@@ -919,22 +923,22 @@ class BasicWebserversManager(BaseManager):
                     WebServiceNode(dest_node,
                                    weightWeb=src_node.weightWeb,
                                    weightBackend=src_node.weightBackend,
-                                   runProxy=src_node.runProxy,
-                                   runWeb=src_node.runWeb,
-                                   runBackend=src_node.runBackend)
+                                   runProxy=src_node.isRunningProxy,
+                                   runWeb=src_node.isRunningWeb,
+                                   runBackend=src_node.isRunningBackend)
                 self._update_proxy(config,
                                    [node for node in config.serviceNodes.values()
                                     if node.isRunningProxy])
         except Exception, ex:
+            self.logger.exception('Could not start nodes: %s. Rolled back.' % ex)
             # error happened: rolling back...
             rm_nodes = reduce(lambda acc, ele: acc + ele,
                               new_nodes.values(), [])
-            rm_nodes.extent(added_new_nodes)
+            rm_nodes.extend(added_new_nodes)
             self.controller.delete_nodes(rm_nodes)
             for node in rm_nodes:
                 if rm_nodes.id in config.serviceNodes:
                     del config.serviceNodes[node.id]
-            self.logger.exception('Could not start nodes: %s. Rolled back.' % ex)
             raise ex
         finally:
             config.update_mappings()
@@ -963,10 +967,10 @@ class BasicWebserversManager(BaseManager):
                               " the old nodes %s after % seconds."
                               % (old_nodes, delay))
             self._start_timer(delay, self._do_migrate_finalize, old_nodes)
-            self.state = self.S_RUNNING
+            self._state_set(self.S_RUNNING)
 
     def _do_migrate_finalize(self, old_nodes):
-        self.state = self.S_ADAPTING
+        self._state_set(self.S_ADAPTING)
 
         config = self._configuration_get()
         for node in old_nodes:
@@ -988,7 +992,8 @@ class BasicWebserversManager(BaseManager):
         if config.web_count == 1 and config.getWebServiceNodes()[0] in config.getProxyServiceNodes():
             config.web_count = 0
 
-        self.state = self.S_RUNNING
+        self._configuration_set(config)
+        self._state_set(self.S_RUNNING)
         self.logger.info("Migration: old nodes %s have been removed."
                          " END of migration." % old_nodes)
 
