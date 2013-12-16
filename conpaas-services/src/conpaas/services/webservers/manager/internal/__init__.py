@@ -822,39 +822,40 @@ class BasicWebserversManager(BaseManager):
         Migrate nodes of this service from a cloud to another.
 
         Parameters
-        ----------
-        migration_plan : list
-            Description of migration: list of mappings with the following keys:
-              * 'src_cloud': cloud name
-              * 'vmid': a VM identifier
-              * 'dest_cloud': cloud name
-            For examples:
-              * migration_plan=[{'src_cloud': 'mycloud',
-                                 'vmid': '2',
-                                 'dest_cloud': 'mycloud2'}]
-              * migration_plan=[{'src_cloud': 'mycloud2',
-                                 'vmid': '42',
-                                 'dest_cloud': 'mycloud1'},
-                                {'src_cloud': 'mycloud2',
-                                 'vmid': '43',
-                                 'dest_cloud': 'mycloud1'}]
-        delay : int
-            time in seconds to delay the removal of the old nodes.
-            Optional with 0 as default.
-            0 means "remove the old nodes as soon as the new nodes are up",
-            60 means "remove the old nodes after 60 seconds after the new nodes
-            are up". Useful to keep the old node active while the DNS and its
-            caches that still have the IP address of the old node are updated
-            to the IP address of the new node.
+            migration_plan : list
+                Description of migration: list of mappings with the following
+                keys:
+                    * 'from_cloud': cloud name
+                    * 'vmid': a VM identifier
+                    * 'to_cloud': cloud name
+                For examples:
+                    * migration_plan=[{'from_cloud': 'mycloud',
+                                       'vmid': '2',
+                                       'to_cloud': 'mycloud2'}]
+                    * migration_plan=[{'from_cloud': 'mycloud2',
+                                       'vmid': '42',
+                                       'to_cloud': 'mycloud1'},
+                                      {'from_cloud': 'mycloud2',
+                                       'vmid': '43',
+                                       'to_cloud': 'mycloud1'}]
+            delay : int
+                time in seconds to delay the removal of the old nodes.
+                Optional with 0 as default.
+                0 means "remove the old nodes as soon as the new nodes are up",
+                60 means "remove the old nodes after 60 seconds after the new nodes
+                are up". Useful to keep the old node active while the DNS and its
+                caches that still have the IP address of the old node are updated
+                to the IP address of the new node.
 
-        Note: the new node on the destination cloud will use the default VM
-          instance type. For example, migrating an Amazon EC2 "t2.medium" to a
-          private OpenNebula cloud, will create a VM in the OpenNebula cloud
-          with default instance type which can be "small" for example.
+        Note
+            the new node on the destination cloud will use the default VM
+            instance type. For example, migrating an Amazon EC2 "t2.medium" to a
+            private OpenNebula cloud, will create a VM in the OpenNebula cloud
+            with default instance type which can be "small" for example.
         """
         try:
             self._check_state([BaseManager.S_RUNNING])
-            exp_keys = ['scr_cloud', 'vmid', 'dest_cloud']
+            exp_keys = ['from_cloud', 'vmid', 'to_cloud']
             exp_params = [('migration_plan', is_list_dict2(exp_keys)),
                           ('delay', is_pos_nul_int, 0)]
             migration_plan, delay = check_arguments(exp_params, kwargs)
@@ -870,16 +871,16 @@ class BasicWebserversManager(BaseManager):
         config = self._configuration_get()
         for migr in migration_plan:
             serv_nodes = [serv_node for serv_node in config.serviceNodes.values()
-                          if serv_node.cloud_name == migr['src_cloud']
+                          if serv_node.cloud_name == migr['from_cloud']
                           and serv_node.vmid == migr['vmid']]
             if len(serv_nodes) == 0:
                 raise Exception("Unknown node from cloud %s with VM identifier %s"
-                                % (migr['src_cloud'], migr['vmid']))
+                                % (migr['from_cloud'], migr['vmid']))
             if len(serv_nodes) > 1:
                 raise Exception("Internal error: found %s nodes from cloud %s with VM identifier %s!"
-                                % (len(serv_nodes), migr['src_cloud'], migr['vmid']))
-            dest_cloud = self._init_cloud(migr['dest_cloud']).cloud_name
-            checked_migration_plan.append({'node': serv_nodes[0], 'dest_cloud': dest_cloud})
+                                % (len(serv_nodes), migr['from_cloud'], migr['vmid']))
+            to_cloud = self._init_cloud(migr['to_cloud']).cloud_name
+            checked_migration_plan.append({'node': serv_nodes[0], 'to_cloud': to_cloud})
         return checked_migration_plan
 
     def _do_migrate_nodes(self, migration_plan, delay):
@@ -962,6 +963,7 @@ class BasicWebserversManager(BaseManager):
                               " the old nodes %s after % seconds."
                               % (old_nodes, delay))
             self._start_timer(delay, self._do_migrate_finalize, old_nodes)
+            self.state = self.S_RUNNING
 
     def _do_migrate_finalize(self, old_nodes):
         self.state = self.S_ADAPTING
