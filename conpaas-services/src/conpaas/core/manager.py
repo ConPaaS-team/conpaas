@@ -92,8 +92,8 @@ class BaseManager(object):
 
     def _check_state(self, expected_states):
         if self.state not in expected_states:
-            raise Exception("ERROR: wrong state, was expecting one of %s"\
-                            " but current state is %s" \
+            raise Exception("Wrong service state: was expecting one of %s"\
+                            " but current state is '%s'" \
                             % (expected_states, self.state))
 
     def _wait_state(self, expected_states, timeout=10 * 60):
