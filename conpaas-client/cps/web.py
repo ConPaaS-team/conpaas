@@ -57,6 +57,14 @@ class WebClient(BaseClient):
             open(destfile, 'w').write(res)
             print destfile, 'written'
 
+    def migrate_nodes(self, service_id, migration_plan, delay=None):
+        data = {}
+        data['migration_plan'] = migration_plan
+        if delay is not None:
+            data['delay'] = delay
+        res = self.callmanager(service_id, "migrate_nodes", True, data)
+        return res
+
     def usage(self, cmdname):
         BaseClient.usage(self, cmdname)
         print "    add_nodes         serviceid b w p [cloud]     # add    b backend, w web and p proxy nodes"
@@ -67,7 +75,8 @@ class WebClient(BaseClient):
         print "    upload_code       serviceid filename  # upload a new code version"
         print "    download_code     serviceid version   # download a specific code version"
         # implemented in {php,java}.py
-        print "    enable_code       serviceid version   # set a specific code version active" 
+        print "    enable_code       serviceid version   # set a specific code version active"
+        print "    migrate_nodes     serviceid from_cloud:vmid:to_cloud[,from_cloud:vmid:to_cloud]*  [delay]"
 
     def main(self, argv):
         command = argv[1]
@@ -146,3 +155,41 @@ class WebClient(BaseClient):
                 print res['error']
             else:
                 print "Service", sid, "is performing the requested operation (%s)" % command
+
+        if command == 'migrate_nodes':
+            try:
+                sid = int(argv[2])
+            except (IndexError, ValueError):
+                print "ERROR: missing the service identifier argument after the sub-command name."
+                sys.exit(1)
+
+            self.check_service_id(sid)
+            delay = None
+
+            if len(sys.argv) < 4:
+                print "ERROR: missing arguments to migrate_nodes sub-command."
+                sys.exit(1)
+            elif len(sys.argv) > 4:
+                delay = sys.argv[4]
+                if not isinstance(delay, int) or int(delay) < 0:
+                    print "ERROR: delay argument must be a positive or null integer."
+                delay = int(delay)
+            elif len(sys.argv) > 5:
+                print "ERROR: too many arguments to migrate_nodes sub-command."
+                sys.exit(1)
+            migration_plan = []
+            migr_arg = sys.argv[3].split(',')
+            for migrate_node in migr_arg:
+                try:
+                    from_cloud, node_id, dest_cloud = migrate_node.split(':')
+                    migr_node = {'from_cloud': from_cloud, 'vmid': node_id, 'to_cloud': dest_cloud}
+                    migration_plan.append(migr_node)
+                except:
+                    print "ERROR: format error on migration argument '%s'." % migrate_node
+                    sys.exit(1)
+
+            res = self.migrate_nodes(sid, migration_plan, delay)
+            if 'error' in res:
+                print "ERROR: %s" % (res['error'])
+            else:
+                print "Migration started..."
