@@ -30,6 +30,7 @@ from cpsdirector import cloud as manager_controller
 from cpsdirector import common
 
 from conpaas.core.services import manager_services
+from conpaas.core.https import client
 
 service_page = Blueprint('service_page', __name__)
 
@@ -95,7 +96,6 @@ def get_service(user_id, service_id):
 
     return service
 
-from conpaas.core import https
 def callmanager(service_id, method, post, data, files=[]):
     """Call the manager API.
 
@@ -110,17 +110,17 @@ def callmanager(service_id, method, post, data, files=[]):
     """
     service = get_service(g.user.uid, service_id)
 
-    https.client.conpaas_init_ssl_ctx('/etc/cpsdirector/certs', 'director')
+    client.conpaas_init_ssl_ctx('/etc/cpsdirector/certs', 'director')
 
     # File upload
     if files:
-        res = https.client.https_post(service.manager, 443, '/', data, files)
+        res = client.https_post(service.manager, 443, '/', data, files)
     # POST
     elif post:
-        res = https.client.jsonrpc_post(service.manager, 443, '/', method, data)
+        res = client.jsonrpc_post(service.manager, 443, '/', method, data)
     # GET
     else:
-        res = https.client.jsonrpc_get(service.manager, 443, '/', method, data)
+        res = client.jsonrpc_get(service.manager, 443, '/', method, data)
 
     if res[0] == 200:
         try:
