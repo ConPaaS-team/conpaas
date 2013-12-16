@@ -12,14 +12,22 @@ class WebClient(BaseClient):
         if 'error' in nodes:
             return 
 
+        errmsg = ''
+
         for what in 'proxy', 'web', 'backend':
             print what,
             for proxy in nodes[what]:
                 params = { 'serviceNodeId': proxy }
                 details = self.callmanager(service['sid'], "get_node_info", False, params)
-                print details['serviceNode']['ip'],
+                if 'error' in details:
+                    errmsg = errmsg + details['error'] + "\n"
+                else:
+                    print details['serviceNode']['ip'],
 
             print
+
+        if errmsg:
+            print 'WARNING: %s' % errmsg
 
     def upload_key(self, service_id, filename):
         contents = open(filename).read()
