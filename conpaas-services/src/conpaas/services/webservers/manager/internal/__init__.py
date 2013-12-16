@@ -481,7 +481,7 @@ class BasicWebserversManager(BaseManager):
         if config.currentCodeVersion is not None:
             self._update_code(
                 config, [node for node in newNodes
-                         if node not in config.serviceNodes])
+                         if node not in config.serviceNodes])  # FIXME: ? rather be config.serviceNodes.values ?
 
         self._start_web(config,
                         [node for node in newNodes if node.isRunningWeb])
@@ -800,7 +800,7 @@ class BasicWebserversManager(BaseManager):
         config = self._configuration_get()
         if serviceNodeId not in config.serviceNodes:
             ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                  detail='Invalid "serviceNodeId"')
+                                  detail='Unknown "serviceNodeId": "%s"' % serviceNodeId)
             return HttpErrorResponse(ex.message)
         serviceNode = config.serviceNodes[serviceNodeId]
         return HttpJsonResponse({
