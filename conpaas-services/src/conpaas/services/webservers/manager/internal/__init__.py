@@ -699,8 +699,8 @@ class BasicWebserversManager(BaseManager):
         except Exception:
             self.logger.critical('Error when trying to remove ')
 
-        self._state_set(self.S_RUNNING)
         self._configuration_set(config)
+        self._state_set(self.S_RUNNING)
 
     @expose('POST')
     def update_nodes_weight(self, kwargs):
