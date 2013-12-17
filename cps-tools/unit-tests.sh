@@ -29,7 +29,7 @@ echo "*** Running syntax and basis checks..."
 
 mkdir -p "$UNIT_TEST_LOG_DIR"
 
-pyfiles="$(find $PYFILE_ROOT -name '*.py' \! -empty)"
+pyfiles="$(find $PYFILE_ROOT -name '*.py' \! -empty) $(ls bin/*)"
 
 for pyfile in $pyfiles
 do
