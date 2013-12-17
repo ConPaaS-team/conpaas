@@ -428,7 +428,7 @@ class XtreemFSManager(BaseManager):
                 serviceNode = node
                 break
         if serviceNode is None:
-            return HttpErrorResponse('ERROR: Invalid arguments')
+            return HttpErrorResponse('ERROR: Unknown service node identifier "%s"' % serviceNodeId)
         return HttpJsonResponse({
             'serviceNode': {
                             'id': serviceNode.id,
