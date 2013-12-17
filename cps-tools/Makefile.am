@@ -9,11 +9,16 @@ dist_bin_SCRIPTS = \
 	bin/cps-application \
 	bin/cps-service \
 	bin/cps-cloud \
-	bin/cps-user
+	bin/cps-user \
+	bin/cps-php \
+	bin/cps-galera \
+	bin/cps-xtreemfs \
+	bin/cps-scalaris \
+	bin/cps-taskfarm
 
 
 install-exec-hook:
-	for cmd in cps-tools cps-user cps-application cps-service cps-cloud; \
+	for cmd in cps-tools cps-user cps-application cps-service cps-cloud cps-php cps-galera cps-xtreemfs cps-scalaris cps-taskfarm; \
 	do \
 	  eval "$$(register-python-argcomplete $$cmd)"; \
 	done; \
