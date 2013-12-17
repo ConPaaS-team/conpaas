@@ -283,14 +283,19 @@ class ServiceCmd(object):
     def list_nodes(self, args):
         service_id = self.get_service_id(args.serv_name_or_id)
         nodes = self.client.call_manager_get(service_id, "list_nodes")
+        if 'error' in nodes:
+            self.client.error("Cannot get list of nodes: %s" % nodes['error'])
 
         for role, role_nodes in nodes.items():
             for node in role_nodes:
                 params = {'serviceNodeId': node}
                 details = self.client.call_manager_get(service_id, "get_node_info", params)
-                node = details['serviceNode']
-                print "%s: node %s from cloud %s with IP address %s" \
-                      % (role, node['vmid'], node['cloud'], node['ip'])
+                if 'error' in details:
+                    print "Warning: got node identifier from list_nodes but failed on get_node_info: %s" % details['error']
+                else:
+                    node = details['serviceNode']
+                    print "%s: node %s from cloud %s with IP address %s" \
+                           % (role, node['vmid'], node['cloud'], node['ip'])
 
     def _get_roles_nb(self, args):
         total_nodes = 0
