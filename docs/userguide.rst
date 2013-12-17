@@ -55,6 +55,9 @@ computations on demand.
 Usage overview
 ==============
 
+Web-based interface
+-------------------
+
 Most operations in ConPaaS can be done using the ConPaaS frontend, which
 gives a Web-based interface to the system. The front-end allows users to
 register, create services, upload code and data to the services, and
@@ -66,10 +69,67 @@ configure each service.
 -  Each service comes with a separate page which allows one to configure
    it, upload code and data, and scale it up and down.
 
+
+Command line interfaces
+-----------------------
+
 All the functionalities of the frontend are also available using a
 command-line interface. This allows one to script commands for ConPaaS.
 The command-line interface also features additional advanced
 functionalities, which are not available using the front-end.
+It exists two command line clients: ``cpsclient.py`` and ``cps-tools``.
+
+``cpsclient.py``
+    Installation and configuration:
+        see :ref:`cpsclient-installation`.
+    Command arguments:
+    ::
+        cpsclient.py usage
+    Available service types:
+    ::
+        cpsclient.py available
+    Service command specific arguments:
+    ::
+        cpsclient.py usage <service_type>
+    Create a service:
+    ::
+        cpsclient.py create <service_type>
+    List services:
+    ::
+        cpsclient.py list
+
+``cps-tools``
+    Installation and configuration:
+        see :ref:`cpstools-installation`.
+    Command arguments:
+    ::
+        cps-tools --help
+    Available service types:
+    ::
+        cps-tools service get_types
+        cps-service get-types
+    Service command specific arguments:
+    ::
+        cps-tools <service_type> --help
+        cps-<service_type> --help
+    Create a service:
+    ::
+        cps-tools service create <service_type>
+        cps-tools <service_type> create
+        cps-<service_type> create
+    List services:
+    ::
+        cps-tools service list
+        cps-service list
+    List applications:
+    ::
+        cps-tools application list
+        cps-application list
+    List clouds:
+    ::
+       cps-tools cloud list
+       cps-cloud list
+
 
 Controlling services using the front-end
 ----------------------------------------

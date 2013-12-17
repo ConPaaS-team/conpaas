@@ -270,12 +270,18 @@ ssh into your manager VM as root and:
 4. Check the contents of :file:`/root/manager.err`, :file:`/root/manager.out`
    and :file:`/var/log/cpsmanager.log`.
 
-.. _cpsclient-installation:
-
 Command line tool installation
 ================================
 
-The command line tool, called ``cpsclient``, can be installed as root or as a
+There are two command line clients: an old one called ``cpsclient.py``
+and a more recent one called ``cps-tools``.
+
+.. _cpsclient-installation:
+
+Installing and configuring cpsclient.py
+---------------------------------------
+
+The command line tool ``cpsclient`` can be installed as root or as a
 regular user. Please note that libcurl development files (binary package
 :file:`libcurl4-openssl-dev` on Debian/Ubuntu systems) need to be installed on
 your system.
@@ -291,6 +297,53 @@ a Python virtual environment if ``virtualenv`` is available on your machine::
     $ cd conpaas
     $ source bin/activate # activate it
     $ easy_install http://www.conpaas.eu/dl/cpsclient-1.3.1.tar.gz
+
+Configuring ``cpsclient.py``:
+::
+    $ cpsclient.py credentials
+    Enter the director URL: https://parapide-16.rennes.grid5000.fr:5555
+    Enter your username: xcv
+    Enter your password: 
+    Authentication succeeded
+
+
+.. _cpstools-installation:
+
+Installing and configuring cps-tools
+------------------------------------
+
+The command line ``cps-tools`` is a more recent command line client to interact
+with ConPaaS.
+It has essentially a modular internal architecture easier to extend.
+It has also "object-oriented" arguments where "ConPaaS" objects are services, users, clouds and applications.
+The argument consists in stating the "object" first and then calling a sub-command on it.
+It also replaces the command line tool ``cpsadduser.py``.
+
+``cps-tools`` requires::
+:
+    * Python 2.7 
+    * Python module argparse
+    * Python module argcomplete
+
+
+Installing ``cps-tools``:
+::
+    $ tar -xaf cps-tools-1.3.1.tar.gz
+    $ cd cps-tools-1.3.1
+    $ ./configure --sysconf=/etc
+    $ sudo make install
+
+Configuring ``cps-tools``:
+::
+    $ mkdir -p $HOME/.conpaas
+    $ cp /etc/cps-tools.conf $HOME/.conpaas/
+    $ vim $HOME/.conpaas/cps-tools.conf
+    >> update 'director_url' and 'username'
+    >> do not update 'password' unless you want to execute scripts that must retrieve a certificate without interaction
+    $ cps-user get_certificate
+    >> enter you password
+    >> now you can use cps-tools commands
+
 
 .. _frontend-installation:
 
