@@ -1,0 +1,49 @@
+
+================================================
+Extract the ConPaaS API from ConPaaS source code
+================================================
+
+--------------
+API definition
+--------------
+
+This script extracts the ConPaaS API based on decorated Python functions.
+
+In the director's code, a function that is part of the API is decorated with a
+call to:
+
+  @<http_page>.route(<entry_name>, methods=[<http_method_list>])
+  def entry():
+      """
+      <entry_documentation>
+      """
+      ...
+
+In the managers' and agents' code, a function is part of the API when decorated
+with a call to:
+
+  @expose(<http_method>)
+  def entry():
+      """
+      <entry_documentation>
+      """
+      ...
+
+----------------------------------
+Generating the API with the script
+----------------------------------
+
+In the usual ConPaaS source code configuration, just run the script that will
+use the relative default director, managers, and agents source code location:
+
+    ./extract_api.sh
+
+Set different source code locations by editing in the script the definitions of
+variables 'director_src' and 'services_src'.
+
+By default, output is generated in directory ./gen_api:
+    ./gen_api/odt/director.odt
+    ./gen_api/odt/services.odt
+    ./gen_api/latex/services.pdf
+    ./gen_api/latex/director.pdf
+
