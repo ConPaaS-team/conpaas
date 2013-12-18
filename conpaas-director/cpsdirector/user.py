@@ -360,3 +360,14 @@ def user_credit():
     Returns the remaining credit of a user identified by a certificate.
     """
     return build_response(simplejson.dumps(g.user.credit))
+
+
+def add_credit(username, credit):
+    """Add credit to a user."""
+    user = User.query.filter_by(username=username).first()
+    if not user:
+        raise Exception("Unknown user '%s'" % username)
+    user.credit += credit
+    if user.credit < 0:
+        user.credit = 0
+    db.session.commit()

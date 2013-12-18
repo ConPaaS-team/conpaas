@@ -37,6 +37,7 @@ class UserCmd:
         self._add_get_certificate()
         self._add_get_config()
         self._add_get_credit()
+        self._add_add_credit()
         self._add_list()
         self._add_help(user_parser)
 
@@ -224,6 +225,21 @@ class UserCmd:
             print "ERROR: %s" % res['error']
         else:
             print "%s" % res
+
+    # ========== get_credit
+    def _add_add_credit(self):
+        subparser = self.add_parser('add_credit', help="add credit to user")
+        subparser.set_defaults(run_cmd=self.add_credit, parser=subparser)
+        subparser.add_argument('username', help="User's username")
+        subparser.add_argument('credit', type=int, help="Credit to add (positive or negative integer)")
+
+    def add_credit(self, args):
+        """Create a new user calling directly the local director."""
+        self._check_director()
+        try:
+            cpsdirector.user.add_credit(args.username, args.credit)
+        except Exception as ex:
+            print "ERROR: %s" % ex
 
 
 def main():
