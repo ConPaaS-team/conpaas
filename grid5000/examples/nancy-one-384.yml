@@ -1,0 +1,30 @@
+deployment:
+  engine:
+    name: opennebula
+    customization_type: multisiteChef
+
+  walltime: 01:54:00
+
+  sites:
+    nancy:
+      nodes: 3
+      subnet: slash_22=1
+
+  environments:
+    default: "http://public.rennes.grid5000.fr/~yradenac/descriptions/wheezy-x64-chef.dsc"
+#    default: "http://public.nancy.grid5000.fr/~yradenac/squeeze-x64-nfs-chef.dsc"
+
+opennebula:
+  master:
+    source:
+      controller_source: "http://public.nancy.grid5000.fr/~yradenac/opennebula/opennebula-3.8.4.tar.gz"
+    vmimage:
+      conpaas:
+        path: "http://public.nancy.grid5000.fr/~yradenac/vmimages/conpaas-galera.img"
+        type: OS
+        public: YES
+        description: "ConPaaS image"
+
+ssh:
+  user: yradenac
+

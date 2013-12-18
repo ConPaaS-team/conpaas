@@ -1,0 +1,212 @@
+
+==========================
+Using ConPaaS in Grid'5000
+==========================
+
+Grid'5000 is "a scientific instrument designed to support experiment-driven
+research in all areas of computer science related to parallel, large-scale or
+distributed computing and networking".
+
+https://www.grid5000.fr
+
+ConPaaS can be deployed and tested in Grid'5000 (G5K for short).
+First one or several OpenNebula clouds are deployed in G5K.
+Then a machine of G5K is used to install a ConPaaS director and clients.
+
+-----------------------
+Deploying clouds in G5K
+-----------------------
+
+The script deploy-start-clouds.sh will deploy clouds but it requires g5k-campaign.
+https://gforge.inria.fr/projects/g5k-campaign/
+
+Install g5k-campaign
+====================
+
+Installing deploy-start-clouds.sh dependencies (to do once). This documentation
+based on G5K documentation:
+https://www.grid5000.fr/mediawiki/index.php/IaaS_and_PaaS_Clouds_on_Grid5000_Prerequisites
+https://www.grid5000.fr/mediawiki/index.php/IaaS_and_PaaS_Clouds_on_Grid5000
+
+
+echo 'gem: --no-ri --no-rdoc --user-install --http-proxy http://proxy:3128' >> $HOME/.gemrc
+echo 'export PATH=$PATH:$HOME/.gem/ruby/1.9.1/bin' >> $HOME/.profile
+echo 'export GEM_HOME=$HOME/.gem/ruby/1.9.1' >> $HOME/.profile
+echo 'export http_proxy="http://proxy:3128"' >> $HOME/.profile
+echo 'export https_proxy="http://proxy:3128"' >> $HOME/.profile
+echo 'export ftp_proxy="http://proxy:3128"' >> $HOME/.profile
+source $HOME/.profile
+gem install bundle
+
+
+git clone git://scm.gforge.inria.fr/g5k-campaign/g5k-campaign.git
+
+Or if you have write access to g5k-campaign
+
+git clone git+ssh://developername@scm.gforge.inria.fr//gitroot/g5k-campaign/g5k-campaign.git
+
+mkdir $HOME/.restfully
+cat > $HOME/.restfully/api.grid5000.fr.yml <<EOF
+username: $USER
+base_uri: https://api.grid5000.fr/2.1/grid5000
+EOF
+
+
+
+Use deploy-start-clouds.sh script
+=================================
+
+The deploy-start-clouds.sh script is wrap up script around a call to g5k-campaign script.
+It takes as argument the files that will be passed to the g5k-campaign script.
+For example,
+    ./deploy-start-clouds.sh -w 18:00 rennes.yml
+where rennes.yml is a YAML file as described in
+https://www.grid5000.fr/mediawiki/index.php/IaaS_and_PaaS_Clouds_on_Grid5000#Deploying_IaaS_Clouds_on_Grid.275000
+
+Directory 'examples' contains some examples of YAML files.
+
+The g5k-campaign called in the deploy-start-clouds.sh script will create an OAR reservation for the cloud.
+
+In case of failure, there are several logs to check out:
+
+  * g5k-campaing output: $HOME/logs/
+  * chef recipes output: /tmp/${USER}_OpenNebula_deployment_logs/
+
+
+On the OpenNebula frontend:
+   List uploaded images:
+       oneimage list
+   Create an image
+       oneimage create image-desc.one -d ONstore
+   List running VM:
+       onevm list
+   Kill VM
+       onevm delete <vm_id>
+
+
+--------------------------
+ConPaaS disk image for G5K
+--------------------------
+
+Select cloud 'opennebula' and hypervision 'kvm'.
+Select a Debian repository mirror from the G5K proxy white list (ftp.fr.debian.org is fine):
+
+https://www.grid5000.fr/mediawiki/index.php/Web_proxy_access#Debian_GNU.2FLinux
+
+Copy the image in the public directory of your home directory in a G5K site:
+    rsync -avS conpaas.img grid5000.irisa.fr:./public/vmimages/
+
+ssh opennebula-frontend
+cat conpaas.one
+NAME          = conpaas-squeeze
+PATH          = http://public.rennes.grid5000.fr/~yradenac/vmimages/conpaas-squeeze.img
+TYPE          = OS
+DESCRIPTION   = "ConPaaS image based on Debian 6 Squeeze"
+
+oneimage create conpaas.one -d ONstore
+oneimage list
+
+
+
+---------------------------------
+Deploying ConPaaS director in G5K
+---------------------------------
+
+First make a reservation of a single machine:
+
+    oarsub -I -t deploy -l nodes=1,walltime=9:35:00
+
+Copy the tarballs:
+    cpsclient-1.4.x.tar.gz
+    cpsdirector-1.4.x.tar.gz
+    cpsfrontend-1.4.x.tar.gz
+    cpslib-1.4.x.tar.gz
+    cps-tools-1.4.x.tar.gz
+    ipop.zip
+
+Then execute the script:
+
+    ./deploy-start-conpaas.sh -v 1.4.x <cloud_name>=<cloud_frontend>
+
+where option '-v' specifies the conpaas version to installed: the script will
+actually install the tarballs it finds locally (cpsclient-$version.tar.gz,
+etc.).
+
+The cloud_frontend has been displayed at the end the deploy-start-clouds.sh script when it succeeds.
+
+
+ERROR:  Could not find a valid gem 'sinatra' (>= 0) in any repository
+ERROR:  Possible alternatives: sinatra
+
+Manually downloaded gems from rubygems.org sinatra and its dependencies tilt and rack-protection, then uploaded into g5k, modified deploy-start-clouds.sh script to upload the gems before running "gem install sinatra"
+
+Or better, build an G5K image from the machine obtained with the script (that will include all ConPaaS dependencies) and redeployed that image each time instead of the basic Wheezy image.
+https://www.grid5000.fr/mediawiki/index.php/ISO_to_kadeploy_image#Create_a_Kadeploy3_image_of_the_filesystem_of_our_OS
+
+
+
+----------------------------------
+Going through G5K two-way firewall
+----------------------------------
+
+https://www.grid5000.fr/mediawiki/index.php/SSH_quick_configuration
+
+Local entry point for Rennes: grid5000.irisa.fr
+Main entry point: access.grid5000.fr
+
+* Generate a keypair and copy the pair on each used site: ssh-keygen.
+* Add public key to all used sites: ssh-copy-id <site>
+
+
+* SSH configuration in the home directory of a site:
+cat $HOME/.ssh/config
+Host nancy grenoble bordeaux lille reims sophia lyon
+  StrictHostKeyChecking no
+  UserKnownHostsFile /dev/null
+  HashKnownHosts no
+  User $USER
+
+Host *
+  StrictHostKeyChecking no
+  UserKnownHostsFile /dev/null
+  HashKnownHosts no
+  User root
+
+* SSH configuration on main entry:
+
+from your personal computer: ssh-copy-id access.grid5000.fr
+
+on your personal computer, append the following to your $HOME/.ssh/config
+
+Host rennes.g5k nancy.g5k bordeaux.g5k reims.g5k *.g5k
+   User $USER
+   ProxyCommand ssh $USER@access.grid5000.fr "nc  -w 60 `basename %h .g5k` %p"
+
+
+ssh access.grid5000.fr
+
+cat $HOME/.ssh/config
+Host *
+  StrictHostKeyChecking no
+  HashKnownHosts no
+
+
+Back to your personal computer, "ssh rennes.g5k" should connect you directly (no
+password) to the G5K Rennes frontend through the main entry point.
+
+
+How to use port forwarding 
+--------------------------
+
+When the web frontend is running in grid5000, connect to it from outside g5k with a tunnel from your personal machine:
+     ssh -l $USER -f -N -L 8081:frontend-node.site.grid5000.fr:443 access.grid5000.fr
+Then access with your browser at address http://localhost:8081/conpaas
+The same for the opennebula OCCI server
+     ssh -l $USER -f -N -L 4567:opennebula-frontend-node.site.grid5000.fr:4567 access.grid5000.fr
+Then access with your browser at address http://localhost:4567/ui
+The same for the opennebula Sunstone server
+     ssh -l $USER -f -N -L 9869:opennebula-frontend-node.site.grid5000.fr:9869 access.grid5000.fr
+Then access with your browser at address http://localhost:9869
+
+
+

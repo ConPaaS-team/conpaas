@@ -1,0 +1,4 @@
+NAME          = conpaas-squeeze
+PATH          = http://public.rennes.grid5000.fr/~yradenac/vmimages/conpaas-squeeze.img
+TYPE          = OS
+DESCRIPTION   = "ConPaaS image based on Debian 6 Squeeze"
