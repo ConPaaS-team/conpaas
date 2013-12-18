@@ -51,6 +51,8 @@ username: $USER
 base_uri: https://api.grid5000.fr/2.1/grid5000
 EOF
 
+cd g5k-campaign
+bundle install
 
 
 Use deploy-start-clouds.sh script
@@ -154,9 +156,10 @@ https://www.grid5000.fr/mediawiki/index.php/SSH_quick_configuration
 Local entry point for Rennes: grid5000.irisa.fr
 Main entry point: access.grid5000.fr
 
-* Generate a keypair and copy the pair on each used site: ssh-keygen.
+* Generate a keypair WITHOUT any passphrase and copy the pair on each used site: ssh-keygen.
+* Add public key to local authorized keys:
+     cat $HOME/.ssh/id_rsa.pub >> $HOME/.ssh/authorized_keys
 * Add public key to all used sites: ssh-copy-id <site>
-
 
 * SSH configuration in the home directory of a site:
 cat $HOME/.ssh/config
