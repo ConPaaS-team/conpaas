@@ -1,0 +1,35 @@
+
+====================================
+Script to build a ConPaaS disk image
+====================================
+
+Update file 'create-img-script.cfg' with your preferences.
+Warning:
+ * choosing 'debian_dist = wheezy'  the resulting image will not work, yet, there is still bugs to fix
+ * only cloud 'ec2' with hypervisor 'xen',  and cloud 'opennebula' with hypervisor 'kvm' are supported
+ * galera and mysql service are exclusive
+
+Then run script:
+   ./create-img-script.py
+it will generate file create-img-conpaas.sh
+
+Then run that script as root
+   sudo ./create-img-conpaas.sh |& tee image-creation.log
+
+
+Default password for root is 'contrail'.
+
+
+Mount locally the generated image:
+  losetup -f -v file.img
+  kpartx -a /dev/loopX
+  mktemp -d
+  mount -o loop file.img /tmp/tmp.dkfghdkfn
+  
+Unmount:
+  umount /tmp/tmp.dkfghdkfn
+  rm -rf /tmp/tmp.dkfghdkfn
+  kpartx -d /dev/loopX
+  losetup -d /dev/loopX
+
+
