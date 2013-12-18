@@ -1,0 +1,357 @@
+===============================
+Howto for developers of ConPaaS
+===============================
+
+--------------------
+Source code location
+--------------------
+
+Until the end of the Contrail project
+=====================================
+
+* The official repository is the Contrail Subversion repository
+ - Create an account: http://contrail.projects.ow2.org/xwiki/bin/view/Development/Contributing
+ - Then send an email to contrail-admin@ow2.org with the account name
+
+ - with subversion: svn checkout svn+ssh://<username>@svn.forge.objectweb.org/svnroot/contrail/trunk/conpaas
+ - with git: git svn clone svn+ssh://<username>@svn.forge.objectweb.org/svnroot/contrail/trunk/conpaas
+
+ - a Github project exists but is just a clone of the subversion repository https://github.com/ConPaaS-team/conpaas
+ - the Github project is kept synchronous:
+
+  git svn clone
+  git remote add origin git@my-git-server:myrepository.git
+  git push origin
+
+  or more complex:
+  http://ironymark.diwan.com/2011/04/a-safe-way-to-keep-a-github-and-svn-repository-in-sync/
+
+  other links:
+  http://www.samaxes.com/2013/11/move-from-svn-to-git/
+
+
+After the end of the Contrail project
+=====================================
+
+* The official repository will be in Github
+
+
+---------------------------------
+How to compile and build packages
+---------------------------------
+
+$CPS_ROOT/mkdist.sh 1.4.x
+
+will build 5 tarballs:
+    cpsclient-1.4.x.tar.gz
+    cpsdirector-1.4.x.tar.gz
+    cpsfrontend-1.4.x.tar.gz
+    cpslib-1.4.x.tar.gz
+    cps-tools-1.4.x.tar.gz
+
+
+---------------------
+How to make a release
+---------------------
+
+Checklist:
+ - create AMIs if necessary
+ - update AMIs in director.cfg.example
+ - update AMIs in documentation file docs/installation.rst , section "Pre-built Amazon Machine Images"
+ - travis test OK
+ - functional tests OK  on OpenNebula and EC2? on other clouds?
+ - test on Amazon with director with a public address
+ - check that new features have documentation, and other features' documentation is up to date, check for typos
+ - mkdist $new_version_id
+ - update doc references to ConPaaS version
+sed -i 's/1.3.0/1.3.1/' docs/conf.py
+sed -i 's/1.3.0/1.3.1/' docs/installation.rst
+ - svn commit   # commit the version number
+ - tag the version:   svn copy svn+ssh://$USER@svn.forge.objectweb.org/svnroot/contrail/trunk/conpaas svn+ssh://$USER@svn.forge.objectweb.org/svnroot/contrail/tags/conpaas-1.3.1
+ - upload the 4 tarballs to www.conpaas.eu/dl/
+ - update the links to readthedocs inside the iframe in the www.conpaas.eu/documentation/{user-guide,installation-guide,internals-guide} to point to http://conpaas-team.readthedocs.org/en/1.3.1/
+ - make the announcement with the release notes
+
+
+
+
+------------------
+Running unit tests
+------------------
+
+Locally
+=======
+
+$CPS_ROOT/conpaas-services/src/tests/unit-tests.sh
+$CPS_ROOT/conpaas-director/unit-tests.sh
+$CPS_ROOT/cps-tools/unit-tests.sh
+
+On Travis
+=========
+
+In https://github.com/ConPaaS-team/conpaas, there is a hook to Travis continuous integration testing.
+https://travis-ci.org/ConPaaS-team/conpaas
+
+Each time there is a push in Github ConPaaS-team/conpaas, Travis notified, clone the git repo and run the script travis.sh as specified in file .travis.yml
+
+$CPS_ROOT/.travis.yml
+$CPS_ROOT/travis.sh
+
+There is a command line interface to travis:
+https://github.com/travis-ci/travis
+
+when installed you can easily retrieve the LARGE log (hard with browsers).
+
+  travis login
+  > enter your username and your password of Github
+
+Then get the last log:
+  travis logs -r ConPaaS-team/conpaas > travis.log
+
+
+------------------------
+Code source architecture
+------------------------
+
+Directories in $CPS_ROOT:
+
+conpaas-blueprints
+    unused
+conpaas-client
+    command line client cpsclient.py, depends on conpaas-services
+conpaas-director
+    conpaas director, depends on conpaas-services
+conpaas-director/functional-tests
+    some scripts using the cpsclient.py command line to test a full installation of ConPaaS with real clouds
+conpaas-frontend
+    web frontend GUI, depends on conpaas-services
+conpaas-services
+    main ConPaaS code including common modules, manager codes, and agent codes.
+cps-tools
+    command line client cps-tools, depends on conpaas-services
+doc
+    obsolete folder still use for collaboration on scientific paper
+docs
+    ConPaaS documentation
+examples
+    old tests
+
+
+-----------
+Developping
+-----------
+
+Using Eclipse
+ * with Pydev:
+  - pep8 support: Preferences > PyDev > Editor > Code Analysis > tab 'pep8.py':   add '--ignore=E501' to Arguments to skip too-long-line warnings
+  WARNING: see PEP8 section below
+  - pylint support: Preferences > PyDev > PyLint: check 'Use PyLint?'  however issues related to PYTHONPATH setting for pylint
+ * Egit plugin for git support
+ * subversion plugin
+
+Using PyCharm
+
+
+----
+PEP8
+----
+
+ConPaaS Python code syntax is not consistent.
+Better thing is to comply to PEP8 official syntax recommendation.
+The command line 'pep8' can spot Python code that does not comply to PEP8.
+However, PEP8 line length of 80 characters is the hardest rule.
+Better disable line-length rule first:  pep8 --ignore=E501  mycode.py
+
+Some part of ConPaaS code is already complying to PEP8 without line-length rule
+ * $CPS_ROOT/conpaas-services/src/conpaas/services/webservers/*
+ * $CPS_ROOT/conpaas-services/src/conpaas/services/galera/*
+It is enforced by the $CPS_ROOT/conpaas-services/src/tests/unit-tests.sh script to prevent any regression regarding PEP8.
+
+Do not manually fix existing code to comply to PEP8, there is a script to do that:
+    autopep8 --in-place --ignore=E501  mycode.py
+by ignoring error E501 (line length), autopep8 will not try to fold long lines on several lines, but will still fix other syntax errors.
+
+
+------
+PYLINT
+------
+
+Pylint is a static code analyzer for Python.
+It helps detect some errors before running a Python script, however it is quite limited because Python is a un-typed language and quite dynamic.
+
+Some ConPaaS code is passing Pylint:
+ * $CPS_ROOT/conpaas-services/src/conpaas/services/webservers/*
+ * $CPS_ROOT/conpaas-services/src/conpaas/services/galera/*
+It is enforced by the $CPS_ROOT/conpaas-services/src/tests/unit-tests.sh script to prevent any regression regarding Pylint.
+
+
+----------------------------
+How to generate a disk image
+----------------------------
+
+see $CPS_ROOT/conpaas-services/scripts/create_vm/README
+
+
+------------------------------
+Howto run ConPaaS on GRID 5000
+------------------------------
+
+see $CPS_ROOT/grid5000/README
+
+
+--------------------------
+How to extract ConPaaS API
+--------------------------
+
+see $CPS_ROOT/cps-api/README
+
+
+--------------------------------
+How to run ConPaaS on Amazon EC2
+--------------------------------
+
+Use amazon command line tools:
+* Get credentials from Thilo Kielmann <Thilo.Kielmann@vu.nl>
+* follow http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/SettingUp_CommandLine.html
+
+unzip -x ec2-api-tools.zip -d $HOME
+
+In $HOME/.profile
+------------------------
+# Set ec2-tools env vars
+export JAVA_HOME="/usr/lib/jvm/java-6-openjdk-amd64/jre"
+export EC2_HOME="/home/$USER/ec2-api-tools-1.6.11.0"
+export PATH="$PATH:$EC2_HOME/bin"
+export AWS_ACCESS_KEY=...
+export AWS_SECRET_KEY=...
+
+# for the register-image-ec2-*.sh scripts
+export EC2_ACCESS_KEY="$AWS_ACCESS_KEY"
+export EC2_SECRET_KEY="$AWS_SECRET_KEY"
+------------------------
+
+
+List amazon things:
+ec2-describe-regions
+ec2-describe-instances
+ec2-describe-volumes
+ec2-describe-snapshots
+
+Amazon S3 buckets
+https://console.aws.amazon.com/s3
+
+Upload a new image and create a new AMI
+sudo apt-get install ec2-ami-tools
+
+
+* Must create an EC2 instance, upload the image, and upload the script, then run the script on the image.
+- Created a micro instance using the conpaas-1.3.0 image, added a new 10Gb volume in EBS as /dev/sdb, pwd contrail for root
+- ssh root@ec2....
+   apt-get install rsync
+   mktemp -d
+   mkfs.ext3 /dev/xvdb
+   mount /dev/xvdb /tmp/tmp.xxxxxxxxx
+   ls /tmp/tmp.xxxxxxxxx
+   df -h /tmp/tmp.xxxxxxxxx
+- local$:
+rsync -aS conpaas.img root@ec2...:/tmp/tmp.xxxxxxxx/conpaas.img
+scp register-image-ec2-* *.cfg 40_custom root@ec2...:/tmp/tmp.xxxxxxxx/
+- ssh root@ec2$
+cd /tmp/tmp.xxxxxxxx/
+./register-image-ec2-ebs.sh conpaas.img
+
+- make created AMI public
+
+
+* Some of my public AMIs are not visible in the list of public AMI in region Oregon (us-west-2):
+
+I can see them as the owner, and they are explicitly public:
+
+$ ec2-describe-images -U https://ec2.us-west-2.amazonaws.com -o 956027799375 | egrep '(ami-cc950efc|ami-f4c75fc4|ami-60940f50|ami-60940f50)'
+IMAGE	ami-f4c75fc4	956027799375/conpaas-1.3.0-2	956027799375	available	public		x86_64	machine	aki-fc37bacc			ebs	paravirtual	xen
+IMAGE	ami-cc950efc	956027799375/conpaas-1.3.0-2.1	956027799375	available	public		x86_64	machine	aki-fc37bacc			ebs	paravirtual	xen
+IMAGE	ami-60940f50	956027799375/conpaas-1.3.0-2.2	956027799375	available	public		x86_64	machine	aki-fc37bacc			ebs	paravirtual	xen
+
+
+However, they do not appear from in the list of publicly available AMIs:
+
+$ ec2-describe-images -U https://ec2.us-west-2.amazonaws.com -x all | egrep '(ami-cc950efc|ami-f4c75fc4|ami-60940f50)'
+$
+
+These AMIs were copied from other regions, two through the AWS web console interface:
+
+ami-b79271c0  in eu-west-1 (Ireland) -----copied to Virginia -----> ami-c3045aaa  -----copied to Oregon --------> ami-f4c75fc4
+ami-b79271c0  in eu-west-1 (Ireland) ---------------------------copied  to Oregon---------------------------> ami-cc950efc
+
+and one AMI copied from command line:
+ami-b79271c0  in eu-west-1 (Ireland) ---------------------------copied  to Oregon ---------------------------> ami-60940f50
+
+command was
+$ ec2cpimg -U https://ec2.us-west-2.amazonaws.com -r eu-west-1 -s ami-b79271c0 -n conpaas-1.3.0-2.2 -d "Copied from eu-west-1.ami-b79271c0 using ec2cpimg command line."
+IMAGE	ami-60940f50
+
+My issue seems related to a previous thread:
+[https://forums.aws.amazon.com/thread.jspa?messageID=454705]
+however it remained unsolved since May-July 2013....
+
+I've also tried to copy from Ireland to North Virgnia again (ami-7f163316) but it does not appear in the list of public AMIs... so it is not specific to Oregon.
+
+SOLUTION:
+## make private
+ec2-modify-image-attribute -U https://ec2.us-west-2.amazonaws.com ami-cc950efc -l -r all
+## yes, this step seems required
+ec2-describe-images -U https://ec2.us-west-2.amazonaws.com -o 956027799375 | egrep '(ami-cc950efc|ami-f4c75fc4|ami-60940f50)'
+## make public
+ec2-modify-image-attribute -U https://ec2.us-west-2.amazonaws.com ami-cc950efc -l -a all
+## checking that it appears in the public list
+ec2-describe-images -U https://ec2.us-west-2.amazonaws.com -x all | egrep '(ami-cc950efc|ami-f4c75fc4|ami-60940f50)'
+
+
+----------------------------------
+how to clean the director database
+----------------------------------
+
+    sudo sqlite3 /etc/cpsdirector/director.db
+    > delete from service;
+    > delete from application;
+
+
+------------------
+Log file locations
+------------------
+
+On the director:
+  /var/log/apache2/director-error.log
+On a manager:
+  /root/manager.err
+  /root/manager.out
+  /var/log/cpsmanager.log
+  From client:
+     cpsclient.py logs <sid>
+     cps-tools service get_logs <sid>
+On an agent:
+  /root/agent.err
+  /root/agent.out
+  /var/log/cpsagent.log
+For web frontend:
+  /var/log/apache2/error.log
+  Javascript console in browser
+On mysql/galera agents:
+  /root/mysql.log
+  
+
+==========================
+==========================
+
+
+* What is missing?  (cf conpaas-todo.odt)
+- more unit tests, more integration tests
+- a continuous integration test system
+- a class diagram
+- sequence diagrams, at least for the generic work of director-managers-agents relations
+- more documentation in the API
+- separate test code from function code (too many main in py files)
+- more generic code (abstracted in BaseManager and BaseAgent)
+- a generic load tester: useful for tests and demos
+
+
