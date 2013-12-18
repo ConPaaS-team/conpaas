@@ -16,6 +16,7 @@ class WebCmd(ServiceCmd):
         self._add_upload_code()
         self._add_list_codes()
         self._add_download_code()
+        self._add_migrate_nodes()
 
     # ========== upload_key
     def _add_upload_key(self):
@@ -124,3 +125,44 @@ class WebCmd(ServiceCmd):
             destfile = os.path.join(os.getenv('TMPDIR', '/tmp'), args.version) + '.tar.gz'
             open(destfile, 'w').write(res)
             print destfile, 'written'
+
+    # ========== migrate_nodes
+    def _add_migrate_nodes(self):
+        subparser = self.add_parser('migrate_nodes', help="migrate nodes in Web service")
+        subparser.set_defaults(run_cmd=self.migrate_nodes, parser=subparser)
+        subparser.add_argument('serv_name_or_id',
+                               help="Name or identifier of a service")
+        subparser.add_argument('nodes', metavar='c1:n:c2[,c1:n:c2]*',
+                               help="Nodes to migrate: node n from cloud c1 to cloud c2")
+        subparser.add_argument('--delay', '-d', metavar='SECONDS', type=int, default=0,
+                               help="Delay in seconds before removing the original nodes")
+
+    def migrate_nodes(self, args):
+        service_id = self.get_service_id(args.serv_name_or_id)
+        if args.delay < 0:
+            self.client.error("Cannot delay %s seconds." % args.delay)
+        try:
+            migr_all = args.nodes.split(',')
+            nodes = []
+            for migr in migr_all:
+                from_cloud, vmid, to_cloud = migr.split(':')
+                migr_dict = {'from_cloud': from_cloud,
+                             'vmid': vmid,
+                             'to_cloud': to_cloud}
+                nodes.append(migr_dict)
+        except:
+            self.client.error('Argument "nodes" does not match format c1:n:c2[,c1:n:c2]*: %s' % args.nodes)
+
+        data = {'migration_plan': nodes, 'delay': args.delay}
+        res = self.client.call_manager_post(service_id, "migrate_nodes", data)
+        if 'error' in res:
+            self.client.error("Could not migrate nodes in Web service %s: %s"
+                              % (service_id, res['error']))
+        else:
+            if args.delay == 0:
+                print("Migration of nodes %s has been successfully started"
+                      " for Web service %s." % (args.nodes, service_id))
+            else:
+                print("Migration of nodes %s has been successfully started"
+                      " for Web service %s with a delay of %s seconds."
+                      % (args.nodes, service_id, args.delay))

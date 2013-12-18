@@ -82,33 +82,6 @@ class PHPCmd(WebCmd):
             self.client.error("Could not set debug mode to %s: %s"
                               % (args.on_off, res['error']))
 
-    # ========== migrate_nodes
-    def _add_migrate_nodes(self):
-        subparser = self.add_parser('migrate_nodes',
-                                    help="migrate nodes between clouds")
-        subparser.set_defaults(run_cmd=self.migrate_nodes, parser=subparser)
-        subparser.add_argument('serv_name_or_id',
-                               help="Name or identifier of a service")
-        subparser.add_argument('migration_plan',
-                               help="description of migration")
-        subparser.add_argument('--delay',
-                               help="Delay the removal of original nodes after a successful node creation")
-
-    def migrate_nodes(self, args):
-        service_id = self.get_service_id(args.serv_name_or_id)
-        params = {'codeVersionId': args.version}
-
-        res = self.client.call_manager_get(service_id, "migrate_nodes",
-                                           params)
-
-        if 'error' in res:
-            self.client.error("Cannot download code: %s" % res['error'])
-
-        else:
-            destfile = os.path.join(os.getenv('TMPDIR', '/tmp'), args.version) + '.tar.gz'
-            open(destfile, 'w').write(res)
-            print destfile, 'written'
-
 
 def main():
     logger = logging.getLogger(__name__)
