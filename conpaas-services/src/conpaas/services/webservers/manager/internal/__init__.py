@@ -439,9 +439,9 @@ class BasicWebserversManager(BaseManager):
 
         self._state_set(
             self.S_ADAPTING, msg='Going to add proxy=%d, web=%d, backend=%d, vm_backend_type=%s, vm_web_type=%s, cloud=%s' %
-            (proxy, web, backend, str(vm_backend_type), str(vm_web_type), str(kwargs['cloud'])))
+            (proxy, web, backend, str(vm_backend_type), str(vm_web_type), cloud.get_cloud_name()))
         Thread(target=self.do_add_nodes, args=[
-               config, proxy, web, backend, kwargs['cloud'], vm_backend_type, vm_web_type]).start()
+               config, proxy, web, backend, cloud, vm_backend_type, vm_web_type]).start()
         return HttpJsonResponse()
 
     def do_add_nodes(self, config, proxy, web, backend, cloud, vm_backend_type, vm_web_type):
