@@ -89,7 +89,7 @@ class Strategy_Finder:
         # else:
         #   self.vm_inst_types = ['smallEC2','mediumEC2','c.mediumEC2', 'largeEC2']
     def set_slo_fulfillment_degree(self, slo_fulfillment_degree):
-        slo_fulfillment_levels = ["low", "medium_down", "medium_up", "medium", "medium_up", "high"]
+        slo_fulfillment_levels = ["low", "medium_down", "medium", "medium_up", "high"]
         if slo_fulfillment_degree in slo_fulfillment_levels:
             self.slo_fulfillment_degree = slo_fulfillment_degree
         else:
