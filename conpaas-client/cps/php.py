@@ -91,7 +91,7 @@ class Client(WebClient):
             except ValueError:
                 print "Error: argument response_time_objective must be an integer (time in milliseconds)."
                 sys.exit(1)
-            strategy = int(argv[5])
+            strategy = argv[5]
             if strategy not in AUTOSCALING_STRATEGIES:
                 print "Error: argument strategy must be one of %s." % AUTOSCALING_STRATEGIES
                 sys.exit(1)
