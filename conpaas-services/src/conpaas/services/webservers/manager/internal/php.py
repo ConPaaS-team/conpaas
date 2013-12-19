@@ -21,7 +21,8 @@ from conpaas.core import git
 
 try:
     from conpaas.services.webservers.manager.autoscaling.scaler import ProvisioningManager
-except ImportError:
+except ImportError as ex:
+    provision_mng_error = "%s" % ex
     ProvisioningManager = None
 
 from multiprocessing.pool import ThreadPool
@@ -36,7 +37,7 @@ class PHPManager(BasicWebserversManager):
         self._register_scalaris(kwargs['scalaris'])
 
         if ProvisioningManager is None:
-            self.logger.info('Provisioning Manager can not be initialized')
+            self.logger.info('Provisioning Manager can not be initialized: %s' % provision_mng_error)
             self.scaler = None
         else:
             try:

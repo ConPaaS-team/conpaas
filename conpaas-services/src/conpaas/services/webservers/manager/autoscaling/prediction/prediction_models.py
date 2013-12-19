@@ -9,7 +9,7 @@ The Predictor module estimates future values using the monitoring data.
 import numpy as np
 import statsmodels.api as sm
 from pandas import Series, DataFrame
-from statsmodels.tools import Dataset
+from statsmodels.datasets.utils import Dataset
 from scipy import stats
 import math
 """
