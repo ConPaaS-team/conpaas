@@ -317,6 +317,37 @@ class BasicWebserversManager(BaseManager):
 
     @expose('POST')
     def add_nodes(self, kwargs):
+        """
+        Add nodes to this web service.
+        At least one of the three types of nodes must be positive:
+        backend > 0 or web > 0 or proxy > 0.
+
+        POST parameters:
+        ----------------
+        backend : int
+            Optional
+            number of new backend nodes to create
+        web : int
+            Optional
+            number of new web nodes to create
+        proxy : int
+            Optional
+            number of new proxy nodes to create
+        vm_backend_instance : string
+            Optional
+            type of cloud instance to create as backend node.
+            Values depend on the cloud provider (for example "t1.micro" for Amazon
+            EC2, or "small" for OpenNebula, etc.). Default is the instance type
+            specified in the director configuration file (INST_TYPE in OpenNebula
+            configuration, SIZE_ID in Amazon EC2 configuration).
+        vm_web_instance : string
+            Optional
+            type of cloud instance to create as web node.
+            Values are similar to the vm_backend_instance argument.
+        cloud : string
+            Optional
+            name of the cloud where the nodes will be created
+        """
         config = self._configuration_get()
         dstate = self._state_get()
         if dstate != self.S_RUNNING:
@@ -368,6 +399,16 @@ class BasicWebserversManager(BaseManager):
                                   detail='Need a positive value for at least one')
             return HttpErrorResponse(ex.message)
 
+        if 'cloud' in kwargs:
+            cloud = kwargs.pop('cloud')
+        else:
+            cloud = 'iaas'
+        try:
+            cloud = self._init_cloud(cloud)
+        except Exception as ex:
+            # unknown cloud
+            return HttpErrorResponse("%s" % ex)
+
         if 'vm_backend_instance' in kwargs:
             self.logger.info('VM BACKEND INSTANCE: %s' %
                              str(kwargs['vm_backend_instance']))
@@ -414,7 +455,6 @@ class BasicWebserversManager(BaseManager):
         webNodesKill = []
         backendNodesKill = []
 
-        cloud = self._init_cloud(cloud)
         if backend > 0 and config.backend_count == 0:
             backendNodesKill.append(config.getBackendServiceNodes()[0])
         if web > 0 and config.web_count == 0:
@@ -494,6 +534,7 @@ class BasicWebserversManager(BaseManager):
                 config, [i for i in config.serviceNodes.values()
                          if i.isRunningProxy and i not in newNodes])
         # remove_nodes old ones
+
         self._stop_backend(config, backendNodesKill)
         self._stop_web(config, webNodesKill)
 
