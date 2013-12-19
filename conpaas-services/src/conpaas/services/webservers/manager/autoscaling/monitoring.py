@@ -156,7 +156,7 @@ class Monitoring_Controller:
         collect_from = self.last_collect_time - (time() - self.last_collect_time)
         #collect_from = self.last_collect_time
         fetch_cmd = ['rrdtool', 'fetch', '-s', str(int(collect_from)), '-r', '15',
-                      str(rrd_file_name), 'AVERAGE']
+                     str(rrd_file_name), 'AVERAGE']
         self.logger.debug("Fetching data with command: %s" % ' '.join(fetch_cmd))
         proc = Popen(fetch_cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
         stdout_req, stderr_req = proc.communicate()

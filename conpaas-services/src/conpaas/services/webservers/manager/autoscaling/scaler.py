@@ -181,7 +181,6 @@ class ProvisioningManager:
         except Exception as e:
             logger.exception("Error trying to predict the future response_time values.")
 
-
     def store_predictorScaler_workload(self, cpu_usage, req_rate):
         list_cpu = []
         list_req_rate = []
