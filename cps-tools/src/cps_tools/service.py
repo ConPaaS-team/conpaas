@@ -295,7 +295,7 @@ class ServiceCmd(object):
                 else:
                     node = details['serviceNode']
                     print "%s: node %s from cloud %s with IP address %s" \
-                           % (role, node['vmid'], node['cloud'], node['ip'])
+                          % (role, node['vmid'], node['cloud'], node['ip'])
 
     def _get_roles_nb(self, args):
         total_nodes = 0
