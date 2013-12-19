@@ -429,6 +429,72 @@ For example, the following command will remove one backend node::
   Requesting for one more backend node will create a new VM that will
   run an additional backend.
 
+Autoscaling
+-----------
+
+One of the worries of a service owner, is the trade-off between the performance
+of the service, and the cost of running it. The service owner can add nodes to
+improve the performance of the service which will have more nodes to balance the
+load, or remove nodes from the service to decrease the cost per hour, but
+increase the load per node.
+
+Adding and removing nodes as described above is interactive: the service owner
+has to run a command line or push some buttons on the web frontend GUI. However,
+the service owner is not always watching for the performance of his Web service.
+
+Autoscaling for the PHP service will add or remove nodes according to the load
+on the Web service. If the load on nodes running a Web service exceeds a given
+threshold and the autoscaling mechanism estimates that it will last, then the
+autoscaling mechanism will automatically add nodes for the service to balance
+the load. If the load on nodes running a Web service is low and the autoscaling
+mechanism estimates that it will last and that removing some nodes will not
+increase the load on nodes beyond the given threshold, then the autoscaling
+mechanism will automatically remove nodes from the service to decrease the cost
+per hour of the service.
+
+Autoscaling for the PHP service will also take into account the different kind
+of nodes that the cloud providers propose. They usually propose small instances,
+middle range instances and large instances. So, the autoscaling mechanism will
+select different kind of nodes depending on the service owner strategy choice.
+
+To enable autoscaling for the PHP service, run the command:
+::
+    cpsclient.py on_autoscaling <sid> <adapt_interval> <response_time_threshold> <strategy>
+    
+where:
+  * <sid> is the service identifier
+  * <adapt_interval> is the time in minutes between automatic adaptation point
+  * <response_time_threshold> is the desired response time in milliseconds
+  * <strategy> is the policy used to select instance type when adding nodes, it must be one of:
+
+    - "low": will always select the smallest (and cheapest) instance proposed by the cloud provider
+    - "medium_down"
+    - "medium"
+    - "medium_up"
+    - "high"
+
+For example:
+::
+    cpsclient.py on_autoscaling 1 5 2000 low
+enables autoscaling for PHP service 1, with an adaptation every 5 minutes, a
+response time threshold of 2000 milliseconds (2 seconds), and using the strategy
+low. This means that every 5 minutes, autoscaling will determine if it will add
+nodes, remove nodes, or do nothing, by looking at the history of the Web service
+response time and comparing it to the desired 2000 milliseconds. According the
+specified "low" strategy, if it decides to create nodes, it will always select the
+smallest instance from the cloud provider.
+
+Any time, the service owner may re-run the "on_autoscaling" command to tune autoscaling with different parameters:
+::
+    cpsclient.py on_autoscaling 1 10 1500 low
+this command updates the previous call to "on_autoscaling" and changes the
+adaptation interval to 10 minutes, and setting a lower threshold to 15000
+milliseconds.
+
+Autoscaling may be disabled by running command:
+::
+    cpsclient.py off_autoscaling <sid>
+
 
 The Java Web hosting service
 ============================
