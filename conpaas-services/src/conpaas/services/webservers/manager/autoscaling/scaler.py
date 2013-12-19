@@ -24,7 +24,7 @@ from datetime import datetime
 from multiprocessing.pool import ThreadPool
 import itertools
 from threading import Thread
-
+import httplib
 
 PATH_LOG_FILE = '/tmp/provisioning.log'
 log.init(PATH_LOG_FILE)
@@ -179,7 +179,7 @@ class ProvisioningManager:
 
             self.forecast_list[proxy_ip] = forecast_list_aux
         except Exception as e:
-            logger.error("Error trying to predict the future response_time values. " + str(e))\
+            logger.exception("Error trying to predict the future response_time values.")
 
 
     def store_predictorScaler_workload(self, cpu_usage, req_rate):
@@ -273,12 +273,12 @@ class ProvisioningManager:
                     #forecast_resp  = weight_avg_predictions
                 logger.debug("Prediction error VAR with php_resp_time: " + str(weight_avg_current) + " --  Prediction php_resp_time: " + str(weight_avg_predictions) + " Error: " + str(prediction_error))
             except Exception as e:
-                logger.warning("Warning trying to predict the error estimate for VAR." + str(e))
+                logger.exception("Warning trying to predict the error estimate for VAR.")
 
             self.forecast_model_selected = forecast_model
 
         except Exception as ex:
-            logger.error("Error trying to predict the error estimate for the different models. " + str(ex))
+            logger.exception("Error trying to predict the error estimate for the different models.")
 
     def obtain_prediciton_decision(self, greater, slo):
         logger.info("Obtain_prediciton_decision model: " + str(self.forecast_model_selected) + " Php resp: " + str(self.forecast_resp_predicted) + " SLO: " + str(slo))
@@ -480,6 +480,7 @@ class ProvisioningManager:
             n_web_to_add = 1
             n_web_to_remove = 0
         elif (len(web_nodes) > 1) and (avg_cpu_web < MIN_CPU_USAGE) and (n_web_to_add == 0):
+            # FIXME:? should read n_web_to_remove and n_web_to_add ? non adapted copy/paste from above?
             n_backend_to_remove = 1
             n_backend_to_add = 0
 
@@ -605,11 +606,11 @@ class ProvisioningManager:
                         added_node = False
                         while not added_node and num_retries > 0:
                             try:
-                                logger.info('Adding backend nodes, quantity: %s , vm_type: %s ' % (str(num), str(vm_type)))
+                                logger.info('Adding backend nodes: host=%s, port=%s, backend=%s , vm_type: %s ' % (MANAGER_HOST, MANAGER_PORT, num, vm_type))
                                 client.add_nodes(MANAGER_HOST, MANAGER_PORT, web=0, backend=num, cloud='default', vm_backend_instance=vm_type, vm_web_instance=vm_web_type)
                                 added_node = True
                             except Exception as ex:
-                                logger.warning('Error when trying to add a node: ' + str(ex))
+                                logger.warning('Error when trying to add a node: %s' % ex)
                                 num_retries = num_retries - 1
                                 logger.warning('Node cannot be added at this time, retrying in 1min. Number of additional retries: ' + str(num_retries))
                                 added_node = False
@@ -655,11 +656,14 @@ class ProvisioningManager:
                         client.add_nodes(MANAGER_HOST, MANAGER_PORT, web=n_web_to_add, backend=0, cloud='default', vm_backend_instance=vm_backend_type, vm_web_instance=vm_web_type)
                         added_node = True
                     except Exception as ex:
-                        logger.warning('Error when trying to add a web node: ' + str(ex))
+                        logger.exception('Error when trying to add a web node.')
+                        if isinstance(ex, httplib.BadStatusLine):
+                            logger.error('BadStatusLine.args="%s"   BadStatusLine.line="%s"' % (ex.args, ex.line))
                         num_retries = num_retries - 1
-                        logger.warning('Web node cannot be added at this time, retrying in 1min. Number of additional retries: ' + str(num_retries))
+                        wait_time = 100
+                        logger.warning('Web node cannot be added at this time, retrying in %s seconds. Number of additional retries: %s' % (wait_time, num_retries))
                         added_node = False
-                        sleep(100)
+                        sleep(wait_time)
 
                 self.last_change_time = time()
 

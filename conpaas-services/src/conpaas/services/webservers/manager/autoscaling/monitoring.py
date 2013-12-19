@@ -135,8 +135,8 @@ class Monitoring_Controller:
                     continue
                 try:
                     hostname, array, array_ip = socket.gethostbyaddr(node_ip)
-                except:
-                    self.logger.warning('Found private ip when trying to get the hostname for ip: ' + str(node_ip))
+                except Exception as ex:
+                    self.logger.warning('Found private ip when trying to get the hostname for ip %s: %s. ' % (str(node_ip), ex))
                     ganglia_dir_name = node_ip
                     break
                 #self.logger.error('gethostbyaddr: ' + hostname)
@@ -145,7 +145,7 @@ class Monitoring_Controller:
                     break
 
         rrd_file_name = self.ganglia_rrd_dir + ganglia_dir_name + '/' + metric_name + '.rrd'
-        self.logger.error('rrd_file_name: ' + str(rrd_file_name))
+#        self.logger.debug('rrd_file_name: ' + str(rrd_file_name))
 #    logger.info('Searching in RRD file:' + rrd_file_name)
         if (not path.isfile(rrd_file_name)):
             self.logger.error('RRD file not found: ' + rrd_file_name)
@@ -155,8 +155,10 @@ class Monitoring_Controller:
 #    logger.info('last collect time: ' + str(int(self.last_collect_time)))
         collect_from = self.last_collect_time - (time() - self.last_collect_time)
         #collect_from = self.last_collect_time
-        proc = Popen(['rrdtool', 'fetch', '-s', str(int(collect_from)), '-r', '15',
-                      str(rrd_file_name), 'AVERAGE'], stdout=PIPE, stderr=PIPE, close_fds=True)
+        fetch_cmd = ['rrdtool', 'fetch', '-s', str(int(collect_from)), '-r', '15',
+                      str(rrd_file_name), 'AVERAGE']
+        self.logger.debug("Fetching data with command: %s" % ' '.join(fetch_cmd))
+        proc = Popen(fetch_cmd, stdout=PIPE, stderr=PIPE, close_fds=True)
         stdout_req, stderr_req = proc.communicate()
 
         lines = stdout_req.splitlines()
@@ -188,6 +190,7 @@ class Monitoring_Controller:
     def init_collect_monitoring_data(self):
         self.perf_info = self._performance_info_get()
 
+    # FIXME: dead code?
     def collect_monitoring_data(self):
 
         web_monitoring_data = {}
@@ -206,6 +209,7 @@ class Monitoring_Controller:
                 ret = self.collect_monitoring_metric(web_node.ip, self.monitoring_metrics_web[it])
                 self.logger.info('Getting web monitoring info 3')
                 if len(ret) == 0:  # monitoring data was not found
+                    self.logger.warning("Could not retrieve data for metric %s: failed to collect all data for web node." % self.monitoring_metrics_web[it])
                     self.logger.info('Getting web monitoring info 4')
                     return False
                 if 'timestamps' not in web_monitoring_data[web_node.ip]:
@@ -233,6 +237,7 @@ class Monitoring_Controller:
             for it in range(len(self.monitoring_metrics_backend)):
                 ret = self.collect_monitoring_metric(backend_node.ip, self.monitoring_metrics_backend[it])
                 if len(ret) == 0:  # monitoring data was not found
+                    self.logger.warning("Could not retrieve data for metric %s: failed to collect all data for backend node." % self.monitoring_metrics_backend[it])
                     return False
                 if 'timestamps' not in backend_monitoring_data[backend_node.ip]:
                     backend_monitoring_data[backend_node.ip]['timestamps'] = ret[0]
@@ -286,6 +291,7 @@ class Monitoring_Controller:
             for it in range(len(self.monitoring_metrics_proxy)):
                 ret = self.collect_monitoring_metric(proxy_node.ip, self.monitoring_metrics_proxy[it])
                 if len(ret) == 0:  # monitoring data was not found
+                    self.logger.warning("Could not retrieve data for metric %s: failed to collect all data for proxy node." % self.monitoring_metrics_proxy[it])
                     return False
                 if 'timestamps' not in proxy_monitoring_data[proxy_node.ip]:
                     proxy_monitoring_data[proxy_node.ip]['timestamps'] = ret[0]
@@ -322,6 +328,7 @@ class Monitoring_Controller:
             for it in range(len(self.monitoring_metrics_web)):
                 ret = self.collect_monitoring_metric(web_node.ip, self.monitoring_metrics_web[it])
                 if len(ret) == 0:  # monitoring data was not found
+                    self.logger.warning("Could not retrieve data for metric %s: failed to collect all data for web node." % self.monitoring_metrics_web[it])
                     return {}
 
                 if 'timestamps' not in web_monitoring_data[web_node.ip]:
@@ -348,12 +355,13 @@ class Monitoring_Controller:
             cpu_num = DEFAULT_NUM_CPU
             mem_total = DEFAULT_RAM_MEMORY
             """
-          It iterates over the array to get the metrics in the same order, they defined added.
-          It allows to detect the type of instance by analyzing the cpu, mem_total.
-      """
+              It iterates over the array to get the metrics in the same order, they defined added.
+              It allows to detect the type of instance by analyzing the cpu, mem_total.
+            """
             for it in range(len(self.monitoring_metrics_backend)):
                 ret = self.collect_monitoring_metric(backend_node.ip, self.monitoring_metrics_backend[it])
                 if len(ret) == 0:  # monitoring data was not found
+                    self.logger.warning("Could not retrieve data for metric %s: failed to collect all data for backend node." % self.monitoring_metrics_backend[it])
                     return {}
                 if 'timestamps' not in backend_monitoring_data[backend_node.ip]:
                     backend_monitoring_data[backend_node.ip]['timestamps'] = ret[0]
@@ -415,6 +423,7 @@ class Monitoring_Controller:
             for it in range(len(self.monitoring_metrics_proxy)):
                 ret = self.collect_monitoring_metric(proxy_node.ip, self.monitoring_metrics_proxy[it])
                 if len(ret) == 0:  # monitoring data was not found
+                    self.logger.warning("Could not retrieve data for metric %s: failed to collect all data for proxy node." % self.monitoring_metrics_proxy[it])
                     return {}
                 if 'timestamps' not in proxy_monitoring_data[proxy_node.ip]:
                     proxy_monitoring_data[proxy_node.ip]['timestamps'] = ret[0]
