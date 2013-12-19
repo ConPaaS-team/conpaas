@@ -172,7 +172,7 @@ class PHPManager(BasicWebserversManager):
         self.logger.info('on_autoscaling entering')
         if not self.scaler:
             return HttpErrorResponse(
-                'Provisioning Manager has not been initialized')
+                'Provisioning Manager has not been initialized: %s' % provision_mng_error)
 
         try:
             self.autoscaling_threads = ThreadPool(processes=1)
@@ -192,7 +192,7 @@ class PHPManager(BasicWebserversManager):
         self.logger.info('off_autoscaling entering')
         if not self.scaler:
             return HttpErrorResponse(
-                'Provisioning Manager has not been initialized')
+                'Provisioning Manager has not been initialized: %s' % provision_mng_error)
 
         try:
             self.autoscaling_threads.terminate()
