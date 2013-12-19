@@ -1,12 +1,13 @@
 
 import argcomplete
 import logging
-import os
 import sys
 
 from .base import BaseClient
 from .config import config
 from .web import WebCmd
+
+AUTOSCALING_STRATEGIES = ["low", "medium_down", "medium", "medium_up", "high"]
 
 
 class PHPCmd(WebCmd):
@@ -17,6 +18,8 @@ class PHPCmd(WebCmd):
         self._add_enable_code()
         self._add_get_configuration()
         self._add_debug()
+        self._add_enable_autoscaling()
+        self._add_disable_autoscaling()
 
     # ========== enable_code
     def _add_enable_code(self):
@@ -81,6 +84,45 @@ class PHPCmd(WebCmd):
         if 'error' in res:
             self.client.error("Could not set debug mode to %s: %s"
                               % (args.on_off, res['error']))
+
+    # ========== enable_autoscaling
+    def _add_enable_autoscaling(self):
+        subparser = self.add_parser('enable_autoscaling',
+                                    help="enable autoscaling")
+        subparser.set_defaults(run_cmd=self.enable_autoscaling, parser=subparser)
+        subparser.add_argument('serv_name_or_id',
+                               help="Name or identifier of a service")
+        subparser.add_argument('adapt_interval', type=int,
+                               help="time in minutes between adaptation points")
+        subparser.add_argument('response_time_limit', type=int,
+                               help="response time objective in milliseconds")
+        subparser.add_argument('strategy', metavar='strategy',
+                               choices=AUTOSCALING_STRATEGIES,
+                               help="one of %(choices)s")
+
+    def enable_autoscaling(self, args):
+        service_id = self.get_service_id(args.serv_name_or_id)
+        params = {'cool_down': args.adapt_interval,
+                  'response_time': args.response_time_limit,
+                  'strategy': args.strategy,
+                  }
+        res = self.client.call_manager_post(service_id, 'on_autoscaling', params)
+        if 'error' in res:
+            self.client.error("Could not enable autoscaling: %s" % res['error'])
+
+    # ========== disable_autoscaling
+    def _add_disable_autoscaling(self):
+        subparser = self.add_parser('disable_autoscaling',
+                                    help="disable autoscaling")
+        subparser.set_defaults(run_cmd=self.disable_autoscaling, parser=subparser)
+        subparser.add_argument('serv_name_or_id',
+                               help="Name or identifier of a service")
+
+    def disable_autoscaling(self, args):
+        service_id = self.get_service_id(args.serv_name_or_id)
+        res = self.client.call_manager_post(service_id, 'off_autoscaling')
+        if 'error' in res:
+            self.client.error("Could not disable autoscaling: %s" % res['error'])
 
 
 def main():
