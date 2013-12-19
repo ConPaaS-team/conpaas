@@ -262,6 +262,8 @@ class ConpaasRequestHandler(BaseHTTPRequestHandler):
     
     def setup(self):
         """
+        Overriding StreamRequestHandler.setup() in SocketServer.py
+
         We need to use socket._fileobject Because SSL.Connection
         doesn't have a 'dup'. Not exactly sure WHY this is, but
         this is backed up by comments in socket.py and SSL/connection.c

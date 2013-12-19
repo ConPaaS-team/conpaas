@@ -154,6 +154,20 @@ class PHPManager(BasicWebserversManager):
 
     @expose('POST')
     def on_autoscaling(self, kwargs):
+        """
+        Enable auto-scaling for this PHP service.
+        The auto-scaling will add or remove nodes to reach the expected response
+        time in milliseconds while keeping a low credit usage.
+
+        POST parameters
+        ---------------
+        cool_down : int
+            time in minutes between adaptation points
+        reponse_time : int
+            service level objective (SLO) for the web and backend response time in milliseconds
+        strategy : string
+            one of "low", "medium_down", "medium_up", "medium", "high"
+        """
         self.logger.info('on_autoscaling entering')
         if not self.scaler:
             return HttpErrorResponse(
