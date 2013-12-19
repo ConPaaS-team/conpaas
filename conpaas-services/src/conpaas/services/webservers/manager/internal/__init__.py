@@ -399,10 +399,7 @@ class BasicWebserversManager(BaseManager):
                                   detail='Need a positive value for at least one')
             return HttpErrorResponse(ex.message)
 
-        if 'cloud' in kwargs:
-            cloud = kwargs.pop('cloud')
-        else:
-            cloud = 'iaas'
+        cloud = kwargs.pop('cloud', 'iaas')
         try:
             cloud = self._init_cloud(cloud)
         except Exception as ex:
