@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # setup and run local agent
+mkdir /etc/scalaris
 cp $CPS_HOME/src/conpaas/services/scalaris/etc/scalaris.local.config.tmpl /etc/scalaris/scalaris.local.cfg.tmpl
 
 apt-get -y install screen
