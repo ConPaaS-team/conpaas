@@ -87,7 +87,13 @@ if __name__ == '__main__':
 
     config = get_cfg_file_handle()
 
+    container = config.get('NUTSHELL', 'container') == 'true'
+    nutshell = config.get('NUTSHELL', 'nutshell') == 'true'
+
     output_filename = 'create-img-' + config.get('CUSTOMIZABLE', 'filename')[:-4] + '.sh'
+    if nutshell:
+        output_filename = 'create-img-' + config.get('NUTSHELL', 'filename')[:-4] + '.sh'
+
     create_output_file()
 
     # Write head script
@@ -99,17 +105,28 @@ if __name__ == '__main__':
 
     append_str_to_output('# The name and size of the image file '\
             'that will be generated.\n')
-    append_str_to_output('FILENAME=' + config.get('CUSTOMIZABLE', 'filename') + '\n')
-    append_str_to_output('FILESIZE=' + config.get('CUSTOMIZABLE', 'filesize') + '\n\n')
+   
+    if nutshell:
+        append_str_to_output('FILENAME=' + config.get('NUTSHELL','filename') + '\n')
+        append_str_to_output('CONT_FILENAME=' + config.get('CUSTOMIZABLE','filename') + '\n')
+        append_str_to_output('FILESIZE=' + config.get('NUTSHELL', 'filesize') + '\n\n')
+        append_str_to_output('HOST=' + config.get('NUTSHELL', 'hostname') + '\n')
+        append_str_to_output('DEBIAN_DIST=' + config.get('NUTSHELL', 'ubuntu_dist') + '\n')
+        append_str_to_output('DEBIAN_MIRROR=' + config.get('NUTSHELL', 'ubuntu_mirror') + '\n\n')
+        append_str_to_output('CREATE_CONT=' + config.get('NUTSHELL', 'container') + '\n\n')
+        container = False;
+    else:
+        append_str_to_output('FILENAME=' + config.get('CUSTOMIZABLE', 'filename') + '\n')
+        append_str_to_output('FILESIZE=' + config.get('CUSTOMIZABLE', 'filesize') + '\n\n')
 
-    append_str_to_output('# The Debian distribution that you would '\
+        append_str_to_output('# The Debian distribution that you would '\
             'like to have installed (we recommend squeeze).\n')
-    append_str_to_output('DEBIAN_DIST=' + config.get('RECOMMENDED', 'debian_dist') + '\n')
-    append_str_to_output('DEBIAN_MIRROR=' + config.get('RECOMMENDED', 'debian_mirror') + '\n\n')
+        append_str_to_output('DEBIAN_DIST=' + config.get('RECOMMENDED', 'debian_dist') + '\n')
+        append_str_to_output('DEBIAN_MIRROR=' + config.get('RECOMMENDED', 'debian_mirror') + '\n\n')
 
-    append_str_to_output('# The architecture and kernel version for '\
+        append_str_to_output('# The architecture and kernel version for '\
             'the OS that will be installed (please make\n')
-    append_str_to_output('# sure to modify the kernel version name accordingly if you modify the architecture).\n')
+        append_str_to_output('# sure to modify the kernel version name accordingly if you modify the architecture).\n')
 
     optimize = config.get('CUSTOMIZABLE', 'optimize')
 
@@ -126,6 +143,10 @@ if __name__ == '__main__':
             hypervisor = 'xen'
     else:
         error('Unknown cloud "%s".' % cloud)
+
+    if container:
+        cloud = config.get('NUTSHELL', 'cloud')
+    
     append_str_to_output('CLOUD=' + cloud + '\n')
 
     arch = config.get('RECOMMENDED', 'arch')
@@ -148,6 +169,14 @@ if __name__ == '__main__':
         kernel_version = 'linux-image-%s' % kernel_arch
     else:
         error('Unknown Debian distribution "%s".' % debian_dist)
+    
+    if nutshell:
+       append_str_to_output('OPTIMIZE=' + config.get('CUSTOMIZABLE', 'optimize') + '\n')
+       if hypervisor == 'kvm':
+           kernel_version = config.get('NUTSHELL', 'kvm_ubuntu_kernel_version')
+       elif hypervisor == 'xen':
+           kernel_version = config.get('NUTSHELL', 'xen_ubuntu_kernel_version')    
+
     append_str_to_output('KERNEL=%s\n' % kernel_version)
     
     append_str_to_output('\n\n')
@@ -157,49 +186,78 @@ if __name__ == '__main__':
     print 'Setting up image for %s, with services:' % hypervisor.upper(),
 
     # Write general scripts
-    filenames = config.get('SCRIPT_FILE_NAMES', 'general_scripts')
-    for filename in filenames.split():
+    #filenames = config.get('SCRIPT_FILE_NAMES', 'general_scripts')
+    #for filename in filenames.split():
+    #    append_file_to_output(root_dir + filename)
+   
+    if nutshell:
+        filename = config.get('SCRIPT_FILE_NAMES', 'image_script_nutshell')
+    elif container:
+        filename = config.get('SCRIPT_FILE_NAMES', 'image_script_container')
+    else:
+        filename = config.get('SCRIPT_FILE_NAMES', 'image_script')
+
+    append_file_to_output(root_dir + filename)    
+
+    if nutshell:
+        filenames = config.get('SCRIPT_FILE_NAMES', 'nutshell_config_scripts')
+        for filename in filenames.split():
+                        append_str_to_output("#Section " + filename + "\n\n")
+                        append_file_to_output(root_dir + filename)
+    else:
+
+        filename = config.get('SCRIPT_FILE_NAMES', 'conpaas_core_script')
         append_file_to_output(root_dir + filename)
 
-    # Write service scripts
-    rm_script_args = ''
-    for servicename, should_include in config.items('SERVICES'):
-        if 'true' == should_include:
-            rm_script_args += ' --' + servicename[:-8]
-            filename = config.get('SCRIPT_FILE_NAMES', servicename + '_script')
+        # Write service scripts
+        rm_script_args = ''
+        for servicename, should_include in config.items('SERVICES'):
+            if 'true' == should_include:
+                rm_script_args += ' --' + servicename[:-8]
+                filename = config.get('SCRIPT_FILE_NAMES', servicename + '_script')
+                append_file_to_output(root_dir + filename)
+                print servicename.replace('_service', '').upper(),
+        print
+
+        if rm_script_args == '':
+            rm_script_args = ' --none'
+
+        # Write rm script
+        if optimize == 'true':
+            filename = config.get('SCRIPT_FILE_NAMES', 'rm_script')
             append_file_to_output(root_dir + filename)
-            print servicename.replace('_service', '').upper(),
-    print
+            append_str_to_output("RM_SCRIPT_ARGS=" + "'" + rm_script_args + "'\n\n")
 
-    if rm_script_args == '':
-        rm_script_args = ' --none'
-
-    # Write rm script
-    if optimize == 'true':
-        filename = config.get('SCRIPT_FILE_NAMES', 'rm_script')
+        # Write user script
+        filename = config.get('SCRIPT_FILE_NAMES', 'user_script')
         append_file_to_output(root_dir + filename)
-        append_str_to_output("RM_SCRIPT_ARGS=" + "'" + rm_script_args + "'\n\n")
 
-    # Write user script
-    filename = config.get('SCRIPT_FILE_NAMES', 'user_script')
-    append_file_to_output(root_dir + filename)
+        # Write tail script
+        filename = config.get('SCRIPT_FILE_NAMES', 'tail_script')
+        append_file_to_output(root_dir + filename)
 
-    # Write tail script
-    filename = config.get('SCRIPT_FILE_NAMES', 'tail_script')
-    append_file_to_output(root_dir + filename)
 
+    suffix = '_nushell' if nutshell else ''
+ 
     # Write contextualization script
     if cloud == 'opennebula':
-        filename = config.get('SCRIPT_FILE_NAMES', 'opennebula_script')
+        filename = config.get('SCRIPT_FILE_NAMES', 'opennebula_script'+suffix)
     elif cloud == 'ec2':
-        filename = config.get('SCRIPT_FILE_NAMES', 'ec2_script')
+        filename = config.get('SCRIPT_FILE_NAMES', 'ec2_script'+suffix)
+    elif cloud == 'openstack':
+       filename = config.get('SCRIPT_FILE_NAMES', 'ec2_script') 
     append_file_to_output(root_dir + filename)
 
-    # Write resize script
-    if optimize == 'true':
-        filename = config.get('SCRIPT_FILE_NAMES', 'resize_script')
-        append_file_to_output(root_dir + filename)
+    if not nutshell:
+        if optimize == 'true':
+            if container:
+                filename = config.get('SCRIPT_FILE_NAMES', 'resize_container_script')
+            else:
+                filename = config.get('SCRIPT_FILE_NAMES', 'resize_script')
+            append_file_to_output(root_dir + filename)   
+
 
     close_output_file()
-
-    print "\nPlease run create-img-conpaas.sh as root"
+   
+    print "\nPlease run " +output_filename+ " as root"
+  

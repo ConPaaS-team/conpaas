@@ -1,0 +1,44 @@
+
+cat <<EOF > $ROOT_DIR/$DEST/conpaas_install
+#!/bin/bash
+
+$DEST/devstack/stack.sh
+sleep 1.5
+
+echo "Authenticating..."
+source $DEST/devstack/openrc admin admin
+sleep 1.5
+
+echo "Registering image"
+glance image-create --name=conpaas --is-public=true --container-format=bare --disk-format=raw < /nutshell/$CONT_IMG
+
+echo 'y' | rm /nutshell/$CONT_IMG
+
+echo "create key pair"
+nova keypair-add test > /nutshell/test.pem
+chmod 600 /nutshell/test.pem
+
+(cd /; patch -p1 < /nutshell/nbd.patch)
+sed -i '/default_floating_pool/a auto_assign_floating_ip=True' /etc/nova/nova.conf
+sed -i '/allow_resize_to_same_host/a ram_allocation_ratio=10' /etc/nova/nova.conf
+
+wget -P /nutshell http://www.conpaas.eu/dl/cpsdirector-1.3.1.tar.gz
+(cd /nutshell ; tar -zxvf cpsdirector-1.3.1.tar.gz)
+rm /nutshell/cpsdirector-1.3.1.tar.gz
+
+wget -P /nutshell http://www.conpaas.eu/dl/cpsclient-1.3.1.tar.gz
+
+(cd /nutshell/cpsdirector-1.3.1/ ; echo '172.16.0.1' | sudo ./install.sh)
+sudo easy_install /nutshell/cpsclient-1.3.1.tar.gz
+
+sudo cpsadduser.py test@email test password
+
+source devstack/eucarc
+/nutshell/scripts/configconpaas.sh /nutshell/director.cfg 172.16.0.1
+
+
+EOF
+
+chmod a+x $ROOT_DIR/$DEST/conpaas_install
+
+

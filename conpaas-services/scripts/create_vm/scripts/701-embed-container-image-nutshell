@@ -1,0 +1,16 @@
+DIR=$(cd `dirname "${BASH_SOURCE[0]}"` && pwd)
+if $CREATE_CONT ; then
+  sed --in-place 's/nutshell = true/nutshell = false/' $DIR/create-img-script.cfg
+  python $DIR/create-img-script.py
+  
+  $DIR/create-img-conpaas.sh
+  CONT_IMG=$FILENAME
+  $OPTIMIZE && CONT_IMG="optimized-$CONT_FILENAME"
+
+  sed --in-place 's/nutshell = false/nutshell = true/' $DIR/create-img-script.cfg
+fi
+
+mkdir -p $ROOT_DIR/nutshell
+chmod a+w $ROOT_DIR/nutshell
+cp $DIR/$CONT_IMG $ROOT_DIR/nutshell
+

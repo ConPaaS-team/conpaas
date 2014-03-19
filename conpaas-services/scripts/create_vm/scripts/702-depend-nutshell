@@ -1,0 +1,41 @@
+# Generate a script that will install the dependencies in the system. 
+cat <<EOF > $ROOT_DIR/nutshell_install
+#!/bin/bash
+# Function for displaying highlighted messages.
+function cecho() {
+  echo -en "\033[1m"
+  echo -n "#" \$@
+  echo -e "\033[0m"
+}
+
+# set root passwd
+echo "root:contrail" | chpasswd
+
+
+# install dependencies
+apt-get -f -y update
+# pre-accept sun-java6 licence
+echo "debconf shared/accepted-sun-dlj-v1-1 boolean true" | debconf-set-selections
+DEBIAN_FRONTEND=noninteractive apt-get -y --force-yes --no-install-recommends --no-upgrade \
+        install openssh-server wget git iptables-persistent patch libvirt-bin \
+                python python-pycurl python-openssl python-m2crypto \
+                python-cheetah python-netaddr libxslt1-dev subversion unzip less vim \
+                build-essential python-setuptools python-dev \
+                libapache2-mod-wsgi libcurl4-openssl-dev ntpdate
+            
+
+# remove cached .debs from /var/cache/apt/archives to save disk space
+apt-get clean
+
+#add the iptables rules for correcting checksums
+iptables -A POSTROUTING -t mangle -p udp --dport bootpc -j CHECKSUM --checksum-fill
+iptables-save > /etc/iptables/rules.v4
+
+exit 0
+EOF
+
+# Execute the script for installing the dependencies.
+chmod a+x $ROOT_DIR/nutshell_install
+chroot $ROOT_DIR /bin/bash /nutshell_install
+rm -f $ROOT_DIR/nutshell_install
+

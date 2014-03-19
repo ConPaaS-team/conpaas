@@ -1,0 +1,43 @@
+mkdir -p /var/lib/lxc/$HOST
+
+sed -i -r "s%(lxc.rootfs *= *).*%\1$ROOT_DIR%" $DIR/nutshell-config/lxc-config
+sed -i -r "s/(lxc.utsname *= *).*/\1$HOST/" $DIR/nutshell-config/lxc-config
+
+cp $DIR/nutshell-config/lxc-config /var/lib/lxc/$HOST/config
+
+
+cat <<EOF > /var/lib/lxc/$HOST/fstab
+proc            proc         proc    nodev,noexec,nosuid 0 0
+sysfs           sys          sysfs defaults  0 0
+
+EOF
+
+
+cat <<"EOF" > $ROOT_DIR/etc/rc.local
+#!/bin/sh
+if ip link ls tap0
+then true
+else
+  ip addr add 10.0.3.2/24 dev eth0
+  ip route add default via 10.0.3.1
+
+  ip tuntap add mode tap tap0
+  ip addr add 172.16.0.1/24 dev tap0
+  ip link set tap0 up
+  echo "container started" | netcat 10.0.3.1 30000 -q 10
+fi
+EOF
+
+cecho "Creating nutshell container"
+lxc-start -n $HOST -d
+
+cecho "Waiting for container to start"
+nc -l 30000
+
+echo 'y' | ssh-keygen -q -t rsa -N "" -f $DIR/id_rsa
+mkdir -p $ROOT_DIR/root/.ssh
+cat $DIR/id_rsa.pub > $ROOT_DIR/root/.ssh/authorized_keys
+ssh -i $DIR/id_rsa -o "StrictHostKeyChecking no" root@10.0.3.2 'su - stack -c ./conpaas_install'
+rm -f $DIR/id_rsa*
+
+rm -f $ROOT_DIR/$DEST/conpaas_install

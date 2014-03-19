@@ -1,0 +1,225 @@
+# Section: 003-create-image
+if [ `id -u` -ne 0 ]; then
+  cecho 'need root permissions for this script';
+  exit 1;
+fi
+
+
+# System rollback function
+function cleanup() {
+    # Set errormsg if something went wrong
+    [ $? -ne 0 ] && errormsg="Script terminated with errors"
+
+    #stop and remove container
+    if [ -d /var/lib/lxc/$HOST ];
+    then
+      lxc-shutdown -n $HOST
+      sleep 10s
+      lxc-destroy -n $HOST
+    fi
+    
+    for mpoint in /dev/pts /dev /proc /
+    do
+      mpoint="${ROOT_DIR?:not set}${mpoint}"
+
+      # Only attempt to umount $ROOT_DIR{/dev/pts,/dev,/proc,/} if necessary
+      if [ -d $mpoint ]
+      then
+        cecho "Umounting $mpoint"
+        umount -l $mpoint || true
+      fi
+    done
+ 
+    sleep 1s
+    losetup -d $LOOP_DEV_P
+    sleep 1s
+    kpartx -ds $LOOP_DEV
+
+    sleep 1s
+    losetup -d $LOOP_DEV
+    sleep 1s
+    rmdir $ROOT_DIR
+    # Print "Done" on success, $errormsg otherwise
+    cecho "${errormsg:-Done}"
+}
+
+
+
+
+# Check if required binaries are in $PATH
+for bin in dd parted losetup kpartx mkfs.ext3 tune2fs mount debootstrap chroot umount grub-install lxc-start
+do
+  if [ -z `which $bin` ]
+  then
+    if [ -x /usr/lib/command-not-found ]
+    then
+      /usr/lib/command-not-found $bin
+    else
+      echo "$bin: command not found"
+    fi
+    exit 1
+  fi
+done
+
+cecho "Creating empty disk image at" $FILENAME
+dd if=/dev/zero of=$FILENAME bs=1M count=1 seek=$FILESIZE
+
+cecho "Writing partition table"
+parted -s $FILENAME mklabel msdos
+
+cecho "Creating primary partition"
+cyl_total=`parted -s $FILENAME unit s print | awk '{if (NF > 2 && $1 == "Disk") print $0}' | sed 's/Disk .* \([0-9]\+\)s/\1/'`
+cyl_partition=`expr $cyl_total - 2048`
+parted -s $FILENAME unit s mkpart primary ext3 2048 $cyl_partition
+
+cecho "Setting boot flag"
+parted -s $FILENAME set 1 boot on
+
+
+LOOP_DEV=`losetup -f`
+cecho "Going to use" $LOOP_DEV
+losetup $LOOP_DEV $FILENAME
+
+
+dname=`kpartx -l $LOOP_DEV | awk '{print $1}'`
+PART_DEV=/dev/mapper/$dname
+cecho "Mapping partition to device"
+kpartx -as $LOOP_DEV
+
+
+cecho "Creating ext3 filesystem"
+
+echo 'y' | mkfs.ext3 $PART_DEV
+cecho "Setting label 'root'"
+tune2fs $PART_DEV -L root
+
+ROOT_DIR=`mktemp -d`
+cecho "Using $ROOT_DIR as mount point"
+
+cecho "Mounting disk image"
+
+LOOP_DEV_P=`losetup -f`
+losetup $LOOP_DEV_P $PART_DEV
+mount $LOOP_DEV_P $ROOT_DIR
+#mount $PART_DEV $ROOT_DIR
+
+# Always clean up on exit
+trap "cleanup" EXIT
+
+cecho "Starting debootstrap"
+debootstrap --arch $ARCH --include locales $DEBIAN_DIST $ROOT_DIR $DEBIAN_MIRROR
+
+opennebula_specific="iface eth0 inet static"
+
+ec2_specific=$(cat <<EOF
+allow-hotplug eth0
+iface eth0 inet dhcp
+EOF
+)
+
+if [ "$CLOUD" == "opennebula" ] ; then
+    net_config="$opennebula_specific"
+elif [ "$CLOUD" == "ec2" ] ; then
+    net_config="$ec2_specific"
+else
+  cecho 'Something went wrong. "CLOUD" shell variable is not properly defined.';
+  exit 1;
+fi
+
+
+cecho "Writing fstab"
+echo "/dev/sda1 / ext3 defaults 0 1" > $ROOT_DIR/etc/fstab
+
+cecho "Writing /etc/network/interfaces"
+cat <<EOF > $ROOT_DIR/etc/network/interfaces
+auto lo
+iface lo inet loopback
+auto eth0
+$net_config
+EOF
+cecho "Removing udev persistent rules"
+rm $ROOT_DIR/etc/udev/rules.d/70-persistent* || true
+
+cecho "Changing hostname"
+cat <<EOF > $ROOT_DIR/etc/hostname
+$HOST
+EOF
+
+sed -i "1i 127.0.0.1  $HOST" $ROOT_DIR/etc/hosts
+
+
+sed --in-place 's/main/main universe multiverse/'  $ROOT_DIR/etc/apt/sources.list 
+echo  'deb http://security.ubuntu.com/ubuntu precise-security main universe multiverse restricted' >>  $ROOT_DIR/etc/apt/sources.list
+
+
+# mount /dev/pts to avoid error message: Can not write log, openpty() failed (/dev/pts not mounted?) 
+cecho "Mounting /dev, /dev/pts and /proc in chroot"
+mount -obind /dev $ROOT_DIR/dev
+mount -obind /dev/pts $ROOT_DIR/dev/pts
+mount -t proc proc $ROOT_DIR/proc
+
+cecho "Setting keyboard layout"
+chroot $ROOT_DIR /bin/bash -c "echo 'debconf keyboard-configuration/variant  select  USA' | debconf-set-selections"
+
+cecho "Generating and setting locale"
+chroot $ROOT_DIR /bin/bash -c 'locale-gen en_US.UTF-8'
+chroot $ROOT_DIR /bin/bash -c 'update-locale LANG=en_US.UTF-8'
+
+cecho "Running apt-get update"
+chroot $ROOT_DIR /bin/bash -c 'apt-get -y update'
+
+chroot $ROOT_DIR /bin/bash -c "echo grub-pc grub-pc/install_devices multiselect $LOOP_DEV | debconf-set-selections -v"
+
+cecho "Installing $KERNEL"
+chroot $ROOT_DIR /bin/bash -c "apt-get -y install $KERNEL"
+#cecho "Installing grub package"
+#chroot $ROOT_DIR /bin/bash -c 'DEBIAN_FRONTEND=noninteractive apt-get -y --force-yes install grub'
+
+mkdir -p $ROOT_DIR/boot/grub
+cat <<EOF > $ROOT_DIR/boot/grub/device.map 
+(hd0)   $LOOP_DEV
+(hd0,1) $LOOP_DEV_P
+EOF
+
+chroot $ROOT_DIR grub-mkconfig -o /boot/grub/grub.cfg
+
+VMLINUZ=/boot/$(chroot $ROOT_DIR ls /boot/ | grep vmlinuz | head -n 1)
+INITRD=/boot/$(chroot $ROOT_DIR ls /boot/ | grep initrd | head -n 1)
+
+cecho "Writing /boot/grub/grub.cfg"
+cat <<EOF > $ROOT_DIR/boot/grub/grub.cfg
+set default=0
+set timeout=0
+menuentry '$(basename $VMLINUZ)' {
+  insmod ext2
+  set root='(hd0,1)'
+  linux  $VMLINUZ root=/dev/sda1
+  initrd $INITRD
+}
+EOF
+
+if [ "$CLOUD" == "ec2" ] ; then
+  cecho "Writing /boot/grub/menu.lst"
+  cat <<EOF > $ROOT_DIR/boot/grub/menu.lst
+default 0
+timeout 0
+
+title $(basename $VMLINUZ)
+  root (hd0,0)
+  kernel $VMLINUZ root=/dev/xvda1 ro
+  initrd $INITRD
+EOF
+fi
+
+cecho "Running grub-install"
+grub-install --no-floppy --recheck --root-directory=$ROOT_DIR --modules=part_msdos  $LOOP_DEV
+
+
+
+# disable auto start after package install
+cat <<EOF > $ROOT_DIR/usr/sbin/policy-rc.d
+#!/bin/sh
+exit 101
+EOF
+chmod 755 $ROOT_DIR/usr/sbin/policy-rc.d
+

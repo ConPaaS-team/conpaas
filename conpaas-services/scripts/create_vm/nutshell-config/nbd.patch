@@ -1,0 +1,33 @@
+--- /opt/stack/nova/nova/virt/disk/api.py	2013-12-02 12:30:38.000000000 +0000
++++ /opt/stack/nova/nova/virt/disk/myapi.py	2013-12-02 12:59:59.000000000 +0000
+@@ -401,12 +401,14 @@
+     It will umount the mounted names that are mounted
+     but leave the linked devices alone.
+     """
++    image_device = None
+     try:
+         img = _DiskImage(image=None, mount_dir=container_dir)
++        image_device = img.device
+         img.umount()
+     except Exception as exn:
+         LOG.exception(_('Failed to umount container filesystem: %s'), exn)
+-
++    return image_device
+ 
+ def inject_data_into_fs(fs, key, net, metadata, admin_password, files,
+                         mandatory=()):
+--- /opt/stack/nova/nova/virt/libvirt/driver.py	2013-12-02 13:12:15.000000000 +0000
++++ /opt/stack/nova/nova/virt/libvirt/mydriver.py	2013-12-02 12:57:58.000000000 +0000
+@@ -3351,7 +3351,11 @@
+             state = self.get_info(instance)['state']
+             container_dir = os.path.join(inst_path, 'rootfs')
+             if state == power_state.RUNNING:
+-                disk.clean_lxc_namespace(container_dir=container_dir)
++                container_root_device = disk.clean_lxc_namespace(container_dir=container_dir)
++                if container_root_device:
++                    self.virtapi.instance_update(
++                        nova_context.get_admin_context(), instance['uuid'],
++                        {'root_device_name': container_root_device}) 
+             else:
+                 disk.teardown_container(container_dir=container_dir)
+ 
