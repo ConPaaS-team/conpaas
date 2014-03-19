@@ -14,10 +14,19 @@ try {
         exit();
     }
 
-    $authenticated = $user->authenticate($_POST['username'], $_POST['password']);
-    if ($authenticated) {
-        echo json_encode(array('authenticated' => 1));
-        exit();
+    if ( isset($_POST['username']) && isset($_POST['password']) ) {
+        $authenticated = $user->authenticate($_POST['username'], $_POST['password']);
+        if ($authenticated) {
+            echo json_encode(array('authenticated' => 1));
+            exit();
+        }
+    }
+    if ( isset($_POST['uuid']) && ($_POST['uuid'] != "<none>") ) {
+        $authenticated = $user->authenticate_uuid($_POST['uuid']);
+        if ($authenticated) {
+            echo json_encode(array('authenticated' => 1));
+            exit();
+        }
     }
 
     echo json_encode(array(

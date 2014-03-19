@@ -1,0 +1,12 @@
+# Section: 5xx-blueprint
+
+cat <<EOF >> $ROOT_DIR/conpaas_install
+cecho "===== install packages required by blueprint ====="
+
+cecho "===== still TODO: set up all packages required by blueprint ====="
+exit 1 # remove this line after setting up all packages required by blueprint
+
+# remove cached .debs from /var/cache/apt/archives to save disk space
+apt-get clean
+EOF
+

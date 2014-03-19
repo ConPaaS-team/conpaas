@@ -17,6 +17,9 @@ import sys, os
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #sys.path.insert(0, os.path.abspath('.'))
+sys.path.append(os.path.abspath('../conpaas-services/config'))
+sys.path.append(os.path.abspath('../conpaas-services/contrib'))
+sys.path.append(os.path.abspath('/usr/local/lib/python2.6/dist-packages'))
 
 # -- General configuration -----------------------------------------------------
 
@@ -118,7 +121,7 @@ html_theme_options = {
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
 # pixels large.
-#html_favicon = None
+html_favicon = '../conpaas-frontend/www/images/conpaas.ico'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

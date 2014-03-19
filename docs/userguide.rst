@@ -44,7 +44,7 @@ ConPaaS currently contains nine services:
    system;
 
 -  **HTC service** providing a throughput-oriented scheduler for bags of tasks
-  submitted on demand.
+   submitted on demand.
 
 ConPaaS applications can be composed of any number of services. For
 example, a bio-informatics application may make use of a PHP and a MySQL
@@ -60,8 +60,9 @@ Web-based interface
 
 Most operations in ConPaaS can be done using the ConPaaS frontend, which
 gives a Web-based interface to the system. The front-end allows users to
-register, create services, upload code and data to the services, and
-configure each service.
+register (directly with ConPaaS or through an external Identification 
+Provider at Contrail), create services, upload code and data to the 
+services, and configure each service.
 
 -  The Dashboard page displays the list of services currently active in
    the system.
@@ -77,56 +78,71 @@ All the functionalities of the frontend are also available using a
 command-line interface. This allows one to script commands for ConPaaS.
 The command-line interface also features additional advanced
 functionalities, which are not available using the front-end.
+(The use of external Identification Provider at Contrail is not yet 
+available from the command-line interface.)
+
 It exists two command line clients: ``cpsclient.py`` and ``cps-tools``.
 
 ``cpsclient.py``
     Installation and configuration:
-        see :ref:`cpsclient-installation`.
-    Command arguments:
-    ::
+    see :ref:`cpsclient-installation`.
+
+    Command arguments::
+
         cpsclient.py usage
-    Available service types:
-    ::
+
+    Available service types::
+
         cpsclient.py available
-    Service command specific arguments:
-    ::
+
+    Service command specific arguments::
+
         cpsclient.py usage <service_type>
-    Create a service:
-    ::
+
+    Create a service::
+
         cpsclient.py create <service_type>
-    List services:
-    ::
+
+    List services::
+
         cpsclient.py list
 
 ``cps-tools``
     Installation and configuration:
         see :ref:`cpstools-installation`.
-    Command arguments:
-    ::
+
+    Command arguments::
+
         cps-tools --help
-    Available service types:
-    ::
+
+    Available service types::
+
         cps-tools service get_types
         cps-service get-types
-    Service command specific arguments:
-    ::
+
+    Service command specific arguments::
+
         cps-tools <service_type> --help
         cps-<service_type> --help
-    Create a service:
-    ::
+
+    Create a service::
+
         cps-tools service create <service_type>
         cps-tools <service_type> create
         cps-<service_type> create
-    List services:
-    ::
+
+    List services::
+
         cps-tools service list
         cps-service list
-    List applications:
-    ::
+
+    List applications::
+
         cps-tools application list
         cps-application list
-    List clouds:
-    ::
+
+    List clouds::
+
        cps-tools cloud list
        cps-cloud list
 
@@ -411,13 +427,16 @@ The ``add_nodes`` sub-command takes 4 arguments in that order: the PHP service i
 the number of backend nodes, the number of web nodes and the number of proxy nodes to add.
 It also take a 5th optional argument that specify in which cloud nodes will be created.
 For example, adding two backend nodes to PHP service id 1::
+
   cpsclient.py add_nodes 1 2 0 0
-Adding one backend node and one web node in a cloud provider called ``mycloud``:
-::
+
+Adding one backend node and one web node in a cloud provider called ``mycloud``::
+
   cpsclient.py add_nodes 1 1 1 0 mycloud
 
 You can also remove nodes using ``cpsclient.py``.
 For example, the following command will remove one backend node::
+
   cpsclient.py remove_nodes 1 1 0 0
 
 
@@ -457,8 +476,8 @@ of nodes that the cloud providers propose. They usually propose small instances,
 middle range instances and large instances. So, the autoscaling mechanism will
 select different kind of nodes depending on the service owner strategy choice.
 
-To enable autoscaling for the PHP service, run the command:
-::
+To enable autoscaling for the PHP service, run the command::
+
     cpsclient.py on_autoscaling <sid> <adapt_interval> <response_time_threshold> <strategy>
     
 where:
@@ -473,9 +492,10 @@ where:
     - "medium_up"
     - "high"
 
-For example:
-::
+For example::
+
     cpsclient.py on_autoscaling 1 5 2000 low
+
 enables autoscaling for PHP service 1, with an adaptation every 5 minutes, a
 response time threshold of 2000 milliseconds (2 seconds), and using the strategy
 low. This means that every 5 minutes, autoscaling will determine if it will add
@@ -484,15 +504,16 @@ response time and comparing it to the desired 2000 milliseconds. According the
 specified "low" strategy, if it decides to create nodes, it will always select the
 smallest instance from the cloud provider.
 
-Any time, the service owner may re-run the "on_autoscaling" command to tune autoscaling with different parameters:
-::
+Any time, the service owner may re-run the "on_autoscaling" command to tune autoscaling with different parameters::
+
     cpsclient.py on_autoscaling 1 10 1500 low
+
 this command updates the previous call to "on_autoscaling" and changes the
 adaptation interval to 10 minutes, and setting a lower threshold to 15000
 milliseconds.
 
-Autoscaling may be disabled by running command:
-::
+Autoscaling may be disabled by running command::
+
     cpsclient.py off_autoscaling <sid>
 
 
@@ -517,9 +538,7 @@ certain size. To upload large archives, you must use the command-line
 tools or Git.
 
 The following example illustrates how to upload an archive with the
-``cpsclient.py`` command line tool:
-
-::
+``cpsclient.py`` command line tool::
 
     $ cpsclient.py upload_code serviceid archivename
 
@@ -570,9 +589,7 @@ Uploading a database dump
 The ConPaaS frontend allows to easily upload database dumps to a MySQL
 service. Note that this functionality is restricted to dumps of a
 relatively small size. To upload larger dumps you can always use the
-regular ``mysql`` command for this:
-
-::
+regular ``mysql`` command for this::
 
     $ mysql mysql-ip-address -u mysqldb -p < dumpfile.sql
 
@@ -583,14 +600,14 @@ MySQL Galera nodes can be migrated from one cloud to another.
 The interface exists only on command line for now.
 
 Here is a possible scenario.
-Get the list of clouds:
-::
+Get the list of clouds::
+
     $ cpsclient.py clouds
     default
     amazon
 
-Get the list of current MySQL Galera nodes:
-::
+Get the list of current MySQL Galera nodes::
+
     $ cpsclient.py info 1
     subnet: None
     user_id: 1
@@ -610,14 +627,14 @@ The migrate_nodes arguments are the service identifier
 and a description of the migration to perform.
 That description contains three parts: the origin cloud,
 the node identifier in that cloud, and the destination cloud
-(``origin_cloud:node_id:dest_cloud``):
-::
+(``origin_cloud:node_id:dest_cloud``)::
+
     $ cpsclient.py migrate_nodes 1 default:4:amazon
     Migration started...
 
 The command may also migrate several nodes at once,
-with potentially different origin clouds and different destination clouds:
-::
+with potentially different origin clouds and different destination clouds::
+
     $ cpsclient.py migrate_nodes 1 default:1:amazon,amazon:i-4abc915e:default
     Migration started...
 
@@ -693,9 +710,7 @@ The bag of tasks file is a simple plain text file that contains the list
 of tasks along with their arguments to be executed. The tasks are
 separated by new lines. This file needs to be uploaded to the service,
 before the service can start sampling. Below is an example of a simple
-bag of tasks file containing three tasks:
-
-::
+bag of tasks file containing three tasks::
 
     /bin/sleep 1 && echo "slept for 1 seconds" >> /mnt/xtreemfs/log
     /bin/sleep 2 && echo "slept for 2 seconds" >> /mnt/xtreemfs/log
@@ -734,12 +749,49 @@ inside the first agent virtual machine and the service can be scaled up and
 down by adding and removing additional OSD nodes. The XtreemFS documentation 
 can be found at http://xtreemfs.org/userguide.php.
 
+
+SSL Certificates
+----------------
+
+The XtreemFS service uses SSL certificates for authorisation and authentication.
+There are two types of certificates, user-certifiaces and client-certificates.
+Both certificates can additionally be flagged as administrator certificates which
+allows performing administrative file-systems tasks when using them to access
+XtreemFS. Certificates are only valid for the service that was used to create them.
+The generated certificates are in P12-format.
+
+The difference between client- and user-certificates is how POSIX users and
+groups are handled when accessing volumes and their content. Client-certificates
+take the user and group with whom an XtreemFS command is called, or a mounted XtreemFS
+volume is accessed. So multiple users might share a single client-certificate.
+On the other hand, user-certificates contain a user and group inside the certificate.
+So usually, each user has her personal user-certificate. Both kinds of certificate can
+be used in parallel. Client-certificates are less secure, since the user and group with
+whom files are accessed can be arbitrarly changed if the mounting user has local 
+superuser rights. So client-certificates should only be used in trusted environments.
+
+Using the command line client, certificates can be created like this, where <adminflag>
+can be "true", "yes", or "1" to grant administrator rights::
+
+    cpsclient.py get_client_cert <service-id> <passphrase> <adminflag> <filename.p12>
+    cpsclient.py get_user_cert <service-id> <user> <group> <passphrase> <adminflag> <filename.p12>
+
 Accessing volumes directly
 --------------------------
 
 Once a volume has been created, it can be directly mounted on a remote site by
 using the mount.xtreemfs command. A mounted volume can be used like any local
-POSIX-compatible filesystem.
+POSIX-compatible filesystem. You need a certificate for mounting (see last section).
+The command looks like this, where <address> is the IP of an agent running
+an XtreemFS directory service (usually the first agent)::
+
+    mount.xtreemfs <address>/<volume> <mount-point> --pkcs12-file-path <filename.p12> --pkcs12-passphrase <passphrase> 
+
+The volume can be unmounted with the following command::
+
+    fusermount -u <mount-point> 
+
+Please refer to the XtreemFS user guide (http://xtreemfs.org/userguide.php) for further details.
 
 Policies
 --------
@@ -747,7 +799,11 @@ Policies
 Different aspects of XtreemFS (e.g. replica- and OSD-selection) can be 
 customised by setting certain policies. Those policies can be set via the 
 ConPaaS command line client (recommended) or directly via xtfsutil (see the
-XtreemFS user guide).
+XtreemFS user guide). The commands are like follows, were <policy_type> is
+"osd_sel", "replica_sel", or "replication"::
+
+   cpsclient.py list_policies <service-id> <policy_type> 
+   cpsclient.py set_policy <service-id> <policy_type> <volume> <policy> [factor] 
 
 Persistency
 -----------
@@ -755,9 +811,17 @@ Persistency
 If the XtreemFS service is shut down, all its data is permanently lost. If 
 persistency beyond the service runtime is needed, the XtreemFS service can be
 moved into a snapshot by using the download_manifest operation of the command
-line client. WARNING: This operation will automatically shut down the service. 
-The service and all of its stored volumes with their data can be moved back
-into a running ConPaaS service by using the manifest operation.
+line client. WARNING: This operation will automatically shut down the service
+and its application.  
+The whole application containing the service and all of its stored volumes 
+with their data can be moved back into a running ConPaaS application by using
+the manifest operation.
+
+The commands are::
+
+    cpsclient.py download_manifest <application-id> > <filename>
+    cpsclient.py manifest <filename>
+
 
 Important notes
 ---------------

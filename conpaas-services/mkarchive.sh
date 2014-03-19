@@ -10,6 +10,9 @@ export IPL_HOME=`pwd`/src/conpaas/services/taskfarm/ipl-2.2
 echo "Compiling taskfarm service..."
 $BATS_HOME/compile.sh
 
+# "compile" XtreemFS Auth Provider, this is a fix for repository Commit Hooks, rejecting data files
+cp src/conpaas/services/xtreemfs/etc/policies/ConpaasX509AuthProvider.class_ src/conpaas/services/xtreemfs/etc/policies/ConpaasX509AuthProvider.class
+
 # Make the archive 
 mkdir ConPaaS
 cp -r config contrib misc sbin scripts src ConPaaS > /dev/null

@@ -5,7 +5,7 @@
 """
 
 from os.path import exists, join
-from os import remove
+from os import makedirs, remove
 
 from conpaas.core.expose import expose
 from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse
@@ -16,6 +16,7 @@ from conpaas.core.misc import run_cmd
 
 from threading import Lock
 import pickle
+import base64
 
 class XtreemFSAgent(BaseAgent):
     def __init__(self,
@@ -219,10 +220,12 @@ class XtreemFSAgent(BaseAgent):
     @expose('POST')
     def get_snapshot(self, kwargs):
         # pack data from:
-        #     /etc/xos/xtreemfs/ (some files later for certificates)
-        #     /var/lib/xtreemfs/ (everything, after shutting down the services)
+        #     /etc/cpsagent/certs/ (original agent certificates)
+        #     /etc/xos/xtreemfs/ (config files, SSL-certificates, policies)
+        #     /var/lib/xtreemfs/ (save everything, after shutting down the services)
+        #     /var/log/xtreemfs/ (xtreemfs log files)
         filename = "/root/snapshot.tar.gz"
-        dirs = "var/lib/xtreemfs/ etc/xos/xtreemfs/ var/log/xtreemfs/"
+        dirs = "var/lib/xtreemfs/ etc/xos/xtreemfs/ var/log/xtreemfs/ etc/cpsagent/certs"
 
         err, out = run_cmd("tar -czf %s %s" % (filename, dirs), "/")
         if err:
@@ -230,3 +233,16 @@ class XtreemFSAgent(BaseAgent):
             return HttpErrorResponse(err)
 
         return HttpFileDownloadResponse("snapshot.tar.gz", filename)
+        
+    @expose('POST')
+    def set_certificates(self, kwargs):
+        self.logger.debug('set_snapshot called')
+    	# write certificates and truststore to the xtreemfs config directory
+    	path = "/etc/xos/xtreemfs/truststore/certs"
+    	if not exists(path):
+  			makedirs(path)
+    	open(path + "/dir.p12", 'wb').write(base64.b64decode(kwargs['dir']))
+    	open(path + "/mrc.p12", 'wb').write(base64.b64decode(kwargs['mrc']))
+    	open(path + "/osd.p12", 'wb').write(base64.b64decode(kwargs['osd']))
+    	open(path + "/trusted.jks", 'wb').write(base64.b64decode(kwargs['truststore']))
+    	return HttpJsonResponse()

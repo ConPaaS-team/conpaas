@@ -31,7 +31,13 @@ class Page {
 			}
 			return;
 		}
-		$uinfo = UserData::getUserByName($_SESSION['username']);
+                if (isset($_SESSION['uuid']) && ($_SESSION['uuid'] != "<none>") ) { /* if you check $_SESSION['username'] first, you will NOT be able to login with Contrail IdP */
+                    user_error('Try UserData::getUserByUuid(' . $_SESSION['uuid'] . ')');
+                    $uinfo = UserData::getUserByUuid($_SESSION['uuid']);
+                } else {
+                    user_error('Try UserData::getUserByName(' . $_SESSION['username'] . ')');
+                    $uinfo = UserData::getUserByName($_SESSION['username']);
+                }
 		if ($uinfo === false) {
 			unset($_SESSION['uid']);
 			self::redirect('login.php');

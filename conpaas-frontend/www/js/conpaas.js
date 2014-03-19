@@ -130,16 +130,18 @@ conpaas.http = (function (this_module) {
         conpaas.ui.visible('pgstatInfo', false);
     },
     req: function (url, params, method, responseCallback, errorCallback,
-            dataType) {
+            dataType, isAsync = true) {
         var that = this,
             params = params || {},
             method = method || 'get',
             dataType = dataType || 'json';
         conpaas.ui.visible('pgstatError', false);
+        //console.log(url + '  ' + isAsync)
         $.ajax({
             url: url,
             type: method,
             dataType: dataType,
+            async: isAsync,
             data: params,
             success: function (response) {
                 //handle error sent
@@ -297,20 +299,46 @@ conpaas.model = (function (this_module) {
 
 conpaas.ui = (function (this_module) {
     this_module.Page = conpaas.new_constructor(
-    /* extends */Object,
-    /* constructor */function (server) {
-        this.server = server;
-    },
-    /* methods */{
-    attachHandlers: function () {
-        var that = this;
-        $('#logout').click(function () {
-            that.server.req('ajax/logout.php', {}, 'post',
-                    function () {
-                window.location = 'index.php';
-                });
+        /* extends */Object,
+        /* constructor */function (server) {
+            this.server = server;
+        },
+        /* methods */{
+        attachHandlers: function () {
+            var that = this;
+            $('#logout').click(function () {
+                var loggedOutFromConPaaS = false;
+
+                var username = 'UnKnOwN';
+                var uuid = '';
+
+                // figure out if uuid is set
+
+                that.server.req('ajax/logout.php', {}, 'post',
+                    function (response) {
+                        username = response.username;
+                        uuid = response.uuid;
+                        //console.log('ConPaaS: logout OK (' + username + ', ' + uuid + ')');
+                        //alert('ConPaaS logged out ( hopefully )');
+                        //window.location = 'index.php'; 
+                        loggedOutFromConPaaS = true;
+                    }, 
+                    function (error) {
+                        console.log('ConPaaS: logout ERROR');
+                        //alert('ConPaaS logout error');
+                        page.displayError(error.name, error.details);
+                    }, 
+                    null,
+                    false /* wait for request to complete */
+                );
+
+                if (loggedOutFromConPaaS && uuid && uuid.length > 0) {
+                    window.location = 'contrail/contrail-logout.php?returnTo=/index.php';
+                } else {
+                    window.location = 'index.php'; 
+                }
             });
-    }
+        },
     });
 
     this_module.ProgressBar = conpaas.new_constructor(

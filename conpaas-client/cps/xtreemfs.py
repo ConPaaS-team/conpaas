@@ -2,6 +2,8 @@ import sys
 
 from cps.base import BaseClient
 
+import base64
+
 class Client(BaseClient):
 
     def info(self, service_id):
@@ -45,6 +47,8 @@ class Client(BaseClient):
         print "    list_volumes      serviceid"
         print "    create_volume     serviceid vol_name"
         print "    delete_volume     serviceid vol_name"
+        print "    get_client_cert   serviceid passphrase adminflag filename"
+        print "    get_user_cert     serviceid user group passphrase adminflag filename"
         print "    list_policies     serviceid policy_type # [ osd_sel | replica_sel | replication ]"
         print "    set_policy        serviceid policy_type vol_name policy [factor]"
         print "    toggle_persistent serviceid"
@@ -57,8 +61,9 @@ class Client(BaseClient):
         command = argv[1]
 
         if command in ( 'add_nodes', 'remove_nodes', 'list_volumes',
-                'create_volume', 'delete_volume', 'list_policies',
-                'set_policy', 'toggle_persistent', 'set_osd_size' ):
+                'create_volume', 'delete_volume', 'get_client_cert', 
+                'get_user_cert', 'list_policies', 'set_policy', 
+                'toggle_persistent', 'set_osd_size' ):
             try:
                 sid = int(argv[2])
             except (IndexError, ValueError):
@@ -114,6 +119,38 @@ class Client(BaseClient):
                 print res['error']
             else:
                 print "Volume", params['volumeName'], "deleted" 
+
+        if command == 'get_client_cert':
+            try:
+                params = { 'passphrase': argv[3],
+                           'adminflag': str(argv[4]).lower() in ("yes", "y", "true", "t", "1") }
+                filename = argv[5]
+            except IndexError:
+                self.usage(argv[0])
+                sys.exit(0)
+
+            res = self.callmanager(sid, 'get_client_cert', True, params)
+            if 'error' in res:
+                print res['error']
+            else:
+                open(filename, 'wb').write(base64.b64decode(res['cert']))
+
+        if command == 'get_user_cert':
+            try:
+                params = { 'user': argv[3],
+                           'group': argv[4],
+                           'passphrase': argv[5],
+                           'adminflag': str(argv[6]).lower() in ("yes", "y", "true", "t", "1") }
+                filename = argv[7]
+            except IndexError:
+                self.usage(argv[0])
+                sys.exit(0)
+
+            res = self.callmanager(sid, 'get_user_cert', True, params)
+            if 'error' in res:
+                print res['error']
+            else:
+                open(filename, 'wb').write(base64.b64decode(res['cert']))
 
         if command == 'list_volumes':
             res = self.callmanager(sid, 'listVolumes', False, {})

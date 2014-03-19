@@ -1,6 +1,7 @@
 #!/bin/bash
 
-cp $CPS_HOME/src/conpaas/services/xtreemfs/etc/* $ETC/
+cp -r $CPS_HOME/src/conpaas/services/xtreemfs/etc/* /etc/xos/xtreemfs/
+cp -r $CPS_HOME/src/conpaas/services/xtreemfs/etc/* $ETC/
 
 $CPS_HOME/sbin/agent/default-cpsagent -c $ROOT_DIR/config.cfg 1>$ROOT_DIR/agent.out 2>$ROOT_DIR/agent.err &
 agent_pid=$!

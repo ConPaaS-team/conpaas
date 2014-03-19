@@ -15,7 +15,7 @@ ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
 # the i18n builder cannot share the environment and doctrees with the others
 I18NSPHINXOPTS  = $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
 
-.PHONY: help clean html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest gettext
+.PHONY: help clean untex html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest gettext
 
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
@@ -38,10 +38,21 @@ help:
 	@echo "  changes    to make an overview of all changed/added/deprecated items"
 	@echo "  linkcheck  to check all external links for integrity"
 	@echo "  doctest    to run all doctests embedded in the documentation (if enabled)"
+	@echo "  untex      to replace TeX \textcolor{color}{text} by appropriate HTML code"
+	@echo "  install    to 'make dirhtml untex' and copy results to /var/www/documentation"
 
 clean:
 	-rm -rf $(BUILDDIR)/* api
  
+untex: 
+	sed -i 's,\\textcolor{\([^}]*\)}{\([^}]*\)},<font color="\1">\2</font>,' `grep -rl textcolor ${BUILDDIR}` 
+
+install: dirhtml untex
+	@mkdir -p /var/www/documentation
+	( cd ./_build/dirhtml ; tar cf - . ) | ( cd /var/www/documentation ; tar xf - )
+	@echo
+	@echo "Installation finished. The HTML pages are in /var/www/documentation."
+
 api:
 	$(SPHINXAPIDOC) -o api ../conpaas-services/src/conpaas/ 
 	$(SPHINXAPIDOC) -o api ../conpaas-director/cpsdirector/
@@ -51,7 +62,7 @@ html: api
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
 
-dirhtml:
+dirhtml: api
 	$(SPHINXBUILD) -b dirhtml $(ALLSPHINXOPTS) $(BUILDDIR)/dirhtml
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/dirhtml."

@@ -19,6 +19,11 @@ OS_ARCH = x86_64
 OS_ROOT = hda
 DISK_TARGET = hda
 CONTEXT_TARGET = hdc
+# specify COST_PER_TIME as currency amount / ATU (in seconds)
+# so            $ 6.00 / 3600  is 6 dollar per hour             (or part thereof)
+# and           $ 1.00 / 600   is 1 dollar per 10 minutes       (or part thereof)
+COST_PER_TIME = $ 1.00/600
+MAX_VMS = 9
 
 # Here we specify the names of our additional clouds
 OTHER_CLOUDS = ec2virginia, amsterdam
@@ -36,6 +41,11 @@ KEY_NAME = my_keyname
 REGION = ec2.us-east-1.amazonaws.com
 IMAGE_ID = ami-bb780cd2
 SIZE_ID = t1.micro
+# specify COST_PER_TIME as currency amount / ATU (in seconds)
+# so            $ 6.00 / 3600  is 6 dollar per hour             (or part thereof)
+# and           $ 1.00 / 600   is 1 dollar per 10 minutes       (or part thereof)
+COST_PER_TIME = $ 12.00/3600
+MAX_VMS = 9
 
 [amsterdam]
 # We also have a data center in Amsterdam with a running OpenNebula installation 
@@ -54,6 +64,11 @@ OS_ARCH = x86_64
 OS_ROOT = hda
 DISK_TARGET = hda
 CONTEXT_TARGET = hdc
+# specify COST_PER_TIME as currency amount / ATU (in seconds)
+# so            $ 6.00 / 3600  is 6 dollar per hour             (or part thereof)
+# and           $ 1.00 / 600   is 1 dollar per 10 minutes       (or part thereof)
+COST_PER_TIME = $ 6.00/3600
+MAX_VMS = 9
 
 
 [director]

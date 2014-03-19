@@ -12,12 +12,14 @@ from conpaas.core.manager import BaseManager
 from conpaas.core.manager import ManagerException
 
 from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse
+from conpaas.core.misc import run_cmd
 
 from conpaas.services.xtreemfs.agent import client
 
 import uuid
 import base64
 import subprocess
+import tempfile
 
 def invalid_arg(msg):
     return HttpErrorResponse(ManagerException(
@@ -31,7 +33,7 @@ class XtreemFSManager(BaseManager):
         # node lists
         self.nodes = []    # all nodes         
         self.osdNodes = [] # only the OSD nodes  
-        self.mrcNodes = [] # onle the MRC nodes
+        self.mrcNodes = [] # only the MRC nodes
         self.dirNodes = [] # only the DIR nodes   
 
         # node counters
@@ -55,6 +57,10 @@ class XtreemFSManager(BaseManager):
 
         # Setup the clouds' controller
         self.controller.generate_context('xtreemfs')
+        
+        # filename of the client certificate
+        self.client_cert_filename = self.config_parser.get('manager', 'CERT_DIR') + "/client.p12"
+        self.client_cert_passphrase = "asdf1234"
 
     def __get__uuid(self, node_id, node_type):
         if node_type == 'dir':
@@ -79,6 +85,64 @@ class XtreemFSManager(BaseManager):
             
         return node_uuid
 
+    def _create_certs(self, nodes):
+        for node in nodes:
+            certs = {}
+            # create a temporary directory
+            tmpdir = tempfile.mkdtemp()
+            # create certificates and truststore
+            creation_cmd  = "bash "
+            creation_cmd += self.config_parser.get('manager', 'CONPAAS_HOME')
+            creation_cmd += "/src/conpaas/services/xtreemfs/etc/"
+            creation_cmd += "generate_certificate.sh -dmo -t"
+            out, err = run_cmd(creation_cmd, tmpdir)
+            self.logger.debug('_create_certs: stderr %s' % out)
+            self.logger.debug('_create_certs: stdout %s' % err)
+            # store result as base64 encoded string into dictionary for transfer
+            certs['dir'] = base64.b64encode(open(tmpdir + "/dir.p12", 'rb').read())
+            certs['mrc'] = base64.b64encode(open(tmpdir + "/mrc.p12", 'rb').read())
+            certs['osd'] = base64.b64encode(open(tmpdir + "/osd.p12", 'rb').read())
+            certs['truststore'] = base64.b64encode(open(tmpdir + "/trusted.jks", 'rb').read())
+            # transfer data to agent node
+            client.set_certificates(node.ip, 5555, certs)
+
+    def _create_client_cert(self, passphrase, adminflag):
+        # create a temporary directory
+        self.logger.debug('_create_client_cert: creating tmp dir')
+        tmpdir = tempfile.mkdtemp()
+        self.logger.debug('_create_client_cert: created tmp dir')
+        # create certificates and truststore
+        creation_cmd  = "bash "
+        creation_cmd += self.config_parser.get('manager', 'CONPAAS_HOME')
+        creation_cmd += "/src/conpaas/services/xtreemfs/etc/"
+        creation_cmd += "generate_certificate.sh -c -p " + passphrase
+        if adminflag:
+            creation_cmd += " -s"
+        self.logger.debug('_create_client_cert: executing script')
+        out, err = run_cmd(creation_cmd, tmpdir)
+        self.logger.debug('_create_client_cert: stderr %s' % out)
+        self.logger.debug('_create_client_cert: stdout %s' % err)
+        # store result as base64 encoded string into dictionary for transfer
+        return open(tmpdir + "/client.p12", 'rb').read()
+
+    def _create_user_cert(self, user, group, passphrase, adminflag):
+        # create a temporary directory
+        self.logger.debug('_create_user_cert: creating tmp dir')
+        tmpdir = tempfile.mkdtemp()
+        self.logger.debug('_create_user_cert: created tmp dir')
+        # create certificates and truststore
+        creation_cmd  = "bash "
+        creation_cmd += self.config_parser.get('manager', 'CONPAAS_HOME')
+        creation_cmd += "/src/conpaas/services/xtreemfs/etc/"
+        creation_cmd += "generate_certificate.sh -u " + user + " -g " + group + " -p " + passphrase
+        if adminflag:
+            creation_cmd += " -s"
+        self.logger.debug('_create_user_cert: executing script')
+        out, err = run_cmd(creation_cmd, tmpdir)
+        self.logger.debug('_create_user_cert: stderr %s' % out)
+        self.logger.debug('_create_user_cert: stdout %s' % err)
+        # store result as base64 encoded string into dictionary for transfer
+        return open(tmpdir + "/" + user + ".p12", 'rb').read()
 
     def _start_dir(self, nodes):
         self.logger.debug("_start_dir(%s)" % nodes)
@@ -212,6 +276,12 @@ class XtreemFSManager(BaseManager):
             self.dirNodes += node_instances
             self.mrcNodes += node_instances
             self.osdNodes += node_instances
+
+            if not resuming:
+                # create certificates for DIR, MRC, OSD and copy them to the agent 
+                self._create_certs(node_instances)
+                # create a client certificate used by the manager to invoke xtreemfs operations
+                open(self.client_cert_filename, 'wb').write(self._create_client_cert(self.client_cert_passphrase))
             
             # start DIR, MRC, OSD
             if not resuming:
@@ -362,17 +432,22 @@ class XtreemFSManager(BaseManager):
         #if nr_osd > 0 and self.osdCount == 0:
         #    KilledOsdNodes.append(self.dirNodes[0])
         #self.KillOsd(KilledOsdNodes)
-          
+
+        for node in node_instances:
+            client.startup(node.ip, 5555)
+        
+        if not resuming:
+            # create certificates for DIR, MRC, OSD and copy them to the agent 
+            self._create_certs(node_instances)
+
         # Startup DIR agents
         for node in dirNodesAdded:
-            client.startup(node.ip, 5555)
             data = client.createDIR(node.ip, 5555)
             self.logger.info('Received %s from %s', data, node.id)
             self.dirCount += 1
 
         # Startup MRC agents
         for node in mrcNodesAdded:
-            client.startup(node.ip, 5555)
             data = client.createMRC(node.ip, 5555, self.dirNodes[0].ip)
             self.logger.info('Received %s from %s', data, node.id)
             self.mrcCount += 1
@@ -581,7 +656,9 @@ class XtreemFSManager(BaseManager):
                  '%s:32636/%s' % (self.mrcNodes[0].ip, volumeName),
                  "-u", owner,
                  "-g", owner,
-                 "-m", "777" ]
+                 "-m", "777",
+                 "--pkcs12-file-path", self.client_cert_filename,
+                 "--pkcs12-passphrase", self.client_cert_passphrase ]
 
         process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         (stdout, stderr) = process.communicate()
@@ -607,6 +684,8 @@ class XtreemFSManager(BaseManager):
 
         args = [ 'rmfs.xtreemfs',
                  '-f',
+                 "--pkcs12-file-path", self.client_cert_filename,
+                 "--pkcs12-passphrase", self.client_cert_passphrase,
                  '%s:32636/%s' % (self.mrcNodes[0].ip, volumeName) ]
 
         process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -629,7 +708,10 @@ class XtreemFSManager(BaseManager):
         if self.state != self.S_RUNNING:
             return HttpErrorResponse('ERROR: Wrong state to view volumes')
 
-        args = [ 'lsfs.xtreemfs', self.mrcNodes[0].ip + ':32636' ]
+        args = [ 'lsfs.xtreemfs', 
+                 "--pkcs12-file-path", self.client_cert_filename,
+                 "--pkcs12-passphrase", self.client_cert_passphrase,
+                 self.mrcNodes[0].ip + ':32636' ]
 
         process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         (stdout, stderr) = process.communicate()
@@ -679,8 +761,10 @@ class XtreemFSManager(BaseManager):
 
         # mount.xtreemfs <dir_ip>:32638/<volumename> <mountpoint>
         process = subprocess.Popen(['mount.xtreemfs',
-                                     '%s:32638/%s' % (self.dirNodes[0].ip, volumeName),
-                                     mountPoint],  
+                                    "--pkcs12-file-path", self.client_cert_filename,
+                                    "--pkcs12-passphrase", self.client_cert_passphrase,
+                                    '%s:32638/%s' % (self.dirNodes[0].ip, volumeName),
+                                    mountPoint],  
                                     stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         (stdout, stderr) = process.communicate()
         process.poll()
@@ -896,10 +980,19 @@ class XtreemFSManager(BaseManager):
                 self.logger.debug("nodes_snapshot[%s]['%s']: %s" % (node.id,
                     key, nodes_snapshot[node.id][key]))
 
+        # manager data
+        filename = "/root/snapshot.tar.gz"
+        dirs = self.config_parser.get('manager', 'CERT_DIR')
+
+        err, out = run_cmd("tar -czf %s %s" % (filename, dirs), "/")
+        if err:
+            self.logger.exception(err)
+            return HttpErrorResponse(err)
+        manager_data = base64.b64encode(open(filename, 'rb').read())
+        
         self.logger.debug("Shutting all agents down")
         self._do_shutdown(stop_services=False)
-
-        return HttpJsonResponse(nodes_snapshot.values())
+        return HttpJsonResponse({'nodes' : nodes_snapshot.values(), 'manager' : manager_data})
 
     @expose('POST')
     def set_service_snapshot(self, kwargs):
@@ -907,6 +1000,9 @@ class XtreemFSManager(BaseManager):
             return HttpErrorResponse(
                 'ERROR: Wrong state to set service snapshot.')
 
+        if not 'manager' in kwargs:
+            return HttpErrorResponse(
+               "ERROR: Required argument (manager) doesn't exist")
         if not 'nodes' in kwargs:
             return HttpErrorResponse(
                "ERROR: Required argument (nodes) doesn't exist")
@@ -975,7 +1071,42 @@ class XtreemFSManager(BaseManager):
                 self.logger.exception(err)
                 raise err
 
+        # restore manager data
+        manager_data = kwargs['manager']
+        filename = "/root/manager_data.tar.gz"
+        open(filename, 'wb').write(base64.b64decode(manager_data))
+        
+        err, out = run_cmd("tar -xzf %s" % filename, "/")
+        if err:
+            self.logger.exception(err)
+            return HttpErrorResponse(err)
+
         self.logger.info("set_service_snapshot: starting all agent services")
         self._start_all()
         self.logger.info("set_service_snapshot: all agent services started")
         return HttpJsonResponse()
+        
+
+    @expose('POST')
+    def get_user_cert(self, kwargs):
+        if not 'user' in kwargs:
+            return HttpErrorResponse("ERROR: Required argument (user) doesn't exist")
+        if not 'group' in kwargs:
+            return HttpErrorResponse("ERROR: Required argument (group) doesn't exist")
+        if not 'passphrase' in kwargs:
+            return HttpErrorResponse("ERROR: Required argument (passphrase) doesn't exist")
+        if not 'adminflag' in kwargs:
+            return HttpErrorResponse("ERROR: Required argument (adminflag) doesn't exist")
+        cert = self._create_user_cert(kwargs['user'], kwargs['group'], 
+                kwargs['passphrase'], kwargs['adminflag'])
+        return HttpJsonResponse({'cert' : base64.b64encode(cert)}) 
+
+    @expose('POST')
+    def get_client_cert(self, kwargs):
+        if not 'passphrase' in kwargs:
+            return HttpErrorResponse("ERROR: Required argument (passphrase) doesn't exist")
+        if not 'adminflag' in kwargs:
+            return HttpErrorResponse("ERROR: Required argument (adminflag) doesn't exist")
+        cert = self._create_client_cert(kwargs['passphrase'], kwargs['adminflag'])
+        return HttpJsonResponse({'cert' : base64.b64encode(cert)}) 
+

@@ -129,6 +129,7 @@ class Provider(object):
     RACKSPACE_NOVA_LON = 'rackspace_nova_lon'
     RACKSPACE_NOVA_ORD = 'rackspace_nova_ord'
 
+    FEDERATION = 'federation'
 
 class NodeState(object):
     """

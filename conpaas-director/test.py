@@ -21,7 +21,8 @@ TEST_USER_DATA = {
     'email': 'test@example.org',
     'affiliation': 'Test Institution', 
     'password': 'properpass', 
-    'credit': USER_CREDIT
+    'credit': USER_CREDIT,
+    'uuid': 'TestUuid'
 }
 
 class Common(unittest.TestCase):
@@ -37,7 +38,8 @@ class Common(unittest.TestCase):
                                        data['email'],
                                        data['affiliation'],
                                        data['password'],
-                                       data['credit'])
+                                       data['credit'],
+                                       data['uuid'])
 
 class DbTest(Common):
 
@@ -309,7 +311,8 @@ class DirectorTest(Common):
             'email': 'test_other@example.org',
             'affiliation': 'Test Institution',
             'password': 'properpass',
-            'credit': USER_CREDIT - 10
+            'credit': USER_CREDIT - 10,
+            'uuid' : 'SecondUuid'
         }
         self.create_user(other_user)
 
@@ -431,6 +434,7 @@ class DirectorTest(Common):
 
         user = simplejson.loads(response.data)
         self.assertEquals(TEST_USER_DATA['affiliation'], user['affiliation'])
+        # TODO test uuid ??
 
     def test_login_unicode_encode_error(self):
         self.create_user()
@@ -474,7 +478,8 @@ class DirectorTest(Common):
         data = { 
             'username': 'namà', 'fname': 'Namé', 'lname': 'Surnàme',
                 'email': 'test@example.org', 'affiliation': 'Our Affiliàtion', 
-                    'password': 'properpàss', 'credit': USER_CREDIT
+                    'password': 'properpàss', 'credit': USER_CREDIT,
+                        'uuid': 'TestUuid'
         }
         self.__test_new_user(data)
 
@@ -488,7 +493,8 @@ class DirectorTest(Common):
             'email': 'test@example.org', 
             'affiliation': 'whatever',
             'password': TEST_USER_DATA['password'], 
-            'credit': USER_CREDIT
+            'credit': USER_CREDIT,
+            'uuid': TEST_USER_DATA['uuid'], 
         }
 
         response = self.app.post('/new_user', data=data)
@@ -507,7 +513,8 @@ class DirectorTest(Common):
             'email': TEST_USER_DATA['email'], 
             'affiliation': 'whatever',
             'password': TEST_USER_DATA['password'], 
-            'credit': USER_CREDIT 
+            'credit': USER_CREDIT,
+            'uuid': TEST_USER_DATA['uuid'], 
         }
 
         response = self.app.post('/new_user', data=data)
@@ -526,6 +533,7 @@ class DirectorTest(Common):
             'affiliation': 'whatever',
             'password': TEST_USER_DATA['password'],
             'credit': too_much_credit,
+            'uuid': TEST_USER_DATA['uuid'], 
         }
 
         response = self.app.post('/new_user', data=data)
@@ -548,6 +556,7 @@ class DirectorTest(Common):
             'affiliation': 'whatever',
             'password': TEST_USER_DATA['password'],
             'credit': more_credit,
+            'uuid': TEST_USER_DATA['uuid'], 
         }
         response = self.app.post('/new_user', data=data)
         print "%s" % response.status_code
@@ -564,6 +573,7 @@ class DirectorTest(Common):
             'affiliation': 'whatever',
             'password': TEST_USER_DATA['password'], 
             'credit': USER_CREDIT,
+            'uuid': TEST_USER_DATA['uuid'], 
         }
 
         response = self.app.post('/new_user', data=data)

@@ -1,9 +1,6 @@
 <?php
 /* Copyright (C) 2010-2013 by Contrail Consortium. */
 
-
-
-
 require_once('__init__.php');
 require_module('ui/page/login');
 require_module('recaptcha');
@@ -15,15 +12,45 @@ if (isset($_SESSION['uid'])) {
 }
 
 $page = new LoginPage();
+echo $page->renderDoctype();
 ?>
-
-<?php echo $page->renderDoctype(); ?>
 <html>
     <head>
-          <?php echo $page->renderContentType(); ?>
-        <?php echo $page->renderTitle(' - Login'); ?>
-        <?php echo $page->renderIcon(); ?>
-        <?php echo $page->renderHeaderCSS(); ?>
+        <script src="js/jquery-1.5.js"></script>
+        <script>
+            // example found on   http://stackoverflow.com/questions/439463/how-to-get-get-and-post-variables-with-jquery
+            // maybe move this code to login.js ??
+            var jGets = new Array ();
+            var jPosts = new Array ();
+            <?
+            if(isset($_GET)) {
+                foreach($_GET as $key => $val)
+                    echo "jGets[\"$key\"]=\"$val\";\n";
+            }
+            if(isset($_POST)) {
+                foreach($_POST as $key => $val)
+                    echo "jPosts[\"$key\"]=\"$val\";\n";
+            }
+            ?>
+        </script>
+        <?php 
+        echo $page->renderContentType(); 
+        if (isset($_GET['get']) || isset($_POST['get'])) {
+                echo $page->renderTitle(' - Login by Contrail'); 
+        } else {
+                echo $page->renderTitle(' - Login'); 
+        }
+        echo $page->renderIcon(); 
+        echo $page->renderHeaderCSS();
+        ?>
+        <script>
+         <?php
+             // there might be a better place for this piece of code
+             $return_url = Conf::getFrontendURL() . '/login.php';
+             $return_url = str_replace( ":443", "", $return_url );
+             echo "MyURL = \"$return_url\";\n";
+         ?>
+        </script>
     </head>
 <body class="loginbody">
     <div class="logo">
@@ -38,7 +65,7 @@ $page = new LoginPage();
             <ul>
                 <li> it can deploy itself on the cloud </li>
                 <li> it monitors its own performance </li>
-                <li> it can increase or decrease its processing capacity by dynamically <br />(de-)provisioning instances of itself in the cloud </li>
+                <li> it can increase or decrease its processing capacity by dynamically (de-)provisioning instances of itself in the cloud </li>
             </ul>
             <em>Copyright &copy;2011-<?php echo date('Y')?> Contrail consortium.<br />All rights reserved.<br />ConPaaS <?php echo Director::getVersion(); ?>.</em>
             </p>
@@ -48,6 +75,16 @@ $page = new LoginPage();
             <h2 class="title" id="login-title">Login</h2>
             <h2 class="title invisible" id="register-title">Register</h2>
             <table>
+                <tr>
+                    <td> </td>
+                    <td class="actions" align="left">
+                        <input type="button" value="Login with external IdP" id="contrail" title="Login with external IdP" />
+                    <!--
+                        <input type="image" src="/images/google.gif" title="Login with Google" id="contrail" height="20"/>
+                        <input type="image" src="/images/contrail.gif" title="Login with Contrail" id="contrail" height="20"/>
+                    -->
+                    </td>
+                </tr>
                 <tr>
                     <td class="name">username</td>
                     <td class="input">
@@ -90,6 +127,12 @@ $page = new LoginPage();
                         <input type="text" id="affiliation" />
                     </td>
                 </tr>
+                <tr class="register_form" style="display: none">
+                    <td class="name invisible">uuid</td>
+                    <td class="input invisible">
+                        <input type="text" name="uuid" id="uuid" size="30" value="<none>" />
+                    </td>
+                </tr>
                 <?php
                 /* Only enable captcha checks if the required configuration
                  * options are provided */
@@ -115,6 +158,7 @@ $page = new LoginPage();
                     <td class="actions">
                         <input class="active" type="button" value="login" id="login" />
                         <input type="button" class="invisible" value="register" id="register" />
+                        <!-- <input type="button" value="myregister" id="myregister" /> -->
                         <a id="toregister" href="javascript: void(0);">register</a>
                     </td>
                 </tr>
@@ -130,5 +174,10 @@ $page = new LoginPage();
         </table>
     </div>
     <?php echo $page->renderJSLoad(); ?>
+
+    <form style="display: hidden" action="/contrail/contrail-idp.php" method="POST" id="form">
+      <input type="hidden" id="ReturnTo" name="ReturnTo" value=""/>
+      <input type="hidden" id="get" name="get" value=""/>
+    </form>
 </body>
 </html>

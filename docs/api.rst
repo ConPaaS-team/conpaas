@@ -33,7 +33,7 @@ of their behavior.
 
         Create a new ConPaaS user. The method expects the following parameters:
 
-        'username', 'fname', 'lname', 'email', 'affiliation', 'password', 'credit'
+        'username', 'fname', 'lname', 'email', 'affiliation', 'password', 'credit', 'uuid'
         
         A dictionary of user values is returned upon successful user creation.
         The following dictionary is returned on failure:

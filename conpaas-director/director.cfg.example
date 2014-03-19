@@ -223,6 +223,12 @@ CERT_DIR = /etc/cpsdirector/certs
 
 # OPENNEBULA_VERSION = 3.8
 
+# specify COST_PER_TIME as currency amount / ATU (in seconds)
+# so            $ 6.00 / 3600  is 6 dollar per hour             (or part thereof)
+# and           $ 1.00 / 600   is 1 dollar per 10 minutes       (or part thereof)
+COST_PER_TIME = $ 6.00/3600
+MAX_VMS = 9
+
 [director]
 DEBUG = true
 DATABASE_URI = sqlite:////etc/cpsdirector/director.db

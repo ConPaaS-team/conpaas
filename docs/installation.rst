@@ -61,7 +61,7 @@ should be enabled in :file:`/etc/apt/sources.list` and
 :file:`/etc/apt/sources.list.d/`. 
 
 **cpsdirector** is available here:
-http://www.conpaas.eu/dl/cpsdirector-1.3.1.tar.gz. The tarball includes an
+http://www.conpaas.eu/dl/cpsdirector-1.3.2.tar.gz. The tarball includes an
 installation script called :file:`install.sh` for your convenience. You can
 either run it as root or follow the installation procedure outlined below in
 order to setup your ConPaaS Director installation.
@@ -78,7 +78,7 @@ order to setup your ConPaaS Director installation.
    $ sudo apt-get install ntpdate
    $ sudo ntpdate 0.us.pool.ntp.org
 
-#. Download http://www.conpaas.eu/dl/cpsdirector-1.3.1.tar.gz and
+#. Download http://www.conpaas.eu/dl/cpsdirector-1.3.2.tar.gz and
    uncompress it
 
 #. Run :command:`make install` as root
@@ -145,6 +145,71 @@ as follows::
 
     $ sudo apt-get install sqlite3
     $ sudo sqlite3 /etc/cpsdirector/director.db
+
+If you have an existing installation (version 1.3.1 and earlier) you 
+should upgrade your database to contain the extra ``uuid`` field needed 
+for external IdP usage (see next topic)::
+
+    $ sudo add-uuid-column-to-db.sh
+
+This script will warn you when you try to upgrade an already upgraded database.
+
+On a fresh installation the database will be created on the fly.
+
+Contrail IdP and SimpleSAML
+---------------------------
+For registration and login through the Contrail Identification Provider 
+you have to install the SimpleSAML package simplesamlphp-1.11.0 as 
+follows::
+
+    $ wget http://simplesamlphp.googlecode.com/files/simplesamlphp-1.11.0.tar.gz
+    $ tar xzf simplesamlphp-1.11.0.tar.gz
+    $ cd simplesamlphp-1.11.0
+    $ cd cert ; openssl req -newkey rsa:2048 -new -x509 -days 3652 -nodes -out saml.crt -keyout saml.pem
+
+Edit file :file:`metadata/saml20-idp-remote.php` and replace the ``$metadata 
+array`` by the code found in the simpleSAMLphp flat file format part at 
+the end of the browser output of
+https://multi.contrail.xlab.si/simplesaml/saml2/idp/metadata.php?output=xhtml .
+
+Modify the authentication sources to contain the following lines (do 
+not copy the line numbers)::
+
+    $ cd ../config ; vi authsources.php
+    25                  // 'idp' => NULL,
+    26                  'idp' => 'https://multi.contrail.xlab.si/simplesaml/saml2/idp/metadata.php',
+
+    32                  //  next lines added by (your name)
+    33                  'privatekey' => 'saml.pem',
+    34                  'certificate' => 'saml.crt',
+
+Copy your SimpleSAML tree to :file:`/usr/share` ::
+
+    $ cd ../../
+    $ tar cf - simplesamlphp-1.11.0 | ( cd /usr/share ; sudo tar xf - )
+
+Change ownerships::
+        
+    $ cd /usr/share/simplesamlphp-1.11.0
+    $ sudo chown www-data www log
+    $ sudo chgrp www-data www log
+
+Now edit :file:`/etc/apache2/sites-enabled/default-ssl` to contain the 
+following lines (line numbers may vary depending on your current 
+situation)::
+
+    5          Alias /simplesaml /usr/share/simplesamlphp-1.11.0/www
+
+    18         <Directory /usr/share/simplesamlphp-1.11.0/www>
+    19                 Options Indexes FollowSymLinks MultiViews
+    20                 AllowOverride None
+    21                 Order allow,deny
+    22                 allow from all
+    23         </Directory>
+
+And the last thing to do: **register** your director domain name or IP at
+*contrail@lists.xlab.si*. This will enable you to use the federated login
+service provided by the Contrail project.
 
 Multi-cloud support
 -------------------
@@ -288,7 +353,7 @@ your system.
 
 As root::
     
-    $ sudo easy_install http://www.conpaas.eu/dl/cpsclient-1.3.1.tar.gz
+    $ sudo easy_install http://www.conpaas.eu/dl/cpsclient-1.3.2.tar.gz
 
 Or, if you do not have root privileges, ``cpsclient`` can also be installed in
 a Python virtual environment if ``virtualenv`` is available on your machine::
@@ -296,7 +361,7 @@ a Python virtual environment if ``virtualenv`` is available on your machine::
     $ virtualenv conpaas # create the 'conpaas' virtualenv
     $ cd conpaas
     $ source bin/activate # activate it
-    $ easy_install http://www.conpaas.eu/dl/cpsclient-1.3.1.tar.gz
+    $ easy_install http://www.conpaas.eu/dl/cpsclient-1.3.2.tar.gz
 
 Configuring ``cpsclient.py``:
 ::
@@ -328,8 +393,8 @@ It also replaces the command line tool ``cpsadduser.py``.
 
 Installing ``cps-tools``:
 ::
-    $ tar -xaf cps-tools-1.3.1.tar.gz
-    $ cd cps-tools-1.3.1
+    $ tar -xaf cps-tools-1.3.2.tar.gz
+    $ cd cps-tools-1.3.2
     $ ./configure --sysconf=/etc
     $ sudo make install
 
@@ -355,7 +420,7 @@ Director and Frontend are installed on the same host, but such does not need to
 be the case.
 
 The ConPaaS Frontend can be downloaded from
-http://www.conpaas.eu/dl/cpsfrontend-1.3.1.tar.gz. 
+http://www.conpaas.eu/dl/cpsfrontend-1.3.2.tar.gz. 
 
 After having uncompressed it you should install the required Debian packages::
 

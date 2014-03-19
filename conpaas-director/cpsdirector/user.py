@@ -99,6 +99,7 @@ class User(db.Model):
     password = db.Column(db.String(256))
     created = db.Column(db.DateTime)
     credit = db.Column(db.Integer)
+    uuid = db.Column(db.String(80))
 
     def __init__(self, **kwargs):
         # Default values
@@ -115,14 +116,21 @@ class User(db.Model):
             'email': self.email, 'affiliation': self.affiliation,
             'password': self.password, 'credit': self.credit,
             'created': self.created.isoformat(),
+            'uuid': self.uuid,
         }
 
 
 def get_user(username, password):
     """Return a User object if the specified (username, password) combination
     is valid."""
+    log('user login attempt with username %s' % username)
     return User.query.filter_by(username=username,
                                 password=hashlib.md5(password).hexdigest()).first()
+
+def get_user_by_uuid(uuid):
+    """Return a User object if the specified uuid is found."""
+    log('uuid login attempt with uuid %s' % uuid)
+    return User.query.filter_by(uuid=uuid).first()
 
 from cpsdirector.application import Application
 
@@ -133,8 +141,7 @@ def list_users():
     """
     return User.query.all()
 
-
-def create_user(username, fname, lname, email, affiliation, password, credit):
+def create_user(username, fname, lname, email, affiliation, password, credit, uuid):
     """Create a new user with the given attributes. Return a new User object
     in case of successful creation. None otherwise."""
     new_user = User(username=username,
@@ -143,7 +150,8 @@ def create_user(username, fname, lname, email, affiliation, password, credit):
                     email=email,
                     affiliation=affiliation,
                     password=hashlib.md5(password).hexdigest(),
-                    credit=credit)
+                    credit=credit,
+                    uuid=uuid)
 
     app = Application(user=new_user)
 
@@ -163,13 +171,28 @@ def login_required(fn):
     def decorated_view(*args, **kwargs):
         username = request.values.get('username', '')
         password = request.values.get('password', '')
+        uuid = request.values.get('uuid', '')
+        if uuid == '<none>':
+            uuid = ''
 
-        # Getting user data from DB
-        g.user = get_user(username, password)
+        # Getting user data from DB through username and password
+        if len(username.strip()):
+            log('authentication attempt for <%s, %s> ' % (username, password) )
+            g.user = get_user(username, password)
 
-        if g.user:
-            # user authenticated
-            return fn(*args, **kwargs)
+            if g.user:
+                # user authenticated through username and passwword
+                return fn(*args, **kwargs)
+
+        # authentication failed, try uuid
+        # Getting user data from DB through uuid
+        if len(uuid.strip()):
+            log('authentication attempt for <%s> ' % (uuid) )
+            g.user = get_user_by_uuid(uuid)
+
+            if g.user:
+                # user authenticated through uuid
+                return fn(*args, **kwargs)
 
         # authentication failed
         return build_response(simplejson.dumps(False))
@@ -181,7 +204,7 @@ def login_required(fn):
 def new_user():
     values = {}
     required_fields = ('username', 'fname', 'lname', 'email',
-                       'affiliation', 'password', 'credit')
+                       'affiliation', 'password', 'credit', 'uuid')
 
     log('New user "%s <%s>" creation attempt' % (
         request.values.get('username'), request.values.get('email')))
@@ -196,6 +219,8 @@ def new_user():
             return build_response(jsonify({
                 'error': True, 'msg': '%s is a required field' % field,
             }))
+        if field == 'uuid' and values[field] == '<none>':
+            values[field] = ''
 
     # check if the provided username already exists
     if User.query.filter_by(username=values['username']).first():

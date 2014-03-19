@@ -3,26 +3,28 @@
 # TODO	use command line arguments and/or config file to create a new service
 # TODO	security: check existence of filenames we want to create
 
-if false
-then
-BP_lc_name=foobar
-BP_mc_name=FooBar
-BP_uc_name=FOOBAR
-BP_bp_name='Foo Bar'
-BP_bp_desc='My brandnew FooBar Service'
-else
-BP_lc_name=htcondor
-BP_mc_name=HTCondor
-BP_uc_name=HTCONDOR
-BP_bp_name='HTCondor'
-BP_bp_desc='High Throughput Computing: Condor Pool Service'
-fi
-FILES=" conpaas-services/scripts/create_vm/opennebula-create-new-vm-image.sh \
+#########################################################
+#                                                       #
+#       Before running this script, make sure that      #
+#       all previous changes are commited to SVN        #  
+#                                                       #
+#########################################################
+
+# ====== replace the next 6 lines with the particulars of your new service
+BP_lc_name=foobar                                   # lowercase service name in the tree
+BP_mc_name=FooBar                                   # mixedcase service name in the tree
+BP_uc_name=FOOBAR                                   # uppercase service name in the tree
+BP_bp_name='Foo Bar'                                # selection name as shown on the frontend  create.php  page
+BP_bp_desc='My brandnew FooBar Service'             # description as shown on the frontend  create.php  page
+BP_bp_num=511                                       # service sequence number for conpaas-services/scripts/create_vm/create-img-script.cfg
+                                                    # first look in conpaas-services/scripts/create_vm/scripts for the first free number
+
+
+FILES=" conpaas-services/scripts/create_vm/create-img-script.cfg \
 conpaas-services/src/conpaas/core/services.py \
 conpaas-frontend/www/create.php \
 conpaas-frontend/www/lib/ui/page/PageFactory.php \
 conpaas-frontend/www/lib/service/factory/__init__.php \
-conpaas-services/scripts/create_vm/select-services.sh
 "
 
 #set -xv
@@ -35,6 +37,17 @@ echo == $i
 svn revert $i
 B=`basename $i`
 case $B in
+        create-img-script.cfg)
+                sed -i '
+/BLUE_PRINT_INSERT_ON_OFF/i\
+#'"$BP_lc_name"'-service = false\
+'"$BP_lc_name"'-service = true
+ 
+/BLUE_PRINT_INSERT_SECTION/i\
+'"$BP_lc_name"'-service-script = '"$BP_bp_num"'-'"$BP_lc_name"'
+ 
+                ' $i
+        ;;
 	select-services.sh)
 		sed -i '
 			/services=/s/"$/ '$BP_lc_name'&/;
@@ -78,21 +91,6 @@ case $B in
 				return new '"$BP_mc_name"'Service($service_data, $manager);
 		' $i
 	;;
-	opennebula-create-new-vm-image.sh)
-		sed -i '
-/BLUE_PRINT_FOR/s/#/'$BP_uc_name' #/;
-/BLUE_PRINT_INSERT_SERVICE/i\
-'"$BP_uc_name"'_SERVICE=true
-/BLUE_PRINT_INSERT_SOFTWARE/i\
-$'"$BP_uc_name"'_SERVICE || echo '"'"'cecho "===== Skipped '"$BP_uc_name"' ====="'"'"' >> $ROOT_DIR/conpaas_install\
-$'"$BP_uc_name"'_SERVICE && cat <<EOF >> $ROOT_DIR/conpaas_install\
-cecho "===== install packages required by '"$BP_mc_name"' ====="\
-# you may want to add the software needed for your new '"$BP_mc_name"' service here\
-\
-EOF\
-
-		' $i
-	;;
 	*)
 		echo "Unkown file $i" 1>&2;
 		exit 100
@@ -101,10 +99,10 @@ esac
 echo $i
 done
 
-echo '
-You may want to make your own adjustments to:
-	conpaas-services/scripts/create_vm/opennebula-create-new-vm-image.sh
-'
+echo "
+You need to make your own adjustments to:
+	conpaas-services/scripts/create_vm/scripts/$BP_bp_num-$BP_lc_name
+"
 echo =====================
 fi
 
@@ -114,10 +112,11 @@ find conpaas-blueprints -type f | grep -v '\.svn' | xargs file
 for SOURCE_FILE in `find conpaas-blueprints -type f | grep -v '\.svn'`
 do
 	SF=`echo $SOURCE_FILE | sed 's,[^/]*/,,'`
-	TARGET_FILE=`basename $SF | sed 's/blueprint/'"$BP_lc_name"'/'`
+	TARGET_FILE=`basename $SF | sed 's/blueprint/'"$BP_lc_name"'/ ; s/5xx-/'"$BP_bp_num"'-/'`
 	TARGET_DIR=`dirname $SF | sed 's,blueprint,'"$BP_lc_name"',g'`
 	[ -d $TARGET_DIR ] || mkdir -p $TARGET_DIR
 	sed '
+                s/Section: 5xx-/Section: '"$BP_bp_num"'-/
 		s/blueprint/'"$BP_lc_name"'/g
 		s/BluePrint/'"$BP_mc_name"'/g
 	' $SOURCE_FILE > $TARGET_DIR/$TARGET_FILE

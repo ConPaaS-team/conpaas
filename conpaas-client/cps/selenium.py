@@ -13,15 +13,15 @@ class Client(BaseClient):
             hub = nodes['hub'][0]
             params = { 'serviceNodeId': hub }
             details = self.callmanager(service['sid'], "get_node_info", False, params)
-            print "hub url: ", "http://%s:4444" % details['serviceNode']['ip']
-            print "node url:", "http://%s:3306" % details['serviceNode']['ip']
+            print "hub url: ", "http://%s:4444" % details['serviceNode']['ip'], "\tVMid: %s" % details['serviceNode']['id']
+            print "node url:", "http://%s:3306" % details['serviceNode']['ip'], "\tVMid: %s" % details['serviceNode']['id']
 
         if 'node' in nodes:
             # Multiple nodes
             for node in nodes['node']:
                 params = { 'serviceNodeId': node }
                 details = self.callmanager(service['sid'], "get_node_info", False, params)
-                print "node url:", "http://%s:3306" % details['serviceNode']['ip']
+                print "node url:", "http://%s:3306" % details['serviceNode']['ip'], "\tVMid: %s" % details['serviceNode']['id']
 
     def usage(self, cmdname):
         BaseClient.usage(self, cmdname)

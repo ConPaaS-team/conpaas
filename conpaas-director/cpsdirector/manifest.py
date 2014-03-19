@@ -18,6 +18,7 @@ import base64
 import socket
 import urllib2
 import simplejson
+import uuid
 
 from cpsdirector.common import log
 from cpsdirector.common import build_response
@@ -597,9 +598,10 @@ class MXTreemFS(MGeneral):
         if 'StartupInstances' not in tmp:
             tmp['StartupInstances'] = {}
 
-        tmp['StartupInstances']['resume'] = []
+        tmp['StartupInstances']['resume'] = {}
+        tmp['StartupInstances']['resume']['nodes'] = []
 
-        for node in snapshot:
+        for node in snapshot['nodes']:
             node_filename = self.__get_node_archive_filename(node)
             data = base64.b64decode(node.pop('data'))
             open(node_filename, 'wb').write(data)
@@ -608,7 +610,9 @@ class MXTreemFS(MGeneral):
             node['archive'] = '%s/download_data/%s' % (get_director_url(),
                     basename(node_filename))
 
-            tmp['StartupInstances']['resume'].append(node)
+            tmp['StartupInstances']['resume']['nodes'].append(node)
+
+        tmp['StartupInstances']['resume']['manager'] = snapshot['manager']
 
         return tmp
 
@@ -632,7 +636,8 @@ class MXTreemFS(MGeneral):
 
     def start(self, json, appid):
         try:
-            to_resume = { 'nodes': json['StartupInstances']['resume'] }
+            to_resume = { 'nodes': json['StartupInstances']['resume']['nodes'], 
+                          'manager' : json['StartupInstances']['resume']['manager'] }
         except KeyError:
             to_resume = {}
             
