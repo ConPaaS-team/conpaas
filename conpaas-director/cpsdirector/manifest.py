@@ -735,7 +735,7 @@ class MHtc(MGeneral):
         tmp['ManifestStatus'] = 'Under Construction'
         return tmp
 
-class MStem(MGeneral):
+class MGeneric(MGeneral):
     
      #def get_archive(self, service_id):
         #res = callmanager(service_id, 'list_code_versions', False, {})
@@ -874,8 +874,8 @@ def get_manifest_class(service_type):
         return MTaskFarm
     elif service_type == 'htc':
         return MHtc
-    elif service_type == 'stem':
-        return MStem
+    elif service_type == 'generic':
+        return MGeneric
     else:
         raise Exception('Service type %s does not exists' % service_type)
 
