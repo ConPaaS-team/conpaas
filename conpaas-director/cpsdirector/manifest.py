@@ -828,7 +828,7 @@ class MGeneric(MGeneral):
                 }
                 res = self.add_nodes(sid, params)
                 if 'error' in res:
-                    log('STEM.start: error calling add_nodes -> %s' % res)
+                    log('generic.start: error calling add_nodes -> %s' % res)
                     return res['error']
 
         return 'ok'
