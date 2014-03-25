@@ -200,7 +200,7 @@ class GenericAgent(BaseAgent):
         
         target_dir = self.VAR_CACHE
         
-        fd, name = tempfile.mkgenericp(prefix='init-', dir=target_dir)
+        fd, name = tempfile.mkstemp(prefix='init-', dir=target_dir)
         fd = fdopen(fd, 'w')
         upload = file.file
         

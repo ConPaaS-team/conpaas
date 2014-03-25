@@ -399,7 +399,7 @@ class GenericManager(BaseManager):
             
         tfile = tarfile.TarFile(name=os.path.join(self.code_repo, 'code-default'), mode='w')
 
-        fileno, path = tempfile.mkgenericp()
+        fileno, path = tempfile.mkstemp()
         fd = os.fdopen(fileno, 'w')
         fd.write('''#/bin/bash
 echo "Initializing Generic Service!" >> /root/generic.out
@@ -414,7 +414,7 @@ echo "" >> /root/generic.out
         os.chmod(path, stat.S_IRWXU | stat.S_IROTH | stat.S_IXOTH)
         tfile.add(path, 'init.sh')
         
-        fileno, path = tempfile.mkgenericp()
+        fileno, path = tempfile.mkstemp()
         fd = os.fdopen(fileno, 'w')
         fd.write('''#/bin/bash
 echo "Starting Generic Service!" >> /root/generic.out
@@ -457,7 +457,7 @@ echo "" >> /root/generic.out
             return HttpErrorResponse(ex.message)
 
         config = self._configuration_get()
-        fd, name = tempfile.mkgenericp(prefix='code-', dir=self.code_repo)
+        fd, name = tempfile.mkstemp(prefix='code-', dir=self.code_repo)
         fd = os.fdopen(fd, 'w')
         upload = code.file
         codeVersionId = os.path.basename(name)
