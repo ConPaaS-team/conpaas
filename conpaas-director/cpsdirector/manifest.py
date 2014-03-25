@@ -18,7 +18,6 @@ import base64
 import socket
 import urllib2
 import simplejson
-import uuid
 
 from cpsdirector.common import log
 from cpsdirector.common import build_response
@@ -615,10 +614,9 @@ class MXTreemFS(MGeneral):
         if 'StartupInstances' not in tmp:
             tmp['StartupInstances'] = {}
 
-        tmp['StartupInstances']['resume'] = {}
-        tmp['StartupInstances']['resume']['nodes'] = []
+        tmp['StartupInstances']['resume'] = []
 
-        for node in snapshot['nodes']:
+        for node in snapshot:
             node_filename = self.__get_node_archive_filename(node)
             data = base64.b64decode(node.pop('data'))
             open(node_filename, 'wb').write(data)
@@ -627,9 +625,7 @@ class MXTreemFS(MGeneral):
             node['archive'] = '%s/download_data/%s' % (get_director_url(),
                     basename(node_filename))
 
-            tmp['StartupInstances']['resume']['nodes'].append(node)
-
-        tmp['StartupInstances']['resume']['manager'] = snapshot['manager']
+            tmp['StartupInstances']['resume'].append(node)
 
         return tmp
 
@@ -653,8 +649,7 @@ class MXTreemFS(MGeneral):
 
     def start(self, json, appid):
         try:
-            to_resume = { 'nodes': json['StartupInstances']['resume']['nodes'], 
-                          'manager' : json['StartupInstances']['resume']['manager'] }
+            to_resume = { 'nodes': json['StartupInstances']['resume'] }
         except KeyError:
             to_resume = {}
             
@@ -740,6 +735,126 @@ class MHtc(MGeneral):
         tmp['ManifestStatus'] = 'Under Construction'
         return tmp
 
+class MStem(MGeneral):
+    
+     #def get_archive(self, service_id):
+        #res = callmanager(service_id, 'list_code_versions', False, {})
+        #if 'error' in res:
+            #return ''
+
+        #version = ''
+        #filename = ''
+        #for row in res['codeVersions']:
+            #if 'current' in row:
+                #version = row['codeVersionId']
+                #filename = row['filename']
+                #break
+
+        #if version == '' or filename == '':
+            #return ''
+
+        #params = { 'codeVersionId': version }
+
+        #res = callmanager(service_id, "download_code_version", False, params)
+        #if 'error' in res:
+            #return ''
+
+        #_, temp_path = mkstemp(suffix=filename, dir=get_userdata_dir())
+        #open(temp_path, 'w').write(res)
+
+        #return '%s/download_data/%s' % (get_director_url(), basename(temp_path))
+
+    def upload_code(self, service_id, url):
+        contents = urllib2.urlopen(url).read()
+        filename = url.split('/')[-1]
+
+        files = [ ( 'code', filename, contents ) ]
+
+        res = callmanager(service_id, "/", True, { 'method': "upload_code_version",  }, files)
+
+        return res
+
+    def enable_code(self, service_id, code_version):
+        params = { 'codeVersionId': code_version }
+
+        res = callmanager(service_id, "enable_code", True, params)
+
+        return res
+
+    def start(self, json, appid):
+        #start = json.get('Start')
+       
+        #this is to prevent startup being called without passing the manifest, should be changed 
+        #json['Start'] = 0
+        sid = MGeneral.start(self, json, appid)
+        
+        #json['Start'] = start
+
+        #if not json.get('Start') or json.get('Start') == 0:
+        #    return sid
+
+        # Start == 1
+        #res = self.startup(sid, json)
+        #if 'error' in res:
+        #    return res['error']
+
+        #self.wait_for_state(sid, 'RUNNING')
+        #return sid
+        
+        if json.get('Archive'):
+            res = self.upload_code(sid, json.get('Archive'))
+            if 'error' in res:
+                return res['error']
+
+            res = self.enable_code(sid, res['codeVersionId']);
+            if 'error' in res:
+                return res['error']
+
+            self.wait_for_state(sid, 'RUNNING')
+
+        if json.get('StartupInstances'):
+            instances = json.get('StartupInstances')
+            nr_instances = 0
+            for role in instances:
+                nr_instances += int(instances[role])
+            
+            if nr_instances:
+                start_role = '*'
+                if json.get('StartRole'):
+                    start_role = json.get('StartRole')
+                params = {
+                   "nodes" : instances,
+                   "start_role" : start_role
+                }
+                res = self.add_nodes(sid, params)
+                if 'error' in res:
+                    log('STEM.start: error calling add_nodes -> %s' % res)
+                    return res['error']
+
+        return 'ok'
+
+
+    #def startup(self, service_id, json, cloud = 'default'):
+        #data = {
+                #'cloud': cloud,
+                #'manifest': json
+        #}
+
+        #res = callmanager(service_id, "startup", True, data)
+
+        #return res   
+ 
+    def get_service_manifest(self, service):
+        tmp = MGeneral.get_service_manifest(self, service)
+
+#        ret = self.get_archive(service.sid)
+#        if ret != '':
+#            tmp['Archive'] = ret
+
+        return tmp
+
+
+
 def get_manifest_class(service_type):
     if service_type == 'php':
         return MPhp
@@ -759,6 +874,8 @@ def get_manifest_class(service_type):
         return MTaskFarm
     elif service_type == 'htc':
         return MHtc
+    elif service_type == 'stem':
+        return MStem
     else:
         raise Exception('Service type %s does not exists' % service_type)
 
