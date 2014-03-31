@@ -6,6 +6,7 @@ import sys
 import getpass
 
 import sqlalchemy
+import json
 
 from cpsdirector import db, common
 from cpsdirector.user import create_user
