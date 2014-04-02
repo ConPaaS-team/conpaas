@@ -13,7 +13,7 @@ install:
   - pip install coveralls flask-sqlalchemy apache-libcloud netaddr mock cheetah
   - pip install pep8 pylint
   - pip install numpy pandas scipy patsy
-  - pip install statsmodels
+  - pip install statsmodels mock
 script: 
   - ./travis.sh
 after_success: 
