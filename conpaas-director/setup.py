@@ -33,7 +33,7 @@ setup(name='cpsdirector',
       zip_safe=False,
       package_data={ 'cpsdirector': [ 'ConPaaS.tar.gz', ] },
       data_files=[ ( CONFDIR, [ 'director.cfg.example', 'director.cfg.multicloud-example', 'ConPaaS.tar.gz' ] ), ],
-      scripts=[ 'cpsadduser.py', 'director.wsgi', 'cpsconf.py', 'cpscheck.py' ],
+      scripts=[ 'cpsadduser.py', 'director.wsgi', 'cpsconf.py', 'cpscheck.py', 'add-uuid-column-to-db.sh' ],
       install_requires=[ 'cpslib', 'flask-sqlalchemy', 'apache-libcloud', 'netaddr' ],
       dependency_links=[ 'http://www.conpaas.eu/dl/cpslib-%s.tar.gz' % CPSVERSION, ],)
 
