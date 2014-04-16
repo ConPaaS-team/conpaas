@@ -323,6 +323,7 @@ ssh into your manager VM as root and:
    Director. In the following example, our manager's IP address is 192.168.122.15
    and we are checking if *the director* can contact *the manager* on port 443::
 
+    root@conpaas-director:~# apt-get install nmap
     root@conpaas-director:~# nmap -p443 192.168.122.15
     Starting Nmap 6.00 ( http://nmap.org ) at 2013-05-14 16:17 CEST
     Nmap scan report for 192.168.122.15
