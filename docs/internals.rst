@@ -43,57 +43,57 @@ A new service should be added in a new python module under the
 ::
 
     ConPaaS/  (conpaas/conpaas-services/)
-    ├── src
-    │   ├── conpaas
-    │   │   ├── \textcolor{red}{core}
-    │   │   │   ├── clouds
-    │   │   │   │   ├── base.py
-    │   │   │   │   ├── dummy.py
-    │   │   │   │   ├── ec2.py
-    │   │   │   │   ├── federation.py
-    │   │   │   │   ├── opennebula.py
-    │   │   │   │   └── openstack.py
-    │   │   │   ├── agent.py
-    │   │   │   ├── controller.py
-    │   │   │   ├── expose.py
-    │   │   │   ├── file.py
-    │   │   │   ├── ganglia.py
-    │   │   │   ├── git.py
-    │   │   │   ├── https\
-    │   │   │   ├── iaas.py
-    │   │   │   ├── ipop.py
-    │   │   │   ├── log.py
-    │   │   │   ├── manager.py
-    │   │   │   ├── manager.py.generic_add_nodes
-    │   │   │   ├── misc.py
-    │   │   │   ├── node.py
-    │   │   │   └── services.py
-    │   │   └── \textcolor{red}{services}
-    │   │       ├── cds/
-    │   │       ├── galera/
-    │   │       ├── helloworld/
-    │   │       ├── htc/
-    │   │       ├── htcondor/
-    │   │       ├── mapreduce/
-    │   │       ├── mysql/
-    │   │       ├── scalaris/
-    │   │       ├── selenium/
-    │   │       ├── taskfarm/
-    │   │       ├── webservers/
-    │   │       └── xtreemfs/
-    │   ├── dist
-    │   ├── libcloud -> ../contrib/libcloud/
-    │   ├── setup.py
-    │   └── tests
-    │       ├── core\
-    │       ├── run_tests.py
-    │       ├── services\
-    │       └── unit-tests.sh
-    ├── config
-    ├── contrib
-    ├── misc
-    ├── sbin
-    └── scripts
+    │── src
+    │   │── conpaas
+    │   │   │── \textcolor{red}{core}
+    │   │   │   │── clouds
+    │   │   │   │   │── base.py
+    │   │   │   │   │── dummy.py
+    │   │   │   │   │── ec2.py
+    │   │   │   │   │── federation.py
+    │   │   │   │   │── opennebula.py
+    │   │   │   │   │── openstack.py
+    │   │   │   │── agent.py
+    │   │   │   │── controller.py
+    │   │   │   │── expose.py
+    │   │   │   │── file.py
+    │   │   │   │── ganglia.py
+    │   │   │   │── git.py
+    │   │   │   │── https\
+    │   │   │   │── iaas.py
+    │   │   │   │── ipop.py
+    │   │   │   │── log.py
+    │   │   │   │── manager.py
+    │   │   │   │── manager.py.generic_add_nodes
+    │   │   │   │── misc.py
+    │   │   │   │── node.py
+    │   │   │   │── services.py
+    │   │   │── \textcolor{red}{services}
+    │   │       │── cds/
+    │   │       │── galera/
+    │   │       │── helloworld/
+    │   │       │── htc/
+    │   │       │── htcondor/
+    │   │       │── mapreduce/
+    │   │       │── mysql/
+    │   │       │── scalaris/
+    │   │       │── selenium/
+    │   │       │── taskfarm/
+    │   │       │── webservers/
+    │   │       │── xtreemfs/
+    │   │── dist
+    │   │── libcloud -> ../contrib/libcloud/
+    │   │── setup.py
+    │   │── tests
+    │       │── core\
+    │       │── run_tests.py
+    │       │── services\
+    │       │── unit-tests.sh
+    │── config
+    │── contrib
+    │── misc
+    │── sbin
+    │── scripts
 
 In the next paragraphs we describe how to add the new ConPaaS service.
 
@@ -254,105 +254,105 @@ configuration files described above.
 ::
 
     ConPaaS/  (conpaas/conpaas-services/)
-    ├── \textcolor{blue}{config}
-    │   ├── \textcolor{red}{agent}
-    │   │   ├── default-agent.cfg
-    │   │   ├── galera-agent.cfg
-    │   │   ├── helloworld-agent.cfg
-    │   │   ├── htc-agent.cfg
-    │   │   ├── htcondor.cfg
-    │   │   ├── mapreduce-agent.cfg
-    │   │   ├── mysql-agent.cfg
-    │   │   ├── scalaris-agent.cfg
-    │   │   ├── web-agent.cfg
-    │   │   └── xtreemfs-agent.cfg
-    │   ├── \textcolor{red}{cloud}
-    │   │   ├── clouds-template.cfg
-    │   │   ├── ec2.cfg
-    │   │   ├── ec2.cfg.example
-    │   │   ├── opennebula.cfg
-    │   │   └── opennebula.cfg.example
-    │   ├── \textcolor{red}{ganglia}
-    │   │   ├── ganglia_frontend.tmpl
-    │   │   ├── ganglia-gmetad.tmpl
-    │   │   └── ganglia-gmond.tmpl
-    │   ├── \textcolor{red}{ipop}
-    │   │   ├── bootstrap.config.tmpl
-    │   │   ├── dhcp.config.tmpl
-    │   │   ├── ipop.config.tmpl
-    │   │   ├── ipop.vpn.config.tmpl
-    │   │   └── node.config.tmpl
-    │   └── \textcolor{red}{manager}
-    │       ├── default-manager.cfg
-    │       ├── htc-manager.cfg
-    │       ├── htcondor.cfg
-    │       ├── java-manager.cfg
-    │       └── php-manager.cfg
-    ├── \textcolor{blue}{sbin}
-    │   ├── \textcolor{red}{agent}
-    │   │   ├── default-cpsagent
-    │   │   └── web-cpsagent
-    │   └── \textcolor{red}{manager}
-    │       ├── default-cpsmanager
-    │       ├── php-cpsmanager
-    │       └── taskfarm-cpsmanager
-    └── \textcolor{blue}{scripts}
-        ├── \textcolor{red}{agent}
-        │   ├── agent-setup
-        │   ├── default-agent-start
-        │   ├── htc-agent-start
-        │   ├── htcondor-agent-start
-        │   ├── mapreduce-agent-start
-        │   ├── scalaris-agent-start
-        │   ├── selenium-agent-start
-        │   ├── taskfarm-agent-start
-        │   ├── web-agent-start
-        │   └── xtreemfs-agent-start
-        ├── \textcolor{red}{cloud}
-        │   ├── dummy
-        │   ├── ec2
-        │   ├── federation
-        │   ├── opennebula
-        │   └── openstack
-        ├── \textcolor{red}{create_vm}
-        │   ├── 40_custom
-        │   ├── create-img-conpaas.sh
-        │   ├── create-img-script.cfg
-        │   ├── create-img-script.py
-        │   ├── README
-        │   ├── register-image-ec2-ebs.sh
-        │   ├── register-image-ec2-s3.sh
-        │   ├── register-image-opennebula.sh
-        │   └── scripts
-        │       ├── 000-head
-        │       ├── 003-create-image
-        │       ├── 004-conpaas-core
-        │       ├── 501-php
-        │       ├── 502-galera
-        │       ├── 502-mysql
-        │       ├── 503-condor
-        │       ├── 504-selenium
-        │       ├── 505-hadoop
-        │       ├── 506-scalaris
-        │       ├── 507-xtreemfs
-        │       ├── 508-cds
-        │       ├── 995-rm-unused-pkgs
-        │       ├── 996-user
-        │       ├── 997-tail
-        │       ├── 998-ec2
-        │       ├── 998-opennebula
-        │       └── 999-resize-image
-        └── \textcolor{red}{manager}
-            ├── cds-manager-start
-            ├── default-git-deploy-hook
-            ├── default-manager-start
-            ├── htc-manager-start
-            ├── htcondor-manager-start
-            ├── java-manager-start
-            ├── manager-setup
-            ├── notify_git_push.py
-            ├── php-manager-start
-            └── taskfarm-manager-start
+    │── \textcolor{blue}{config}
+    │   │── \textcolor{red}{agent}
+    │   │   │── default-agent.cfg
+    │   │   │── galera-agent.cfg
+    │   │   │── helloworld-agent.cfg
+    │   │   │── htc-agent.cfg
+    │   │   │── htcondor.cfg
+    │   │   │── mapreduce-agent.cfg
+    │   │   │── mysql-agent.cfg
+    │   │   │── scalaris-agent.cfg
+    │   │   │── web-agent.cfg
+    │   │   │── xtreemfs-agent.cfg
+    │   │── \textcolor{red}{cloud}
+    │   │   │── clouds-template.cfg
+    │   │   │── ec2.cfg
+    │   │   │── ec2.cfg.example
+    │   │   │── opennebula.cfg
+    │   │   │── opennebula.cfg.example
+    │   │── \textcolor{red}{ganglia}
+    │   │   │── ganglia_frontend.tmpl
+    │   │   │── ganglia-gmetad.tmpl
+    │   │   │── ganglia-gmond.tmpl
+    │   │── \textcolor{red}{ipop}
+    │   │   │── bootstrap.config.tmpl
+    │   │   │── dhcp.config.tmpl
+    │   │   │── ipop.config.tmpl
+    │   │   │── ipop.vpn.config.tmpl
+    │   │   │── node.config.tmpl
+    │   │── \textcolor{red}{manager}
+    │       │── default-manager.cfg
+    │       │── htc-manager.cfg
+    │       │── htcondor.cfg
+    │       │── java-manager.cfg
+    │       │── php-manager.cfg
+    │── \textcolor{blue}{sbin}
+    │   │── \textcolor{red}{agent}
+    │   │   │── default-cpsagent
+    │   │   │── web-cpsagent
+    │   │── \textcolor{red}{manager}
+    │       │── default-cpsmanager
+    │       │── php-cpsmanager
+    │       │── taskfarm-cpsmanager
+    │── \textcolor{blue}{scripts}
+        │── \textcolor{red}{agent}
+        │   │── agent-setup
+        │   │── default-agent-start
+        │   │── htc-agent-start
+        │   │── htcondor-agent-start
+        │   │── mapreduce-agent-start
+        │   │── scalaris-agent-start
+        │   │── selenium-agent-start
+        │   │── taskfarm-agent-start
+        │   │── web-agent-start
+        │   │── xtreemfs-agent-start
+        │── \textcolor{red}{cloud}
+        │   │── dummy
+        │   │── ec2
+        │   │── federation
+        │   │── opennebula
+        │   │── openstack
+        │── \textcolor{red}{create_vm}
+        │   │── 40_custom
+        │   │── create-img-conpaas.sh
+        │   │── create-img-script.cfg
+        │   │── create-img-script.py
+        │   │── README
+        │   │── register-image-ec2-ebs.sh
+        │   │── register-image-ec2-s3.sh
+        │   │── register-image-opennebula.sh
+        │   │── scripts
+        │       │── 000-head
+        │       │── 003-create-image
+        │       │── 004-conpaas-core
+        │       │── 501-php
+        │       │── 502-galera
+        │       │── 502-mysql
+        │       │── 503-condor
+        │       │── 504-selenium
+        │       │── 505-hadoop
+        │       │── 506-scalaris
+        │       │── 507-xtreemfs
+        │       │── 508-cds
+        │       │── 995-rm-unused-pkgs
+        │       │── 996-user
+        │       │── 997-tail
+        │       │── 998-ec2
+        │       │── 998-opennebula
+        │       │── 999-resize-image
+        │── \textcolor{red}{manager}
+            │── cds-manager-start
+            │── default-git-deploy-hook
+            │── default-manager-start
+            │── htc-manager-start
+            │── htcondor-manager-start
+            │── java-manager-start
+            │── manager-setup
+            │── notify_git_push.py
+            │── php-manager-start
+            │── taskfarm-manager-start
 
 Implementing a new ConPaaS service
 ==================================
@@ -507,12 +507,12 @@ Files to be modified
 ::
 
     frontend
-    └── www
-        ├── \textcolor{blue}{create.php}
-        └── lib
-            └── service
-                └── factory
-                    └── \textcolor{blue}{__init__.php}
+    │── www
+        │── \textcolor{blue}{create.php}
+        │── lib
+            │── service
+                │── factory
+                    │── \textcolor{blue}{__init__.php}
 
 Several lines of code must be added to the two files above for the new
 service to be recognized. If you look inside these files, you’ll see
@@ -525,17 +525,17 @@ Files to be added
 ::
 
     frontend
-    └── www
-        ├── lib
-        |   ├── service
-        |   |   └── helloworld
-        |   |       └── \textcolor{red}{__init__.php}
-        |   └── ui
-        |       └── instance
-        |           └── helloworld
-        |               └── \textcolor{red}{__init__.php}
-        └── images
-            └── \textcolor{red}{helloworld.png}
+    │── www
+        │── lib
+        |   │── service
+        |   |   │── helloworld
+        |   |       │── \textcolor{red}{__init__.php}
+        |   │── ui
+        |       │── instance
+        |           │── helloworld
+        |               │── \textcolor{red}{__init__.php}
+        │── images
+            │── \textcolor{red}{helloworld.png}
 
 Implementing a new ConPaaS service using blueprints
 ===================================================
@@ -549,44 +549,44 @@ mechanism with  :file:`create-new-service-from-blueprints.sh`.
 The :file:`conpaas-blueprints` tree contains the following files::
 
     conpaas-blueprints
-    ├── conpaas-client
-    │   └── cps
-    │       └── blueprint.py
-    ├── conpaas-frontend
-    │   └── www
-    │       ├── images
-    │       │   └── blueprint.png
-    │       ├── js
-    │       │   └── blueprint.js
-    │       └── lib
-    │           ├── service
-    │           │   └── blueprint
-    │           │       └── __init__.php
-    │           └── ui
-    │               ├── instance
-    │               │   └── blueprint
-    │               │       └── __init__.php
-    │               └── page
-    │                   └── blueprint
-    │                       └── __init__.php
-    └── conpaas-services
-        ├── scripts
-        │   └── create_vm
-        │       └── scripts
-        │           └── 5xx-blueprint
-        └── src
-            └── conpaas
-                └── services
-                    └── blueprint
-                        ├── agent
-                        │   ├── agent.py
-                        │   ├── client.py
-                        │   └── __init__.py
-                        ├── __init__.py
-                        └── manager
-                            ├── client.py
-                            ├── __init__.py
-                            └── manager.py
+    │── conpaas-client
+    │   │── cps
+    │       │── blueprint.py
+    │── conpaas-frontend
+    │   │── www
+    │       │── images
+    │       │   │── blueprint.png
+    │       │── js
+    │       │   │── blueprint.js
+    │       │── lib
+    │           │── service
+    │           │   │── blueprint
+    │           │       │── __init__.php
+    │           │── ui
+    │               │── instance
+    │               │   │── blueprint
+    │               │       │── __init__.php
+    │               │── page
+    │                   │── blueprint
+    │                       │── __init__.php
+    │── conpaas-services
+        │── scripts
+        │   │── create_vm
+        │       │── scripts
+        │           │── 5xx-blueprint
+        │── src
+            │── conpaas
+                │── services
+                    │── blueprint
+                        │── agent
+                        │   │── agent.py
+                        │   │── client.py
+                        │   │── __init__.py
+                        │── __init__.py
+                        │── manager
+                            │── client.py
+                            │── __init__.py
+                            │── manager.py
 
 Edit :file:`create-new-service-from-blueprints.sh`
 and change the following lines to set up the script::
