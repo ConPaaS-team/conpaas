@@ -22,14 +22,13 @@ chmod 600 /nutshell/test.pem
 sed -i '/default_floating_pool/a auto_assign_floating_ip=True' /etc/nova/nova.conf
 sed -i '/allow_resize_to_same_host/a ram_allocation_ratio=10' /etc/nova/nova.conf
 
-wget -P /nutshell http://www.conpaas.eu/dl/cpsdirector-1.3.1.tar.gz
-(cd /nutshell ; tar -zxvf cpsdirector-1.3.1.tar.gz)
-rm /nutshell/cpsdirector-1.3.1.tar.gz
+sudo easy_install /nutshell/cpslib-*.tar.gz
 
-wget -P /nutshell http://www.conpaas.eu/dl/cpsclient-1.3.1.tar.gz
+(cd /nutshell ; tar -zxvf cpsdirector-*.tar.gz)
+rm /nutshell/cpsdirector-*.tar.gz
+(cd /nutshell/cpsdirector-*/ ; echo '172.16.0.1' | sudo make install)
 
-(cd /nutshell/cpsdirector-1.3.1/ ; echo '172.16.0.1' | sudo ./install.sh)
-sudo easy_install /nutshell/cpsclient-1.3.1.tar.gz
+sudo easy_install /nutshell/cpsclient-*.tar.gz
 
 sudo cpsadduser.py test@email test password
 

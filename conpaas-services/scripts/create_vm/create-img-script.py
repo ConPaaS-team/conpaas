@@ -114,6 +114,7 @@ if __name__ == '__main__':
         append_str_to_output('DEBIAN_DIST=' + config.get('NUTSHELL', 'ubuntu_dist') + '\n')
         append_str_to_output('DEBIAN_MIRROR=' + config.get('NUTSHELL', 'ubuntu_mirror') + '\n\n')
         append_str_to_output('CREATE_CONT=' + config.get('NUTSHELL', 'container') + '\n\n')
+        append_str_to_output('CONPASS_TAR_PATH=' + config.get('NUTSHELL', 'conpaas_tar_path') + '\n\n')
         container = False;
     else:
         append_str_to_output('FILENAME=' + config.get('CUSTOMIZABLE', 'filename') + '\n')

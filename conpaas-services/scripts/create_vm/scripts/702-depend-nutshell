@@ -20,7 +20,7 @@ DEBIAN_FRONTEND=noninteractive apt-get -y --force-yes --no-install-recommends --
         install openssh-server wget git iptables-persistent patch libvirt-bin \
                 python python-pycurl python-openssl python-m2crypto \
                 python-cheetah python-netaddr libxslt1-dev subversion unzip less vim \
-                build-essential python-setuptools python-dev \
+                build-essential python-setuptools python-dev libffi-dev \
                 libapache2-mod-wsgi libcurl4-openssl-dev ntpdate
             
 
