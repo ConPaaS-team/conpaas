@@ -135,7 +135,7 @@ if __name__ == '__main__':
         error('Unknown hypervisor "%s".' % hypervisor)
     
     cloud = config.get('CUSTOMIZABLE', 'cloud')
-    if cloud == 'opennebula':
+    if cloud == 'opennebula' or cloud == 'openstack':
         pass
     elif cloud == 'ec2':
         if hypervisor != 'xen':

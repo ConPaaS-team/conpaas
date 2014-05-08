@@ -102,15 +102,21 @@ EOF
 
 if [ "$CLOUD" == "opennebula" ] ; then
     net_config="$opennebula_specific"
-elif [ "$CLOUD" == "ec2" ] ; then
+elif [ "$CLOUD" == "ec2" ] || [ "$CLOUD" == "openstack" ] ; then
     net_config="$ec2_specific"
 else
   cecho 'Something went wrong. "CLOUD" shell variable is not properly defined.';
   exit 1;
 fi
 
+#OpenStack defaults to the use of the virtio disk driver
+BLOCK_DEV=/dev/sda1
+if [ "$CLOUD" == "openstack" ] ; then
+    BLOCK_DEV=/dev/vda1
+fi
+
 cecho "Writing fstab"
-echo "/dev/sda1 / ext3 defaults 0 1" > $ROOT_DIR/etc/fstab
+echo "$BLOCK_DEV / ext3 defaults 0 1" > $ROOT_DIR/etc/fstab
 cecho "Writing /etc/network/interfaces"
 cat <<EOF > $ROOT_DIR/etc/network/interfaces
 auto lo
@@ -167,7 +173,7 @@ set timeout=0
 menuentry '$(basename $VMLINUZ)' {
   insmod ext2
   set root='(hd0,1)'
-  linux  $VMLINUZ root=/dev/sda1
+  linux  $VMLINUZ root=$BLOCK_DEV
   initrd $INITRD
 }
 EOF
