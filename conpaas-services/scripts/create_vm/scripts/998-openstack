@@ -1,0 +1,132 @@
+# Section: 998-ec2
+
+cat <<"EOF" > $ROOT_DIR/etc/rc.local
+
+#!/bin/bash
+### BEGIN INIT INFO
+# Provides:       ec2-get-credentials
+# Required-Start: $network
+# Required-Stop:  
+# Should-Start:   
+# Should-Stop:    
+# Default-Start:  2 3 4 5
+# Default-Stop:   
+# Description:    Retrieve the ssh credentials and add to authorized_keys
+### END INIT INFO
+#
+# ec2-get-credentials - Retrieve the ssh credentials and add to authorized_keys
+#
+# Based on /usr/local/sbin/ec2-get-credentials from Amazon's ami-20b65349
+#
+
+prog=$(basename $0)
+logger="logger -t $prog"
+
+public_key_url=http://169.254.169.254/1.0/meta-data/public-keys/0/openssh-key
+username='root'
+# A little bit of nastyness to get the homedir, when the username is a variable
+ssh_dir="`eval printf ~$username`/.ssh"
+authorized_keys="$ssh_dir/authorized_keys"
+
+# Try to get the ssh public key from instance data.
+public_key=`wget -qO - $public_key_url`
+if [ -n "$public_key" ]; then
+	if [ ! -f $authorized_keys ]; then
+		if [ ! -d $ssh_dir ]; then
+			mkdir -m 700 $ssh_dir
+			chown $username:$username $ssh_dir
+		fi
+		touch $authorized_keys
+		chown $username:$username $authorized_keys
+	fi
+
+	if ! grep -s -q "$public_key" $authorized_keys; then
+		printf "\n%s" -- "$public_key" >> $authorized_keys
+		$logger "New ssh key added to $authorized_keys from $public_key_url"
+		chmod 600 $authorized_keys
+		chown $username:$username $authorized_keys
+	fi
+fi
+
+### BEGIN INIT INFO
+# Provides:       ec2-run-user-data
+# Required-Start: ec2-get-credentials
+# Required-Stop:  
+# Should-Start:   
+# Should-Stop:    
+# Default-Start:  2 3 4 5
+# Default-Stop:   
+# Description:    Run instance user-data if it looks like a script.
+### END INIT INFO
+#
+# Only retrieves and runs the user-data script once per instance.  If
+# you want the user-data script to run again (e.g., on the next boot)
+# then readd this script with insserv:
+#   insserv -d ec2-run-user-data
+#
+prog=$(basename $0)
+logger="logger -t $prog"
+instance_data_url="http://169.254.169.254/2008-02-01"
+
+
+# Retrieve the instance user-data and run it if it looks like a script
+user_data_file=$(tempfile --prefix ec2 --suffix .user-data --mode 700)
+$logger "Retrieving user-data"
+wget -qO $user_data_file $instance_data_url/user-data 2>&1 | $logger
+
+if [ $(file -b --mime-type $user_data_file) = 'application/x-gzip' ]; then
+	$logger "Uncompressing gzip'd user-data"
+	mv $user_data_file $user_data_file.gz
+	gunzip $user_data_file.gz
+fi
+
+if [ ! -s $user_data_file ]; then
+	$logger "No user-data available"
+elif head -1 $user_data_file | egrep -v '^#!'; then
+	$logger "Skipping user-data as it does not begin with #!"
+else
+	$logger "Running user-data"
+	$user_data_file 2>&1 | logger -t "user-data"
+	$logger "user-data exit code: $?"
+fi
+rm -f $user_data_file
+
+# Disable this script, it may only run once
+# insserv -r $0
+
+### BEGIN INIT INFO
+# Provides:       generate-ssh-hostkeys
+# Required-Start: $local_fs
+# Required-Stop:  
+# Should-Start:   
+# Should-Stop:    
+# Default-Start:  S
+# Default-Stop:   
+# Description:    Generate ssh host keys if they do not exist
+### END INIT INFO
+
+prog=$(basename $0)
+logger="logger -t $prog"
+
+rsa_key="/etc/ssh/ssh_host_rsa_key"
+dsa_key="/etc/ssh/ssh_host_dsa_key"
+
+# Exit if the hostkeys already exist
+if [ -f $rsa_key -a -f $dsa_key ]; then
+	exit
+fi
+
+# Generate the ssh host keys
+[ -f $rsa_key ] || ssh-keygen -f $rsa_key -t rsa -C 'host' -N ''
+[ -f $dsa_key ] || ssh-keygen -f $dsa_key -t dsa -C 'host' -N ''
+
+# Output the public keys to the console
+# This allows user to get host keys securely through console log
+echo "-----BEGIN SSH HOST KEY FINGERPRINTS-----" | $logger
+ssh-keygen -l -f $rsa_key.pub | $logger
+ssh-keygen -l -f $dsa_key.pub | $logger
+echo "------END SSH HOST KEY FINGERPRINTS------" | $logger
+
+exit 0
+EOF
+

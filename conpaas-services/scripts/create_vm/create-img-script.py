@@ -245,7 +245,7 @@ if __name__ == '__main__':
     elif cloud == 'ec2':
         filename = config.get('SCRIPT_FILE_NAMES', 'ec2_script'+suffix)
     elif cloud == 'openstack':
-       filename = config.get('SCRIPT_FILE_NAMES', 'ec2_script') 
+       filename = config.get('SCRIPT_FILE_NAMES', 'openstack_script') 
     append_file_to_output(root_dir + filename)
 
     if not nutshell:
