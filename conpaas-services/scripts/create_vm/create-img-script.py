@@ -149,6 +149,7 @@ if __name__ == '__main__':
         cloud = config.get('NUTSHELL', 'cloud')
     
     append_str_to_output('CLOUD=' + cloud + '\n')
+    append_str_to_output('HYPERVISOR=' + hypervisor + '\n')
 
     arch = config.get('RECOMMENDED', 'arch')
     if arch == 'i386':

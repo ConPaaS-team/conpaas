@@ -124,7 +124,7 @@ fi
 
 #OpenStack defaults to the use of the virtio disk driver
 BLOCK_DEV=/dev/sda1
-if [ "$CLOUD" == "openstack" ] ; then
+if [ "$CLOUD" == "openstack" ] && [ "$HYPERVISOR" == "kvm" ]; then
     BLOCK_DEV=/dev/vda1
 fi
 
