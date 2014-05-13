@@ -135,7 +135,7 @@ if __name__ == '__main__':
         error('Unknown hypervisor "%s".' % hypervisor)
     
     cloud = config.get('CUSTOMIZABLE', 'cloud')
-    if cloud == 'opennebula':
+    if cloud == 'opennebula' or cloud == 'openstack':
         pass
     elif cloud == 'ec2':
         if hypervisor != 'xen':
@@ -148,6 +148,7 @@ if __name__ == '__main__':
         cloud = config.get('NUTSHELL', 'cloud')
     
     append_str_to_output('CLOUD=' + cloud + '\n')
+    append_str_to_output('HYPERVISOR=' + hypervisor + '\n')
 
     arch = config.get('RECOMMENDED', 'arch')
     if arch == 'i386':
@@ -245,7 +246,7 @@ if __name__ == '__main__':
     elif cloud == 'ec2':
         filename = config.get('SCRIPT_FILE_NAMES', 'ec2_script'+suffix)
     elif cloud == 'openstack':
-       filename = config.get('SCRIPT_FILE_NAMES', 'ec2_script') 
+       filename = config.get('SCRIPT_FILE_NAMES', 'openstack_script') 
     append_file_to_output(root_dir + filename)
 
     if not nutshell:
