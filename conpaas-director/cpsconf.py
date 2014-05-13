@@ -10,6 +10,7 @@ import re
 import sys
 import random
 import platform
+import subprocess
 
 from urlparse import urlparse
 from distutils.spawn import find_executable
@@ -89,6 +90,20 @@ conf_values = {
     'port':     5555
 }
 
+apache2_info = subprocess.check_output(["apache2", "-v"])
+match = re.search(r'\d\.\d\.\d', apache2_info)
+if match:
+        digits = match.group().split(".")
+        version = '.'.join(digits[:2])
+
+if version >= 2.4:
+	access_control = """
+        Require all granted"""
+else:
+	access_control = """
+        Order deny,allow
+        Allow from all"""
+
 conf = """
 Listen %(port)s
 <VirtualHost *:%(port)s>
@@ -102,7 +117,7 @@ Listen %(port)s
 """ % conf_values
 
 conf += """
-        WSGIApplicationGroup %{GLOBAL}
+        WSGIApplicationGroup %%{GLOBAL}
         WSGIPassApacheRequest On
 
         SSLRequireSSL
@@ -110,8 +125,7 @@ conf += """
         SSLVerifyDepth 2
         SSLOptions +StdEnvVars +ExportCertData
 
-        Order deny,allow
-        Allow from all
+		%s
     </Directory>
 
     SSLEngine on
@@ -124,10 +138,13 @@ conf += """
     CustomLog ${APACHE_LOG_DIR}/director-access.log combined
     ErrorLog ${APACHE_LOG_DIR}/director-error.log
 </VirtualHost>
-"""
+""" % access_control
 
 try:
-    open('/etc/apache2/sites-available/conpaas-director', 'w').write(conf)
+	config_path = '/etc/apache2/sites-available/conpaas-director'
+	if version >= 2.4:
+		config_path += ".conf" 
+	open(config_path, 'w').write(conf)
 except IOError:
     print "W: Cannot write Apache config file. Are you root?"
     sys.exit(0)
