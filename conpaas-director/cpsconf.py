@@ -93,14 +93,14 @@ conf_values = {
 apache2_info = subprocess.check_output(["apache2", "-v"])
 match = re.search(r'\d\.\d\.\d', apache2_info)
 if match:
-        digits = match.group().split(".")
-        version = '.'.join(digits[:2])
+    digits = match.group().split(".")
+    version = '.'.join(digits[:2])
 
 if version >= 2.4:
-	access_control = """
+    access_control = """
         Require all granted"""
 else:
-	access_control = """
+    access_control = """
         Order deny,allow
         Allow from all"""
 
@@ -125,7 +125,7 @@ conf += """
         SSLVerifyDepth 2
         SSLOptions +StdEnvVars +ExportCertData
 
-		%s
+        %s
     </Directory>
 
     SSLEngine on
@@ -141,10 +141,10 @@ conf += """
 """ % access_control
 
 try:
-	config_path = '/etc/apache2/sites-available/conpaas-director'
-	if version >= 2.4:
-		config_path += ".conf" 
-	open(config_path, 'w').write(conf)
+    config_path = '/etc/apache2/sites-available/conpaas-director'
+    if version >= 2.4:
+        config_path += ".conf" 
+        open(config_path, 'w').write(conf)
 except IOError:
     print "W: Cannot write Apache config file. Are you root?"
     sys.exit(0)
