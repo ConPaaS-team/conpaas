@@ -42,3 +42,4 @@ cp $DIR/nutshell-config/scripts/my-rejoin-stack.sh $ROOT_DIR/$DEST/devstack/
 mkdir -p $ROOT_DIR/nutshell/img-creation
 cp -r $DIR/nutshell-config $ROOT_DIR/nutshell/img-creation
 cp $DIR/create-img-script.{cfg,py} $ROOT_DIR/nutshell/img-creation
+cp $CONPASS_TAR_PATH/*.tar.gz $ROOT_DIR/nutshell/

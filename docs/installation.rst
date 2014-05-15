@@ -323,6 +323,7 @@ ssh into your manager VM as root and:
    Director. In the following example, our manager's IP address is 192.168.122.15
    and we are checking if *the director* can contact *the manager* on port 443::
 
+    root@conpaas-director:~# apt-get install nmap
     root@conpaas-director:~# nmap -p443 192.168.122.15
     Starting Nmap 6.00 ( http://nmap.org ) at 2013-05-14 16:17 CEST
     Nmap scan report for 192.168.122.15
@@ -500,6 +501,11 @@ to disable any service that you do not need in your VM image. If a service is
 disabled, its package dependencies are not installed in the VM image. Paired
 with the *optimize* flag, the end result will be a minimal VM image that runs
 only what you need.
+
+Note that te configuration file contains also a **NUTSHELL** section. The 
+settings in this section are explained in details in :ref:`conpaas-in-a-nutshell`.
+However, in order to generete a regular customized VM image make sure that both 
+*container* and *nutshell* flags in this section are set to false.
 
 Once you are done with the configuration, you should run this command in the
 create_vm directory:: 
@@ -751,3 +757,88 @@ suggest to disable reverse lookups on your OCCI server by editing
 with::
 
     :DoNotReverseLookup => true,
+
+.. _conpaas-in-a-nutshell:
+
+ConPaaS in a Nutshell
+=====================
+ConPaaS in a Nutshell is an extension to the ConPaaS project which aims at 
+providing a cloud environent and a ConPaaS installation running on it, all
+in a single VM, called the Nutshell. More specifically, this VM has an 
+all-in-one OpenStack installation running on top of LXC containers, as well 
+as a ConPaaS installation already configured to work in this environment.
+
+The Nutshell VM can be depoloyed on various virtual environments, not only
+standard clouds such as OpenNebula, OpenStack and EC2 but also on simpler 
+environments such as VirtualBox. Therefore, it provides a great developing 
+and testing environemnt for ConPaaS without the need of accessing a cloud. 
+
+
+Creating a Nutshell image
+-------------------------
+The procedure for creating a Nutshell image is very similar to the one for 
+creating a standard costumized image described in section :ref:`image-creation`.
+However, there are a few settings in the configuration file which need 
+to be considered.
+
+Most importantly, there are two flags in the **Nutshell** section of the 
+configuration file, *nutshell* and *container* which control the kind of image
+that is going to be generated. Since these two flags can take either value
+true of false, we distinguish four cases:
+
+#. nutshell = false, container = false: In this case a standard VM is generated
+   and the nutshell configurations are not taken into consideration.
+
+#. nutshell = false, container = true: In this case the user indicates that the
+   image that will be generated will be a LXC container image. This image is similar
+   to a standard VM one, but it does not contain a kernel installation. 
+
+#. nutshell = true, container = false. In this case a Nutshell image is generated
+   and a standard VM image will be embedded in it. This case can be useful in case
+   the user is using a nested cloud environment based on standard VMs.
+
+#. nutshell = true, container = true. Similar to the previous case, a Nutshell image
+   is generated but in this time a container image is embedded in it instead of a VM one.
+   Therefore, in order to generate a Nutshell based on contaners make sure to set these 
+   flags to this configuration. 
+
+Another important setting for generating the Nutshell image is also the path to a direcotry
+containing the ConPaaS tarballs (cps*.tar.gz files). 
+The rest of the settings specify the distro and kernel versions that the Nutshell VM would have.
+For the moment we have tested it only for Ubuntu 12.04 with kenrel 3.5.0.
+
+In order to run the image generating script, the procedure is almost the same as for a standard image.
+From the create_vm diretory run:: 
+
+    $ python create-img-script.py
+    $ sudo ./create-img-nutshell.sh
+
+Note that if the nutshell flag is enabled the generated script file is called *create-img-nutshell.sh*.
+Otherwise, the generated script file is called create-img-conpaas.sh as indicated previously.
+
+   
+Nutshell VirtualBox Image 
+-------------------------
+From the 1.4.1 release, ConPaaS is shipped together with a VirtualBox appliance containing the Nutshell
+VM image. This can be found in cpsnutshell-*.tar.gz. Before running the appliance it is suggested to 
+create a host-only network on VirtualBox in case there is not already one created.
+To do so from the GUI, go to: File>Preferences>Network>Host-only Networks and click add. 
+
+In order to run the appliance, just extract it from the archive and double click.
+The login credentials are::
+    Username: stack
+    Password: contrail
+
+After the first login, it will take a couple of seconds for OpenStack to start. In order to check the status
+run::
+    nova list
+
+In case an empty table is shown, everything is ready and ConPaaS components can be used. A simple test would be to 
+start a *helloworld* service by running::
+    cpsclient.py create helloworld
+
+
+
+
+
+

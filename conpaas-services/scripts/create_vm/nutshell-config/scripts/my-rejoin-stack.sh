@@ -17,6 +17,10 @@ if [[ -e $TOP_DIR/stack-screenrc ]]; then
         echo "Screen session already started.."
         exit 0
     fi
+  
+    if [[ $EUID -e 0 ]]; then
+        exit 100
+    fi
 
     VOLUME_GROUP="stack-volumes"
     BACKING_FILE="/opt/stack/data/stack-volumes-backing-file"

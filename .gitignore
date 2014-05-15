@@ -1,0 +1,9 @@
+*.tar.gz
+*.LOG
+conpaas-services/src/conpaas/services/xtreemfs/etc/policies/ConpaasX509AuthProvider.class
+cps-tools/Makefile
+cps-tools/autom4te.cache/
+cps-tools/config.log
+cps-tools/config.status
+cps-tools/src/Makefile
+cps-tools/src/cps_tools/Makefile
