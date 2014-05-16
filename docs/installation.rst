@@ -490,7 +490,7 @@ everything the script has done, follow these instructions:
            sudo umount /tmp/tmp.X/dev /tmp/tmp.X/proc /tmp/tmp.X
          
 
-#. Find which loop device your using:
+#. Find which loop device you are using:
 
    ::
 
