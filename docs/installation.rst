@@ -10,8 +10,11 @@ handling their life-cycle and much more. **cpsdirector** is a web service
 exposing all its functionalities via an HTTP-based API.
 
 ConPaaS can be used either via a command line interface called **cpsclient** or
-through a web frontend (**cpsfrontend**). This document explains how to install
-and configure all the aforementioned components.
+through a web frontend (**cpsfrontend**). 
+Recently a command line interface called **cps-tools** has become available,
+that requires Python 2.7.
+This document explains how to install and configure all the aforementioned components.
+
 
 .. _ConPaaS: http://www.conpaas.eu
 .. _Flask: http://flask.pocoo.org/
@@ -42,6 +45,9 @@ Installing ConPaaS requires to take the following steps:
 
 #. Install and configure **cpsclient** as explained in
    :ref:`cpsclient-installation`.
+
+#. Install and configure **cps-tools** as explained in
+   :ref:`cpstools-installation`.
 
 #. Install **cpsfrontend** and configure it to use your ConPaaS
    director as explained in :ref:`frontend-installation`.
@@ -75,8 +81,12 @@ order to setup your ConPaaS Director installation.
 #. Make sure that your system's time and date are set correctly by installing
    and running **ntpdate**::
 
-   $ sudo apt-get install ntpdate
-   $ sudo ntpdate 0.us.pool.ntp.org
+    $ sudo apt-get install ntpdate
+    $ sudo ntpdate 0.us.pool.ntp.org
+    >> when the NTP socket is in use, you can
+    $ sudo service ntp stop
+    >> and again
+    $ sudo ntpdate 0.us.pool.ntp.org
 
 #. Download http://www.conpaas.eu/dl/cpsdirector-1.3.2.tar.gz and
    uncompress it
@@ -364,8 +374,8 @@ a Python virtual environment if ``virtualenv`` is available on your machine::
     $ source bin/activate # activate it
     $ easy_install http://www.conpaas.eu/dl/cpsclient-1.3.2.tar.gz
 
-Configuring ``cpsclient.py``:
-::
+Configuring ``cpsclient.py``::
+
     $ cpsclient.py credentials
     Enter the director URL: https://parapide-16.rennes.grid5000.fr:5555
     Enter your username: xcv
@@ -380,27 +390,34 @@ Installing and configuring cps-tools
 
 The command line ``cps-tools`` is a more recent command line client to interact
 with ConPaaS.
-It has essentially a modular internal architecture easier to extend.
+It has essentially a modular internal architecture that is easier to extend.
 It has also "object-oriented" arguments where "ConPaaS" objects are services, users, clouds and applications.
 The argument consists in stating the "object" first and then calling a sub-command on it.
 It also replaces the command line tool ``cpsadduser.py``.
 
-``cps-tools`` requires::
-:
+``cps-tools`` requires:
+
     * Python 2.7 
     * Python module argparse
     * Python module argcomplete
 
+If these are not yet installed, first follow the guidelines in :ref:`python-and-ve`.
 
-Installing ``cps-tools``:
-::
+Installing ``cps-tools``::
+
     $ tar -xaf cps-tools-1.3.2.tar.gz
     $ cd cps-tools-1.3.2
     $ ./configure --sysconf=/etc
     $ sudo make install
+        or
+    $ make prefix=$HOME/src/virtualenv-1.11.4/ve install |& tee my-make-install.log
+    $  cd ..
+    $  pip install simplejson |& tee sjson.log
+    $  apt-get install libffi-dev |& tee libffi.log
+    $  pip install cpslib-1.3.2.tar.gz |& tee my-ve-cpslib.log
 
-Configuring ``cps-tools``:
-::
+Configuring ``cps-tools``::
+
     $ mkdir -p $HOME/.conpaas
     $ cp /etc/cps-tools.conf $HOME/.conpaas/
     $ vim $HOME/.conpaas/cps-tools.conf
@@ -409,6 +426,60 @@ Configuring ``cps-tools``:
     $ cps-user get_certificate
     >> enter you password
     >> now you can use cps-tools commands
+
+.. _python-and-ve:
+
+Installing Python2.7 and virtualenv
+-----------------------------------
+
+Recommended installation order is first ``python2.7``, then ``virtualenv``.  (You will need about .5Gb free disk space.)
+Check if the following packages are installed, and install them if not::
+
+    apt-get install gcc
+    apt-get install libreadline-dev
+    apt-get install -t squeeze-backports libsqlite3-dev libsqlite3-0
+    apt-get install tk8.4-dev libgdbm-dev libdb-dev libncurses-dev
+
+Installing ``python2.7``::
+
+    $ mkdir ~/src        (choose a directory)
+    $ cd ~/src
+    $ wget --no-check-certificate http://www.python.org/ftp/python/2.7.2/Python-2.7.2.tgz
+    $ tar xzf Python-2.7.2.tgz
+    $ cd Python-2.7.2
+    $ mkdir $HOME/.localpython
+    $ ./configure --prefix=$HOME/.localpython |& tee my-config.log
+    $ make |& tee my-make.log
+    >> here you may safely ignore complaints about missing modules: bsddb185   bz2   dl   imageop   sunaudiodev  
+    $ make install |& tee my-make-install.log
+
+Installing ``virtualenv`` (here version 1.11.4)::
+
+    $ cd ~/src
+    $ wget --no-check-certificate http://pypi.python.org/packages/source/v/virtualenv/virtualenv-1.11.4.tar.gz
+    $ tar xzf virtualenv-1.11.4.tar.gz
+    $ cd virtualenv-1.11.4
+    $ $HOME/.localpython/bin/python setup.py install     (install virtualenv using P2.7)
+    
+    $ $HOME/.localpython/bin/virtualenv ve -p $HOME/.localpython/bin/python2.7 
+    New python executable in ve/bin/python2.7
+    Also creating executable in ve/bin/python
+    Installing setuptools, pip...done.
+    Running virtualenv with interpreter $HOME/.localpython/bin/python2.7
+
+Activate ``virtualenv``::
+
+    $ alias startVE='source $HOME/src/virtualenv-1.11.4/ve/bin/activate'
+    $ alias stopVE='deactivate'
+    $ startVE
+    (ve)$ python -V
+    Python 2.7.2
+    (ve)$
+
+Install python modules::
+
+    (ve)$ pip install argparse
+    (ve)$ pip install argcomplete
 
 
 .. _frontend-installation:
@@ -820,25 +891,23 @@ Otherwise, the generated script file is called create-img-conpaas.sh as indicate
 Nutshell VirtualBox Image 
 -------------------------
 From the 1.4.1 release, ConPaaS is shipped together with a VirtualBox appliance containing the Nutshell
-VM image. This can be found in cpsnutshell-*.tar.gz. Before running the appliance it is suggested to 
+VM image. This can be found in cpsnutshell-\*.tar.gz. Before running the appliance it is suggested to 
 create a host-only network on VirtualBox in case there is not already one created.
 To do so from the GUI, go to: File>Preferences>Network>Host-only Networks and click add. 
 
 In order to run the appliance, just extract it from the archive and double click.
 The login credentials are::
+
     Username: stack
     Password: contrail
 
 After the first login, it will take a couple of seconds for OpenStack to start. In order to check the status
 run::
+
     nova list
 
 In case an empty table is shown, everything is ready and ConPaaS components can be used. A simple test would be to 
 start a *helloworld* service by running::
+
     cpsclient.py create helloworld
-
-
-
-
-
 
