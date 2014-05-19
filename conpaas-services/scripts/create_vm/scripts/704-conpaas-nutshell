@@ -26,14 +26,32 @@ sudo easy_install /nutshell/cpslib-*.tar.gz
 
 (cd /nutshell ; tar -zxvf cpsdirector-*.tar.gz)
 rm /nutshell/cpsdirector-*.tar.gz
-(cd /nutshell/cpsdirector-*/ ; echo '172.16.0.1' | sudo make install)
+(cd /nutshell/cpsdirector-*/ ; echo '172.16.0.1' | sudo ./install.sh)
 
 sudo easy_install /nutshell/cpsclient-*.tar.gz
 
-sudo cpsadduser.py test@email test password
+IP=172.16.0.1
+USR = test
+PWD = password
+
+
+sudo cpsadduser.py test@email $USR $PWD
+
+
+(cd /nutshell ; tar -zxvf cps-tools-*.tar.gz)
+(cd /nutshell/cps-tools-* ; sudo make install)
+
+mkdir -p $HOME/.conpaas
+cp /etc/cps-tools.conf $HOME/.conpaas/
+sed -i "s/^\(# director_url\s*=\s*\).*$/director_url = https:\/\/$IP:5555/" cps-tools.conf
+sed -i "s/^\(# username\s*=\s*\).*$/username = $USR/" cps-tools.conf
+
+#maybe cps-user can be modified to accept pwd as parameter
+#cps-user get_certificate $PWD
+
 
 source devstack/eucarc
-/nutshell/scripts/configconpaas.sh /nutshell/director.cfg 172.16.0.1
+/nutshell/scripts/configconpaas.sh /nutshell/director.cfg $IP
 
 
 EOF

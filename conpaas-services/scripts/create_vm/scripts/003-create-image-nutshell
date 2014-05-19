@@ -61,6 +61,13 @@ do
   fi
 done
 
+#check if open-iscsi is installed 
+if [ -z `lsmod | grep -o -m 1 iscsi` ] ; then
+echo 'Please install open-iscsi before proceeding: sudo apt-get install open-iscsi'
+exit 1
+fi
+
+
 cecho "Creating empty disk image at" $FILENAME
 dd if=/dev/zero of=$FILENAME bs=1M count=1 seek=$FILESIZE
 
