@@ -1,5 +1,6 @@
 #!/bin/bash
-
+mkdir /etc/xos
+mkdir /etc/xos/xtreemfs
 cp -r $CPS_HOME/src/conpaas/services/xtreemfs/etc/* /etc/xos/xtreemfs/
 cp -r $CPS_HOME/src/conpaas/services/xtreemfs/etc/* $ETC/
 
