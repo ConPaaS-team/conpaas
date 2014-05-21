@@ -13,6 +13,7 @@ if (isset($_SESSION['uid'])) {
 
 $page = new LoginPage();
 echo $page->renderDoctype();
+$support_external_idp = Director::getSupportExternalIdp();
 ?>
 <html>
     <head>
@@ -75,6 +76,7 @@ echo $page->renderDoctype();
             <h2 class="title" id="login-title">Login</h2>
             <h2 class="title invisible" id="register-title">Register</h2>
             <table>
+                <?php if ($support_external_idp) { ?>
                 <tr>
                     <td> </td>
                     <td class="actions" align="left">
@@ -85,6 +87,7 @@ echo $page->renderDoctype();
                     -->
                     </td>
                 </tr>
+                <?php } ?>
                 <tr>
                     <td class="name">username</td>
                     <td class="input">
