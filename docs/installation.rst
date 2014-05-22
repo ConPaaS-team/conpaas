@@ -822,7 +822,7 @@ parameter from /etc/one/occi-server.conf and restarting the OCCI server.
               OS = [ arch = "<%= os.attr('TYPE', 'arch').split('/').last %>" ]
             <% end %>
        <% end %>
-       GRAPHICS = [type="vnc",listen="0.0.0.0",port="-1"]
+       GRAPHICS = [type="vnc",listen="0.0.0.0"]
 
 
    These new lines adds a number of improvements from the standard version:
