@@ -1,23 +1,35 @@
-ConPaaS (http://www.conpaas.eu) is developed by Vrije Universiteit
-Amsterdam, Zuse Institut Berlin, and XLAB in the Contrail European
-research project (http://contrail-project.eu/). Contrail is partially
-funded by the FP7 Programme of the European Commission under Grant
-Agreement FP7-ICT-257438.
+ConPaaS (http://www.conpaas.eu) is mainly developed by Vrije
+Universiteit Amsterdam, University of Rennes 1, Zuse Institut Berlin
+and XLAB. This effort was partially funded by:
 
-The main ConPaaS developers are:
+- Contrail (http://contrail-project.eu/): as part of the FP7 Programme
+  of the European Commission under Grant Agreement FP7-ICT-257438.
 
-- Frontend: Claudiu-Dan Gheorghe, Ismail El Helw, Adriana Szekeres, Emanuele Rocca.
+- HARNESS (http://www.harness-project.eu/): as part of the FP7 Programme
+  of the European Commission under Grant Agreement 318521.
 
-- Web hosting service: Ismail El Helw, Adriana Szekeres, Emanuele Rocca.
+- MC-DATA: an action of the EIT ICT Labs.
 
-- MySQL service: Ales Cernivec, Adriana Szekeres.
+- COMMIT/ (http://www.commit-nl.nl/): a public-private research community
 
-- Scalaris service: Thorsten Schuett.
 
-- MapReduce service: Thorsten Schuett.
 
-- TaskFarming service: Ana-Maria Oprescu, Kaveh Razavi, Maricel Mihalcea.
+The main ConPaaS developers are/were (in alphabetical order):
 
-- Selenium service: Emanuele Rocca.
+Adriana Szekeres
+Ales Cernivec
+Ana-Maria Oprescu 
+Bert Ijff
+Claudiu-Dan Gheorghe
+Emanuele Rocca
+Genc Tato
+Ismail El Helw
+Ismail El Helw
+Kaveh Razavi 
+Maricel Mihalcea
+Matthias Noack
+Stéphane Chevalier
+Teodo Crivat
+Thorsten Schuett
+Yann Radenac
 
-- XtreemFS service: Matthias Noack.
