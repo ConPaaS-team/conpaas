@@ -103,7 +103,7 @@ class OpenNebulaCloud(Cloud):
     def list_vms(self):
         return Cloud.list_vms(self, False)
 
-    def list_instace_types(self):
+    def list_instance_types(self):
         return self.inst_types
 
     def new_instances(self, count, name='conpaas', inst_type=None):
