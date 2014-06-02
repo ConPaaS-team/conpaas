@@ -19,6 +19,7 @@ import libcloud
 from conpaas.core.log import create_logger
 from conpaas.core.expose import expose
 from conpaas.core.controller import Controller
+from conpaas.core.proxycontroller import ProxyController
 from conpaas.core.https.server import HttpJsonResponse
 from conpaas.core.https.server import HttpErrorResponse
 from conpaas.core.https.server import FileUploadField
@@ -62,7 +63,7 @@ class BaseManager(object):
         self.logger = create_logger(__name__)
         self.logger.debug('Using libcloud version %s' % libcloud.__version__)
 
-        self.controller = Controller(config_parser)
+        self.controller = ProxyController(config_parser)
         self.logfile = config_parser.get('manager', 'LOG_FILE')
         self.config_parser = config_parser
         self.state = self.S_INIT

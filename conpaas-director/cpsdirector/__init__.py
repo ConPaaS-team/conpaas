@@ -36,6 +36,9 @@ app.register_blueprint(manifest.manifest_page)
 from cpsdirector import director
 app.register_blueprint(director.director_page)
 
+from cpsdirector import nestedapi
+app.register_blueprint(nestedapi.nestedapi_page)
+
 if __name__ == "__main__":
     db.create_all()
     app.run(host="0.0.0.0", debug=True)

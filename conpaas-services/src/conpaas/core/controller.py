@@ -420,6 +420,9 @@ class Controller(object):
 
         return False
 
+    def wait_for_nodes(self, nodes, test_agent, port, poll_interval=10):
+        return self.__wait_for_nodes(nodes, test_agent, port, poll_interval)
+
     def __wait_for_nodes(self, nodes, test_agent, port, poll_interval=10):
         self.__logger.debug('[__wait_for_nodes]: going to start polling')
 
