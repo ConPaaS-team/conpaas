@@ -393,6 +393,7 @@ It also replaces the command line tool ``cpsadduser.py``.
 
 Installing ``cps-tools``:
 ::
+    $ pip install argcomplete activate-global-python-argcomplete argparse
     $ tar -xaf cps-tools-1.3.2.tar.gz
     $ cd cps-tools-1.3.2
     $ ./configure --sysconf=/etc
@@ -409,6 +410,9 @@ Configuring ``cps-tools``:
     >> enter you password
     >> now you can use cps-tools commands
 
+In case you need to install python2.7 in a virtual env:
+
+https://gist.github.com/2xyo/6026136
 
 .. _frontend-installation:
 
@@ -706,6 +710,11 @@ OpenNebula cluster.
        :custom:
          :template: custom.erb
 
+The OCCI server should be configured to listen on the correct interface so that
+it can receive connections from the managers located on the VMs. This can be 
+achieved by modifying the "host" IP (or FQDN - fully qualified domain name) 
+parameter from /etc/one/occi-server.conf and restarting the OCCI server.
+
 #. At the end of the OCCI profile file ``/etc/one/occi_templates/common.erb``
    from your OpenNebula installation, append the following lines:
    
@@ -716,7 +725,7 @@ OpenNebula cluster.
               OS = [ arch = "<%= os.attr('TYPE', 'arch').split('/').last %>" ]
             <% end %>
        <% end %>
-       GRAPHICS = [type="vnc",listen="0.0.0.0",port="-1"]
+       GRAPHICS = [type="vnc",listen="0.0.0.0"]
 
 
    These new lines adds a number of improvements from the standard version:

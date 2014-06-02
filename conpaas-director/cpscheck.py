@@ -2,6 +2,7 @@
 
 import re
 import sys
+import ConfigParser
 from urlparse import urlparse
 
 from cpsdirector import x509cert, common
@@ -18,3 +19,9 @@ if cname != director_hostname:
 else:
     print >> sys.stderr, "OK: The hostname part of DIRECTOR_URL (%s) matches the cname found in %s/cert.pem (%s)" % (
         director_hostname, common.config_parser.get('conpaas', 'CERT_DIR'), cname)
+
+try:
+    driver = common.config_parser.get('iaas', 'DRIVER')
+except ConfigParser.Error:
+    print >> sys.stderr, "no DRIVER specified in [iaas] section"
+
