@@ -17,7 +17,11 @@ class ProxyController(Controller):
         #TODO fix harcoded links
         self.create_node_url = "https://10.100.0.42:5555/nestedapi/create_node.php"
         self.delete_node_url = "https://10.100.0.42:5555/nestedapi/delete_node.php"
-
+        self.update_configuration_url = "https://10.100.0.42:5555/nestedapi/update_configuration.php"
+       
+        self._stop_reservation_timers() 
+        self._update_configuration()
+        
     def create_nodes(self, count, test_agent, port, cloudobj=None, inst_type=None):
         """Override the create_nodes function from Controller.
         """
@@ -46,7 +50,21 @@ class ProxyController(Controller):
         """
         for node in nodes:
             self._remote_delete_node(node)
-    
+
+    def _stop_reservation_timers(self):
+        for reservation_timer in self._Controller__reservation_map.values():
+            reservation_timer.stop()
+
+    def _update_configuration(self):
+        cert = self._get_cert()
+
+        parsed_url = urlparse.urlparse(self.update_configuration_url)
+        status, body = https.client.https_post(parsed_url.hostname,
+                                parsed_url.port,
+                                parsed_url.path,
+                                params={'config': self.config_parser._sections,
+                                        'cert': cert})        
+
     def _get_cert(self):
         """Extract the public certificate of the manager. It will be enclosed in
         the request sent to the director (for identification).

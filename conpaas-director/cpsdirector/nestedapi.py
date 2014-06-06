@@ -60,6 +60,31 @@ class AgentController(Controller):
         db.session.rollback()
         return False        
 
+@nestedapi_page.route("/nestedapi/update_configuration.php", methods=['POST'])
+def update_configuration():
+    global controllers
+    
+    #TODO fix harcoded paths
+    cert = request.values['cert']
+      
+    d = ast.literal_eval(request.values['config'])
+    d['manager']['conpaas_home'] = '/etc/cpsdirector'
+    service_type = d['manager']['type']
+
+    config_parser = ConfigParser()
+
+    for section in d:
+        config_parser.add_section(section)
+        for option in d[section]:
+            config_parser.set(section, option, d[section][option])
+
+    controller = AgentController(config_parser)
+    controller.generate_context(service_type)
+
+    controllers[cert] = controller
+    
+    return jsonify({})    
+
 @nestedapi_page.route("/nestedapi/create_node.php", methods=['POST'])
 def create_node():
     #dictionary that holds for each manager its associated controller
@@ -69,30 +94,7 @@ def create_node():
     cert = request.values['cert']
     cloud_name = request.values['cloud']
 
-    log(request.values['config'])
-    log(cloud_name)
-    
-    #check if a controller was already created for the manager issuing 
-    #the request
-    #TODO fix harcoded paths
-    if cert not in controllers:
-        d = ast.literal_eval(request.values['config'])
-        d['manager']['conpaas_home'] = '/etc/cpsdirector'
-        service_type = d['manager']['type']
-        
-        config_parser = ConfigParser()
-        
-        for section in d:
-            config_parser.add_section(section)
-            for option in d[section]:
-                config_parser.set(section, option, d[section][option])
-        
-        controller = AgentController(config_parser)
-        controller.generate_context(service_type)
-        
-        controllers[cert] = controller
-    else:
-        controller = controllers[cert]
+    controller = controllers[cert]
 
     if cloud_name == 'default':
             cloud_name = 'iaas'
