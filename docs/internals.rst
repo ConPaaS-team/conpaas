@@ -45,7 +45,7 @@ A new service should be added in a new python module under the
     ConPaaS/  (conpaas/conpaas-services/)
     │── src
     │   │── conpaas
-    │   │   │── \textcolor{red}{core}
+    │   │   │── core
     │   │   │   │── clouds
     │   │   │   │   │── base.py
     │   │   │   │   │── dummy.py
@@ -59,7 +59,7 @@ A new service should be added in a new python module under the
     │   │   │   │── file.py
     │   │   │   │── ganglia.py
     │   │   │   │── git.py
-    │   │   │   │── https\
+    │   │   │   │── https
     │   │   │   │── iaas.py
     │   │   │   │── ipop.py
     │   │   │   │── log.py
@@ -68,7 +68,7 @@ A new service should be added in a new python module under the
     │   │   │   │── misc.py
     │   │   │   │── node.py
     │   │   │   │── services.py
-    │   │   │── \textcolor{red}{services}
+    │   │   │── services
     │   │       │── cds/
     │   │       │── galera/
     │   │       │── helloworld/
@@ -85,9 +85,9 @@ A new service should be added in a new python module under the
     │   │── libcloud -> ../contrib/libcloud/
     │   │── setup.py
     │   │── tests
-    │       │── core\
+    │       │── core
     │       │── run_tests.py
-    │       │── services\
+    │       │── services
     │       │── unit-tests.sh
     │── config
     │── contrib
@@ -254,8 +254,8 @@ configuration files described above.
 ::
 
     ConPaaS/  (conpaas/conpaas-services/)
-    │── \textcolor{blue}{config}
-    │   │── \textcolor{red}{agent}
+    │── config
+    │   │── agent
     │   │   │── default-agent.cfg
     │   │   │── galera-agent.cfg
     │   │   │── helloworld-agent.cfg
@@ -266,38 +266,38 @@ configuration files described above.
     │   │   │── scalaris-agent.cfg
     │   │   │── web-agent.cfg
     │   │   │── xtreemfs-agent.cfg
-    │   │── \textcolor{red}{cloud}
+    │   │── cloud
     │   │   │── clouds-template.cfg
     │   │   │── ec2.cfg
     │   │   │── ec2.cfg.example
     │   │   │── opennebula.cfg
     │   │   │── opennebula.cfg.example
-    │   │── \textcolor{red}{ganglia}
+    │   │── ganglia
     │   │   │── ganglia_frontend.tmpl
     │   │   │── ganglia-gmetad.tmpl
     │   │   │── ganglia-gmond.tmpl
-    │   │── \textcolor{red}{ipop}
+    │   │── ipop
     │   │   │── bootstrap.config.tmpl
     │   │   │── dhcp.config.tmpl
     │   │   │── ipop.config.tmpl
     │   │   │── ipop.vpn.config.tmpl
     │   │   │── node.config.tmpl
-    │   │── \textcolor{red}{manager}
+    │   │── manager
     │       │── default-manager.cfg
     │       │── htc-manager.cfg
     │       │── htcondor.cfg
     │       │── java-manager.cfg
     │       │── php-manager.cfg
-    │── \textcolor{blue}{sbin}
-    │   │── \textcolor{red}{agent}
+    │── sbin
+    │   │── agent
     │   │   │── default-cpsagent
     │   │   │── web-cpsagent
-    │   │── \textcolor{red}{manager}
+    │   │── manager
     │       │── default-cpsmanager
     │       │── php-cpsmanager
     │       │── taskfarm-cpsmanager
-    │── \textcolor{blue}{scripts}
-        │── \textcolor{red}{agent}
+    │── scripts
+        │── agent
         │   │── agent-setup
         │   │── default-agent-start
         │   │── htc-agent-start
@@ -308,13 +308,13 @@ configuration files described above.
         │   │── taskfarm-agent-start
         │   │── web-agent-start
         │   │── xtreemfs-agent-start
-        │── \textcolor{red}{cloud}
+        │── cloud
         │   │── dummy
         │   │── ec2
         │   │── federation
         │   │── opennebula
         │   │── openstack
-        │── \textcolor{red}{create_vm}
+        │── create_vm
         │   │── 40_custom
         │   │── create-img-conpaas.sh
         │   │── create-img-script.cfg
@@ -342,7 +342,7 @@ configuration files described above.
         │       │── 998-ec2
         │       │── 998-opennebula
         │       │── 999-resize-image
-        │── \textcolor{red}{manager}
+        │── manager
             │── cds-manager-start
             │── default-git-deploy-hook
             │── default-manager-start
@@ -354,8 +354,99 @@ configuration files described above.
             │── php-manager-start
             │── taskfarm-manager-start
 
-Implementing a new ConPaaS service
-==================================
+
+Implementing a new ConPaaS service using blueprints
+===================================================
+
+Blueprints are service templates you can use to speed up the creation
+of a new service.  You can use this blueprinting mechanism with
+:file:`create-new-service-from-blueprints.sh`.
+
+The :file:`conpaas-blueprints` tree contains the following files::
+
+    conpaas-blueprints
+    │── conpaas-client
+    │   │── cps
+    │       │── blueprint.py
+    │── conpaas-frontend
+    │   │── www
+    │       │── images
+    │       │   │── blueprint.png
+    │       │── js
+    │       │   │── blueprint.js
+    │       │── lib
+    │           │── service
+    │           │   │── blueprint
+    │           │       │── __init__.php
+    │           │── ui
+    │               │── instance
+    │               │   │── blueprint
+    │               │       │── __init__.php
+    │               │── page
+    │                   │── blueprint
+    │                       │── __init__.php
+    │── conpaas-services
+        │── scripts
+        │   │── create_vm
+        │       │── scripts
+        │           │── 5xx-blueprint
+        │── src
+            │── conpaas
+                │── services
+                    │── blueprint
+                        │── agent
+                        │   │── agent.py
+                        │   │── client.py
+                        │   │── __init__.py
+                        │── __init__.py
+                        │── manager
+                            │── client.py
+                            │── __init__.py
+                            │── manager.py
+
+Edit :file:`create-new-service-from-blueprints.sh`
+and change the following lines to set up the script::
+
+    BP_lc_name=foobar                  # Lowercase service name in the tree
+    BP_mc_name=FooBar                  # Mixedcase service name in the tree
+    BP_uc_name=FOOBAR                  # Uppercase service name in the tree
+    BP_bp_name='Foo Bar'               # Selection name as shown on the frontend  create.php  page
+    BP_bp_desc='My new FooBar Service' # Description as shown on the frontend  create.php  page
+    BP_bp_num=511                      # Service sequence number for 
+                                       # conpaas-services/scripts/create_vm/create-img-script.cfg
+                                       # Please look in conpaas-services/scripts/create_vm/scripts 
+                                       # for the first available number
+
+Running the script in the ConPaaS root will copy the files from the 
+tree above to the appropriate places in the :file:`conpaas-client`, 
+:file:`conpaas-frontend` and :file:`conpaas-services` trees.  In the 
+process of copying, the above keywords will be replaced by the values
+you entered, and files and directories named :file:`*blueprint*` will be 
+replaced by the new service name.  Furthermore, the following files 
+will be adjusted similarly::
+
+    conpaas-services/src/conpaas/core/services.py
+    conpaas-frontend/www/create.php
+    conpaas-frontend/www/lib/ui/page/PageFactory.php
+    conpaas-frontend/www/lib/service/factory/__init__.php
+
+.. :TODO: need to check these files, or replacements thereof
+    conpaas-services/scripts/create_vm/select-services.sh
+    conpaas-services/scripts/create_vm/opennebula-create-new-vm-image.sh
+
+Now you are ready to set up the specifics for your service. In most newly created files you will find the following comment 
+
+::
+
+    *TODO: as this file was created from a BLUEPRINT file, you may want to 
+    change ports, paths and/or methods (e.g. for hub) to meet your specific 
+    service/server needs*.
+
+So it's a good idea to do just that.
+
+
+Implementing a new ConPaaS service by hand
+==========================================
 
 In this section we describe how to implement a new ConPaaS service by
 providing an example which can be used as a starting point. The new
@@ -508,11 +599,11 @@ Files to be modified
 
     frontend
     │── www
-        │── \textcolor{blue}{create.php}
+        │── create.php
         │── lib
             │── service
                 │── factory
-                    │── \textcolor{blue}{__init__.php}
+                    │── __init__.php
 
 Several lines of code must be added to the two files above for the new
 service to be recognized. If you look inside these files, you’ll see
@@ -521,6 +612,7 @@ self-explanatory.
 
 Files to be added
 -----------------
+.. role:: red
 
 ::
 
@@ -529,99 +621,11 @@ Files to be added
         │── lib
         |   │── service
         |   |   │── helloworld
-        |   |       │── \textcolor{red}{__init__.php}
+        |   |       │── __init__.php
         |   │── ui
         |       │── instance
         |           │── helloworld
-        |               │── \textcolor{red}{__init__.php}
+        |               │── __init__.php
         │── images
-            │── \textcolor{red}{helloworld.png}
+            │── helloworld.png
 
-Implementing a new ConPaaS service using blueprints
-===================================================
-
-As you may have noticed in |lst:helloworldservices| above, a 
-blueprinting mechanism is available to speed up the creation of a new 
-service. 
-You can use this blueprinting 
-mechanism with  :file:`create-new-service-from-blueprints.sh`.
-
-The :file:`conpaas-blueprints` tree contains the following files::
-
-    conpaas-blueprints
-    │── conpaas-client
-    │   │── cps
-    │       │── blueprint.py
-    │── conpaas-frontend
-    │   │── www
-    │       │── images
-    │       │   │── blueprint.png
-    │       │── js
-    │       │   │── blueprint.js
-    │       │── lib
-    │           │── service
-    │           │   │── blueprint
-    │           │       │── __init__.php
-    │           │── ui
-    │               │── instance
-    │               │   │── blueprint
-    │               │       │── __init__.php
-    │               │── page
-    │                   │── blueprint
-    │                       │── __init__.php
-    │── conpaas-services
-        │── scripts
-        │   │── create_vm
-        │       │── scripts
-        │           │── 5xx-blueprint
-        │── src
-            │── conpaas
-                │── services
-                    │── blueprint
-                        │── agent
-                        │   │── agent.py
-                        │   │── client.py
-                        │   │── __init__.py
-                        │── __init__.py
-                        │── manager
-                            │── client.py
-                            │── __init__.py
-                            │── manager.py
-
-Edit :file:`create-new-service-from-blueprints.sh`
-and change the following lines to set up the script::
-
-    BP_lc_name=foobar                          # lowercase service name in the tree
-    BP_mc_name=FooBar                          # mixedcase service name in the tree
-    BP_uc_name=FOOBAR                          # uppercase service name in the tree
-    BP_bp_name='Foo Bar'                       # selection name as shown on the frontend  create.php  page
-    BP_bp_desc='My brandnew FooBar Service'    # description as shown on the frontend  create.php  page
-    BP_bp_num=511                              # service sequence number for conpaas-services/scripts/create_vm/create-img-script.cfg
-                                               # look in conpaas-services/scripts/create_vm/scripts for the first free number
-
-Running the script in the ConPaaS root will copy the files from the 
-tree above to the appropriate places in the :file:`conpaas-client`, 
-:file:`conpaas-frontend` and :file:`conpaas-services` trees.  In the 
-process of copying, the above keywords will be replaced by the values
-you entered, and files and directories named :file:`*blueprint*` will be 
-replaced by the new service name.  Furthermore, the following files 
-will be adjusted similarly::
-
-    conpaas-services/src/conpaas/core/services.py
-    conpaas-frontend/www/create.php
-    conpaas-frontend/www/lib/ui/page/PageFactory.php
-    conpaas-frontend/www/lib/service/factory/__init__.php
-
-.. :TODO: need to check these files, or replacements thereof
-    conpaas-services/scripts/create_vm/select-services.sh
-    conpaas-services/scripts/create_vm/opennebula-create-new-vm-image.sh
-
-Now you are ready to set up the specifics for your service. In most newly created files you will find the following comment 
-
-::
-
-    *TODO: as this file was created from a BLUEPRINT file, you may want to 
-    change ports, paths and/or methods (e.g. for hub) to meet your specific 
-    service/server needs*.
-
-So it's a good idea to do just that.
