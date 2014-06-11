@@ -18,7 +18,8 @@ import socket
 import urlparse
 from string import Template
 
-from conpaas.core.log import create_logger
+import logging
+from conpaas.core.log import create_logger, init
 from conpaas.core import iaas
 from conpaas.core import https
 
@@ -33,6 +34,10 @@ class Controller(object):
     """
 
     def __init__(self, config_parser, **kwargs):
+        # TODO: retrieve this file name from the director.cfg configuration file & create the log file if it is not yet present
+        init('/var/log/cpsdirector/debugging.log')
+        self.__logger = create_logger(__name__)
+        self.__logger.setLevel(logging.DEBUG)
         # Params for director callback
         self.__conpaas_creditUrl = config_parser.get('manager',
                                                 'CREDIT_URL')
@@ -90,7 +95,6 @@ class Controller(object):
         self.config_parser = config_parser
         self.__created_nodes = []
         self.__partially_created_nodes = []
-        self.__logger = create_logger(__name__)
 
         self.__available_clouds = []
         self.__default_cloud = None
@@ -102,7 +106,14 @@ class Controller(object):
             self.__available_clouds.append(self.__default_cloud)
 
         if config_parser.has_option('iaas', 'OTHER_CLOUDS'):
-            self.__available_clouds.extend(iaas.get_clouds(config_parser))
+            self.__logger.debug("attempt iaas.get_clouds()")
+            try:
+                self.__available_clouds.extend(iaas.get_clouds(config_parser))
+            except Exception as e:
+                self.__logger.debug("failed iaas.get_clouds()")
+                self.__reservation_map['manager'].stop()
+                raise e
+            self.__logger.debug("succeeded iaas.get_clouds()")
 
         # Setting VM role
         self.role = 'agent'
@@ -155,6 +166,7 @@ class Controller(object):
         @return A list of nodes of type node.ServiceNode
 
         """
+        self.__logger.debug('[create_nodes]')
         ready = []
         poll = []
         iteration = 0
@@ -217,15 +229,16 @@ class Controller(object):
 
                             self.__partially_created_nodes.append(newinst)
                 else:
+                    self.__logger.debug("[create_nodes]: cloud.new_instances(%d, %s, %s)" % ( count - len(ready), name, inst_type ) )
                     self.__partially_created_nodes = cloud.new_instances(
                         count - len(ready), name, inst_type)
 
-                self.__logger.debug("cloud.new_instances returned %s" %
+                self.__logger.debug("[create_nodes]: cloud.new_instances returned %s" %
                         self.__partially_created_nodes)
 
             except Exception as e:
                 self.__logger.exception(
-                    '[_create_nodes]: Failed to request new nodes')
+                    '[create_nodes]: Failed to request new nodes')
                 self.delete_nodes(ready)
                 self.__partially_created_nodes = []
                 raise e
@@ -238,7 +251,7 @@ class Controller(object):
 
             poll = []
             if failed:
-                self.__logger.debug('[_create_nodes]: %d nodes '
+                self.__logger.debug('[create_nodes]: %d nodes '
                                     'failed to startup properly: %s'
                                     % (len(failed), str(failed)))
                 self.__partially_created_nodes = []
@@ -407,6 +420,7 @@ class Controller(object):
         """Return True if the given node has properly started an agent on the
         given port"""
         if node.ip == '' or node.private_ip == '':
+            self.__logger.debug('[__check_node]: node.ip = %s, node.private_ip = %s: return False' % (node.ip, node.private_ip))
             return False
 
         try:
@@ -414,6 +428,7 @@ class Controller(object):
                 node.ip, port))
 
             test_agent(node.ip, port)
+            self.__logger.debug('[__check_node]: node = %s' % node.__repr__())
             return True
         except socket.error, err:
             self.__logger.debug('[__check_node]: %s' % err)
@@ -421,7 +436,7 @@ class Controller(object):
         return False
 
     def __wait_for_nodes(self, nodes, test_agent, port, poll_interval=10):
-        self.__logger.debug('[__wait_for_nodes]: going to start polling')
+        self.__logger.debug('[__wait_for_nodes]: going to start polling for %d nodes' % len(nodes))
 
         done = []
         poll_cycles = 0
@@ -707,4 +722,6 @@ class ReservationTimer(Thread):
             self.event.wait(self.interval)
 
     def stop(self):
+        self.reservation_logger.debug('RTIMER Stopping timer for %s'
+                                      % (str(self.nodes)))
         self.event.set()
