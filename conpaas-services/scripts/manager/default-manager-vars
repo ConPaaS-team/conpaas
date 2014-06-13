@@ -1,0 +1,9 @@
+#!/bin/bash
+
+
+vars=(ROOT_DIR IP_PUBLIC CPS_HOME)
+
+
+for var in ${vars[@]} ; do
+    echo "$var=${!var}" >> $ROOT_DIR/vars.cfg
+done
