@@ -12,16 +12,22 @@
 from flask import Blueprint
 from flask import jsonify, request, g
 
+import sys
+import traceback
+
 import simplejson
 
 import ConfigParser
 from netaddr import IPNetwork
 
 from cpsdirector import db
+from cpsdirector import cloud as manager_controller
+
 
 from cpsdirector.common import log
 from cpsdirector.common import build_response
 from cpsdirector.common import config_parser
+
 
 application_page = Blueprint('application_page', __name__)
 
@@ -29,7 +35,8 @@ class Application(db.Model):
     aid = db.Column(db.Integer, primary_key=True,
                     autoincrement=True)
     name = db.Column(db.String(256))
-
+    manager = db.Column(db.String(512))
+    vmid = db.Column(db.String(256))
     user_id = db.Column(db.Integer, db.ForeignKey('user.uid'))
     user = db.relationship('User', backref=db.backref('applications',
                            lazy="dynamic"))
@@ -37,13 +44,14 @@ class Application(db.Model):
     def __init__(self, **kwargs):
         # Default values
         self.name = "New Application"
-
+        
         for key, val in kwargs.items():
             setattr(self, key, val)
 
+
     def to_dict(self):
         return  {
-            'aid': self.aid, 'name': self.name,
+            'aid': self.aid, 'name': self.name, 'manager':self.manager,
         }
 
     def get_available_vpn_subnet(self):
@@ -118,7 +126,7 @@ def _createapp(app_name):
     db.session.add(a)
     # flush() is needed to get auto-incremented sid
     db.session.flush()
-
+    
     db.session.commit()
 
     log('Application %s created properly' % (a.aid))
@@ -139,6 +147,27 @@ def deleteapp(user_id, app_id):
 
     return True
 
+def _startapp(user_id, app_id, cloudname):
+    app = get_app_by_id(user_id, app_id)
+    if not app:
+        return False    
+    try:
+        #s.manager, s.vmid, s.cloud = manager_controller.start(
+        #    servicetype, s.sid, g.user.uid, cloudname, appid, vpn)
+        vpn = app.get_available_vpn_subnet()
+        app.manager, app.vmid, _ = manager_controller.startapp(user_id, cloudname, app_id, vpn)
+        db.session.commit()
+        return True
+    except Exception, err:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        lines = traceback.format_exception(exc_type, exc_value, exc_traceback)
+        log(''.join('!! ' + line for line in lines))
+        error_msg = 'Error upon service creation: %s %s' % (type(err), err)
+        log(error_msg)
+        return { 'error': True, 'msg': error_msg }
+    
+
+
 from cpsdirector.user import cert_required
 @application_page.route("/createapp", methods=['POST'])
 @cert_required(role='user')
@@ -149,6 +178,14 @@ def createapp():
         return build_response(simplejson.dumps(False))
 
     return build_response(_createapp(app_name))
+
+
+@application_page.route("/startapp/<int:appid>", methods=['POST'])
+@application_page.route("/startapp/<int:appid>/<cloudname>", methods=['POST'])
+@cert_required(role='user')
+def startapp(appid, cloudname="default"):
+    return build_response(simplejson.dumps(_startapp(g.user.uid, appid, cloudname)))
+
 
 from cpsdirector.service import Service
 from cpsdirector.service import stop
@@ -199,4 +236,6 @@ def list_applications():
     return build_response(simplejson.dumps([
         app.to_dict() for app in g.user.applications.all()
     ]))
+
+
 

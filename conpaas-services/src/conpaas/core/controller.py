@@ -34,18 +34,12 @@ class Controller(object):
 
     def __init__(self, config_parser, **kwargs):
         # Params for director callback
-        self.__conpaas_creditUrl = config_parser.get('manager',
-                                                'CREDIT_URL')
-        self.__conpaas_terminateUrl = config_parser.get('manager',
-                                                   'TERMINATE_URL')
-        self.__conpaas_service_id = config_parser.get('manager',
-                                                 'SERVICE_ID')
-        self.__conpaas_user_id = config_parser.get('manager',
-                                              'USER_ID')
-        self.__conpaas_app_id = config_parser.get('manager',
-                                              'APP_ID')
-        self.__conpaas_caUrl = config_parser.get('manager',
-                                            'CA_URL')
+        self.__conpaas_creditUrl = config_parser.get('manager', 'CREDIT_URL')
+        self.__conpaas_terminateUrl = config_parser.get('manager', 'TERMINATE_URL')
+        #self.__conpaas_service_id = config_parser.get('manager', 'SERVICE_ID')
+        self.__conpaas_user_id = config_parser.get('manager', 'USER_ID')
+        self.__conpaas_app_id = config_parser.get('manager','APP_ID')
+        self.__conpaas_caUrl = config_parser.get('manager','CA_URL')
 
         # Set the CA URL as IPOP's base namespace
         self.__ipop_base_namespace = self.__conpaas_caUrl
@@ -132,29 +126,8 @@ class Controller(object):
                     % host)
                 return host
 
-    #=========================================================================#
-    #               create_nodes(self, count, contextFile, test_agent)        #
-    #=========================================================================#
-    def create_nodes(self, count, test_agent, port, cloud=None, inst_type=None):
-        """
-        Creates the VMs associated with the list of nodes. It also tests
-        if the agents started correctly.
+    def create_reservation(self, reservation_id, count, test_agent, port, cloud=None):
 
-        @param count The number of nodes to be created
-
-        @param test_agent A callback function to test if the agent
-                        started correctly in the newly created VM
-
-        @param port The port on which the agent will listen
-
-        @param cloud (Optional) If specified, this function will start new
-                        nodes inside cloud, otherwise it will start new nodes
-                        inside the default cloud or wherever the controller
-                        wants (for now only the default cloud is used)
-
-        @return A list of nodes of type node.ServiceNode
-
-        """
         ready = []
         poll = []
         iteration = 0
@@ -172,68 +145,63 @@ class Controller(object):
             iteration += 1
             msg = '[create_nodes] iter %d: creating %d nodes on cloud %s' % (
                 iteration, count - len(ready), cloud.cloud_name)
-
-            if inst_type:
-                msg += ' of type %s' % inst_type
-
             self.__logger.debug(msg)
-
             try:
                 self.__force_terminate_lock.acquire()
                 if iteration == 1:
                     request_start = time.time()
 
-                service_type = self.config_parser.get('manager', 'TYPE')
+                #service_type = self.config_parser.get('manager', 'TYPE')
 
                 # eg: conpaas-agent-php-u34-s316
-                name = "conpaas-%s-%s-u%s-s%s" % (self.role, service_type,
-                       self.__conpaas_user_id, self.__conpaas_service_id)
+                #name = "conpaas-%s-a%s-u%s" % (self.role, self.__conpaas_app_id, self.__conpaas_user_id )
 
-                if (service_type == 'htc'):
-                    # If HTC is used we need to update here as well (as I see no way to do this elsewhere)
-                    self.add_context_replacement({
-                        # 'CLOUD_VMID': cloud.cloud_vmid,
-                        'CLOUD_NAME': cloud.cloud_name,
-                        'CLOUD_MACHINE_TYPE': self.config_parser.get(cloud.cloud_name, 'INST_TYPE') ,
-                        'CLOUD_COST_PER_TIME': self.config_parser.get(cloud.cloud_name, 'COST_PER_TIME'),
-                        'CLOUD_MAX_VMS_ALL_CLOUDS': self.config_parser.get('iaas', 'MAX_VMS_ALL_CLOUDS'),
-                        'CLOUD_MAX_VMS': self.config_parser.get(cloud.cloud_name, 'MAX_VMS')
-                        }, cloud)
+                # if (service_type == 'htc'):
+                #     # If HTC is used we need to update here as well (as I see no way to do this elsewhere)
+                #     self.add_context_replacement({
+                #         # 'CLOUD_VMID': cloud.cloud_vmid,
+                #         'CLOUD_NAME': cloud.cloud_name,
+                #         'CLOUD_MACHINE_TYPE': self.config_parser.get(cloud.cloud_name, 'INST_TYPE') ,
+                #         'CLOUD_COST_PER_TIME': self.config_parser.get(cloud.cloud_name, 'COST_PER_TIME'),
+                #         'CLOUD_MAX_VMS_ALL_CLOUDS': self.config_parser.get('iaas', 'MAX_VMS_ALL_CLOUDS'),
+                #         'CLOUD_MAX_VMS': self.config_parser.get(cloud.cloud_name, 'MAX_VMS')
+                #         }, cloud)
 
-                if self.__ipop_base_ip and self.__ipop_netmask:
-                    # If IPOP has to be used we need to update VMs
-                    # contextualization data for each new instance
-                    for _ in range(count - len(ready)):
-                        vpn_ip = self.get_available_ipop_address()
-                        self.add_context_replacement({ 'IPOP_IP_ADDRESS': vpn_ip }, cloud)
+                # if self.__ipop_base_ip and self.__ipop_netmask:
+                #     # If IPOP has to be used we need to update VMs
+                #     # contextualization data for each new instance
+                #     for _ in range(count - len(ready)):
+                #         vpn_ip = self.get_available_ipop_address()
+                #         self.add_context_replacement({ 'IPOP_IP_ADDRESS': vpn_ip }, cloud)
                         
-                        for newinst in cloud.new_instances(1, name, inst_type):
-                            # Set VPN IP
-                            newinst.ip = vpn_ip
+                #         for newinst in cloud.new_instances(1, name, inst_type):
+                #             # Set VPN IP
+                #             newinst.ip = vpn_ip
 
-                            if newinst.private_ip == '':
-                                # If private_ip is not set yet, use vpn_ip
-                                newinst.private_ip = vpn_ip
+                #             if newinst.private_ip == '':
+                #                 # If private_ip is not set yet, use vpn_ip
+                #                 newinst.private_ip = vpn_ip
 
-                            self.__partially_created_nodes.append(newinst)
-                else:
-                    self.__partially_created_nodes = cloud.new_instances(
-                        count - len(ready), name, inst_type)
-
-                self.__logger.debug("cloud.new_instances returned %s" %
-                        self.__partially_created_nodes)
+                #             self.__partially_created_nodes.append(newinst)
+                # else:
+                #     self.__partially_created_nodes = cloud.new_instances(
+                #         count - len(ready), name, inst_type)
+                
+                #self.__partially_created_nodes = cloud.create_reservation(reservation_id)['Resources'] 
+                self.__partially_created_nodes = cloud.create_reservation(reservation_id)
+                
+                self.__logger.debug("cloud.new_instances returned %s" % self.__partially_created_nodes)
 
             except Exception as e:
-                self.__logger.exception(
-                    '[_create_nodes]: Failed to request new nodes')
-                self.delete_nodes(ready)
+                self.__logger.exception('[_create_nodes]: Failed to request new nodes')
+                #self.delete_nodes(ready)
+                cloud.release_reservation(reservation_id)
                 self.__partially_created_nodes = []
                 raise e
             finally:
                 self.__force_terminate_lock.release()
 
-            poll, failed = self.__wait_for_nodes(
-                self.__partially_created_nodes, test_agent, port)
+            poll, failed = self.__wait_for_nodes(self.__partially_created_nodes, test_agent, port)
             ready += poll
 
             poll = []
@@ -242,7 +210,11 @@ class Controller(object):
                                     'failed to startup properly: %s'
                                     % (len(failed), str(failed)))
                 self.__partially_created_nodes = []
-                self.delete_nodes(failed)
+                ready = []
+                #self.delete_nodes(failed)
+                cloud.release_reservation(reservation_id)
+                raise Exception("Nodes: %s, in reservation %s failed to start" % (failed, reservation_id))
+
         self.__force_terminate_lock.acquire()
         self.__created_nodes += ready
         self.__partially_created_nodes = []
@@ -260,6 +232,144 @@ class Controller(object):
         for i in ready:
             self.__reservation_map[i.id] = timer
         return ready
+
+    def prepare_reservation(self, manager_configuration, cloud=None):
+        
+        if cloud is None:
+            cloud = self.__default_cloud
+
+        return cloud.prepare_reservation(manager_configuration) 
+
+
+
+    #=========================================================================#
+    #               create_nodes(self, count, contextFile, test_agent)        #
+    #=========================================================================#
+    # def create_nodes(self, count, test_agent, port, cloud=None, inst_type=None):
+    #     """
+    #     Creates the VMs associated with the list of nodes. It also tests
+    #     if the agents started correctly.
+
+    #     @param count The number of nodes to be created
+
+    #     @param test_agent A callback function to test if the agent
+    #                     started correctly in the newly created VM
+
+    #     @param port The port on which the agent will listen
+
+    #     @param cloud (Optional) If specified, this function will start new
+    #                     nodes inside cloud, otherwise it will start new nodes
+    #                     inside the default cloud or wherever the controller
+    #                     wants (for now only the default cloud is used)
+
+    #     @return A list of nodes of type node.ServiceNode
+
+    #     """
+    #     ready = []
+    #     poll = []
+    #     iteration = 0
+
+    #     if count == 0:
+    #         return []
+
+    #     if cloud is None:
+    #         cloud = self.__default_cloud
+
+    #     if not self.deduct_credit(count):
+    #         raise Exception('Could not add nodes. Not enough credits.')
+
+    #     while len(ready) < count:
+    #         iteration += 1
+    #         msg = '[create_nodes] iter %d: creating %d nodes on cloud %s' % (
+    #             iteration, count - len(ready), cloud.cloud_name)
+
+    #         if inst_type:
+    #             msg += ' of type %s' % inst_type
+
+    #         self.__logger.debug(msg)
+
+    #         try:
+    #             self.__force_terminate_lock.acquire()
+    #             if iteration == 1:
+    #                 request_start = time.time()
+
+    #             service_type = self.config_parser.get('manager', 'TYPE')
+
+    #             # eg: conpaas-agent-php-u34-s316
+    #             name = "conpaas-%s-%s-u%s-s%s" % (self.role, service_type,
+    #                    self.__conpaas_user_id, self.__conpaas_service_id)
+
+    #             if (service_type == 'htc'):
+    #                 # If HTC is used we need to update here as well (as I see no way to do this elsewhere)
+    #                 self.add_context_replacement({
+    #                     # 'CLOUD_VMID': cloud.cloud_vmid,
+    #                     'CLOUD_NAME': cloud.cloud_name,
+    #                     'CLOUD_MACHINE_TYPE': self.config_parser.get(cloud.cloud_name, 'INST_TYPE') ,
+    #                     'CLOUD_COST_PER_TIME': self.config_parser.get(cloud.cloud_name, 'COST_PER_TIME'),
+    #                     'CLOUD_MAX_VMS_ALL_CLOUDS': self.config_parser.get('iaas', 'MAX_VMS_ALL_CLOUDS'),
+    #                     'CLOUD_MAX_VMS': self.config_parser.get(cloud.cloud_name, 'MAX_VMS')
+    #                     }, cloud)
+
+    #             if self.__ipop_base_ip and self.__ipop_netmask:
+    #                 # If IPOP has to be used we need to update VMs
+    #                 # contextualization data for each new instance
+    #                 for _ in range(count - len(ready)):
+    #                     vpn_ip = self.get_available_ipop_address()
+    #                     self.add_context_replacement({ 'IPOP_IP_ADDRESS': vpn_ip }, cloud)
+                        
+    #                     for newinst in cloud.new_instances(1, name, inst_type):
+    #                         # Set VPN IP
+    #                         newinst.ip = vpn_ip
+
+    #                         if newinst.private_ip == '':
+    #                             # If private_ip is not set yet, use vpn_ip
+    #                             newinst.private_ip = vpn_ip
+
+    #                         self.__partially_created_nodes.append(newinst)
+    #             else:
+    #                 self.__partially_created_nodes = cloud.new_instances(
+    #                     count - len(ready), name, inst_type)
+
+    #             self.__logger.debug("cloud.new_instances returned %s" %
+    #                     self.__partially_created_nodes)
+
+    #         except Exception as e:
+    #             self.__logger.exception(
+    #                 '[_create_nodes]: Failed to request new nodes')
+    #             self.delete_nodes(ready)
+    #             self.__partially_created_nodes = []
+    #             raise e
+    #         finally:
+    #             self.__force_terminate_lock.release()
+
+    #         poll, failed = self.__wait_for_nodes(
+    #             self.__partially_created_nodes, test_agent, port)
+    #         ready += poll
+
+    #         poll = []
+    #         if failed:
+    #             self.__logger.debug('[_create_nodes]: %d nodes '
+    #                                 'failed to startup properly: %s'
+    #                                 % (len(failed), str(failed)))
+    #             self.__partially_created_nodes = []
+    #             self.delete_nodes(failed)
+    #     self.__force_terminate_lock.acquire()
+    #     self.__created_nodes += ready
+    #     self.__partially_created_nodes = []
+    #     self.__force_terminate_lock.release()
+
+    #     # start reservation timer with slack of 3 mins + time already wasted
+    #     # this should be enough time to terminate instances before
+    #     # hitting the following hour
+    #     timer = ReservationTimer([i.id for i in ready],
+    #                              (55 * 60) - (time.time() - request_start),
+    #                              self.__deduct_and_check_credit,
+    #                              self.__reservation_logger)
+    #     timer.start()
+    #     # set mappings
+    #     for i in ready:
+    #         self.__reservation_map[i.id] = timer
+    #     return ready
 
     #=========================================================================#
     #                    delete_nodes(self, nodes)                            #
@@ -314,8 +424,7 @@ class Controller(object):
                                 to select
         """
         def __set_cloud_ctx(cloud):
-            contxt = self._get_context_file(service_name,
-                                            cloud.get_cloud_type())
+            contxt = self._get_context_file(service_name, cloud.get_cloud_type())
             cloud.set_context(contxt)
 
         if cloud is None:
@@ -410,9 +519,7 @@ class Controller(object):
             return False
 
         try:
-            self.__logger.debug('[__check_node]: test_agent(%s, %s)' % (
-                node.ip, port))
-
+            self.__logger.debug('[__check_node]: test_agent(%s, %s)' % (node.ip, port))
             test_agent(node.ip, port)
             return True
         except socket.error, err:
@@ -469,6 +576,7 @@ class Controller(object):
                             % str(done))
         return (done, [])
 
+     
     def create_volume(self, size, name, vm_id, cloud=None):
         """Create a new volume with the given name and size (in MBs)."""
         if cloud is None:
@@ -535,7 +643,7 @@ class Controller(object):
             AGENT_TYPE=service_name,
             MANAGER_IP=manager_ip,
             CONPAAS_USER_ID=self.__conpaas_user_id,
-            CONPAAS_SERVICE_ID=self.__conpaas_service_id,
+            #CONPAAS_SERVICE_ID=self.__conpaas_service_id,
             CONPAAS_APP_ID=self.__conpaas_app_id,
             CLOUD_TYPE=cloud_type,
             IPOP_BASE_NAMESPACE=self.__ipop_base_namespace)
@@ -599,11 +707,12 @@ class Controller(object):
         parsed_url = urlparse.urlparse(self.__conpaas_caUrl)
 
         req_key = https.x509.gen_rsa_keypair()
-
+        
+        #serviceLocator=self.__conpaas_service_id,
         x509_req = https.x509.create_x509_req(
             req_key,
             userId=self.__conpaas_user_id,
-            serviceLocator=self.__conpaas_service_id,
+            serviceLocator=self.__conpaas_app_id,
             O='ConPaaS',
             emailAddress='info@conpaas.eu',
             CN='ConPaaS',
@@ -611,11 +720,10 @@ class Controller(object):
         )
 
         x509_req_as_pem = https.x509.x509_req_as_pem(x509_req)
-        _, cert = https.client.https_post(parsed_url.hostname,
+        resp, cert = https.client.https_post(parsed_url.hostname,
                                           parsed_url.port or 443,
                                           parsed_url.path,
-                                          files=[('csr', 'csr.pem',
-                                                  x509_req_as_pem)])
+                                          files=[('csr', 'csr.pem', x509_req_as_pem)])
         cert_dir = self.config_parser.get('manager', 'CERT_DIR')
         ca_cert_file = open(os.path.join(cert_dir, 'ca_cert.pem'), 'r')
         ca_cert = ca_cert_file.read()
@@ -624,6 +732,7 @@ class Controller(object):
                  'key': https.x509.key_as_pem(req_key),
                  'cert': cert}
 
+        #self.__logger.debug('resp: %s, userid: %s, appid: %s,  hostname: %s, port: %s, path: %s, certs: %s' % (resp.msg.__dict__, self.__conpaas_user_id, self.__conpaas_app_id, parsed_url.hostname, parsed_url.port, parsed_url.path, certs))
         return certs
 
     def __force_terminate_service(self):
@@ -659,8 +768,9 @@ class Controller(object):
             _, body = https.client.https_post(parsed_url.hostname,
                                               parsed_url.port or 443,
                                               parsed_url.path,
-                                              {'sid': self.__conpaas_service_id,
-                                               'decrement': value})
+                                              {'aid': self.__conpaas_app_id, 'decrement': value})
+                                              # {'sid': self.__conpaas_service_id,
+                                              #  'decrement': value})
             obj = json.loads(body)
             return not obj['error']
         except:
@@ -696,7 +806,7 @@ class ReservationTimer(Thread):
         return len(self.nodes)
 
     def run(self):
-        self.event.wait(self.delay)
+        self.event.wait(self.delay) 
         while not self.event.is_set():
             with self.lock:
                 list_size = len(self.nodes)

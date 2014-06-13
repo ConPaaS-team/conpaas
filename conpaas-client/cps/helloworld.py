@@ -16,9 +16,9 @@ class Client(BaseClient):
 
     def usage(self, cmdname):
         BaseClient.usage(self, cmdname)
-        print "    get_helloworld serviceid"
-        print "    add_nodes      serviceid count"
-        print "    remove_nodes   serviceid count"
+        print "    get_helloworld     serviceid   appid"
+        print "    add_nodes          serviceid   appid   count"
+        print "    remove_nodes       serviceid   appid   count"
 
     def main(self, argv):
         command = argv[1]
@@ -26,12 +26,13 @@ class Client(BaseClient):
         if command == 'get_helloworld':
             try:
                 sid = int(argv[2])
+                aid = int(argv[3])
             except (IndexError, ValueError):
                 self.usage(argv[0])
                 sys.exit(0)
-                
-            self.check_service_id(sid)
-            res = self.callmanager(sid, "get_helloworld", False, {})
+            
+            self.check_service_id(sid, aid)
+            res = self.callmanager(aid, sid, "get_helloworld", False, {})
             if 'error' in res:
                 print res['error']
             else:

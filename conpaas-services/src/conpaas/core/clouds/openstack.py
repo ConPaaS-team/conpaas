@@ -9,7 +9,7 @@ class OpenStackCloud(Cloud):
         Cloud.__init__(self, cloud_name)
 
         cloud_params = [
-            'USER', 'PASSWORD', 'HOST',
+            'USER', 'PASSWORD', 'HOST','TENANT',
             'IMAGE_ID', 'SIZE_ID',
             'KEY_NAME',
             'SECURITY_GROUP_NAME',
@@ -19,6 +19,7 @@ class OpenStackCloud(Cloud):
 
         self.user = iaas_config.get(cloud_name, 'USER')
         self.passwd = iaas_config.get(cloud_name, 'PASSWORD')
+        self.tenant = iaas_config.get(cloud_name, 'TENANT')
         self.host = iaas_config.get(cloud_name, 'HOST')
         self.img_id = iaas_config.get(cloud_name, 'IMAGE_ID')
         self.size_id = iaas_config.get(cloud_name, 'SIZE_ID')
@@ -30,10 +31,17 @@ class OpenStackCloud(Cloud):
 
     # connect to openstack cloud
     def _connect(self):
-        Driver = get_driver(Provider.EUCALYPTUS)
+        #Driver = get_driver(Provider.EUCALYPTUS)
+
+        #self.driver = Driver(self.user, self.passwd, secure=False,
+        #    host=self.host, port=8773, path='/services/Cloud')
+        Driver = get_driver(Provider.OPENSTACK)
 
         self.driver = Driver(self.user, self.passwd, secure=False,
-            host=self.host, port=8773, path='/services/Cloud')
+            ex_force_auth_url='http://'+ self.host +':5000',
+            ex_force_auth_version='2.0_password',
+            ex_tenant_name= self.tenant)
+        
         self.connected = True
 
     def config(self, config_params={}, context=None):
@@ -65,8 +73,22 @@ class OpenStackCloud(Cloud):
         }
 
         nodes = self._create_service_nodes(self.driver.create_node(**kwargs))
+        self.logger.debug('OS nodes %s' % nodes)
+
 
         if count > 1:
             return nodes
 
         return [ nodes ]
+
+    def prepare_reservation(self, configuration = {}):
+        ret_configuration = {}
+        ret_configuration['ID'] = 'someid'
+        ret_configuration['Resources'] = configuration['Resources']
+
+        return ret_configuration
+
+    def create_reservation(self, configurationID):
+        return self.new_instances(1, name='conpaas')
+
+    

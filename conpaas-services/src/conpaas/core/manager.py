@@ -23,10 +23,12 @@ from conpaas.core.https.server import HttpJsonResponse
 from conpaas.core.https.server import HttpErrorResponse
 from conpaas.core.https.server import FileUploadField
 
+from conpaas.core.https.server import ConpaasRequestHandlerComponent
+
 from conpaas.core import ipop
 from conpaas.core.ganglia import ManagerGanglia
 
-class BaseManager(object):
+class BaseManager(ConpaasRequestHandlerComponent):
     """Manager class with the following exposed methods:
 
     startup() -- POST
@@ -59,6 +61,8 @@ class BaseManager(object):
     AGENT_PORT = 5555
 
     def __init__(self, config_parser):
+        ConpaasRequestHandlerComponent.__init__(self)
+
         self.logger = create_logger(__name__)
         self.logger.debug('Using libcloud version %s' % libcloud.__version__)
 
@@ -68,6 +72,8 @@ class BaseManager(object):
         self.state = self.S_INIT
 
         self.volumes = []
+        self.exposed_functions = {}
+
 
         # IPOP setup
         ipop.configure_conpaas_node(config_parser)
@@ -82,13 +88,13 @@ class BaseManager(object):
             self.ganglia = None
             return
 
-        err = self.ganglia.start()
+        # err = self.ganglia.start()
 
-        if err:
-            self.logger.exception(err)
-            self.ganglia = None
-        else:
-            self.logger.info('Ganglia started successfully')
+        # if err:
+        #     self.logger.exception(err)
+        #     self.ganglia = None
+        # else:
+        #     self.logger.info('Ganglia started successfully')
 
     def _check_state(self, expected_states):
         if self.state not in expected_states:
@@ -277,6 +283,8 @@ class BaseManager(object):
         if cloud is None or cloud == 'default':
             cloud = 'iaas'
         return self.controller.get_cloud_by_name(cloud)
+
+    
 
 
 class ManagerException(Exception):

@@ -78,13 +78,12 @@ if __name__ == '__main__':
     sys.exit(1)
   
   # Initialize the context for the client   
-  client.conpaas_init_ssl_ctx(config_parser.get('agent', 'CERT_DIR'),
-                                    'agent', config_parser.get('agent', 'USER_ID'),
-                                    config_parser.get('agent', 'SERVICE_ID'))
+  # client.conpaas_init_ssl_ctx(config_parser.get('agent', 'CERT_DIR'),
+  #                                   'agent', config_parser.get('agent', 'USER_ID'),
+  #                                   config_parser.get('agent', 'SERVICE_ID'))
 
+  client.conpaas_init_ssl_ctx(config_parser.get('agent', 'CERT_DIR'), 'agent', config_parser.get('agent', 'USER_ID'), config_parser.get('agent', 'APP_ID'))
   # Start the agent server
   print options.address, options.port
-  d = server.ConpaasSecureServer((options.address, options.port),
-                     config_parser,
-		     'agent')
+  d = server.ConpaasSecureServer((options.address, options.port), config_parser,'agent')
   d.serve_forever()

@@ -96,7 +96,43 @@ class BaseClient(object):
             print "E: Cannot perform the requested action.\nTry updating your client certificates with %s credentials" % sys.argv[0]
             sys.exit(1)
 
-    def callmanager(self, service_id, method, post, data, files=[]):
+    # def callmanager(self, service_id, method, post, data, files=[]):
+    #     """Call the manager API.
+
+    #     'service_id': an integer holding the service id of the manager.
+    #     'method': a string representing the API method name.
+    #     'post': boolean value. True for POST method, false for GET.
+    #     'data': a dictionary representing the data to be sent to the director.
+    #     'files': sequence of (name, filename, value) tuples for data to be uploaded as files.
+
+    #     callmanager loads the manager JSON response and returns it as a Python
+    #     object.
+    #     """
+    #     service = self.service_dict(service_id)
+
+    #     # File upload
+    #     if files:
+    #         res = client.https_post(service['manager'], 443, '/', data, files)
+    #     # POST
+    #     elif post:
+    #         res = client.jsonrpc_post(service['manager'], 443, '/', method, data)
+    #     # GET
+    #     else:
+    #         res = client.jsonrpc_get(service['manager'], 443, '/', method, data)
+
+    #     if res[0] == 200:
+    #         try:
+    #             data = simplejson.loads(res[1])
+    #         except simplejson.decoder.JSONDecodeError:
+    #             # Not JSON, simply return what we got
+    #             return res[1]
+
+    #         return data.get('result', data)
+
+    #     raise Exception, "Call to method %s on %s failed: %s.\nParams = %s" % (
+    #         method, service['manager'], res[1], data)
+
+    def callmanager(self, app_id, manager_id, method, post, data, files=[]):
         """Call the manager API.
 
         'service_id': an integer holding the service id of the manager.
@@ -108,17 +144,18 @@ class BaseClient(object):
         callmanager loads the manager JSON response and returns it as a Python
         object.
         """
-        service = self.service_dict(service_id)
+        application = self.application_dict(app_id)
+        
 
         # File upload
         if files:
-            res = client.https_post(service['manager'], 443, '/', data, files)
+            res = client.https_post(application['manager'], 443, '/', data, files)
         # POST
         elif post:
-            res = client.jsonrpc_post(service['manager'], 443, '/', method, data)
+            res = client.jsonrpc_post(application['manager'], 443, '/', method, manager_id, data)
         # GET
         else:
-            res = client.jsonrpc_get(service['manager'], 443, '/', method, data)
+            res = client.jsonrpc_get(application['manager'], 443, '/', method, manager_id, data)
 
         if res[0] == 200:
             try:
@@ -130,7 +167,7 @@ class BaseClient(object):
             return data.get('result', data)
 
         raise Exception, "Call to method %s on %s failed: %s.\nParams = %s" % (
-            method, service['manager'], res[1], data)
+            method, application['manager'], res[1], data)
 
     def wait_for_state(self, sid, state):
         """Poll the state of service 'sid' till it matches 'state'."""
@@ -155,30 +192,37 @@ class BaseClient(object):
     def create(self, service_type, cloud = None, application_id=None, initial_state='INIT'):
         data = {}
         if application_id is not None:
-            data['appid'] = application_id
+           data['appid'] = application_id
         if cloud is None:
-            res = self.callapi("start/" + service_type, True, data)
+            res = self.callapi("create/" + service_type, True, data)
         else:
-            res = self.callapi("start/" + service_type + '/' + cloud, True, data)
-        sid = res['sid']
+            res = self.callapi("create/" + service_type + '/' + cloud, True, data)
+        
+        # data = {'service_type': service_type}
+        # res  = self.callmanager(application_id, 0, "create_service", True, data)
+        print res   
+        
+        #sid = res['sid']
 
-        print "Creating new manager on " + res['manager'] + "... ",
-        sys.stdout.flush()
+        #print "Creating new manager on " + res['manager'] + "... ",
+        #sys.stdout.flush()
 
-        self.wait_for_state(sid, initial_state)
+        #self.wait_for_state(sid, initial_state)
 
-        print "done."
-        sys.stdout.flush()
+        #print "done."
+        #sys.stdout.flush()
 
-    def start(self, service_id, cloud = "default"):
+    def start(self, service_id, app_id, cloud = "default"):
+        #data = {'service_id': service_id, 'cloud': cloud}
         data = {'cloud': cloud}
-        res = self.callmanager(service_id, "startup", True, data)
+        res = self.callmanager(app_id, service_id, "startup", True, data)
         if 'error' in res:
             print res['error']
         else:
-            print "Your service is starting up."
+            #print "Your service is starting up."
+            print res
 
-    def stop(self, service_id):
+    def stop(self, service_id, app_id):
         print "Stopping service... "
         sys.stdout.flush()
 
@@ -189,7 +233,7 @@ class BaseClient(object):
         else:
             print "Service is in '%(state)s' state. We can not stop it." % res
 
-    def terminate(self, service_id):
+    def terminate(self, service_id, app_id):
         print "Terminating service... "
         sys.stdout.flush()
 
@@ -204,7 +248,7 @@ class BaseClient(object):
         else:
             print "failed."
 
-    def rename(self, service_id, newname):
+    def rename(self, service_id, app_id, newname):
         print "Renaming service... "
 
         if self.callapi("rename/%s" % service_id, True, { 'name': newname }):
@@ -223,7 +267,17 @@ class BaseClient(object):
 
         return []
 
-    def info(self, service_id):
+    def application_dict(self, app_id):
+        """Return application's data as a dictionary"""
+        applications = self.callapi("listapp", True, {})
+
+        for application in applications:
+            if str(application['aid']) == str(app_id):
+                return application
+
+        return []    
+
+    def info(self, service_id, app_id):
         """Print service info. Clients should extend this method and print any
         additional information needed. Returns service_dict"""
         service = self.service_dict(service_id)
@@ -238,7 +292,7 @@ class BaseClient(object):
 
         return service
 
-    def logs(self, service_id):
+    def logs(self, service_id, app_id):
         res = self.callmanager(service_id, "getLog", False, {})
         print res['log']
 
@@ -254,18 +308,18 @@ class BaseClient(object):
         #for name in zipdata.namelist():
         #    print os.path.join(self.confdir, name)
 
-    def credentials(self):
+    def credentials(self, trget, user, pwd):
         wrong_url = "E: Invalid target URL. Try with something like https://conpaas.example.com:5555\n"
 
         # Loop till  we get a valid URL
         while True:
             try:
-                # Previously saved target_url, if any
-                target = self.read_conf_value("target")
+                target = trget if trget else self.read_conf_value("target")
             except IOError:
                 target = ''
 
-            target = rlinput('Enter the director URL: ', target)
+            if not trget:
+                target = rlinput('Enter the director URL: ', target)
             try:
                 url = urlparse.urlparse(target)
             except IndexError:
@@ -298,17 +352,17 @@ class BaseClient(object):
 
         while True:
             try:
-                # Previously saved username, if any
-                username = self.read_conf_value("username")
+                username = user if user else self.read_conf_value("username")
             except IOError:
                 username = ''
 
             # Get the username
-            username = rlinput('Enter your username: ', username)
+            if not user:
+                username = rlinput('Enter your username: ', username)
             self.write_conf_to_file('username', username)
 
             # Get the password
-            password = getpass.getpass('Enter your password: ')
+            password = pwd if pwd else getpass.getpass('Enter your password: ')
             self.write_conf_to_file('password', password)
 
             if self.callapi('login', True, {}, use_certs=False):
@@ -345,15 +399,17 @@ class BaseClient(object):
         else:
             print "Startup script uploaded correctly."
 
-    def check_service_id(self, sid):
+    #TODO:genc this has been added an appid, update every call of it
+    def check_service_id(self, sid, aid):
         # get requested service data
         for service in self.callapi("list", True, {}):
-            if service['sid'] == sid:
+            if service['sid'] == sid and service['application_id'] == aid:
                 # return service type
                 return service['type'].lower()
 
         print "E: cannot find service %s" % sid
         sys.exit(1)
+
 
     def prettytable(self, print_order, rows):
         maxlens = {}
@@ -383,6 +439,17 @@ class BaseClient(object):
             output += "\n" + " ".join(rowstr).format(**row)
 
         return output
+
+    
+    def startapp(self, app_id):
+        print "Starting application... "
+        sys.stdout.flush()
+
+        res = self.callapi("startapp/%s" % app_id, True, {})
+        if res:
+            print "done."
+        else:
+            print "failed."
 
     def deleteapp(self, app_id):
         print "Deleting application... "
@@ -446,7 +513,7 @@ Do you want to continue? (y/N): """
         apps = self.callapi("listapp", True, {})
         if apps:
             if doPrint:
-                print self.prettytable(( 'aid', 'name' ), apps)
+                print self.prettytable(( 'aid', 'name', 'manager' ), apps)
             return [app['aid'] for app in apps]
         else:
             if doPrint:
@@ -475,26 +542,27 @@ Do you want to continue? (y/N): """
         print "Usage: %s COMMAND [params]" % sys.argv[0]
         print "COMMAND is one of the following"
         print
-        print "    credentials                           # set your ConPaaS credentials"
-        print "    version                               # show director's version"
-        print "    listapp                               # list all applications"
-        print "    available                             # list supported services"
-        print "    clouds                                # list available clouds"
-        print "    list              [appid]             # list running services under an application"
-        print "    deleteapp         appid               # delete an application"
-        print "    createapp         appname             # create a new application"
-        print "    renameapp         appid newname       # rename an application"
-        print "    manifest          filename            # upload a new manifest"
-        print "    download_manifest appid               # download an existing manifest"
-        print "    create            servicetype [appid] # create a new service [inside a specific application]"
-        print "    start             serviceid [cloud]   # startup the given service [on a specific cloud]"
-        print "    info              serviceid           # get service details"
-        print "    logs              serviceid           # get service logs"
-        print "    stop              serviceid           # stop the specified service"
-        print "    terminate         serviceid           # delete the specified service"
-        print "    rename            serviceid newname   # rename the specified service"
-        print "    startup_script    serviceid filename  # upload a startup script"
-        print "    usage             serviceid           # show service-specific options"
+        print "    credentials                                     # set your ConPaaS credentials"
+        print "    version                                         # show director's version"
+        print "    listapp                                         # list all applications"
+        print "    available                                       # list supported services"
+        print "    clouds                                          # list available clouds"
+        print "    list              [appid]                       # list running services under an application"
+        print "    deleteapp         appid                         # delete an application"
+        print "    createapp         appname                       # create a new application"
+        print "    startapp          [appid]                       # start an application"
+        print "    renameapp         appid       newname           # rename an application"
+        print "    manifest          filename                      # upload a new manifest"
+        print "    download_manifest appid                         # download an existing manifest"
+        print "    create            servicetype [appid]           # create a new service [inside a specific application]"
+        print "    start             serviceid   appid   [cloud]   # startup the given service [on a specific cloud]"
+        print "    info              serviceid   appid             # get service details"
+        print "    logs              serviceid   appid             # get service logs"
+        print "    stop              serviceid   appid             # stop the specified service"
+        print "    terminate         serviceid   appid             # delete the specified service"
+        print "    rename            serviceid   appid   newname   # rename the specified service"
+        print "    startup_script    serviceid   appid   filename  # upload a startup script"
+        print "    usage             servicetype                   # show service-specific options"
 
     def main(self, argv):
         """What to do when invoked from the command line. Clients should extend
@@ -511,7 +579,7 @@ Do you want to continue? (y/N): """
             return getattr(self, command)()
 
         # Service and application generic commands
-        if command in ( "listapp", "createapp", "manifest",
+        if command in ( "listapp", "createapp", "startapp","manifest",
                         "download_manifest", "list", "credentials", 
                         "available", "clouds", "create", "st_usage",
                         "deleteapp", "renameapp", "getcerts" ):
@@ -576,6 +644,10 @@ Do you want to continue? (y/N): """
                 appid = argv[2]
                 return getattr(self, command)(appid)
 
+            if command == "startapp":
+                appid = argv[2]
+                return getattr(self, command)(appid)
+
             if command == "renameapp":
                 appid = argv[2]
                 name  = argv[3]
@@ -594,6 +666,14 @@ Do you want to continue? (y/N): """
             if command == "download_manifest":
                 appid = argv[2]
                 return getattr(self, command)(appid)
+
+            if command == "credentials":
+                target = user = pwd = ''
+                if len(argv) == 5:
+                    target = argv[2]
+                    user = argv[3]
+                    pwd = argv[4]
+                return getattr(self, command)(target, user, pwd)
 
             if command == "list":
                 if len(sys.argv) == 2:
@@ -615,6 +695,7 @@ Do you want to continue? (y/N): """
         # Commands requiring a service id. We want it to be an integer.
         try:
             sid = int(argv[2])
+            aid = int(argv[2])
         except (ValueError):
             if command == "usage":
                 self.main([ argv[0], 'st_usage', argv[2] ])
@@ -625,7 +706,7 @@ Do you want to continue? (y/N): """
             self.usage(argv[0])
             sys.exit(0)
 
-        service_type = self.check_service_id(sid)
+        service_type = self.check_service_id(sid, aid)
 
         if command == "startup_script":
             try:
@@ -652,16 +733,28 @@ Do you want to continue? (y/N): """
             command = "usage"
 
         if command in ( 'start', 'stop', 'terminate', 'info', 'logs', 'usage' ):
+            try:
+                aid = int(argv[3])
+            except (ValueError):
+                if command == "usage":
+                    self.main([ argv[0], 'st_usage', argv[2] ])
+                else:
+                    self.usage(argv[0])
+                    sys.exit(0)
+            except (IndexError):
+                self.usage(argv[0])
+                sys.exit(0)
+
             # Call the method 
             if command == "start":
-                if len(sys.argv) == 3:
+                if len(sys.argv) == 4:
                     cloud = 'default'
                 else:
-                    cloud = argv[3]
+                    cloud = argv[4]
                 #return getattr(self, command)(sid, cloud)
-                return getattr(client, command)(sid, cloud)
+                return getattr(client, command)(sid, aid, cloud)
 
-            return getattr(client, command)(sid)
+            return getattr(client, command)(sid, aid)
 
         if command == "st_usage":
             return getattr(client, command)()

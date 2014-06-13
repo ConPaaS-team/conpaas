@@ -22,18 +22,26 @@ class HelloWorldManager(BaseManager):
     def __init__(self, config_parser, **kwargs):
         BaseManager.__init__(self, config_parser)
         self.nodes = []
+        
         # Setup the clouds' controller
+        
         self.controller.generate_context('helloworld')
         self.state = self.S_INIT
+        
 
     def _do_startup(self, cloud):
+        
         startCloud = self._init_cloud(cloud)
 
         self.controller.add_context_replacement(dict(STRING='helloworld'))
-
+       
+        #self.logger.exception('_do_startup: Came here: %s' % startCloud)
         try:
-            nodes = self.controller.create_nodes(1,
-                client.check_agent_process, self.AGENT_PORT, startCloud)
+            manager_configuration = {'Resources' : [{'GID' : 'ID1', 'Number' : 1, 'Type' : 'Machine', 'Attributes' : {'Cores' : 1, 'Frequency': 2.5, 'RAM' : 1024, 'Disk': 8192 }}]}
+            reservation_id = self.controller.prepare_reservation(manager_configuration)['ID']
+            nodes = self.controller.create_reservation(reservation_id, len(manager_configuration['Resources']), client.check_agent_process, self.AGENT_PORT, startCloud)
+
+            #nodes = self.controller.create_nodes(1, client.check_agent_process, self.AGENT_PORT, startCloud)
 
             node = nodes[0]
 
@@ -168,3 +176,5 @@ class HelloWorldManager(BaseManager):
             messages.append(message)
 
         return HttpJsonResponse({ 'helloworld': "\n".join(messages) })
+
+   

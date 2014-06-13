@@ -12,6 +12,7 @@ from cpsdirector.user import create_user
 
 from conpaas.core.misc import rlinput
 
+
 if __name__ == "__main__":
     db.create_all()
     credit = 50
@@ -38,7 +39,7 @@ if __name__ == "__main__":
             password, p2 = pprompt()
 
     try:
-        create_user(username, "", "", email, "", password, credit)
+        create_user(username, "", "", email, "", password, credit, '')
     except sqlalchemy.exc.IntegrityError:
         print "User %s already present" % username
 

@@ -315,7 +315,7 @@ class MGeneral(object):
         self.wait_for_state(sid, 'RUNNING')
         return sid
 
-from cpsdirector.service import _start as service_start
+#from cpsdirector.service import _start as service_start
 from cpsdirector.service import _rename as service_rename
 class MPhp(MGeneral):
     

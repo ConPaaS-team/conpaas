@@ -18,23 +18,26 @@ from conpaas.core.ganglia import AgentGanglia
 
 from conpaas.core.https.server import HttpJsonResponse
 from conpaas.core.https.server import HttpErrorResponse
+from conpaas.core.https.server import ConpaasRequestHandlerComponent
                           
-class BaseAgent(object):
+class BaseAgent(ConpaasRequestHandlerComponent):
     """Agent class with the following exposed methods:
 
     check_agent_process() -- GET
     """
 
     def __init__(self, config_parser):
+        ConpaasRequestHandlerComponent.__init__(self)
         self.logger = create_logger(__name__)    
         self.state = 'INIT'
 
         service_type = config_parser.get('agent', 'TYPE')
         user_id      = config_parser.get('agent', 'USER_ID')
-        service_id   = config_parser.get('agent', 'SERVICE_ID')
+        #service_id   = config_parser.get('agent', 'SERVICE_ID')
+        app_id   = config_parser.get('agent', 'APP_ID')
 
-        self.logger.info("'%s' agent started (uid=%s, sid=%s)" % (
-            service_type, user_id, service_id))
+        self.logger.info("'%s' agent started (uid=%s, aid=%s)" % (
+            service_type, user_id, app_id))
 
         # IPOP setup
         ipop.configure_conpaas_node(config_parser)

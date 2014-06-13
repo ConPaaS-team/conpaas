@@ -120,8 +120,11 @@ class Cloud:
 
         if self.connected is False:
             self._connect()
+            
+        nodes = self.driver.list_nodes()
+                 
         return [serviceNode for serviceNode in
-                self._create_service_nodes(self.driver.list_nodes())]
+                self._create_service_nodes(nodes)]
 
     def new_instances(self, count, name='conpaas', inst_type=None):
         raise NotImplementedError(
@@ -168,6 +171,9 @@ class Cloud:
                 private_ip = instance.private_ips[0]
             else:
                 private_ip = ''
+            #Support for nova-network
+            if len(instance.private_ips) > 1 and len(instance.public_ips) == 0:
+                ip = instance.private_ips[1]
         else:
             private_ip = ip
 
@@ -175,7 +181,7 @@ class Cloud:
             ip = ip.address
 
         if hasattr(private_ip, 'address'):
-            private_ip = private_ip.address
+           private_ip = private_ip.address
 
         return ip, private_ip
 
@@ -197,3 +203,16 @@ class Cloud:
 
     def attach_volume(self, node, volume, device):
         return self.driver.attach_volume(node, volume, device)
+
+    def prepare_reservation(self, configuration = {}):
+        raise NotImplementedError('prepareReservation not implemented for this cloud driver')
+
+    def create_reservation(self, reservation_id):
+        raise NotImplementedError('createReservation not implemented for this cloud driver')
+
+    def release_reservation(self, reservation_id):
+        raise NotImplementedError('releaseReservation not implemented for this cloud driver')
+
+    # this method is supposed to check if the the IPs are present, but it is not necessary, instead only listvms is needed
+    #def checkReservation(self, reservationID):
+    #    raise NotImplementedError('checkReservation not implemented for this cloud driver')

@@ -40,10 +40,10 @@ from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 from OpenSSL import SSL
 
 from conpaas.core import log
-from conpaas.core.expose import exposed_functions
 from conpaas.core.services import manager_services 
 from conpaas.core.services import agent_services 
 
+from conpaas.core.expose import exposed_functions_http_methods
 
 class HttpError(Exception): pass
 
@@ -82,6 +82,24 @@ class HTTPSServer(HTTPServer):
         self.server_bind()
         self.server_activate()
 
+class ConpaasRequestHandlerComponent(object):
+    def __init__(self):
+        self.exposed_functions = {}
+
+    def get_exposed_methods(self):
+        wrap_func_name = 'wrapped'
+        for attr_name in dir(self):
+            attr = object.__getattribute__(self, attr_name)
+            if hasattr(attr, 'im_self'):
+                if attr.im_func.__name__ == wrap_func_name:
+                    if attr.func_closure and attr.func_closure[0] and attr.func_closure[0].cell_contents:
+                        method_id = id( attr.func_closure[0].cell_contents)
+                        http_method = exposed_functions_http_methods[method_id]
+                        if http_method not in self.exposed_functions:
+                            self.exposed_functions[http_method] = {}
+                        self.exposed_functions[http_method][attr_name] = attr
+        return self.exposed_functions
+
 
 class ConpaasSecureServer(HTTPSServer):
     '''
@@ -95,47 +113,54 @@ class ConpaasSecureServer(HTTPSServer):
     def __init__(self, server_address, config_parser, role, **kwargs):
         log.init(config_parser.get(role, 'LOG_FILE'))
         self.config_parser = config_parser
+
+        self.instances = {}
         self.callback_dict = {'GET': {}, 'POST': {}, 'UPLOAD': {}}
+
+        handler_id = 0
+        service_instance = None
 
         if role == 'manager':
-            services = manager_services
+            from conpaas.core.applicationmanager import ApplicationManager
+            service_instance = ApplicationManager(self, config_parser, **kwargs)
         else:
             services = agent_services
+        
+            # Instantiate the requested service class
+            service_type = config_parser.get(role, 'TYPE')
+            try:
+                module = __import__(services[service_type]['module'], globals(), locals(), ['*'])
+            except ImportError:
+                raise Exception('Could not import module containing service class "%(module)s"' % 
+                    services[service_type])
 
-        # Instantiate the requested service class
-        service_type = config_parser.get(role, 'TYPE')
-        try:
-            module = __import__(services[service_type]['module'], 
-                                globals(), locals(), ['*'])
-        except ImportError:
-            raise Exception('Could not import module containing service class "%(module)s"' % 
-                services[service_type])
+            # Get the appropriate class for this service
+            service_class = services[service_type]['class']
+            try:
+                instance_class = getattr(module, service_class)
+            except AttributeError:
+                raise Exception('Could not get service class %s from module %s' % (service_class, module))
 
-        # Get the appropriate class for this service
-        service_class = services[service_type]['class']
-        try:
-            instance_class = getattr(module, service_class)
-        except AttributeError:
-            raise Exception('Could not get service class %s from module %s' % (
-                service_class, module))
+            # Create an instance of the service class
+            service_instance = instance_class(config_parser, **kwargs)
+            
+            
+        self.instances[handler_id] = service_instance
+        handler_exposed_functions = service_instance.get_exposed_methods()
 
-        # Create an instance of the service class
-        self.instance = instance_class(config_parser, **kwargs)
 
-        # Register the callable functions
-        self.callback_dict = {'GET': {}, 'POST': {}, 'UPLOAD': {}}
-        for http_method in exposed_functions:
-            for func_name in exposed_functions[http_method]:
-                self._register_method(http_method, func_name,
-                            exposed_functions[http_method][func_name])
-
+        for http_method in handler_exposed_functions:
+            for func_name in handler_exposed_functions[http_method]:
+                self._register_method(http_method, handler_id, func_name, handler_exposed_functions[http_method][func_name])
+        
         # Start the HTTPS server
-        ctx = self._conpaas_init_ssl_ctx(role,
-                                    config_parser.get(role, 'CERT_DIR'), SSL.SSLv23_METHOD)
+        ctx = self._conpaas_init_ssl_ctx(role, config_parser.get(role, 'CERT_DIR'), SSL.SSLv23_METHOD)
         HTTPSServer.__init__(self, server_address, ConpaasRequestHandler, ctx)
 
-    def _register_method(self, http_method, func_name, callback):
-        self.callback_dict[http_method][func_name] = callback
+    def _register_method(self, http_method, manager_id, func_name, callback):
+        if manager_id not in self.callback_dict[http_method]:
+            self.callback_dict[http_method][manager_id] = {}
+        self.callback_dict[http_method][manager_id][func_name] = callback
 
     def _conpaas_callback_agent(self, connection, x509, errnum, errdepth, ok):
         '''
@@ -163,8 +188,10 @@ class ConpaasSecureServer(HTTPSServer):
            return False
 
         uid = self.config_parser.get('agent', 'USER_ID')
-        sid = self.config_parser.get('agent', 'SERVICE_ID')
-        if dict['UID'] != uid or dict['serviceLocator'] != sid:
+        #sid = self.config_parser.get('agent', 'SERVICE_ID')
+        aid = self.config_parser.get('agent', 'APP_ID')
+        #if dict['UID'] != uid or dict['serviceLocator'] != sid:
+        if dict['UID'] != uid or dict['serviceLocator'] != aid:
             return False
         
         #print 'Received request from %s' % x509.get_subject()
@@ -182,12 +209,13 @@ class ConpaasSecureServer(HTTPSServer):
         '''
         components = x509.get_subject().get_components()
         dict = {}
-
+        
         '''
             Somehow this function gets called twice: once with the CA's
             certificate and once with the peer's certificate. So first
             we rule out the CA's certificate.
         '''
+        
         for key,value in components:
             dict[key] = value
             if key == 'CN':
@@ -208,8 +236,10 @@ class ConpaasSecureServer(HTTPSServer):
 
         # If request from manager, check the SID
         if dict['role'] == 'manager':
-            sid = self.config_parser.get('manager', 'SERVICE_ID')
-            if dict['serviceLocator'] != sid:
+            # sid = self.config_parser.get('manager', 'SERVICE_ID')
+            # if dict['serviceLocator'] != sid:
+            aid = self.config_parser.get('manager', 'APP_ID')
+            if dict['serviceLocator'] != aid:
                 return False
         
         #print 'Received request from %s' % x509.get_subject()
@@ -254,7 +284,6 @@ class ConpaasRequestHandler(BaseHTTPRequestHandler):
     pairs of GET parameters.
 
     '''
-
     JSON_CONTENT_TYPES = ['application/json-rpc',
                           'application/json',
                           'application/jsonrequest']
@@ -288,6 +317,7 @@ class ConpaasRequestHandler(BaseHTTPRequestHandler):
         if not self.parse_request(): # An error code has been sent, just exit
             return
         parsed_url = urlparse.urlparse(self.path)
+        
         # we allow calls to / only
         if parsed_url.path != '/':
             self.send_error(httplib.NOT_FOUND)
@@ -353,41 +383,45 @@ class ConpaasRequestHandler(BaseHTTPRequestHandler):
         return params
 
     def _dispatch(self, callback_type, params):
-        if 'method' not in params:
+        if 'manager_id' not in params:
             self.send_method_missing(callback_type, params)
-        elif params['method'] not in self.server.callback_dict[callback_type]:
-            self.send_method_not_found(callback_type, params)
-        else:
-            callback_name = params.pop('method')
-            callback_params = {}
-            if callback_type != 'UPLOAD':
-                if 'params' in params:
-                    callback_params = params['params']
-                request_id = params['id']
+        elif int(params['manager_id']) not in self.server.callback_dict[callback_type]:
+            self.send_method_missing(callback_type, params)
+        else:    
+            callback_manager_id = int(params.pop('manager_id'))
+            if 'method' not in params:
+                self.send_method_missing(callback_type, params)
+            elif params['method'] not in self.server.callback_dict[callback_type][callback_manager_id]:
+                self.send_method_not_found(callback_type, params)
             else:
-                callback_params = params
-                request_id = 1
-            try:
-                response = self._do_dispatch(callback_type, callback_name, callback_params)
-                if isinstance(response, HttpFileDownloadResponse):
-                    self.send_file_response(httplib.OK, response.file,
-                                    {'Content-disposition': 'attachement; filename="%s"' % (response.filename)})
-                elif isinstance(response, HttpErrorResponse):
-                    self.send_custom_response(httplib.OK,
-                                    json.dumps({'error': response.message, 'id': request_id}))
-                elif isinstance(response, HttpJsonResponse):
-                    self.send_custom_response(httplib.OK,
-                                    json.dumps({'result': response.obj, 'error': None, 'id': request_id}))
-            except:
-                errmsg = 'Error when calling method %s with params %s: %s' \
-                        % (callback_name, callback_params, traceback.format_exc())
-                self.send_custom_response(httplib.OK,
-                                          json.dumps({'error': errmsg}))
-                sys.stderr.write(errmsg + '\n')
-                sys.stderr.flush()
+                callback_name = params.pop('method')
+                callback_params = {}
+                if callback_type != 'UPLOAD':
+                    if 'params' in params:
+                        callback_params = params['params']
+                    request_id = params['id']
+                else:
+                    callback_params = params
+                    request_id = 1
+                try:
+                    response = self._do_dispatch(callback_type, callback_manager_id, callback_name, callback_params)
+                    if isinstance(response, HttpFileDownloadResponse):
+                        self.send_file_response(httplib.OK, response.file, {'Content-disposition': 'attachement; filename="%s"' % (response.filename)})
+                    elif isinstance(response, HttpErrorResponse):
+                        self.send_custom_response(httplib.OK, json.dumps({'error': response.message, 'id': request_id}))
+                    elif isinstance(response, HttpJsonResponse):
+                        self.send_custom_response(httplib.OK, json.dumps({'result': response.obj, 'error': None, 'id': request_id}))
+                        
+                except:
+                    errmsg = 'Error when calling method %s with params %s: %s' \
+                            % (callback_name, callback_params, traceback.format_exc())
+                    self.send_custom_response(httplib.OK, json.dumps({'error': errmsg}))
+                    sys.stderr.write(errmsg + '\n')
+                    sys.stderr.flush()
 
-    def _do_dispatch(self, callback_type, callback_name, params):
-        return self.server.callback_dict[callback_type][callback_name](self.server.instance, params)
+    def _do_dispatch(self, callback_type, callback_manager_id, callback_name, params):
+        #return self.server.callback_dict[callback_type][callback_service_id][callback_name](self.server.instances[callback_service_id], params)
+        return self.server.callback_dict[callback_type][callback_manager_id][callback_name](params)
 
     def send_custom_response(self, code, body=None):
         '''Convenience method to send a custom HTTP response.
