@@ -501,7 +501,7 @@ After having uncompressed it you should install the required Debian packages::
 Copy all the files contained in the :file:`www` directory underneath your web
 server document root. For example::
 
-   $ sudo cp -a www/ /var/www/conpaas/
+   $ sudo cp -a www/ /var/www/
 
 Copy :file:`conf/main.ini` and :file:`conf/welcome.txt` in your ConPaaS
 Director configuration folder (:file:`/etc/cpsdirector`). Modify those files to
@@ -513,7 +513,7 @@ Create a :file:`config.php` file in the web server directory where you have
 chosen to install the frontend. :file:`config-example.php` is a good starting
 point::
 
-   $ sudo cp www/config-example.php /var/www/conpaas/config.php
+   $ sudo cp www/config-example.php /var/www/config.php
 
 Note that :file:`config.php` must contain the :envvar:`CONPAAS_CONF_DIR`
 option, pointing to the directory mentioned in the previous step
