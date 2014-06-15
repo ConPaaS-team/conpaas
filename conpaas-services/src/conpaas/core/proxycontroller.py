@@ -14,10 +14,6 @@ class ProxyController(Controller):
     def __init__(self, config_parser):
         self.config_parser = config_parser
         Controller.__init__(self, config_parser)
-        #TODO fix harcoded links
-        self.create_node_url = "https://10.100.0.42:5555/nestedapi/create_node.php"
-        self.delete_node_url = "https://10.100.0.42:5555/nestedapi/delete_node.php"
-        self.update_configuration_url = "https://10.100.0.42:5555/nestedapi/update_configuration.php"
        
         self._stop_reservation_timers() 
         self._update_configuration()
@@ -38,10 +34,10 @@ class ProxyController(Controller):
             nodes.append(node)
 
         #wait for the nodes to be up
-        poll, failed = self.wait_for_nodes(nodes, test_agent, int(port))        
+        poll, failed = self._Controller__wait_for_nodes(nodes, test_agent, int(port))        
         
         if failed:
-            self.controller.delete_nodes(failed)
+            self.delete_nodes(failed)
 
         return poll
 
@@ -56,9 +52,12 @@ class ProxyController(Controller):
             reservation_timer.stop()
 
     def _update_configuration(self):
+        """ When the manager is created, push the configuration to the director, so
+        that the timer for the manager is started on the director's side.
+        """
         cert = self._get_cert()
 
-        parsed_url = urlparse.urlparse(self.update_configuration_url)
+        parsed_url = urlparse.urlparse(self._Controller__conpaas_configUrl)
         status, body = https.client.https_post(parsed_url.hostname,
                                 parsed_url.port,
                                 parsed_url.path,
@@ -78,7 +77,7 @@ class ProxyController(Controller):
     def _remote_create_node(self, count, test_agent, port, cloud=None, inst_type=None):
         cert = self._get_cert()
 
-        parsed_url = urlparse.urlparse(self.create_node_url)
+        parsed_url = urlparse.urlparse(self._Controller__conpaas_createUrl)
         status, body = https.client.https_post(parsed_url.hostname,
                                 parsed_url.port,
                                 parsed_url.path,
@@ -92,12 +91,12 @@ class ProxyController(Controller):
                            node_info['private_ip'], node_info['cloud_name'], 
                            node_info['weightBackend'])
 
-        return node
-        
+        return node        
 
     def _remote_delete_node(self, node):
         cert = self._get_cert()
-        parsed_url = urlparse.urlparse(self.delete_node_url)
+
+        parsed_url = urlparse.urlparse(self._Controller__conpaas_delUrl)
         status, body = https.client.https_post(parsed_url.hostname,
                                 parsed_url.port,
                                 parsed_url.path,

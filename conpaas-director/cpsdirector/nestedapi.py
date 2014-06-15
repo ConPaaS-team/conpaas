@@ -5,7 +5,7 @@ from flask import jsonify, request
 
 from cpsdirector import db
 from cpsdirector.user import User
-from cpsdirector.common import log
+from cpsdirector.common import log, config_parser
 from cpsdirector.cloud import ManagerController
 from cpsdirector.x509cert import generate_certificate
 
@@ -28,12 +28,14 @@ class AgentController(Controller):
         logic from ManagerController.    
     """
     
+    def __init__(self, agent_config_parser):
+        Controller.__init__(self, agent_config_parser)
+        self.config_parser.set('manager', 'CERT_DIR', config_parser.get('conpaas', 'CERT_DIR'))
+         
     def _generate_agent_certificate(self, email, cn, org):
         user_id = self.config_parser.get("manager", "USER_ID")
         service_id = self.config_parser.get("manager", "SERVICE_ID")
-        #TODO fix hardcoded path
-        #cert_dir = self.config_parser.get('conpaas', 'CERT_DIR')
-        cert_dir = "/etc/cpsdirector/certs"
+        cert_dir = self.config_parser.get('manager', 'CERT_DIR')
 
         return generate_certificate(cert_dir, user_id, service_id,
                                     "manager", email, cn, org)
@@ -63,22 +65,20 @@ class AgentController(Controller):
 @nestedapi_page.route("/nestedapi/update_configuration.php", methods=['POST'])
 def update_configuration():
     global controllers
-    
-    #TODO fix harcoded paths
     cert = request.values['cert']
       
     d = ast.literal_eval(request.values['config'])
-    d['manager']['conpaas_home'] = '/etc/cpsdirector'
+    d['manager']['conpaas_home'] = config_parser.get('conpaas', 'CONF_DIR')
     service_type = d['manager']['type']
 
-    config_parser = ConfigParser()
+    agent_config_parser = ConfigParser()
 
     for section in d:
-        config_parser.add_section(section)
+        agent_config_parser.add_section(section)
         for option in d[section]:
-            config_parser.set(section, option, d[section][option])
+            agent_config_parser.set(section, option, d[section][option])
 
-    controller = AgentController(config_parser)
+    controller = AgentController(agent_config_parser)
     controller.generate_context(service_type)
 
     controllers[cert] = controller
@@ -88,7 +88,7 @@ def update_configuration():
 @nestedapi_page.route("/nestedapi/create_node.php", methods=['POST'])
 def create_node():
     #dictionary that holds for each manager its associated controller
-    #TODO push the dictionary to a persisten structure
+    #TODO push the dictionary to a persistent structure
     global controllers
 
     cert = request.values['cert']
@@ -132,6 +132,7 @@ def remove_controller(service_id):
     the service_id.
     """
     global controllers
+    
     controller_cert = None    
 
     for cert in controllers:
