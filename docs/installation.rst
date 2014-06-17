@@ -837,7 +837,8 @@ ConPaaS in a Nutshell is an extension to the ConPaaS project which aims at
 providing a cloud environent and a ConPaaS installation running on it, all
 in a single VM, called the Nutshell. More specifically, this VM has an 
 all-in-one OpenStack installation running on top of LXC containers, as well 
-as a ConPaaS installation already configured to work in this environment.
+as a ConPaaS installation, including all of its components, already configured 
+to work in this environment.
 
 The Nutshell VM can be depoloyed on various virtual environments, not only
 standard clouds such as OpenNebula, OpenStack and EC2 but also on simpler 
@@ -857,21 +858,24 @@ configuration file, *nutshell* and *container* which control the kind of image
 that is going to be generated. Since these two flags can take either value
 true of false, we distinguish four cases:
 
-#. nutshell = false, container = false: In this case a standard VM is generated
-   and the nutshell configurations are not taken into consideration.
+#. nutshell = false, container = false: In this case a standard ConPaaS VM
+   image is generated and the nutshell configurations are not taken into consideration.
+   This is the default configuration which should be used when ConPaaS is deployed on a
+   standard cloud.
 
 #. nutshell = false, container = true: In this case the user indicates that the
    image that will be generated will be a LXC container image. This image is similar
    to a standard VM one, but it does not contain a kernel installation. 
 
 #. nutshell = true, container = false. In this case a Nutshell image is generated
-   and a standard VM image will be embedded in it. This case can be useful in case
-   the user is using a nested cloud environment based on standard VMs.
+   and a standard ConPaaS VM image will be embedded in it. This configuraiton should be
+   used for deploying ConPaaS in nested standard VMs within a single VM.
 
 #. nutshell = true, container = true. Similar to the previous case, a Nutshell image
-   is generated but in this time a container image is embedded in it instead of a VM one.
+   is generated but this time a container image is embedded in it instead of a VM one.
    Therefore, in order to generate a Nutshell based on contaners make sure to set these 
-   flags to this configuration. 
+   flags to this configuration. This is the default configuraiton for our distribution of
+   nutshell.
 
 Another important setting for generating the Nutshell image is also the path to a direcotry
 containing the ConPaaS tarballs (cps*.tar.gz files). 
@@ -886,6 +890,7 @@ From the create_vm diretory run::
 
 Note that if the nutshell flag is enabled the generated script file is called *create-img-nutshell.sh*.
 Otherwise, the generated script file is called create-img-conpaas.sh as indicated previously.
+
 
    
 Nutshell VirtualBox Image 
