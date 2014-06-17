@@ -136,7 +136,7 @@ if __name__ == '__main__':
         error('Unknown hypervisor "%s".' % hypervisor)
     
     cloud = config.get('CUSTOMIZABLE', 'cloud')
-    if cloud == 'opennebula':
+    if cloud == 'opennebula' or cloud == 'vbox':
         pass
     elif cloud == 'ec2':
         if hypervisor != 'xen':
@@ -247,6 +247,8 @@ if __name__ == '__main__':
         filename = config.get('SCRIPT_FILE_NAMES', 'ec2_script'+suffix)
     elif cloud == 'openstack':
        filename = config.get('SCRIPT_FILE_NAMES', 'ec2_script') 
+    elif cloud == 'vbox':
+        filename = config.get('SCRIPT_FILE_NAMES', 'vbox_script'+suffix)
     append_file_to_output(root_dir + filename)
 
     if not nutshell:

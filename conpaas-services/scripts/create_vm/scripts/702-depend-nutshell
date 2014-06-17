@@ -17,19 +17,19 @@ apt-get -f -y update
 # pre-accept sun-java6 licence
 echo "debconf shared/accepted-sun-dlj-v1-1 boolean true" | debconf-set-selections
 DEBIAN_FRONTEND=noninteractive apt-get -y --force-yes --no-install-recommends --no-upgrade \
-        install openssh-server wget git iptables-persistent patch libvirt-bin \
+        install openssh-server wget git ssl-cert patch libvirt-bin \
                 python python-pycurl python-openssl python-m2crypto \
                 python-cheetah python-netaddr libxslt1-dev subversion unzip less vim \
                 build-essential python-setuptools python-dev libffi-dev \
-                libapache2-mod-wsgi libcurl4-openssl-dev ntpdate
+                libapache2-mod-wsgi libcurl4-openssl-dev ntpdate libapache2-mod-php5 php5-curl
             
 
 # remove cached .debs from /var/cache/apt/archives to save disk space
 apt-get clean
 
 #add the iptables rules for correcting checksums
-iptables -A POSTROUTING -t mangle -p udp --dport bootpc -j CHECKSUM --checksum-fill
-iptables-save > /etc/iptables/rules.v4
+#iptables -A POSTROUTING -t mangle -p udp --dport bootpc -j CHECKSUM --checksum-fill
+#iptables-save > /etc/iptables/rules.v4
 
 exit 0
 EOF

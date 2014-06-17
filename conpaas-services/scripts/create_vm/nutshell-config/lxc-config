@@ -6,7 +6,7 @@ lxc.network.hwaddr = 00:16:3e:75:fd:48
 lxc.network.link = lxcbr0
 lxc.network.flags = up
 
-lxc.rootfs = /tmp/tmp.VWcbUG7ANf
+lxc.rootfs = /tmp/tmp.ov9YsRS5jb
 lxc.mount = /var/lib/lxc/nutshell/fstab
 lxc.pivotdir = lxc_putold
 

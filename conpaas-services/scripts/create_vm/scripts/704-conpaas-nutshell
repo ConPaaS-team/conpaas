@@ -22,36 +22,63 @@ chmod 600 /nutshell/test.pem
 sed -i '/default_floating_pool/a auto_assign_floating_ip=True' /etc/nova/nova.conf
 sed -i '/allow_resize_to_same_host/a ram_allocation_ratio=10' /etc/nova/nova.conf
 
-sudo easy_install /nutshell/cpslib-*.tar.gz
-
-(cd /nutshell ; tar -zxvf cpsdirector-*.tar.gz)
-rm /nutshell/cpsdirector-*.tar.gz
-(cd /nutshell/cpsdirector-*/ ; echo '172.16.0.1' | sudo ./install.sh)
-
-sudo easy_install /nutshell/cpsclient-*.tar.gz
 
 IP=172.16.0.1
 USR=test
-PWD=password
+PSWD=password
 
+#install director
+sudo easy_install /nutshell/cpslib-*.tar.gz
 
-sudo cpsadduser.py test@email $USR $PWD
+(cd /nutshell ; tar -zxvf cpsdirector-*.tar.gz)
+sudo rm /nutshell/cpsdirector-*.tar.gz
+(cd /nutshell/cpsdirector-*/ ; echo $IP | sudo ./install.sh)
+sudo a2enmod ssl
+sudo a2ensite conpaas-director
 
+#install client
+sudo easy_install /nutshell/cpsclient-*.tar.gz
+
+#sudo cpsadduser.py test@email $USR $PSWD
+sudo cpsadduser.py test@email test password
+
+#install tools (has some problems)
+wget http://apt.postgresql.org/pub/repos/apt/pool/main/p/python-argcomplete/python-argcomplete_0.6.9-1.pgdg12.4+1_all.deb
+sudo dpkg -i python-argcomplete_0.6.9-1.pgdg12.4+1_all.deb
+rm python-argcomplete_0.6.9-1.pgdg12.4+1_all.deb
 
 (cd /nutshell ; tar -zxvf cps-tools-*.tar.gz)
+(cd /nutshell/cps-tools-* ; ./configure --sysconf=/etc)
 (cd /nutshell/cps-tools-* ; sudo make install)
 
 mkdir -p $HOME/.conpaas
 cp /etc/cps-tools.conf $HOME/.conpaas/
-sed -i "s/^\(# director_url\s*=\s*\).*$/director_url = https:\/\/$IP:5555/" cps-tools.conf
-sed -i "s/^\(# username\s*=\s*\).*$/username = $USR/" cps-tools.conf
+sed -i "s/^\(# director_url\s*=\s*\).*$/director_url = https:\/\/$IP:5555/" /opt/stack/.conpaas/cps-tools.conf
+sed -i "s/^\(# username\s*=\s*\).*$/username = $USR/" /opt/stack/.conpaas/cps-tools.conf
+sed -i "s/^\(# password\s*=\s*\).*$/password = $PSWD/" /opt/stack/.conpaas/cps-tools.conf
 
 #maybe cps-user can be modified to accept pwd as parameter
-#cps-user get_certificate $PWD
+#cps-user get_certificate $PSWD
 
+#install frontend
+(cd /nutshell ; tar -zxvf cpsfrontend-*.tar.gz)
+sudo cp -a /nutshell/cpsfrontend-*/www/* /var/www/
+sudo rm -f  /var/www/index.html
+sudo cp /nutshell/cpsfrontend-*/conf/{main.ini,welcome.txt} /etc/cpsdirector/
+sudo sed -i "s/^\(logfile\s*=\s*\).*$/logfile = \/var\/log\/apache2\/cpsfrontend-error.log/" /etc/cpsdirector/main.ini
 
-source devstack/eucarc
+sudo cp /var/www/config-example.php /var/www/config.php
+sudo sed -i "s/^\(const DIRECTOR_URL\s*=\s*\).*$/const DIRECTOR_URL = 'https:\/\/172.16.0.1:5555';/" /var/www/config.php
+sudo a2ensite default-ssl
+
+sudo chmod 777 /var/log/apache2
+sudo mkdir /var/log/cpsdirector/
+sudo touch /var/log/cpsdirector/debugging.log
+sudo chmod 777 /var/log/cpsdirector/debugging.log
+
+#source devstack/eucarc
 /nutshell/scripts/configconpaas.sh /nutshell/director.cfg $IP
+
 
 
 EOF
