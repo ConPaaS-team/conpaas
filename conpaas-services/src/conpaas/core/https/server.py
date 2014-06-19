@@ -121,7 +121,7 @@ class ConpaasSecureServer(HTTPSServer):
         service_instance = None
 
         if role == 'manager':
-            from conpaas.core.applicationmanager import ApplicationManager
+            from conpaas.core.appmanager.appmanager import ApplicationManager
             service_instance = ApplicationManager(self, config_parser, **kwargs)
         else:
             services = agent_services
