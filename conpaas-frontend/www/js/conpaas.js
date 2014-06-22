@@ -130,7 +130,7 @@ conpaas.http = (function (this_module) {
         conpaas.ui.visible('pgstatInfo', false);
     },
     req: function (url, params, method, responseCallback, errorCallback,
-            dataType, isAsync = true) {
+            dataType, isAsync) {
         var that = this,
             params = params || {},
             method = method || 'get',

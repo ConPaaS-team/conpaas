@@ -15,7 +15,7 @@ grep -q "^#includedir.*/etc/sudoers.d" /etc/sudoers ||
 
 echo "stack:contrail" | chpasswd
 su - stack -c "git clone https://github.com/openstack-dev/devstack.git"
-sed --in-place 's/:80/:8080/' $DEST/devstack/files/apache-horizon.template
+#sed --in-place 's/:80/:8080/' $DEST/devstack/files/apache-horizon.template
 
 exit 0
 EOF

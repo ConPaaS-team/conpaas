@@ -324,6 +324,18 @@ chown -R git:git ~git/code
 EOF
 fi
 
+# Section: 502-mysql
+
+cat <<EOF >> $ROOT_DIR/conpaas_install
+# fix apt sources
+sed --in-place 's/main/main contrib non-free/' /etc/apt/sources.list
+apt-get -f -y update
+DEBIAN_FRONTEND=noninteractive apt-get -y --force-yes --no-install-recommends --no-upgrade \
+		install mysql-server python-mysqldb
+update-rc.d mysql disable
+
+EOF
+
 # Section: 502-galera
 
 cat <<EOF >> $ROOT_DIR/conpaas_install
@@ -412,6 +424,135 @@ rm -fr glb-\${glb_version} glb-\${glb_version}.tar.gz
 
 
 EOF
+# Section: 503-condor
+
+cat <<EOF >> $ROOT_DIR/conpaas_install
+cecho "===== install packages required by HTCondor ====="
+# avoid warning: W: GPG error: http://mozilla.debian.net squeeze-backports Release: The following signatures couldn't be verified because the public key is not available: NO_PUBKEY 85A3D26506C4AE2A 
+#apt-get install debian-keyring
+wget -O - -q http://mozilla.debian.net/archive.asc | apt-key add -
+# avoid warning: W: GPG error: http://dl.google.com stable Release: The following signatures couldn't be verified because the public key is not available: NO_PUBKEY A040830F7FAC5991 
+wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
+
+# If things go wrong, you may want to read  http://research.cs.wisc.edu/htcondor/debian/
+# 
+# added [arch=amd64 trusted=yes] to avoid authentication warning
+echo "deb [arch=amd64 trusted=yes] http://research.cs.wisc.edu/htcondor/debian/stable/ $DEBIAN_DIST contrib" >> /etc/apt/sources.list
+apt-get update
+if [ $DEBIAN_DIST == "squeeze" ]
+then
+    DEBIAN_FRONTEND=noninteractive apt-get -y --force-yes --no-install-recommends --no-upgrade \
+        install sun-java6-jdk ant condor sudo xvfb
+elif [ $DEBIAN_DIST == "wheezy" ]
+then
+    DEBIAN_FRONTEND=noninteractive apt-get -y --force-yes --no-install-recommends --no-upgrade \
+        install openjdk-7-jre-headless ant condor sudo xvfb
+else
+    echo "Error: unknown Debian distribution '$DEBIAN_DIST': cannot select correct Condor packages."
+    exit 1
+fi
+
+# next 12 lines moved here from conpaas-services/scripts/manager/htc-manager-start
+apt-get update -y 
+echo ==== python-setuptools 
+apt-get install python-setuptools -y 
+sleep 2
+echo ==== pip  
+easy_install -U distribute
+easy_install pip 
+sleep 2
+echo PATH=$PATH 
+export PATH=$PATH:/usr/local/bin
+echo PATH=$PATH 
+echo ==== xmltodict  
+pip install xmltodict 
+
+echo ===== check if HTCondor is running =====
+ps -ef | grep condor
+echo ===== stop condor =====
+/etc/init.d/condor stop
+echo ===== 
+
+# remove cached .debs from /var/cache/apt/archives to save disk space
+apt-get clean
+EOF
+
+# Section: 504-selenium
+
+cat <<EOF >> $ROOT_DIR/conpaas_install
+cecho "===== install SELENIUM ====="
+
+if [ $DEBIAN_DIST == "squeeze" ]
+then
+    # recent versions of iceweasel and chrome
+    echo "deb http://backports.debian.org/debian-backports $DEBIAN_DIST-backports main" >> /etc/apt/sources.list
+    echo "deb http://mozilla.debian.net/ $DEBIAN_DIST-backports iceweasel-esr" >> /etc/apt/sources.list
+
+    apt-get -f -y update
+    apt-get -f -y --force-yes install -t $DEBIAN_DIST-backports iceweasel
+    apt-get -f -y --force-yes install xvfb xinit chromium-browser sun-java6-jdk
+elif [ $DEBIAN_DIST == "wheezy" ]
+then
+    apt-get -f -y update
+    apt-get -f -y --force-yes install iceweasel xvfb xinit chromium-browser openjdk-7-jre-headless
+else
+    echo "Error: unknown Debian distribution '$DEBIAN_DIST': cannot select correct Selenium packages."
+    exit 1
+fi
+
+EOF
+
+# Section: 505-hadoop
+
+cat <<EOF >> $ROOT_DIR/conpaas_install
+cecho "===== install cloudera repo for hadoop ====="
+# add cloudera repo for hadoop
+if [ "$DEBIAN_DIST" == "wheezy" ]
+then
+  hadoop_dist="squeeze"
+else
+  hadoop_dist="$DEBIAN_DIST"
+fi
+echo "deb http://archive.cloudera.com/debian \${hadoop_dist}-cdh3 contrib" >> /etc/apt/sources.list
+wget -O - http://archive.cloudera.com/debian/archive.key 2>/dev/null | apt-key add -
+apt-get -f -y update
+apt-get -f -y --no-install-recommends --no-upgrade install \
+  hadoop-0.20 hadoop-0.20-namenode hadoop-0.20-datanode \
+  hadoop-0.20-secondarynamenode hadoop-0.20-jobtracker  \
+  hadoop-0.20-tasktracker hadoop-pig hue-common  hue-filebrowser \
+  hue-jobbrowser hue-jobsub hue-plugins hue-server dnsutils
+update-rc.d hadoop-0.20-namenode disable
+update-rc.d hadoop-0.20-datanode disable
+update-rc.d hadoop-0.20-secondarynamenode disable
+update-rc.d hadoop-0.20-jobtracker disable
+update-rc.d hadoop-0.20-tasktracker disable
+update-rc.d hue disable
+# create a default config dir
+mkdir -p /etc/hadoop-0.20/conf.contrail
+update-alternatives --install /etc/hadoop-0.20/conf hadoop-0.20-conf /etc/hadoop-0.20/conf.contrail 99
+# remove cloudera repo
+sed --in-place "s%deb http://archive.cloudera.com/debian \${hadoop_dist}-cdh3 contrib%%" /etc/apt/sources.list
+apt-get -f -y update
+
+
+EOF
+
+# Section: 506-scalaris
+
+cat <<EOF >> $ROOT_DIR/conpaas_install
+cecho "===== install scalaris repo ====="
+# add scalaris repo
+echo "deb http://download.opensuse.org/repositories/home:/scalaris/Debian_6.0 /" >> /etc/apt/sources.list
+wget -O - http://download.opensuse.org/repositories/home:/scalaris/Debian_6.0/Release.key 2>/dev/null | apt-key add -
+apt-get -f -y update
+apt-get -f -y --no-install-recommends --no-upgrade install scalaris screen erlang
+update-rc.d scalaris disable
+# remove scalaris repo
+sed --in-place 's%deb http://download.opensuse.org/repositories/home:/scalaris/Debian_6.0 /%%' /etc/apt/sources.list
+apt-get -f -y update
+
+EOF
+
 # Section: 507-xtreemfs
 
 cat <<EOF >> $ROOT_DIR/conpaas_install
@@ -437,6 +578,70 @@ update-rc.d xtreemfs-dir disable
 # remove xtreemfs repo
 sed --in-place 's%deb http://download.opensuse.org/repositories/home:/xtreemfs:/unstable/Debian_..0 /%%' /etc/apt/sources.list
 apt-get -f -y update
+
+EOF
+
+# Section: 508-cds
+
+cat <<EOF >> $ROOT_DIR/conpaas_install
+cecho "===== add dotdeb repo for php fpm ====="
+# add dotdeb repo for php fpm
+echo "deb http://packages.dotdeb.org stable all" >> /etc/apt/sources.list
+wget -O - http://www.dotdeb.org/dotdeb.gpg 2>/dev/null | apt-key add -
+apt-get -f -y update
+apt-get -f -y --no-install-recommends --no-upgrade install php5-fpm php5-curl \
+		php5-mcrypt php5-mysql php5-odbc php5-pgsql php5-sqlite php5-sybase php5-xmlrpc \
+		php5-xsl php5-adodb php5-memcache php5-gd git tomcat6-user memcached \
+		make gcc g++
+update-rc.d php5-fpm disable
+update-rc.d memcached disable
+
+# remove dotdeb repo
+sed --in-place 's%deb http://packages.dotdeb.org stable all%%' /etc/apt/sources.list
+apt-get -f -y update
+
+# remove cached .debs from /var/cache/apt/archives to save disk space
+apt-get clean
+
+EOF
+
+if [ $GIT_SERVICE = "false" ] ; then
+GIT_SERVICE="true"
+
+cat <<EOF >> $ROOT_DIR/conpaas_install
+cecho "===== install GIT ====="
+# add git user
+useradd git --shell /usr/bin/git-shell --create-home -k /dev/null
+# create ~git/.ssh and authorized_keys
+install -d -m 700 --owner=git --group=git /home/git/.ssh 
+install -m 600 --owner=git --group=git /dev/null ~git/.ssh/authorized_keys 
+# create default repository
+git init --bare ~git/code
+# create SSH key for manager -> agent access
+ssh-keygen -N "" -f ~root/.ssh/id_rsa
+echo StrictHostKeyChecking no > ~root/.ssh/config
+# allow manager -> agent passwordless pushes 
+cat ~root/.ssh/id_rsa.pub > ~git/.ssh/authorized_keys
+# fix repository permissions
+chown -R git:git ~git/code
+
+EOF
+fi
+
+
+cat <<EOF >> $ROOT_DIR/conpaas_install
+cecho "===== install latest nginx (1.2.2) and other packages required by CDS ====="
+# install latest nginx (1.2.2) and other packages required by CDS
+DEBIAN_FRONTEND=noninteractive apt-get -y --force-yes --no-install-recommends --no-upgrade \
+    install libpcre3-dev libssl-dev libgeoip-dev libperl-dev
+wget http://nginx.org/download/nginx-1.2.2.tar.gz
+tar xzf nginx-1.2.2.tar.gz
+cd nginx-1.2.2
+./configure --sbin-path=/usr/sbin/nginx --conf-path=/etc/nginx/nginx.conf --error-log-path=/var/log/nginx/error.log --http-client-body-temp-path=/var/lib/nginx/body --http-fastcgi-temp-path=/var/lib/nginx/fastcgi --http-log-path=/var/log/nginx/access.log --http-proxy-temp-path=/var/lib/nginx/proxy --lock-path=/var/lock/nginx.lock --pid-path=/var/run/nginx.pid --with-debug --with-http_dav_module --with-http_flv_module --with-http_geoip_module --with-http_gzip_static_module --with-http_realip_module --with-http_stub_status_module --with-http_ssl_module --with-http_sub_module --with-ipv6 --with-mail --with-mail_ssl_module --with-http_perl_module
+make
+make install
+cd ..
+rm -rf nginx-1.2.2*
 
 EOF
 
@@ -683,7 +888,7 @@ print shell_cmd('rm -rf /usr/share/doc-base/ 2>&1')
 print shell_cmd('rm -rf /usr/share/man/ 2>&1')
 
 EOF
-RM_SCRIPT_ARGS=' --php --galera --xtreemfs'
+RM_SCRIPT_ARGS=' --php --mysql --galera --condor --selenium --hadoop --scalaris --xtreemfs --cds'
 
 # Section: 996-tail
 
