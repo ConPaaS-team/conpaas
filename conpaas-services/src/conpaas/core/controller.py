@@ -47,6 +47,13 @@ class Controller(object):
         self.__conpaas_caUrl = config_parser.get('manager',
                                             'CA_URL')
 
+        self.__conpaas_createUrl = config_parser.get('manager',
+                                            'CREATE_URL')
+        self.__conpaas_delUrl = config_parser.get('manager',
+                                            'DEL_URL')
+        self.__conpaas_configUrl = config_parser.get('manager',
+                                            'CONFIG_URL')
+
         # Set the CA URL as IPOP's base namespace
         self.__ipop_base_namespace = self.__conpaas_caUrl
 
@@ -420,9 +427,6 @@ class Controller(object):
 
         return False
 
-    def wait_for_nodes(self, nodes, test_agent, port, poll_interval=10):
-        return self.__wait_for_nodes(nodes, test_agent, port, poll_interval)
-
     def __wait_for_nodes(self, nodes, test_agent, port, poll_interval=10):
         self.__logger.debug('[__wait_for_nodes]: going to start polling')
 
@@ -458,7 +462,7 @@ class Controller(object):
             if no_ip_nodes:
                 self.__logger.debug('[__wait_for_nodes]: refreshing %d nodes'
                                     % len(no_ip_nodes))
-
+                
                 for node in no_ip_nodes:
                     refreshed_list = self.list_vms(
                         self.get_cloud_by_name(node.cloud_name))
@@ -689,7 +693,7 @@ class ReservationTimer(Thread):
         self.reservation_logger = reservation_logger
         self.reservation_logger.debug('RTIMER Creating timer for %s'
                                       % (str(self.nodes)))
-
+        
     def remove_node(self, node_id):
         with self.lock:
             self.nodes.remove(node_id)
