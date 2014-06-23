@@ -8,15 +8,16 @@ from conpaas.core.node import ServiceNode
 from conpaas.core import https
 
 class ProxyController(Controller):
-    """Class used to manage the VMs associated with agents thrugh the
+    """Class used to manage the VMs associated with agents through the
     director.
     """
     def __init__(self, config_parser):
         self.config_parser = config_parser
-        Controller.__init__(self, config_parser)
-       
-        self._stop_reservation_timers() 
-        self._update_configuration()
+        Controller.__init__(self, config_parser)       
+        self._stop_reservation_timers()
+
+    def generate_context(self, service_name, cloud=None, ip_whitelist=None):
+        self._update_configuration(service_name)        
         
     def create_nodes(self, count, test_agent, port, cloudobj=None, inst_type=None):
         """Override the create_nodes function from Controller.
@@ -51,7 +52,7 @@ class ProxyController(Controller):
         for reservation_timer in self._Controller__reservation_map.values():
             reservation_timer.stop()
 
-    def _update_configuration(self):
+    def _update_configuration(self, service_name):
         """ When the manager is created, push the configuration to the director, so
         that the timer for the manager is started on the director's side.
         """
@@ -62,7 +63,8 @@ class ProxyController(Controller):
                                 parsed_url.port,
                                 parsed_url.path,
                                 params={'config': self.config_parser._sections,
-                                        'cert': cert})        
+                                        'cert': cert,
+                                        'service_name': service_name})        
 
     def _get_cert(self):
         """Extract the public certificate of the manager. It will be enclosed in

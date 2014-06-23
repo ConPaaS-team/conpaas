@@ -66,11 +66,11 @@ class AgentController(Controller):
 def update_configuration():
     global controllers
     cert = request.values['cert']
+    service_type = request.values['service_name']
       
     d = ast.literal_eval(request.values['config'])
     d['manager']['conpaas_home'] = config_parser.get('conpaas', 'CONF_DIR')
-    service_type = d['manager']['type']
-
+    
     agent_config_parser = ConfigParser()
 
     for section in d:
