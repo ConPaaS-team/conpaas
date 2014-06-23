@@ -911,14 +911,14 @@ Depending on how your host-only network is configured the IP might be different.
 the IP is in the range 192.168.56.101/32. 
 
 The credentials for the Opensack and ConPaaS users are::
- Openstack
- Username: admin
- Password: password
 
- ConPaaS
- Username: test
- Password: password
+    Openstack
+    Username: admin
+    Password: password
 
+    ConPaaS
+    Username: test
+    Password: password
 
 However, on login, both the users are authenticated and you are able to execute Openstack command such as::
 
