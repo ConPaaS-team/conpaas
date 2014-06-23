@@ -22,6 +22,8 @@ chmod 600 /nutshell/test.pem
 sed -i '/default_floating_pool/a auto_assign_floating_ip=True' /etc/nova/nova.conf
 sed -i '/allow_resize_to_same_host/a ram_allocation_ratio=10' /etc/nova/nova.conf
 
+#update m1.small flavor
+mysql -uroot -ppassword -e "update nova.instance_types set memory_mb=1024, root_gb=2 where name='m1.small';"
 
 IP=172.16.0.1
 USR=test

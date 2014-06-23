@@ -842,7 +842,7 @@ to work in this environment.
 
 The Nutshell VM can be depoloyed on various virtual environments, not only
 standard clouds such as OpenNebula, OpenStack and EC2 but also on simpler 
-environments such as VirtualBox. Therefore, it provides a great developing 
+virtualization tools such as VirtualBox. Therefore, it provides a great developing 
 and testing environemnt for ConPaaS without the need of accessing a cloud. 
 
 
@@ -895,24 +895,26 @@ Otherwise, the generated script file is called create-img-conpaas.sh as indicate
    
 Nutshell VirtualBox Image 
 -------------------------
-From the 1.4.1 release, ConPaaS is shipped together with a VirtualBox appliance containing the Nutshell
-VM image. This can be found in cpsnutshell-\*.tar.gz. Before running the appliance it is suggested to 
+
+As mentioned earlier the Nutshell VM can run also on VirtualBox. In order to generate a Nutshell image
+compatible with VirtualBox, you have to set the *cloud* value to *vbox* on the **Customizable** section of the configuration file.
+The rest of the procedure is the same as for other clouds. The result of the image generation script would be a
+nutshell.vdi image file which can be used as a virtual hard drive when creating a new appliance on VirtualBox.
+
+The procedure for creating a new appliance on VirtualBox is quite standard:
+  
+#. Name and OS: You choose a custom name for the appliance but use *Linux* and *Ubuntu (64 bit)* for the type and version.
+
+#. Memory size: Since the nutshell runs a significat number of services and requires also some memory for the containers we suggest to choose at least 3 GB of RAM.
+
+#. Hard drive: Select "User an existing virtual hard drive file", browse to the location of the nutshell.vdi file generated earlier and press create.
+  
+  
+From the 1.4.1 release though, ConPaaS is shipped together with a VirtualBox appliance containing the Nutshell
+VM image as well. This can be found in cpsnutshell-\*.tar.gz. Therefore the steps described above can be used in case you would like to customize this appliance but they are not mandatory for testing the Nutshell.
+
+In any case, before running the appliance it is suggested to 
 create a host-only network on VirtualBox in case there is not already one created.
 To do so from the GUI, go to: File>Preferences>Network>Host-only Networks and click add. 
 
-In order to run the appliance, just extract it from the archive and double click.
-The login credentials are::
-
-    Username: stack
-    Password: contrail
-
-After the first login, it will take a couple of seconds for OpenStack to start. In order to check the status
-run::
-
-    nova list
-
-In case an empty table is shown, everything is ready and ConPaaS components can be used. A simple test would be to 
-start a *helloworld* service by running::
-
-    cpsclient.py create helloworld
-
+For more information regarding the usage of the Nutshell please consult the :ref:`nutshell-guide` section in the guide.

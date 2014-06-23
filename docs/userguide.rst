@@ -891,3 +891,46 @@ with the current configuration of workers.
 
 ``add service_id job_id .bot_file``: submits a .bot_file for execution on
 demand.  The bag is executed with the existing configuration.
+
+
+
+.. _nutshell-guide:
+
+ConPaaS in a VirtualBox Nutshell
+================================
+
+After the host-only network has been set up and the tarball has been extracted, you can import the appliance on VirtualBox by double clicking on it. In case you genereated a custom appliance, it is already imported so you can start it.
+
+The login credentials are::
+
+    Username: stack
+    Password: contrail
+
+In order to have a more interactive inteface we suggest to connect to it through *ssh* from the host machine. 
+Depending on how your host-only network is configured the IP might be different. However, for a default configuration
+the IP is in the range 192.168.56.101/32. 
+
+On login, the openstack user gets authenticated and you are able to execute openstack command such as::
+
+    nova list
+
+In case an empty table is shown, everything is ready and ConPaaS components can be used. A simple test would be to
+start a *helloworld* service by running::
+
+    cpsclient.py create helloworld
+
+In addition to the ConPaaS CLI, the Nutshell contains also the ConPaaS front-end isntallation. You can reach the front-end from the host machine by going to::
+
+    https://192.168.56.xxx 
+
+Note that also *Horizon* (the Openstack dashboard) is running on it as well. Horizon can be reached at::
+ 
+    http://192.168.56.xxx
+
+The Nutshell contains a *Devstack* installation of Openstack, therefore different services run and log on different tabs of a *screen* session. In order to stop, start or consult the logs of these services, connect to the screen session by executing::
+
+     /opt/stack/devstack/rejoin-stack.sh
+
+Every tab in the screen session is labeled with the name of the service it belongs to. For more information on how to navigate between tabs and scroll up and down the logs, please consult the manual page for the screen command.
+
+ 
