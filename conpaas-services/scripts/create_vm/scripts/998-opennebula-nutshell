@@ -33,7 +33,7 @@ else
   modprobe nbd
 fi
 
-su - stack -c "/opt/stack/devstack/my-rejoin-stack.sh"
+su - stack -c "export PATH=$PATH:/sbin ; /opt/stack/devstack/my-rejoin-stack.sh"
 
 exit 0
 EOF
