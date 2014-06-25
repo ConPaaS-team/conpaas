@@ -97,8 +97,11 @@ A new service should be added in a new python module under the
 
 In the next paragraphs we describe how to add the new ConPaaS service.
 
+Service Organization
+====================
+
 Service’s name
-==============
+--------------
 
 The first step in adding a new ConPaaS service is to choose a name for
 it. This name will be used to construct, in a standardized manner, the
@@ -107,7 +110,7 @@ Therefore, the names should not contain spaces, nor unaccepted
 characters.
 
 Scripts
-=======
+-------
 
 To function properly, ConPaaS uses a series of configuration files and
 scripts. Some of them must be modified by the administrator, i.e. the

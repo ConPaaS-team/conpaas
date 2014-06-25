@@ -175,7 +175,7 @@ class PhpPage extends HostingPage {
 	}
 	
 	public function renderAutoscalingSlider() {
-		return '<select name="strategy" id="strategy"><option value="low">Standard</option><option value="medium_low">Good</option><option value="medium">Well-Adjusted</option><option value="optimal">Optimal</option><option value="high">Excellent</option></select>';
+		return '<select name="strategy" id="strategy"><option value="low">Standard</option><option value="medium_low">Medium</option><option value="medium">High</option><option value="optimal">Very high</option><option value="high">Insane</option></select>';
 	}
 	
 	public function renderAutoscalingSettingsSection() {
@@ -187,11 +187,11 @@ class PhpPage extends HostingPage {
 				.'</div>'
 			.'</div>'
 			.'<table class="form settings-form">'
-				.$this->renderSettingsRow('Response time',
+				.$this->renderSettingsRow('Maximum acceptable response time',
 					$this->renderResponseTimeField())
 				.$this->renderSettingsRow('Cool down time',
 					$this->renderCooldownTimeOptions())
-				.$this->renderSettingsRow('QoS autoscaling (performance/cost)',
+				.$this->renderSettingsRow('Autoscaling aggressiveness',
 					$this->renderAutoscalingSlider())
 			.'</table>'
 		.'</div>';
