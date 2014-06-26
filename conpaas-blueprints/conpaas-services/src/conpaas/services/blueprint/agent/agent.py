@@ -56,74 +56,28 @@ class BluePrintAgent(BaseAgent):
         """
         BaseAgent.__init__(self, config_parser)
 
-        # Path to the BluePrint JAR file
-        self.blueprint_dir = config_parser.get('agent', 'CONPAAS_HOME')
-  
-        # The following two variables have the same value on the Hub
-        self.my_ip_address = None
-        self.hub_ip_address = None
-
-    @expose('POST')
-    def create_hub(self, kwargs):
-        """Create a BluePrint Hub by starting blueprint server with -role hub"""
-        self.logger.info('Hub starting up')
-
-        self.state = 'PROLOGUE'
-
-        self.my_ip_address = self.hub_ip_address = kwargs['my_ip']
-
-        # Starting blueprint hub
-        start_args = [ "java", "-jar", "blueprint-server", "-role", "hub" ]
-
-        self.logger.debug("Running command: '%s'. cwd='%s'" % (
-            " ".join(start_args), self.blueprint_dir))
-
-        proc = Popen(start_args, cwd=self.blueprint_dir, close_fds=True)
-
-        self.state = 'RUNNING'
-        self.logger.info('Hub started up. BluePrint pid=%d' % proc.pid)
-        return HttpJsonResponse()
 
     @expose('POST')
     def create_node(self, kwargs):
-        """Create a BluePrint Node. As this host will actually fire up browser
-        sessions, and we want to run the tests in a non-interactive fashion, X 
-        output will be sent to a fake display."""
         self.logger.info('Node starting up')
 
         self.state = 'ADAPTING'
 
         self.my_ip_address = kwargs['my_ip']
-        self.hub_ip_address = kwargs['hub_ip']
-
-        # Running the BluePrint Node via xvfb-run and DISPLAY set to :1.  We
-        # have to specify the PATH because Popen overrides all the environment
-        # variables if env is specified. Using port 3306 (MySQL) to avoid
-        # requesting yet another port to be open.
-	# TODO: as this file was created from a BLUEPRINT file,
-	# 	you may want to change ports, paths and/or other start_args
-	#	to meet your specific service/server needs
-        start_args = [ 
-            "xvfb-run", "--auto-servernum",
-            "java", "-jar", "blueprint-server",
-            "-role", "node", "-port", "3306",
-            "-hub", "http://%s:4444/grid/register" % self.hub_ip_address,
-            "-host", self.my_ip_address,
-            "-maxSession", "6",
-            "-browser", "browserName=firefox,maxInstances=3",
-            "-browser", "browserName=chrome,maxInstances=3",
-        ]
-
-        env = { 
-            'DISPLAY': ':1', 
-            'PATH': '/bin:/usr/bin:/usr/local/bin' 
-        }
-
-        self.logger.debug("Running command: '%s'. cwd='%s', env='%s'" % (
-            " ".join(start_args), self.blueprint_dir, env))
-
-        proc = Popen(start_args, cwd=self.blueprint_dir, env=env, close_fds=True)
+        #Do something on agent startup
 
         self.state = 'RUNNING'
-        self.logger.info('Node started up. BluePrint pid=%d' % proc.pid)
+        self.logger.info('Node started up')
         return HttpJsonResponse()
+
+    @expose('GET')
+    def test(self, kwargs):
+        self.logger.info('Test method started')
+
+        self.state = 'ADAPTING'
+
+        msg = "hello kitty"
+        
+        self.state = 'RUNNING'
+        self.logger.info('Test method ended')
+        return HttpJsonResponse({'msg': msg})    

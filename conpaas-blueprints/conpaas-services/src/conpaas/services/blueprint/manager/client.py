@@ -92,3 +92,8 @@ def get_node_info(host, port, serviceNodeId):
     method = 'get_node_info'
     params = { 'serviceNodeId': serviceNodeId }
     return _check(https.client.jsonrpc_get(host, port, '/', method, params=params))
+
+def test(host, port):
+    """GET () test"""
+    method = 'test'
+    return _check(https.client.jsonrpc_get(host, port, '/', method))
