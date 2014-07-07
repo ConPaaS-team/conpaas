@@ -130,13 +130,13 @@ class MRC:
         conf_fd.close()
 
 class OSD:
-    def __init__(self, dir_serviceHost, uuid, mkfs):
+    def __init__(self, dir_serviceHost, uuid, mkfs, device_name):
         self.state = S_INIT         
         self.uuid = uuid
         self.dir_serviceHost = dir_serviceHost
         self.config_template = join(ETC, 'osdconfig.properties')
         self.dir_servicePort = 32638
-        self.dev_name = "/dev/sdb"
+        self.dev_name = "/dev/%s" % device_name
         self.mount_point = "/media/xtreemfs-objs"
 
         # To be filled once we get a dev_name
@@ -158,6 +158,7 @@ class OSD:
         devnull_fd = open(devnull,'w')
         # waiting for our block device to be available
         dev_found = False
+        dev_prefix = self.dev_name.split('/')[2][:-1]
 
         for attempt in range(1, 11):
             logger.info("OSD node waiting for block device %s" % self.dev_name)
@@ -167,12 +168,10 @@ class OSD:
             else:
                 # On EC2 the device name gets changed 
                 # from /dev/sd[a-z] to /dev/xvd[a-z]
-                self.dev_name = self.dev_name.replace('sd', 'xvd')
-                if lexists(self.dev_name):
+                if lexists(self.dev_name.replace(dev_prefix, 'xvd')):
                     dev_found = True
+                    self.dev_name = self.dev_name.replace(dev_prefix, 'xvd')
                     break
-                else:
-                    self.dev_name = self.dev_name.replace('xvd', 'sd')
 
             time.sleep(10)
 
