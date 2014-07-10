@@ -26,6 +26,7 @@ from cpsdirector.common import log
 from cpsdirector.common import build_response
 
 from cpsdirector import cloud as manager_controller
+from cpsdirector import nestedapi
 
 from cpsdirector import common
 
@@ -78,6 +79,7 @@ class Service(db.Model):
                 self.sid, self.user_id, self.cloud, self.application_id,
                 self.subnet)
 
+        nestedapi.remove_controller(self.sid)
         controller.stop(self.vmid)
         db.session.delete(self)
         db.session.commit()

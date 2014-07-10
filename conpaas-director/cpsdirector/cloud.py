@@ -13,6 +13,8 @@ from cpsdirector.user import User
 from cpsdirector import db
 
 from flask import Blueprint
+from flask import jsonify, request
+
 cloud_page = Blueprint('cloud_page', __name__)
 
 class ManagerController(Controller):
@@ -244,7 +246,18 @@ EOF
         config_parser.set("manager", "CA_URL",
                         config_parser.get('director',
                                             'DIRECTOR_URL') + "/ca")
-        config_parser.set("manager", "TYPE", service_type)
+        config_parser.set("manager", "CREATE_URL",
+                        config_parser.get('director',
+                                            'DIRECTOR_URL') + "/nodes")
+        config_parser.set("manager", "DEL_URL",
+                        config_parser.get('director',
+                                            'DIRECTOR_URL') + "/nodes")
+    
+        config_parser.set("manager", "CONFIG_URL",
+                        config_parser.get('director',
+                                            'DIRECTOR_URL') + "/nodes")
+
+        config_parser.set("manager", "TYPE", service_type)        
 
         if vpn:
             config_parser.set("manager", "IPOP_SUBNET", vpn)
