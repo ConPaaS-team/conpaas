@@ -147,12 +147,12 @@ class ConpaasSecureServer(HTTPSServer):
             
         self.instances[handler_id] = service_instance
         handler_exposed_functions = service_instance.get_exposed_methods()
-
+        
 
         for http_method in handler_exposed_functions:
             for func_name in handler_exposed_functions[http_method]:
                 self._register_method(http_method, handler_id, func_name, handler_exposed_functions[http_method][func_name])
-        
+
         # Start the HTTPS server
         ctx = self._conpaas_init_ssl_ctx(role, config_parser.get(role, 'CERT_DIR'), SSL.SSLv23_METHOD)
         HTTPSServer.__init__(self, server_address, ConpaasRequestHandler, ctx)

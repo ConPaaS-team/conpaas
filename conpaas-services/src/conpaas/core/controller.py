@@ -126,6 +126,32 @@ class Controller(object):
                     % host)
                 return host
 
+    def create_reservation_test(self, reservation_id, cloud=None):
+        if cloud is None:
+            cloud = self.__default_cloud     
+        #try:
+        cloud.create_reservation(reservation_id)        
+        
+        max_iteration = 20
+        iteration = 0
+
+        while True:
+            status = cloud.check_reservation(reservation_id)
+            if status['Ready'] or iteration >= max_iteration:
+                break
+            else:
+                time.sleep(3)
+                iteration += 1
+
+        if status['Ready']:
+            return status['Nodes']
+        else:
+            pass # timeout 
+
+
+        #except Exception as e:
+        #    cloud.release_reservation(reservation_id)
+
     def create_reservation(self, reservation_id, count, test_agent, port, cloud=None):
 
         ready = []
@@ -151,43 +177,9 @@ class Controller(object):
                 if iteration == 1:
                     request_start = time.time()
 
-                #service_type = self.config_parser.get('manager', 'TYPE')
-
                 # eg: conpaas-agent-php-u34-s316
                 #name = "conpaas-%s-a%s-u%s" % (self.role, self.__conpaas_app_id, self.__conpaas_user_id )
 
-                # if (service_type == 'htc'):
-                #     # If HTC is used we need to update here as well (as I see no way to do this elsewhere)
-                #     self.add_context_replacement({
-                #         # 'CLOUD_VMID': cloud.cloud_vmid,
-                #         'CLOUD_NAME': cloud.cloud_name,
-                #         'CLOUD_MACHINE_TYPE': self.config_parser.get(cloud.cloud_name, 'INST_TYPE') ,
-                #         'CLOUD_COST_PER_TIME': self.config_parser.get(cloud.cloud_name, 'COST_PER_TIME'),
-                #         'CLOUD_MAX_VMS_ALL_CLOUDS': self.config_parser.get('iaas', 'MAX_VMS_ALL_CLOUDS'),
-                #         'CLOUD_MAX_VMS': self.config_parser.get(cloud.cloud_name, 'MAX_VMS')
-                #         }, cloud)
-
-                # if self.__ipop_base_ip and self.__ipop_netmask:
-                #     # If IPOP has to be used we need to update VMs
-                #     # contextualization data for each new instance
-                #     for _ in range(count - len(ready)):
-                #         vpn_ip = self.get_available_ipop_address()
-                #         self.add_context_replacement({ 'IPOP_IP_ADDRESS': vpn_ip }, cloud)
-                        
-                #         for newinst in cloud.new_instances(1, name, inst_type):
-                #             # Set VPN IP
-                #             newinst.ip = vpn_ip
-
-                #             if newinst.private_ip == '':
-                #                 # If private_ip is not set yet, use vpn_ip
-                #                 newinst.private_ip = vpn_ip
-
-                #             self.__partially_created_nodes.append(newinst)
-                # else:
-                #     self.__partially_created_nodes = cloud.new_instances(
-                #         count - len(ready), name, inst_type)
-                
-                #self.__partially_created_nodes = cloud.create_reservation(reservation_id)['Resources'] 
                 self.__partially_created_nodes = cloud.create_reservation(reservation_id)
                 
                 self.__logger.debug("cloud.new_instances returned %s" % self.__partially_created_nodes)
@@ -239,6 +231,13 @@ class Controller(object):
             cloud = self.__default_cloud
 
         return cloud.prepare_reservation(manager_configuration) 
+
+    def release_reservation(self, reservation_id, cloud=None):
+        
+        if cloud is None:
+            cloud = self.__default_cloud
+
+        return cloud.release_reservation(reservation_id)    
 
 
 

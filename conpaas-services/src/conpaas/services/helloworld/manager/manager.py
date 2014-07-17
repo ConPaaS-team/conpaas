@@ -29,26 +29,29 @@ class HelloWorldManager(BaseManager):
         self.state = self.S_INIT
         
 
-    def _do_startup(self, cloud):
+    def _do_startup(self, cloud, resources=None):
+        # resc = {}
+        # resc['Resources'] = resources['Resources']
+        # roles = resources['Roles']
         
         startCloud = self._init_cloud(cloud)
 
         self.controller.add_context_replacement(dict(STRING='helloworld'))
        
-        #self.logger.exception('_do_startup: Came here: %s' % startCloud)
         try:
-            manager_configuration = {'Resources' : [{'GID' : 'ID1', 'Number' : 1, 'Type' : 'Machine', 'Attributes' : {'Cores' : 1, 'Frequency': 2.5, 'RAM' : 1024, 'Disk': 8192 }}]}
-            reservation_id = self.controller.prepare_reservation(manager_configuration)['ID']
-            nodes = self.controller.create_reservation(reservation_id, len(manager_configuration['Resources']), client.check_agent_process, self.AGENT_PORT, startCloud)
+            #manager_configuration = {'Resources' : [{'GID' : 'ID1', 'Number' : 1, 'Type' : 'Machine', 'Attributes' : {'Cores' : 1, 'Frequency': 2.5, 'RAM' : 1024, 'Disk': 8192 }}]}
+            #reservation_id = self.controller.prepare_reservation(resc)['ID']
+            #nodes = self.controller.create_reservation(reservation_id, len(manager_configuration['Resources']), client.check_agent_process, self.AGENT_PORT, startCloud)
 
             #nodes = self.controller.create_nodes(1, client.check_agent_process, self.AGENT_PORT, startCloud)
 
-            node = nodes[0]
+            node = resources[0]
 
-            client.startup(node.ip, 5555)
+            client.startup(node['IP'], 5555)
 
             # Extend the nodes list with the newly created one
-            self.nodes += nodes
+            #self.nodes += nodes
+            self.nodes += resources
             self.state = self.S_RUNNING
         except Exception, err:
             self.logger.exception('_do_startup: Failed to create node: %s' % err)

@@ -14,6 +14,7 @@ from string import Template
 
 from conpaas.core.node import ServiceNode
 from conpaas.core.log import create_logger
+import uuid
 
 class Cloud:
     ''' Abstract Cloud '''
@@ -26,6 +27,7 @@ class Cloud:
         self._context = None
         self._mapping_vars = {}
         self.logger = create_logger(__name__)
+        self.reservations = {}
 
     def get_cloud_name(self):
         return self.cloud_name
@@ -205,14 +207,71 @@ class Cloud:
         return self.driver.attach_volume(node, volume, device)
 
     def prepare_reservation(self, configuration = {}):
-        raise NotImplementedError('prepareReservation not implemented for this cloud driver')
+        uid = uuid.uuid1()
+        self.reservations[str(uid)] = configuration
+
+        ret_reservation = {}
+        ret_reservation['ConfigID'] = str(uid)
+        ret_reservation['Cost'] = 300
+        #reservation['Resources'] = configuration['Resources']
+        ret_reservation['Resources'] = []
+        ret_res = {}
+        for res in configuration['Resources']:
+            nr_instances = res['NumInstances']
+            for i in range(nr_instances):
+                #res['ID'] = str(uuid.uuid1())
+                #ret_res['ID'] = res['ID']
+                #ret_res['ID'] = res['ID']
+                ret_res['GroupID'] = res['GroupID']
+                ret_res['Type'] = res['Type']
+                ret_res['Attributes'] = res['Attributes']
+                ret_reservation['Resources'].append(ret_res)
+
+
+        return ret_reservation
+
+        #raise NotImplementedError('prepareReservation not implemented for this cloud driver')
 
     def create_reservation(self, reservation_id):
-        raise NotImplementedError('createReservation not implemented for this cloud driver')
+        reservation = self.reservations[reservation_id]
+        for res in reservation['Resources']:
+            if res['Type'] == 'Machine': #only for standard clouds
+                res['Nodes'] = self.new_instances(res['NumInstances'])
+        return reservation_id
+        #raise NotImplementedError('createReservation not implemented for this cloud driver')
 
     def release_reservation(self, reservation_id):
+        reservation = self.reservations[reservation_id]
+        for res in reservation['Resources']:
+            if res['Type'] == 'Machine': #only for standard clouds
+                for node in res['Nodes']:
+                    self.kill_instance(node)
+                
+                 
+        
+
         raise NotImplementedError('releaseReservation not implemented for this cloud driver')
 
-    # this method is supposed to check if the the IPs are present, but it is not necessary, instead only listvms is needed
-    #def checkReservation(self, reservationID):
-    #    raise NotImplementedError('checkReservation not implemented for this cloud driver')
+    # this method is supposed to check if the the IPs are present, but it is not necessary, instead only listvms is needed, or maybe not
+    def check_reservation(self, reservation_id):
+        reservation = self.reservations[reservation_id]
+        result = {}
+        result['Ready'] = True
+        
+        refreshed_list = self.list_vms()
+
+        for res in reservation['Resources']:
+            for node in res['Nodes']:
+                for refreshed_node in refreshed_list:
+                    if refreshed_node.id == node.id:
+                        node.ip = refreshed_node.ip
+                        #node.private_ip = refreshed_node.private_ip
+                        if node.ip == '':
+                            result['Ready'] = False      
+                            return result
+                                
+        result['Nodes'] = []
+        for res in reservation['Resources']:
+            for node in res['Nodes']:
+                result['Nodes'].append({'ID': node.vmid, 'IP':node.ip, 'GroupID':res['GroupID']})
+        return result

@@ -81,14 +81,8 @@ class OpenStackCloud(Cloud):
 
         return [ nodes ]
 
-    def prepare_reservation(self, configuration = {}):
-        ret_configuration = {}
-        ret_configuration['ID'] = 'someid'
-        ret_configuration['Resources'] = configuration['Resources']
 
-        return ret_configuration
-
-    def create_reservation(self, configurationID):
-        return self.new_instances(1, name='conpaas')
+    # def create_reservation(self, configurationID):
+    #    return self.new_instances(1, name='conpaas')
 
     

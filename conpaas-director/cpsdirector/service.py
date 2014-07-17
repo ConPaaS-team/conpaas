@@ -129,7 +129,7 @@ def callmanager(application, manager_id, method, post, data, files=[]):
 
             return data.get('result', data)
 
-        raise Exception, "Call to method %s on %s failed: %s.\nParams = %s" % (method, application['manager'], res[1], data)
+        raise Exception, "Call to method %s on %s failed: Result: %s.\nParams = %s" % (method, application['manager'], res, data)
 
 
 # def callmanager(service_id, method, post, data, files=[]):

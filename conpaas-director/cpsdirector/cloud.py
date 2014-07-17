@@ -29,6 +29,7 @@ class ManagerController(Controller):
     #     self.cloud_name = cloud_name
     #     self.role = "manager"
     
+    #def __init__(self, user_id, cloud_name, app_id, vpn, manifest, slo):
     def __init__(self, user_id, cloud_name, app_id, vpn):
         #self.config_parser = self.__get_config(str(user_id), str(app_id), service_name, vpn)
         self.config_parser = self.__get_config(str(user_id), str(app_id), vpn)
@@ -40,6 +41,8 @@ class ManagerController(Controller):
         self.user_id = user_id
         self.cloud_name = cloud_name
         self.role = "manager"
+        #self.manifest = manifest
+        #self.slo = slo
     
     def _get_certificate(self, email, cn, org):
         user_id = self.config_parser.get("manager", "USER_ID")
@@ -171,7 +174,21 @@ class ManagerController(Controller):
         tmpl_values['mngr_certs_key'] = mngr_certs['key']
         tmpl_values['mngr_certs_ca_cert'] = mngr_certs['ca_cert']
 
+        # tmpl_values['mngr_manifest']=tmpl_values['mngr_slo']=''
+        # if self.manifest is not None:
+        #     tmpl_values['mngr_manifest'] = self.manifest
+        # if self.slo is not None:
+        #     tmpl_values['mngr_slo'] = self.slo
         # Concatenate the files
+
+#cat <<EOF > $ROOT_DIR/manifest.json
+#%(mngr_manifest)s
+#EOF
+
+#cat <<EOF > $ROOT_DIR/slo.json
+#%(mngr_slo)s
+#EOF
+        
         return """%(cloud_script)s
 
 cat <<EOF > /tmp/cert.pem
@@ -192,6 +209,8 @@ cat <<EOF > $ROOT_DIR/config.cfg
 %(cloud_cfg)s
 %(mngr_cfg)s
 EOF
+
+
 
 %(mngr_start_script)s
 
@@ -306,6 +325,7 @@ EOF
 #     return node.ip, node.vmid, cloud.get_cloud_name()
 
 #this is a double of the previous method (so eventually the previous method will be deleted)
+#def startapp(user_id, cloud_name, app_id, vpn, manifest, slo):
 def startapp(user_id, cloud_name, app_id, vpn):
     """Start an application manager for the given app_id and user_id,
        on cloud_name
@@ -316,6 +336,7 @@ def startapp(user_id, cloud_name, app_id, vpn):
         cloud_name = 'iaas'
 
     # Create a new controller
+    #controller = ManagerController(user_id, cloud_name, app_id, vpn, manifest, slo)
     controller = ManagerController(user_id, cloud_name, app_id, vpn)
 
     cloud = controller.get_cloud_by_name(cloud_name)
@@ -329,14 +350,16 @@ def startapp(user_id, cloud_name, app_id, vpn):
     controller_dict[app_id] = controller
     # FIXME: test_manager(ip, port) not implemented yet. Just return True.
     #node = controller.create_nodes(1, lambda ip, port: True, None, cloud)[0]
-    manager_configuration = {'Resources' : [{'GID' : 'ID0', 'Number' : 1, 'Type' : 'Machine', 'Attributes' : {'Cores' : 1, 'Frequency': 2.5, 'RAM' : 1024, 'Disk': 8192 }}]}
-    reservation_id = controller.prepare_reservation(manager_configuration)['ID']
-    node = controller.create_reservation(reservation_id, len(manager_configuration['Resources']), lambda ip, port: True, None, cloud)[0]
+    manager_configuration = {'Resources' : [{'GroupID' : 'ID0', 'NumInstances' : 1, 'Type' : 'Machine', 'Attributes' : {'Cores' : 1, 'RAM' : 1024}}]}
+    reservation_id = controller.prepare_reservation(manager_configuration)['ConfigID']
+    
+    node = controller.create_reservation_test(reservation_id)[0]
+    #node = controller.create_reservation(reservation_id, len(manager_configuration['Resources']), lambda ip, port: True, None, cloud)[0]
 
     controller._stop_reservation_timer()
 
-    return node.ip, node.vmid, cloud.get_cloud_name()
-
+    return node['IP'], node['ID'], cloud.get_cloud_name()
+    #return node.ip, node.vmid, cloud.get_cloud_name()
 
 @cloud_page.route("/available_clouds", methods=['GET'])
 def available_clouds():

@@ -471,19 +471,25 @@ class BaseClient(object):
         else:
             print "failed."
 
-    def manifest(self, manifestfile):
-        print "Uploading the manifest... "
+    def manifest(self, manifestfile, slofile):
+        print "Uploading the manifest and slo... "
         sys.stdout.flush()
 
         f = open(manifestfile, 'r')
-        json = f.read()
+        manifest = f.read()
         f.close()
 
-        res = self.callapi("upload_manifest", True, { 'manifest': json })
+        f = open(slofile, 'r')
+        slo = f.read()
+        f.close()
+
+        res = self.callapi("upload_manifest", True, { 'manifest': manifest, 'slo':slo })
         if res:
             print "done."
         else:
             print "failed."
+
+        print res    
 
     def download_manifest(self, appid):
         services = self.callapi("list/%s" % appid, True, {})
@@ -552,7 +558,7 @@ Do you want to continue? (y/N): """
         print "    createapp         appname                       # create a new application"
         print "    startapp          [appid]                       # start an application"
         print "    renameapp         appid       newname           # rename an application"
-        print "    manifest          filename                      # upload a new manifest"
+        print "    manifest          manifest    slo               # upload a new manifest"
         print "    download_manifest appid                         # download an existing manifest"
         print "    create            servicetype [appid]           # create a new service [inside a specific application]"
         print "    start             serviceid   appid   [cloud]   # startup the given service [on a specific cloud]"
@@ -658,7 +664,8 @@ Do you want to continue? (y/N): """
                     # 'manifest' wants a filename type. Check if we got one,
                     # and if it is acceptable.
                     open(argv[2])
-                    return getattr(self, command)(argv[2])
+                    open(argv[3])
+                    return getattr(self, command)(argv[2], argv[3])
                 except (IndexError, IOError):
                     self.usage(argv[0])
                     sys.exit(0)

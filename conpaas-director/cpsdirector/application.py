@@ -147,6 +147,7 @@ def deleteapp(user_id, app_id):
 
     return True
 
+#def _startapp(user_id, app_id, cloudname, manifest=None, slo=None):
 def _startapp(user_id, app_id, cloudname):
     app = get_app_by_id(user_id, app_id)
     if not app:
@@ -155,6 +156,7 @@ def _startapp(user_id, app_id, cloudname):
         #s.manager, s.vmid, s.cloud = manager_controller.start(
         #    servicetype, s.sid, g.user.uid, cloudname, appid, vpn)
         vpn = app.get_available_vpn_subnet()
+        #app.manager, app.vmid, _ = manager_controller.startapp(user_id, cloudname, app_id, vpn, manifest, slo)
         app.manager, app.vmid, _ = manager_controller.startapp(user_id, cloudname, app_id, vpn)
         db.session.commit()
         return True

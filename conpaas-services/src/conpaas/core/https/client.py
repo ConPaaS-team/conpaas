@@ -327,8 +327,8 @@ def https_post(host, port, uri, params={}, files=[]):
     r = h.getresponse()
     body = r.read()
     h.close()
-    #return r.status, body
-    return r, body
+    return r.status, body
+    #return r, body
 
 
 def _encode_multipart_formdata(params, files):
