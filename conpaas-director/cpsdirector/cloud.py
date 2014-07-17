@@ -11,8 +11,11 @@ from cpsdirector.x509cert import generate_certificate
 from cpsdirector.common import config_parser, log
 from cpsdirector.user import User
 from cpsdirector import db
+from conpaas.core.clouds.nested import base_clouds
 
 from flask import Blueprint
+from flask import jsonify, request
+
 cloud_page = Blueprint('cloud_page', __name__)
 
 class ManagerController(Controller):
@@ -224,7 +227,8 @@ EOF
         self._stop_reservation_timer()
 
     def get_cloud_by_name(self, cloud_name):
-        return [ cloud for cloud in self.get_clouds() 
+        log(cloud_name)
+        return [ cloud for cloud in self.get_clouds()
             if cloud.get_cloud_name() == cloud_name ][0]
 
     def __get_config(self, service_id, user_id, app_id, service_type="", vpn=None):
@@ -244,7 +248,18 @@ EOF
         config_parser.set("manager", "CA_URL",
                         config_parser.get('director',
                                             'DIRECTOR_URL') + "/ca")
-        config_parser.set("manager", "TYPE", service_type)
+        config_parser.set("manager", "CREATE_URL",
+                        config_parser.get('director',
+                                            'DIRECTOR_URL') + "/nodes")
+        config_parser.set("manager", "DEL_URL",
+                        config_parser.get('director',
+                                            'DIRECTOR_URL') + "/nodes")
+    
+        config_parser.set("manager", "CONFIG_URL",
+                        config_parser.get('director',
+                                            'DIRECTOR_URL') + "/nodes")
+
+        config_parser.set("manager", "TYPE", service_type)        
 
         if vpn:
             config_parser.set("manager", "IPOP_SUBNET", vpn)
@@ -255,8 +270,35 @@ EOF
     def _stop_reservation_timer(self):
         for reservation_timer in self._Controller__reservation_map.values():
             reservation_timer.stop()
+        log("Stopped timers")
+    
+    def get_vm_status(self, vmid):
+        cloud = self.get_cloud_by_name(self.cloud_name)
 
+        if not cloud.connected:
+            cloud._connect()
 
+        return cloud.get_vm_info(vmid)
+
+    def migrate_instance(self, vmid, host):
+        cloud = self.get_cloud_by_name(self.cloud_name)
+
+        if not cloud.connected:
+            cloud._connect()
+    
+        #cloud.migrate_instance(vmid, host)
+
+    def prepare_migration(self, appid, sid, src_cloud, dst_cloud):
+        global base_clouds
+
+        cloud = self.get_cloud_by_name(self.cloud_name)
+
+        if not cloud.connected:
+            cloud._connect()
+        
+        driver = cloud.get_driver()
+        base_clouds.prepare_migration(appid, src_cloud, dst_cloud, driver)
+         
 def start(service_name, service_id, user_id, cloud_name, app_id, vpn):
     """Start a manager for the given service_name, service_id and user_id,
        on cloud_name

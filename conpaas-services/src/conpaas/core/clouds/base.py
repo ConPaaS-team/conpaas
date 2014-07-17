@@ -26,9 +26,12 @@ class Cloud:
         self._context = None
         self._mapping_vars = {}
         self.logger = create_logger(__name__)
-
+        
     def get_cloud_name(self):
         return self.cloud_name
+
+    def get_driver(self):
+        return self.driver
 
     def _check_cloud_params(self, iaas_config, cloud_params=[]):
         """Check for missing or empty parameters in iaas_config"""
@@ -109,6 +112,23 @@ class Cloud:
         raise NotImplementedError(
             'config not implemented for this cloud driver')
 
+    def get_vm_info(self, vmid):
+        if self.connected is False:
+            self._connect()
+        
+        for node in self.driver.list_nodes():
+            if node.id == vmid:
+                return node
+
+        return None
+
+    def migrate_instance(self, vmid, host):
+        if self.connected is False:
+            self._connect()
+
+        self.driver.list_nodes()
+        self.driver.migrate_vm(vmid, host, True)
+        
     def list_vms(self, has_private_ip=True):
         '''
         lists the service nodes in the cloud instances
@@ -166,6 +186,8 @@ class Cloud:
         if has_private_ip:
             if instance.private_ips:
                 private_ip = instance.private_ips[0]
+                if len(instance.private_ips) > 1:
+                    ip = instance.private_ips[1]
             else:
                 private_ip = ''
         else:
@@ -176,10 +198,10 @@ class Cloud:
 
         if hasattr(private_ip, 'address'):
             private_ip = private_ip.address
-
+        
         return ip, private_ip
 
-    def kill_instance(self, node):
+    def kill_instance(self, instance):
         '''Kill a VM instance.
 
            @param node: A ServiceNode instance, where node.id is the
@@ -189,7 +211,10 @@ class Cloud:
 
         if self.connected is False:
             self._connect()
-        return self.driver.destroy_node(node.as_libcloud_node())
+
+        libcloud_node = [node for node in driver.list_nodes() if node.id == instance.vmid][0]
+        
+        return self.driver.destroy_node(libcloud_node)
 
     def create_volume(self, size, name, vm_id=None):
         # We can ignore vm_id. It is only needed by EC2.

@@ -27,6 +27,7 @@ from cpsdirector.common import build_response
 
 from cpsdirector import cloud as manager_controller
 from cpsdirector import nestedapi
+from cpsdirector.nestedapi import controllers
 
 from cpsdirector import common
 
@@ -85,6 +86,10 @@ class Service(db.Model):
         db.session.commit()
         log('Service %s stopped properly' % self.sid)
         return True
+    
+    def remove_service(self):
+        db.session.delete(self)
+        db.session.commit()
 
 def get_service(user_id, service_id):
     service = Service.query.filter_by(sid=service_id).first()
@@ -296,6 +301,115 @@ def list_services(appid):
     return build_response(simplejson.dumps([
         ser.to_dict() for ser in Service.query.filter_by(application_id=appid)
     ]))
+
+
+def _get_service_controller(service_id):
+    global controllers
+    
+    for controller in controllers:
+        if controller._Controller__conpaas_service_id == service_id:
+            return controller
+
+def _get_service_vm_ids(service_id):
+    controller = _get_service_controller(service_id)
+    compute_nodes = []
+
+    if controller:
+        for node in controller.Controller__created_nodes:
+            compute_nodes.append(node.vmid)
+
+    return compute_nodes
+
+def _get_service_state(service, compute_nodes):
+    controller = manager_controller.ManagerController(service.type,
+                service.sid, service.user_id, service.cloud, service.application_id,
+                service.subnet)
+    controller._stop_reservation_timer()
+
+    service_status = "ACTIVE"
+    for vmid in compute_nodes:
+        log(controller.get_vm_status(vmid).state)
+        if str(controller.get_vm_status(vmid).state) == '4':
+            service_status = "MIGRATING"
+            break
+
+    return service_status
+
+@service_page.route("/get_service_vm_status", methods=['POST', 'GET'])
+@cert_required(role='user')
+def get_service_vms_status():
+    service_id = request.values.get('sid') 
+    service = Service.query.filter_by(sid=service_id).first()
+    
+    if not service:
+        log('Service %s does not exist' % service_id)
+        return
+
+    compute_nodes = _get_service_vm_ids(service_id)
+    compute_nodes.append(service.vmid)
+    
+    log(compute_nodes)
+   
+    return build_response(simplejson.dumps(
+        {'status': _get_service_state(service, compute_nodes)}
+    ))
+
+def _migrate_nodes(service, compute_nodes):
+    controller = manager_controller.ManagerController(service.type,
+                service.sid, service.user_id, service.cloud, service.application_id,
+                service.subnet)
+    controller._stop_reservation_timer()
+
+    for vmid in compute_nodes:
+        controller.migrate_instance(vmid, 'test')
+    
+@service_page.route("/migrate", methods=['POST', 'GET'])
+@cert_required(role='user')
+def migrate_service():
+    service_id = request.values.get('sid')
+    service = Service.query.filter_by(sid=service_id).first()
+
+    if not service:
+        log('Service %s does not exist' % service_id)
+        return
+    
+    compute_nodes = _get_service_vm_ids(service_id)
+    compute_nodes.append(service.vmid)
+
+    _migrate_nodes(service, compute_nodes)
+     
+    return build_response(simplejson.dumps(
+    {'error': 'started migration'}
+    ))
+
+def _prepare_migration(appid, service_id, src_cloud, dst_cloud):
+    log(service_id)
+    service = Service.query.filter_by(sid=service_id).first()
+
+    if not service:
+        log('Service %s does not exist' % service_id)
+        return
+
+    controller = manager_controller.ManagerController(service.type,
+                service.sid, service.user_id, service.cloud, service.application_id,
+                service.subnet)
+    controller._stop_reservation_timer()
+
+    controller.prepare_migration(appid, service_id, src_cloud, dst_cloud)
+ 
+@service_page.route("/prepare_migration", methods=['POST', 'GET'])
+@cert_required(role='user')
+def prepare_migration():
+    appid = request.values.get('appid')
+    sid = request.values.get('sid')
+    src_cloud = request.values.get('src_cloud')
+    dst_cloud = request.values.get('dst_cloud')
+
+    _prepare_migration(appid, sid, src_cloud, dst_cloud)  
+
+    return build_response(simplejson.dumps(
+    {'error': 'started migration'}
+    ))
 
 @service_page.route("/download/ConPaaS.tar.gz", methods=['GET'])
 def download():

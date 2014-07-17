@@ -152,6 +152,58 @@ class BaseClient(object):
 
         sys.stdout.flush()
 
+        print "done."
+
+        sys.stdout.flush()
+        
+    def migrateapp(self, appid, src_cloud, dst_cloud):
+        services = self.callapi("list/%s" % appid, True, {})
+       
+        if len(services) == 0:
+            print "nothing to migrate"
+            return
+        
+        data = {}
+        data['src_cloud'] = src_cloud
+        data['dst_cloud'] = dst_cloud
+        data['appid'] = appid
+        data['sid'] = services[0]['sid']
+        res = self.callapi('prepare_migration', True, data) 
+        
+        '''
+        for service in services:
+            self.migrateservice(service['sid'], src_cloud, dst_cloud)
+
+        time.sleep(4)
+        while True:
+            all_services_migrated = True
+            
+            services = self.callapi("list/%s" % appid, True, {})
+            for service in services:
+                data = {}
+                data['sid'] = service['sid']
+                res = self.callapi('get_service_vm_status', True, data)
+                print res['status']
+                if res['status'] == "MIGRATING":
+                    all_services_migrated = False
+            
+            if all_services_migrated:
+                break;
+
+            time.sleep(2) 
+       '''
+ 
+    def migrateservice(self, sid, src_cloud, dst_cloud):
+        data = {}
+        data['sid'] = sid
+        data['src_cloud'] = src_cloud
+        data['dst_cloud'] = dst_cloud
+        
+        res = self.callapi("migrate", True, data) 
+       
+        print res 
+        sys.stdout.flush()
+        
     def create(self, service_type, cloud = None, application_id=None, initial_state='INIT'):
         data = {}
         if application_id is not None:
@@ -495,6 +547,7 @@ Do you want to continue? (y/N): """
         print "    rename            serviceid newname   # rename the specified service"
         print "    startup_script    serviceid filename  # upload a startup script"
         print "    usage             serviceid           # show service-specific options"
+        print "    migrateapp        appid source_cloud destination_cloud #migrate application"
 
     def main(self, argv):
         """What to do when invoked from the command line. Clients should extend
@@ -514,7 +567,7 @@ Do you want to continue? (y/N): """
         if command in ( "listapp", "createapp", "manifest",
                         "download_manifest", "list", "credentials", 
                         "available", "clouds", "create", "st_usage",
-                        "deleteapp", "renameapp", "getcerts" ):
+                        "deleteapp", "renameapp", "getcerts", "migrateapp" ):
 
             if command == "st_usage":
                 try:
@@ -608,6 +661,29 @@ Do you want to continue? (y/N): """
             if command == "clouds":
                 return getattr(self, 'available')('clouds')
 
+            if command == "migrateapp":
+                try:
+                    # Create wants a service type. Check if we got one, and if
+                    # it is acceptable.
+                    appid = int(argv[2])
+                    if appid not in self.listapp(False):
+                        print "E: Unknown application id: %s" % appid
+                        raise IndexError
+
+                    src_cloud = None
+                    if appid:
+                        try:
+                            src_cloud = argv[3]
+                            dst_cloud = argv[4]
+                        except IndexError:
+                            self.usage(argv[0])
+                            sys.exit(0)
+                    # normal service creation
+                    return getattr(self, command)(appid, src_cloud, dst_cloud)
+                except IndexError:
+                    self.usage(argv[0])
+                    sys.exit(0)
+                
             # We need no params, just call the method and leave
             return getattr(self, command)()
 

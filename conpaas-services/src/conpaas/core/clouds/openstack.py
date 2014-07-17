@@ -1,9 +1,7 @@
 from libcloud.compute.types import Provider
 from libcloud.compute.providers import get_driver
 
-from cpsdirector.common import log
-
-from conpaas.core.clouds.nested import nested_cloud
+from conpaas.core.clouds.nested import base_clouds
 from .base import Cloud
 
 class OpenStackCloud(Cloud):
@@ -50,14 +48,7 @@ class OpenStackCloud(Cloud):
                             ex_force_auth_version='2.0_password',
                             ex_force_service_name='nova',
                             ex_tenant_name = 'admin')
-        #Driver = get_driver(Provider.OPENSTACK)
-
-        #self.driver = Driver('admin', 'password', secure=False,
-        #    host='10.100.0.42', port=35357, #path='/services/Cloud',
-        #    ex_force_auth_url='http://10.100.0.42:35357',
-        #    ex_force_auth_version='2.0_password',
-        #    ex_force_service_name='nova',
-        #    ex_tenant_name = 'admin')
+        
         self.connected = True
         
     
@@ -65,7 +56,7 @@ class OpenStackCloud(Cloud):
         if context is not None:
             self._context = context
 
-    def nested_new_instances(self, app_id, count, name='conpaas', inst_type=None):
+    def new_instances(self, app_id, count, name='conpaas', inst_type=None):
         if self.connected is False:
             self._connect()
 
@@ -88,14 +79,14 @@ class OpenStackCloud(Cloud):
 
         node = self.driver.create_node(**kwargs)
        
-        #node = nested_cloud.create_container(self.driver, kwargs, app_id) 
-         
+        #node = base_clouds.get_active_cloud().create_container(self.driver, kwargs, app_id) 
+        
         return [ self._create_service_nodes(node) ]
 
     def add_compute_vm(self, app_id, name, inst_type=None):
-        return nested_cloud.add_compute_vm(app_id, name, inst_type)
+        return base_clouds.get_active_cloud().add_compute_vm(app_id, name, inst_type)
      
-    def new_instances(self, count, name='conpaas', inst_type=None):
+    def xnew_instances(self, count, name='conpaas', inst_type=None):
         if self.connected is False:
             self._connect()
 
@@ -120,7 +111,6 @@ class OpenStackCloud(Cloud):
         }
 
         node = self.driver.create_node(**kwargs)
-        log(node)
 
         return [ self._create_service_nodes(node) ]
 
@@ -133,5 +123,5 @@ class OpenStackCloud(Cloud):
         if self.connected is False:
             self._connect()
         #size = [size for size in self.driver.list_sizes() if size.name == inst_type][0]
-        #nested_cloud.clean_shared_pool(self.driver, size)
+        #base_clouds.get_active_cloud().clean_shared_pool(self.driver, size)
         return self.driver.destroy_node(node.as_libcloud_node())
