@@ -96,6 +96,15 @@ def run_cmd(cmd, directory='/'):
     _return_code = pipe.wait()
     return out, error
 
+def string_to_hex(string):
+    return ''.join(["%02X" % ord(x) for x in string])
+
+def hex_to_string(hexadec):
+    bytes = [] 
+    for i in range(0,len(hexadec),2):
+        bytes.append(chr(int(hexadec[i:i+2],16)))
+    return ''.join(bytes)
+
 
 def run_cmd_code(cmd, directory='/'):
     """Same as run_cmd but it returns also the return code.

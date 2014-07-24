@@ -295,6 +295,8 @@ def https_get(host, port, uri, params=None):
     """
     h = HTTPSConnection(host, port=port, ssl_context=__client_ctx)
     if params:
+        if 'manager_id' not in params:
+            params['manager_id'] = 0
         h.putrequest('GET', '%s?%s' % (uri, urlencode(params)))
     else:
         h.putrequest('GET', uri)
@@ -347,6 +349,11 @@ def _encode_multipart_formdata(params, files):
         unicode and the CRLF.join(L) crashes.
         To solve this, I converted the filename to ascii.
     '''
+
+    if 'manager_id' not in params:
+        params['manager_id'] = 0
+
+
     BOUNDARY = '----------_BoUnDaRy_StRiNg_$'
     CRLF = '\r\n'
     L = []
@@ -356,6 +363,12 @@ def _encode_multipart_formdata(params, files):
         L.append('')
         L.append(str(params[key]))
     for (key, filename, value) in files:
+        # if key == 'app_tar' or key == 'code':
+        #     import sys
+        #     f = open('/tmp/'+key,'a')
+        #     f.write("from client: encod: %s, type: %s, len: %s, contents: %s\n" % (sys.getdefaultencoding(), type(value), len(value), value))
+        #     f.close()
+
         L.append('--' + BOUNDARY)
         L.append('Content-Disposition: form-data; name="%s"; filename="%s"' \
                 % (key, filename.encode('ascii')))
@@ -364,6 +377,7 @@ def _encode_multipart_formdata(params, files):
         L.append(value)
     L.append('--' + BOUNDARY + '--')
     L.append('')
+
     body = CRLF.join(L)
     content_type = 'multipart/form-data; boundary=%s' % BOUNDARY
     return content_type, body

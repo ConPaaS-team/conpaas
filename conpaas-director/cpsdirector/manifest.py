@@ -21,6 +21,8 @@ import simplejson
 
 from cpsdirector.common import log
 from cpsdirector.common import build_response
+from conpaas.core.misc import hex_to_string
+
 
 manifest_page = Blueprint('manifest_page', __name__)
 
@@ -31,11 +33,20 @@ from multiprocessing import Process
 def upload_manifest():
     manifest = request.values.get('manifest')
     slo = request.values.get('slo')
+    app_tar = request.values.get('app_tar')
+    #app_tar = hex_to_string(app_tar.encode('utf-8'))
+    #app_tar = app_tar.decode("hex")
+    # f = open('/opt/stack/conpaas_deploy/generic.tar.gz', 'r')
+    # app_tar = f.read()
+    # f.close()
+
+
+    #TODO(genc):do some checking for these params
     if not manifest:
         log('"manifest" is a required argument')
         return build_response(simplejson.dumps(False))
 
-    log('User %s has uploaded the following manifest %s and the following slo %s' % (g.user.username, manifest, slo))
+    #log('User %s has uploaded the following manifest %s and the following slo %s and this app_tar :%s' % (g.user.username, manifest, slo, app_tar))
 
     #TODO:(genc): maybe the director can do some simple checks
     #if not check_manifest(manifest):
@@ -43,12 +54,12 @@ def upload_manifest():
 
     if request.values.get('thread'):
         log('Starting a new process for the manifest')
+        p = Process(target=new_manifest, args=(manifest,slo,app_tar))
         p.start()
-        p = Process(target=new_manifest, args=(manifest,slo,))
         log('Process started, now return')
         return simplejson.dumps(True)
 
-    msg = new_manifest(manifest, slo)
+    msg = new_manifest(manifest, slo, app_tar)
     
 
     if msg != 'ok':
@@ -951,7 +962,7 @@ from cpsdirector.application import _startapp as startapp
 from cpsdirector.application import get_app_by_id
 from cpsdirector.service import callmanager
 
-def new_manifest(manifest, slo, cloud='default'):
+def new_manifest(manifest, slo, app_tar, cloud='default'):
     try:
         parse = simplejson.loads(manifest)
         simplejson.loads(slo)
@@ -960,6 +971,7 @@ def new_manifest(manifest, slo, cloud='default'):
 
     # 'Application' has to be defined
     app_name = parse.get('ApplicationName')
+
     if not app_name:
         return 'Application is not defined'
 
@@ -987,14 +999,14 @@ def new_manifest(manifest, slo, cloud='default'):
 
     #TODO:(genc): wait until the manager is created, delete the ugly sleep
     import time
-    time.sleep(15)
-    files = [ ( 'slo', 'slo', slo ), ( 'manifest', 'manifest', manifest ) ]
+    time.sleep(20)
+    
+
+    files = [ ( 'slo', 'slo', slo ), ( 'manifest', 'manifest', manifest ), ( 'app_tar', 'app_tar', app_tar ) ]
     app = get_app_by_id(g.user.uid, appid)
     # TODO:(genc): make post files to read the method and manager id from the actual paramaters and not params
     log('####Application: %s' % app.to_dict())    
     res = callmanager(app.to_dict(), 0, 'upload_manifest_slo', True, { 'method': 'upload_manifest_slo', 'manager_id':'0', 'cloud':cloud }, files)
-
     
-    
-
     return 'ok'
+ 

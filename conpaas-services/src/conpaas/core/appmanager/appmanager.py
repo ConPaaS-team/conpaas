@@ -53,7 +53,13 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
         #self.run_am()
 
         #sys.stdout.flush()
-        
+    
+    @expose('GET')
+    def check_manager_process(self, kwargs):
+        """Check if manager process started - just return an empty response"""
+        if len(kwargs) != 0:
+            return HttpErrorResponse('ERROR: Arguments unexpected')
+        return HttpJsonResponse()    
 
     def run_am(self, cloud):
         if self.manifest.PerformanceModel == None:
@@ -93,6 +99,12 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
         sloconent = slofile.file
         self.slo = SLOParser.parse(simplejson.loads(sloconent.getvalue()))
         
+
+        #Note that I am assuming that an application has only ONE generic service    
+        self.app_tar = kwargs.pop('app_tar')
+        #apptarfile = kwargs.pop('app_tar')
+        #self.app_tar = apptarfile.file
+        
         self.run_am(kwargs['cloud'])
 
         # resc = {}
@@ -118,6 +130,7 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
     @expose('POST')
     def create_service(self, kwargs):
         """Expose methods relative to a specific service manager"""
+        self.kwargs.update(kwargs)
 
         if 'service_type' not in kwargs:
             vals = { 'arg': 'service_type' }
@@ -142,6 +155,7 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
         self.add_manager_configuration(service_type)
         self.run_manager_start_script(service_type)
 		
+
         #Create an instance of the service class
         #Watch the config parser is from the applciation manager and it is not specific, can be source for problems
         service_insance = instance_class(self.config_parser, **self.kwargs)

@@ -13,7 +13,7 @@ import StringIO
 import simplejson
 
 from conpaas.core.https import client
-from conpaas.core.misc import rlinput
+from conpaas.core.misc import rlinput, string_to_hex, hex_to_string
 
 class BaseClient(object):
     # Set this to the service type. eg: php, java, mysql...
@@ -471,7 +471,7 @@ class BaseClient(object):
         else:
             print "failed."
 
-    def manifest(self, manifestfile, slofile):
+    def manifest(self, manifestfile, slofile, appfile):
         print "Uploading the manifest and slo... "
         sys.stdout.flush()
 
@@ -483,7 +483,14 @@ class BaseClient(object):
         slo = f.read()
         f.close()
 
-        res = self.callapi("upload_manifest", True, { 'manifest': manifest, 'slo':slo })
+        f = open(appfile, 'r')
+        app_tar = f.read()
+        f.close()
+        
+        app_tar = string_to_hex(app_tar) 
+      
+        res = self.callapi("upload_manifest", True, {'thread':True, 'manifest': manifest, 'slo':slo, 'app_tar':app_tar })
+        #res = self.callapi("upload_manifest", True, {'manifest': manifest, 'slo':slo, 'app_tar':app_tar })
         if res:
             print "done."
         else:
@@ -558,7 +565,7 @@ Do you want to continue? (y/N): """
         print "    createapp         appname                       # create a new application"
         print "    startapp          [appid]                       # start an application"
         print "    renameapp         appid       newname           # rename an application"
-        print "    manifest          manifest    slo               # upload a new manifest"
+        print "    manifest          manifest    slo     app_tar   # upload a new manifest"
         print "    download_manifest appid                         # download an existing manifest"
         print "    create            servicetype [appid]           # create a new service [inside a specific application]"
         print "    start             serviceid   appid   [cloud]   # startup the given service [on a specific cloud]"
@@ -665,7 +672,8 @@ Do you want to continue? (y/N): """
                     # and if it is acceptable.
                     open(argv[2])
                     open(argv[3])
-                    return getattr(self, command)(argv[2], argv[3])
+                    open(argv[4])
+                    return getattr(self, command)(argv[2], argv[3], argv[4])
                 except (IndexError, IOError):
                     self.usage(argv[0])
                     sys.exit(0)

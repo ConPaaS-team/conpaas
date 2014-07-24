@@ -126,7 +126,9 @@ class Controller(object):
                     % host)
                 return host
 
-    def create_reservation_test(self, reservation_id, cloud=None):
+    def create_reservation_test(self, reservation, test_managent, port, cloud=None):
+        
+        reservation_id = reservation['ConfigID']
         if cloud is None:
             cloud = self.__default_cloud     
         #try:
@@ -134,19 +136,35 @@ class Controller(object):
         
         max_iteration = 20
         iteration = 0
+        sleep_interval = 3
 
         while True:
             status = cloud.check_reservation(reservation_id)
             if status['Ready'] or iteration >= max_iteration:
                 break
             else:
-                time.sleep(3)
+                time.sleep(sleep_interval)
                 iteration += 1
-
+                
         if status['Ready']:
-            return status['Nodes']
-        else:
-            pass # timeout 
+            iteration = 0
+            nr_not_started = len(status['Nodes'])
+            while True:
+                for node in status['Nodes']:
+                    if self.__check_node(node, test_managent, port):
+                        nr_not_started -= 1
+
+                if nr_not_started == 0 or iteration >= max_iteration:
+                    break
+
+                time.sleep(sleep_interval)
+                iteration += 1    
+            if nr_not_started == 0:
+                reservation['Resources'] = status['Nodes']
+                return reservation
+        
+        raise Exception('Timeout while creating a reservation: %s nodes did not start' % nr_not_started)
+            
 
 
         #except Exception as e:
@@ -511,15 +529,30 @@ class Controller(object):
         for cloud in self.__available_clouds:
             cloud.config(config_params)
 
-    def __check_node(self, node, test_agent, port):
+    # def __check_node(self, node, test_agent, port):
+    #     """Return True if the given node has properly started an agent on the
+    #     given port"""
+    #     if node.ip == '' or node.private_ip == '':
+    #         return False
+
+    #     try:
+    #         self.__logger.debug('[__check_node]: test_agent(%s, %s)' % (node.ip, port))
+    #         test_agent(node.ip, port)
+    #         return True
+    #     except socket.error, err:
+    #         self.__logger.debug('[__check_node]: %s' % err)
+
+    #     return False
+
+    def __check_node(self, node, test_managent, port):
         """Return True if the given node has properly started an agent on the
         given port"""
-        if node.ip == '' or node.private_ip == '':
+        if node['IP'] == '':
             return False
 
         try:
-            self.__logger.debug('[__check_node]: test_agent(%s, %s)' % (node.ip, port))
-            test_agent(node.ip, port)
+            self.__logger.debug('[__check_node]: test_managent(%s, %s)' % (node['IP'], port))
+            test_managent(node['IP'], port)
             return True
         except socket.error, err:
             self.__logger.debug('[__check_node]: %s' % err)

@@ -49,7 +49,7 @@ import tempfile
 import stat
 import os.path
 import time
-
+import cStringIO
 
 from conpaas.core.expose import expose
 from conpaas.core.controller import Controller
@@ -63,6 +63,7 @@ from conpaas.services.generic.misc import archive_open, archive_get_members, arc
 from conpaas.core.log import create_logger
 from conpaas.services.generic.agent import client
 from conpaas.services.generic.manager.config import CodeVersion, ServiceConfiguration
+from conpaas.core.misc import hex_to_string
 
 class GenericManager(BaseManager):
     """Manager class with the following exposed methods:
@@ -115,10 +116,24 @@ class GenericManager(BaseManager):
         self.memcache = memcache.Client([memcache_addr])
         self.code_repo = config_parser.get('manager', 'CODE_REPO')
 
+        self.logger.info("kwargs: %s" % kwargs)
         self.state_log = []        
-        if kwargs['reset_config']:
-            self._create_initial_configuration()
+
+        self._configuration_set(ServiceConfiguration())
         
+        if 'app_tar' in kwargs:
+            app_tar_fu = kwargs['app_tar']
+            import cStringIO
+            output = cStringIO.StringIO()
+            output.write(hex_to_string(app_tar_fu.file.getvalue()))
+            #self.logger.info("tar in hex: %s" % app_tar_fu.file.getvalue())
+            output.seek(0)
+            app_tar_fu.file = output
+            self.upload_code_version({'code':app_tar_fu, 'enable':True})
+            output.close()
+        elif kwargs['reset_config']:
+            self._create_initial_configuration() 
+
         self.nodes = []
         self.agents_info = []
         self.starters = []
@@ -126,7 +141,7 @@ class GenericManager(BaseManager):
         #self.hub_ip = None
 
     @expose('POST')
-    def startup(self, kwargs):
+    def startup(self, cloud, configuration=None):
         """Start the Generic service"""
         self.logger.info('Manager starting up')
 
@@ -139,11 +154,11 @@ class GenericManager(BaseManager):
         
         self._state_set(self.S_PROLOGUE, msg='Starting up')
 
-        Thread(target=self._do_startup, args=[kwargs]).start()
+        Thread(target=self._do_startup, args=[cloud, configuration]).start()
 
         return HttpJsonResponse({ 'state': self._state_get() })
 
-    def _do_startup(self, kwargs):
+    def _do_startup(self, cloud, configuration):
         """Start up the service. The first node will be an agent running a
         Generic Hub and a Stem Node."""
         
@@ -160,11 +175,14 @@ class GenericManager(BaseManager):
 #        self.logger.debug(self.ACTION_REQUESTING_NODES % vals)
 
         self._state_set(self.S_RUNNING)
-        #try:
+        self.logger.info("Generic manager started")
+        self.logger.info("configuration: %s" % configuration)
+        try:
             ##nodes = []
             ##for i in range(1, nr_instances):
             ##    nodes.append( self.controller.create_nodes(1, client.check_agent_process, self.AGENT_PORT))
             #nodes = self.controller.create_nodes(nr_instances, client.check_agent_process, self.AGENT_PORT)
+            self.nodes = configuration['Resources']
 
             #config = self._configuration_get()
             
@@ -172,44 +190,60 @@ class GenericManager(BaseManager):
             
             #agents_info = self._update_agents_info(nodes, roles)
             
-            #self._init_agents(config, nodes, agents_info)
             
-            #self._update_code(config, nodes)
+            self._init_agents()
+            
+            self._update_code(self.nodes)
 
             ## Extend the nodes list with the newly created one
             #self.nodes += nodes
             ##self.agents_info += agents_info
-            #self._state_set(self.S_RUNNING)
-        #except Exception, err:
-            #self.logger.exception('_do_startup: Failed to create agents: %s' % err)
-            #self._state_set(self.S_ERROR) 
+            self._state_set(self.S_RUNNING)
+        except Exception, err:
+            self.logger.exception('_do_startup: Failed to create agents: %s' % err)
+            self._state_set(self.S_ERROR) 
 
-    def _update_agents_info(self, nodes, roles):
-        id_ip = []
-        for node in nodes:
-            id_ip.append( { 'id': node.id, 'ip': node.ip })
+    # def _update_agents_info(self, nodes, roles):
+    #     id_ip = []
+    #     for node in nodes:
+    #         id_ip.append( { 'id': node['ID'], 'ip': node['IP'] })
 
-        id_ip_role = []
-        for role in roles:
-            if len(id_ip):
-                node_ip_id = id_ip.pop()
-                node_ip_id.update({'role':role})
-                id_ip_role.append(node_ip_id)
+    #     id_ip_role = []
+    #     for role in roles:
+    #         if len(id_ip):
+    #             node_ip_id = id_ip.pop()
+    #             node_ip_id.update({'role':role})
+    #             id_ip_role.append(node_ip_id)
 
-        return id_ip_role
+    #     return id_ip_role
 
-    def _init_agents(self, config, nodes, agents_info):
-        self._extract_init(config)
-        for serviceNode in nodes:                                                                        
+    # def _init_agents(self, config, nodes, agents_info):
+    #     self._extract_init(config)
+    #     for serviceNode in nodes:                                                                        
+    #         try:                                           
+    #             initpath = os.path.join(self.code_repo, 'init.sh')                                              
+    #             client.init_agent(serviceNode.ip, 5555, initpath, agents_info)            
+    #         except client.AgentException:                                                                
+    #             self.logger.exception('Failed initialize agent at node %s' % str(serviceNode))             
+    #             self._state_set(self.S_ERROR, msg='Failed to initialize agent at node %s' % str(serviceNode))
+    #             raise        
+
+    def get_check_agent_funct(self):
+        return client.check_agent_process
+
+    def _init_agents(self):
+        self._extract_init()
+        for node in self.nodes:                                                                        
             try:                                           
                 initpath = os.path.join(self.code_repo, 'init.sh')                                              
-                client.init_agent(serviceNode.ip, 5555, initpath, agents_info)            
+                client.init_agent(node['IP'], 5555, initpath, self.nodes)            
             except client.AgentException:                                                                
-                self.logger.exception('Failed initialize agent at node %s' % str(serviceNode))             
-                self._state_set(self.S_ERROR, msg='Failed to initialize agent at node %s' % str(serviceNode))
+                self.logger.exception('Failed initialize agent at node %s' % str(node))             
+                self._state_set(self.S_ERROR, msg='Failed to initialize agent at node %s' % str(node))
                 raise        
 
-    def _extract_init(self, config):
+    def _extract_init(self):
+        config = self._configuration_get()
         #current_code = config.codeVersions[config.currentCodeVersion]
         filepath = os.path.join(self.code_repo, config.currentCodeVersion)
         arch = archive_open(filepath)
@@ -228,14 +262,24 @@ class GenericManager(BaseManager):
 
         return HttpJsonResponse({ 'state': self._state_get() })    
 
+    # def _do_run(self):
+    #     for starter in self.starters:     
+    #         try:               
+    #             client.run(starter['ip'], 5555)            
+    #         except client.AgentException:                                                                
+    #             self.logger.exception('Failed to start run at node %s' % str(starter))             
+    #             self._state_set(self.S_ERROR, msg='Failed to run code at node %s' % str(starter))
+    #             raise   
+
     def _do_run(self):
-        for starter in self.starters:     
+        for node in self.nodes:     
             try:               
-                client.run(starter['ip'], 5555)            
+                client.run(node['IP'], 5555)            
             except client.AgentException:                                                                
-                self.logger.exception('Failed to start run at node %s' % str(starter))             
-                self._state_set(self.S_ERROR, msg='Failed to run code at node %s' % str(starter))
+                self.logger.exception('Failed to start run at node %s' % str(node))             
+                self._state_set(self.S_ERROR, msg='Failed to run code at node %s' % str(node))
                 raise   
+
 
     @expose('POST')
     def shutdown(self, kwargs):
@@ -389,7 +433,7 @@ class GenericManager(BaseManager):
     def _create_initial_configuration(self):
         print 'CREATING INIT CONFIG'
  
-        config = ServiceConfiguration()
+        config = self._configuration_get()
         
         if len(config.codeVersions) > 0:
             return
@@ -446,6 +490,8 @@ echo "" >> /root/generic.out
             description = kwargs.pop('description')
         else:
             description = ''
+        if 'enable' in kwargs:
+            enable = kwargs.pop('enable')
 
         if len(kwargs) != 0:
             ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
@@ -457,20 +503,26 @@ echo "" >> /root/generic.out
             return HttpErrorResponse(ex.message)
 
         config = self._configuration_get()
+        
+        if not os.path.exists(self.code_repo):
+            os.makedirs(self.code_repo)
         fd, name = tempfile.mkstemp(prefix='code-', dir=self.code_repo)
         fd = os.fdopen(fd, 'w')
         upload = code.file
         codeVersionId = os.path.basename(name)
+        self.logger.info("upload is an instance of %s" % upload)
 
         bytes = upload.read(2048)
+        self.logger.info("byte has len: %s" % len(bytes))
         while len(bytes) != 0:
             fd.write(bytes)
             bytes = upload.read(2048)
+            self.logger.info("byte has len: %s" % len(bytes))
         fd.close()
 
         arch = archive_open(name)
         if arch is None:
-            os.remove(name)
+            #os.remove(name)
             ex = ManagerException(ManagerException.E_ARGS_INVALID,
                                   detail='Invalid archive format')
             return HttpErrorResponse(ex.message)
@@ -486,6 +538,10 @@ echo "" >> /root/generic.out
         config.codeVersions[codeVersionId] = CodeVersion(
             codeVersionId, os.path.basename(code.filename), archive_get_type(name), description=description)
         self._configuration_set(config)
+
+        if enable:
+            self.do_enable_code(os.path.basename(codeVersionId))
+
         return HttpJsonResponse({'codeVersionId': os.path.basename(codeVersionId)})
 
 
@@ -547,7 +603,7 @@ echo "" >> /root/generic.out
         codeVersionId = None
         if 'codeVersionId' in kwargs:
             codeVersionId = kwargs.pop('codeVersionId')                                                  
-        config = self._configuration_get()                                                               
+        config = self._configuration_get()
         phpconf = {}                                                                                     
                                                                                                          
         if len(kwargs) != 0:                                                                             
@@ -566,12 +622,13 @@ echo "" >> /root/generic.out
             self._configuration_set(config)                                                              
         elif dstate == self.S_RUNNING:                                                                   
             self._state_set(self.S_ADAPTING, msg='Updating configuration')
-            Thread(target=self.do_enable_code, args=[config, codeVersionId]).start()   
+            Thread(target=self.do_enable_code, args=[codeVersionId]).start()   
         else:                                                                                            
             return HttpErrorResponse(ManagerException(ManagerException.E_STATE_ERROR).message)           
         return HttpJsonResponse()                                                                        
 
-    def do_enable_code(self, config, codeVersionId):    
+    def do_enable_code(self, codeVersionId):    
+        config = self._configuration_get()
         if codeVersionId is not None:                                     
             self.prevCodeVersion = config.currentCodeVersion              
             config.currentCodeVersion = codeVersionId                     
@@ -579,25 +636,36 @@ echo "" >> /root/generic.out
         self._state_set(self.S_RUNNING)
         self._configuration_set(config)                                   
 
-    def _update_code(self, config, agents_info, start_role):                                                               
-        for agent in agents_info:                                                                        
-            # Push the current code version via GIT if necessary                                         
-            #if config.codeVersions[config.currentCodeVersion].type == 'git':                             
-            #    _, err = git.git_push(git.DEFAULT_CODE_REPO, agent['ip'])                             
-            #    if err:                                                                                  
-            #        self.logger.debug('git-push to %s: %s' % (agent['ip'], err))                      
-            if start_role == '*' or start_role == agent['role']:
-                try:               
-                    self.starters.append(agent)
-                    client.update_code(agent['ip'], 5555, config.currentCodeVersion,                    
-                                         config.codeVersions[config.currentCodeVersion].type,                
-                                         os.path.join(self.code_repo, config.currentCodeVersion))            
-                except client.AgentException:                                                                
-                    self.logger.exception('Failed to update code at node %s' % str(agent))             
-                    self._state_set(self.S_ERROR, msg='Failed to update code at node %s' % str(agent))
-                    raise                                                                                    
+    # def _update_code(self, start_role,):                                                               
+    #     config = self._configuration_get()
+    #     for node in  self.nodes:                                                                        
+    #         # Push the current code version via GIT if necessary                                         
+    #         #if config.codeVersions[config.currentCodeVersion].type == 'git':                             
+    #         #    _, err = git.git_push(git.DEFAULT_CODE_REPO, node['ip'])                             
+    #         #    if err:                                                                                  
+    #         #        self.logger.debug('git-push to %s: %s' % (node['ip'], err))                      
+    #         if start_role == '*' or start_role == node['role']:
+    #             try:               
+    #                 self.starters.append(node)
+    #                 client.update_code(node['IP'], 5555, config.currentCodeVersion,                    
+    #                                      config.codeVersions[config.currentCodeVersion].type,                
+    #                                      os.path.join(self.code_repo, config.currentCodeVersion))            
+    #             except client.AgentException:                                                                
+    #                 self.logger.exception('Failed to update code at node %s' % str(node))             
+    #                 self._state_set(self.S_ERROR, msg='Failed to update code at node %s' % str(node))
+    #                 raise                                                                                    
                                                                                                          
-    
+    def _update_code(self, nodes):                                                               
+        config = self._configuration_get()
+        for node in  nodes:                                                                        
+            try:               
+                client.update_code(node['IP'], 5555, config.currentCodeVersion,                    
+                                     config.codeVersions[config.currentCodeVersion].type,                
+                                     os.path.join(self.code_repo, config.currentCodeVersion))            
+            except client.AgentException:                                                                
+                self.logger.exception('Failed to update code at node %s' % str(node))             
+                self._state_set(self.S_ERROR, msg='Failed to update code at node %s' % str(node))
+                raise                                                                                    
 
     def _configuration_get(self):
         return self.memcache.get(self.CONFIG)

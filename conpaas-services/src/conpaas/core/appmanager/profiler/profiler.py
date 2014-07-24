@@ -25,7 +25,7 @@ class Profiler:
         module_managers=[]
         for i in range(len(self.appmanager.manifest.Modules)):
             self.implementationsXmodule.append(len(self.appmanager.manifest.Modules[i].Implementations) - 1) 
-            res = self.appmanager.create_service({'service_type':self.appmanager.manifest.Modules[i].ModuleType})
+            res = self.appmanager.create_service({'service_type':self.appmanager.manifest.Modules[i].ModuleType, 'app_tar': self.appmanager.app_tar})
             module_managers.append(self.appmanager.httpsserver.instances[int(res.obj['sid'])])
         
         print "Index of implementations per module :", self.implementationsXmodule
@@ -92,25 +92,25 @@ class Profiler:
                 
                 #explore parameter space with the first input size /first value for arguments                   
                 experiments = strategy.explore()
-                                
-        #         pareto_experiments = self.get_pareto_experiments(experiments)
                 
-        #         pareto_configurations = map(lambda exp: exp["Configuration"], pareto_experiments)
-        #         print "Pareto Configurations per input size :", pareto_configurations
+                pareto_experiments = self.get_pareto_experiments(experiments)
                 
-        #         print "Test different input sizes."
-        #     else:
-        #         """
-        #             Test different input sizes on the efficient configurations only
-        #         """
+                pareto_configurations = map(lambda exp: exp["Configuration"], pareto_experiments)
+                print "Pareto Configurations per input size :", pareto_configurations
                 
-        #         #test the pareto configurations with the current arguments
-        #         pareto_experiments.extend(strategy.test_additional_configurations(pareto_configurations))
+                print "Test different input sizes."
+            else:
+                """
+                    Test different input sizes on the efficient configurations only
+                """
+                
+                #test the pareto configurations with the current arguments
+                pareto_experiments.extend(strategy.test_additional_configurations(pareto_configurations))
             break #genc delete this when you are done     
         
         # print "Total Pareto experiments : %d."% len(pareto_experiments)
-        # Traces.TrainingSet = experiments
-        # Traces.ParetoExperiments = pareto_experiments
+        Traces.TrainingSet = experiments
+        Traces.ParetoExperiments = pareto_experiments
         
         
         

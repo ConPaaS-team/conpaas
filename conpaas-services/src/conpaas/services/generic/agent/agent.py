@@ -216,8 +216,8 @@ class GenericAgent(BaseAgent):
         with open(join(target_dir, 'agents.json'), 'w') as outfile:
             simplejson.dump(agents_info, outfile)
        
-        agent_role = [i['role'] for i in agents_info if i['ip'] == agent_ip][0]
-        master_ip = [i['ip'] for i in agents_info if i['role'] == 'master'][0]
+        agent_role = [i['Role'] for i in agents_info if i['IP'] == agent_ip][0]
+        master_ip = [i['IP'] for i in agents_info if i['Role'] == 'MASTER'][0]
         
         self.env.update({'MY_IP':agent_ip})
         self.env.update({'MY_ROLE':agent_role})
@@ -240,7 +240,7 @@ class GenericAgent(BaseAgent):
         start_args = [ "bash",  startpath ]
         
         proc = Popen(start_args, cwd=self.generic_dir, env=self.env, close_fds=True)
-        
+        proc.wait()
         self.state = 'RUNNING'
         self.logger.info('Starter is running')
         return HttpJsonResponse()

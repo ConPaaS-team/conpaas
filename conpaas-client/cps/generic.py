@@ -9,15 +9,15 @@ from cps.base import BaseClient
 
 class Client(BaseClient):
 
-    def info(self, service_id):
+    def info(self,  app_id, service_id):
         service = BaseClient.info(self, service_id)
         
-        nodes = self.callmanager(service['sid'], "list_nodes", False, {})
+        nodes = self.callmanager(app_id, service['sid'], "list_nodes", False, {})
         if 'hub' in nodes and nodes['hub']:
             # Only one HUB
             hub = nodes['hub'][0]
             params = { 'serviceNodeId': hub }
-            details = self.callmanager(service['sid'], "get_node_info", False, params)
+            details = self.callmanager(app_id, service['sid'], "get_node_info", False, params)
             print "hub url: ", "http://%s:4444" % details['serviceNode']['ip']
             print "node url:", "http://%s:3306" % details['serviceNode']['ip']
 
@@ -25,7 +25,7 @@ class Client(BaseClient):
             # Multiple nodes
             for node in nodes['node']:
                 params = { 'serviceNodeId': node }
-                details = self.callmanager(service['sid'], "get_node_info", False, params)
+                details = self.callmanager(app_id, service['sid'], "get_node_info", False, params)
                 print "node url:", "http://%s:3306" % details['serviceNode']['ip']
 
     def usage(self, cmdname):
@@ -42,23 +42,24 @@ class Client(BaseClient):
    
         if command in ( 'add_nodes', 'remove_nodes', 'upload_code', 'list_uploads', 'enable_code', 'run' ): 
             try:                                                      
-                sid = int(argv[2])                                    
+                sid = int(argv[2])
+                aid = int(argv[3])                                    
             except (IndexError, ValueError):                          
                 self.usage(argv[0])                                   
                 sys.exit(0)                                           
                                                               
-            self.check_service_id(sid)                                
+            self.check_service_id(sid, aid)                                
 
   
         if command in ( 'add_nodes', 'remove_nodes'):
             try:
-                count = int(argv[3])
+                count = int(argv[4])
             except (IndexError, ValueError):
                 self.usage(argv[0])
                 sys.exit(0)
 
             # call the method
-            res = self.callmanager(sid, command, True, { 'count': count })
+            res = self.callmanager(aid, sid, command, True, { 'count': count })
             if 'error' in res:
                 print res['error']
             else:
@@ -66,20 +67,20 @@ class Client(BaseClient):
 
         if command == 'upload_code':
             try: 
-                filename = argv[3]
+                filename = argv[4]
                 if not (os.path.isfile(filename) and os.access(filename, os.R_OK)):
                     raise IndexError                                               
             except IndexError:                                                     
                 self.usage(argv[0])                                                
                 sys.exit(0)                                                        
                                                                        
-            getattr(self, command)(sid, filename)                    
+            getattr(self, command)(aid, sid, filename)                    
         
         if command == 'run':            
-            getattr(self, command)(sid)                    
+            getattr(self, command)(aid, sid)                    
     
         if command == 'list_uploads':                                                              
-            res = self.callmanager(sid, 'list_code_versions', False, {})                           
+            res = self.callmanager(aid, sid, 'list_code_versions', False, {})                           
                                                                                            
             def add_cur(row):                                                                      
                 if 'current' in row:                                                               
@@ -98,25 +99,27 @@ class Client(BaseClient):
                 self.usage(argv[0])                      
                 sys.exit(0)                              
                                                  
-            getattr(self, command)(sid, code_version)    
+            getattr(self, command)(aid, sid, code_version)    
 
 
-    def upload_code(self, service_id, filename):
+    def upload_code(self, app_id, service_id, filename):
         contents = open(filename).read()
+        
+
 
         files = [ ( 'code', filename, contents ) ]
 
-        res = self.callmanager(service_id, "/", True, { 'method': "upload_code_version",  }, files)
+        res = self.callmanager(app_id, service_id, "upload_code_version", True, { 'method': "upload_code_version", 'manager_id':service_id }, files)
         if 'error' in res:
             print res['error']
         else:
             print "Code version %(codeVersionId)s uploaded" % res
 
 
-    def enable_code(self, service_id, code_version):
+    def enable_code(self,  app_id, service_id, code_version):
         params = { 'codeVersionId': code_version }
 
-        res = self.callmanager(service_id, "enable_code",
+        res = self.callmanager( app_id, service_id, "enable_code",
             True, params)
 
         if 'error' in res:
@@ -125,9 +128,9 @@ class Client(BaseClient):
         else:
             print code_version, 'enabled'
     
-    def run(self, service_id):
+    def run(self,  app_id, service_id):
         params = {}
-        res = self.callmanager(service_id, "run", True, params)
+        res = self.callmanager( app_id, service_id, "run", True, params)
 
         if 'error' in res:
             print res['error']

@@ -28,6 +28,9 @@ class Cloud:
         self._mapping_vars = {}
         self.logger = create_logger(__name__)
         self.reservations = {}
+        # this is a stupid way to evaluate the price per unit of resources
+        #self.costs = {'Cores':6e-7, 'Memory':2e-9 }
+        self.costs = {'Cores':6e-1, 'Memory':2e-3 }
 
     def get_cloud_name(self):
         return self.cloud_name
@@ -212,7 +215,8 @@ class Cloud:
 
         ret_reservation = {}
         ret_reservation['ConfigID'] = str(uid)
-        ret_reservation['Cost'] = 300
+        
+        total_cost = {}
         #reservation['Resources'] = configuration['Resources']
         ret_reservation['Resources'] = []
         ret_res = {}
@@ -225,9 +229,14 @@ class Cloud:
                 ret_res['GroupID'] = res['GroupID']
                 ret_res['Type'] = res['Type']
                 ret_res['Attributes'] = res['Attributes']
+                for attr in res['Attributes']:
+                    if attr in self.costs:
+                        if attr not in total_cost:
+                            total_cost[attr] = 0
+                        total_cost[attr] += res['Attributes'][attr] * self.costs[attr]
                 ret_reservation['Resources'].append(ret_res)
 
-
+        ret_reservation['Cost'] = sum(total_cost.values())
         return ret_reservation
 
         #raise NotImplementedError('prepareReservation not implemented for this cloud driver')
@@ -247,10 +256,6 @@ class Cloud:
                 for node in res['Nodes']:
                     self.kill_instance(node)
                 
-                 
-        
-
-        raise NotImplementedError('releaseReservation not implemented for this cloud driver')
 
     # this method is supposed to check if the the IPs are present, but it is not necessary, instead only listvms is needed, or maybe not
     def check_reservation(self, reservation_id):

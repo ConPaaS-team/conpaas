@@ -92,7 +92,7 @@ class BaseStrategy:
         print "\nApplication arguments :", args
         data = {}   
         implementation = copy.deepcopy(self.implementation)
-        #data["Index"] = len(self.EXPERIMENTS)
+        data["Index"] = len(self.EXPERIMENTS)
         data["Configuration"] = copy.deepcopy(variables)
         data["Arguments"] = args
 
@@ -111,7 +111,7 @@ class BaseStrategy:
 
         
         configuration, roles = implementation.Resources.get_configuration(variables)
-        print "configuration: %s, manager: %s" % (configuration, self.module_manager)
+        #print "configuration: %s, roles: %s" % (configuration, roles)
         
 
         """"
@@ -119,47 +119,61 @@ class BaseStrategy:
         """
         reservation = self.module_manager.controller.prepare_reservation(configuration)
         #check cost reservation['Cost'] and contiune
-        serv_resc = self.module_manager.controller.create_reservation_test(reservation['ConfigID'])
+        #cost = reservation['Cost']
+        reservation = self.module_manager.controller.create_reservation_test(reservation, self.module_manager.get_check_agent_funct(), 5555)
 
         # #reservation = ReservationManager.acquire_resources(configuration)
         if reservation == None:
             print "Experiment failed."
             return 0 
-        #"""
-        #    Add roles to the acquired machines
-        #"""
-        #for i in range(len(reservation["Resources"])):
-        #    reservation["Resources"][i]["Role"] = roles[i]
+        """
+           Add roles to the acquired machines
+        """
+        for i in range(len(reservation['Resources'])):
+           reservation['Resources'][i]["Role"] = roles[i]
 
         # print "\n ~ Acquired Resources ~"
         # print reservation["Resources"]
 
-        # """"
-        #     Execute Implementation
-        # """
-        # variables.update(args)
-        # #get manifest special variables, environment variables
-        # variables.update(implementation.Resources.get_special_variables(reservation["Resources"]))
+        """"
+            Execute Implementation
+        """
+        variables.update(args)
+        #get manifest special variables, environment variables
+        variables.update(implementation.Resources.get_special_variables(reservation['Resources']))
 
-        # reservation["Variables"] = variables
+        reservation["Variables"] = variables
+        #print "*** reservation: %s" % (reservation)
+
         # "Deploy implementation"
         # implementation.deploy(reservation)
+        
+        # # what anca calls deploy (no variables taken into consideration at this point)
+        self.module_manager._do_startup(self.cloud, reservation)
+        
 
-        self.module_manager._do_startup(self.cloud, serv_resc)
-        # "Execute implementation"
-        # execution_time, utilization_data = implementation.execute(reservation)
-        # total_cost = execution_time * reservation["Cost"]
-        # """
-        #     Releasing resources
-        # """
-        # #reservation = ReservationManager.release_resources(reservation["ResID"])
+        "Execute implementation"
+        start_time = time.time()
+        self.module_manager._do_run()
+        end_time = time.time()
+        execution_time = end_time - start_time
 
-        # "Save output and update experiments list"
-        # data["Results"] = {"ExeTime" : execution_time, "TotalCost" : total_cost} 
+
+        # # execution_time, utilization_data = implementation.execute(reservation)
+        total_cost = execution_time * reservation["Cost"]
+        
+        """
+            Releasing resources
+        """
+        #reservation = ReservationManager.release_resources(reservation["ResID"])
+        self.module_manager.controller.release_reservation(reservation['ConfigID'])
+
+        "Save output and update experiments list"
+        data["Results"] = {"ExeTime" : execution_time, "TotalCost" : total_cost} 
         # data["RuntimeData"] = utilization_data
-        # if self.listed:
-        #     print "Add experiment to the Queue."
-        #     self.EXPERIMENTS.append(data)
+        if self.listed:
+            print "Add experiment to the Queue."
+            self.EXPERIMENTS.append(data)
         # else:
         #     #save to logs
         #     fname = str(datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d_%H:%M:%S'))
@@ -167,9 +181,11 @@ class BaseStrategy:
         #     f = open("/home/aiordache/exps3/exp-%s" % fname, "w")
         #     f.write(unicode(json.dumps(data, ensure_ascii=False)))
         #     f.close()
-        # print "Done experiment."
-        # "Returns evaluation of the execution based on cost and execution time"
-        # return self.goodness(data["Results"]["ExeTime"], data["Results"]["TotalCost"])
+        print "GGG> data:%s, reservation: %s" % (data, reservation)
+        print "Done experiment."
+        "Returns evaluation of the execution based on cost and execution time"
+        
+        return self.goodness(data["Results"]["ExeTime"], data["Results"]["TotalCost"])
 
         
     def explore(self):
@@ -208,22 +224,23 @@ class SimulatedAnnealingStrategy(BaseStrategy):
         
     def explore(self):
         print "\n ~ Running Simulated Annealing ~ "
-        # result = anneal(
-        #                 self.execute,# self.simulate
-        #                 [0]*len(self.VarOrder), 
-        #                 lower = float(self.ResModel.Interval[0]), 
-        #                 upper = float(self.ResModel.Interval[1])
-        #                 )#, schedule = "boltzmann")#"fast") #default = fast   
+        result = anneal(
+                        self.execute,# self.simulate
+                        [0]*len(self.VarOrder), 
+                        lower = float(self.ResModel.Interval[0]), 
+                        upper = float(self.ResModel.Interval[1]),
+                        T0 = 100, maxeval = 5, dwell = 1
+                        )#, schedule = "boltzmann")#"fast") #default = fast   
         
-        self.execute([0,0])
+        #self.execute([0,0])
         print "\n\nStrategy Done!\n"
-        #print "Num iterations :", len(self.EXPERIMENTS)
+        print "Num iterations :", len(self.EXPERIMENTS)
         # print solution
         #print 'Return Code: ', result
         #print self.EXPERIMENTS
         
-        #return self.EXPERIMENTS
-        return True
+        return self.EXPERIMENTS
+        #return True
   
     def test_additional_configurations(self, configurations):
         
