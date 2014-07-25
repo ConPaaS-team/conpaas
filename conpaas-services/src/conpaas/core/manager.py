@@ -251,8 +251,11 @@ class BaseManager(object):
             self.volumes.remove(volume)
         else:
             raise Exception("Error destroying volume %s" % volume_id)
+   
+    def attach_volume(self, volume_id, vm_id, device_name=None):
+        if device_name is None:
+            device_name=self.config_parser.get('manager', 'DEV_TARGET')
 
-    def attach_volume(self, volume_id, vm_id, device_name):
         self.logger.info("Attaching volume %s to VM %s as %s" % (volume_id,
             vm_id, device_name))
 
@@ -262,7 +265,7 @@ class BaseManager(object):
             id = vm_id
 
         return self.controller.attach_volume(node, volume, device_name,
-                volume.cloud)
+                volume.cloud), device_name
 
     def detach_volume(self, volume_id):
         self.logger.info("Detaching volume %s..." % volume_id)

@@ -6,34 +6,8 @@ Howto for developers of ConPaaS
 Source code location
 --------------------
 
-Until the end of the Contrail project
-=====================================
-
-* The official repository is the Contrail Subversion repository
- - Create an account: http://contrail.projects.ow2.org/xwiki/bin/view/Development/Contributing
- - Then send an email to contrail-admin@ow2.org with the account name
-
- - with subversion: svn checkout svn+ssh://<username>@svn.forge.objectweb.org/svnroot/contrail/trunk/conpaas
- - with git: git svn clone svn+ssh://<username>@svn.forge.objectweb.org/svnroot/contrail/trunk/conpaas
-
- - a Github project exists but is just a clone of the subversion repository https://github.com/ConPaaS-team/conpaas
- - the Github project is kept synchronous:
-
-  git svn clone
-  git remote add origin git@my-git-server:myrepository.git
-  git push origin
-
-  or more complex:
-  http://ironymark.diwan.com/2011/04/a-safe-way-to-keep-a-github-and-svn-repository-in-sync/
-
-  other links:
-  http://www.samaxes.com/2013/11/move-from-svn-to-git/
-
-
-After the end of the Contrail project
-=====================================
-
-* The official repository will be in Github
+The official repository is hosted in github:
+https://github.com/ConPaaS-team/conpaas
 
 
 ---------------------------------

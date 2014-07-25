@@ -11,8 +11,7 @@ exposing all its functionalities via an HTTP-based API.
 
 ConPaaS can be used either via a command line interface called **cpsclient** or
 through a web frontend (**cpsfrontend**). 
-Recently a command line interface called **cps-tools** has become available,
-that requires Python 2.7.
+Recently a new command line interface called **cps-tools** has become available (note: **cps-tools** requires Python 2.7).
 This document explains how to install and configure all the aforementioned components.
 
 
@@ -83,7 +82,8 @@ order to setup your ConPaaS Director installation.
 
     $ sudo apt-get install ntpdate
     $ sudo ntpdate 0.us.pool.ntp.org
-    >> when the NTP socket is in use, you can
+
+    >> If the NTP socket is in use, you can type:
     $ sudo service ntp stop
     >> and again
     $ sudo ntpdate 0.us.pool.ntp.org
@@ -168,9 +168,10 @@ On a fresh installation the database will be created on the fly.
 
 Contrail IdP and SimpleSAML
 ---------------------------
-For registration and login through the Contrail Identification Provider 
-you have to install the SimpleSAML package simplesamlphp-1.11.0 as 
-follows::
+ConPaaS can optionally delegate its user authentication to an external
+service. For registration and login through the Contrail
+Identification Provider you have to install the SimpleSAML package
+simplesamlphp-1.11.0 as follows::
 
     $ wget http://simplesamlphp.googlecode.com/files/simplesamlphp-1.11.0.tar.gz
     $ tar xzf simplesamlphp-1.11.0.tar.gz
@@ -234,20 +235,19 @@ after the cloud itself. Please refer to
 
 Virtual Private Networks with IPOP
 ----------------------------------
-
-Network connectivity between private clouds running on different networks can
-be achieved in ConPaaS by using IPOP_ (IP over P2P). 
-
-IPOP is useful when you need to deploy ConPaaS instances across multiple
+Network connectivity between private clouds running on different
+networks can be achieved in ConPaaS by using IPOP_ (IP over P2P). This
+is useful in particular to deploy ConPaaS instances across multiple
 clouds. IPOP adds a virtual network interface to all ConPaaS instances
-belonging to an application, allowing services to communicate over a virtual
-private network as if they were deployed on the same LAN. This is achieved
-transparently to the user and applications - the only configuration needed to
-enable IPOP is to determine the network's base IP address, mask, and the number
-of IP addresses in this virtual network that are allocated to each service.
+belonging to an application, allowing services to communicate over a
+virtual private network as if they were deployed on the same LAN. This
+is achieved transparently to the user and applications - the only
+configuration needed to enable IPOP is to determine the network's base
+IP address, mask, and the number of IP addresses in this virtual
+network that are allocated to each service.
 
 VPN support in ConPaaS is per-application: each application you create will get
-its own IPOP Virtual Private Network. VMs running in the same application will
+its own isolated IPOP Virtual Private Network. VMs running in the same application will
 be able to communicate with each other.
 
 In order to enable IPOP you need to set the following variables in
@@ -295,11 +295,9 @@ For example::
 
 Troubleshooting
 ---------------
-There are a few things you can check if for some reason your Director
-installation is not behaving as expected.
+If for some reason your Director installation is not behaving as expected, here are a few frequent issues and their solutions.
 
-If you cannot create services, this is what you should try to do on your
-Director:
+If you cannot create services, try to run this on the machine holding your Director:
 
 1. Run the **cpscheck.py** command as root to attempt an automatic detection of
    possible misconfigurations.
@@ -364,7 +362,9 @@ your system.
 
 As root::
     
-    $ sudo easy_install http://www.conpaas.eu/dl/cpsclient-1.3.2.tar.gz
+    $ sudo easy_install http://www.conpaas.eu/dl/cpsclient-1.x.x.tar.gz
+
+(do not forget to replace 1.x.x with the exact number of the ConPaaS release you are using)
 
 Or, if you do not have root privileges, ``cpsclient`` can also be installed in
 a Python virtual environment if ``virtualenv`` is available on your machine::
@@ -372,13 +372,13 @@ a Python virtual environment if ``virtualenv`` is available on your machine::
     $ virtualenv conpaas # create the 'conpaas' virtualenv
     $ cd conpaas
     $ source bin/activate # activate it
-    $ easy_install http://www.conpaas.eu/dl/cpsclient-1.3.2.tar.gz
+    $ easy_install http://www.conpaas.eu/dl/cpsclient-1.x.x.tar.gz
 
 Configuring ``cpsclient.py``::
 
     $ cpsclient.py credentials
-    Enter the director URL: https://parapide-16.rennes.grid5000.fr:5555
-    Enter your username: xcv
+    Enter the director URL: https://your.director.name:5555
+    Enter your username: xxxxx
     Enter your password: 
     Authentication succeeded
 
@@ -398,18 +398,20 @@ It also replaces the command line tool ``cpsadduser.py``.
 ``cps-tools`` requires:
 
     * Python 2.7 
-    * Python module argparse
-    * Python module argcomplete
+    * Python argparse module
+    * Python argcomplete module
 
 If these are not yet installed, first follow the guidelines in :ref:`python-and-ve`.
 
 Installing ``cps-tools``::
 
-    $ tar -xaf cps-tools-1.3.2.tar.gz
-    $ cd cps-tools-1.3.2
+    $ tar -xaf cps-tools-1.x.x.tar.gz
+    $ cd cps-tools-1.x.x
     $ ./configure --sysconf=/etc
     $ sudo make install
-        or
+
+or::
+	
     $ make prefix=$HOME/src/virtualenv-1.11.4/ve install |& tee my-make-install.log
     $  cd ..
     $  pip install simplejson |& tee sjson.log
@@ -432,7 +434,7 @@ Configuring ``cps-tools``::
 Installing Python2.7 and virtualenv
 -----------------------------------
 
-Recommended installation order is first ``python2.7``, then ``virtualenv``.  (You will need about .5Gb free disk space.)
+Recommended installation order is first ``python2.7``, then ``virtualenv``  (you will need about 0.5GB of free disk space.)
 Check if the following packages are installed, and install them if not::
 
     apt-get install gcc
@@ -492,7 +494,7 @@ Director and Frontend are installed on the same host, but such does not need to
 be the case.
 
 The ConPaaS Frontend can be downloaded from
-http://www.conpaas.eu/dl/cpsfrontend-1.3.2.tar.gz. 
+http://www.conpaas.eu/dl/cpsfrontend-1.x.x.tar.gz. 
 
 After having uncompressed it you should install the required Debian packages::
 
@@ -600,9 +602,7 @@ virtualization technology, or running a Debian/Ubuntu instance in the cloud.
    mkfs.ext3 tune2fs mount debootstrap chroot umount grub-install*
 
 #. It is particularly important that you use Grub version 2. To install
-   it:
-
-   ::
+   it::
 
          sudo apt-get install grub2
          
@@ -625,30 +625,22 @@ everything the script has done, follow these instructions:
    the form of ``/tmp/tmp.X``.
 
 #. There may be a ``dev`` and a ``proc`` directories mounted inside it.
-   Unmount everything using:
-
-   ::
+   Unmount everything using::
 
            sudo umount /tmp/tmp.X/dev /tmp/tmp.X/proc /tmp/tmp.X
          
 
-#. Find which loop device your using:
-
-   ::
+#. Find which loop device your using::
 
            sudo losetup -a
          
 
-#. Remove the device mapping:
-
-   ::
+#. Remove the device mapping::
 
            sudo kpartx -d /dev/loopX
          
 
-#. Remove the binding of the loop device:
-
-   ::
+#. Remove the binding of the loop device::
 
            sudo losetup -d /dev/loopX
          
@@ -776,17 +768,13 @@ OpenNebula’s OCCI daemon is used by ConPaaS to communicate with your
 OpenNebula cluster.
 
 #. Ensure the OCCI server configuration file ``/etc/one/occi-server.conf``
-   contains the following lines in section instance\_types:
-
-   ::
+   contains the following lines in section instance\_types::
 
        :custom:
          :template: custom.erb
 
 #. At the end of the OCCI profile file ``/etc/one/occi_templates/common.erb``
-   from your OpenNebula installation, append the following lines:
-   
-   ::
+   from your OpenNebula installation, append the following lines::
    
        <% @vm_info.each('OS') do |os| %>
             <% if os.attr('TYPE', 'arch') %>
@@ -805,9 +793,7 @@ OpenNebula cluster.
       is very useful for debugging purposes and is not necessary once
       testing is complete.
 
-#. Make sure you started OpenNebula’s OCCI daemon:
-
-   ::
+#. Make sure you started OpenNebula’s OCCI daemon::
 
        sudo occi-server start
 
@@ -837,11 +823,12 @@ ConPaaS in a Nutshell is an extension to the ConPaaS project which aims at
 providing a cloud environent and a ConPaaS installation running on it, all
 in a single VM, called the Nutshell. More specifically, this VM has an 
 all-in-one OpenStack installation running on top of LXC containers, as well 
-as a ConPaaS installation already configured to work in this environment.
+as a ConPaaS installation, including all of its components, already configured 
+to work in this environment.
 
-The Nutshell VM can be depoloyed on various virtual environments, not only
+The Nutshell VM can be deployed on various virtual environments, not only
 standard clouds such as OpenNebula, OpenStack and EC2 but also on simpler 
-environments such as VirtualBox. Therefore, it provides a great developing 
+virtualization tools such as VirtualBox. Therefore, it provides a great developing 
 and testing environemnt for ConPaaS without the need of accessing a cloud. 
 
 
@@ -857,26 +844,29 @@ configuration file, *nutshell* and *container* which control the kind of image
 that is going to be generated. Since these two flags can take either value
 true of false, we distinguish four cases:
 
-#. nutshell = false, container = false: In this case a standard VM is generated
-   and the nutshell configurations are not taken into consideration.
+#. nutshell = false, container = false: In this case a standard ConPaaS VM
+   image is generated and the nutshell configurations are not taken into consideration.
+   This is the default configuration which should be used when ConPaaS is deployed on a
+   standard cloud.
 
 #. nutshell = false, container = true: In this case the user indicates that the
    image that will be generated will be a LXC container image. This image is similar
    to a standard VM one, but it does not contain a kernel installation. 
 
 #. nutshell = true, container = false. In this case a Nutshell image is generated
-   and a standard VM image will be embedded in it. This case can be useful in case
-   the user is using a nested cloud environment based on standard VMs.
+   and a standard ConPaaS VM image will be embedded in it. This configuraiton should be
+   used for deploying ConPaaS in nested standard VMs within a single VM.
 
 #. nutshell = true, container = true. Similar to the previous case, a Nutshell image
-   is generated but in this time a container image is embedded in it instead of a VM one.
+   is generated but this time a container image is embedded in it instead of a VM one.
    Therefore, in order to generate a Nutshell based on contaners make sure to set these 
-   flags to this configuration. 
+   flags to this configuration. This is the default configuraiton for our distribution of
+   nutshell.
 
 Another important setting for generating the Nutshell image is also the path to a direcotry
 containing the ConPaaS tarballs (cps*.tar.gz files). 
 The rest of the settings specify the distro and kernel versions that the Nutshell VM would have.
-For the moment we have tested it only for Ubuntu 12.04 with kenrel 3.5.0.
+For the moment we have tested it only for Ubuntu 12.04 with kernel 3.5.0.
 
 In order to run the image generating script, the procedure is almost the same as for a standard image.
 From the create_vm diretory run:: 
@@ -887,27 +877,32 @@ From the create_vm diretory run::
 Note that if the nutshell flag is enabled the generated script file is called *create-img-nutshell.sh*.
 Otherwise, the generated script file is called create-img-conpaas.sh as indicated previously.
 
+
    
-Nutshell VirtualBox Image 
--------------------------
-From the 1.4.1 release, ConPaaS is shipped together with a VirtualBox appliance containing the Nutshell
-VM image. This can be found in cpsnutshell-\*.tar.gz. Before running the appliance it is suggested to 
-create a host-only network on VirtualBox in case there is not already one created.
-To do so from the GUI, go to: File>Preferences>Network>Host-only Networks and click add. 
+Creating a Nutshell image for VirtualBox
+----------------------------------------
 
-In order to run the appliance, just extract it from the archive and double click.
-The login credentials are::
+As mentioned earlier the Nutshell VM can run on VirtualBox. In order to generate a Nutshell image
+compatible with VirtualBox, you have to set the *cloud* value to *vbox* on the **Customizable** section of the configuration file.
+The rest of the procedure is the same as for other clouds. The result of the image generation script would be a
+nutshell.vdi image file which can be used as a virtual hard drive when creating a new appliance on VirtualBox.
 
-    Username: stack
-    Password: contrail
+The procedure for creating a new appliance on VirtualBox is quite standard:
+  
+#. Name and OS: You choose a custom name for the appliance but use *Linux* and *Ubuntu (64 bit)* for the type and version.
 
-After the first login, it will take a couple of seconds for OpenStack to start. In order to check the status
-run::
+#. Memory size: Since the nutshell runs a significat number of services and requires also some memory for the containers we suggest to choose at least 3 GB of RAM.
 
-    nova list
+#. Hard drive: Select "User an existing virtual hard drive file", browse to the location of the nutshell.vdi file generated earlier and press create.
 
-In case an empty table is shown, everything is ready and ConPaaS components can be used. A simple test would be to 
-start a *helloworld* service by running::
+Running the Nutshell in VirtualBox
+----------------------------------
+  
+From the 1.4.1 release though, ConPaaS is shipped together with a VirtualBox appliance containing the Nutshell
+VM image as well. 
 
-    cpsclient.py create helloworld
+Before running the appliance it is strongly suggested to 
+create a host-only network on VirtualBox in case there is not already one created. To do so from the VirtualBox GUI, go to: File>Preferences>Network>Host-only Networks and click add.  Then use the File>Import appliance menu to import the image in VirtualBox.
 
+
+For more information regarding the usage of the Nutshell please consult the :ref:`nutshell-guide` section in the guide.

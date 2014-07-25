@@ -1,0 +1,23 @@
+# Section: 998-vbox
+
+cat <<"EOF" > $ROOT_DIR/etc/rc.local
+#!/bin/sh
+
+if ip link ls tap0
+then true
+else
+  ip tuntap add mode tap tap0
+  ip addr add 172.16.0.1/24 dev tap0
+  ip link set tap0 up
+  
+  modprobe nbd
+fi
+
+su - stack -c "export PATH=$PATH:/sbin ; /opt/stack/devstack/my-rejoin-stack.sh"
+
+exit 0
+EOF
+
+VDINAME=`echo $FILENAME | cut -d'.' -f1 `
+rm "$VDINAME.vdi"
+vboxmanage convertdd $FILENAME "$VDINAME.vdi" --format VDI

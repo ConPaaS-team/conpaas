@@ -189,6 +189,7 @@ class XtreemFSManager(BaseManager):
                 del self.mrc_node_uuid_map[node.id]
 
     def _start_osd(self, nodes, cloud=None):
+        dev_name = None
         for idx, node in enumerate(nodes):
             osd_uuid = self.__get__uuid(node.id, 'osd')
 
@@ -211,13 +212,13 @@ class XtreemFSManager(BaseManager):
                 self.osd_uuid_volume_map[osd_uuid] = volume.id
 
             try:
-                self.attach_volume(volume.id, node.id, "sdb")
+                _, dev_name = self.attach_volume(volume.id, node.vmid)
             except Exception, err:
                 self.logger.error("attach_volume: %s" % err)
 
             try:
                 client.createOSD(node.ip, 5555, self.dirNodes[0].ip, osd_uuid,
-                        mkfs=not volume_associated)
+                        mkfs=not volume_associated, device_name=dev_name)
             except client.AgentException:
                 self.logger.exception('Failed to start OSD at node %s' % node)
                 self.state = self.S_ERROR
@@ -281,7 +282,7 @@ class XtreemFSManager(BaseManager):
                 # create certificates for DIR, MRC, OSD and copy them to the agent 
                 self._create_certs(node_instances)
                 # create a client certificate used by the manager to invoke xtreemfs operations
-                open(self.client_cert_filename, 'wb').write(self._create_client_cert(self.client_cert_passphrase))
+                open(self.client_cert_filename, 'wb').write(self._create_client_cert(self.client_cert_passphrase, True))
             
             # start DIR, MRC, OSD
             if not resuming:

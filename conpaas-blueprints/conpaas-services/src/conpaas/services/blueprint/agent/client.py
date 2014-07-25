@@ -62,14 +62,14 @@ def check_agent_process(host, port):
     method = 'check_agent_process'
     return _check(https.client.jsonrpc_get(host, port, '/', method))
 
-def create_hub(host, port):
-    """POST (my_ip) create_hub"""
-    method = 'create_hub'
+
+def create_node(host, port):
+    """POST (my_ip) create_node"""
+    method = 'create_node'
     params = { 'my_ip': host }
     return _check(https.client.jsonrpc_post(host, port, '/', method, params))
 
-def create_node(host, port, hub_ip):
-    """POST (my_ip, hub_ip) create_node"""
-    method = 'create_node'
-    params = { 'my_ip': host, 'hub_ip': hub_ip }
-    return _check(https.client.jsonrpc_post(host, port, '/', method, params))
+def test(host, port):
+    """GET (my_ip) create_node"""
+    method = 'test'
+    return _check(https.client.jsonrpc_get(host, port, '/', method))

@@ -6,7 +6,7 @@ lxc.network.hwaddr = 00:16:3e:75:fd:48
 lxc.network.link = lxcbr0
 lxc.network.flags = up
 
-lxc.rootfs = /tmp/tmp.VWcbUG7ANf
+lxc.rootfs = /tmp/tmp.ov9YsRS5jb
 lxc.mount = /var/lib/lxc/nutshell/fstab
 lxc.pivotdir = lxc_putold
 
@@ -50,5 +50,7 @@ lxc.cgroup.devices.allow = c 1:7 rwm
 lxc.cgroup.devices.allow = c 10:228 rwm
 #kvm
 lxc.cgroup.devices.allow = c 10:232 rwm
-
+#loop
+lxc.cgroup.devices.allow = b 7:* rwm
+lxc.cgroup.devices.allow = c 10:237 rwm
 

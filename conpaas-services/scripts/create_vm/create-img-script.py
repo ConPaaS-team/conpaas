@@ -136,7 +136,7 @@ if __name__ == '__main__':
         error('Unknown hypervisor "%s".' % hypervisor)
     
     cloud = config.get('CUSTOMIZABLE', 'cloud')
-    if cloud == 'opennebula':
+    if cloud == 'opennebula' or cloud == 'vbox':
         pass
     elif cloud == 'ec2':
         if hypervisor != 'xen':
@@ -212,13 +212,21 @@ if __name__ == '__main__':
 
         # Write service scripts
         rm_script_args = ''
+        incompatible_services = []
         for servicename, should_include in config.items('SERVICES'):
             if 'true' == should_include:
+                upp_servicename = servicename.replace('_service', '').upper()
+                if servicename == 'mysql_service' or servicename == 'galera_service':
+                    incompatible_services.append(upp_servicename)
                 rm_script_args += ' --' + servicename[:-8]
                 filename = config.get('SCRIPT_FILE_NAMES', servicename + '_script')
                 append_file_to_output(root_dir + filename)
-                print servicename.replace('_service', '').upper(),
+                #print servicename.replace('_service', '').upper(),
+                print upp_servicename,
         print
+
+        if len(incompatible_services) > 1:
+            print "***WARNING***: Services %s can not be enabled at the same time. Generating the image can result in malfunctioning of these services." % incompatible_services
 
         if rm_script_args == '':
             rm_script_args = ' --none'
@@ -247,6 +255,8 @@ if __name__ == '__main__':
         filename = config.get('SCRIPT_FILE_NAMES', 'ec2_script'+suffix)
     elif cloud == 'openstack':
        filename = config.get('SCRIPT_FILE_NAMES', 'ec2_script') 
+    elif cloud == 'vbox':
+        filename = config.get('SCRIPT_FILE_NAMES', 'vbox_script'+suffix)
     append_file_to_output(root_dir + filename)
 
     if not nutshell:

@@ -18,22 +18,26 @@ if [[ -e $TOP_DIR/stack-screenrc ]]; then
         exit 0
     fi
   
-    if [[ $EUID -e 0 ]]; then
+    if [[ $EUID -eq 0 ]]; then
         exit 100
     fi
 
     VOLUME_GROUP="stack-volumes"
     BACKING_FILE="/opt/stack/data/stack-volumes-backing-file"
     DEV=`sudo losetup -f`
-    if ! sudo losetup -a | grep $BACKING_FILE &> /dev/null ; then
-        sudo losetup $DEV $BACKING_FILE
-    fi
+    
+    if [[ -f $BACKING_FILE ]]; then
 
-    if ! sudo vgs $VOLUME_GROUP  ; then
-        DEV=`sudo losetup -a | grep $BACKING_FILE | cut -d':' -f1`
-        sudo vgcreate $VOLUME_GROUP $DEV
-    fi
+      if ! sudo losetup -a | grep $BACKING_FILE &> /dev/null ; then
+          sudo losetup $DEV $BACKING_FILE
+      fi
 
+      if ! sudo vgs $VOLUME_GROUP  ; then
+          DEV=`sudo losetup -a | grep $BACKING_FILE | cut -d':' -f1`
+          sudo vgcreate $VOLUME_GROUP $DEV
+      fi
+    fi
+ 
     exec screen -d -m -c $TOP_DIR/stack-screenrc
 fi
 

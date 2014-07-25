@@ -57,7 +57,7 @@ ConPaaS currently contains:
 Installation
 ============
 
-You will find the ConPaaS Installation guide in the "doc" directory.
+You will find the ConPaaS Installation guide in the "docs" directory.
 
 Bugs
 ====

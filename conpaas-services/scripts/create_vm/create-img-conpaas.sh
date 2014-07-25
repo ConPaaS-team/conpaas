@@ -71,7 +71,7 @@ DEBIAN_MIRROR=http://ftp.fr.debian.org/debian/
 
 # The architecture and kernel version for the OS that will be installed (please make
 # sure to modify the kernel version name accordingly if you modify the architecture).
-CLOUD=openstack
+CLOUD=opennebula
 ARCH=amd64
 KERNEL=linux-image-amd64
 
@@ -87,7 +87,6 @@ function cleanup() {
     # Set errormsg if something went wrong
     [ $? -ne 0 ] && errormsg="Script terminated with errors"
 
-
     for mpoint in /dev/pts /dev /proc /
     do
       mpoint="${ROOT_DIR?:not set}${mpoint}"
@@ -101,13 +100,16 @@ function cleanup() {
     done
 
     sleep 1s
+    losetup -d $LOOP_DEV_P
+    sleep 1s
+    kpartx -ds $LOOP_DEV
+    sleep 1s
     losetup -d $LOOP_DEV
     sleep 1s
     rmdir $ROOT_DIR
     # Print "Done" on success, $errormsg otherwise
     cecho "${errormsg:-Done}"
 }
-
 
 # Check if required binaries are in $PATH
 for bin in dd parted losetup kpartx mkfs.ext3 tune2fs mount debootstrap chroot umount grub-install
@@ -127,23 +129,40 @@ done
 cecho "Creating empty disk image at" $FILENAME
 dd if=/dev/zero of=$FILENAME bs=1M count=1 seek=$FILESIZE
 
+cecho "Writing partition table"
+parted -s $FILENAME mklabel msdos
+
+cecho "Creating primary partition"
+cyl_total=`parted -s $FILENAME unit s print | awk '{if (NF > 2 && $1 == "Disk") print $0}' | sed 's/Disk .* \([0-9]\+\)s/\1/'`
+cyl_partition=`expr $cyl_total - 2048`
+parted -s $FILENAME unit s mkpart primary ext3 2048 $cyl_partition
+
+cecho "Setting boot flag"
+parted -s $FILENAME set 1 boot on
 
 LOOP_DEV=`losetup -f`
 cecho "Going to use" $LOOP_DEV
 losetup $LOOP_DEV $FILENAME
 
+dname=`kpartx -l $LOOP_DEV | awk '{print $1}'`
+PART_DEV=/dev/mapper/$dname
+cecho "Mapping partition to device"
+kpartx -as $LOOP_DEV
 
 cecho "Creating ext3 filesystem"
-
-echo 'y' | mkfs.ext3 $FILENAME
-tune2fs $FILENAME -L root
+echo 'y' | mkfs.ext3 $PART_DEV
+cecho "Setting label 'root'"
+tune2fs $PART_DEV -L root
 
 ROOT_DIR=`mktemp -d`
 cecho "Using $ROOT_DIR as mount point"
 
 cecho "Mounting disk image"
 
-mount $LOOP_DEV $ROOT_DIR
+LOOP_DEV_P=`losetup -f`
+losetup $LOOP_DEV_P $PART_DEV
+mount $LOOP_DEV_P $ROOT_DIR
+#mount $PART_DEV $ROOT_DIR
 
 # Always clean up on exit
 trap "cleanup" EXIT
@@ -159,8 +178,30 @@ iface eth0 inet dhcp
 EOF
 )
 
-net_config="$ec2_specific"
+vbox_specific=$(cat <<EOF
+allow-hotplug eth0
+iface eth0 inet dhcp
 
+auto eth1
+allow-hotplug eth1
+iface eth1 inet dhcp
+EOF
+)
+
+
+if [ "$CLOUD" == "opennebula" ] ; then
+    net_config="$opennebula_specific"
+elif [ "$CLOUD" == "ec2" ] ; then
+    net_config="$ec2_specific"
+elif [ "$CLOUD" == "vbox" ] ; then
+    net_config="$vbox_specific"
+else
+  cecho 'Something went wrong. "CLOUD" shell variable is not properly defined.';
+  exit 1;
+fi
+
+cecho "Writing fstab"
+echo "/dev/sda1 / ext3 defaults 0 1" > $ROOT_DIR/etc/fstab
 cecho "Writing /etc/network/interfaces"
 cat <<EOF > $ROOT_DIR/etc/network/interfaces
 auto lo
@@ -194,6 +235,49 @@ chroot $ROOT_DIR /bin/bash -c 'update-locale LANG=en_US.UTF-8'
 
 cecho "Running apt-get update"
 chroot $ROOT_DIR /bin/bash -c 'apt-get -y update'
+cecho "Installing $KERNEL"
+chroot $ROOT_DIR /bin/bash -c "apt-get -y install $KERNEL"
+cecho "Installing grub package"
+chroot $ROOT_DIR /bin/bash -c 'DEBIAN_FRONTEND=noninteractive apt-get -y --force-yes install grub'
+
+mkdir -p $ROOT_DIR/boot/grub
+cat <<EOF > $ROOT_DIR/boot/grub/device.map 
+(hd0)   $LOOP_DEV
+(hd0,1) $LOOP_DEV_P
+EOF
+
+chroot $ROOT_DIR grub-mkconfig -o /boot/grub/grub.cfg
+
+VMLINUZ=/boot/$(chroot $ROOT_DIR ls /boot/ | grep vmlinuz | head -n 1)
+INITRD=/boot/$(chroot $ROOT_DIR ls /boot/ | grep initrd | head -n 1)
+
+cecho "Writing /boot/grub/grub.cfg"
+cat <<EOF > $ROOT_DIR/boot/grub/grub.cfg
+set default=0
+set timeout=0
+menuentry '$(basename $VMLINUZ)' {
+  insmod ext2
+  set root='(hd0,1)'
+  linux  $VMLINUZ root=/dev/sda1
+  initrd $INITRD
+}
+EOF
+
+if [ "$CLOUD" == "ec2" ] ; then
+    cecho "Writing /boot/grub/menu.lst"
+    cat <<EOF > $ROOT_DIR/boot/grub/menu.lst
+default 0
+timeout 0
+
+title $(basename $VMLINUZ)
+  root (hd0,0)
+  kernel $VMLINUZ root=/dev/xvda1 ro
+  initrd $INITRD
+EOF
+fi
+
+cecho "Running grub-install"
+grub-install --no-floppy --recheck --root-directory=$ROOT_DIR --modules=part_msdos  $LOOP_DEV
 
 # disable auto start after package install
 cat <<EOF > $ROOT_DIR/usr/sbin/policy-rc.d
@@ -324,6 +408,18 @@ chown -R git:git ~git/code
 EOF
 fi
 
+# Section: 502-mysql
+
+cat <<EOF >> $ROOT_DIR/conpaas_install
+# fix apt sources
+sed --in-place 's/main/main contrib non-free/' /etc/apt/sources.list
+apt-get -f -y update
+DEBIAN_FRONTEND=noninteractive apt-get -y --force-yes --no-install-recommends --no-upgrade \
+		install mysql-server python-mysqldb
+update-rc.d mysql disable
+
+EOF
+
 # Section: 502-galera
 
 cat <<EOF >> $ROOT_DIR/conpaas_install
@@ -412,6 +508,135 @@ rm -fr glb-\${glb_version} glb-\${glb_version}.tar.gz
 
 
 EOF
+# Section: 503-condor
+
+cat <<EOF >> $ROOT_DIR/conpaas_install
+cecho "===== install packages required by HTCondor ====="
+# avoid warning: W: GPG error: http://mozilla.debian.net squeeze-backports Release: The following signatures couldn't be verified because the public key is not available: NO_PUBKEY 85A3D26506C4AE2A 
+#apt-get install debian-keyring
+wget -O - -q http://mozilla.debian.net/archive.asc | apt-key add -
+# avoid warning: W: GPG error: http://dl.google.com stable Release: The following signatures couldn't be verified because the public key is not available: NO_PUBKEY A040830F7FAC5991 
+wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
+
+# If things go wrong, you may want to read  http://research.cs.wisc.edu/htcondor/debian/
+# 
+# added [arch=amd64 trusted=yes] to avoid authentication warning
+echo "deb [arch=amd64 trusted=yes] http://research.cs.wisc.edu/htcondor/debian/stable/ $DEBIAN_DIST contrib" >> /etc/apt/sources.list
+apt-get update
+if [ $DEBIAN_DIST == "squeeze" ]
+then
+    DEBIAN_FRONTEND=noninteractive apt-get -y --force-yes --no-install-recommends --no-upgrade \
+        install sun-java6-jdk ant condor sudo xvfb
+elif [ $DEBIAN_DIST == "wheezy" ]
+then
+    DEBIAN_FRONTEND=noninteractive apt-get -y --force-yes --no-install-recommends --no-upgrade \
+        install openjdk-7-jre-headless ant condor sudo xvfb
+else
+    echo "Error: unknown Debian distribution '$DEBIAN_DIST': cannot select correct Condor packages."
+    exit 1
+fi
+
+# next 12 lines moved here from conpaas-services/scripts/manager/htc-manager-start
+apt-get update -y 
+echo ==== python-setuptools 
+apt-get install python-setuptools -y 
+sleep 2
+echo ==== pip  
+easy_install -U distribute
+easy_install pip 
+sleep 2
+echo PATH=$PATH 
+export PATH=$PATH:/usr/local/bin
+echo PATH=$PATH 
+echo ==== xmltodict  
+pip install xmltodict 
+
+echo ===== check if HTCondor is running =====
+ps -ef | grep condor
+echo ===== stop condor =====
+/etc/init.d/condor stop
+echo ===== 
+
+# remove cached .debs from /var/cache/apt/archives to save disk space
+apt-get clean
+EOF
+
+# Section: 504-selenium
+
+cat <<EOF >> $ROOT_DIR/conpaas_install
+cecho "===== install SELENIUM ====="
+
+if [ $DEBIAN_DIST == "squeeze" ]
+then
+    # recent versions of iceweasel and chrome
+    echo "deb http://backports.debian.org/debian-backports $DEBIAN_DIST-backports main" >> /etc/apt/sources.list
+    echo "deb http://mozilla.debian.net/ $DEBIAN_DIST-backports iceweasel-esr" >> /etc/apt/sources.list
+
+    apt-get -f -y update
+    apt-get -f -y --force-yes install -t $DEBIAN_DIST-backports iceweasel
+    apt-get -f -y --force-yes install xvfb xinit chromium-browser sun-java6-jdk
+elif [ $DEBIAN_DIST == "wheezy" ]
+then
+    apt-get -f -y update
+    apt-get -f -y --force-yes install iceweasel xvfb xinit chromium-browser openjdk-7-jre-headless
+else
+    echo "Error: unknown Debian distribution '$DEBIAN_DIST': cannot select correct Selenium packages."
+    exit 1
+fi
+
+EOF
+
+# Section: 505-hadoop
+
+cat <<EOF >> $ROOT_DIR/conpaas_install
+cecho "===== install cloudera repo for hadoop ====="
+# add cloudera repo for hadoop
+if [ "$DEBIAN_DIST" == "wheezy" ]
+then
+  hadoop_dist="squeeze"
+else
+  hadoop_dist="$DEBIAN_DIST"
+fi
+echo "deb http://archive.cloudera.com/debian \${hadoop_dist}-cdh3 contrib" >> /etc/apt/sources.list
+wget -O - http://archive.cloudera.com/debian/archive.key 2>/dev/null | apt-key add -
+apt-get -f -y update
+apt-get -f -y --no-install-recommends --no-upgrade install \
+  hadoop-0.20 hadoop-0.20-namenode hadoop-0.20-datanode \
+  hadoop-0.20-secondarynamenode hadoop-0.20-jobtracker  \
+  hadoop-0.20-tasktracker hadoop-pig hue-common  hue-filebrowser \
+  hue-jobbrowser hue-jobsub hue-plugins hue-server dnsutils
+update-rc.d hadoop-0.20-namenode disable
+update-rc.d hadoop-0.20-datanode disable
+update-rc.d hadoop-0.20-secondarynamenode disable
+update-rc.d hadoop-0.20-jobtracker disable
+update-rc.d hadoop-0.20-tasktracker disable
+update-rc.d hue disable
+# create a default config dir
+mkdir -p /etc/hadoop-0.20/conf.contrail
+update-alternatives --install /etc/hadoop-0.20/conf hadoop-0.20-conf /etc/hadoop-0.20/conf.contrail 99
+# remove cloudera repo
+sed --in-place "s%deb http://archive.cloudera.com/debian \${hadoop_dist}-cdh3 contrib%%" /etc/apt/sources.list
+apt-get -f -y update
+
+
+EOF
+
+# Section: 506-scalaris
+
+cat <<EOF >> $ROOT_DIR/conpaas_install
+cecho "===== install scalaris repo ====="
+# add scalaris repo
+echo "deb http://download.opensuse.org/repositories/home:/scalaris/Debian_6.0 /" >> /etc/apt/sources.list
+wget -O - http://download.opensuse.org/repositories/home:/scalaris/Debian_6.0/Release.key 2>/dev/null | apt-key add -
+apt-get -f -y update
+apt-get -f -y --no-install-recommends --no-upgrade install scalaris screen erlang
+update-rc.d scalaris disable
+# remove scalaris repo
+sed --in-place 's%deb http://download.opensuse.org/repositories/home:/scalaris/Debian_6.0 /%%' /etc/apt/sources.list
+apt-get -f -y update
+
+EOF
+
 # Section: 507-xtreemfs
 
 cat <<EOF >> $ROOT_DIR/conpaas_install
@@ -683,7 +908,7 @@ print shell_cmd('rm -rf /usr/share/doc-base/ 2>&1')
 print shell_cmd('rm -rf /usr/share/man/ 2>&1')
 
 EOF
-RM_SCRIPT_ARGS=' --php --galera --xtreemfs'
+RM_SCRIPT_ARGS=' --php --mysql --galera --condor --selenium --hadoop --scalaris --xtreemfs'
 
 # Section: 996-tail
 
@@ -705,134 +930,31 @@ if [ -f $ROOT_DIR/conpaas_rm ] ; then
     chroot $ROOT_DIR /usr/bin/python /conpaas_rm $RM_SCRIPT_ARGS
     rm -f $ROOT_DIR/conpaas_rm
 fi
-# Section: 998-ec2
+# Section: 997-opennebula
 
+##### TO CUSTOMIZE: #####
+# This part is for OpenNebula contextualization. The contextualization scripts (and possibly
+# other necessary files) will be provided through OpenNebula to the VM as an ISO image.
+# We need to mount this image and execute the contextualization scripts. You might need
+# to change the dev file associated with the CD-ROM inside your virtual machine from
+# "/dev/sr0" to something else (depending on your operating system and on the virtualization 
+# software, it can be /dev/hdb, /dev/sdb etc.). You can check this in a VM that is already running
+# in your OpenNebula system and that has been configured with contextualization.  
+ 
 cat <<"EOF" > $ROOT_DIR/etc/rc.local
-
-#!/bin/bash
-### BEGIN INIT INFO
-# Provides:       ec2-get-credentials
-# Required-Start: $network
-# Required-Stop:  
-# Should-Start:   
-# Should-Stop:    
-# Default-Start:  2 3 4 5
-# Default-Stop:   
-# Description:    Retrieve the ssh credentials and add to authorized_keys
-### END INIT INFO
-#
-# ec2-get-credentials - Retrieve the ssh credentials and add to authorized_keys
-#
-# Based on /usr/local/sbin/ec2-get-credentials from Amazon's ami-20b65349
-#
-
-prog=$(basename $0)
-logger="logger -t $prog"
-
-public_key_url=http://169.254.169.254/1.0/meta-data/public-keys/0/openssh-key
-username='root'
-# A little bit of nastyness to get the homedir, when the username is a variable
-ssh_dir="`eval printf ~$username`/.ssh"
-authorized_keys="$ssh_dir/authorized_keys"
-
-# Try to get the ssh public key from instance data.
-public_key=`wget -qO - $public_key_url`
-if [ -n "$public_key" ]; then
-	if [ ! -f $authorized_keys ]; then
-		if [ ! -d $ssh_dir ]; then
-			mkdir -m 700 $ssh_dir
-			chown $username:$username $ssh_dir
-		fi
-		touch $authorized_keys
-		chown $username:$username $authorized_keys
-	fi
-
-	if ! grep -s -q "$public_key" $authorized_keys; then
-		printf "\n%s" -- "$public_key" >> $authorized_keys
-		$logger "New ssh key added to $authorized_keys from $public_key_url"
-		chmod 600 $authorized_keys
-		chown $username:$username $authorized_keys
-	fi
+#!/bin/sh
+mount -t iso9660 /dev/sr0 /mnt
+ 
+if [ -f /mnt/context.sh ]; then
+  . /mnt/context.sh
+  if [ -n "$USERDATA" ]; then
+    echo "$USERDATA" | /usr/bin/xxd -p -r | /bin/sh
+  elif [ -e /mnt/init.sh ]; then
+    . /mnt/init.sh
+  fi
 fi
-
-### BEGIN INIT INFO
-# Provides:       ec2-run-user-data
-# Required-Start: ec2-get-credentials
-# Required-Stop:  
-# Should-Start:   
-# Should-Stop:    
-# Default-Start:  2 3 4 5
-# Default-Stop:   
-# Description:    Run instance user-data if it looks like a script.
-### END INIT INFO
-#
-# Only retrieves and runs the user-data script once per instance.  If
-# you want the user-data script to run again (e.g., on the next boot)
-# then readd this script with insserv:
-#   insserv -d ec2-run-user-data
-#
-prog=$(basename $0)
-logger="logger -t $prog"
-instance_data_url="http://169.254.169.254/2008-02-01"
-
-
-# Retrieve the instance user-data and run it if it looks like a script
-user_data_file=$(tempfile --prefix ec2 --suffix .user-data --mode 700)
-$logger "Retrieving user-data"
-wget -qO $user_data_file $instance_data_url/user-data 2>&1 | $logger
-
-if [ $(file -b --mime-type $user_data_file) = 'application/x-gzip' ]; then
-	$logger "Uncompressing gzip'd user-data"
-	mv $user_data_file $user_data_file.gz
-	gunzip $user_data_file.gz
-fi
-
-if [ ! -s $user_data_file ]; then
-	$logger "No user-data available"
-elif head -1 $user_data_file | egrep -v '^#!'; then
-	$logger "Skipping user-data as it does not begin with #!"
-else
-	$logger "Running user-data"
-	$user_data_file 2>&1 | logger -t "user-data"
-	$logger "user-data exit code: $?"
-fi
-rm -f $user_data_file
-
-# Disable this script, it may only run once
-# insserv -r $0
-
-### BEGIN INIT INFO
-# Provides:       generate-ssh-hostkeys
-# Required-Start: $local_fs
-# Required-Stop:  
-# Should-Start:   
-# Should-Stop:    
-# Default-Start:  S
-# Default-Stop:   
-# Description:    Generate ssh host keys if they do not exist
-### END INIT INFO
-
-prog=$(basename $0)
-logger="logger -t $prog"
-
-rsa_key="/etc/ssh/ssh_host_rsa_key"
-dsa_key="/etc/ssh/ssh_host_dsa_key"
-
-# Exit if the hostkeys already exist
-if [ -f $rsa_key -a -f $dsa_key ]; then
-	exit
-fi
-
-# Generate the ssh host keys
-[ -f $rsa_key ] || ssh-keygen -f $rsa_key -t rsa -C 'host' -N ''
-[ -f $dsa_key ] || ssh-keygen -f $dsa_key -t dsa -C 'host' -N ''
-
-# Output the public keys to the console
-# This allows user to get host keys securely through console log
-echo "-----BEGIN SSH HOST KEY FINGERPRINTS-----" | $logger
-ssh-keygen -l -f $rsa_key.pub | $logger
-ssh-keygen -l -f $dsa_key.pub | $logger
-echo "------END SSH HOST KEY FINGERPRINTS------" | $logger
+ 
+umount /mnt
 
 exit 0
 EOF
@@ -887,13 +1009,12 @@ cecho "Mounting old image."
 SRC_LOOP=`losetup -f`
 losetup $SRC_LOOP $SRC_IMG
 
-#PARTITION=`kpartx -l $SRC_LOOP | awk '{ print $1 }'`
-#PARTITION=/dev/mapper/$PARTITION
-#kpartx -as $SRC_LOOP
+PARTITION=`kpartx -l $SRC_LOOP | awk '{ print $1 }'`
+PARTITION=/dev/mapper/$PARTITION
+kpartx -as $SRC_LOOP
 
 SRC_DIR=`mktemp -d`
-#mount -o loop $PARTITION $SRC_DIR
-mount -o loop $SRC_LOOP $SRC_DIR
+mount -o loop $PARTITION $SRC_DIR
 
 USED_SPACE=`(cd $SRC_DIR ; df --total --block-size=M  . | tail -n 1 | awk '{print $3}' | tr -d 'M')`
 
@@ -903,8 +1024,8 @@ DST_SIZE=`python -c "print ($USED_SPACE + $FS_SPACE + $FREE_SPACE)"`
 #DST_SIZE=`python -c "import math; print int(math.ceil($DST_SIZE/$gb_size) * $gb_size)"`
 
 umount $SRC_DIR
-#sleep 1s
-#kpartx -ds $SRC_LOOP
+sleep 1s
+kpartx -ds $SRC_LOOP
 sleep 1s
 losetup -d $SRC_LOOP
 sleep 1s
@@ -914,85 +1035,79 @@ rmdir $SRC_DIR
 # Create new image
 dd if=/dev/zero of=$DST_IMG bs=1M count=1 seek=$DST_SIZE
 
-#PART_OFFSET_IN_BYTES=`parted -s $SRC_IMG unit B print | awk \
-#	'/Number.*Start.*End/ { getline; print $2 }' | tr -d 'B'`
-#PART_OFFSET_IN_SECTORS=`parted -s $SRC_IMG unit S print | awk \
-#	'/Number.*Start.*End/ { getline; print $2 }' | tr -d 's'`
+PART_OFFSET_IN_BYTES=`parted -s $SRC_IMG unit B print | awk \
+	'/Number.*Start.*End/ { getline; print $2 }' | tr -d 'B'`
+PART_OFFSET_IN_SECTORS=`parted -s $SRC_IMG unit S print | awk \
+	'/Number.*Start.*End/ { getline; print $2 }' | tr -d 's'`
 
 # Create filesystem on new image and mount it
-#cecho "Writing partition table."
-#parted -s $DST_IMG mklabel msdos
+cecho "Writing partition table."
+parted -s $DST_IMG mklabel msdos
 
-#cecho "Creating primary partition."
-#cyl_total=`parted -s $DST_IMG unit s print | awk \
-#	'{if (NF > 2 && $1 == "Disk") print $0}' | sed \
-#	's/Disk .* \([0-9]\+\)s/\1/'`
-#cyl_partition=`expr $cyl_total - $PART_OFFSET_IN_SECTORS`
-#parted -s $DST_IMG unit s mkpart primary ext3 2048 $cyl_partition
+cecho "Creating primary partition."
+cyl_total=`parted -s $DST_IMG unit s print | awk \
+	'{if (NF > 2 && $1 == "Disk") print $0}' | sed \
+	's/Disk .* \([0-9]\+\)s/\1/'`
+cyl_partition=`expr $cyl_total - $PART_OFFSET_IN_SECTORS`
+parted -s $DST_IMG unit s mkpart primary ext3 2048 $cyl_partition
 
-#cecho "Setting boot flag."
-#parted -s $DST_IMG set 1 boot on
+cecho "Setting boot flag."
+parted -s $DST_IMG set 1 boot on
 
 DST_LOOP=`losetup -f`
 losetup $DST_LOOP $DST_IMG
 
-#PARTITION=`kpartx -l $DST_LOOP | awk '{ print $1 }'`
-#PARTITION=/dev/mapper/$PARTITION
-#kpartx -as $DST_LOOP
-#DST_LOOP_P=`losetup -f`
+PARTITION=`kpartx -l $DST_LOOP | awk '{ print $1 }'`
+PARTITION=/dev/mapper/$PARTITION
+kpartx -as $DST_LOOP
+DST_LOOP_P=`losetup -f`
 
-#cecho "Creating ext3 filesystem."
-#echo 'y' | mkfs.ext3 $PARTITION
-#cecho "Setting label 'root'."
-#tune2fs $PARTITION -L root
-
-echo 'y' | mkfs.ext3 $DST_LOOP
-tune2fs $DST_LOOP -L root
-
+cecho "Creating ext3 filesystem."
+echo 'y' | mkfs.ext3 $PARTITION
+cecho "Setting label 'root'."
+tune2fs $PARTITION -L root
 
 cecho "Mounting new image."
 DST_DIR=`mktemp -d`
-#mount -o loop $PARTITION $DST_DIR
-mount -o loop $DST_LOOP $DST_DIR
+mount -o loop $PARTITION $DST_DIR
 
 cecho "Mounting old image."
 SRC_LOOP=`losetup -f`
 losetup $SRC_LOOP $SRC_IMG
 
-#PARTITION=`kpartx -l $SRC_LOOP | awk '{ print $1 }'`
-#PARTITION=/dev/mapper/$PARTITION
-#kpartx -as $SRC_LOOP
+PARTITION=`kpartx -l $SRC_LOOP | awk '{ print $1 }'`
+PARTITION=/dev/mapper/$PARTITION
+kpartx -as $SRC_LOOP
 
 SRC_DIR=`mktemp -d`
-#mount -o loop $PARTITION $SRC_DIR
-mount -o loop $SRC_LOOP $SRC_DIR
+mount -o loop $PARTITION $SRC_DIR
 
 # Copy files
 cecho "Copying files."
 ( cd $SRC_DIR && tar -cf - . ) | ( cd $DST_DIR && tar -xpf -)
 
 
-#cecho "Running grub-install"
+cecho "Running grub-install"
 
-#cat <<DEVICEMAP > $DST_DIR/boot/grub/device.map 
-#(hd0)   $DST_LOOP
-#(hd0,1) $DST_LOOP_P
-#DEVICEMAP
+cat <<DEVICEMAP > $DST_DIR/boot/grub/device.map 
+(hd0)   $DST_LOOP
+(hd0,1) $DST_LOOP_P
+DEVICEMAP
 
-#grub-install --no-floppy --recheck --root-directory=$DST_DIR --modules=part_msdos  $DST_LOOP
+grub-install --no-floppy --recheck --root-directory=$DST_DIR --modules=part_msdos  $DST_LOOP
 
 cecho "Clean."
 umount $SRC_DIR
-#sleep 1s
-#kpartx -ds $SRC_LOOP
+sleep 1s
+kpartx -ds $SRC_LOOP
 sleep 1s
 losetup -d $SRC_LOOP
 sleep 1s
 rmdir $SRC_DIR
 
 umount $DST_DIR
-#sleep 1s
-#kpartx -ds $DST_LOOP
+sleep 1s
+kpartx -ds $DST_LOOP
 sleep 1s
 losetup -d $DST_LOOP
 sleep 1s
