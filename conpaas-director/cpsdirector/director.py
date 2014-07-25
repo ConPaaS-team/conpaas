@@ -25,7 +25,15 @@ def version():
 @director_page.route("/support_external_idp", methods=['GET'])
 def support_external_idp():
     try:
-        result = config_parser.get('conpaas', 'SUPPORT_EXTERNAL_IDP')
+        result = config_parser.getboolean('conpaas', 'SUPPORT_EXTERNAL_IDP')
     except ConfigParser.NoOptionError:
-        result = 'false';       # default value
-    return build_response(result)
+        result = False;       # default value
+    return build_response(result.__str__())
+
+@director_page.route("/support_openid", methods=['GET'])
+def support_openid():
+    try:
+        result = config_parser.getboolean('conpaas', 'SUPPORT_OPENID')
+    except ConfigParser.NoOptionError:
+        result = False;       # default value
+    return build_response(result.__str__())
