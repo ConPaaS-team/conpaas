@@ -123,8 +123,10 @@ class NestedCloud():
     def get_script(self, hostname):
         cloud_script = 'HOSTNAME=testnode\n' \
                         + 'echo "127.0.0.1\tlocalhost" > /etc/hosts\n' \
-                        + 'echo "127.0.0.1\t$HOSTNAME" >> /etc/hosts\n' \
+                        + 'echo "127.0.0.1\tcomp1" > /etc/hosts\n' \
                         + 'echo "172.16.0.210\ttest" >> /etc/hosts\n' \
+                        + 'echo "172.16.0.219\tip-172-30-0-210.ec2.internal" >> /etc/hosts\n' \
+                        + 'echo "172.16.0.219\tip-172-30-0-210" >> /etc/hosts\n' \
                         + 'echo \'{ ' \
                         + '\t"ip4": "172.16.0.251",\n' \
                         + '\t"xmpp_username": "useripop@gmail.com",\n' \
@@ -132,11 +134,34 @@ class NestedCloud():
                         + '\t"xmpp_password": "Ipop1234.",\n' \
                         + '\t"switchmode": 1,\n' \
                         + '\t"icc": true,\n' \
-                        + '\t"tincan_logging": 2,\n' \
-                        + '\t"controller_logging": "DEBUG",\n' \
-                        + '\t"icc_port": 30000}\' > /home/stack/ipop/config.json\n' \
-                        + 'cd /home/stack/ipop\n' \
-                        + './run.sh' 
+                        + '\t"bridge_ip": "172.16.0.4",\n' \
+                        + '\t"icc_port": 30000}\' > /home/stack/kj/config.json\n' \
+                        + 'cd /home/stack/kj\n' \
+                        + './run.sh\n' \
+                        + 'echo \'HOST_IP=127.0.0.1\n' \
+                        + 'SERVICE_HOST=172.16.0.210\n' \
+                        + 'ADMIN_PASSWORD=password\n' \
+                        + 'MYSQL_PASSWORD=password\n' \
+                        + 'RABBIT_PASSWORD=password\n' \
+                        + 'SERVICE_PASSWORD=password\n' \
+                        + 'SERVICE_TOKEN=tokentoken\n' \
+                        + 'FLAT_INTERFACE=ipop\n' \
+                        + 'FIXED_RANGE=172.16.0.0/24\n' \
+                        + 'FIXED_NETWORK_SIZE=126\n' \
+                        + 'FLOATING_RANGE=172.16.0.128/25\n' \
+                        + 'MULTI_HOST=1\n' \
+                        + 'LOGFILE=/opt/stack/logs/stack.sh.log\n' \
+                        + 'SCREEN_LOGDIR=/opt/stack/logs\n' \
+                        + 'DATABASE_TYPE=mysql\n' \
+                        + 'MYSQL_HOST=$SERVICE_HOST\n' \
+                        + 'RABBIT_HOST=$SERVICE_HOST\n' \
+                        + 'GLANCE_HOSTPORT=$SERVICE_HOST:9292\n' \
+                        + 'Q_HOST=$SERVICE_HOST\n' \
+                        + 'ENABLED_SERVICES=n-cpu,n-net,rabbit,n-api \' > /home/stack/devstack/localrc \n' \
+                        + 'cd /home/stack/devstack/\n' \
+                        + 'sleep 40\n' \
+                        + 'sudo -u stack FORCE=yes ./stack.sh\n' \
+                        + 'sleep 20'
         
         return cloud_script            
     
@@ -144,11 +169,12 @@ class NestedCloud():
         if self.cloud_name == 'OpenNebula':
             start_script = self.get_script(name).encode("hex")
             context_vars = {}
-            context_vars['HOSTNAME'] = "lala"
+            context_vars['HOSTNAME'] = "comp1"
             context_vars['DNS'] = "$NETWORK[DNS,     NETWORK_ID=1]"
             context_vars['GATEWAY'] = "$NETWORK[GATEWAY, NETWORK_ID=1]"
             context_vars['NETMASK'] = "$NETWORK[NETMASK, NETWORK_ID=1]"
             context_vars['IP_PRIVATE'] = "$NIC[IP, NETWORK_ID=1]"
+           
             context_vars['USERDATA'] = '23212f62696e2f626173680a200a6966205b202d66202f6d6e742f636f6e' \
                 '746578742e7368205d3b207468656e0a20202e202f6d6e742f636f6e7465' \
                 '78742e73680a66690a0a686f73746e616d652024484f53544e414d450a69' \
@@ -167,7 +193,7 @@ class NestedCloud():
             
     def add_compute_vm(self, app_id, driver, name):
         instance = driver.add_compute_node(cloud_name=self.cloud_name,
-                                           instance_name='lala',
+                                           instance_name='comp1',
                                            image_id=self.image_id,
                                            size_id=self.size_id,
                                            vnet_id=self.vnet_id,
@@ -204,8 +230,22 @@ class NestedCloud():
 
     def add_compute_nodes(self, app_id, no_nodes, driver):
         for i in range(no_nodes):
-            node_name = self.cloud_name + "_private_" + str(i)
-            self.add_compute_vm(app_id, driver, node_name)
+            self.add_compute_vm(app_id, driver, 'comp1')
+
+    def wait_for_nodes(self, nodes, driver):
+        
+        while True:
+            all_nodes_up = True
+            for node in nodes:
+                running_hosts = driver.list_compute_hosts()
+
+                if node not in running_hosts:
+                    all_nodes_up = False
+
+            if all_nodes_up:
+                break
+
+            time.sleep(10) 
 
     
 class BaseClouds:
@@ -216,11 +256,8 @@ class BaseClouds:
     def add_cloud(self, base_cloud):
         self.__available_clouds.append(base_cloud)
 
-    def set_active_cloud(self, cloud_name):
-        for index, cloud in enumerate(self.__available_clouds):
-            if cloud.cloud_name == cloud_name:
-                self.__active_cloud_index = index
-                break                 
+    def set_active_cloud(self, index):
+        self.__active_cloud_index = index
 
     def get_cloud(self, cloud_name):
         for cloud in self.__available_clouds:
@@ -245,16 +282,23 @@ class BaseClouds:
             #log("The destination cloud is not available")
             return
 
-        no_compute_nodes = source_cloud.get_private_pool_size(appid)
+        #no_compute_nodes = source_cloud.get_private_pool_size(appid)
+        no_compute_nodes = 1
         destination_cloud.add_compute_nodes(appid, no_compute_nodes, driver)
+        destination_cloud.wait_for_nodes(['comp1'], driver)
+
+cloud1 = NestedCloud(cloud_name="EC2", image_id='835',
+                           size_id='0', vnet_id='1', location_name="", access_id="aion",
+                           secret_key='', keyname="", security_group="")
+
+
+cloud2 = NestedCloud(cloud_name="OpenNebula", image_id='835',
+                           size_id=1, vnet_id=1, location_name="", access_id="aion",
+                           secret_key='', keyname="", security_group="")
 
 base_clouds = BaseClouds()
-base_clouds.add_cloud(NestedCloud(cloud_name="OpenNebula", image_id='822',
-                           size_id='0', vnet_id='1', location_name="", access_id="aion",
-                           secret_key='', keyname="", security_group=""))
 
-base_clouds.add_cloud(NestedCloud(cloud_name="OpenNebula", image_id='822',
-                           size_id='0', vnet_id='1', location_name="", access_id="aion",
-                           secret_key='', keyname="", security_group=""))
+base_clouds.add_cloud(cloud1)
+base_clouds.add_cloud(cloud2)
 
-base_clouds.set_active_cloud("OpenNebula")
+base_clouds.set_active_cloud(0)

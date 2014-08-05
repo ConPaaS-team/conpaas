@@ -306,8 +306,8 @@ def list_services(appid):
 def _get_service_controller(service_id):
     global controllers
     
-    for controller in controllers:
-        if controller._Controller__conpaas_service_id == service_id:
+    for cert in controllers:
+        if controllers[cert]._Controller__conpaas_service_id == service_id:
             return controller
 
 def _get_service_vm_ids(service_id):
@@ -315,7 +315,7 @@ def _get_service_vm_ids(service_id):
     compute_nodes = []
 
     if controller:
-        for node in controller.Controller__created_nodes:
+        for node in controller._Controller__created_nodes:
             compute_nodes.append(node.vmid)
 
     return compute_nodes
@@ -361,7 +361,7 @@ def _migrate_nodes(service, compute_nodes):
     controller._stop_reservation_timer()
 
     for vmid in compute_nodes:
-        controller.migrate_instance(vmid, 'test')
+        controller.migrate_instance(vmid, 'comp1')
     
 @service_page.route("/migrate", methods=['POST', 'GET'])
 @cert_required(role='user')
@@ -379,7 +379,7 @@ def migrate_service():
     _migrate_nodes(service, compute_nodes)
      
     return build_response(simplejson.dumps(
-    {'error': 'started migration'}
+    {'status': 'started migration'}
     ))
 
 def _prepare_migration(appid, service_id, src_cloud, dst_cloud):
@@ -408,7 +408,19 @@ def prepare_migration():
     _prepare_migration(appid, sid, src_cloud, dst_cloud)  
 
     return build_response(simplejson.dumps(
-    {'error': 'started migration'}
+    {'status': 'added new node'}
+    ))
+
+@service_page.route("/delete_service", methods=['POST', 'GET'])
+@cert_required(role='user')
+def delete_service():
+    appid = request.values.get('appid')
+    service_id = request.values.get('sid')
+    service = Service.query.filter_by(sid=service_id).first()
+
+    service.remove_service()
+    return build_response(simplejson.dumps(
+    {'result': 'service was deleted'}
     ))
 
 @service_page.route("/download/ConPaaS.tar.gz", methods=['GET'])

@@ -286,7 +286,7 @@ EOF
         if not cloud.connected:
             cloud._connect()
     
-        #cloud.migrate_instance(vmid, host)
+        cloud.migrate_instance(vmid, host)
 
     def prepare_migration(self, appid, sid, src_cloud, dst_cloud):
         global base_clouds

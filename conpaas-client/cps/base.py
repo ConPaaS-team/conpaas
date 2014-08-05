@@ -156,6 +156,14 @@ class BaseClient(object):
 
         sys.stdout.flush()
         
+    def delete_service(self, appid, serv_id):
+        data = {}
+        data['appid'] = appid
+        data['sid'] = serv_id
+        self.callapi('delete_service', True, data)
+    
+        print 'service was deleted'
+        
     def migrateapp(self, appid, src_cloud, dst_cloud):
         services = self.callapi("list/%s" % appid, True, {})
        
@@ -169,11 +177,12 @@ class BaseClient(object):
         data['appid'] = appid
         data['sid'] = services[0]['sid']
         res = self.callapi('prepare_migration', True, data) 
-        
-        '''
+       
+        print "added node comp1" 
+       
         for service in services:
             self.migrateservice(service['sid'], src_cloud, dst_cloud)
-
+        
         time.sleep(4)
         while True:
             all_services_migrated = True
@@ -183,15 +192,14 @@ class BaseClient(object):
                 data = {}
                 data['sid'] = service['sid']
                 res = self.callapi('get_service_vm_status', True, data)
-                print res['status']
                 if res['status'] == "MIGRATING":
                     all_services_migrated = False
             
             if all_services_migrated:
                 break;
 
-            time.sleep(2) 
-       '''
+            time.sleep(5) 
+        print "migration done."
  
     def migrateservice(self, sid, src_cloud, dst_cloud):
         data = {}
@@ -201,7 +209,6 @@ class BaseClient(object):
         
         res = self.callapi("migrate", True, data) 
        
-        print res 
         sys.stdout.flush()
         
     def create(self, service_type, cloud = None, application_id=None, initial_state='INIT'):
@@ -567,7 +574,7 @@ Do you want to continue? (y/N): """
         if command in ( "listapp", "createapp", "manifest",
                         "download_manifest", "list", "credentials", 
                         "available", "clouds", "create", "st_usage",
-                        "deleteapp", "renameapp", "getcerts", "migrateapp" ):
+                        "deleteapp", "renameapp", "getcerts", "migrateapp", "delete_service"):
 
             if command == "st_usage":
                 try:
@@ -661,6 +668,9 @@ Do you want to continue? (y/N): """
             if command == "clouds":
                 return getattr(self, 'available')('clouds')
 
+            if command == "delete_service":
+                return getattr(self, command)(argv[2], argv[3])
+            
             if command == "migrateapp":
                 try:
                     # Create wants a service type. Check if we got one, and if
