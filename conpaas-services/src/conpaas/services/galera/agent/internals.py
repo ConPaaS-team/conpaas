@@ -17,8 +17,6 @@ from conpaas.core.https.server import HttpErrorResponse, HttpJsonResponse, FileU
 from conpaas.core.expose import expose
 from conpaas.core.misc import check_arguments, is_list, is_string, is_uploaded_file
 
-#logging
-import logging
 
 # daemons identifier
 MYSQLD = 'mysqld'
@@ -58,7 +56,7 @@ class GaleraAgent(BaseAgent):
             list of IP addresses and port of other nodes of this
             synchronization group. If empty or absent, then a new
             synchronization group will be created by Galera.
-        """        
+        """
         try:
             exp_params = [('nodes', is_list, [])]
             nodes = check_arguments(exp_params, kwargs)
@@ -214,13 +212,13 @@ class GaleraAgent(BaseAgent):
         if not role.GLBNode in self.running_roles:
             raise AgentException("Cannot add nodes: agent is not running a glbd daemon.")
         try:
-            exp_params = [('nodesIp', is_list, [])]
+            exp_params = [('nodes', is_list, [])]
             nodes = check_arguments(exp_params, kwargs)
-	    with self.lock:
-		fd = open(role.GLBNode.class_file, 'r')
+            with self.lock:
+                fd = open(role.GLBNode.class_file, 'r')
                 p = pickle.load(fd)
-		p.add(  nodes)
-                fd.close()		
+                p.add(nodes)
+                fd.close()
         except Exception as ex:
             return HttpErrorResponse("%s" % ex)
         else:
@@ -250,37 +248,3 @@ class GaleraAgent(BaseAgent):
             return HttpErrorResponse("%s" % ex)
         else:
             return HttpJsonResponse()
-
-    @expose('GET')
-    def getLoad(self, kwargs):
-        """
-        Returns the local load of the single nodes.
-
-        """
-        logger=logging.getLogger('__name__')
-	flog=logging.FileHandler('/var/log/franco.log')
-	logger.addHandler(flog)
-	logger.setLevel(logging.WARNING)
-	logger.error('il client prova ad eseguire la getLoad kwargs %s ' % kwargs)
-	if len(kwargs) > 0:
-            self.logger.warning('Galera agent "stop" was called with arguments that will be ignored: "%s"' % kwargs)
-        try:
-            logger.error('1il client prova ad eseguire la getLoad kwargs %s ' % kwargs)
-	    exp_params = []
-            logger.error('2il client prova ad eseguire la getLoad kwargs %s ' % kwargs)
-	    check_arguments(exp_params, kwargs)
-	    logger.error('3il client prova ad eseguire la getLoad kwargs %s ' % kwargs)
-	    fd = open(role.MySQLServer.class_file, 'r')
-            logger.error('4il client prova ad eseguire la getLoad kwargs %s ' % kwargs)
-	    p = pickle.load(fd)
-            logger.error('5il client prova ad eseguire la getLoad kwargs %s ' % kwargs)
-	    load=p.getLoad()
-	    logger.error('6il client prova ad eseguire la getLoad kwargs %s ' % kwargs)
-            fd.close()
-	    logger.error('7il client prova ad eseguire la getLoad kwargs %s ' % kwargs)
-        except Exception as ex:
-            return HttpErrorResponse("%s" % ex)
-        else:
-            return HttpJsonResponse({
-                                 'load': load 
-                                     })

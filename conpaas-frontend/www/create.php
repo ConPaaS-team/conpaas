@@ -56,11 +56,6 @@ $page = new Page();
                   <td class="info"> MySQL 5.2 Database </td>
               </tr>
               <tr class="service">
-                  <td class="description"> <img src="images/galera.png" height="32" /></td>
-                  <td class="radio"><input type="radio" name="type" value="galera" />Galera Cluster</td>
-                  <td class="info">Multimaster DB</td>
-              </tr>
-              <tr class="service">
                   <td class="description"> <img src="images/scalaris.png" height="32" /></td>
                   <td class="radio"><input type="radio" name="type" value="scalaris" /> scalarix</td>
                   <td class="info"> In-memory key-value store </td>

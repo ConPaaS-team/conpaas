@@ -21,9 +21,7 @@ import conpaas.services.galera.agent.client as agent
 from conpaas.services.galera.agent.client import AgentException
 from conpaas.services.galera.manager.config import Configuration
 
-import logging
-import commands
-import MySQLdb
+
 class GaleraManager(BaseManager):
 
     # MySQL Galera node types
@@ -54,7 +52,6 @@ class GaleraManager(BaseManager):
 
         Returns a dict with the single key 'state' with the new service state.
         """
-	self.logger.debug('try to startup service' )
         try:
             self._check_state([self.S_INIT, self.S_STOPPED])
             exp_params = [('cloud', is_string, None)]
@@ -104,12 +101,8 @@ class GaleraManager(BaseManager):
                 raise
         try:
             glb_nodes = self.config.get_glb_nodes()
-	    self.logger.exception('Galera node already active: %s' % glb_nodes) 
-            nodesIp=[]
-	    nodesIp = ["%s:%s" % (node.ip, self.config.MYSQL_PORT)  # FIXME: find real mysql port instead of default 3306
-                         for node in nodes]
-	    for glb in glb_nodes:
-		agent.add_glbd_nodes(glb.ip, self.config.AGENT_PORT, nodesIp)
+            for glb in glb_nodes:
+                agent.add_glbd_nodes(glb.ip, self.config.AGENT_PORT, nodes)
         except Exception as ex:
             self.logger.exception('Failed to configure GLB nodes with new Galera nodes: %s' % ex)
             raise
@@ -117,7 +110,7 @@ class GaleraManager(BaseManager):
     def _start_glbd(self, new_glb_nodes):
         for new_glb in new_glb_nodes:
             try:
-                nodes = ["%s:%s" % (node.ip, self.config.MYSQL_PORT)  # FIXME: find real mysql port instead of default 3306
+                nodes = ["%s:%s" % (node.ip, 3306)  # FIXME: find real mysql port instead of default 3306
                          for node in self.config.get_nodes()]
                 self.logger.debug('create_glb_node all galera nodes = %s' % nodes)
                 self.logger.debug('create_glb_node for new_glb.ip  = %s' % new_glb.ip)
@@ -174,7 +167,7 @@ class GaleraManager(BaseManager):
         except Exception as ex:
             return HttpErrorResponse("%s" % ex)
 
-        if serviceNodeId not in self.config.serviceNodes and serviceNodeId not in self.config.glb_service_nodes :
+        if serviceNodeId not in self.config.serviceNodes:
             return HttpErrorResponse('Unknown "serviceNodeId" %s, should be one of %s.'
                                      % (serviceNodeId, self.config.serviceNodes.keys()))
         serviceNode = self.config.getMySQLNode(serviceNodeId)
@@ -182,8 +175,6 @@ class GaleraManager(BaseManager):
                                                  'ip': serviceNode.ip,
                                                  'vmid': serviceNode.vmid,
                                                  'cloud': serviceNode.cloud_name,
-						 'isNode': serviceNode.isNode,
-						 'isGlb_node': serviceNode.isGlb_node
                                                  }
                                  })
 
@@ -220,10 +211,8 @@ class GaleraManager(BaseManager):
         # TODO: check if argument "cloud" is an known cloud
         if nodes > 0:
             Thread(target=self._do_add_nodes, args=[self.REGULAR_NODE, nodes, cloud]).start()
-	    #self._do_add_nodes(self.REGULAR_NODE, nodes, cloud)
         if glb_nodes > 0:
             Thread(target=self._do_add_nodes, args=[self.GLB_NODE, glb_nodes, cloud]).start()
-	    #self._do_add_nodes(self.GLB_NODE, glb_nodes, cloud)
         return HttpJsonResponse()
 
     def _do_add_nodes(self, node_type, count, cloud=None):
@@ -236,9 +225,9 @@ class GaleraManager(BaseManager):
                                                           agent.check_agent_process,
                                                           self.config.AGENT_PORT,
                                                           start_cloud)
-	    if node_type == self.REGULAR_NODE:
-		self._start_mysqld(node_instances)
-		self.config.addMySQLServiceNodes(node_instances)
+            if node_type == self.REGULAR_NODE:
+                self._start_mysqld(node_instances)
+                self.config.addMySQLServiceNodes(node_instances)
             elif node_type == self.GLB_NODE:
                 self._start_glbd(node_instances)
                 self.config.addGLBServiceNodes(node_instances)
@@ -249,104 +238,6 @@ class GaleraManager(BaseManager):
             self.controller.delete_nodes(node_instances)
             self.logger.exception('Could not add nodes: %s' % ex)
         self.state = self.S_RUNNING
-
-    @expose('GET')
-    def getMeanLoad(self, kwargs):
-        """
-        TODO: placeholder for obtaining performance metrics.
-
-        No parameters.
-
-        Returns a dict with keys:
-            request_rate : int
-            error_rate : int
-            throughput : int
-            response_time : int
-        """
-        nodes = self.config.get_nodes()
-	loads=[]
-	load=0.0
-	updates=[]
-	update=0.0
-	selects=[]
-	select=0
-	deletes=[]
-	delete=0
-	inserts=[]
-	insert=0
-	for node in nodes:
-		db = MySQLdb.connect(node.ip, 'mysqldb', self.root_pass)
-        	exc = db.cursor()
-       		exc.execute("SHOW STATUS LIKE 'wsrep_local_recv_queue_avg';")
-        	localLoad=exc.fetchone()[1]
-		loads.append(localLoad)
-		load=load+float(localLoad)
-		#select
-		exc.execute("SHOW GLOBAL STATUS LIKE 'Com_select';")
-                localSelect=exc.fetchone()[1]
-                selects.append(localSelect)
-                select=select+float(localSelect)
-                #insert
-                exc.execute("SHOW GLOBAL STATUS LIKE 'Com_insert';")
-                localInsert=exc.fetchone()[1]
-                inserts.append(localInsert)
-                insert=insert+float(localInsert)
-                #delete
-                exc.execute("SHOW GLOBAL STATUS LIKE 'Com_delete';")
-                localDelete=exc.fetchone()[1]
-                deletes.append(localDelete)
-                delete=delete+float(localDelete)
-                #update
-                exc.execute("SHOW GLOBAL STATUS LIKE 'Com_update';")
-                localUpdate=exc.fetchone()[1]
-                updates.append(localUpdate)
-                update=update+float(localUpdate)
-	if len(nodes)!=0 :
-		l=len(nodes)
-	else:
-		l=1
-	meanLoad=load/l
-	meanSelect=select/l
-	meanUpdate=update/l
-	meanDelete=delete/l
-	meanInsert=insert/l
-	return HttpJsonResponse({
-                                 'loads': loads,
-                                 'meanLoad': meanLoad,
-				 'updates': updates,
-				 'meanUpdate' : meanUpdate,
-				 'selects': selects,
-				 'meanSelect': meanSelect,
-				 'deletes' : deletes,
-				 'meanDelete' : meanDelete,
-				 'inserts': inserts,
-				 'meanInsert': meanInsert
-                                 })
-
-    @expose('GET')
-    def getGangliaParams(self, kwargs):
-        """
-        TODO: placeholder for obtaining performance metrics.
-
-        No parameters.
-
-        Returns a dict with keys:
-            request_rate : int
-            error_rate : int
-            throughput : int
-            response_time : int
-        """
-
-        try:
-            exp_params = []
-            check_arguments(exp_params, kwargs)
-	    import commands
-	    xml=commands.getstatusoutput("curl -s telnet://localhost:8651/")
-        except Exception as ex:
-            return HttpErrorResponse("%s" % ex)
-        return HttpJsonResponse({
-                                 'Ganglia': xml
-                                 })
 
     @expose('GET')
     def get_service_performance(self, kwargs):
@@ -367,8 +258,8 @@ class GaleraManager(BaseManager):
             check_arguments(exp_params, kwargs)
         except Exception as ex:
             return HttpErrorResponse("%s" % ex)
-	return HttpJsonResponse({
-				 'request_rate': 0,
+
+        return HttpJsonResponse({'request_rate': 0,
                                  'error_rate': 0,
                                  'throughput': 0,
                                  'response_time': 0,
@@ -409,24 +300,16 @@ class GaleraManager(BaseManager):
         self.state = self.S_ADAPTING
         rm_reg_nodes = self.config.get_nodes()[:nodes]
         rm_glb_nodes = self.config.get_glb_nodes()[:glb_nodes]
-        Thread(target=self._do_remove_nodes, args=[rm_reg_nodes,rm_glb_nodes]).start()
+        rm_nodes = rm_reg_nodes + rm_glb_nodes
+        Thread(target=self._do_remove_nodes, args=[rm_nodes]).start()
         return HttpJsonResponse()
 
-    def _do_remove_nodes(self,rm_reg_nodes,rm_glb_nodes):
-	glb_nodes = self.config.get_glb_nodes()
-        nodesIp = ["%s:%s" % (node.ip, self.config.MYSQL_PORT)  # FIXME: find real mysql port instead of default 3306
-                         for node in rm_reg_nodes]
-        for glb in glb_nodes:
-                agent.remove_glbd_nodes(glb.ip, self.config.AGENT_PORT, nodesIp)
-	nodes = rm_reg_nodes + rm_glb_nodes
-	for node in nodes:
+    def _do_remove_nodes(self, nodes):
+        for node in nodes:
             agent.stop(node.ip, self.config.AGENT_PORT)
         self.controller.delete_nodes(nodes)
         self.config.remove_nodes(nodes)
-	if (len(self.config.get_nodes()) +len(self.config.get_glb_nodes())==0 ):
-		self.state=self.S_STOPPED
-	else :
-        	self.state = self.S_RUNNING
+        self.state = self.S_RUNNING
 
     @expose('POST')
     def migrate_nodes(self, kwargs):
@@ -597,10 +480,8 @@ class GaleraManager(BaseManager):
 
     def _do_shutdown(self):
         ''' Shuts down the service. '''
-        self._do_remove_nodes(self.config.serviceNodes.values(),self.config.glb_service_nodes.values())
+        self._do_remove_nodes(self.config.serviceNodes.values())
         self.config.serviceNodes = {}
-	#self._do_remove_nodes(self.config.glb_service_nodes.values())
-	self.config.glb_service_nodes = {}
         self.state = self.S_STOPPED
 
     @expose('POST')
@@ -693,58 +574,3 @@ class GaleraManager(BaseManager):
             return HttpJsonResponse(out)
         else:
             return HttpErrorResponse("Failed to run mysqldump: %s." % error)
-
-
-
-
-    @expose('GET')
-    def remove_specific_nodes(self, kwargs):
-        """
-        Remove MySQL Galera nodes.
-
-        Parameters
-        ----------
-        nodes : int
-            number of regular nodes to remove (default 0)
-        glb_nodes : int
-            number of Galera Load Balancer nodes to remove (default 0)
-
-        Returns an error if "nodes + glb_nodes == 0".
-        """
-	import logging
-	logger=logging.getLogger('__name__')
-	flog=logging.FileHandler('/var/log/elimina.log')
-	logger.addHandler(flog)
-	logger.setLevel(logging.WARNING)
-	logger.error('siamo a destinazione')      
-	try:
-            self._check_state([self.S_RUNNING])
-            exp_params = [('ip', is_string)]
-            ip = check_arguments(exp_params, kwargs)
-            logger.error('ip= %s' % ip )        
-        except Exception as ex:
-            return HttpErrorResponse("%s" % ex)
-        self.state = self.S_ADAPTING
-        rm_reg_nodes = self.config.get_nodes()
-        rm_glb_nodes = self.config.get_glb_nodes()
-	is_in_glb=False
-	is_in_reg=False
-        for node in self.config.get_nodes():
-            if node.ip == ip :
-                nodeTarget=node
-                is_in_reg=True
-        for node in self.config.get_glb_nodes():
-            if node.ip== ip :
-                nodeTarget=node
-                is_in_glb=True
-        if is_in_reg==False and is_in_glb==False :
-	    return HttpErrorResponse("%s" % "Sorry invalid ip !!!")
-	elif is_in_reg == True :
-            rm_reg_nodes=[nodeTarget]
-            rm_glb_nodes=[]
-        else :
-            rm_glb_nodes=[nodeTarget]
-            rm_reg_nodes=[]
-        Thread(target=self._do_remove_nodes, args=[rm_reg_nodes,rm_glb_nodes]).start()
-        return HttpJsonResponse()
-

@@ -18,8 +18,6 @@ class Cluster {
 
 	private function getRoleColor() {
 		static $roles = array(
-			'nodes'=>'orange',
-                        'glb_nodes'=>'blue',
 			'backend' => 'purple',
 			'web' => 'blue',
 			'proxy' => 'orange',

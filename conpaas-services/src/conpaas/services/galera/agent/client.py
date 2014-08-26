@@ -6,7 +6,7 @@
 
 import httplib
 import json
-import logging 
+
 from conpaas.core import https
 
 
@@ -24,8 +24,6 @@ def _check(response):
         raise AgentException(*e.args)
     if data['error']:
         raise AgentException(data['error'])
-    elif data['result']:
-	return  data['result']
     else:
         return True
 
@@ -85,29 +83,19 @@ def stop(host, port):
     return _check(https.client.jsonrpc_post(host, port, '/', method))
 
 
-def getLoad(host, port):
-    logger=logging.getLogger('__name__')
-    flog=logging.FileHandler('/var/log/franco.log')
-    logger.addHandler(flog)
-    logger.setLevel(logging.WARNING)
-    logger.error('il manager Prova la chiamata')
-    method = 'getLoad'
-    return _check(https.client.jsonrpc_get(host, port, '/', method))
-
-
 def start_glbd(host, port, nodes):
     method = 'start_glbd'
     params = {'nodes': nodes}
     return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
 
 
-def add_glbd_nodes(host, port, nodesIp):
+def add_glbd_nodes(host, port, nodes):
     method = 'add_glbd_nodes'
-    params = {'nodesIp': nodesIp}
+    params = {'node': nodes}
     return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
 
 
 def remove_glbd_nodes(host, port, nodes):
     method = 'remove_glbd_nodes'
-    params = {'nodes': nodes}
+    params = {'node': nodes}
     return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))

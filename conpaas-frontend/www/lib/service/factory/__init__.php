@@ -22,9 +22,6 @@ class ServiceFactory {
 			case 'java':
 				require_module('service/java');
 				return new JavaService($service_data, $manager);
-			case 'galera':
-                                require_module('service/galera');
-                                return new GaleraService($service_data, $manager);
 			case 'mysql':
 				require_module('service/mysql');
 				return new MysqlService($service_data, $manager);
