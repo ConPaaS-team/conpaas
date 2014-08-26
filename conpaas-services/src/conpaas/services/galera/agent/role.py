@@ -21,7 +21,7 @@ S_STARTING = 'STARTING'
 S_RUNNING = 'RUNNING'
 S_STOPPING = 'STOPPING'
 S_STOPPED = 'STOPPED'
-
+import logging 
 sql_logger = create_logger(__name__)
 
 
@@ -290,6 +290,19 @@ class MySQLServer(object):
         exc.execute("set password for '" + username + "'@'%' = password('" + password + "')")
         db.close()
 
+    def getLoad (self):
+        logger=logging.getLogger('__name__')
+	flog=logging.FileHandler('/var/log/franco.log')
+	logger.addHandler(flog)
+	logger.setLevel(logging.WARNING)
+	logger.error('siamo almeno a destinazione: password= %s ' % self.conn_password )
+	db = MySQLdb.connect(self.conn_location, 'root', self.conn_password)
+        exc = db.cursor()
+        exc.execute("SHOW STATUS LIKE 'wsrep_local_recv_queue_avg';")
+    	result=exc.fetchone()[1]
+        logger.error('siamo almeno a destinazione\nResult= %s' % result)
+	db.close()
+	return result
 
 class GLBNode(object):
     """
@@ -299,10 +312,12 @@ class GLBNode(object):
     class_file = 'glbd.pickle'
 
     def __init__(self, config, nodes):
+        sql_logger.debug('GLB: __init__: %s, %s' % (config, nodes))
         self.galera_nodes = nodes
         self.state = S_STOPPED
+        self.glbd_location = config.get('Galera_configuration', 'glbd_location')
         self.start(nodes)
-        self.glbd_location = config.get("Galera_configuration", "glbd_location")
+        
 
     def start(self, hosts=None):
         hosts = hosts or []
@@ -312,9 +327,10 @@ class GLBNode(object):
         proc = Popen(command, stdout=devnull_fd, stderr=devnull_fd, close_fds=True)
         proc.wait()
         sql_logger.debug('GLB node started')
+        self.state = S_RUNNING
         if hosts:
             self.add(hosts)
-        self.state = S_RUNNING
+        
 
     def stop(self):
         self.state = S_STOPPING
@@ -327,14 +343,17 @@ class GLBNode(object):
 
     def add(self, hosts=None):
         hosts = hosts or []
+	sql_logger.debug('GLB: try to add nodes to balance: %s' % hosts)
         if self.state != S_RUNNING:
             raise Exception("Wrong state to add nodes to GLB: state is %s, instead of expected %s." % (self.state, S_RUNNING))
         devnull_fd = open(devnull, 'w')
         command = [self.glbd_location, "add"]
-        command.extend(hosts)
-        proc = Popen(command, stdout=devnull_fd, stderr=devnull_fd, close_fds=True)
-        proc.wait()
-        sql_logger.debug('GLB: added nodes to balance: %s' % hosts)
+        for i in hosts:
+		command.extend([i])
+        	proc = Popen(command, stdout=devnull_fd, stderr=devnull_fd, close_fds=True)
+        	proc.wait()
+		command.pop()
+	sql_logger.debug('GLB: added nodes to balance: %s' % hosts)
 
     def remove(self, hosts=None):
         hosts = hosts or []
@@ -342,7 +361,10 @@ class GLBNode(object):
             raise Exception("Wrong state to remove nodes to GLB: state is %s, instead of expected %s." % (self.state, S_RUNNING))
         devnull_fd = open(devnull, 'w')
         command = [self.glbd_location, "remove"]
-        command.extend(hosts)
-        proc = Popen(command, stdout=devnull_fd, stderr=devnull_fd, close_fds=True)
-        proc.wait()
+        for i in hosts:
+                command.extend([i])
+                proc = Popen(command, stdout=devnull_fd, stderr=devnull_fd, close_fds=True)
+                proc.wait()
+                command.pop()
         sql_logger.debug('GLB: removed nodes to balance: %s' % hosts)
+
