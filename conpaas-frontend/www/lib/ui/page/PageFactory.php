@@ -9,6 +9,9 @@ class PageFactory {
 		$type = $service->getType();
 
 		switch ($type) {
+			case 'galera':
+                                require_module('ui/page/galera');
+                                return new GaleraPage($service);
 			case 'php':
 				require_module('ui/page/hosting');
 				return new PhpPage($service);

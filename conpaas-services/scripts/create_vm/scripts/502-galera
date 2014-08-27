@@ -68,11 +68,16 @@ sed -i 's/1 2 3 4 5 6.*;/\$(seq 60);/' /etc/init.d/mysql
 
 # Install Galera Load Balancer (glb)
 
-glb_version=1.0.1
-wget http://www.codership.com/files/glb/glb-\${glb_version}.tar.gz 2>/dev/null
-tar xvfz glb-\${glb_version}.tar.gz
-cd glb-\${glb_version}
-./configure; make; make install
+#installation of prerequisites
+apt-get install git autoconf libtool 
+#download the lastest version from git-hub  
+git clone https://github.com/codership/glb
+#configuration build and installation  
+cd glb
+./bootstrap.sh
+./configure
+make
+make install
 cp -a ./files/glbd.sh /etc/init.d/glbd
 cp -a ./files/glbd.cfg /etc/default/glbd
 # using default listen port 8010
