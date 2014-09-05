@@ -53,7 +53,7 @@ class LinkUI {
 	}
 
 	public function __toString() {
-		$target = $this->external ? 'target="new"' : '';
+		$target = $this->external ? 'target="_blank"' : '';
 		$leftSymbol = '';
 		$rightSymbol = '';
 		if ($this->iconPosition == self::POS_LEFT) {
