@@ -14,6 +14,7 @@ if (isset($_SESSION['uid'])) {
 $page = new LoginPage();
 echo $page->renderDoctype();
 $support_external_idp = Director::getSupportExternalIdp();
+$support_openid = Director::getSupportOpenID();
 ?>
 <html>
     <head>
@@ -80,7 +81,19 @@ $support_external_idp = Director::getSupportExternalIdp();
                 <tr>
                     <td> </td>
                     <td class="actions" align="left">
-                        <input type="button" value="Login with external IdP" id="contrail" title="Login with external IdP" />
+                        <input type="button" value="Login with external IdP" id="but_contrail" title="Login with external IdP" />
+                    <!--
+                        <input type="image" src="/images/google.gif" title="Login with Google" id="contrail" height="20"/>
+                        <input type="image" src="/images/contrail.gif" title="Login with Contrail" id="contrail" height="20"/>
+                    -->
+                    </td>
+                </tr>
+                <?php } ?>
+                <?php if ($support_openid) { ?>
+                <tr>
+                    <td> </td>
+                    <td class="actions" align="left">
+                        <input type="button" value="Login with Open ID" id="but_openid" title="Login with Open ID" />
                     <!--
                         <input type="image" src="/images/google.gif" title="Login with Google" id="contrail" height="20"/>
                         <input type="image" src="/images/contrail.gif" title="Login with Contrail" id="contrail" height="20"/>
@@ -131,9 +144,25 @@ $support_external_idp = Director::getSupportExternalIdp();
                     </td>
                 </tr>
                 <tr class="register_form" style="display: none">
+                    <!--
                     <td class="name invisible">uuid</td>
                     <td class="input invisible">
+                    -->
+                    <td class="name ">uuid</td>
+                    <td class="input ">
                         <input type="text" name="uuid" id="uuid" size="30" value="<none>" />
+                    </td>
+                </tr>
+                <tr class="register_form" style="display: none">
+                    <td class="name ">openid</td>
+                    <td class="input ">
+                        <input type="text" name="openid" id="openid" size="30" value="<none>" />
+                    </td>
+                </tr>
+                <tr class="register_form" style="display: none">
+                    <td class="name ">selected</td>
+                    <td class="input ">
+                        <input type="text" name="selected" id="selected" size="30" value="<none>" />
                     </td>
                 </tr>
                 <?php
@@ -180,7 +209,10 @@ $support_external_idp = Director::getSupportExternalIdp();
 
     <form style="display: hidden" action="/contrail/contrail-idp.php" method="POST" id="form">
       <input type="hidden" id="ReturnTo" name="ReturnTo" value=""/>
-      <input type="hidden" id="get" name="get" value=""/>
+      <input type="hidden" id="4get" name="4get" value=""/>
+      <input type="hidden" id="4set" name="4set" value=""/>
     </form>
+    <div id = "msgc"></div>
+    <div id = "msgl"></div>
 </body>
 </html>

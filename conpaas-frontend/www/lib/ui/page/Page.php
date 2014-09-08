@@ -31,7 +31,10 @@ class Page {
 			}
 			return;
 		}
-                if (isset($_SESSION['uuid']) && ($_SESSION['uuid'] != "<none>") ) { /* if you check $_SESSION['username'] first, you will NOT be able to login with Contrail IdP */
+                if (isset($_SESSION['openid']) && ($_SESSION['openid'] != "<none>") ) { /* if you check $_SESSION['username'] first, you will NOT be able to login with OpenID */
+                    user_error('Try UserData::getUserByOpenid(' . $_SESSION['openid'] . ')');
+                    $uinfo = UserData::getUserByOpenid($_SESSION['openid']);
+                } elseif (isset($_SESSION['uuid']) && ($_SESSION['uuid'] != "<none>") ) { /* if you check $_SESSION['username'] first, you will NOT be able to login with Contrail IdP */
                     user_error('Try UserData::getUserByUuid(' . $_SESSION['uuid'] . ')');
                     $uinfo = UserData::getUserByUuid($_SESSION['uuid']);
                 } else {
