@@ -408,18 +408,6 @@ chown -R git:git ~git/code
 EOF
 fi
 
-# Section: 502-mysql
-
-cat <<EOF >> $ROOT_DIR/conpaas_install
-# fix apt sources
-sed --in-place 's/main/main contrib non-free/' /etc/apt/sources.list
-apt-get -f -y update
-DEBIAN_FRONTEND=noninteractive apt-get -y --force-yes --no-install-recommends --no-upgrade \
-		install mysql-server python-mysqldb
-update-rc.d mysql disable
-
-EOF
-
 # Section: 502-galera
 
 cat <<EOF >> $ROOT_DIR/conpaas_install
@@ -490,11 +478,16 @@ sed -i 's/1 2 3 4 5 6.*;/\$(seq 60);/' /etc/init.d/mysql
 
 # Install Galera Load Balancer (glb)
 
-glb_version=1.0.1
-wget http://www.codership.com/files/glb/glb-\${glb_version}.tar.gz 2>/dev/null
-tar xvfz glb-\${glb_version}.tar.gz
-cd glb-\${glb_version}
-./configure; make; make install
+#installation of prerequisites
+apt-get install git autoconf libtool 
+#download the lastest version from git-hub  
+git clone https://github.com/codership/glb
+#configuration build and installation  
+cd glb
+./bootstrap.sh
+./configure
+make
+make install
 cp -a ./files/glbd.sh /etc/init.d/glbd
 cp -a ./files/glbd.cfg /etc/default/glbd
 # using default listen port 8010
@@ -699,8 +692,6 @@ php_pkgs = ['php5-fpm', 'php5-curl', 'php5-mcrypt', 'php5-mysql', 'php5-odbc',
             'git', 'tomcat6-user', 'memcached', 'python-scipy', 'python-simplejson',
             'libatlas-base-dev', 'libatlas3gf-base', 'python-dev', 'python-setuptools']
 
-mysql_pkgs = ['mysql-server', 'python-mysqldb']
-
 galera_pkgs = ['galera', 'mysql-server-wsrep', 'python-mysqldb', 'rsync']
 
 if "$DEBIAN_DIST" == "squeeze":
@@ -796,7 +787,7 @@ pkgs.extend(core_pkgs)
 
 if len(args) == 0:
     sys.exit('The script needs at least one of the arguments: '
-    '--all, --none, --php, --mysql, --condor, --selenium, --hadoop, --scalaris, --xtreemfs, --cds, --debug.')
+    '--all, --none, --php, --condor, --selenium, --hadoop, --scalaris, --xtreemfs, --cds, --debug.')
 
 if '--debug' in args:
 	dbg = True
@@ -806,7 +797,6 @@ else:
 
 if '--all' in args:
     pkgs.extend(php_pkgs)
-    pkgs.extend(mysql_pkgs)
     pkgs.extend(condor_pkgs)
     pkgs.extend(selenium_pkgs)
     pkgs.extend(hadoop_pkgs)
@@ -820,9 +810,6 @@ else:
     if '--php' in args:
         pkgs.extend(php_pkgs)
         args.remove('--php')
-    if '--mysql' in args:
-        pkgs.extend(mysql_pkgs)
-        args.remove('--mysql')
     if '--galera' in args:
         pkgs.extend(galera_pkgs)
         args.remove('--galera')
@@ -908,7 +895,7 @@ print shell_cmd('rm -rf /usr/share/doc-base/ 2>&1')
 print shell_cmd('rm -rf /usr/share/man/ 2>&1')
 
 EOF
-RM_SCRIPT_ARGS=' --php --mysql --galera --condor --selenium --hadoop --scalaris --xtreemfs'
+RM_SCRIPT_ARGS=' --php --galera --condor --selenium --hadoop --scalaris --xtreemfs'
 
 # Section: 996-tail
 

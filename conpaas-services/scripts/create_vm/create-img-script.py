@@ -212,21 +212,13 @@ if __name__ == '__main__':
 
         # Write service scripts
         rm_script_args = ''
-        incompatible_services = []
         for servicename, should_include in config.items('SERVICES'):
             if 'true' == should_include:
-                upp_servicename = servicename.replace('_service', '').upper()
-                if servicename == 'mysql_service' or servicename == 'galera_service':
-                    incompatible_services.append(upp_servicename)
                 rm_script_args += ' --' + servicename[:-8]
                 filename = config.get('SCRIPT_FILE_NAMES', servicename + '_script')
                 append_file_to_output(root_dir + filename)
-                #print servicename.replace('_service', '').upper(),
-                print upp_servicename,
+                print servicename.replace('_service', '').upper(),
         print
-
-        if len(incompatible_services) > 1:
-            print "***WARNING***: Services %s can not be enabled at the same time. Generating the image can result in malfunctioning of these services." % incompatible_services
 
         if rm_script_args == '':
             rm_script_args = ' --none'
