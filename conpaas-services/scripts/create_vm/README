@@ -7,7 +7,6 @@ Update file 'create-img-script.cfg' with your preferences.
 Warning:
  * choosing 'debian_dist = wheezy'  the resulting image will not work, yet, there is still bugs to fix
  * only cloud 'ec2' with hypervisor 'xen',  and cloud 'opennebula' with hypervisor 'kvm' are supported
- * galera and mysql service are exclusive
 
 Then run script:
    ./create-img-script.py

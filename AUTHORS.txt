@@ -24,12 +24,11 @@ Claudiu-Dan Gheorghe
 Emanuele Rocca
 Genc Tato
 Ismail El Helw
-Ismail El Helw
 Kaveh Razavi 
 Maricel Mihalcea
 Matthias Noack
 Stéphane Chevalier
-Teodo Crivat
+Teodor Crivat
 Thorsten Schuett
 Yann Radenac
 

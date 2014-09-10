@@ -37,7 +37,7 @@ ConPaaS currently contains:
 - One service dedicated to hosting static Web content as well as Web
   applications written in PHP or Java.
 
-- One service dedicated to hosting MySQL databases.
+- One service dedicated to hosting MySQL Galera databases.
 
 - One service dedicated to hosting a Scalarix key-value store.
 

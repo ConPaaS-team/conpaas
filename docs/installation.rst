@@ -75,7 +75,7 @@ order to setup your ConPaaS Director installation.
 
    $ sudo apt-get update
    $ sudo apt-get install build-essential python-setuptools python-dev 
-   $ sudo apt-get install libapache2-mod-wsgi libcurl4-openssl-dev
+   $ sudo apt-get install apache2 libapache2-mod-wsgi libcurl4-openssl-dev
 
 #. Make sure that your system's time and date are set correctly by installing
    and running **ntpdate**::
@@ -106,7 +106,7 @@ order to setup your ConPaaS Director installation.
    image suitable for ConPaaS is available in :ref:`conpaas-on-opennebula`.
 
 The installation process will create an `Apache VirtualHost` for the ConPaaS
-director in :file:`/etc/apache2/sites-available/conpaas-director`. There should
+director in :file:`/etc/apache2/sites-available/conpaas-director.conf`. There should
 be no need for you to modify such a file, unless its defaults conflict with
 your Apache configuration.
 
@@ -114,6 +114,7 @@ Run the following commands as root to start your ConPaaS director for
 the first time::
 
     $ sudo a2enmod ssl
+    $ sudo a2enmod wsgi
     $ sudo a2ensite conpaas-director
     $ sudo service apache2 restart
 
@@ -178,7 +179,7 @@ simplesamlphp-1.11.0 as follows::
     $ cd simplesamlphp-1.11.0
     $ cd cert ; openssl req -newkey rsa:2048 -new -x509 -days 3652 -nodes -out saml.crt -keyout saml.pem
 
-Edit file :file:`metadata/saml20-idp-remote.php` and replace the ``$metadata 
+Edit file :file:`../metadata/saml20-idp-remote.php` and replace the ``$metadata
 array`` by the code found in the simpleSAMLphp flat file format part at 
 the end of the browser output of
 https://multi.contrail.xlab.si/simplesaml/saml2/idp/metadata.php?output=xhtml .
@@ -205,7 +206,7 @@ Change ownerships::
     $ sudo chown www-data www log
     $ sudo chgrp www-data www log
 
-Now edit :file:`/etc/apache2/sites-enabled/default-ssl` to contain the 
+Now edit :file:`/etc/apache2/sites-enabled/default-ssl.conf` to contain the
 following lines (line numbers may vary depending on your current 
 situation)::
 
@@ -434,7 +435,7 @@ Configuring ``cps-tools``::
 Installing Python2.7 and virtualenv
 -----------------------------------
 
-Recommended installation order is first ``python2.7``, then ``virtualenv``  (you will need about 0.5GB of free disk space.)
+Recommended installation order is first ``python2.7``, then ``virtualenv`` (you will need about 0.5GB of free disk space.)
 Check if the following packages are installed, and install them if not::
 
     apt-get install gcc
@@ -542,6 +543,30 @@ As a last step, restart your Apache web server::
     $ sudo service apache2 restart
 
 At this point, your front-end should be working!
+If it doesn't work and you have forbidden error on apache, then modify: :file: '/etc/apache2/apache2.conf'.
+In particular, when you find ::
+
+
+
+
+             <Directory />
+                     Options FollowSymLinks
+                     AllowOverride all
+                     Order deny,allow
+                     Allow from all
+             </Directory>
+
+Substituish it with ::
+
+
+
+             <Directory />
+                     Options Indexes FollowSymLinks Includes ExecCGI
+                     AllowOverride all
+                     Order deny,allow
+                     Allow from all
+             </Directory>
+
 
 .. _image-creation:
 
@@ -749,11 +774,17 @@ This section assumed that you already have created a ConPaaS services image as
 explained in :ref:`image-creation`. Upload your image (i.e. *conpaas.img*) to
 your OpenNebula headnode. The headnode is where OpenNebula services are
 running. You need have a valid OpenNebula account on the headnode (i.e. onevm
-list works!).
+list works!). Although you have a valid account on OpenNebula, you may have a problem similar to this:
+
+*/usr/lib/one/ruby/opennebula/client.rb:119:in `initialize': ONE_AUTH file not present (RuntimeError)*
+
+You can fix it setting the ONE_AUT variable like follows::
+
+    $  export ONE_AUTH="/var/lib/one/.one/one_auth"
 
 To register your image, you should execute *register-image-opennebula.sh* on
 the headnode. *register-image-opennebula.sh* needs the path to *conpaas.img* as
-well as OpenNebula's datastore ID.
+well as OpenNebula's datastore ID and  architecture Type.
 
 To get the datastore ID, you should execute this command on the headnode::
     
