@@ -16,7 +16,7 @@ from conpaas.core.https import client
 from conpaas.core.misc import rlinput
 
 class BaseClient(object):
-    # Set this to the service type. eg: php, java, mysql...
+    # Set this to the service type. eg: php, java, galera...
     service_type = None
 
     def __init__(self):

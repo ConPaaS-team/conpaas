@@ -9,7 +9,6 @@ dist_cpstools_PYTHON = \
 	java.py \
 	galera.py \
 	htc.py \
-	mysql.py \
 	php.py \
 	scalaris.py \
 	selenium.py \
