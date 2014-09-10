@@ -51,11 +51,6 @@ $page = new Page();
                   Data Storage
               </div>
               <tr class="service">
-                  <td class="description"> <img src="images/mysql.png" height="32" /></td>
-                  <td class="radio"><input type="radio" name="type" value="mysql" /> mysql</td>
-                  <td class="info"> MySQL 5.2 Database </td>
-              </tr>
-              <tr class="service">
                   <td class="description"> <img src="images/galera.png" height="32" /></td>
                   <td class="radio"><input type="radio" name="type" value="galera" /> Galera</td>
                   <td class="info"> Galera </td>

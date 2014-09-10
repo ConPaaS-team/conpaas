@@ -46,12 +46,6 @@ try {
         throw new Exception($res->msg);
     }
 
-	// HACK: keep a must_reset_password flag for the MySQL service
-	// we should keep this information in the service's manager state
-	if ($type == 'mysql') {
-		$_SESSION['must_reset_passwd_for_'.$res->sid] = true;
-	}
-
 	echo json_encode(array(
 		'sid' => $res->sid,
 		'create' => 1,

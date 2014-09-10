@@ -18,9 +18,6 @@ class PageFactory {
 			case 'java':
 				require_module('ui/page/hosting');
 				return new JavaPage($service);
-			case 'mysql':
-				require_module('ui/page/mysql');
-				return new MysqlPage($service);
 			case 'taskfarm':
 				require_module('ui/page/taskfarm');
 				return new TaskFarmPage($service);
