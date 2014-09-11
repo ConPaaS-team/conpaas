@@ -157,11 +157,12 @@ as follows::
     $ sudo apt-get install sqlite3
     $ sudo sqlite3 /etc/cpsdirector/director.db
 
-If you have an existing installation (version 1.3.1 and earlier) you 
+If you have an existing installation (version 1.4.0 and earlier) you
 should upgrade your database to contain the extra ``uuid`` field needed 
-for external IdP usage (see next topic)::
+for external IdP usage (see next topic) and the extra ``openid`` field
+needed for OpenID support::
 
-    $ sudo add-uuid-column-to-db.sh
+    $ sudo add-user-columns-to-db.sh
 
 This script will warn you when you try to upgrade an already upgraded database.
 
