@@ -639,6 +639,118 @@ with potentially different origin clouds and different destination clouds::
     Migration started...
 
 
+
+The Galera Cluster Multimaster Database Service
+===============================================
+
+Galera Cluster service  is  a true Multimaster Data Base Cluster based on 
+synchronous replication. Galera Cluster is an easy-to-use, high-availability 
+solution, which provides high system uptime, no data loss and scalability for 
+future growth. It is based on MySQL and as this allow direct client connection 
+and offers the same native look and feel.
+ 
+Summarizing, its advanced features are:
+Synchronous replication
+Active-active multi-master topology
+Read and write to any cluster node
+Automatic membership control, failed nodes drop from the cluster
+Automatic node joining
+True parallel replication, on row level
+Both read and write scalability
+Direct client connections, native MySQL look & feel
+
+The  Ordinary Nodes and Load Balancer Nodes
+-------------------------------------------
+
+Conpaas Galera Cluster service offers the capability to instantiate multiple 
+instances of ordinary node, which can be used to increase the througput and to 
+improve features of fault tolerance throws replication. The multi-master 
+structure allows update by any ordinary node of the cluster, because the 
+replication system is responsible for propagating the data modifications made 
+by each member to the rest of the group, and resolving any conflicts that 
+might arise between concurrent changes made by different members. These 
+features can be used to increase the throughput of the cluster. To obtain the 
+better performances from a cluster, it is a best practice, to use it in 
+balanced fashion, so that each node has, approximatively, the same load of the 
+others. To achieve this, the service allows to allocate special load balancer 
+nodes, which implement load balancing. In a nutshell the Galera Load Balancer 
+nodes, automatically, schedule database queries between the ordinary nodes, and 
+in this way it ensures performance improvments.
+
+Resetting the User Password
+---------------------------
+
+When a Galera Cluster service is started, a new user "mysqldb" is created with 
+a randomly-generated password. To gain access to the database you must first 
+reset this password. Click “Reset Password“ in the front-end, and choose the 
+new password.
+
+Note that the user password is not kept by the ConPaaS frontend. If you forget 
+the password the only thing you can do is reset the password again to a 
+new value.
+
+Accessing the database
+----------------------
+
+The frontend provides the command-line to access the database cluster. 
+Copy-paste this command in a terminal. You will be asked for the user password, 
+after which you can use the database as you wish. 
+Note that, in case the service has instantiate a load balancer the, command 
+refers to the load balancer ip and its specifical port, so the load balancer 
+can receive all the queries and distributes them across the ordinary nodes.
+Note, again, that the mysqldb user has extended privileges. It can create new 
+databases, new users etc.
+
+Uploading a Database Dump
+-------------------------
+
+The ConPaaS frontend allows to easily upload database dumps to a Galera Cluster 
+service. Note that this functionality is restricted to dumps of a relatively 
+small size. To upload larger dumps you can always use the regular mysql command 
+for this::
+
+    $ mysql mysql-ip-address -u mysqldb -p < dumpfile.sql
+
+The Monitoring
+--------------
+
+Galera Cluster User Interface provides a sophisticated mechanism to monitor the Service.
+The user interface, in the frontend, shows a monitoring control, called 
+“Performance Monitor”, that can be used to monitor a large cluster's behaviour.
+It interacts with “Ganglia”, “Galera” and “MySQL” to obtain various kinds of information. 
+Thus, Performance Monitor provides a solution for maintaining control and visibility 
+of all nodes, with a monitoring dynamic data every few seconds. 
+It consists of three main components.
+The first one, named “Cluster usage” is in charge of identifing and monitoring SQL queries.
+This will let you know in advance about any overload of the resources.
+You will also be able to spot usage trends over time so as to get insights on 
+when you need to  add new nodes, serving the MySQL database.
+In the second control, you see an overview of the cluster’s performance, with a 
+table detailing the load, memory usage, CPU utilization, and network traffic 
+for each node of the cluster.
+Users can use these informations in order to detect problems in their applications.
+These metrics are taken from the Ganglia monitoring system. 
+In the worst case, metrics are collected at 30-second intervals, because this 
+is the time required by Ganglia, for sensing of these metrics. 
+The table displays the resource utilization across all nodes, and highlight the 
+parameters which suggest an abnormality.
+For example if CPU utilization is high, or free memory is very low it is shown. 
+This may mean that processes on this node will start to slow down, and that it 
+may be time to add additional nodes to the cluster.
+On the other hand this may alarm of a malfunction on the specific node. 
+In this last case, in a multimaster system, it may be a good idea to kill the 
+node and replace it with another one.
+The monitoring system simplifys also this kind of operations through buttons 
+which allows to directly kill a specific node.
+Keep in mind, however, that high CPU utilization may not necessarily affect 
+application performance.
+The last section "Galera Mean Misalignment" draws a realtime [1-sec delay] 
+measure of the mean misalignment accross the nodes. 
+This information is derived by Galera metrics about the average length of the 
+receive queue since the most recent status query. If this value is noticeably 
+larger than zero, the nodes are likely to be overloaded, and cannot apply the 
+writesets as quickly as they arrive, resulting in replication throttling. 
+
 The Scalarix key-value store service
 ====================================
 

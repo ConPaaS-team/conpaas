@@ -155,5 +155,9 @@ def remove_specific_nodes(host, port, ip):
     params = {'ip': ip}
     return _check(https.client.jsonrpc_get(host, port, '/', method, params=params))
 
+def setMySqlParams (host, port, variable,value):
+    method = 'setMySqlParams'
+    params = {'variable': variable, 'value': value}
+    return _check(https.client.jsonrpc_get(host, port, '/', method, params=params))
 
 

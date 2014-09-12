@@ -258,10 +258,16 @@ class GaleraManager(BaseManager):
         No parameters.
 
         Returns a dict with keys:
-            request_rate : int
-            error_rate : int
-            throughput : int
-            response_time : int
+            'loads': float array, wsrep_local_recv_queue_avg of each node
+            'meanLoad':float, average load of wsrep_local_recv_queue_avg galera variable across the nodes
+            'updates': float, array within the  number of update queries across the nodes
+            'meanUpdate' : average number of update queries across the nodes
+            'selects': int array, array within the  number of select queries across the nodes
+            'meanSelect': float, average number of select queries across the nodes
+            'deletes' : int array,array within the  number of delete queries across the nodes
+            'meanDelete' : float, average number of delete queries across the nodes
+            'inserts': int array, array within the  number of insert queries across the nodes
+            'meanInsert': float average number of insert  queries across the nodes
         """
         nodes = self.config.get_nodes()
 	loads=[]
@@ -326,15 +332,12 @@ class GaleraManager(BaseManager):
     @expose('GET')
     def getGangliaParams(self, kwargs):
         """
-        TODO: placeholder for obtaining performance metrics.
+        TODO: it allows to obtain Monitoring info from Ganglia.
 
         No parameters.
 
         Returns a dict with keys:
-            request_rate : int
-            error_rate : int
-            throughput : int
-            response_time : int
+            Ganglia : xml
         """
 
         try:
@@ -740,4 +743,37 @@ class GaleraManager(BaseManager):
             rm_reg_nodes=[]
         Thread(target=self._do_remove_nodes, args=[rm_reg_nodes,rm_glb_nodes]).start()
         return HttpJsonResponse()
+
+    @expose('GET')
+    def setMySqlParams(self, kwargs):
+        """
+        set a specified global variable of mysql to the value provided
+
+        Parameters
+        ----------
+        variable : string
+            name of MySQL variable
+        value : string
+            value to set
+        
+        """
+        try:
+            self._check_state([self.S_RUNNING])
+            exp_params = [('variable', is_string),('value',is_string)]
+            variable, value = check_arguments(exp_params, kwargs)
+	    nodes = self.config.get_nodes()
+	    for node in nodes:
+		db = MySQLdb.connect(node.ip, 'mysqldb', self.root_pass)
+		exc = db.cursor()
+        	exc.execute('set global ' + variable + ' = ' + value + ';')
+	    '''glb_nodes = self.config.get_glb_nodes()
+	    n=len(nodes)*value
+            for node in glb_nodes:
+                db = MySQLdb.connect(node.ip, 'mysqldb', self.root_pass,port=8010)
+                exc = db.cursor()
+                exc.execute('set global ' + variable + ' = ' + n + ';')'''
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
+        return HttpJsonResponse("OK!")
+
 
