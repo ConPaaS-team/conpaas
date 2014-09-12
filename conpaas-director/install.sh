@@ -10,6 +10,9 @@ fi
 apt-get update
 apt-get -y --force-yes install build-essential python-setuptools python-dev libapache2-mod-wsgi libcurl4-openssl-dev ntpdate lynx moreutils
 
+# Reinstalling setuptools (fixes a bug on some upgrade installations)
+apt-get -y --force-yes --reinstall install python-setuptools
+
 # Set correct date and time
 ntpdate 0.us.pool.ntp.org
 
