@@ -29,9 +29,7 @@ ConPaaS currently contains nine services:
 -  **Two Web hosting services** respectively specialized for hosting PHP
    and JSP applications;
 
--  **MySQL database** service;
-
--  **Galer Cluster** offering a multimaster load-balanced database service;
+-  **MySQL Galera Cluster** offering a multimaster load-balanced database service;
 
 -  **Scalarix service** offering a scalable in-memory key-value store;
 
