@@ -385,6 +385,32 @@ Configuring ``cpsclient.py``::
     Authentication succeeded
 
 
+If it doesn't work and you have forbidden error on apache, then modify: :file: '/etc/apache2/apache2.conf'.
+In particular, when you find ::
+
+
+
+
+             <Directory />
+                     Options FollowSymLinks
+                     AllowOverride all
+                     Order deny,allow
+                     Allow from all
+             </Directory>
+
+Substituish it with ::
+
+
+
+             <Directory />
+                     Options Indexes FollowSymLinks Includes ExecCGI
+                     AllowOverride all
+                     Order deny,allow
+                     Allow from all
+             </Directory>
+
+
+
 .. _cpstools-installation:
 
 Installing and configuring cps-tools
@@ -544,30 +570,6 @@ As a last step, restart your Apache web server::
     $ sudo service apache2 restart
 
 At this point, your front-end should be working!
-If it doesn't work and you have forbidden error on apache, then modify: :file: '/etc/apache2/apache2.conf'.
-In particular, when you find ::
-
-
-
-
-             <Directory />
-                     Options FollowSymLinks
-                     AllowOverride all
-                     Order deny,allow
-                     Allow from all
-             </Directory>
-
-Substituish it with ::
-
-
-
-             <Directory />
-                     Options Indexes FollowSymLinks Includes ExecCGI
-                     AllowOverride all
-                     Order deny,allow
-                     Allow from all
-             </Directory>
-
 
 .. _image-creation:
 

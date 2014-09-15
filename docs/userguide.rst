@@ -31,6 +31,8 @@ ConPaaS currently contains nine services:
 
 -  **MySQL database** service;
 
+-  **Galer Cluster** offering a multimaster load-balanced database service;
+
 -  **Scalarix service** offering a scalable in-memory key-value store;
 
 -  **MapReduce service** providing the well-known high-performance
@@ -650,14 +652,15 @@ future growth. It is based on MySQL and as this allow direct client connection
 and offers the same native look and feel.
  
 Summarizing, its advanced features are:
-Synchronous replication
-Active-active multi-master topology
-Read and write to any cluster node
-Automatic membership control, failed nodes drop from the cluster
-Automatic node joining
-True parallel replication, on row level
-Both read and write scalability
-Direct client connections, native MySQL look & feel
+
+-  Synchronous replication
+-  Active-active multi-master topology
+-  Read and write to any cluster node
+-  Automatic membership control, failed nodes drop from the cluster
+-  Automatic node joining
+-  True parallel replication, on row level
+-  Both read and write scalability
+-  Direct client connections, native MySQL look & feel
 
 The  Ordinary Nodes and Load Balancer Nodes
 -------------------------------------------
