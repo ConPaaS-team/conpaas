@@ -8,7 +8,7 @@ fi
 
 # Installing required Debian packages
 apt-get update
-apt-get -y --force-yes install build-essential python-setuptools python-dev libapache2-mod-wsgi libcurl4-openssl-dev ntpdate lynx moreutils
+apt-get -y --force-yes install build-essential python-setuptools python-dev apache2 libapache2-mod-wsgi libcurl4-openssl-dev ntpdate lynx moreutils
 
 # Reinstalling setuptools (fixes a bug on some upgrade installations)
 apt-get -y --force-yes --reinstall install python-setuptools
@@ -23,6 +23,7 @@ python setup.py install
 cpsconf.py
 
 # Configuring Apache
+a2enmod wsgi
 a2enmod ssl
 a2ensite conpaas-director
 
