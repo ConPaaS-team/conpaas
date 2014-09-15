@@ -100,7 +100,7 @@ conpaas.ui = (function (this_module) {
             username: username, password: password
         }, 'post', function (response) {
             if (response.authenticated == 1) {
-                alert('Passed login, show index');
+                // alert('Passed login, show index');
                 window.location = 'index.php';
                 return;
             }
@@ -153,7 +153,7 @@ conpaas.ui = (function (this_module) {
                 //$("#selected").val("uuid");
                         console.log('onContrail: response');
                         if (response.authenticated == 1) {
-                            alert('Passed uuid login, show index');
+                            // alert('Passed uuid login, show index');
                             window.location = 'index.php';
                             return;
                         }
@@ -183,14 +183,14 @@ conpaas.ui = (function (this_module) {
                 $("#4get").val("4get");
                 $("#4set").val("uuid");
                 //$("#selected").val("uuid");
-                alert('form = ' + $("#form").val() + '\nselected = ' + $("#selected").val() );
+                // alert('form = ' + $("#form").val() + '\nselected = ' + $("#selected").val() );
                 $("#form").submit();  // now go to the multi-login URL
             }
         );
     },
     //======
     onOpenID: function (event) {
-                            alert('Passed openid login, show index');
+                            // alert('Passed openid login, show index');
     },
     onRegister: function (event) {
         var page = event.data;
@@ -228,7 +228,7 @@ conpaas.ui = (function (this_module) {
                 }
                 return;
             }
-            alert('Passed registration, show index');
+            // alert('Passed registration, show index');
             window.location = 'index.php';
         }, function (error) {
             page.displayError(error.name, error.details);
@@ -252,7 +252,7 @@ $(document).ready(function () {
         button = '#error';
         if ($('#selected').val() == "uuid") { button = '#but_contrail' }
         if ($('#selected').val() == "openid") { button = '#but_openid' }
-        alert('4get:select ' + $('#selected').val() + '\nbutton = "' + button + '"');
+        // alert('4get:select ' + $('#selected').val() + '\nbutton = "' + button + '"');
 
         $(button).click();
         //$('#but_contrail').click();
