@@ -188,6 +188,10 @@ class XtreemFSAgent(BaseAgent):
                 AgentException.E_ARGS_MISSING, 'uuid')
         ret['uuid'] = kwargs.pop('uuid')
         ret['mkfs'] = kwargs['mkfs']
+        if 'device_name' not in kwargs:
+            raise AgentException(
+                AgentException.E_ARGS_MISSING, 'device_name')
+        ret['device_name'] = kwargs.pop('device_name')
         return ret    
 
     @expose('POST')
@@ -237,12 +241,12 @@ class XtreemFSAgent(BaseAgent):
     @expose('POST')
     def set_certificates(self, kwargs):
         self.logger.debug('set_snapshot called')
-    	# write certificates and truststore to the xtreemfs config directory
-    	path = "/etc/xos/xtreemfs/truststore/certs"
-    	if not exists(path):
-  			makedirs(path)
-    	open(path + "/dir.p12", 'wb').write(base64.b64decode(kwargs['dir']))
-    	open(path + "/mrc.p12", 'wb').write(base64.b64decode(kwargs['mrc']))
-    	open(path + "/osd.p12", 'wb').write(base64.b64decode(kwargs['osd']))
-    	open(path + "/trusted.jks", 'wb').write(base64.b64decode(kwargs['truststore']))
-    	return HttpJsonResponse()
+        # write certificates and truststore to the xtreemfs config directory
+        path = "/etc/xos/xtreemfs/truststore/certs"
+        if not exists(path):
+            makedirs(path)
+        open(path + "/dir.p12", 'wb').write(base64.b64decode(kwargs['dir']))
+        open(path + "/mrc.p12", 'wb').write(base64.b64decode(kwargs['mrc']))
+        open(path + "/osd.p12", 'wb').write(base64.b64decode(kwargs['osd']))
+        open(path + "/trusted.jks", 'wb').write(base64.b64decode(kwargs['truststore']))
+        return HttpJsonResponse()
