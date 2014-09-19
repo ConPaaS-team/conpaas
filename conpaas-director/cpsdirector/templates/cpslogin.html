@@ -1,0 +1,22 @@
+{% extends "cpslayout.html" %}
+{% block title %}Sign in{% endblock %}
+{% block body %}
+  <h2>Sign in</h2>
+  <form action="" method=post>
+    {% if error %}<p class=error><strong>Error:</strong> {{ error }}</p>{% endif %}
+    {% for k in items|sort: %}
+	<button id="button-{{ k }}" value="{{ k }}" name="source" type="submit">
+	  <table>
+	    <tr>
+	      <td width="30" valign="center" align="left">
+		<img height="16" src="{{ url_for('static', filename = 'images/' + items[k].img, _external=False ) }}" />
+	      </td>
+	      <td width="240" align="left">
+		Log in using the {{ items[k].name }} IdP
+	      </td>
+	    </tr>
+	  </table>
+	</button>
+	<br>
+    {% endfor %}
+{% endblock %}
