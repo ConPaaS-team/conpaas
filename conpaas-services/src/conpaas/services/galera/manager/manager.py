@@ -29,7 +29,7 @@ class GaleraManager(BaseManager):
     # MySQL Galera node types
     REGULAR_NODE = 'node'  # regular node running a mysqld daemon
     GLB_NODE = 'glb_node'  # load balancer running a glbd daemon
-
+    volumes_dict={}
     def __init__(self, conf, **kwargs):
         BaseManager.__init__(self, conf)
 
@@ -84,7 +84,13 @@ class GaleraManager(BaseManager):
                                                           agent.check_agent_process,
                                                           self.config.AGENT_PORT,
                                                           start_cloud)
-            self._start_mysqld(node_instances)
+            # We need to create a new volume.
+            #volume_name = "galera-%s" % node_instances[0].ip
+	    #node_id=node_instances[0].id.replace("iaas", "")
+	    #self.logger.debug("Node_id=%s" % node_id)
+            #volume = self.create_volume(1024, volume_name,node_id, cloud=start_cloud)
+	    #self.attach_volume(volume.id, node_id, "vda" )
+	    self._start_mysqld(node_instances)
             self.config.addMySQLServiceNodes(node_instances)
         except Exception, ex:
             # rollback
@@ -97,6 +103,21 @@ class GaleraManager(BaseManager):
     def _start_mysqld(self, nodes):
         existing_nodes = self.config.get_nodes_addr()
         for serviceNode in nodes:
+	    try: 
+		# We try to create a new volume.
+            	volume_name = "galera-%s" % serviceNode.ip
+            	node_id=serviceNode.id.replace("iaas", "")
+	        self.logger.debug("tryng to create a volume for the node_id=%s" % node_id)
+        	volume = self.create_volume(1024, volume_name,node_id)
+            except AgentException, ex:
+                self.logger.exception('Failed creating volume   %s: %s' % (volume_name, ex))
+                raise
+            try:
+		self.attach_volume(volume.id, node_id, "vda" )
+		self.volumes_dict[serviceNode.ip]=volume.id
+            except AgentException, ex:
+                self.logger.exception('Failed to attaching disk to Galera node %s: %s' % (str(serviceNode), ex))
+                raise
             try:
                 agent.start_mysqld(serviceNode.ip, self.config.AGENT_PORT, existing_nodes)
             except AgentException, ex:
@@ -424,6 +445,10 @@ class GaleraManager(BaseManager):
 	nodes = rm_reg_nodes + rm_glb_nodes
 	for node in nodes:
             agent.stop(node.ip, self.config.AGENT_PORT)
+        for node in rm_reg_nodes:
+	    volume_id=self.volumes_dict[node.ip]
+	    self.detach_volume(volume_id)
+	    self.destroy_volume(volume_id)
         self.controller.delete_nodes(nodes)
         self.config.remove_nodes(nodes)
 	if (len(self.config.get_nodes()) +len(self.config.get_glb_nodes())==0 ):
