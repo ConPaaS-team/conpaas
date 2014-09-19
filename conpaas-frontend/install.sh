@@ -11,7 +11,7 @@ apt-get update
 apt-get -y --force-yes install libapache2-mod-php5 php5-curl
 
 # Copying the www directory underneath the web server document root
-cp -a www/ /var/
+cp -a www/*** /var/www/html/
 
 # Copy conf/main.ini and conf/welcome.txt in the ConPaaS Director configuration folder
 # (if these are not already there)
