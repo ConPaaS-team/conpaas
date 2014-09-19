@@ -4,7 +4,8 @@
 require_once('__init__.php');
 require_module('ui/page/login');
 require_module('recaptcha');
-require_module('director');
+//require_module('director');
+require_module('debug'); // also includes director
 
 if (isset($_SESSION['uid'])) {
     header('Location: index.php');
@@ -208,6 +209,11 @@ $support_openid = Director::getSupportOpenID();
     <?php echo $page->renderJSLoad(); ?>
 
     <form style="display: hidden" action="/contrail/contrail-idp.php" method="POST" id="form">
+      <input type="hidden" id="ReturnTo" name="ReturnTo" value=""/>
+      <input type="hidden" id="4get" name="4get" value=""/>
+      <input type="hidden" id="4set" name="4set" value=""/>
+    </form>
+    <form style="display: hidden" action="idp.php" method="POST" id="form2">
       <input type="hidden" id="ReturnTo" name="ReturnTo" value=""/>
       <input type="hidden" id="4get" name="4get" value=""/>
       <input type="hidden" id="4set" name="4set" value=""/>
