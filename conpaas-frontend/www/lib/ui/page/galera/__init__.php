@@ -127,7 +127,8 @@ class GaleraPage extends ServicePage {
 
 	private function renderCommand() {
 		$users = $this->service->getUsers();
-		$cmd = 'mysql --host='.$this->service->getMasterAddr()['ip'].' --port='.$this->service->getMasterAddr()['port'].' -u '.$users[0].' -p';
+		$master_addr = $this->service->getMasterAddr();
+		$cmd = 'mysql --host='.$master_addr['ip'].' --port='.$master_addr['port'].' -u '.$users[0].' -p';
 		return '<input class="command" type="text" readonly="readonly" '
 			.' value="'.$cmd.'" title="shell command"/>'
 			.'<b class="hint"> Click on command to Copy it</b>';

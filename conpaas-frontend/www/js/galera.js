@@ -231,7 +231,8 @@ google.setOnLoadCallback(drawChart);
       }
 if ($("#stats_div")){
 window.setInterval(drawStats, 1000);
-google.setOnLoadCallback(drawStats);}
+google.setOnLoadCallback(drawStats);
+}
 
 if ($("#stats_div")){
 window.setInterval(gangliaMonitor, 5000);
