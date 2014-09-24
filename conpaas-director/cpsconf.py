@@ -127,7 +127,7 @@ conf += """
 """
 
 try:
-    open('/etc/apache2/sites-available/conpaas-director.conf', 'w').write(conf)
+    open('/etc/apache2/sites-available/conpaas-director', 'w').write(conf)
 except IOError:
     print "W: Cannot write Apache config file. Are you root?"
     sys.exit(0)

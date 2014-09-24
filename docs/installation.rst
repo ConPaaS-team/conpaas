@@ -106,7 +106,7 @@ order to setup your ConPaaS Director installation.
    image suitable for ConPaaS is available in :ref:`conpaas-on-opennebula`.
 
 The installation process will create an `Apache VirtualHost` for the ConPaaS
-director in :file:`/etc/apache2/sites-available/conpaas-director.conf`. There should
+director in :file:`/etc/apache2/sites-available/conpaas-director`. There should
 be no need for you to modify such a file, unless its defaults conflict with
 your Apache configuration.
 
