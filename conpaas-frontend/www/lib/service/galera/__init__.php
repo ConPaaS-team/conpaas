@@ -72,7 +72,7 @@ class GaleraService extends Service {
 	}
 */
 	public function getAccessLocation() {
-		 $master_addr=$this->getMasterAddr()['ip'].':'.$this->getMasterAddr()['port'];
+		 $master_addr=$this->getMasterAddr();
 		 return $master_addr['ip'].':'.$master_addr['port'];
 	}
 
