@@ -31,7 +31,7 @@ cpsconf.py
 # Configuring Apache
 a2enmod wsgi
 a2enmod ssl
-a2ensite conpaas-director
+a2ensite conpaas-director.conf
 
 # Restarting apache
 service apache2 restart
