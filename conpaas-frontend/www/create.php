@@ -1,8 +1,6 @@
 <?php
 /* Copyright (C) 2010-2013 by Contrail Consortium. */
 
-
-
 require_once('__init__.php');
 require_module('ui/page');
 
@@ -52,8 +50,8 @@ $page = new Page();
               </div>
               <tr class="service">
                   <td class="description"> <img src="images/galera.png" height="32" /></td>
-                  <td class="radio"><input type="radio" name="type" value="galera" /> Galera</td>
-                  <td class="info"> Galera </td>
+                  <td class="radio"><input type="radio" name="type" value="galera" /> MySQL Galera</td>
+                  <td class="info"> Replicated MySQL database </td>
               </tr>
               <tr class="service">
                   <td class="description"> <img src="images/scalaris.png" height="32" /></td>
