@@ -208,7 +208,7 @@ class XtreemFSManager(BaseManager):
                 # We need to create a new volume.
                 volume_name = "osd-%s" % osd_uuid
                 volume = self.create_volume(self.osd_volume_size, volume_name,
-                        node.id, cloud)
+                        node.vmid, cloud)
                 self.osd_uuid_volume_map[osd_uuid] = volume.id
 
             try:
