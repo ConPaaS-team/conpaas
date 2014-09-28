@@ -32,7 +32,7 @@ class MySQLServer(object):
 
     class_file = 'mysqld.pickle'
 
-    def __init__(self, config, nodes):
+    def __init__(self, config, nodes, device_name):
         """
         Creates a configuration from `config`.
 
@@ -44,8 +44,8 @@ class MySQLServer(object):
 	sql_logger.debug("Trying to Mount the device.")
         try:
             # Mount device
-            self.dev_name="/dev/vda"
-            self.mount_point="/media/GaleraDisk"
+            self.dev_name = "/dev/%s" % device_name
+            self.mount_point = "/media/GaleraDisk"
             self.mkdir_cmd = "mkdir -p %s" % self.mount_point
             self.mount(True)
         except ConfigParser.Error:

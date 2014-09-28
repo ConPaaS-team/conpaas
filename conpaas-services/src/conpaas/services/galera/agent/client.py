@@ -30,10 +30,11 @@ def _check(response):
         return True
 
 
-def start_mysqld(host, port, nodes=None):
+def start_mysqld(host, port, nodes=None, device_name=None):
     method = 'start_mysqld'
     nodes = nodes or []
-    params = {'nodes': nodes}
+    params = {'nodes': nodes,
+              'device_name': device_name}
     return _check(https.client.jsonrpc_post(host, port, '/', method, params))
 
 

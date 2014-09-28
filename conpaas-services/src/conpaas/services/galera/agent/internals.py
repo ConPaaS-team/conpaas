@@ -58,24 +58,27 @@ class GaleraAgent(BaseAgent):
             list of IP addresses and port of other nodes of this
             synchronization group. If empty or absent, then a new
             synchronization group will be created by Galera.
+        device_name : string
+            the block device where the disks are attached to
         """        
         try:
-            exp_params = [('nodes', is_list, [])]
-            nodes = check_arguments(exp_params, kwargs)
+            exp_params = [('nodes', is_list, []),
+                          ('device_name', is_string)]
+            nodes, device_name = check_arguments(exp_params, kwargs)
             with self.lock:
                 mysql_role = role.MySQLServer
-                self._start(mysql_role, nodes)
+                self._start(mysql_role, nodes, device_name)
                 self.running_roles.append(mysql_role)
         except Exception as ex:
             return HttpErrorResponse("%s" % ex)
         else:
             return HttpJsonResponse()
 
-    def _start(self, roleClass, nodes):
+    def _start(self, roleClass, nodes, device_name):
         if exists(roleClass.class_file):
             raise AgentException('Cannot start %s: file %s already exists.'
                                  % (roleClass, roleClass.class_file))
-        p = roleClass(self.config_parser, nodes)
+        p = roleClass(self.config_parser, nodes, device_name)
         try:
             fd = open(roleClass.class_file, 'w')
             pickle.dump(p, fd)
