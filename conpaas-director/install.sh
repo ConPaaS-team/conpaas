@@ -16,12 +16,6 @@ apt-get -y --force-yes --reinstall install python-setuptools
 # Set correct date and time
 ntpdate 0.us.pool.ntp.org
 
-# Create the director log file (temporary fix)
-# TODO: retrieve this file name from director.cfg
-mkdir -p /var/log/cpsdirector/
-touch /var/log/cpsdirector/debugging.log
-chmod 777 /var/log/cpsdirector/debugging.log
-
 # Installing cpsdirector
 python setup.py install
 

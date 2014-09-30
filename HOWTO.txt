@@ -296,6 +296,7 @@ Log file locations
 
 On the director:
   /var/log/apache2/director-error.log
+  /var/log/cpsdirector/debugging.log
 On a manager:
   /root/manager.err
   /root/manager.out

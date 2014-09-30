@@ -12,6 +12,7 @@ from pkg_resources import Requirement, resource_filename
 CPSVERSION = '1.3.1'
 
 CONFDIR = '/etc/cpsdirector'
+LOGDIR = '/var/log/cpsdirector'
 
 if not os.geteuid() == 0:
     CONFDIR = 'cpsdirectorconf'
@@ -59,6 +60,12 @@ if __name__ == "__main__" and sys.argv[1] == "install":
     # create user data dir
     if not os.path.exists(os.path.join(CONFDIR, "data")):
         os.mkdir(os.path.join(CONFDIR, "data"))
+
+    # create log dir and debugging log file
+    if not os.path.exists(LOGDIR):
+        os.mkdir(LOGDIR)
+    open(os.path.join(LOGDIR, "debugging.log"), 'a').close()
+    os.chmod(os.path.join(LOGDIR, "debugging.log"), 0777)
 
     # set www-data as the owner of CONFDIR
     try:
