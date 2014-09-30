@@ -29,7 +29,8 @@ def createMRC(host, port, dir_serviceHost, uuid):
   method = 'createMRC'
   params = {
     'dir_serviceHost' : dir_serviceHost,
-    'uuid' : uuid
+    'uuid' : uuid,
+    'hostname' : host
   }
   return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
 
@@ -45,6 +46,7 @@ def createOSD(host, port, dir_serviceHost, uuid, mkfs=True, device_name=None):
   params = {
       'dir_serviceHost' : dir_serviceHost,
       'uuid' : uuid,
+      'hostname' : host,
       'mkfs': mkfs,
       'device_name': device_name
   }

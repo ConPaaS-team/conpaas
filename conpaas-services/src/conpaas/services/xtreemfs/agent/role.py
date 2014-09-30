@@ -82,7 +82,7 @@ class DIR():
         conf_fd.close()
 
 class MRC:
-    def __init__(self, dir_serviceHost, uuid):
+    def __init__(self, dir_serviceHost, uuid, hostname):
         self.state = S_INIT         
         self.start_args = [MRC_STARTUP,'start']        
         self.stop_args = [MRC_STARTUP, 'stop']
@@ -90,7 +90,7 @@ class MRC:
         logger = create_logger(__name__)
         logger.info('MRC server initialized.')
         self.uuid = uuid
-        self.configure(dir_serviceHost)
+        self.configure(dir_serviceHost, hostname)
         self.start()
 
     def start(self):
@@ -115,24 +115,27 @@ class MRC:
         else:
             logger.warning('Request to stop MRC service while it is not running')      
         
-    def configure(self, dir_serviceHost):
-        self.dir_serviceHost = dir_serviceHost    
+    def configure(self, dir_serviceHost, hostname):
+        self.dir_serviceHost = dir_serviceHost
+        self.hostname = hostname
         self._write_config()
         
     def _write_config(self):
         tmpl = open(self.config_template).read()
         template = Template(tmpl,{
                             'dir_serviceHost' : self.dir_serviceHost,
-                            'uuid' : self.uuid
+                            'uuid' : self.uuid,
+                            'hostname' : self.hostname
                         })
         conf_fd = open('/etc/xos/xtreemfs/mrcconfig.properties','w')
         conf_fd.write(str(template))
         conf_fd.close()
 
 class OSD:
-    def __init__(self, dir_serviceHost, uuid, mkfs, device_name):
+    def __init__(self, dir_serviceHost, uuid, hostname, mkfs, device_name):
         self.state = S_INIT         
         self.uuid = uuid
+        self.hostname = hostname
         self.dir_serviceHost = dir_serviceHost
         self.config_template = join(ETC, 'osdconfig.properties')
         self.dir_servicePort = 32638
@@ -231,6 +234,7 @@ class OSD:
         template = Template(tmpl,{
                             'dir_serviceHost' : self.dir_serviceHost,
                             'uuid' : self.uuid,
+                            'hostname' : self.hostname,
                             'object_dir' : self.mount_point
                         })
         conf_fd = open('/etc/xos/xtreemfs/osdconfig.properties','w')

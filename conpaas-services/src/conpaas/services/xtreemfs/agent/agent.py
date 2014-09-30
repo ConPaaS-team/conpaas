@@ -175,6 +175,10 @@ class XtreemFSAgent(BaseAgent):
             raise AgentException(
                 AgentException.E_ARGS_MISSING, 'uuid')
         ret['uuid'] = kwargs.pop('uuid')
+        if 'hostname' not in kwargs:
+            raise AgentException(
+                AgentException.E_ARGS_MISSING, 'hostname')
+        ret['hostname'] = kwargs.pop('hostname')
         return ret
  
     def _OSD_get_params(self, kwargs):
@@ -187,6 +191,10 @@ class XtreemFSAgent(BaseAgent):
             raise AgentException(
                 AgentException.E_ARGS_MISSING, 'uuid')
         ret['uuid'] = kwargs.pop('uuid')
+        if 'hostname' not in kwargs:
+            raise AgentException(
+                AgentException.E_ARGS_MISSING, 'hostname')
+        ret['hostname'] = kwargs.pop('hostname')
         ret['mkfs'] = kwargs['mkfs']
         if 'device_name' not in kwargs:
             raise AgentException(
