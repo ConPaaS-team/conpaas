@@ -658,7 +658,7 @@ everything the script has done, follow these instructions:
            sudo umount /tmp/tmp.X/dev /tmp/tmp.X/proc /tmp/tmp.X
          
 
-#. Find which loop device your using::
+#. Find which loop device you are using::
 
            sudo losetup -a
          
@@ -801,18 +801,18 @@ Make sure OpenNebula is properly configured
 OpenNebula’s OCCI daemon is used by ConPaaS to communicate with your
 OpenNebula cluster. The OCCI daemon is included in OpenNebula only up to
 version 4.6 (inclusive), so later versions of OpenNebula are not officially
-supported.
+supported at the moment.
+
+#. The OCCI server should be configured to listen on the correct interface so that
+   it can receive connections from the managers located on the VMs. This can be 
+   achieved by modifying the "host" IP (or FQDN - fully qualified domain name) 
+   parameter from ``/etc/one/occi-server.conf`` and restarting the OCCI server.
 
 #. Ensure the OCCI server configuration file ``/etc/one/occi-server.conf``
    contains the following lines in section instance\_types::
 
        :custom:
          :template: custom.erb
-
-The OCCI server should be configured to listen on the correct interface so that
-it can receive connections from the managers located on the VMs. This can be 
-achieved by modifying the "host" IP (or FQDN - fully qualified domain name) 
-parameter from /etc/one/occi-server.conf and restarting the OCCI server.
 
 #. At the end of the OCCI profile file ``/etc/one/occi_templates/common.erb``
    from your OpenNebula installation, append the following lines::
