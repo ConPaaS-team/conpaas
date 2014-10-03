@@ -799,7 +799,9 @@ image ID.
 Make sure OpenNebula is properly configured
 -------------------------------------------
 OpenNebula’s OCCI daemon is used by ConPaaS to communicate with your
-OpenNebula cluster.
+OpenNebula cluster. The OCCI daemon is included in OpenNebula only up to
+version 4.6 (inclusive), so later versions of OpenNebula are not officially
+supported.
 
 #. Ensure the OCCI server configuration file ``/etc/one/occi-server.conf``
    contains the following lines in section instance\_types::
