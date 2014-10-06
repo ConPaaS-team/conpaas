@@ -67,11 +67,11 @@ class ScalarisManager(BaseManager):
     def add_nodes(self, kwargs):
         if self.state != self.S_RUNNING:
             return HttpErrorResponse('ERROR: Wrong state to add_nodes')
-        if not 'count' in kwargs:
-            return HttpErrorResponse('ERROR: Required argument "count" doesn\'t exist')
-        if not isinstance(kwargs['count'], int):
-            return HttpErrorResponse('ERROR: Expected an integer value for "count"')
-        count = int(kwargs.pop('count'))
+        if not 'scalaris' in kwargs:
+            return HttpErrorResponse('ERROR: Required argument "scalaris" doesn\'t exist')
+        if not isinstance(kwargs['scalaris'], int):
+            return HttpErrorResponse('ERROR: Expected an integer value for "scalaris"')
+        count = int(kwargs.pop('scalaris'))
         # create at least one node
         if count < 1:
             return HttpErrorResponse('ERROR: Expected a positive integer value for "count"')
@@ -120,7 +120,7 @@ class ScalarisManager(BaseManager):
         if self.state != self.S_RUNNING:
             return HttpErrorResponse('ERROR: Wrong state to list_nodes')
         return HttpJsonResponse({
-              'nodes': [ node.id for node in self.nodes ],
+              'scalaris': [ node.id for node in self.nodes ],
               })
 
     @expose('GET')
@@ -168,11 +168,11 @@ class ScalarisManager(BaseManager):
         self.logger.info('called remove_nodes')
         if self.state != self.S_RUNNING:
             return HttpErrorResponse('ERROR: Wrong state to remove_nodes')
-        if not 'count' in kwargs:
-            return HttpErrorResponse('ERROR: Required argument doesn\'t exist')
-        if not isinstance(kwargs['count'], int):
-            return HttpErrorResponse('ERROR: Expected an integer value for "count"')
-        count = int(kwargs.pop('count'))
+        if not 'scalaris' in kwargs:
+            return HttpErrorResponse('ERROR: Required argument "scalaris" doesn\'t exist')
+        if not isinstance(kwargs['scalaris'], int):
+            return HttpErrorResponse('ERROR: Expected an integer value for "scalaris"')
+        count = int(kwargs.pop('scalaris'))
         self.state = self.S_ADAPTING
         Thread(target=self._do_remove_nodes, args=[count]).start()
         return HttpJsonResponse()
