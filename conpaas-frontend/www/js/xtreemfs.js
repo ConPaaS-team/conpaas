@@ -55,7 +55,7 @@ conpaas.ui = (function (this_module) {
             owner: owner
         }, 'post', function (response) {
             // successful
-            page.showCreateVolStatus('positive', 'The Volume was created successfuly');
+            page.showCreateVolStatus('positive', 'The Volume was created successfully');
             $('#createVolume').removeAttr('disabled');
             $('#volume').val('');
             $('#owner').val('');
@@ -82,7 +82,7 @@ conpaas.ui = (function (this_module) {
             volumeName: volumeName
         }, 'post', function (response) {
             // successful
-            page.showCreateVolStatus('positive', 'The Volume was deleted successfuly');
+            page.showCreateVolStatus('positive', 'The Volume was deleted successfully');
             $('#deleteVolume').removeAttr('disabled');
             $('#volume').val('');
             $('.selectHint, .msgbox').hide();
