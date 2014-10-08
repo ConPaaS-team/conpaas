@@ -85,10 +85,11 @@ conpaas.ui = (function (this_module) {
             page.showCreateVolStatus('positive', 'The Volume was deleted successfully');
             $('#deleteVolume').removeAttr('disabled');
             $('#volume').val('');
+            $('#owner').val('');
             $('.selectHint, .msgbox').hide();
         }, function (response) {
             // error
-            page.showCreateVolStatus('error', 'Volume was deleted');
+            page.showCreateVolStatus('error', 'Volume was not deleted');
             $('#deleteVolume').removeAttr('disabled');
         });
     }
