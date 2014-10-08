@@ -32,11 +32,11 @@ try {
         $passphrase = '';
     }
 
-    if (is_null($adminflag)) {
+    if (empty($adminflag)) {
         $adminflag = 'no';
     }
 
-    if (is_null($filename)) {
+    if (empty($filename)) {
         $filename = $cert_type . '_cert.p12';
     }
 
