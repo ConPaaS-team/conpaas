@@ -867,7 +867,7 @@ SSL Certificates
 ----------------
 
 The XtreemFS service uses SSL certificates for authorisation and authentication.
-There are two types of certificates, user-certifiaces and client-certificates.
+There are two types of certificates, user-certificates and client-certificates.
 Both certificates can additionally be flagged as administrator certificates which
 allows performing administrative file-systems tasks when using them to access
 XtreemFS. Certificates are only valid for the service that was used to create them.
