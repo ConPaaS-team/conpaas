@@ -22,7 +22,7 @@ import simplejson
 from cpsdirector.common import log
 from cpsdirector.common import build_response
 from conpaas.core.misc import hex_to_string
-
+from threading import Thread
 
 manifest_page = Blueprint('manifest_page', __name__)
 
@@ -49,17 +49,22 @@ def upload_manifest():
     #log('User %s has uploaded the following manifest %s and the following slo %s and this app_tar :%s' % (g.user.username, manifest, slo, app_tar))
 
     #TODO:(genc): maybe the director can do some simple checks
-    #if not check_manifest(manifest):
+    # if not check_manifest(manifest):
     #    return simplejson.dumps(False)
-
+    msg, appid = get_app_id(manifest)
+    if msg != 'ok':
+        return build_response(jsonify({'error' : True,'msg' : msg }))
+  
+    #uncomment this when done (genc)
     if request.values.get('thread'):
         log('Starting a new process for the manifest')
-        p = Process(target=new_manifest, args=(manifest,slo,app_tar))
+        p = Process(target=new_manifest, args=(manifest,slo,app_tar,appid))
         p.start()
         log('Process started, now return')
-        return simplejson.dumps(True)
+        return simplejson.dumps({'appid':appid})
 
-    msg = new_manifest(manifest, slo, app_tar)
+
+    msg = new_manifest(manifest, slo, app_tar, appid)
     
 
     if msg != 'ok':
@@ -67,7 +72,23 @@ def upload_manifest():
 
     log('Manifest created')
     #return simplejson.dumps(True)
-    return simplejson.dumps({'hello':'world'})
+    return simplejson.dumps({'appid':appid})
+
+
+from cpsdirector.user import cert_required
+from multiprocessing import Process
+@manifest_page.route("/test_upload_manifest", methods=['POST'])
+@cert_required(role='user')
+def test_upload_manifest():
+    app_tar = request.values.get('app_tar')
+
+    f = open('/tmp/myfile','a')
+    f.write('lesh :%s\n' % (app_tar))
+    f.close()
+
+    return simplejson.dumps({'res':len(app_tar)})
+
+
 
 # def check_manifest(json):
 #     try:
@@ -956,24 +977,25 @@ def upload_manifest():
 #     return 'ok'
 
 
+
 from cpsdirector.application import check_app_exists
 from cpsdirector.application import _createapp as createapp
 from cpsdirector.application import _startapp as startapp
 from cpsdirector.application import get_app_by_id
 from cpsdirector.service import callmanager
 
-def new_manifest(manifest, slo, app_tar, cloud='default'):
+
+def get_app_id(manifest, cloud='default'):
     try:
         parse = simplejson.loads(manifest)
-        simplejson.loads(slo)
     except:
-        return 'Error parsing manifest or slo'
+        return 'Error parsing manifest',-1
 
     # 'Application' has to be defined
     app_name = parse.get('ApplicationName')
 
     if not app_name:
-        return 'Application is not defined'
+        return 'Application is not defined',-1
 
     if not check_app_exists(app_name):
         # Create application if it does not exist yet
@@ -990,23 +1012,26 @@ def new_manifest(manifest, slo, app_tar, cloud='default'):
 
         # If all the applications exists, then exit
         if i is 99:
-            return 'Application can not be created'
+            return 'Application can not be created',-1
+
+    return 'ok', appid
+
+
+def new_manifest(manifest, slo, app_tar, appid, cloud='default'):
+    try:
+        simplejson.loads(slo)
+    except:
+        return 'Error parsing manifest or slo'
 
     #res = startapp(g.user.uid, appid, "default", manifest, slo) 
     res = startapp(g.user.uid, appid, cloud) 
-    #log('Res %s' % res)    
-    #now pass the manifest somehow!
-
-    #TODO:(genc): wait until the manager is created, delete the ugly sleep
-    import time
-    time.sleep(20)
+    # log('Res %s' % res)    
     
-
     files = [ ( 'slo', 'slo', slo ), ( 'manifest', 'manifest', manifest ), ( 'app_tar', 'app_tar', app_tar ) ]
     app = get_app_by_id(g.user.uid, appid)
     # TODO:(genc): make post files to read the method and manager id from the actual paramaters and not params
     log('####Application: %s' % app.to_dict())    
-    res = callmanager(app.to_dict(), 0, 'upload_manifest_slo', True, { 'method': 'upload_manifest_slo', 'manager_id':'0', 'cloud':cloud }, files)
+    res = callmanager(app.to_dict(), 0, 'upload_manifest_slo', True, { 'method': 'upload_manifest_slo', 'manager_id':'0', 'appid':appid, 'cloud':cloud }, files)
     
     return 'ok'
  

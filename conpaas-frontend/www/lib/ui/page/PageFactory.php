@@ -36,6 +36,9 @@ class PageFactory {
 			case 'cds':
 				require_module('ui/page/cds');
 				return new CDSPage($service);
+			case 'generic':
+				require_module('ui/page/generic');
+				return new GenericPage($service);
 /*
 			case 'htcondor':
 				require_module('ui/page/htcondor');

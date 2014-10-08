@@ -81,13 +81,14 @@ class HTTPS {
 		return HTTPS::req($url, 'post', $data, $ping, false, $uid);
 	}
 
-	public static function jsonrpc($url, $http_method, $rpc_method, $params,
+	public static function jsonrpc($url, $http_method, $rpc_method, $manager_id, $params,
 			$ping=false) {
 		$data = array();
 		if ($http_method == 'get') {
 			// TODO(claudiugh): not sure if this is still part of the protocol
 			$url .= '?'.http_build_query(array(
 						'method' => $rpc_method,
+						'manager_id'=>$manager_id,
 						'params' => json_encode($params),
 						'id' => 1),
 					null, '&');

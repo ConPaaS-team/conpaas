@@ -36,6 +36,7 @@ service_page = Blueprint('service_page', __name__)
 
 valid_services = manager_services.keys()
 
+
 class Service(db.Model):
     #sid = db.Column(db.Integer, primary_key=True, autoincrement=True)
     sid = db.Column(db.Integer, primary_key=True)
@@ -74,11 +75,12 @@ class Service(db.Model):
         return ret
 
     def stop(self):
-        controller = manager_controller.ManagerController(self.type,
-                self.sid, self.user_id, self.cloud, self.application_id,
-                self.subnet)
+        # TODO: (genc) find a proper way to stop servies 
+        # controller = manager_controller.ManagerController(self.type,
+        #         self.sid, self.user_id, self.cloud, self.application_id,
+        #         self.subnet)
 
-        controller.stop(self.vmid)
+        # controller.stop(self.vmid)
         db.session.delete(self)
         db.session.commit()
         log('Service %s stopped properly' % self.sid)
@@ -267,7 +269,7 @@ def _create(servicetype, cloudname, appid):
         return build_response(jsonify({ 'error': True,
                                 'msg': "Application not found" }))
 
-    log('app controller is %s' % (manager_controller.controller_dict))        
+    #log('app controller is %s' % (manager_controller.controller_dict))        
 
     # Do we have to assign a VPN subnet to this service?
      
@@ -374,6 +376,34 @@ def create(servicetype, cloudname="default"):
 
     return _create(servicetype, cloudname, appid)
 
+@service_page.route("/callback/startService.php", methods=['POST'])
+@cert_required(role='manager')
+def create_callback(cloudname="default"):
+    servicetype = request.values.get('service_type')
+    sid = request.values.get('sid')
+    appid = request.values.get('appid')
+    
+    app = get_app_by_id(g.user.uid, appid)
+    if not app:
+        return build_response(jsonify({ 'error': True,
+                                'msg': "Application not found" }))
+
+    
+    # New service with default name, proper servicetype and user relationship
+    s = Service(sid=sid, name="New %s service" % servicetype, type=servicetype,
+        user=g.user, application=app, manager=app.to_dict()['manager'])
+
+    db.session.add(s)
+    db.session.commit()
+
+    log('%s (id=%s) created properly' % (s.name, s.sid))
+    return build_response(jsonify(s.to_dict()))
+
+# @service_page.route("/callback/startService.php", methods=['POST'])
+# @cert_required(role='manager')
+# def create_callback():
+#     log('Application manager trying to create a service of type')
+#     return simplejson.dumps(True) 
 
 def _rename(serviceid, newname):
     log('User %s attempting to rename service %s' % (g.user.uid, serviceid))

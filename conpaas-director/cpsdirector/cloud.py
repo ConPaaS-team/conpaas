@@ -15,8 +15,7 @@ from cpsdirector import db
 from flask import Blueprint
 cloud_page = Blueprint('cloud_page', __name__)
 
-#TODO: (genc) maybe having this global is not a good idea
-controller_dict = {}
+
 class ManagerController(Controller):
     # def __init__(self, service_name, service_id, user_id, cloud_name, app_id, vpn):
     #     self.config_parser = self.__get_config(str(service_id), str(user_id),
@@ -31,8 +30,12 @@ class ManagerController(Controller):
     
     #def __init__(self, user_id, cloud_name, app_id, vpn, manifest, slo):
     def __init__(self, user_id, cloud_name, app_id, vpn):
-        #self.config_parser = self.__get_config(str(user_id), str(app_id), service_name, vpn)
-        self.config_parser = self.__get_config(str(user_id), str(app_id), vpn)
+        
+        if user_id is None and app_id is None:
+            self.config_parser = None
+        else:
+            self.config_parser = self.__get_config(str(user_id), str(app_id), vpn)
+        
         Controller.__init__(self, self.config_parser)
         
         #self.service_name = service_name
@@ -43,7 +46,9 @@ class ManagerController(Controller):
         self.role = "manager"
         #self.manifest = manifest
         #self.slo = slo
+
     
+
     def _get_certificate(self, email, cn, org):
         user_id = self.config_parser.get("manager", "USER_ID")
         #service_id = self.config_parser.get("manager", "SERVICE_ID")
@@ -326,7 +331,7 @@ EOF
 
 #this is a double of the previous method (so eventually the previous method will be deleted)
 #def startapp(user_id, cloud_name, app_id, vpn, manifest, slo):
-def startapp(user_id, cloud_name, app_id, vpn):
+def startapp(user_id, cloud_name, app_id, vpn, controller=None):
     """Start an application manager for the given app_id and user_id,
        on cloud_name
 
@@ -337,32 +342,45 @@ def startapp(user_id, cloud_name, app_id, vpn):
 
     # Create a new controller
     #controller = ManagerController(user_id, cloud_name, app_id, vpn, manifest, slo)
-    controller = ManagerController(user_id, cloud_name, app_id, vpn)
+    if controller is None:
+        controller = ManagerController(user_id, cloud_name, app_id, vpn)
 
     cloud = controller.get_cloud_by_name(cloud_name)
     # Create a context file for the specific service
   
-    #log('came here cloud: %s' % cloud)  
     #This should probably be generated at a later moment
     controller.generate_context('', cloud)
 
-    global controller_dict
-    controller_dict[app_id] = controller
     # FIXME: test_manager(ip, port) not implemented yet. Just return True.
     #node = controller.create_nodes(1, lambda ip, port: True, None, cloud)[0]
-    manager_configuration = {'Resources' : [{'GroupID' : 'ID0', 'NumInstances' : 1, 'Type' : 'Machine', 'Attributes' : {'Cores' : 1, 'RAM' : 1024}}]}
+    manager_configuration = {'Resources' : [{'GroupID' : 0, 'NumInstances' : 1, 'Type' : 'Machine', 'Attributes' : {'Cores' : 1, 'Memory' : 1024}}]}
     
     reservation = controller.prepare_reservation(manager_configuration)
-    
+    if 'ConfigID' not in reservation:
+        raise Exception('The requested resources are not available!')
 
     from conpaas.core.appmanager import appclient 
-    node = controller.create_reservation_test(reservation, appclient.check_manager_process, 443)['Resources'][0]
+    reservation = controller.create_reservation_test(reservation, appclient.check_manager_process, 443)
+    node = reservation['Resources'][0]
     #node = controller.create_reservation(reservation_id, len(manager_configuration['Resources']), lambda ip, port: True, None, cloud)[0]
     #node = {'IP':'123', 'ID':'leshpresh'}
     controller._stop_reservation_timer()
 
-    return node['IP'], node['ID'], cloud.get_cloud_name()
+    return node['IP'], reservation['ConfigID'], cloud.get_cloud_name(), controller
     #return node.ip, node.vmid, cloud.get_cloud_name()
+
+
+def deleteapp(reservation_id):
+    """Delete an application manager for the given reservation_id,
+       on cloud_name
+
+    Return (node_ip, node_id, cloud_name)."""
+
+    cloud_name = 'iaas'
+    # Create a new controller
+    controller = ManagerController(None, cloud_name, None, None)
+    controller.release_reservation(reservation_id)
+   
 
 @cloud_page.route("/available_clouds", methods=['GET'])
 def available_clouds():

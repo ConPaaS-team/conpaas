@@ -177,7 +177,63 @@ class GenericAgent(BaseAgent):
                                                                                                          
         return HttpJsonResponse()   
 
-    @expose('UPLOAD') 
+    # @expose('UPLOAD') 
+    # def init_agent(self, kwargs):
+    #     """Set the environment variables"""
+        
+    #     self.logger.info('Setting agent environment')
+
+    #     #TODO: do some checks on the arguments
+    #     agents_info = simplejson.loads(kwargs.pop('agents_info'))
+    #     #agents_info = kwargs.pop('agents_info')
+    #     file = kwargs.pop('file')
+    #     agent_ip = kwargs.pop('ip')
+    #     self.state = 'ADAPTING'
+        
+    #     #maybe some permission issues
+    #     #if not exists(join(self.VAR_CACHE, 'init')):                                                      
+    #     #    makedirs(join(self.VAR_CACHE, 'init'))                                                        
+                                                                                                         
+    #     #target_dir = join(self.VAR_CACHE, 'init')                                          
+    #     #if exists(target_dir):                                                                           
+    #     #    rmtree(target_dir)        
+        
+    #     target_dir = self.VAR_CACHE
+        
+    #     fd, name = tempfile.mkstemp(prefix='init-', dir=target_dir)
+    #     fd = fdopen(fd, 'w')
+    #     upload = file.file
+        
+    #     #self.logger.info('agents info = %s' % agents_info)
+    #     #self.logger.info('agents info[0] = %s' % agents_info[0])
+
+    #     bytes = upload.read(2048)
+    #     while len(bytes) != 0:
+    #         fd.write(bytes)
+    #         bytes = upload.read(2048)
+    #     fd.close()
+        
+    #     with open(join(target_dir, 'agents.json'), 'w') as outfile:
+    #         simplejson.dump(agents_info, outfile)
+       
+    #     agent_role = [i['Role'] for i in agents_info if i['IP'] == agent_ip][0]
+    #     master_ip = [i['IP'] for i in agents_info if i['Role'] == 'MASTER'][0]
+        
+    #     self.env.update({'MY_IP':agent_ip})
+    #     self.env.update({'MY_ROLE':agent_role})
+    #     self.env.update({'MASTER_IP':master_ip})
+        
+    #     initpath = join(target_dir, name)
+    #     start_args = [ "bash",  initpath ]
+        
+    #     proc = Popen(start_args, cwd=self.generic_dir, env=self.env, close_fds=True)
+        
+
+    #     self.state = 'RUNNING'
+    #     self.logger.info('Agent initialized')
+    #     return HttpJsonResponse()
+
+    @expose('POST') 
     def init_agent(self, kwargs):
         """Set the environment variables"""
         
@@ -185,35 +241,11 @@ class GenericAgent(BaseAgent):
 
         #TODO: do some checks on the arguments
         agents_info = simplejson.loads(kwargs.pop('agents_info'))
-        #agents_info = kwargs.pop('agents_info')
-        file = kwargs.pop('file')
         agent_ip = kwargs.pop('ip')
         self.state = 'ADAPTING'
+     
         
-        #maybe some permission issues
-        #if not exists(join(self.VAR_CACHE, 'init')):                                                      
-        #    makedirs(join(self.VAR_CACHE, 'init'))                                                        
-                                                                                                         
-        #target_dir = join(self.VAR_CACHE, 'init')                                          
-        #if exists(target_dir):                                                                           
-        #    rmtree(target_dir)        
-        
-        target_dir = self.VAR_CACHE
-        
-        fd, name = tempfile.mkstemp(prefix='init-', dir=target_dir)
-        fd = fdopen(fd, 'w')
-        upload = file.file
-        
-        #self.logger.info('agents info = %s' % agents_info)
-        #self.logger.info('agents info[0] = %s' % agents_info[0])
-
-        bytes = upload.read(2048)
-        while len(bytes) != 0:
-            fd.write(bytes)
-            bytes = upload.read(2048)
-        fd.close()
-        
-        with open(join(target_dir, 'agents.json'), 'w') as outfile:
+        with open(join(self.VAR_CACHE, 'agents.json'), 'w') as outfile:
             simplejson.dump(agents_info, outfile)
        
         agent_role = [i['Role'] for i in agents_info if i['IP'] == agent_ip][0]
@@ -223,12 +255,17 @@ class GenericAgent(BaseAgent):
         self.env.update({'MY_ROLE':agent_role})
         self.env.update({'MASTER_IP':master_ip})
         
-        initpath = join(target_dir, name)
+
+        initpath = join(self.VAR_CACHE, 'bin', 'init.sh')
         start_args = [ "bash",  initpath ]
         
-        proc = Popen(start_args, cwd=self.generic_dir, env=self.env, close_fds=True)
-        
+        if 'args' in kwargs and kwargs['args']:
+            args = kwargs.pop('args')
+            start_args.extend(args.values())
 
+
+        proc = Popen(start_args, cwd=self.generic_dir, env=self.env, close_fds=True)
+        proc.wait()
         self.state = 'RUNNING'
         self.logger.info('Agent initialized')
         return HttpJsonResponse()
@@ -239,6 +276,10 @@ class GenericAgent(BaseAgent):
         startpath = join(self.VAR_CACHE, 'bin', 'start.sh')
         start_args = [ "bash",  startpath ]
         
+        if 'args' in kwargs and kwargs['args']:
+            args = kwargs.pop('args')
+            start_args.extend(args.values())
+
         proc = Popen(start_args, cwd=self.generic_dir, env=self.env, close_fds=True)
         proc.wait()
         self.state = 'RUNNING'

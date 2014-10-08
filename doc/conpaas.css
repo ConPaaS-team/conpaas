@@ -101,6 +101,7 @@ a:hover {
 	border-right: 1px solid #eee;
 	border-left: 1px solid #eee;
 	height: 22px;
+	background-color: #FFF;
 }
 
 #pgstatTimer {

@@ -275,7 +275,8 @@ conpaas.model = (function (this_module) {
             return this.state !== 'PROLOGUE' &&
                 this.state !== 'EPILOGUE' &&
                 this.state !== 'ADAPTING' &&
-                this.state !== 'PREINIT';
+                this.state !== 'PREINIT' &&
+                this.state !== 'INIT';
         },
         /**
          * @return {Boolean} true if you need to poll on this service

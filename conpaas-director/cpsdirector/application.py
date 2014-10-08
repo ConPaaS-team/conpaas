@@ -30,6 +30,8 @@ from cpsdirector.common import config_parser
 
 
 application_page = Blueprint('application_page', __name__)
+# aug = {}
+app_controllers = {}
 
 class Application(db.Model):
     aid = db.Column(db.Integer, primary_key=True,
@@ -129,6 +131,11 @@ def _createapp(app_name):
     
     db.session.commit()
 
+    _store_app_controller(g.user.uid, a.aid, 'iaas')
+    # global aug
+    # aug['1'] = 'create'
+    log('create app_controllers %s' % app_controllers)
+
     log('Application %s created properly' % (a.aid))
     return jsonify(a.to_dict())
 
@@ -137,15 +144,33 @@ def deleteapp(user_id, app_id):
     if not app:
         return False
 
+    # global aug
+    # aug['3'] = 'delete'
+    # log('aug at delete %s' % aug)
+    
     # If an application with id 'app_id' exists and user is the owner
+    #TODO: (genc) fix the following loop
     for service in Service.query.filter_by(application_id=app_id):
-        callmanager(service.sid, "shutdown", True, {})
+        # callmanager(app.to_dict(), service.sid, "shutdown", True, {})
         stop(service.sid)
 
+    controller = app_controllers[app_id]    
+    controller.release_reservation(app.vmid)
+    del app_controllers[app_id]
+   
     db.session.delete(app)
     db.session.commit()
 
     return True
+
+def _store_app_controller(user_id, app_id, cloudname):
+    app = get_app_by_id(user_id, app_id)
+    if not app:
+        return None
+    vpn = app.get_available_vpn_subnet()
+    controller = manager_controller.ManagerController(user_id, cloudname, app_id, vpn)
+    global app_controllers
+    app_controllers[app_id] = controller
 
 #def _startapp(user_id, app_id, cloudname, manifest=None, slo=None):
 def _startapp(user_id, app_id, cloudname):
@@ -155,9 +180,17 @@ def _startapp(user_id, app_id, cloudname):
     try:
         #s.manager, s.vmid, s.cloud = manager_controller.start(
         #    servicetype, s.sid, g.user.uid, cloudname, appid, vpn)
-        vpn = app.get_available_vpn_subnet()
+        log('start app_controllers %s' % app_controllers)
         #app.manager, app.vmid, _ = manager_controller.startapp(user_id, cloudname, app_id, vpn, manifest, slo)
-        app.manager, app.vmid, _ = manager_controller.startapp(user_id, cloudname, app_id, vpn)
+        controller = app_controllers[app_id] if app_id in app_controllers else None
+        vpn = app.get_available_vpn_subnet() if controller is None else None
+
+        app.manager, app.vmid, _, _= manager_controller.startapp(user_id, cloudname, app_id, vpn, controller)
+        
+        # global aug
+        # aug['2'] = 'start'
+        # log('aug at startapp %s' % aug)
+
         db.session.commit()
         return True
     except Exception, err:

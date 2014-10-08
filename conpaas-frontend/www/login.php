@@ -53,14 +53,16 @@ $support_external_idp = Director::getSupportExternalIdp();
          ?>
         </script>
     </head>
-<body class="loginbody">
+<body class="loginbody" style="border-style:none">
     <div class="logo">
-        <a href="http://www.conpaas.eu/"><img src="images/conpaas-logo-large.png" /></a>
+        <!--a href="http://www.conpaas.eu/"><img src="images/conpaas-logo-large.png" /></a-->
+        <a href="http://www.conpaas.eu/"><img src="images/conpaas-harness-logo-large.png" style="width: 225px" /></a>
     </div>
     <div class="login">
         <table><tr>
         <td class="descr" width="65%">
-            <p><b><a href="http://www.conpaas.eu/">ConPaaS</a></b> is the Platform-as-a-Service component of the <a href="http://contrail-project.eu/">Contrail</a> E.U. project.</p>
+            <p><b><a href="http://www.conpaas.eu/" target="blank">ConPaaS</a></b> is the Platform-as-a-Service component of the <a href="http://contrail-project.eu/" target="blank">Contrail</a> 
+            and <a href="http://www.harness-project.eu/" target="blank">Harness</a> E.U. projects.</p>
             <p><b>ConPaaS</b> aims at facilitating the deployment of applications in the cloud. It provides a number of services to address common developer needs.
             Each service is self-managed and elastic:
             <ul>
@@ -80,7 +82,7 @@ $support_external_idp = Director::getSupportExternalIdp();
                 <tr>
                     <td> </td>
                     <td class="actions" align="left">
-                        <input type="button" value="Login with external IdP" id="contrail" title="Login with external IdP" />
+                        <input type="button" value="Login with external IdP" id="contrail" title="Login with external IdP" style="display:none" />
                     <!--
                         <input type="image" src="/images/google.gif" title="Login with Google" id="contrail" height="20"/>
                         <input type="image" src="/images/contrail.gif" title="Login with Contrail" id="contrail" height="20"/>

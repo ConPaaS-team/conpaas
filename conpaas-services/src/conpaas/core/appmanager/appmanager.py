@@ -23,9 +23,11 @@ from conpaas.core.https.server import ConpaasRequestHandlerComponent
 from conpaas.core.services import manager_services 
 from conpaas.core.misc import file_get_contents
 
+from conpaas.core.appmanager.core.patterns.store import Traces
 from conpaas.core.appmanager.core.context.parser import ManifestParser, SLOParser
 from conpaas.core.appmanager.profiler.profiler import Profiler
-
+from conpaas.core import https
+import urlparse
 
 class ApplicationManager(ConpaasRequestHandlerComponent):
 
@@ -61,10 +63,16 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
             return HttpErrorResponse('ERROR: Arguments unexpected')
         return HttpJsonResponse()    
 
+    @expose('GET')
+    def get_profiling_info(self, kwargs):
+        return HttpJsonResponse(Traces.Experiments)    
+
+
     def run_am(self, cloud):
         if self.manifest.PerformanceModel == None:
             profiler = Profiler(self, cloud)
             profiler.run()
+        sys.stdout.flush()
 
 
     
@@ -105,7 +113,9 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
         #apptarfile = kwargs.pop('app_tar')
         #self.app_tar = apptarfile.file
         
-        self.run_am(kwargs['cloud'])
+        self.appid = kwargs.pop('appid')
+        Thread(target=self.run_am, args=[kwargs['cloud']]).start()
+        #self.run_am(kwargs['cloud'])
 
         # resc = {}
         # service_ids=[]
@@ -123,7 +133,7 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
         #     service_manager._do_startup(kwargs['cloud'], serv_resc)
         #     service_manager.controller.release_reservation(reservation['ConfigID'])
         
-        sys.stdout.flush()
+        
         return HttpJsonResponse({'success': True})
   
   
@@ -207,4 +217,18 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
         if os.path.isfile(mngr_startup_scriptname):
             proc = subprocess.Popen(['bash', mngr_startup_scriptname] , close_fds=True)
             proc.wait()
-        
+    
+
+    def dir_create_service(self, service_type, sid):
+        try:
+            parsed_url = urlparse.urlparse(self.config_parser.get('manager', 'START_URL'))
+            _, body = https.client.https_post(parsed_url.hostname,
+                                              parsed_url.port or 443,
+                                              parsed_url.path,
+                                              params={'service_type': service_type, 'appid':self.appid, 'sid':sid})
+                                              
+            obj = simplejson.loads(body)
+            return not obj['error']
+        except:
+            #self.__logger.exception('Failed to deduct credit')
+            return False    

@@ -170,6 +170,20 @@ class DashboardServiceUI {
 
 	public function __toString() {
 		$lastClass = $this->last ? 'last' : '';
+		//return
+			//'<tr class="service" id="service-'.$this->service->getSID().'">'
+				//.$this->renderColorTag()
+				//.'<td class="wrapper '.$lastClass.'">'
+					//.$this->renderImage()
+					//.'<div class="content">'
+						//.$this->renderTitle()
+						//.$this->renderActions()
+					//.'</div>'
+					//.$this->renderStats()
+					//.'<div class="clear"></div>'
+				//.'</td>'
+			//.'</tr>';
+			
 		return
 			'<tr class="service" id="service-'.$this->service->getSID().'">'
 				.$this->renderColorTag()
@@ -179,10 +193,10 @@ class DashboardServiceUI {
 						.$this->renderTitle()
 						.$this->renderActions()
 					.'</div>'
-					.$this->renderStats()
+					//.$this->renderStats()
 					.'<div class="clear"></div>'
 				.'</td>'
-			.'</tr>';
+			.'</tr>';	
 	}
 
 }

@@ -43,6 +43,9 @@ class ServiceFactory {
 			case 'cds':
 				require_module('service/cds');
 				return new ContentDeliveryService($service_data, $manager);
+			case 'generic':
+				require_module('service/generic');
+				return new GenericService($service_data, $manager);
 /*
 			case 'htcondor':
 				require_module('service/htcondor');

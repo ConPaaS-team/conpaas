@@ -127,7 +127,6 @@ class Controller(object):
                 return host
 
     def create_reservation_test(self, reservation, test_managent, port, cloud=None):
-        
         reservation_id = reservation['ConfigID']
         if cloud is None:
             cloud = self.__default_cloud     
@@ -808,6 +807,8 @@ class Controller(object):
         except:
             self.__logger.exception('Failed to deduct credit')
             return False
+
+    
 
     def __deduct_and_check_credit(self, value):
         if not self.deduct_credit(value):

@@ -125,7 +125,8 @@ class GenericManager(BaseManager):
             app_tar_fu = kwargs['app_tar']
             import cStringIO
             output = cStringIO.StringIO()
-            output.write(hex_to_string(app_tar_fu.file.getvalue()))
+            #output.write(hex_to_string(app_tar_fu.file.getvalue()))
+            output.write(hex_to_string(app_tar_fu.file.read()))
             #self.logger.info("tar in hex: %s" % app_tar_fu.file.getvalue())
             output.seek(0)
             app_tar_fu.file = output
@@ -158,7 +159,7 @@ class GenericManager(BaseManager):
 
         return HttpJsonResponse({ 'state': self._state_get() })
 
-    def _do_startup(self, cloud, configuration):
+    def _do_startup(self, cloud, configuration, args):
         """Start up the service. The first node will be an agent running a
         Generic Hub and a Stem Node."""
         
@@ -190,10 +191,11 @@ class GenericManager(BaseManager):
             
             #agents_info = self._update_agents_info(nodes, roles)
             
-            
-            self._init_agents()
+            #this was when init was executed before ssending the rest of the code  
+            #self._init_agents()
             
             self._update_code(self.nodes)
+            self._init_agents(args)
 
             ## Extend the nodes list with the newly created one
             #self.nodes += nodes
@@ -230,25 +232,36 @@ class GenericManager(BaseManager):
 
     def get_check_agent_funct(self):
         return client.check_agent_process
-
-    def _init_agents(self):
-        self._extract_init()
+ 
+    def _init_agents(self, args=None):
         for node in self.nodes:                                                                        
             try:                                           
-                initpath = os.path.join(self.code_repo, 'init.sh')                                              
-                client.init_agent(node['IP'], 5555, initpath, self.nodes)            
+                #initpath = os.path.join(self.code_repo, 'init.sh')                                              
+                #client.init_agent(node['IP'], 5555, initpath, self.nodes)            
+                client.init_agent(node['IP'], 5555, self.nodes, args)            
             except client.AgentException:                                                                
                 self.logger.exception('Failed initialize agent at node %s' % str(node))             
                 self._state_set(self.S_ERROR, msg='Failed to initialize agent at node %s' % str(node))
                 raise        
 
-    def _extract_init(self):
-        config = self._configuration_get()
-        #current_code = config.codeVersions[config.currentCodeVersion]
-        filepath = os.path.join(self.code_repo, config.currentCodeVersion)
-        arch = archive_open(filepath)
+    # def _init_agents(self):
+    #     self._extract_init()
+    #     for node in self.nodes:                                                                        
+    #         try:                                           
+    #             initpath = os.path.join(self.code_repo, 'init.sh')                                              
+    #             client.init_agent(node['IP'], 5555, initpath, self.nodes)            
+    #         except client.AgentException:                                                                
+    #             self.logger.exception('Failed initialize agent at node %s' % str(node))             
+    #             self._state_set(self.S_ERROR, msg='Failed to initialize agent at node %s' % str(node))
+    #             raise        
+
+    # def _extract_init(self):
+    #     config = self._configuration_get()
+    #     #current_code = config.codeVersions[config.currentCodeVersion]
+    #     filepath = os.path.join(self.code_repo, config.currentCodeVersion)
+    #     arch = archive_open(filepath)
         
-        archive_extract_file(arch, self.code_repo,'init.sh')
+    #     archive_extract_file(arch, self.code_repo,'init.sh')
         
     @expose('POST')
     def run(self, kwargs):
@@ -271,10 +284,10 @@ class GenericManager(BaseManager):
     #             self._state_set(self.S_ERROR, msg='Failed to run code at node %s' % str(starter))
     #             raise   
 
-    def _do_run(self):
+    def _do_run(self, args=None):
         for node in self.nodes:     
             try:               
-                client.run(node['IP'], 5555)            
+                client.run(node['IP'], 5555, args)            
             except client.AgentException:                                                                
                 self.logger.exception('Failed to start run at node %s' % str(node))             
                 self._state_set(self.S_ERROR, msg='Failed to run code at node %s' % str(node))
@@ -411,6 +424,25 @@ class GenericManager(BaseManager):
         """Return True if the given node is the Generic Hub"""
         return node.ip == self.hub_ip        
 
+    # @expose('GET')
+    # def list_nodes(self, kwargs):
+    #     """Return a list of running nodes"""
+    #     if self._state_get() != self.S_RUNNING:
+    #         vals = { 'curstate': self._state_set(self.S_STOPPED), 'action': 'list_nodes' }
+    #         return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
+
+    #     generic_nodes = [ 
+    #         node.id for node in self.nodes if not self.__is_hub(node) 
+    #     ]
+    #     generic_hub = [ 
+    #         node.id for node in self.nodes if self.__is_hub(node) 
+    #     ]
+
+    #     return HttpJsonResponse({
+    #         'hub': generic_hub,
+    #         'node': generic_nodes
+    #     })
+
     @expose('GET')
     def list_nodes(self, kwargs):
         """Return a list of running nodes"""
@@ -418,16 +450,8 @@ class GenericManager(BaseManager):
             vals = { 'curstate': self._state_set(self.S_STOPPED), 'action': 'list_nodes' }
             return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
 
-        generic_nodes = [ 
-            node.id for node in self.nodes if not self.__is_hub(node) 
-        ]
-        generic_hub = [ 
-            node.id for node in self.nodes if self.__is_hub(node) 
-        ]
-
         return HttpJsonResponse({
-            'hub': generic_hub,
-            'node': generic_nodes
+            'nodes': self.nodes
         })
 
     def _create_initial_configuration(self):

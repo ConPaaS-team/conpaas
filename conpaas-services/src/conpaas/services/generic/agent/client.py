@@ -79,10 +79,13 @@ def create_node(host, port, hub_ip):
     params = { 'my_ip': host, 'hub_ip': hub_ip }
     return _check(https.client.jsonrpc_post(host, port, '/', method, params))
 
-def run(host, port):
+def run(host, port, args):
     """POST run"""
     method = 'run'
-    return _check(https.client.jsonrpc_post(host, port, '/', method))
+    params = {}
+    if args:
+        params['args'] = args 
+    return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
 
 def update_code(host, port, codeVersionId, filetype, filepath):                   
     params = {                                                                      
@@ -102,13 +105,27 @@ def update_code(host, port, codeVersionId, filetype, filepath):
     return _check(https.client.https_post(host, port, '/', params))                 
 
 
-def init_agent(host, port, init_path, agents_info):                   
-    """POST (agents_info) init_agent"""
-    
+def init_agent(host, port, agents_info, args):
+    """POST run"""
+    method = 'init_agent'
     params = {
         'method' : 'init_agent',    
         'agents_info': json.dumps(agents_info),
         'ip' : host
     }
-    files = [('file', init_path, file_get_contents(init_path))]
-    return _check(https.client.https_post(host, port, '/', params, files=files))                 
+    if args:
+        params['args'] = args 
+    return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
+
+
+
+# def init_agent(host, port, init_path, agents_info):                   
+#     """POST (agents_info) init_agent"""
+    
+#     params = {
+#         'method' : 'init_agent',    
+#         'agents_info': json.dumps(agents_info),
+#         'ip' : host
+#     }
+#     files = [('file', init_path, file_get_contents(init_path))]
+#     return _check(https.client.https_post(host, port, '/', params, files=files))                 

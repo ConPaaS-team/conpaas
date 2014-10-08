@@ -58,12 +58,13 @@ class Service {
 			$remoteState != 'ADAPTING';
 	}
 
-	private function pingManager() {
+	private function pingManager($manager_id) {
 		if (!isset($this->manager)) {
 			return;
 		}
 		try {
-			$state = $this->fetchState();
+			$state = $this->fetchState($manager_id);
+			//dlog(__FILE__.': leshi preshi: ' . print_r($state['result']));
 			if ($state !== null && isset($state['result'])) {
 				$this->reachable = true;
                 if (array_key_exists('state', $state['result'])) {
@@ -111,13 +112,14 @@ class Service {
         }
 
 		$this->manager_instance = $manager_instance;
-		$this->pingManager();
+		
+		$this->pingManager($data['sid']);
 		if (!$this->reachable && $this->state == self::STATE_INIT) {
 			$this->checkTimeout();
 		}
 		/* fetch the nodes and arrange them */
 		if ($this->reachable && $this->state == self::STATE_RUNNING) {
-			$this->nodesLists = $this->fetchNodesLists();
+			$this->nodesLists = $this->fetchNodesLists($data['sid']);
 			/* compute the nodes count */
 			if ($this->nodesLists !== false) {
 				$selected = array();
@@ -131,9 +133,9 @@ class Service {
 				}
 			}
 		}
-		if ($this->hasDedicatedManager()) {
-			$this->nodesCount++;
-		}
+		//if ($this->hasDedicatedManager()) {
+			//$this->nodesCount++;
+		//}
 	}
 
 	public function getErrorMessage() {
@@ -187,10 +189,8 @@ class Service {
 		return $response;
 	}
 
-	protected function managerRequest($http_method, $method, array $params,
-			$ping=false) {
-		$json = HTTPS::jsonrpc($this->manager, $http_method, $method, $params,
-			$ping);
+	protected function managerRequest($http_method, $method, $manager_id,  array $params, $ping=false) {
+		$json = HTTPS::jsonrpc($this->manager, $http_method, $method, $manager_id, $params,$ping);
 		$this->decodeResponse($json, $method);
 		return $json;
 	}
@@ -206,11 +206,11 @@ class Service {
 		return $info['result']['serviceNode'];
 	}
 
-	protected function fetchNodesLists() {
+	protected function fetchNodesLists($manager_id) {
 		if (!isset($this->manager)) {
 			return false;
 		}
-		$json = $this->managerRequest('get', 'list_nodes', array());
+		$json = $this->managerRequest('get', 'list_nodes', $manager_id , array('manager_id' => $manager_id));
 		$response = json_decode($json, true);
 		if ($response == null || isset($response['error'])) {
 			return false;
@@ -218,17 +218,26 @@ class Service {
 		return $response['result'];
 	}
 
-	public function fetchState($force_fetch=false) {
+	public function fetchState($manager_id, $force_fetch=false) {
 		if (!$force_fetch && $this->cached_state !== null) {
 			return $this->cached_state;
 		}
-		$json = $this->managerRequest('get', 'get_service_info', array(), true);
+		$json = $this->managerRequest('get', 'get_service_info', $manager_id, array('manager_id' => $manager_id), true);
 		$state = json_decode($json, true);
 		if ($state == null) {
 			return false;
 		}
 		$this->cached_state = $state;
 		return $this->cached_state;
+	}
+
+	public function getProfilingInfo() {
+		$json = $this->managerRequest('get', 'get_profiling_info', 0, array('manager_id' => 0), false);
+		$info = json_decode($json, true);
+		if ($info == null) {
+			return false;
+		}
+		return $info['result'];
 	}
 
 	public function fetchCodeVersions() {

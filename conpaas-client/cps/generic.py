@@ -9,24 +9,26 @@ from cps.base import BaseClient
 
 class Client(BaseClient):
 
-    def info(self,  app_id, service_id):
-        service = BaseClient.info(self, service_id)
+    def info(self, service_id, app_id):
+        service = BaseClient.info(self, service_id, app_id)
         
-        nodes = self.callmanager(app_id, service['sid'], "list_nodes", False, {})
-        if 'hub' in nodes and nodes['hub']:
-            # Only one HUB
-            hub = nodes['hub'][0]
-            params = { 'serviceNodeId': hub }
-            details = self.callmanager(app_id, service['sid'], "get_node_info", False, params)
-            print "hub url: ", "http://%s:4444" % details['serviceNode']['ip']
-            print "node url:", "http://%s:3306" % details['serviceNode']['ip']
+        print "%s" % service
 
-        if 'node' in nodes:
-            # Multiple nodes
-            for node in nodes['node']:
-                params = { 'serviceNodeId': node }
-                details = self.callmanager(app_id, service['sid'], "get_node_info", False, params)
-                print "node url:", "http://%s:3306" % details['serviceNode']['ip']
+        # nodes = self.callmanager(app_id, service['sid'], "list_nodes", False, {})
+        # if 'hub' in nodes and nodes['hub']:
+        #     # Only one HUB
+        #     hub = nodes['hub'][0]
+        #     params = { 'serviceNodeId': hub }
+        #     details = self.callmanager(app_id, service['sid'], "get_node_info", False, params)
+        #     print "hub url: ", "http://%s:4444" % details['serviceNode']['ip']
+        #     print "node url:", "http://%s:3306" % details['serviceNode']['ip']
+
+        # if 'node' in nodes:
+        #     # Multiple nodes
+        #     for node in nodes['node']:
+        #         params = { 'serviceNodeId': node }
+        #         details = self.callmanager(app_id, service['sid'], "get_node_info", False, params)
+        #         print "node url:", "http://%s:3306" % details['serviceNode']['ip']
 
     def usage(self, cmdname):
         BaseClient.usage(self, cmdname)

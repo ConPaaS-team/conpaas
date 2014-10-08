@@ -284,7 +284,7 @@ class BaseClient(object):
         for key, value in service.items():
             print "%s: %s" % (key, value)
 
-        res = self.callmanager(service['sid'], "get_service_info", False, {})
+        res = self.callmanager(app_id, service_id, "get_service_info", False, {'manager_id': service_id})
         print "state:", res['state']
 
         for key, value in res.items():
@@ -471,6 +471,12 @@ class BaseClient(object):
         else:
             print "failed."
 
+    def profiling_info(self, app_id):
+        #check if application exists
+
+        res = self.callmanager(app_id, 0, "get_profiling_info", False, { 'method': "get_profiling_info", 'manager_id':0 })
+        print "Print profiling_info for appid %s" % res
+
     def manifest(self, manifestfile, slofile, appfile):
         print "Uploading the manifest and slo... "
         sys.stdout.flush()
@@ -497,6 +503,28 @@ class BaseClient(object):
             print "failed."
 
         print res    
+
+    #genc delete this method when done with testing 
+    def test_manifest(self, appfile):
+        print "Uploading the manifest and slo... "
+        sys.stdout.flush()
+
+        f = open(appfile, 'r')
+        app_tar = f.read()
+        f.close()
+        
+        #app_tar = string_to_hex(app_tar) 
+        print "app_tar size: %s " % len(app_tar)
+
+        res = self.callapi("test_upload_manifest", True, {'app_tar':app_tar })
+        #res = self.callapi("upload_manifest", True, {'thread':True, 'manifest': manifest, 'slo':slo, 'app_tar':app_tar })
+        #res = self.callapi("upload_manifest", True, {'manifest': manifest, 'slo':slo, 'app_tar':app_tar })
+        if res:
+            print "done."
+        else:
+            print "failed."
+
+        print res
 
     def download_manifest(self, appid):
         services = self.callapi("list/%s" % appid, True, {})
@@ -565,6 +593,7 @@ Do you want to continue? (y/N): """
         print "    createapp         appname                       # create a new application"
         print "    startapp          [appid]                       # start an application"
         print "    renameapp         appid       newname           # rename an application"
+        print "    profiling_info    appid                         # get profiling experiments information"
         print "    manifest          manifest    slo     app_tar   # upload a new manifest"
         print "    download_manifest appid                         # download an existing manifest"
         print "    create            servicetype [appid]           # create a new service [inside a specific application]"
@@ -592,10 +621,10 @@ Do you want to continue? (y/N): """
             return getattr(self, command)()
 
         # Service and application generic commands
-        if command in ( "listapp", "createapp", "startapp","manifest",
+        if command in ( "listapp", "createapp", "startapp","manifest", "test_manifest", #genc:delete the last one 
                         "download_manifest", "list", "credentials", 
                         "available", "clouds", "create", "st_usage",
-                        "deleteapp", "renameapp", "getcerts" ):
+                        "deleteapp", "renameapp", "getcerts", "profiling_info" ):
 
             if command == "st_usage":
                 try:
@@ -677,6 +706,14 @@ Do you want to continue? (y/N): """
                 except (IndexError, IOError):
                     self.usage(argv[0])
                     sys.exit(0)
+            #genc: delete this if as well
+            if command == "test_manifest":
+                try:
+                    open(argv[2])
+                    return getattr(self, command)(argv[2])
+                except (IndexError, IOError):
+                    self.usage(argv[0])
+                    sys.exit(0)
 
             if command == "download_manifest":
                 appid = argv[2]
@@ -703,6 +740,10 @@ Do you want to continue? (y/N): """
             if command == "clouds":
                 return getattr(self, 'available')('clouds')
 
+            if command == "profiling_info":
+                appid = argv[2]
+                return getattr(self, command)(appid)
+
             # We need no params, just call the method and leave
             return getattr(self, command)()
 
@@ -710,7 +751,7 @@ Do you want to continue? (y/N): """
         # Commands requiring a service id. We want it to be an integer.
         try:
             sid = int(argv[2])
-            aid = int(argv[2])
+            aid = int(argv[3])
         except (ValueError):
             if command == "usage":
                 self.main([ argv[0], 'st_usage', argv[2] ])

@@ -2,4 +2,4 @@
 
 class Traces:
     TrainingSet = []
-    
+    Experiments = {}

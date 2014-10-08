@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from conpaas.core.appmanager.core.context.parameters import VariableModel
+from conpaas.core.appmanager.core.patterns.store import Traces
 #from conpaas.core.appmanager.provisioner.resources import ReservationManager
 #from conpaas.core.appmanager.provisioner.simulator import SimulatorManager
 import math, random, copy
@@ -32,23 +33,23 @@ class BaseStrategy:
             
         self.implementation = implementation
 
-        print "\n == In BaseStrategy =="
+        # print "\n == In BaseStrategy =="
 
         self.generate_resource_model()
-        print "\n ~ ResModel ~"
+        # print "\n ~ ResModel ~"
         str(self.ResModel)
 
-        print "\n ~ Mapping for variables ~"
-        print self.ResVarMap, "\n"
+        # print "\n ~ Mapping for variables ~"
+        # print self.ResVarMap, "\n"
 
         self.generate_arguments_model()
-        print "\n ~ ArgModel ~"
+        # print "\n ~ ArgModel ~"
         str(self.ArgModel)
 
-        print "\n ~ Order ~"
+        # print "\n ~ Order ~"
         self.VarOrder = self.ResModel.get_keys()
-        print self.VarOrder
-        print "\n =====\n"
+        # print self.VarOrder
+        # print "\n =====\n"
         
 
     def generate_resource_model(self):
@@ -89,13 +90,14 @@ class BaseStrategy:
 
         #setup application arguments
         args = self.ArgModel.denormalize(self.ArgModel.nrandomize())
-        print "\nApplication arguments :", args
+        # print "\nApplication arguments :", args
         data = {}   
         implementation = copy.deepcopy(self.implementation)
         data["Index"] = len(self.EXPERIMENTS)
         data["Configuration"] = copy.deepcopy(variables)
         data["Arguments"] = args
-
+        data["Done"] = False
+        
         if self.listed:
             already_done = None
 
@@ -105,6 +107,7 @@ class BaseStrategy:
                     break                
             if already_done != None:
                 return already_done 
+        Traces.Experiments[data["Index"]] = data 
         """
             Get the configuration structure from the implementation
         """
@@ -149,12 +152,12 @@ class BaseStrategy:
         # implementation.deploy(reservation)
         
         # # what anca calls deploy (no variables taken into consideration at this point)
-        self.module_manager._do_startup(self.cloud, reservation)
+        self.module_manager._do_startup(self.cloud, reservation, args)
         
 
         "Execute implementation"
         start_time = time.time()
-        self.module_manager._do_run()
+        self.module_manager._do_run(args)
         end_time = time.time()
         execution_time = end_time - start_time
 
@@ -166,10 +169,14 @@ class BaseStrategy:
             Releasing resources
         """
         #reservation = ReservationManager.release_resources(reservation["ResID"])
-        self.module_manager.controller.release_reservation(reservation['ConfigID'])
+        # genc:uncomment the following line 
+        #debug if (delete when done)
+        if execution_time > 2:
+            self.module_manager.controller.release_reservation(reservation['ConfigID'])
 
         "Save output and update experiments list"
-        data["Results"] = {"ExeTime" : execution_time, "TotalCost" : total_cost} 
+        data["Results"] = {"ExeTime" : round(execution_time, 3), "TotalCost" : round(total_cost, 2)} 
+        data["Done"] = True
         # data["RuntimeData"] = utilization_data
         if self.listed:
             print "Add experiment to the Queue."
@@ -232,7 +239,7 @@ class SimulatedAnnealingStrategy(BaseStrategy):
                         T0 = 100, maxeval = 5, dwell = 1
                         )#, schedule = "boltzmann")#"fast") #default = fast   
         
-        #self.execute([0,0])
+        # self.execute([0,0])
         print "\n\nStrategy Done!\n"
         print "Num iterations :", len(self.EXPERIMENTS)
         # print solution

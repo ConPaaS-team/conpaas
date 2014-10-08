@@ -19,6 +19,9 @@ def get_cloud_instance(cloud_name, cloud_type, iaas_config):
     elif cloud_type == 'openstack':
         from .clouds.openstack import OpenStackCloud
         return OpenStackCloud(cloud_name, iaas_config)
+    elif cloud_type == 'harness':
+        from .clouds.harness import HarnessCloud
+        return HarnessCloud(cloud_name, iaas_config)
     elif cloud_type == 'dummy':
         from .clouds.dummy import DummyCloud
         return DummyCloud(cloud_name, iaas_config)

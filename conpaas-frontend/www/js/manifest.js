@@ -29,9 +29,9 @@ $(document).ready(function() {
 		}
 	});
 
-	$('input:file').change(function() {
-		$('#fileForm').submit();
-	});
+	//$('input:file').change(function() {
+	//	$('#fileForm').submit();
+	//});
 
     $('#logout').click(function () {
         $.ajax({
@@ -45,25 +45,48 @@ $(document).ready(function() {
 
 	$('#deploy').click(function() {
 		type = $('input[name=type]:checked').val();
+		
 		if (manifest[type] == '') {
 			alert("There is no manifest for this application.");
 			return;
 		}
-
-		$.ajax({
+		var formData = { json: manifest[type] }
+		
+		if (type == 'custom'){
+			formData = new FormData($('#fileForm')[0]);
+			xrhSetting = 'cache: false, contentType: false, processData: false,'
+		}
+		
+		ajaxobj = {
 			type: "POST",
 			url: "ajax/uploadManifest.php",
-			data: { json: manifest[type] },
+			data: formData,
 			dataType: 'json'
-		}).done(function(response) {
+		}
+		
+		if (type == 'custom'){
+			ajaxobj['cache'] = false
+			ajaxobj['contentType'] = false
+			ajaxobj['processData'] = false
+		}
+		
+		$.ajax(ajaxobj).done(function(response) {
 			if (typeof response.error != 'undefined' && response.error != null) {
 				alert('Error: ' + response.error);
 				$('#file').val('');
 				return;
 			}
+
 			alert("The manifest was correctly uploaded. Now it can take a while to start everything.")
-			window.location = 'index.php';
+			window.location = 'services.php?aid='+response.appid;
 		});
 
 	});
+
+	$('#manformbutton').click(function() {
+            if ($("#manslodiv").css('display') == 'none')
+                $('#manslodiv').fadeIn()
+            else
+                $('#manslodiv').fadeOut()
+        });
 });

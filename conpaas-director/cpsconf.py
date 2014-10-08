@@ -104,6 +104,7 @@ Listen %(port)s
 conf += """
         WSGIApplicationGroup %{GLOBAL}
         WSGIPassApacheRequest On
+        SSLRenegBufferSize 262144
 
         SSLRequireSSL
         SSLVerifyClient optional

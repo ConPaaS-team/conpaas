@@ -3,12 +3,27 @@
 
 @CHARSET "UTF-8";
 
+html {
+    display: table;
+    margin: auto;
+}
+
 body {
 	margin: 0;
 	font-size: 12px;
 	color: #0055A5;
 	font-family: Verdana, Tahoma, sans serif;
 	width: 800px;
+	display: table-cell;
+	background: url('images/onclouds3-gray.jpg') top no-repeat;
+	border: 6px solid #999	;
+	-webkit-border-bottom-right-radius: 25px;
+	-webkit-border-bottom-left-radius: 25px;
+	-moz-border-radius-bottomright: 25px;
+	-moz-border-radius-bottomleft: 25px;
+	border-bottom-right-radius: 25px;
+	border-bottom-left-radius: 25px;
+	border-top-style: none;
 }
 
 h1 {
@@ -23,6 +38,7 @@ h1 {
 	padding: 3px 10px 10px 3px;
 	border: 1px solid #eee;
 	border-top: none;
+	background:#FFF;
 }
 
 a,a:visited {
@@ -47,6 +63,12 @@ a:hover {
 	padding: 10px;
 	background-color: #eee;
 	text-align: right;
+	-webkit-border-bottom-right-radius: 20px;
+	-webkit-border-bottom-left-radius: 20px;
+	-moz-border-radius-bottomright: 20px;
+	-moz-border-radius-bottomleft: 20px;
+	border-bottom-right-radius: 20px;
+	border-bottom-left-radius: 20px;
 }
 
 .serviceheader {
@@ -74,6 +96,7 @@ a:hover {
 	border-top: 1px solid #ccc;
 	border-right: 1px solid #eee;
 	border-left: 1px solid #eee;
+	background:#FFF;
 }
 
 #pgstatTimer {
@@ -176,6 +199,7 @@ a:hover {
 	padding: 3px;
 	border-right: 1px solid #eee;
 	border-bottom: 5px solid #eee;
+	background:#FFF;
 }
 
 .pageheader .info {
@@ -1154,7 +1178,7 @@ ul.versions li .timestamp {
 
 /* login */
 body.loginbody {
-	background: url('images/onclouds.jpg') top left no-repeat;
+	background: url('images/onclouds3.jpg') top no-repeat;
 }
 
 .login {
@@ -1162,6 +1186,20 @@ body.loginbody {
 	margin: 10px 10px 10px 10px;
 	border: 3px solid #999;
 	background-color: white;
+	/*-webkit-border-radius: 25px;
+	-moz-border-radius: 25px;
+	border-radius: 25px;*/
+
+	-webkit-border-bottom-right-radius: 25px;
+	-webkit-border-bottom-left-radius: 25px;
+	-moz-border-radius-bottomright: 25px;
+	-moz-border-radius-bottomleft: 25px;
+	border-bottom-right-radius: 25px;
+	border-bottom-left-radius: 25px;
+
+
+
+
 }
 
 #user-form {
@@ -1184,7 +1222,20 @@ body.loginbody {
 }
 
 .loginbody .logo {
-	margin: 50px 30px 30px 100px;
+	/*margin: 50px 30px 30px 100px;*/
+
+	margin: 100px 10px -12px 10px;
+	background: white;
+	border: 3px solid rgb(153, 153, 153);
+	-webkit-border-top-left-radius: 20px;
+	-webkit-border-top-right-radius: 20px;
+	-moz-border-radius-topleft: 20px;
+	-moz-border-radius-topright: 20px;
+	border-top-left-radius: 20px;
+	border-top-right-radius: 20px;
+	text-align: center;
+	padding: 10px;
+	background-color: rgba(255, 255, 255, 0.3);
 }
 
 .login #error {
@@ -1205,6 +1256,11 @@ body.loginbody {
 	padding: 50px 30px 50px 30px;
 	border-right: 1px dotted #333;
 	background-color: #eee;
+	-webkit-border-top-left-radius: 20px;
+	-webkit-border-bottom-left-radius: 20px;
+	-moz-border-radius-topleft: 20px;
+	-moz-border-radius-bottomleft: 20px;
+	border-bottom-left-radius: 20px;
 }
 
 .login .formwrap {
@@ -1740,4 +1796,22 @@ img {
 .addressbox .address:hover {
 	cursor: pointer;
 >>>>>>> 86e0cc4... taskfarm service UI: remove hardcoded values used for chart drawing and align with the new encoding for sampling results
+}
+
+
+.transparent {
+  /* IE 8 */
+  -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=50)";
+
+  /* IE 5-7 */
+  filter: alpha(opacity=50);
+
+  /* Netscape */
+  -moz-opacity: 0.5;
+
+  /* Safari 1.x */
+  -khtml-opacity: 0.5;
+
+  /* Good browsers */
+  opacity: 0.5;
 }

@@ -175,7 +175,7 @@ class Device(Base):
             returns its JSON description
         """        
         d = {"Type" : self.Type, "GroupID":self.GroupID}
-        
+      
         for key in self.__dict__:
             item = self.__dict__[key]
             if issubclass(item.__class__, Metric) or isinstance(item, Metric):

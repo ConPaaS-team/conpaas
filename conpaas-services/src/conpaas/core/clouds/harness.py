@@ -13,7 +13,9 @@ from libcloud.compute.types import Provider
 from libcloud.compute.providers import get_driver
 
 from .base import Cloud
-
+import httplib2
+import simplejson
+import base64
 
 class HarnessCloud(Cloud):
     '''Support for "harness" clouds'''
@@ -21,7 +23,10 @@ class HarnessCloud(Cloud):
     def __init__(self, cloud_name, iaas_config):
         Cloud.__init__(self, cloud_name)
         #TODO:(genc) put this on configurations
-        self.url = "http://131.254.201.5:5558" 
+        self.conn = httplib2.Http()
+        self.img = iaas_config.get(cloud_name, 'IMAGE_ID') 
+        #self.url = "http://127.0.0.1:5558/method" 
+        self.url = "http://172.16.0.1:5558/method" 
 
     def get_cloud_type(self):
         return 'harness'
@@ -54,40 +59,47 @@ class HarnessCloud(Cloud):
         #if self.connected is False:
             #raise Exception('Not connected to cloud')
 
-        ## destroy_node does not work properly in libcloud's dummy
-        ## driver. Just return True.
-        #return True
-    
-        #def __make_request(self, url, content = {}):
-        ##print "Conn ID =", id(self)
-        #print "\nRequest :",url
-        #print content
-        #data, response = self.cHonn.request(self.url + url , 'POST',
-                          #simplejson.dumps(content),
-                          #headers={'Content-Type': 'application/json'})
-        #try:
-            #response = simplejson.loads(response)
-        #except:
+
+    def __make_request(self, url, content = {}):
+        #print "Conn ID =", id(self)
+        #print "\nRequest :", url, content
+        data, response = self.conn.request(self.url + url , 'POST',
+                          simplejson.dumps(content),
+                          headers={'Content-Type': 'application/json'})
+        try:
+            response = simplejson.loads(response)
+        except:
             #print traceback.print_exc()
-            #return response
-
-        #print "Response :", response
-        #return response
-
-
-    def prepareReservation(self, configuration = {}):
+            return response
+        
+        #print "Response :", response["result"]
+        return response["result"]
+    
+    
+    def prepare_reservation(self, configuration = {}):
+        for i in range(len(configuration['Resources'])):
+            if configuration['Resources'][i]['Type'] == 'Machine':
+                configuration['Resources'][i]['Image'] =  self.img
+                configuration['Resources'][i]['UserData'] = base64.b64encode(self.get_context())
         response = self.__make_request("/prepareReservation", configuration)
         return response
-
-    def createReservation(self, configurationID):
-        response = self.__make_request("/createReservation", {"configID" : configurationID})
-        print response
-
+    
+    def create_reservation(self, configurationID):
+        response = self.__make_request("/createReservation", {"ConfigID" : configurationID})
         return response
-
-    def releaseReservation(self, reservationID):
-        response = self.__make_request("/releaseReservation", {"reservID" : reservationID})
-
+    
+    def release_reservation(self, reservationID):
+        response = self.__make_request("/releaseReservation", {"ResID" : reservationID})
+        if response is {}:
+            return True
+    
+    def check_reservation(self, reservationID):
+        response = self.__make_request("/checkReservation", {"ResID" : reservationID})
+        
+        return response
+    #for development only
+    def reset(self):
+        response = self.__make_request("/reset")
         return response
 
     
