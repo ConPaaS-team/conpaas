@@ -23,14 +23,16 @@ conpaas.ui = (function (this_module) {
         conpaas.ui.ServicePage.prototype.attachHandlers.call(this);
         $('#createVolume').click(this, this.onCreateVolume);
         $('#deleteVolume').click(this, this.onDeleteVolume);
+        $('#downloadUserCert').click(this, this.onDownloadUserCert);
+        $('#downloadClientCert').click(this, this.onDownloadClientCert);
     },
-    showCreateVolStatus: function (type, message) {
+    showStatus: function (statusId, type, message) {
         var otherType = (type === 'positive') ? 'error' : 'positive';
-        $('#VolumeStat').removeClass(otherType).addClass(type)
+        $(statusId).removeClass(otherType).addClass(type)
             .html(message)
             .show();
         setTimeout(function () {
-            $('#VolumeStat').fadeOut();
+            $(statusId).fadeOut();
         }, 3000);
     },
     // handlers
@@ -39,12 +41,12 @@ conpaas.ui = (function (this_module) {
 			volumeName = $('#volume').val();
 	        owner = $('#owner').val();	
 		if(volumeName.length == 0){
-			page.showCreateVolStatus('error','There is no volume name');	
+			page.showStatus('#VolumeStat', 'error','There is no volume name');	
 			return;
 		}
 
 		if(owner.length == 0){
-			page.showCreateVolStatus('error','There is no owner');	
+			page.showStatus('#VolumeStat', 'error','There is no owner');	
 			return;
 		}
 		//send the request
@@ -55,14 +57,14 @@ conpaas.ui = (function (this_module) {
             owner: owner
         }, 'post', function (response) {
             // successful
-            page.showCreateVolStatus('positive', 'The Volume was created successfully');
+            page.showStatus('#VolumeStat', 'positive', 'The Volume was created successfully');
             $('#createVolume').removeAttr('disabled');
             $('#volume').val('');
             $('#owner').val('');
             $('.selectHint, .msgbox').hide();
         }, function (response) {
             // error
-            page.showCreateVolStatus('error', 'Volume was not created');
+            page.showStatus('#VolumeStat', 'error', 'Volume was not created');
             $('#createVolume').removeAttr('disabled');
         });
     },
@@ -72,7 +74,7 @@ conpaas.ui = (function (this_module) {
 			volumeName = $('#volume').val();
 		
 		if(volumeName.length == 0){
-			page.showCreateVolStatus('error','There is no volume name');	
+			page.showStatus('#VolumeStat', 'error','There is no volume name');	
 			return;
 		}
 		//send the request
@@ -82,19 +84,41 @@ conpaas.ui = (function (this_module) {
             volumeName: volumeName
         }, 'post', function (response) {
             // successful
-            page.showCreateVolStatus('positive', 'The Volume was deleted successfully');
+            page.showStatus('#VolumeStat', 'positive', 'The Volume was deleted successfully');
             $('#deleteVolume').removeAttr('disabled');
             $('#volume').val('');
             $('#owner').val('');
             $('.selectHint, .msgbox').hide();
         }, function (response) {
             // error
-            page.showCreateVolStatus('error', 'Volume was not deleted');
+            page.showStatus('#VolumeStat', 'error', 'Volume was not deleted');
             $('#deleteVolume').removeAttr('disabled');
         });
+    },
+
+    onDownloadUserCert: function (event) {
+        var page = event.data,
+            form = $('form#userCertForm');
+
+        if ($('#user').val().length == 0) {
+            page.showStatus('#userCertStat', 'error', 'The user field must not be empty');
+            return false;
+        }
+
+        form.submit();
+        form[0].reset();
+    },
+
+    onDownloadClientCert: function (event) {
+        var page = event.data,
+            form = $('form#clientCertForm');
+
+        form.submit();
+        form[0].reset();
     }
+
     });
-    
+
     return this_module;
 }(conpaas.ui || {}));
 
