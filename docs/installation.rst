@@ -66,7 +66,7 @@ should be enabled in :file:`/etc/apt/sources.list` and
 :file:`/etc/apt/sources.list.d/`. 
 
 **cpsdirector** is available here:
-http://www.conpaas.eu/dl/cpsdirector-1.3.2.tar.gz. The tarball includes an
+http://www.conpaas.eu/dl/cpsdirector-1.x.x.tar.gz. The tarball includes an
 installation script called :file:`install.sh` for your convenience. You can
 either run it as root or follow the installation procedure outlined below in
 order to setup your ConPaaS Director installation.
@@ -88,7 +88,7 @@ order to setup your ConPaaS Director installation.
     >> and again
     $ sudo ntpdate 0.us.pool.ntp.org
 
-#. Download http://www.conpaas.eu/dl/cpsdirector-1.3.2.tar.gz and
+#. Download http://www.conpaas.eu/dl/cpsdirector-1.x.x.tar.gz and
    uncompress it
 
 #. Run :command:`make install` as root
@@ -444,7 +444,7 @@ or::
     $  cd ..
     $  pip install simplejson |& tee sjson.log
     $  apt-get install libffi-dev |& tee libffi.log
-    $  pip install cpslib-1.3.2.tar.gz |& tee my-ve-cpslib.log
+    $  pip install cpslib-1.x.x.tar.gz |& tee my-ve-cpslib.log
 
 Configuring ``cps-tools``::
 
