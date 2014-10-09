@@ -7,6 +7,8 @@ from .base import BaseClient
 from .config import config
 from .service import ServiceCmd
 
+import base64
+
 POLICIES = {'osd_sel': {'list': 'list_osd_sel_policies',
                         'set': 'set_osd_sel_policy',
                         },
@@ -28,6 +30,8 @@ class XtreemFSCmd(ServiceCmd):
         self._add_add_volume()
         self._add_list_volumes()
         self._add_remove_volume()
+        self._add_get_client_cert()
+        self._add_get_user_cert()
         self._add_list_policies()
         self._add_set_policy()
         self._add_toggle_persistent()
@@ -88,6 +92,68 @@ class XtreemFSCmd(ServiceCmd):
         else:
             print("Volume %s has been successfully removed from XtreemFS service %d."
                   % (args.volume_name, service_id))
+
+    # ========== get_client_cert
+    def _add_get_client_cert(self):
+        subparser = self.add_parser('get_client_cert',
+                                    help="create a PKCS#12 client certificate")
+        subparser.set_defaults(run_cmd=self.get_client_cert, parser=subparser)
+        subparser.add_argument('serv_name_or_id',
+                               help="Name or identifier of a service")
+        subparser.add_argument('passphrase',
+                               help="PKCS#12 passphrase")
+        subparser.add_argument('adminflag',
+                               help="Flag which grants administrator rights [ yes | no ]")
+        subparser.add_argument('filename',
+                               help="Name of the PKCS#12 certificate file to be generated")
+
+    def get_client_cert(self, args):
+        service_id = self.get_service_id(args.serv_name_or_id)
+        data = { 'passphrase': args.passphrase,
+                 'adminflag': str(args.adminflag).lower() in ("yes", "y", "true", "t", "1") }
+        filename = args.filename
+        res = self.client.call_manager_post(service_id, "get_client_cert", data)
+        if 'error' in res:
+            self.client.error("Could not create client certificate %s from XtreemFS service %d: %s"
+                              % (args.filename, service_id, res['error']))
+        else:
+            open(filename, 'wb').write(base64.b64decode(res['cert']))
+            print("Client certificate %s has been successfully created from XtreemFS service %d."
+                  % (args.filename, service_id))
+
+    # ========== get_user_cert
+    def _add_get_user_cert(self):
+        subparser = self.add_parser('get_user_cert',
+                                    help="create a PKCS#12 user certificate")
+        subparser.set_defaults(run_cmd=self.get_user_cert, parser=subparser)
+        subparser.add_argument('serv_name_or_id',
+                               help="Name or identifier of a service")
+        subparser.add_argument('user',
+                               help="User name")
+        subparser.add_argument('group',
+                               help="Group name")
+        subparser.add_argument('passphrase',
+                               help="PKCS#12 passphrase")
+        subparser.add_argument('adminflag',
+                               help="Flag which grants administrator rights [ yes | no ]")
+        subparser.add_argument('filename',
+                               help="Name of the PKCS#12 certificate file to be generated")
+
+    def get_user_cert(self, args):
+        service_id = self.get_service_id(args.serv_name_or_id)
+        data = {  'user': args.user,
+                  'group': args.group,
+                  'passphrase': args.passphrase,
+                  'adminflag': str(args.adminflag).lower() in ("yes", "y", "true", "t", "1") }
+        filename = args.filename
+        res = self.client.call_manager_post(service_id, "get_user_cert", data)
+        if 'error' in res:
+            self.client.error("Could not create user certificate %s from XtreemFS service %d: %s"
+                              % (args.filename, service_id, res['error']))
+        else:
+            open(filename, 'wb').write(base64.b64decode(res['cert']))
+            print("User certificate %s has been successfully created from XtreemFS service %d."
+                  % (args.filename, service_id))
 
     # ========== list_policies
     def _add_list_policies(self):
