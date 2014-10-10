@@ -98,23 +98,37 @@ conpaas.ui = (function (this_module) {
 
     onDownloadUserCert: function (event) {
         var page = event.data,
-            form = $('form#userCertForm');
+            form = $('form#userCertForm')[0];
 
         if ($('#user').val().length == 0) {
             page.showStatus('#userCertStat', 'error', 'The user field must not be empty');
             return false;
         }
 
+        passphrase = form.elements['passphrase'].value;
+        passphrase2 = form.elements['passphrase2'].value;
+        if (passphrase != passphrase2) {
+            page.showStatus('#userCertStat', 'error', 'Retyped passphrase does not match');
+            return false;
+        }
+
         form.submit();
-        form[0].reset();
+        form.reset();
     },
 
     onDownloadClientCert: function (event) {
         var page = event.data,
-            form = $('form#clientCertForm');
+            form = $('form#clientCertForm')[0];
+
+        passphrase = form.elements['passphrase'].value;
+        passphrase2 = form.elements['passphrase2'].value;
+        if (passphrase != passphrase2) {
+            page.showStatus('#clientCertStat', 'error', 'Retyped passphrase does not match');
+            return false;
+        }
 
         form.submit();
-        form[0].reset();
+        form.reset();
     }
 
     });

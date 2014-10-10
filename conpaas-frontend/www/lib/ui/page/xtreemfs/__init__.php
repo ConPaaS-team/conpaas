@@ -113,6 +113,17 @@ class XtreemFSPage extends ServicePage {
 			.'</div>';
 	}
 
+	private function renderRetypePassphraseInput() {
+		return
+			'<div id="certForm">'
+				.'<div class="left-stack name">retype passphrase</div>'
+				.'<div class="left-stack details">'
+					.'<input type="password" name="passphrase2" value="" />'
+				.'</div>'
+				.'<div class="clear"></div>'
+			.'</div>';
+	}
+
 	private function renderAdminflagInput() {
 		return
 			'<div id="certForm">'
@@ -148,13 +159,14 @@ class XtreemFSPage extends ServicePage {
 			.$this->renderUserInput()
 			.$this->renderGroupInput()
 			.$this->renderPassphraseInput()
+			.$this->renderRetypePassphraseInput()
 			.$this->renderAdminflagInput()
 			.$this->renderFilenameInput('user_cert.p12')
 			.'<div id="createCertForm" class="">'
 				.'<div class="left-stack name"></div>'
 				.'<div class="left-stack details">'
 					.'<input id="downloadUserCert" type="button" '
-						.'value="download" />'
+						.'value="download certificate" />'
 					.'<i id="userCertStat" class="invisible"></i>'
 				.'</div>'
 				.'<div class="clear"></div>'
@@ -171,13 +183,14 @@ class XtreemFSPage extends ServicePage {
 			.'" />'
 			.'<input type="hidden" name="cert_type" value="client" />'
 			.$this->renderPassphraseInput()
+			.$this->renderRetypePassphraseInput()
 			.$this->renderAdminflagInput()
 			.$this->renderFilenameInput('client_cert.p12')
 			.'<div id="createCertForm" class="">'
 				.'<div class="left-stack name"></div>'
 				.'<div class="left-stack details">'
 					.'<input id="downloadClientCert" type="button" '
-						.'value="download" />'
+						.'value="download certificate" />'
 					.'<i id="clientCertStat" class="invisible"></i>'
 				.'</div>'
 				.'<div class="clear"></div>'
