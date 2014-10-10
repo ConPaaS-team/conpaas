@@ -241,6 +241,7 @@ class BaseManager(object):
         for attempt in range(1, 11):
             try:
                 ret = self.controller.destroy_volume(volume, volume.cloud)
+                break
             except Exception, err:
                 self.logger.info("Attempt %s: %s" % (attempt, err))
                 # It might take a bit for the volume to actually be
