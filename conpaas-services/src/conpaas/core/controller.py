@@ -502,21 +502,21 @@ class Controller(object):
             cloud = self.__default_cloud
 
         self.__logger.debug("attach_volume(node=%s, volume=%s, device=%s)" % 
-                (node, volume, device))
+                (node, volume.id, device))
         return cloud.attach_volume(node, volume, device)
 
     def detach_volume(self, volume, cloud=None):
         if cloud is None:
             cloud = self.__default_cloud
 
-        self.__logger.debug("detach_volume(volume=%s)" % volume)
+        self.__logger.debug("detach_volume(volume=%s)" % volume.id)
         return cloud.driver.detach_volume(volume)
 
     def destroy_volume(self, volume, cloud=None):
         if cloud is None:
             cloud = self.__default_cloud
 
-        self.__logger.debug("destroy_volume(volume=%s)" % volume)
+        self.__logger.debug("destroy_volume(volume=%s)" % volume.id)
         return cloud.driver.destroy_volume(volume)
 
     def _get_context_file(self, service_name, cloud_type):
