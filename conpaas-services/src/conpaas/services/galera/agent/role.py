@@ -386,9 +386,9 @@ class MySQLServer(object):
         sql_logger.info("Trying to unmount the Galera Disk")
         self.unmount_args = ['umount', self.dev_name]
         unmount_cmd = ' '.join(self.unmount_args)
-    	sql_logger.debug('Running command %s' % unmount_cmd)
+        sql_logger.debug('Running command %s' % unmount_cmd)
         _, err = run_cmd(unmount_cmd)
-	    if err:
+        if err:
             sql_logger.critical('Failed to unmount storage device: %s' % err)
         else:
             sql_logger.info("OSD node has succesfully unmounted %s" % self.dev_name)
