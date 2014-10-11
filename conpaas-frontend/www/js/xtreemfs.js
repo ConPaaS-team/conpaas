@@ -25,6 +25,11 @@ conpaas.ui = (function (this_module) {
         $('#deleteVolume').click(this, this.onDeleteVolume);
         $('#downloadUserCert').click(this, this.onDownloadUserCert);
         $('#downloadClientCert').click(this, this.onDownloadClientCert);
+        $('#refreshSelect').click(this, this.onRefreshSelect);
+        $('#mountCommand').click(this, this.onClickCommand);
+        $('#unmountCommand').click(this, this.onClickCommand);
+        $('#mountPoint').focusout(this.refreshCommand);
+        $('#certFilename').focusout(this.refreshCommand);
     },
     showStatus: function (statusId, type, message) {
         var otherType = (type === 'positive') ? 'error' : 'positive';
@@ -35,10 +40,39 @@ conpaas.ui = (function (this_module) {
             $(statusId).fadeOut();
         }, 3000);
     },
+    refreshCommand: function () {
+        var dirAddress = $('#dirAddress').text(),
+            volume = $('#selectVolume').val(),
+            mountPoint = $('#mountPoint').val(),
+            certFilename = $('#certFilename').val();
+
+            if (!dirAddress) {
+				dirAddress = '<DIR-address>';
+			}
+            if (!volume) {
+				volume = '<volume>';
+			}
+            if (!mountPoint) {
+				mountPoint = '<mount-point>';
+			}
+            if (!certFilename) {
+				certFilename = '<filename.p12>';
+			}
+
+            $('#mountCommand').val('mount.xtreemfs ' +
+                dirAddress + '/' +
+                volume + ' ' +
+                mountPoint +
+                ' --pkcs12-file-path ' +
+                certFilename +
+                ' --pkcs12-passphrase -');
+
+            $('#unmountCommand').val('fusermount -u ' + mountPoint);
+    },
     // handlers
     onCreateVolume: function (event) {
 		var page = event.data,
-			volumeName = $('#volume').val();
+			volumeName = $('#volume').val(),
 	        owner = $('#owner').val();	
 		if(volumeName.length == 0){
 			page.showStatus('#VolumeStat', 'error','There is no volume name');	
@@ -62,6 +96,7 @@ conpaas.ui = (function (this_module) {
             $('#volume').val('');
             $('#owner').val('');
             $('.selectHint, .msgbox').hide();
+            page.onRefreshSelect(event, volumeName);
         }, function (response) {
             // error
             page.showStatus('#VolumeStat', 'error', 'Volume was not created');
@@ -89,6 +124,7 @@ conpaas.ui = (function (this_module) {
             $('#volume').val('');
             $('#owner').val('');
             $('.selectHint, .msgbox').hide();
+            page.onRefreshSelect(event);
         }, function (response) {
             // error
             page.showStatus('#VolumeStat', 'error', 'Volume was not deleted');
@@ -98,37 +134,106 @@ conpaas.ui = (function (this_module) {
 
     onDownloadUserCert: function (event) {
         var page = event.data,
-            form = $('form#userCertForm')[0];
+            form = $('form#userCertForm')[0],
+            passphrase = form.elements['passphrase'].value,
+            passphrase2 = form.elements['passphrase2'].value,
+            certFilename = form.elements['filename'].value;
 
         if ($('#user').val().length == 0) {
             page.showStatus('#userCertStat', 'error', 'The user field must not be empty');
+            $('#user').focus();
             return false;
         }
 
-        passphrase = form.elements['passphrase'].value;
-        passphrase2 = form.elements['passphrase2'].value;
         if (passphrase != passphrase2) {
             page.showStatus('#userCertStat', 'error', 'Retyped passphrase does not match');
+            form.elements['passphrase'].value = '';
+            form.elements['passphrase2'].value = '';
+            form.elements['passphrase'].focus();
             return false;
         }
 
         form.submit();
         form.reset();
+
+        $('#hintCert').hide();
+        $('#certFilename').val(certFilename);
+        page.refreshCommand();
     },
 
     onDownloadClientCert: function (event) {
         var page = event.data,
-            form = $('form#clientCertForm')[0];
+            form = $('form#clientCertForm')[0],
+            passphrase = form.elements['passphrase'].value,
+            passphrase2 = form.elements['passphrase2'].value,
+            certFilename = form.elements['filename'].value;
 
-        passphrase = form.elements['passphrase'].value;
-        passphrase2 = form.elements['passphrase2'].value;
         if (passphrase != passphrase2) {
             page.showStatus('#clientCertStat', 'error', 'Retyped passphrase does not match');
+            form.elements['passphrase'].value = '';
+            form.elements['passphrase2'].value = '';
+            form.elements['passphrase'].focus();
             return false;
         }
 
         form.submit();
         form.reset();
+
+        $('#hintCert').hide();
+        $('#certFilename').val(certFilename);
+        page.refreshCommand();
+    },
+
+    onClickCommand: function (event) {
+        var page = event.data;
+
+        page.refreshCommand();
+        $(this).focus().select();
+    },
+
+    onRefreshSelect: function (event, selectedVolume) {
+        var page = event.data,
+            standardErrorText = 'Volumes information not available';
+
+        $('#selectVolume').attr('disabled','disabled');
+        $('#refreshSelect').attr('disabled','disabled');
+        $('#hintVolume').hide();
+        page.server.reqHTML('viewVolumes.php', {
+            sid: page.service.sid
+        }, 'get', function (response) {
+            // successful
+            $('#selectVolume').removeAttr('disabled');
+            $('#refreshSelect').removeAttr('disabled');
+            $('.selectHint, .msgbox').hide();
+            if (response.indexOf(standardErrorText) > -1) {
+                page.showStatus('#selectVolumeStat', 'error', standardErrorText);
+                $('#selectVolume').html('');
+                page.refreshCommand();
+                return;
+            }
+            var re = /\n\t(.+)\t->\t/g,
+                m, options = '',
+                oldVal = selectedVolume || $('#selectVolume').val();
+            while (m = re.exec(response)) {
+                options += '<option value="' + m[1] + '"';
+                if (m[1] == oldVal) {
+                    options += ' selected="selected"';
+                }
+                options += '>' + m[1] + '</option>';
+            }
+            $('#selectVolume').html(options);
+            page.refreshCommand();
+            if (!options) {
+				$('#hintVolume').show();
+			}
+        }, function (response) {
+            // error
+            $('#selectVolume').removeAttr('disabled');
+            $('#refreshSelect').removeAttr('disabled');
+            page.showStatus('#selectVolumeStat', 'error', response);
+            $('#selectVolume').html('');
+            page.refreshCommand();
+        });
     }
 
     });
@@ -152,6 +257,7 @@ $(document).ready(function () {
                 window.location.reload();
             });
         }
+        $('#refreshSelect').click();
     }, function () {
         // error
         window.location = 'services.php';

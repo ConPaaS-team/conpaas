@@ -72,7 +72,8 @@ class XtreemFSPage extends ServicePage {
 		return
 		'<div class="form-section xtreemfs-volume">'
 			.'<div class="form-header">'
-				.'<div class="title">XtreemFS Volume'
+				.'<div class="title">'
+					.'<img src="images/volume.png" />Manage XtreemFS Volumes'
 				.'</div>'
 				.'<div class="clear"></div>'
 			.'</div>'
@@ -202,7 +203,8 @@ class XtreemFSPage extends ServicePage {
 		return
 		'<div class="form-section xtreemfs-volume">'
 			.'<div class="form-header">'
-				.'<div class="title">Create User Certificate'
+				.'<div class="title">'
+					.'<img src="images/certificate.png" />Create User Certificate'
 				.'</div>'
 				.'<div class="clear"></div>'
 			.'</div>'
@@ -214,7 +216,8 @@ class XtreemFSPage extends ServicePage {
 		return
 		'<div class="form-section xtreemfs-volume">'
 			.'<div class="form-header">'
-				.'<div class="title">Create Client Certificate'
+				.'<div class="title">'
+					.'<img src="images/certificate.png" />Create Client Certificate'
 				.'</div>'
 				.'<div class="clear"></div>'
 			.'</div>'
@@ -222,10 +225,122 @@ class XtreemFSPage extends ServicePage {
 		.'</div>';
 	}
 
+	private function renderServerAddress() {
+		return
+			'<div id="certForm">'
+				.'<div class="left-stack name">DIR address</div>'
+				.'<div id="dirAddress" class="left-stack details">'
+					.$this->service->getAccessLocation()
+				.'</div>'
+				.'<div class="clear"></div>'
+			.'</div>';
+	}
+
+	private function renderVolumeSelect() {
+		return
+			'<div id="certForm">'
+				.'<div class="left-stack name">volume</div>'
+				.'<div class="left-stack details">'
+					.'<select id="selectVolume" class="xtreemfs-select" />'
+					.'<input id="refreshSelect" type="button" value="refresh" />'
+					.'<b id="hintVolume" class="hint invisible">To access the service you '
+						.'must first create a volume</b>'
+					.'<i id="selectVolumeStat" class="invisible"></i>'
+				.'</div>'
+				.'<div class="clear"></div>'
+			.'</div>';
+	}
+
+	private function renderMountPointInput() {
+		return
+			'<div id="certForm">'
+				.'<div class="left-stack name">mount point</div>'
+				.'<div class="left-stack details">'
+					.'<input id="mountPoint" type="text" value="" />'
+				.'</div>'
+				.'<div class="clear"></div>'
+			.'</div>';
+	}
+
+	private function renderCertFilenameInput() {
+		return
+			'<div id="certForm">'
+				.'<div class="left-stack name">certificate filename</div>'
+				.'<div class="left-stack details">'
+					.'<input id="certFilename" type="text" value="" />'
+					.'<b id="hintCert" class="hint">To access the service you '
+						.'must first create a certificate (client or user)</b>'
+				.'</div>'
+				.'<div class="clear"></div>'
+			.'</div>';
+	}
+
+	private function renderMountCommand() {
+		$cmd = 'mount.xtreemfs '.$this->service->getAccessLocation()
+				.'/<volume> <mount-point> '
+				.'--pkcs12-file-path <client_cert.p12> '
+				.'--pkcs12-passphrase <passphrase>';
+		return
+			'<div id="certForm">'
+				.'<div class="left-stack name">'
+					.'<div class="xtreemfs-command">'
+						.'<img src="images/terminal.png" title="shell command" />'
+					.'</div><div class="xtreemfs-command">'
+						.'mount<br/>command'
+					.'</div>'
+				.'</div>'
+				.'<div class="left-stack details">'
+					.'<input class="command" type="text" readonly="readonly" '
+						.' id="mountCommand" value="'.$cmd.'" title="shell command"/>'
+					.'<b class="hint"> Click on command to Copy it</b>'
+				.'</div>'
+				.'<div class="clear"></div>'
+			.'</div>';
+	}
+
+	private function renderUnmountCommand() {
+		$cmd = 'fusermount -u <mount-point>';
+		return
+			'<div id="certForm">'
+				.'<div class="left-stack name">'
+					.'<div class="xtreemfs-command">'
+						.'<img src="images/terminal.png" title="shell command" />'
+					.'</div><div class="xtreemfs-command">'
+						.'unmount<br/>command'
+					.'</div>'
+				.'</div>'
+				.'<div class="left-stack details">'
+					.'<input class="command" type="text" readonly="readonly" '
+						.' id="unmountCommand" value="'.$cmd.'" title="shell command"/>'
+					.'<b class="hint"> Click on command to Copy it</b>'
+				.'</div>'
+				.'<div class="clear"></div>'
+			.'</div>';
+	}
+
+	public function renderAccessSection() {
+		return
+		'<div class="form-section xtreemfs-volume">'
+			.'<div class="form-header">'
+				.'<div class="title">'
+					.'<img src="images/key.png" />XtreemFS Access'
+				.'</div>'
+				.'<div class="clear"></div>'
+			.'</div>'
+			.$this->renderServerAddress()
+			.$this->renderVolumeSelect()
+			.$this->renderMountPointInput()
+			.$this->renderCertFilenameInput()
+			.$this->renderMountCommand()
+			.$this->renderUnmountCommand()
+		.'</div>';
+	}
+
 	public function renderContent() {
 		$html = $this->renderInstancesSection();
 		if($this->service->isRunning()){
-			$html .= $this->renderVolumeForm(); 
+			$html .= $this->renderAccessSection();
+			$html .= $this->renderVolumeForm();
 		}
 		$html .= $this->renderClientCertificateSection();
 		$html .= $this->renderUserCertificateSection();
