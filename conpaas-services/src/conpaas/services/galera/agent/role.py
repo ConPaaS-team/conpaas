@@ -198,6 +198,11 @@ class MySQLServer(object):
             except Exception as e:
                 sql_logger.exception('Failed to stop MySQL daemon: %s' % e)
                 raise e
+            try:
+                self.unmount()                
+            except Exception as e:
+                sql_logger.exception('Failed to unmount disk %s' % self.dev_name)
+                raise e
         else:
             sql_logger.warning('Requested to stop MySQL daemon'
                                ' while it was in state %s'
@@ -375,6 +380,19 @@ class MySQLServer(object):
         else:
             sql_logger.critical("Block device %s unavailable, falling back to image space" 
                     % self.dev_name)
+
+    def unmount(self):
+        # unmount
+        sql_logger.info("Trying to unmount the Galera Disk")
+        self.unmount_args = ['umount', self.dev_name]
+        unmount_cmd = ' '.join(self.unmount_args)
+    	sql_logger.debug('Running command %s' % unmount_cmd)
+        _, err = run_cmd(unmount_cmd)
+	    if err:
+            sql_logger.critical('Failed to unmount storage device: %s' % err)
+        else:
+            sql_logger.info("OSD node has succesfully unmounted %s" % self.dev_name)
+
 
 class GLBNode(object):
     """
