@@ -28,6 +28,8 @@ conpaas.ui = (function (this_module) {
         $('#refreshSelect').click(this, this.onRefreshSelect);
         $('#mountCommand').click(this, this.onClickCommand);
         $('#unmountCommand').click(this, this.onClickCommand);
+        $('#linkVolumes').click(this, this.onClickLinkVolumes);
+        $('#linkCert').click(this, this.onClickLinkCert);
         $('#mountPoint').focusout(this.refreshCommand);
         $('#certFilename').focusout(this.refreshCommand);
     },
@@ -189,6 +191,14 @@ conpaas.ui = (function (this_module) {
 
         page.refreshCommand();
         $(this).focus().select();
+    },
+
+    onClickLinkVolumes: function (event) {
+        $('#volume').focus();
+    },
+
+    onClickLinkCert: function (event) {
+        $('form#clientCertForm')[0].elements['passphrase'].focus();
     },
 
     onRefreshSelect: function (event, selectedVolume) {

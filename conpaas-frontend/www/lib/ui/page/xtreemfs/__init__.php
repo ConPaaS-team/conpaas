@@ -24,6 +24,7 @@ class XtreemFSPage extends ServicePage {
 		}
 		return '<div class="rightmenu">'.$links.'</div>';
 	}
+
 	protected function renderInstanceActions() {
 		return EditableTag()
 			->setColor('orange')
@@ -32,9 +33,9 @@ class XtreemFSPage extends ServicePage {
 			->setText('XtreemFS OSD');
 	}
 
-	private function renderVolumeInput(){
+	private function renderVolumeInput() {
 		return
-			'<div id="volumeForm">'
+			'<div>'
 			.'<div class="left-stack name">volume name</div>'
 			.'<div class="left-stack details">'
 					.'<input id="volume" type="text" />'
@@ -42,9 +43,9 @@ class XtreemFSPage extends ServicePage {
 				.'<div class="clear"></div>'
 			.'</div>';
 	}
-	private function renderOwnerInput(){
+	private function renderOwnerInput() {
 		return
-			'<div id="volumeForm">'
+			'<div>'
 			.'<div class="left-stack name">owner</div>'
 			.'<div class="left-stack details">'
 					.'<input id="owner" type="text" />'
@@ -52,7 +53,7 @@ class XtreemFSPage extends ServicePage {
 				.'<div class="clear"></div>'
 			.'</div>';
 	}
-	private function renderVolumeCreate(){
+	private function renderVolumeCreate() {
 		return $this->renderVolumeInput()
            .$this->renderOwnerInput()     
            .'<div id="createVolumeForm" class="">'
@@ -68,9 +69,9 @@ class XtreemFSPage extends ServicePage {
 			.'</div>';
 	}
 
-	public function renderVolumeForm(){
+	public function renderManageVolumesSection() {
 		return
-		'<div class="form-section xtreemfs-volume">'
+		'<div id="Manage_XtreemFS_Volumes" class="form-section xtreemfs-volume">'
 			.'<div class="form-header">'
 				.'<div class="title">'
 					.'<img src="images/volume.png" />Manage XtreemFS Volumes'
@@ -83,7 +84,7 @@ class XtreemFSPage extends ServicePage {
 
 	private function renderUserInput() {
 		return
-			'<div id="certForm">'
+			'<div>'
 				.'<div class="left-stack name">user</div>'
 				.'<div class="left-stack details">'
 					.'<input id="user" type="text" name="user" value="" />'
@@ -94,7 +95,7 @@ class XtreemFSPage extends ServicePage {
 
 	private function renderGroupInput() {
 		return
-			'<div id="certForm">'
+			'<div>'
 				.'<div class="left-stack name">group</div>'
 				.'<div class="left-stack details">'
 					.'<input id="group" type="text" name="group" value="" />'
@@ -105,7 +106,7 @@ class XtreemFSPage extends ServicePage {
 
 	private function renderPassphraseInput() {
 		return
-			'<div id="certForm">'
+			'<div>'
 				.'<div class="left-stack name">passphrase</div>'
 				.'<div class="left-stack details">'
 					.'<input type="password" name="passphrase" value="" />'
@@ -116,7 +117,7 @@ class XtreemFSPage extends ServicePage {
 
 	private function renderRetypePassphraseInput() {
 		return
-			'<div id="certForm">'
+			'<div>'
 				.'<div class="left-stack name">retype passphrase</div>'
 				.'<div class="left-stack details">'
 					.'<input type="password" name="passphrase2" value="" />'
@@ -127,7 +128,7 @@ class XtreemFSPage extends ServicePage {
 
 	private function renderAdminflagInput() {
 		return
-			'<div id="certForm">'
+			'<div>'
 				.'<div class="left-stack name">admin flag</div>'
 				.'<div class="left-stack details">'
 					.'<input type="checkbox" name="adminflag" value="yes" />'
@@ -138,7 +139,7 @@ class XtreemFSPage extends ServicePage {
 
 	private function renderFilenameInput($filename) {
 		return
-			'<div id="certForm">'
+			'<div>'
 				.'<div class="left-stack name">filename</div>'
 				.'<div class="left-stack details">'
 					.'<input type="text" name="filename" value="'
@@ -201,7 +202,7 @@ class XtreemFSPage extends ServicePage {
 
 	public function renderUserCertificateSection() {
 		return
-		'<div class="form-section xtreemfs-volume">'
+		'<div id="Create_User_Certificate" class="form-section xtreemfs-volume">'
 			.'<div class="form-header">'
 				.'<div class="title">'
 					.'<img src="images/certificate.png" />Create User Certificate'
@@ -214,7 +215,7 @@ class XtreemFSPage extends ServicePage {
 
 	public function renderClientCertificateSection() {
 		return
-		'<div class="form-section xtreemfs-volume">'
+		'<div id="Create_Client_Certificate" class="form-section xtreemfs-volume">'
 			.'<div class="form-header">'
 				.'<div class="title">'
 					.'<img src="images/certificate.png" />Create Client Certificate'
@@ -227,7 +228,7 @@ class XtreemFSPage extends ServicePage {
 
 	private function renderServerAddress() {
 		return
-			'<div id="certForm">'
+			'<div>'
 				.'<div class="left-stack name">DIR address</div>'
 				.'<div id="dirAddress" class="left-stack details">'
 					.$this->service->getAccessLocation()
@@ -238,13 +239,17 @@ class XtreemFSPage extends ServicePage {
 
 	private function renderVolumeSelect() {
 		return
-			'<div id="certForm">'
+			'<div>'
 				.'<div class="left-stack name">volume</div>'
 				.'<div class="left-stack details">'
 					.'<select id="selectVolume" class="xtreemfs-select" />'
 					.'<input id="refreshSelect" type="button" value="refresh" />'
-					.'<b id="hintVolume" class="hint invisible">To access the service you '
-						.'must first create a volume</b>'
+					.'<b id="hintVolume" class="hint invisible">'
+						.'To access the service you must first '
+						.'<a id="linkVolumes" href="#Manage_XtreemFS_Volumes">'
+							.'create a volume'
+						.'</a>'
+					.'</b>'
 					.'<i id="selectVolumeStat" class="invisible"></i>'
 				.'</div>'
 				.'<div class="clear"></div>'
@@ -253,7 +258,7 @@ class XtreemFSPage extends ServicePage {
 
 	private function renderMountPointInput() {
 		return
-			'<div id="certForm">'
+			'<div>'
 				.'<div class="left-stack name">mount point</div>'
 				.'<div class="left-stack details">'
 					.'<input id="mountPoint" type="text" value="" />'
@@ -264,12 +269,16 @@ class XtreemFSPage extends ServicePage {
 
 	private function renderCertFilenameInput() {
 		return
-			'<div id="certForm">'
+			'<div>'
 				.'<div class="left-stack name">certificate filename</div>'
 				.'<div class="left-stack details">'
 					.'<input id="certFilename" type="text" value="" />'
-					.'<b id="hintCert" class="hint">To access the service you '
-						.'must first create a certificate (client or user)</b>'
+					.'<b id="hintCert" class="hint">'
+						.'To access the service you must first '
+						.'<a id="linkCert" href="#Create_Client_Certificate">'
+							.'create a certificate'
+						.'</a> (client or user)'
+					.'</b>'
 				.'</div>'
 				.'<div class="clear"></div>'
 			.'</div>';
@@ -281,7 +290,7 @@ class XtreemFSPage extends ServicePage {
 				.'--pkcs12-file-path <client_cert.p12> '
 				.'--pkcs12-passphrase <passphrase>';
 		return
-			'<div id="certForm">'
+			'<div>'
 				.'<div class="left-stack name">'
 					.'<div class="xtreemfs-command">'
 						.'<img src="images/terminal.png" title="shell command" />'
@@ -301,7 +310,7 @@ class XtreemFSPage extends ServicePage {
 	private function renderUnmountCommand() {
 		$cmd = 'fusermount -u <mount-point>';
 		return
-			'<div id="certForm">'
+			'<div>'
 				.'<div class="left-stack name">'
 					.'<div class="xtreemfs-command">'
 						.'<img src="images/terminal.png" title="shell command" />'
@@ -320,7 +329,7 @@ class XtreemFSPage extends ServicePage {
 
 	public function renderAccessSection() {
 		return
-		'<div class="form-section xtreemfs-volume">'
+		'<div id="XtreemFS_Access" class="form-section xtreemfs-volume">'
 			.'<div class="form-header">'
 				.'<div class="title">'
 					.'<img src="images/key.png" />XtreemFS Access'
@@ -340,7 +349,7 @@ class XtreemFSPage extends ServicePage {
 		$html = $this->renderInstancesSection();
 		if($this->service->isRunning()){
 			$html .= $this->renderAccessSection();
-			$html .= $this->renderVolumeForm();
+			$html .= $this->renderManageVolumesSection();
 		}
 		$html .= $this->renderClientCertificateSection();
 		$html .= $this->renderUserCertificateSection();
