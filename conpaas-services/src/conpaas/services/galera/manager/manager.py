@@ -126,7 +126,7 @@ class GaleraManager(BaseManager):
                 raise
         try:
             glb_nodes = self.config.get_glb_nodes()
-	    self.logger.exception('Galera node already active: %s' % glb_nodes) 
+	    self.logger.debug('Galera node already active: %s' % glb_nodes) 
             nodesIp=[]
 	    nodesIp = ["%s:%s" % (node.ip, self.config.MYSQL_PORT)  # FIXME: find real mysql port instead of default 3306
                          for node in nodes]

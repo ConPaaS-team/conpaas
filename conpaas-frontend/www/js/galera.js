@@ -144,7 +144,7 @@ $(document).ready(function () {
 	  ['3s',  0],
 	  ['2s',  0],
 	  ['1s',  0],
-	  ['0s', 0],
+	  ['0s', 0]
           ];
 var sid = getUrlVars()["sid"];
       function drawChart() {
@@ -202,7 +202,7 @@ google.setOnLoadCallback(drawChart);
                                                 statsPS[statsPS.length-1][1]-statsPS[statsPS.length-2][1] ,
 						statsPS[statsPS.length-1][2]-statsPS[statsPS.length-2][2] ,
 						statsPS[statsPS.length-1][3]-statsPS[statsPS.length-2][3] ,
-						statsPS[statsPS.length-1][4]-statsPS[statsPS.length-2][4] ,
+						statsPS[statsPS.length-1][4]-statsPS[statsPS.length-2][4] 
                                                ];
 
 		var tot_operation= (+stats[stats.length-1][1]
@@ -253,11 +253,11 @@ $.ajax({ type: "GET",
 			var $xml = $( xmlDoc );
   			$xml.find( "GRID" ).find("CLUSTER").find("HOST").each(function(){
 											var host= new Object;
-											if ($(this).attr("NAME") !="conpaas")
-												host["hostname"]=$(this).attr("NAME");
+											if ($(this).attr("IP") =="127.0.0.1" || $(this).attr("NAME") =="conpaas")
+												host["hostname"]="Manager";
 											else 
-												 host["hostname"]="Manager";
-														;
+												 host["hostname"]=$(this).attr("IP");
+														
 
 											$(this).find('METRIC[NAME="cpu_idle"]').each(function (){
 											host[$(this).attr("NAME")]=$(this).attr("VAL");
