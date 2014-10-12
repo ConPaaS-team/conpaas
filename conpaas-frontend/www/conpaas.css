@@ -710,9 +710,21 @@ input.button {
 .mysql-access .name {
 	width: 100px;
 }
+
 .xtreemfs-volume .name {
 	width: 120px;
 }
+
+.xtreemfs-select {
+	width: 172px;
+}
+
+.xtreemfs-command {
+	float: right;
+	margin-left: 10px;
+	vertical-align: middle;
+}
+
 .form-section .form-header {
 	margin-bottom: 10px;
 }
