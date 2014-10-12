@@ -186,7 +186,7 @@ class XtreemFSPage extends ServicePage {
 			.'<input type="hidden" name="cert_type" value="client" />'
 			.$this->renderPassphraseInput()
 			.$this->renderRetypePassphraseInput()
-			.$this->renderAdminflagInput()
+//			.$this->renderAdminflagInput()
 			.$this->renderFilenameInput('client_cert.p12')
 			.'<div id="createCertForm" class="">'
 				.'<div class="left-stack name"></div>'
@@ -277,7 +277,7 @@ class XtreemFSPage extends ServicePage {
 						.'To access the service you must first '
 						.'<a id="linkCert" href="#Create_Client_Certificate">'
 							.'create a certificate'
-						.'</a> (client or user)'
+						.'</a>'
 					.'</b>'
 				.'</div>'
 				.'<div class="clear"></div>'
@@ -352,7 +352,7 @@ class XtreemFSPage extends ServicePage {
 			$html .= $this->renderManageVolumesSection();
 		}
 		$html .= $this->renderClientCertificateSection();
-		$html .= $this->renderUserCertificateSection();
+//		$html .= $this->renderUserCertificateSection();
 
 		return $html;
 	}

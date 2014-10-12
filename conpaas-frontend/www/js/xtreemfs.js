@@ -23,7 +23,7 @@ conpaas.ui = (function (this_module) {
         conpaas.ui.ServicePage.prototype.attachHandlers.call(this);
         $('#createVolume').click(this, this.onCreateVolume);
         $('#deleteVolume').click(this, this.onDeleteVolume);
-        $('#downloadUserCert').click(this, this.onDownloadUserCert);
+//        $('#downloadUserCert').click(this, this.onDownloadUserCert);
         $('#downloadClientCert').click(this, this.onDownloadClientCert);
         $('#refreshSelect').click(this, this.onRefreshSelect);
         $('#mountCommand').click(this, this.onClickCommand);
