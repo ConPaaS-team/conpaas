@@ -187,7 +187,7 @@ class XtreemFSPage extends ServicePage {
 			.$this->renderPassphraseInput()
 			.$this->renderRetypePassphraseInput()
 //			.$this->renderAdminflagInput()
-			.$this->renderFilenameInput('client_cert.p12')
+			.$this->renderFilenameInput('certificate.p12')
 			.'<div id="createCertForm" class="">'
 				.'<div class="left-stack name"></div>'
 				.'<div class="left-stack details">'
@@ -218,7 +218,7 @@ class XtreemFSPage extends ServicePage {
 		'<div id="Create_Client_Certificate" class="form-section xtreemfs-volume">'
 			.'<div class="form-header">'
 				.'<div class="title">'
-					.'<img src="images/certificate.png" />Create Client Certificate'
+					.'<img src="images/certificate.png" />Access credentials'
 				.'</div>'
 				.'<div class="clear"></div>'
 			.'</div>'
@@ -347,12 +347,12 @@ class XtreemFSPage extends ServicePage {
 
 	public function renderContent() {
 		$html = $this->renderInstancesSection();
-		if($this->service->isRunning()){
-			$html .= $this->renderAccessSection();
-			$html .= $this->renderManageVolumesSection();
-		}
 		$html .= $this->renderClientCertificateSection();
 //		$html .= $this->renderUserCertificateSection();
+		if($this->service->isRunning()){
+			$html .= $this->renderManageVolumesSection();
+			$html .= $this->renderAccessSection();
+		}
 
 		return $html;
 	}

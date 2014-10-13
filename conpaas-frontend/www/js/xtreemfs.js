@@ -197,10 +197,12 @@ conpaas.ui = (function (this_module) {
 
     onClickLinkVolumes: function (event) {
         $('#volume').focus();
+        return false;
     },
 
     onClickLinkCert: function (event) {
         $('form#clientCertForm')[0].elements['passphrase'].focus();
+        return false;
     },
 
     onRefreshSelect: function (event, selectedVolume) {
