@@ -218,9 +218,9 @@ class MGeneral(object):
     def update_environment(self, appid):
         env = ''
 
-        # Find mysql ip address
+        # Find galera ip address
         try:
-            sid = Service.query.filter_by(application_id=appid, type='mysql').first().sid
+            sid = Service.query.filter_by(application_id=appid, type='galera').first().sid
             nodes = callmanager(sid, "list_nodes", False, {})
 
             params = { 'serviceNodeId': nodes['masters'][0] }
@@ -230,7 +230,7 @@ class MGeneral(object):
         except:
             env = env + ''
 
-        # Find xtreemfs ip address
+        # Find xtreemfs ip address and generate certificate
         try:
             sid = Service.query.filter_by(application_id=appid, type='xtreemfs').first().sid
             nodes = callmanager(sid, "list_nodes", False, {})
@@ -239,6 +239,15 @@ class MGeneral(object):
             details = callmanager(sid, "get_node_info", False, params)
             env = env + 'echo "env[XTREEMFS_IP]=\'%s\'" >> /root/ConPaaS/src/conpaas/services/webservers/etc/fpm.tmpl\n' % details['serviceNode']['ip']
             env = env + 'export XTREEMFS_IP=\'%s\'\n' % details['serviceNode']['ip']
+
+            passphrase = 'contrail123';
+            env = env + 'echo "env[XTREEMFS_PASSPHRASE]=\'%s\'" >> /root/ConPaaS/src/conpaas/services/webservers/etc/fpm.tmpl\n' % passphrase
+            env = env + 'export XTREEMFS_PASSPHRASE=\'%s\'\n' % passphrase
+
+            params = { 'passphrase': passphrase, 'adminflag': False }
+            res = callmanager(sid, "get_client_cert", True, params)
+            env = env + 'echo "env[XTREEMFS_CERT]=\'%s\'" >> /root/ConPaaS/src/conpaas/services/webservers/etc/fpm.tmpl\n' % res['cert']
+            env = env + 'export XTREEMFS_CERT=\'%s\'\n' % res['cert']
         except:
             env = env + ''
 
@@ -728,7 +737,7 @@ def get_manifest_class(service_type):
         return MPhp
     elif service_type == 'java':
         return MJava
-    elif service_type == 'mysql' or service_type == 'galera':
+    elif service_type == 'galera':
         return MMySql
     elif service_type == 'scalaris':
         return MScalaris
