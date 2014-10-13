@@ -149,6 +149,12 @@ conpaas.ui = (function (this_module) {
             return false;
         }
 
+        if (passphrase.length == 0) {
+            page.showStatus('#userCertStat', 'error', 'The passphrase must not be empty');
+            form.elements['passphrase'].focus();
+            return false;
+        }
+
         if (passphrase != passphrase2) {
             page.showStatus('#userCertStat', 'error', 'Retyped passphrase does not match');
             form.elements['passphrase'].value = '';
@@ -171,6 +177,12 @@ conpaas.ui = (function (this_module) {
             passphrase = form.elements['passphrase'].value,
             passphrase2 = form.elements['passphrase2'].value,
             certFilename = form.elements['filename'].value;
+
+        if (passphrase.length == 0) {
+            page.showStatus('#clientCertStat', 'error', 'The passphrase must not be empty');
+            form.elements['passphrase'].focus();
+            return false;
+        }
 
         if (passphrase != passphrase2) {
             page.showStatus('#clientCertStat', 'error', 'Retyped passphrase does not match');
