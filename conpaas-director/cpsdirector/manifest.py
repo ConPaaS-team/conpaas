@@ -223,7 +223,10 @@ class MGeneral(object):
             sid = Service.query.filter_by(application_id=appid, type='galera').first().sid
             nodes = callmanager(sid, "list_nodes", False, {})
 
-            params = { 'serviceNodeId': nodes['masters'][0] }
+            if nodes['glb_nodes']:
+                params = { 'serviceNodeId': nodes['glb_nodes'][0] }
+            else:
+                params = { 'serviceNodeId': nodes['nodes'][0] }
             details = callmanager(sid, "get_node_info", False, params)
             env = env + 'echo "env[MYSQL_IP]=\'%s\'" >> /root/ConPaaS/src/conpaas/services/webservers/etc/fpm.tmpl\n' % details['serviceNode']['ip']
             env = env + 'export MYSQL_IP=\'%s\'\n' % details['serviceNode']['ip']
@@ -497,15 +500,19 @@ class MMySql(MGeneral):
 
         if json.get('StartupInstances'):
             params = {
-                    'slaves': 0
+                    'nodes': 0,
+                    'glb_nodes': 0
             }
 
-            if json.get('StartupInstances').get('slaves'):
-                params['slaves'] = int(json.get('StartupInstances').get('slaves'))
+            if json.get('StartupInstances').get('nodes'):
+                params['nodes'] = int(json.get('StartupInstances').get('nodes'))
+            if json.get('StartupInstances').get('glb_nodes'):
+                params['glb_nodes'] = int(json.get('StartupInstances').get('glb_nodes'))
 
-            res = self.add_nodes(sid, params)
-            if 'error' in res:
-                return res['error']
+            if params['nodes'] or params['glb_nodes']:
+                res = self.add_nodes(sid, params)
+                if 'error' in res:
+                    return res['error']
 
         return 'ok'
 
