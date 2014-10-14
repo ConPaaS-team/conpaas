@@ -244,12 +244,10 @@ class MGeneral(object):
             env = env + 'export XTREEMFS_IP=\'%s\'\n' % details['serviceNode']['ip']
 
             passphrase = 'contrail123';
-            env = env + 'echo "env[XTREEMFS_PASSPHRASE]=\'%s\'" >> /root/ConPaaS/src/conpaas/services/webservers/etc/fpm.tmpl\n' % passphrase
             env = env + 'export XTREEMFS_PASSPHRASE=\'%s\'\n' % passphrase
 
             params = { 'passphrase': passphrase, 'adminflag': False }
             res = callmanager(sid, "get_client_cert", True, params)
-            env = env + 'echo "env[XTREEMFS_CERT]=\'%s\'" >> /root/ConPaaS/src/conpaas/services/webservers/etc/fpm.tmpl\n' % res['cert']
             env = env + 'export XTREEMFS_CERT=\'%s\'\n' % res['cert']
         except:
             env = env + ''
