@@ -9,7 +9,7 @@ require_module('application');
 require_module('ui/page/apppage');
 require_module('ui/application');
 
-$page = new Apppage();
+$page = new AppPage();
 ?>
 <?php echo $page->renderDoctype(); ?>
 <html xmlns="http://www.w3.org/1999/xhtml">
