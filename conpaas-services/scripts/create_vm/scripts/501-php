@@ -19,6 +19,10 @@ easy_install pandas
 easy_install patsy 
 easy_install statsmodels
 
+# Fix a bug in the scipy python module
+sed -i 's/from scipy import factorial/from scipy.misc import factorial/g' \
+    /usr/lib/python2.6/dist-packages/scipy/interpolate/polyint.py
+
 update-rc.d php5-fpm disable
 update-rc.d memcached disable
 update-rc.d nginx disable
