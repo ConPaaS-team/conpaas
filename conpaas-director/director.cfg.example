@@ -5,6 +5,9 @@ CONF_DIR = /etc/cpsdirector
 # Path to certificates
 CERT_DIR = /etc/cpsdirector/certs
 
+# Support for external identity providers
+support_external_idp = false
+
 # Uncomment the following directives in case you want to use per-application
 # Virtual Private Networks. In the default config presented below, the maximum
 # number of services per application is 32 (2^5), with no more than 32767

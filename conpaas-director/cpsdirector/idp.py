@@ -41,7 +41,7 @@ def __LINE__():
 
 
 idp_page = Blueprint('idp_page', __name__)
-log( '%s:%d:idp.py started' % (__file__,__LINE__() ) )
+#log( '%s:%d:idp.py started' % (__file__,__LINE__() ) )
 
 ei_dict = get_external_idps("/etc/cpsdirector/director.cfg")
 #oid = None
