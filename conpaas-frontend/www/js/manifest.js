@@ -66,4 +66,8 @@ $(document).ready(function() {
 		});
 
 	});
+
+	$('.createpage .form .service').click(function () {
+		$(this).find(':radio').attr('checked', true);
+	});
 });
