@@ -162,8 +162,14 @@ def _start(servicetype, cloudname, appid):
     # Do we have to assign a VPN subnet to this service?
     vpn = app.get_available_vpn_subnet()
 
+    # Default name
+    if servicetype == 'galera':
+        defaultname = 'New MySQL service';
+    else:
+        defaultname = "New %s service" % servicetype
+
     # New service with default name, proper servicetype and user relationship
-    s = Service(name="New %s service" % servicetype, type=servicetype,
+    s = Service(name=defaultname, type=servicetype,
         user=g.user, application=app, subnet=vpn)
 
     db.session.add(s)

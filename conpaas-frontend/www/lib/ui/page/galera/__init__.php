@@ -22,6 +22,13 @@ class GaleraPage extends ServicePage {
 		}
 	}
 
+	/*
+	 * overrides ServicePage.getTypeImage()
+	 */
+	protected function getTypeImage() {
+		return 'mysql.png';
+	}
+
 	private function passwordResetMessage() {
 		return
 		'You must '

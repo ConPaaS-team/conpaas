@@ -194,7 +194,7 @@ class ServicePage extends Page {
 		return '<div class="instancesWrapper">'.$html.'</div>';
 	}
 
-	private function getTypeImage() {
+	protected function getTypeImage() {
 		return $this->service->getType().'.png';
 	}
 

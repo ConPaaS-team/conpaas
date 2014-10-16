@@ -26,9 +26,15 @@ class DashboardServiceUI {
 	}
 
 	private function renderImage() {
+		if ($this->service->getType() == 'galera') {
+			$filename = 'mysql.png';
+		} else {
+			$filename = $this->service->getType().'.png';
+		}
+
 		return
 			'<div class="icon">'
-				.'<img src="images/'.$this->service->getType().'.png" height="64" />'
+				.'<img src="images/'.$filename.'" height="64" />'
 			.'</div>';
 	}
 

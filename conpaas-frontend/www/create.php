@@ -49,8 +49,8 @@ $page = new CreatePage();
                   Data Storage
               </div>
               <tr class="service">
-                  <td class="description"> <img src="images/galera.png" height="32" /></td>
-                  <td class="radio"><input type="radio" name="type" value="galera" /> MySQL Galera</td>
+                  <td class="description"> <img src="images/mysql.png" height="32" /></td>
+                  <td class="radio"><input type="radio" name="type" value="galera" /> mysql</td>
                   <td class="info"> MySQL-5.5 database with Galera extensions </td>
               </tr>
               <tr class="service">

@@ -12,15 +12,13 @@ conpaas.ui = (function (this_module) {
         this.server = server;
         this.service = service;
         this.setupPoller_();
-        this.stopWarningText = 'All data stored in the Galera service ' +
-                'will be lost. Are you sure you want to stop the service?';
     },
     /* methods */{
     /**
      * @override conpaas.ui.ServicePage.getStopWarningText
      */
     getStopWarningText: function () {
-        return 'All data stored in the Galera service ' +
+        return 'All data stored in the MySQL service ' +
                'will be lost. Are you sure you want to stop the service?';
     },
     /**
