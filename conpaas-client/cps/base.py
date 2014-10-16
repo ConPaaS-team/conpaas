@@ -16,7 +16,7 @@ from conpaas.core.https import client
 from conpaas.core.misc import rlinput
 
 class BaseClient(object):
-    # Set this to the service type. eg: php, java, galera...
+    # Set this to the service type. eg: php, java, mysql...
     service_type = None
 
     def __init__(self):
@@ -154,6 +154,8 @@ class BaseClient(object):
 
     def create(self, service_type, cloud = None, application_id=None, initial_state='INIT'):
         data = {}
+        if service_type == "mysql":
+            service_type == "galera"
         if application_id is not None:
             data['appid'] = application_id
         if cloud is None:
@@ -228,6 +230,8 @@ class BaseClient(object):
         additional information needed. Returns service_dict"""
         service = self.service_dict(service_id)
         for key, value in service.items():
+            if key == 'type' and value == 'galera':
+                value = 'mysql'
             print "%s: %s" % (key, value)
 
         res = self.callmanager(service['sid'], "get_service_info", False, {})
@@ -330,7 +334,10 @@ class BaseClient(object):
                 print cloud
         else:
             for service in self.available_services():
-                print service
+                if service == 'galera':
+                    print 'mysql'
+                else:
+                    print service
 
     def upload_startup_script(self, service_id, filename):
         contents = open(filename).read()
@@ -357,6 +364,10 @@ class BaseClient(object):
 
     def prettytable(self, print_order, rows):
         maxlens = {}
+
+        for row in rows:
+            if row['type'] == 'galera':
+                row['type'] = 'mysql'
 
         fields = rows[0].keys()
 
@@ -521,6 +532,8 @@ Do you want to continue? (y/N): """
                     # St_usage wants a service type. Check if we got one, and if
                     # it is acceptable.
                     service_type = argv[2]
+                    if service_type == 'mysql':
+                        service_type = 'galera'
                     if service_type not in self.available_services():
                         raise IndexError
                     # normal service usage
@@ -536,6 +549,8 @@ Do you want to continue? (y/N): """
                     # Create wants a service type. Check if we got one, and if
                     # it is acceptable.
                     service_type = argv[2]
+                    if service_type == 'mysql':
+                        service_type = 'galera'
                     if service_type not in self.available_services():
                         raise IndexError
 
