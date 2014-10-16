@@ -106,7 +106,7 @@ class DashboardServiceUI {
 		}
 		$monitor = $this->service->fetchHighLevelMonitoringInfo();
 
-		if ($this->service->getType() == 'php') {
+		if ($this->service->getType() == 'php<monitoring-disabled>') {
 			$resptime =
 				'<i class="text">'.$monitor['throughput'].'ms</i>'.
 				'<img src="images/green-down.png" />';
