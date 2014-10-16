@@ -126,6 +126,9 @@ class ServiceCmd(object):
     def list_serv(self, args):
         services = self.client.get_services(self.type)
         sorted_serv = services
+        for row in sorted_serv:
+            if row['type'] == 'galera':
+                row['type'] = 'mysql'
         # tertiary sort per service id
         sorted_serv = sorted(sorted_serv, key=lambda k: k['sid'])
         # secondary sort per service types
@@ -205,6 +208,8 @@ class ServiceCmd(object):
         res = self.client.call_manager_get(service_id, "get_service_info")
 
         for key, value in res.items():
+            if key == 'type' and value == 'galera':
+                value = 'mysql'
             print "%s: %s" % (key, value)
 
     # ========== rename
@@ -270,7 +275,10 @@ class ServiceCmd(object):
     def get_types(self, args):
         res = self.client.call_director_get("available_services")
         for serv_type in res:
-            print("%s" % serv_type)
+            if serv_type == 'galera':
+                print 'mysql'
+            else:
+                print("%s" % serv_type)
 
     # ========== list_nodes
     def _add_list_nodes(self):

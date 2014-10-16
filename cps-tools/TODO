@@ -42,7 +42,7 @@ TODO list for the cps-tools ConPaaS command line command.
     $ cps-tools service start 2 --cloud=mycloud
   better group the service identifier with the 'service' command::
     $ cps-tools service 2 start --cloud=mycloud
-    $ cps-tools service "My Galera service" set_password mypwd
+    $ cps-tools service "My MySQL service" set_password mypwd
     $ cps-tools application 3 stop
   etc.
 

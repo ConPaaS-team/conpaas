@@ -12,7 +12,7 @@ class GaleraCmd(ServiceCmd):
 
     def __init__(self, mysql_parser, client):
         ServiceCmd.__init__(self, mysql_parser, client, "galera", ['nodes', 'glb_nodes'],
-                            "MySQL Galera service sub-commands help")
+                            "MySQL service sub-commands help")
         self._add_change_pwd()
         self._add_migrate_nodes()
         self._add_dump()
@@ -21,7 +21,7 @@ class GaleraCmd(ServiceCmd):
     # ========== change_password
     def _add_change_pwd(self):
         subparser = self.add_parser('set_password',
-                                    help="change the password of the MySQL Galera database")
+                                    help="change the password of the MySQL database")
         subparser.set_defaults(run_cmd=self.change_pwd, parser=subparser)
         subparser.add_argument('serv_name_or_id',
                                help="Name or identifier of a service")
@@ -43,14 +43,14 @@ class GaleraCmd(ServiceCmd):
         data = {'user': 'mysqldb', 'password': pwd1}
         res = self.client.call_manager(service_id, "set_password", True, data)
         if 'error' in res:
-            self.client.error("Could not update MySQL Galera password for service %d: %s"
+            self.client.error("Could not update MySQL password for service %d: %s"
                               % (service_id, res['error']))
         else:
-            print("MySQL Galera password updated successfully.")
+            print("MySQL password updated successfully.")
 
     # ========== migrate_nodes
     def _add_migrate_nodes(self):
-        subparser = self.add_parser('migrate_nodes', help="migrate nodes in Galera service")
+        subparser = self.add_parser('migrate_nodes', help="migrate nodes in MySQL service")
         subparser.set_defaults(run_cmd=self.migrate_nodes, parser=subparser)
         subparser.add_argument('serv_name_or_id',
                                help="Name or identifier of a service")
@@ -78,15 +78,15 @@ class GaleraCmd(ServiceCmd):
         data = {'nodes': nodes, 'delay': args.delay}
         res = self.client.call_manager_post(service_id, "migrate_nodes", data)
         if 'error' in res:
-            self.client.error("Could not migrate nodes in MySQL Galera service %s: %s"
+            self.client.error("Could not migrate nodes in MySQL service %s: %s"
                               % (service_id, res['error']))
         else:
             if args.delay == 0:
                 print("Migration of nodes %s has been successfully started"
-                      " for MySQL Galera service %s." % (args.nodes, service_id))
+                      " for MySQL service %s." % (args.nodes, service_id))
             else:
                 print("Migration of nodes %s has been successfully started"
-                      " for MySQL Galera service %s with a delay of %s seconds."
+                      " for MySQL service %s with a delay of %s seconds."
                       % (args.nodes, service_id, args.delay))
 
     # ========== dump
