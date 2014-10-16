@@ -1,18 +1,19 @@
 ============
 Installation 
 ============
-ConPaaS_ is a Platform-as-a-Service system. It aims at simplifying the
-deployment and management of applications in the Cloud.
 
-The central component of ConPaaS, called *ConPaaS Director* (**cpsdirector**),
-is responsible for handling user authentication, creating new applications,
-handling their life-cycle and much more. **cpsdirector** is a web service
-exposing all its functionalities via an HTTP-based API.
+The central component of ConPaaS is called the *ConPaaS Director*
+(**cpsdirector**). It is responsible for handling user authentication,
+creating new applications, handling their life-cycle and much
+more. **cpsdirector** is a web service exposing all its
+functionalities via an HTTP-based API.
 
-ConPaaS can be used either via a command line interface called **cpsclient** or
-through a web frontend (**cpsfrontend**). 
-Recently a new command line interface called **cps-tools** has become available (note: **cps-tools** requires Python 2.7).
-This document explains how to install and configure all the aforementioned components.
+ConPaaS can be used either via a command line interface (called
+**cpsclient**) or through a web frontend (**cpsfrontend**).  Recently
+a new experimental command line interface called **cps-tools** has
+become available (note: **cps-tools** requires Python 2.7). This
+document explains how to install and configure all the aforementioned
+components.
 
 
 .. _ConPaaS: http://www.conpaas.eu

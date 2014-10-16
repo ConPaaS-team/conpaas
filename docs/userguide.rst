@@ -1,35 +1,13 @@
 ==========
 User Guide
 ==========
-ConPaaS is an open-source runtime environment for hosting applications in the
-cloud which aims at offering the full power of the cloud to application
-developers while shielding them from the associated complexity of the cloud.
-
-ConPaaS is designed to host both high-performance scientific
-applications and online Web applications. It runs on a variety of public
-and private clouds, and is easily extensible. ConPaaS automates the
-entire life-cycle of an application, including collaborative
-development, deployment, performance monitoring, and automatic scaling.
-This allows developers to focus their attention on application-specific
-concerns rather than on cloud-specific details.
-
-ConPaaS is organized as a collection of **services**, where each service
-acts as a replacement for a commonly used runtime environment. For
-example, to replace a MySQL database, ConPaaS provides a cloud-based
-MySQL service which acts as a high-level database abstraction. The
-service uses real MySQL databases internally, and therefore makes it
-easy to port a cloud application to ConPaaS. Unlike a regular
-centralized database, however, it is self-managed and fully elastic: one
-can dynamically increase or decrease its processing capacity by
-requesting it to reconfigure itself with a different number of virtual
-machines.
 
 ConPaaS currently contains nine services:
 
 -  **Two Web hosting services** respectively specialized for hosting PHP
    and JSP applications;
 
--  **MySQL Galera Cluster** offering a multimaster load-balanced database service;
+-  **MySQL** offering a multi-master replicated load-balanced database service;
 
 -  **Scalarix service** offering a scalable in-memory key-value store;
 
@@ -551,103 +529,14 @@ Access the application
 The frontend gives a link to the running application. This URL will
 remain valid as long as you do not stop the service.
 
-The MySQL database service
-==========================
-
-The MySQL service provides the famous database in the form of a ConPaaS
-service. When scaling the service up and down, it creates (or deletes)
-database replicas using the master-slave mechanism. At the moment, the
-service does not implement load balancing of database queries between
-the master and its slaves. Replication therefore provides
-fault-tolerance properties but no performance improvement.
-
-Resetting the user password
----------------------------
-
-When a MySQL service is started, a new user ``mysqldb`` is created with
-a randomly-generated password. To gain access to the database you must
-first reset this password. Click “Reset password” in the front-end, and
-choose the new password.
-
-Note that the user password is *not* kept by the ConPaaS frontend. If
-you forget the password the only thing you can do is reset the password
-again to a new value.
-
-Accessing the database
-----------------------
-
-The frontend provides the command-line to access the database.
-Copy-paste this command in a terminal. You will be asked for the user
-password, after which you can use the database as you wish.
-
-Note that the ``mysqldb`` user has extended privileges. It can create
-new databases, new users etc.
-
-Uploading a database dump
--------------------------
-
-The ConPaaS frontend allows to easily upload database dumps to a MySQL
-service. Note that this functionality is restricted to dumps of a
-relatively small size. To upload larger dumps you can always use the
-regular ``mysql`` command for this::
-
-    $ mysql mysql-ip-address -u mysqldb -p < dumpfile.sql
-
-Migrating MySQL agents from one cloud to another
-------------------------------------------------
-
-MySQL Galera nodes can be migrated from one cloud to another.
-The interface exists only on command line for now.
-
-Here is a possible scenario.
-Get the list of clouds::
-
-    $ cpsclient.py clouds
-    default
-    amazon
-
-Get the list of current MySQL Galera nodes::
-
-    $ cpsclient.py info 1
-    subnet: None
-    user_id: 1
-    name: New galera service
-    created: 2013-12-11T13:13:46.661778
-    vmid: 3
-    manager: 10.158.4.4
-    sid: 2
-    application_id: 1
-    type: galera
-    cloud: iaas
-    state: RUNNING
-    node: ip=10.158.4.5 cloud=iaas vmid=4
-
-Migrate a node from cloud 'default' to cloud 'amazon'.
-The migrate_nodes arguments are the service identifier
-and a description of the migration to perform.
-That description contains three parts: the origin cloud,
-the node identifier in that cloud, and the destination cloud
-(``origin_cloud:node_id:dest_cloud``)::
-
-    $ cpsclient.py migrate_nodes 1 default:4:amazon
-    Migration started...
-
-The command may also migrate several nodes at once,
-with potentially different origin clouds and different destination clouds::
-
-    $ cpsclient.py migrate_nodes 1 default:1:amazon,amazon:i-4abc915e:default
-    Migration started...
-
-
-
-The MySQL Galera Multimaster Database Service
+The MySQL Database Service
 ===============================================
 
-MySQL Galera service  is  a true Multimaster Data Base Cluster based on
-synchronous replication. MySQL Galera is an easy-to-use, high-availability
-solution, which provides high system uptime, no data loss and scalability for
-future growth. It is based on MySQL 5.5 with Galera extensions and as this
-allow direct client connection and offers the same native look and feel.
+The MySQL service is a true multi-master database cluster based on
+MySQL-5.5 and the Galera synchronous replication system. It is an
+easy-to-use, high-availability solution, which provides high system
+uptime, no data loss and scalability for future growth. It provides
+exactly the same look and feel as a regular MySQL database.
  
 Summarizing, its advanced features are:
 
@@ -660,96 +549,107 @@ Summarizing, its advanced features are:
 -  Both read and write scalability
 -  Direct client connections, native MySQL look & feel
 
-The  Ordinary Nodes and Load Balancer Nodes
+The Database Nodes and Load Balancer Nodes
 -------------------------------------------
 
-Conpaas MySQL Galera service offers the capability to instantiate multiple 
-instances of ordinary node, which can be used to increase the througput and to 
-improve features of fault tolerance throws replication. The multi-master 
-structure allows update by any ordinary node of the cluster, because the 
-replication system is responsible for propagating the data modifications made 
-by each member to the rest of the group, and resolving any conflicts that 
-might arise between concurrent changes made by different members. These 
-features can be used to increase the throughput of the cluster. To obtain the 
-better performances from a cluster, it is a best practice, to use it in 
-balanced fashion, so that each node has, approximatively, the same load of the 
-others. To achieve this, the service allows to allocate special load balancer 
-nodes, which implement load balancing. In a nutshell the Galera Load Balancer 
-nodes, automatically, schedule database queries between the ordinary nodes, and 
-in this way it ensures performance improvments.
+The MySQL service offers the capability to instantiate multiple
+instances of database nodes, which can be used to increase the
+througput and to improve features of fault tolerance throws
+replication. The multi-master structure allows any database node to
+process incoming updates, because the replication system is
+responsible for propagating the data modifications made by each member
+to the rest of the group and resolving any conflicts that might arise
+between concurrent changes made by different members. These features
+can be used to increase the throughput of the cluster. 
+
+To obtain the better performances from a cluster, it is a best
+practice to use it in balanced fashion, so that each node has
+approximatively the same load of the others. To achieve this, the
+service allows users to allocate special load balancer nodes
+(``glb_nodes``) which implement load balancing. Load balancer nodes
+are designed to receive all incoming database queries and
+automatically schedule them between the database nodes, making sure
+they all process equivalent workload.
 
 Resetting the User Password
 ---------------------------
 
-When a MySQL Galera service is started, a new user "mysqldb" is created with 
-a randomly-generated password. To gain access to the database you must first 
-reset this password. Click “Reset Password“ in the front-end, and choose the 
-new password.
+When a MySQL service is started, a new user "``mysqldb``" is created
+with a randomly-generated password. To gain access to the database you
+must first reset this password. Click "Reset Password" in the
+front-end, and choose the new password.
 
-Note that the user password is not kept by the ConPaaS frontend. If you forget 
-the password the only thing you can do is reset the password again to a 
-new value.
+Note that the user password is not kept by the ConPaaS frontend. If
+you forget the password the only thing you can do is reset the
+password again to a new value.
 
 Accessing the database
 ----------------------
 
-The frontend provides the command-line to access the database cluster. 
-Copy-paste this command in a terminal. You will be asked for the user password, 
-after which you can use the database as you wish. 
-Note that, in case the service has instantiate a load balancer the, command 
-refers to the load balancer ip and its specifical port, so the load balancer 
-can receive all the queries and distributes them across the ordinary nodes.
-Note, again, that the mysqldb user has extended privileges. It can create new 
-databases, new users etc.
+The frontend provides the command-line to access the database cluster.
+Copy-paste this command in a terminal. You will be asked for the user
+password, after which you can use the database as you wish.  Note
+that, in case the service has instantiate a load balancer the, command
+refers to the load balancer ip and its specifical port, so the load
+balancer can receive all the queries and distributes them across the
+ordinary nodes.  Note, again, that the mysqldb user has extended
+privileges. It can create new databases, new users etc.
 
 Uploading a Database Dump
 -------------------------
 
-The ConPaaS frontend allows to easily upload database dumps to a MySQL Galera 
-service. Note that this functionality is restricted to dumps of a relatively 
-small size. To upload larger dumps you can always use the regular mysql command 
-for this::
+The ConPaaS frontend allows users to easily upload database dumps to a
+MySQL service. Note that this functionality is restricted to dumps of
+a relatively small size. To upload larger dumps you can always use the
+regular mysql command for this::
 
     $ mysql mysql-ip-address -u mysqldb -p < dumpfile.sql
 
-The Monitoring
---------------
+Performance Monitoring
+----------------------
 
-MySQL Galera User Interface provides a sophisticated mechanism to monitor the
-Service.  The user interface, in the frontend, shows a monitoring control,
-called “Performance Monitor”, that can be used to monitor a large cluster's
-behaviour.  It interacts with “Ganglia”, “Galera” and “MySQL” to obtain various
+The MySQL service interface provides a sophisticated mechanism to monitor the
+service.  The user interface, in the frontend, shows a monitoring control,
+called "Performance Monitor," that can be used to monitor a large cluster's
+behaviour.  It interacts with "Ganglia", "Galera" and “MySQL” to obtain various
 kinds of information.  Thus, Performance Monitor provides a solution for
 maintaining control and visibility of all nodes, with a monitoring dynamic data
 every few seconds. 
+
 It consists of three main components.
-The first one, named “Cluster usage” is in charge of identifing and monitoring
-SQL queries.  This will let you know in advance about any overload of the
-resources.  You will also be able to spot usage trends over time so as to get
-insights on when you need to  add new nodes, serving the MySQL database.
-In the second control, you see an overview of the cluster’s performance, with a
-table detailing the load, memory usage, CPU utilization, and network traffic
-for each node of the cluster.  Users can use these informations in order to
-detect problems in their applications.  These metrics are taken from the
-Ganglia monitoring system.  In the worst case, metrics are collected at
-30-second intervals, because this is the time required by Ganglia, for sensing
-of these metrics.  The table displays the resource utilization across all
-nodes, and highlight the parameters which suggest an abnormality.  For example
-if CPU utilization is high, or free memory is very low it is shown.  This may
-mean that processes on this node will start to slow down, and that it may be
-time to add additional nodes to the cluster.  On the other hand this may alarm
-of a malfunction on the specific node. 
-In this last case, in a multimaster system, it may be a good idea to kill the
-node and replace it with another one.  The monitoring system simplifys also
-this kind of operations through buttons which allows to directly kill a
-specific node.  Keep in mind, however, that high CPU utilization may not
-necessarily affect application performance.
-The last section "Galera Mean Misalignment" draws a realtime [1-sec delay]
-measure of the mean misalignment accross the nodes.  This information is
-derived by Galera metrics about the average length of the receive queue since
-the most recent status query. If this value is noticeably larger than zero, the
-nodes are likely to be overloaded, and cannot apply the writesets as quickly as
-they arrive, resulting in replication throttling. 
+
+- "Cluster usage" monitors the number of incoming SQL queries.  This
+  will let you know in advance about any overload of the resources.
+  You will also be able to spot usage trends over time so as to get
+  insights on when you need to add new nodes, serving the MySQL
+  database.
+
+- The second control highlights the cluster’s performance, with a
+  table detailing the load, memory usage, CPU utilization, and network
+  traffic for each node of the cluster.  Users can use these
+  informations in order to detect problems in their applications. The
+  table displays the resource utilization across all nodes, and
+  highlight the parameters which suggest an abnormality. For example
+  if CPU utilization is high, or free memory is very low this is shown
+  clearly. This may mean that processes on this node will start to
+  slow down, and that it may be time to add additional nodes to the
+  cluster.  On the other hand this may indicate a malfunction on the
+  specific node.
+
+  In this last case, in a multimaster system, it may be a good idea to
+  kill the node and replace it with another one.  The monitoring
+  system simplifys also this kind of operations through buttons which
+  allows to directly kill a specific node.  Keep in mind, however,
+  that high CPU utilization may not necessarily affect application
+  performance.
+
+- "Galera Mean Misalignment" draws a realtime measure of the mean
+  misalignment accross the nodes.  This information is derived by
+  Galera metrics about the average length of the receive queue since
+  the most recent status query. If this value is noticeably larger
+  than zero, the nodes are likely to be overloaded, and cannot apply
+  the writesets as quickly as they arrive, resulting in replication
+  throttling.
 
 The Scalarix key-value store service
 ====================================
@@ -790,10 +690,10 @@ to/from the service and issue MapReduce jobs.
 **IMPORTANT:** This service requires virtual machines with *at least* 384 MB of
 RAM to function properly.
 
-The TaskFarm service
+The TaskFarming service
 ====================
 
-The TaskFarm service provides a bag of tasks scheduler for ConPaaS. The
+The TaskFarming service provides a bag of tasks scheduler for ConPaaS. The
 user needs to provide a list of independent tasks to be executed on the
 cloud and a file system location where the tasks can read input data
 and/or write output data to it. The service first enters a sampling
@@ -808,7 +708,7 @@ the rest of the tasks according to the user’s choice.
 Preparing the ConPaaS services image
 ------------------------------------
 
-By default, the TaskFarm service can execute the user code that is
+By default, the TaskFarming service can execute the user code that is
 supported by the default ConPaaS services image. If user’s tasks depend
 on specific libraries and/or applications that do not ship with the
 default ConPaaS services image, the user needs to configure the ConPaaS
@@ -835,17 +735,17 @@ tasks is large enough.
 The filesystem location
 -----------------------
 
-TaskFarm service uses XtreemFS for data input/output. The actual task
+The TaskFarming service uses XtreemFS for data input/output. The actual task
 code can also reside in the XtreemFS. The user can optionally provide an
-XtreemFS location which is then mounted on TaskFarm agents.
+XtreemFS location which is then mounted on TaskFarming agents.
 
 The demo mode
 -------------
 
-With large bags of tasks and/or with long running tasks, the TaskFarm
+With large bags of tasks and/or with long running tasks, the TaskFarming
 service can take a long time to execute the given bag. The service
 provides its users with a progress bar and reports the amount of money
-spent so far. TaskFarm service also provides a “demo” mode where the
+spent so far. The TaskFarming service also provides a “demo” mode where the
 users can try the service with custom bags without spending time and
 money.
 
