@@ -365,10 +365,6 @@ class BaseClient(object):
     def prettytable(self, print_order, rows):
         maxlens = {}
 
-        for row in rows:
-            if row['type'] == 'galera':
-                row['type'] = 'mysql'
-
         fields = rows[0].keys()
 
         for field in fields:
@@ -472,6 +468,9 @@ Do you want to continue? (y/N): """
             services = self.callapi("list/%s" % appid, True, {})
 
         if services:
+            for row in services:
+                if row['type'] == 'galera':
+                    row['type'] = 'mysql'
             print self.prettytable(( 'type', 'sid', 'application_id', 'vmid', 
                                      'name', 'manager' ), services)
         else:
