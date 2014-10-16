@@ -164,7 +164,10 @@ class MGeneral(object):
 
     def get_service_manifest(self, service):
         tmp = {}
-        tmp['Type'] = service.type
+        if service.type == "galera":
+            tmp['Type'] = "mysql"
+        else:
+            tmp['Type'] = service.type
         tmp['ServiceName'] = service.name
         tmp['Cloud'] = service.cloud
 
@@ -793,6 +796,9 @@ def new_manifest(json):
         return 'ok'
 
     for service in parse.get('Services'):
+        if service.get('Type') == "mysql":
+            service.set('Type', "galera")
+
         try:
             cls = get_manifest_class(service.get('Type'))
         except Exception:
