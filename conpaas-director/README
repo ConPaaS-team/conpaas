@@ -9,7 +9,7 @@ Installation
 ------------
 The following Debian packages are required in order to use ConPaaS. 
 
-$ sudo apt-get install build-essential python-setuptools python-dev libapache2-mod-wsgi libcurl4-openssl-dev
+$ sudo apt-get install build-essential python-setuptools python-dev libapache2-mod-wsgi libcurl4-openssl-dev autoconf
 
 Run "make install" as root. 
 
