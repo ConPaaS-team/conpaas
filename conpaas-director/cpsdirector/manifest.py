@@ -797,7 +797,7 @@ def new_manifest(json):
 
     for service in parse.get('Services'):
         if service.get('Type') == "mysql":
-            service.set('Type', "galera")
+            service['Type'] = "galera"
 
         try:
             cls = get_manifest_class(service.get('Type'))
