@@ -41,6 +41,20 @@ conpaas.ui = (function (this_module) {
         $('#linkCert').click(this, this.onClickLinkCert);
         $('#mountPoint').focusout(this.refreshCommand);
         $('#certFilename').focusout(this.refreshCommand);
+        $('#volume').keypress('createVolume', this.onEnterPressed);
+        $('#owner').keypress('createVolume', this.onEnterPressed);
+        $('#clientCertForm input[name="passphrase"]').keypress(
+                'downloadClientCert', this.onEnterPressed);
+        $('#clientCertForm input[name="passphrase2"]').keypress(
+                'downloadClientCert', this.onEnterPressed);
+        $('#clientCertForm input[name="filename"]').keypress(
+                'downloadClientCert', this.onEnterPressed);
+/*        $('#userCertForm input[name="passphrase"]').keypress(
+                'downloadUserCert', this.onEnterPressed);
+        $('#userCertForm input[name="passphrase2"]').keypress(
+                'downloadUserCert', this.onEnterPressed);
+        $('#userCertForm input[name="filename"]').keypress(
+                'downloadUserCert', this.onEnterPressed); */
     },
     showStatus: function (statusId, type, message) {
         var otherType = (type === 'positive') ? 'error' : 'positive';
@@ -337,6 +351,13 @@ conpaas.ui = (function (this_module) {
     onRefreshVolumesList: function (event, selectedVolume) {
         var page = event.data;
         page.onRefreshSelect(event, selectedVolume, true);
+    },
+
+    onEnterPressed: function (event) {
+        var buttonToBePressed = event.data;
+        if (event.keyCode == 13) {
+            $('#' + buttonToBePressed).click();
+        }
     }
 
     });
