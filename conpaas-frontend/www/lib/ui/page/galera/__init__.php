@@ -31,13 +31,11 @@ class GaleraPage extends ServicePage {
 
 	private function passwordResetMessage() {
 		return
-		'You must '
+		'Before using this service you must first '
 		.'<a id="warningResetPasswd" href="javascript: void(0);">'
-			.'reset the password'
+			.'reset the databse password'
 		.'</a>'
-		.', otherwise you cannot access the database. Because your password is '
-		.'not stored in clear text, you can only reset it, but you cannot view '
-		.'it.';
+		.', otherwise you will not be able to access it.';
 	}
 
 	public function needsPasswordReset() {
