@@ -431,6 +431,7 @@ tr.service {
 
 .service .wrapper {
 	padding: 10px;
+	border-left: 1px solid #ddd;
 	border-right: 1px solid #ccc;
 	border-top: 1px solid #ddd;
 }
@@ -715,14 +716,49 @@ input.button {
 	width: 120px;
 }
 
+.xtreemfs-details {
+	color: #333;
+	font-weight: bold;
+	margin-top: 5px;
+}
+
+.xtreemfs-available {
+	padding-bottom: 0px;
+}
+
+.xtreemfs-create {
+	padding-top: 15px;
+}
+
+.xtreemfs-box {
+	border-color: #ccc;
+	background-color: #eee;
+	margin-left: 2px;
+}
+
 .xtreemfs-select {
 	width: 172px;
+}
+
+.xtreemfs-list {
+	width: 250px;
+}
+
+.xtreemfs-list table.slist {
+	width: 100%;
 }
 
 .xtreemfs-command {
 	float: right;
 	margin-left: 10px;
 	vertical-align: middle;
+}
+
+.xtreemfs-hint {
+	color: #666;
+	font-size: 11px;
+	font-weight: normal;
+	padding: 3px;
 }
 
 .form-section .form-header {

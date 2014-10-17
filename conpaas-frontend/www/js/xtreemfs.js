@@ -33,9 +33,11 @@ conpaas.ui = (function (this_module) {
 //        $('#downloadUserCert').click(this, this.onDownloadUserCert);
         $('#downloadClientCert').click(this, this.onDownloadClientCert);
         $('#refreshSelect').click(this, this.onRefreshSelect);
+        $('#refreshVolumeList').click(this, this.onRefreshVolumesList);
         $('#mountCommand').click(this, this.onClickCommand);
         $('#unmountCommand').click(this, this.onClickCommand);
         $('#linkVolumes').click(this, this.onClickLinkVolumes);
+        $('#linkVolumes2').click(this, this.onClickLinkVolumes);
         $('#linkCert').click(this, this.onClickLinkCert);
         $('#mountPoint').focusout(this.refreshCommand);
         $('#certFilename').focusout(this.refreshCommand);
@@ -77,6 +79,34 @@ conpaas.ui = (function (this_module) {
                 ' --pkcs12-passphrase -');
 
             $('#unmountCommand').val('fusermount -u ' + mountPoint);
+    },
+    deleteVolume: function (event, volumeName) {
+		var page = event.data;
+		if (volumeName.length == 0) {
+			return;
+		}
+        if (!confirm('Are you sure you want to delete the volume ' + volumeName +
+                '? All data contained within will be lost.')) {
+            return;
+        }
+		//send the request
+        page.server.req('ajax/deleteVolume.php', {
+            sid: page.service.sid,
+            volumeName: volumeName
+        }, 'post', function (response) {
+            // successful
+            page.showStatus('#listVolumeStat', 'positive', 'The Volume was deleted successfully');
+            $('.selectHint, .msgbox').hide();
+            page.onRefreshSelect(event);
+        }, function (response) {
+            // error
+            page.showStatus('#listVolumeStat', 'error', 'Volume was not deleted');
+        });
+    },
+    makeDeleteHandler_: function (page, volumeName) {
+        return function (event) {
+            page.deleteVolume(event, volumeName);
+        };
     },
     // handlers
     onCreateVolume: function (event) {
@@ -222,12 +252,13 @@ conpaas.ui = (function (this_module) {
         return false;
     },
 
-    onRefreshSelect: function (event, selectedVolume) {
+    onRefreshSelect: function (event, selectedVolume, showResult) {
         var page = event.data,
             standardErrorText = 'Volumes information not available';
 
         $('#selectVolume').attr('disabled','disabled');
         $('#refreshSelect').attr('disabled','disabled');
+        $('#refreshVolumeList').attr('disabled','disabled');
         $('#hintVolume').hide();
         page.server.reqHTML('viewVolumes.php', {
             sid: page.service.sid
@@ -235,36 +266,77 @@ conpaas.ui = (function (this_module) {
             // successful
             $('#selectVolume').removeAttr('disabled');
             $('#refreshSelect').removeAttr('disabled');
+            $('#refreshVolumeList').removeAttr('disabled');
             $('.selectHint, .msgbox').hide();
             if (response.indexOf(standardErrorText) > -1) {
                 page.showStatus('#selectVolumeStat', 'error', standardErrorText);
+                page.showStatus('#listVolumeStat', 'error', standardErrorText);
                 $('#selectVolume').html('');
                 page.refreshCommand();
                 return;
             }
-            var re = /\n\t(.+)\t->\t/g,
-                m, options = '',
+            var re = /\n\t(.+)\t->\t/g, m, volumeName,
+                optionsHTML = '', listHTML = '',
+                volumeNames = Array(),
                 oldVal = selectedVolume || $('#selectVolume').val();
             while (m = re.exec(response)) {
-                options += '<option value="' + m[1] + '"';
-                if (m[1] == oldVal) {
-                    options += ' selected="selected"';
-                }
-                options += '>' + m[1] + '</option>';
+                volumeNames.push(m[1]);
             }
-            $('#selectVolume').html(options);
-            page.refreshCommand();
-            if (!options) {
+            volumeNames.sort();
+            for	(var i = 0; i < volumeNames.length; i++) {
+                optionsHTML += '<option value="' + volumeNames[i] + '"';
+                if (volumeNames[i] == oldVal) {
+                    optionsHTML += ' selected="selected"';
+                }
+                optionsHTML += '>' + volumeNames[i] + '</option>';
+
+                listHTML += '<tr class="service"><td class="wrapper'
+                listHTML += (i == volumeNames.length - 1 ? ' last' : '') + '">';
+                listHTML += '<div class="content xtreemfs-details">';
+                listHTML += '<img src="images/volume.png">&nbsp;&nbsp;';
+                listHTML += volumeNames[i];
+                listHTML += '</div>';
+                listHTML += '<div class="statistic"><div class="statcontent">';
+                listHTML += '<img id="';
+                listHTML += 'deleteVolume-' + volumeNames[i];
+                listHTML += '" src="images/remove.png">';
+                listHTML += '</div></div>';
+                listHTML += '<div class="clear"></div>';
+                listHTML += '</td></tr>';
+            }
+            $('#selectVolume').html(optionsHTML);
+            $('#volumesList').html(listHTML);
+            for	(var i = 0; i < volumeNames.length; i++) {
+                $('#deleteVolume-' + volumeNames[i]).click(page,
+                        page.makeDeleteHandler_(page, volumeNames[i]));
+            }
+            if (!optionsHTML) {
 				$('#hintVolume').show();
-			}
+				$('#noVolumesBox').show();
+			} else {
+                $('#noVolumesBox').hide();
+            }
+            page.refreshCommand();
+            if (showResult) {
+                page.showStatus('#listVolumeStat', 'positive', 'Volume list refreshed');
+            }
+            return true;
         }, function (response) {
             // error
             $('#selectVolume').removeAttr('disabled');
             $('#refreshSelect').removeAttr('disabled');
+            $('#refreshVolumeList').removeAttr('disabled');
             page.showStatus('#selectVolumeStat', 'error', response);
+            page.showStatus('#listVolumeStat', 'error', response);
             $('#selectVolume').html('');
+            $('#noVolumesBox').hide();
             page.refreshCommand();
         });
+    },
+
+    onRefreshVolumesList: function (event, selectedVolume) {
+        var page = event.data;
+        page.onRefreshSelect(event, selectedVolume, true);
     }
 
     });

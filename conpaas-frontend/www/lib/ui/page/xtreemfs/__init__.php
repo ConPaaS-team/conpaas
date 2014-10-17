@@ -43,6 +43,7 @@ class XtreemFSPage extends ServicePage {
 				.'<div class="clear"></div>'
 			.'</div>';
 	}
+
 	private function renderOwnerInput() {
 		return
 			'<div>'
@@ -53,16 +54,46 @@ class XtreemFSPage extends ServicePage {
 				.'<div class="clear"></div>'
 			.'</div>';
 	}
+
+	private function renderAvailableVolumes() {
+		return
+			'<div id="availableVolumesForm">'
+				.'<div class="left-stack name">available volumes</div>'
+				.'<div class="left-stack details">'
+					.'<div class="xtreemfs-list">'
+						.'<div id="noVolumesBox" class="box xtreemfs-box invisible">'
+							.'You have no volumes in this XtreemFS service. '
+							.'Go ahead and '
+							.'<a id="linkVolumes2" href="#Manage_XtreemFS_Volumes">'
+							.'create a volume'
+							.'</a>.'
+						.'</div>'
+						.'<table id="volumesList" class="slist" '
+							.'cellpadding="0" cellspacing="1">'
+						.'</table>'
+					.'</div>'
+				.'</div>'
+				.'<div class="clear"></div>'
+				.'<div class="left-stack name"></div>'
+				.'<div class="left-stack details">'
+					.'<input id="refreshVolumeList" '
+						.'type="button" value="refresh volumes" />'
+					.'<i id="listVolumeStat" class="invisible"></i>'
+				.'</div>'
+				.'<div class="clear"></div>'
+			.'</div>';
+	}
+
 	private function renderVolumeCreate() {
 		return $this->renderVolumeInput()
            .$this->renderOwnerInput()     
-           .'<div id="createVolumeForm" class="">'
+           .'<div id="createVolumeForm">'
 				.'<div class="left-stack name"></div>'
 				.'<div class="left-stack details">'
 					.'<input id="createVolume" type="button" '
 					.' value="create volume" />'
 					.'<input id="deleteVolume" type="button" '
-					.' value="delete volume" />'
+					.' value="delete volume" class="invisible" />'
                     .'<i id="VolumeStat" class="invisible"></i>'
 				.'</div>'
 				.'<div class="clear"></div>'
@@ -71,13 +102,17 @@ class XtreemFSPage extends ServicePage {
 
 	public function renderManageVolumesSection() {
 		return
-		'<div id="Manage_XtreemFS_Volumes" class="form-section xtreemfs-volume">'
+		'<div id="Manage_XtreemFS_Volumes" '
+				.'class="form-section xtreemfs-volume xtreemfs-available">'
 			.'<div class="form-header">'
 				.'<div class="title">'
 					.'<img src="images/volume.png" />Manage XtreemFS Volumes'
 				.'</div>'
 				.'<div class="clear"></div>'
 			.'</div>'
+			.$this->renderAvailableVolumes()
+		.'</div>'
+		.'<div class="form-section xtreemfs-volume xtreemfs-create">'
 			.$this->renderVolumeCreate()
 		.'</div>';
 	}
@@ -244,7 +279,7 @@ class XtreemFSPage extends ServicePage {
 				.'<div class="left-stack details">'
 					.'<select id="selectVolume" class="xtreemfs-select" />'
 					.'<input id="refreshSelect" type="button" value="refresh" />'
-					.'<b id="hintVolume" class="hint invisible">'
+					.'<b id="hintVolume" class="xtreemfs-hint invisible">'
 						.'To access the service you must first '
 						.'<a id="linkVolumes" href="#Manage_XtreemFS_Volumes">'
 							.'create a volume'
@@ -273,7 +308,7 @@ class XtreemFSPage extends ServicePage {
 				.'<div class="left-stack name">certificate filename</div>'
 				.'<div class="left-stack details">'
 					.'<input id="certFilename" type="text" value="" />'
-					.'<b id="hintCert" class="hint">'
+					.'<b id="hintCert" class="xtreemfs-hint">'
 						.'To access the service you must first '
 						.'<a id="linkCert" href="#Create_Client_Certificate">'
 							.'create a certificate'
@@ -301,7 +336,7 @@ class XtreemFSPage extends ServicePage {
 				.'<div class="left-stack details">'
 					.'<input class="command" type="text" readonly="readonly" '
 						.' id="mountCommand" value="'.$cmd.'" title="shell command"/>'
-					.'<b class="hint"> Click on command to Copy it</b>'
+					.'<b class="xtreemfs-hint"> Click on command to Copy it</b>'
 				.'</div>'
 				.'<div class="clear"></div>'
 			.'</div>';
@@ -321,7 +356,7 @@ class XtreemFSPage extends ServicePage {
 				.'<div class="left-stack details">'
 					.'<input class="command" type="text" readonly="readonly" '
 						.' id="unmountCommand" value="'.$cmd.'" title="shell command"/>'
-					.'<b class="hint"> Click on command to Copy it</b>'
+					.'<b class="xtreemfs-hint"> Click on command to Copy it</b>'
 				.'</div>'
 				.'<div class="clear"></div>'
 			.'</div>';
