@@ -33,7 +33,7 @@ class GaleraPage extends ServicePage {
 		return
 		'Before using this service you must first '
 		.'<a id="warningResetPasswd" href="javascript: void(0);">'
-			.'reset the databse password'
+			.'reset the database password'
 		.'</a>'
 		.', otherwise you will not be able to access it.';
 	}
