@@ -469,25 +469,25 @@ class BasicWebserversManager(BaseManager):
         for i in backendNodesKill:
             i.isRunningBackend = False
 
-        newNodes = []
+        node_instances = []
         try:
             self._adapting_set_count(
                 len(proxyNodesNew) + len(webNodesNew) + len(backendNodesNew))
             if proxy > 0:
-                node_instances = self.controller.create_nodes(
+                node_instances += self.controller.create_nodes(
                     len(proxyNodesNew), client.check_agent_process, self.AGENT_PORT, cloud)
             if web > 0 and vm_web_type is None:
-                node_instances = self.controller.create_nodes(
+                node_instances += self.controller.create_nodes(
                     len(webNodesNew), client.check_agent_process, self.AGENT_PORT, cloud)
             elif web > 0:
-                node_instances = self.controller.create_nodes(
+                node_instances += self.controller.create_nodes(
                     len(webNodesNew), client.check_agent_process, self.AGENT_PORT, cloud, inst_type=vm_web_type)
 
             if backend > 0 and vm_backend_type is None:
-                node_instances = self.controller.create_nodes(
+                node_instances += self.controller.create_nodes(
                     len(backendNodesNew), client.check_agent_process, self.AGENT_PORT, cloud)
             elif backend > 0:
-                node_instances = self.controller.create_nodes(
+                node_instances += self.controller.create_nodes(
                     len(backendNodesNew), client.check_agent_process, self.AGENT_PORT, cloud, inst_type=vm_backend_type)
         except:
             self.logger.exception(
@@ -500,6 +500,7 @@ class BasicWebserversManager(BaseManager):
             self._adapting_set_count(0)
 
         i = 0
+        newNodes = []
         for kwargs in proxyNodesNew + webNodesNew + backendNodesNew:
             config.serviceNodes[node_instances[i].id] = WebServiceNode(
                 node_instances[i], self.DEFAULT_NODE_WEIGHT, self.DEFAULT_NODE_WEIGHT, **kwargs)
