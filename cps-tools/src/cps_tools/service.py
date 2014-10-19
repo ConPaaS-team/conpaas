@@ -368,7 +368,7 @@ class ServiceCmd(object):
                               % (service_id, res['error']))
         else:
             print("%s nodes have been successfully removed from service %s."
-                  % (args.number, service_id))
+                  % (total_nodes, service_id))
             state = self.client.wait_for_state(service_id, ['RUNNING', 'ERROR'])
             if state in ['ERROR']:
                 self.client.error("Failed to remove nodes from service %s." % service_id)
