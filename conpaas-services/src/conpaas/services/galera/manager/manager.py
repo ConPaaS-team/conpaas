@@ -106,7 +106,7 @@ class GaleraManager(BaseManager):
         for serviceNode in nodes:
 	    try: 
 		# We try to create a new volume.
-            	volume_name = "galera-%s" % serviceNode.ip
+            	volume_name = "mysql-%s" % serviceNode.ip
             	node_id=serviceNode.id.replace("iaas", "")
 	        self.logger.debug("trying to create a volume for the node_id=%s" % node_id)
         	volume = self.create_volume(1024, volume_name,node_id)
