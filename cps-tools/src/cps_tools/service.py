@@ -302,8 +302,12 @@ class ServiceCmd(object):
                     print "Warning: got node identifier from list_nodes but failed on get_node_info: %s" % details['error']
                 else:
                     node = details['serviceNode']
-                    print "%s: node %s from cloud %s with IP address %s" \
-                          % (role, node['vmid'], node['cloud'], node['ip'])
+                    if 'vmid' in node and 'cloud' in node:
+                        print "%s: node %s from cloud %s with IP address %s" \
+                              % (role, node['vmid'], node['cloud'], node['ip'])
+                    else:
+                        print "%s: node %s with IP address %s" \
+                              % (role, node['id'], node['ip'])
 
     def _get_roles_nb(self, args):
         total_nodes = 0
