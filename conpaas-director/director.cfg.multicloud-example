@@ -1,6 +1,7 @@
 [conpaas]
 CONF_DIR = /etc/cpsdirector
 CERT_DIR = /etc/cpsdirector/certs
+DEPLOYMENT_NAME = conpaas-online
 support_external_idp = false
 
 

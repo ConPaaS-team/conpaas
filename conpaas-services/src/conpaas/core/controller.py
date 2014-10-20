@@ -39,6 +39,8 @@ class Controller(object):
         self.__logger = create_logger(__name__)
         self.__logger.setLevel(logging.DEBUG)
         # Params for director callback
+        self.__conpaas_name = config_parser.get('manager',
+                                                'DEPLOYMENT_NAME')
         self.__conpaas_creditUrl = config_parser.get('manager',
                                                 'CREDIT_URL')
         self.__conpaas_terminateUrl = config_parser.get('manager',
@@ -199,9 +201,14 @@ class Controller(object):
                 if service_type == 'galera':
                     service_type = 'mysql'
 
-                # eg: conpaas-agent-php-u34-s316
-                name = "conpaas-%s-%s-u%s-s%s" % (self.role, service_type,
-                       self.__conpaas_user_id, self.__conpaas_service_id)
+                if self.role == 'manager':
+                    role_abbr = 'mgr'
+                else:
+                    role_abbr = 'agn'
+
+                # eg: conpaas-online-u3-s1-xtreemfs-mgr
+                name = "%s-u%s-s%s-%s-%s" % (self.__conpaas_name, self.__conpaas_user_id,
+                        self.__conpaas_service_id, service_type, role_abbr)
 
                 if (service_type == 'htc'):
                     # If HTC is used we need to update here as well (as I see no way to do this elsewhere)

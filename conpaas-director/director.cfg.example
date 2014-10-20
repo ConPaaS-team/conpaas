@@ -5,6 +5,9 @@ CONF_DIR = /etc/cpsdirector
 # Path to certificates
 CERT_DIR = /etc/cpsdirector/certs
 
+# Unique name of the current ConPaaS deployment
+DEPLOYMENT_NAME = conpaas-online
+
 # Support for external identity providers
 support_external_idp = false
 

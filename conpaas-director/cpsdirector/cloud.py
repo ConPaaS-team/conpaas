@@ -39,6 +39,12 @@ class ManagerController(Controller):
     def _get_context_file(self, service_name, cloud):
         """Override default _get_context_file. Here we generate the context
         file for managers rather than for agents."""
+
+        if self.config_parser.has_option('conpaas', 'DEPLOYMENT_NAME'):
+            conpaas_deployment_name = self.config_parser.get('conpaas', 'DEPLOYMENT_NAME')
+        else:
+            conpaas_deployment_name = 'conpaas'
+
         conpaas_home = self.config_parser.get('conpaas', 'CONF_DIR')
 
         cloud_scripts_dir = os.path.join(conpaas_home, 'scripts', 'cloud')
@@ -93,6 +99,7 @@ class ManagerController(Controller):
             mngr_cfg += file_get_contents(mngr_service_cfg)
 
         # Modify manager config file setting the required variables
+        mngr_cfg = mngr_cfg.replace('%CONPAAS_DEPLOYMENT_NAME%', conpaas_deployment_name)
         mngr_cfg = mngr_cfg.replace('%DIRECTOR_URL%', director)
         mngr_cfg = mngr_cfg.replace('%CONPAAS_SERVICE_TYPE%', service_name)
 
@@ -232,6 +239,12 @@ EOF
         if not config_parser.has_section("manager"):
             config_parser.add_section("manager")
 
+        if config_parser.has_option('conpaas', 'DEPLOYMENT_NAME'):
+            conpaas_deployment_name = config_parser.get('conpaas', 'DEPLOYMENT_NAME')
+        else:
+            conpaas_deployment_name = 'conpaas'
+
+        config_parser.set("manager", "DEPLOYMENT_NAME", conpaas_deployment_name)
         config_parser.set("manager", "SERVICE_ID", service_id)
         config_parser.set("manager", "USER_ID", user_id)
         config_parser.set("manager", "APP_ID", app_id)
