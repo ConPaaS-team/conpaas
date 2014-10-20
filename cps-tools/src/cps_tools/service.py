@@ -176,11 +176,11 @@ class ServiceCmd(object):
         service_id = self.get_service_id(args.serv_name_or_id)
         print("Stopping service %s..." % service_id)
         res = self.client.call_manager_post(service_id, "shutdown")
-        if res:
-            print("Service %s is stopping." % service_id)
-        else:
+        if 'error' in res:
             self.client.error("Error when stopping service %s: %s"
                               % (service_id, res['error']))
+        else:
+            print("Service %s is stopping." % service_id)
 
     # ========== get_config
     def _add_get_config(self):
