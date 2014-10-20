@@ -196,6 +196,8 @@ class Controller(object):
                     request_start = time.time()
 
                 service_type = self.config_parser.get('manager', 'TYPE')
+                if service_type == 'galera':
+                    service_type = 'mysql'
 
                 # eg: conpaas-agent-php-u34-s316
                 name = "conpaas-%s-%s-u%s-s%s" % (self.role, service_type,
