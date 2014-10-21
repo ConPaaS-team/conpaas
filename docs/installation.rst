@@ -348,7 +348,7 @@ ssh into your manager VM as root and:
    and :file:`/var/log/cpsmanager.log`.
    
 If the director fails to respond to requests, and you receive:
-`` No ConPaaS Director at the provided URL: HTTP Error 403: Forbidden ``, or ``403 Access Denied``,
+``No ConPaaS Director at the provided URL: HTTP Error 403: Forbidden`` , or ``403 Access Denied`` ,
 you need to allow access to the root file system, which is denied by default in the new 
 version of apache2.  
 You can fix it modifying: :file: '/etc/apache2/apache2.conf'.
@@ -361,6 +361,8 @@ In particular, you need to replace these lines ::
                      Order deny,allow
                      Allow from all
              </Directory>
+             
+             
 
  with these others::
 
