@@ -352,7 +352,7 @@ If the director fails to respond to requests, and you receive:
 you need to allow access to the root file system, which is denied by default in the new 
 version of apache2.  
 You can fix it modifying: :file: '/etc/apache2/apache2.conf'.
-In particular, you need to replace these lines ::
+In particular, you need to replace these lines::
 
 
              <Directory />
@@ -363,8 +363,7 @@ In particular, you need to replace these lines ::
              </Directory>
              
              
-
- with these others::
+with these others::
 
 
              <Directory />
