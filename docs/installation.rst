@@ -347,7 +347,7 @@ ssh into your manager VM as root and:
 4. Check the contents of :file:`/root/manager.err`, :file:`/root/manager.out`
    and :file:`/var/log/cpsmanager.log`.
    
-5. If the director fails to respond to requests and you receive errors such as
+5. If the Director fails to respond to requests and you receive errors such as
    ``No ConPaaS Director at the provided URL: HTTP Error 403: Forbidden`` or
    ``403 Access Denied``, you need to allow access to the root file system,
    which is denied by default in newer versions of **apache2**.
