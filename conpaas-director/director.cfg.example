@@ -227,7 +227,7 @@ support_external_idp = false
 # ConPaaS features. This value has to match exactly the version of OpenNebula
 # you are running. If omitted it will default to 2.2.
 
-# OPENNEBULA_VERSION = 3.8
+# OPENNEBULA_VERSION = 4.6
 
 # specify COST_PER_TIME as currency amount / ATU (in seconds)
 # so            $ 6.00 / 3600  is 6 dollar per hour             (or part thereof)
