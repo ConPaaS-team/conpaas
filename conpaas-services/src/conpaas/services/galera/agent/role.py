@@ -401,7 +401,7 @@ class GLBNode(object):
 
     class_file = 'glbd.pickle'
 
-    def __init__(self, config, nodes):
+    def __init__(self, config, nodes, device_name=None):
         sql_logger.debug('GLB: __init__: %s, %s' % (config, nodes))
         self.galera_nodes = nodes
         self.state = S_STOPPED

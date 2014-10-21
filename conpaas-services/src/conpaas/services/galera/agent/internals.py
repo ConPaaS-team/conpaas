@@ -74,7 +74,7 @@ class GaleraAgent(BaseAgent):
         else:
             return HttpJsonResponse()
 
-    def _start(self, roleClass, nodes, device_name):
+    def _start(self, roleClass, nodes, device_name=None):
         if exists(roleClass.class_file):
             raise AgentException('Cannot start %s: file %s already exists.'
                                  % (roleClass, roleClass.class_file))
