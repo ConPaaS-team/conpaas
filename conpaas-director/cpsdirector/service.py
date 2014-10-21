@@ -215,7 +215,12 @@ def start(servicetype, cloudname="default"):
 
     # Use default application id if no appid was specified
     if not appid:
-        appid = get_default_app(g.user.uid).aid
+        app = get_default_app(g.user.uid)
+        if not app:
+            return build_response(jsonify({ 'error': True,
+		                        'msg': "No existing applications" }))
+        else:
+            appid = app.aid
 
     return _start(servicetype, cloudname, appid)
 

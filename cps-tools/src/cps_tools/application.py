@@ -16,11 +16,14 @@ def check_appl_name(client, appl_name_or_id):
              raise an exception otherwise.
     """
 
-    if appl_name_or_id is None:
-        return (None, None)
-
     apps = client.call_director_get("listapp")
     app_ids = [appl['aid'] for appl in apps]
+
+    if not apps:
+        raise Exception('No existing applications')
+
+    if appl_name_or_id is None:
+        return (None, None)
 
     try:
         appl_id = int(appl_name_or_id)

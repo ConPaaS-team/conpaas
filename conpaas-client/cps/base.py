@@ -553,9 +553,14 @@ Do you want to continue? (y/N): """
                     if service_type not in self.available_services():
                         raise IndexError
 
+                    applist = self.listapp(False)
+                    if not applist:
+                        print "E: No existing applications"
+                        sys.exit(1)
+
                     try:
                         appid = int(argv[3])
-                        if appid not in self.listapp(False):
+                        if appid not in applist:
                             print "E: Unknown application id: %s" % appid
                             sys.exit(1)
                     except IndexError:
