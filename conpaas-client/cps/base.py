@@ -95,6 +95,9 @@ class BaseClient(object):
         except (ssl.SSLError, urllib2.URLError):
             print "E: Cannot perform the requested action.\nTry updating your client certificates with %s credentials" % sys.argv[0]
             sys.exit(1)
+        except Exception as e:
+            print "E: %s" % e
+            sys.exit(1)
 
     def callmanager(self, service_id, method, post, data, files=[]):
         """Call the manager API.

@@ -188,7 +188,7 @@ def _start(servicetype, cloudname, appid):
         exc_type, exc_value, exc_traceback = sys.exc_info()
         lines = traceback.format_exception(exc_type, exc_value, exc_traceback)
         log(''.join('!! ' + line for line in lines))
-        error_msg = 'Error upon service creation: %s %s' % (type(err), err)
+        error_msg = 'Error upon service creation: %s' % err
         log(error_msg)
         return build_response(jsonify({ 'error': True, 'msg': error_msg }))
 

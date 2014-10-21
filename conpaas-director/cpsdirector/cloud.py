@@ -231,8 +231,12 @@ EOF
         self._stop_reservation_timer()
 
     def get_cloud_by_name(self, cloud_name):
-        return [ cloud for cloud in self.get_clouds() 
-            if cloud.get_cloud_name() == cloud_name ][0]
+        clouds = [ cloud for cloud in self.get_clouds()
+            if cloud.get_cloud_name() == cloud_name ]
+        if not clouds:
+            raise Exception(('There is no cloud named %s. Please check your ' +
+                'Director configuration.') % cloud_name)
+        return clouds[0]
 
     def __get_config(self, service_id, user_id, app_id, service_type="", vpn=None):
         """Add manager configuration"""
