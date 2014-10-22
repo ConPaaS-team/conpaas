@@ -751,7 +751,8 @@ The following ports should be open for all running instances:
 -  TCP ports 80, 443, 5555, 8000, 8080 and 9000 – used by the Web
    Hosting service
 
--  TCP port 3306 – used by the MySQL service
+-  TCP ports 3306, 4444, 4567, 4568 – used by the MySQL service with
+   Galera extensions
 
 -  TCP ports 8020, 8021, 8088, 50010, 50020, 50030, 50060, 50070, 50075,
    50090, 50105, 54310 and 54311 – used by the Map Reduce service
