@@ -45,3 +45,4 @@ if __name__ == "__main__":
 
     common.chown(common.config_parser.get('director',
         'DATABASE_URI').replace('sqlite:///', ''), 'www-data', 'www-data')
+    
