@@ -75,7 +75,6 @@ A new service should be added in a new python module under the
     │   │       │── htc/
     │   │       │── htcondor/
     │   │       │── mapreduce/
-    │   │       │── mysql/
     │   │       │── scalaris/
     │   │       │── selenium/
     │   │       │── taskfarm/
@@ -265,7 +264,6 @@ configuration files described above.
     │   │   │── htc-agent.cfg
     │   │   │── htcondor.cfg
     │   │   │── mapreduce-agent.cfg
-    │   │   │── mysql-agent.cfg
     │   │   │── scalaris-agent.cfg
     │   │   │── web-agent.cfg
     │   │   │── xtreemfs-agent.cfg
@@ -332,7 +330,6 @@ configuration files described above.
         │       │── 004-conpaas-core
         │       │── 501-php
         │       │── 502-galera
-        │       │── 502-mysql
         │       │── 503-condor
         │       │── 504-selenium
         │       │── 505-hadoop

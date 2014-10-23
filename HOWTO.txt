@@ -103,12 +103,10 @@ conpaas-services
     main ConPaaS code including common modules, manager codes, and agent codes.
 cps-tools
     command line client cps-tools, depends on conpaas-services
-doc
-    obsolete folder still use for collaboration on scientific paper
 docs
     ConPaaS documentation
 examples
-    old tests
+    example applications that can be deployed in ConPaaS
 
 
 -----------
