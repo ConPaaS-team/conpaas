@@ -240,20 +240,24 @@ class GenericAgent(BaseAgent):
         self.logger.info('Setting agent environment')
 
         #TODO: do some checks on the arguments
-        agents_info = simplejson.loads(kwargs.pop('agents_info'))
+        instances = simplejson.loads(kwargs.pop('instances'))
         agent_ip = kwargs.pop('ip')
         self.state = 'ADAPTING'
-     
-        
-        with open(join(self.VAR_CACHE, 'agents.json'), 'w') as outfile:
-            simplejson.dump(agents_info, outfile)
+         
+        dirname = join(self.VAR_CACHE, 'harness')
+
+        if not exists(dirname):
+            makedirs(dirname)
+
+        with open(join(dirname, 'instances.json'), 'w') as outfile:
+            simplejson.dump(instances, outfile)
        
-        agent_role = [i['Role'] for i in agents_info if i['IP'] == agent_ip][0]
-        master_ip = [i['IP'] for i in agents_info if i['Role'] == 'MASTER'][0]
+        # agent_role = [i['Role'] for i in instances if i['Addresss'] == agent_ip][0]
+        # master_ip = [i['Addresss'] for i in instances if i['Role'] == 'MASTER'][0]
         
-        self.env.update({'MY_IP':agent_ip})
-        self.env.update({'MY_ROLE':agent_role})
-        self.env.update({'MASTER_IP':master_ip})
+        # self.env.update({'MY_IP':agent_ip})
+        # self.env.update({'MY_ROLE':agent_role})
+        # self.env.update({'MASTER_IP':master_ip})
         
 
         initpath = join(self.VAR_CACHE, 'bin', 'init.sh')

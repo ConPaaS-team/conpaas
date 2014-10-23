@@ -161,11 +161,11 @@ def create_user(username, fname, lname, email, affiliation, password, credit, uu
                     credit=credit,
                     uuid=uuid)
 
-    from cpsdirector.application import Application
-    app = Application(user=new_user)
+    # from cpsdirector.application import Application
+    # app = Application(user=new_user)
 
     db.session.add(new_user)
-    db.session.add(app)
+    # db.session.add(app)
 
     try:
         db.session.commit()

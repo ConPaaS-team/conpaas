@@ -361,7 +361,7 @@ def startapp(user_id, cloud_name, app_id, vpn, controller=None):
 
     from conpaas.core.appmanager import appclient 
     reservation = controller.create_reservation_test(reservation, appclient.check_manager_process, 443)
-    node = reservation['Resources'][0]
+    node = reservation['Nodes'][0]
     #node = controller.create_reservation(reservation_id, len(manager_configuration['Resources']), lambda ip, port: True, None, cloud)[0]
     #node = {'IP':'123', 'ID':'leshpresh'}
     controller._stop_reservation_timer()

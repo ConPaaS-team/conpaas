@@ -13,7 +13,7 @@ $page = new Page();
    <head>
       <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
       <title>ConPaaS - Upload new manifest</title>
-      <link type="text/css" rel="stylesheet" href="conpaas.css" />
+      <link type="text/css" rel="stylesheet" href="css/conpaas.css" />
       <?php echo $page->renderIcon(); ?>
       <script src="js/jquery-1.5.js"></script>
       <script src="js/jquery.form.js"></script>

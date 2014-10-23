@@ -31,17 +31,30 @@ import urlparse
 
 class ApplicationManager(ConpaasRequestHandlerComponent):
 
+    S_INIT = 'INIT'         # manager initialized but not yet started
+    S_PROLOGUE = 'PROLOGUE' # manager is starting up
+    S_RUNNING = 'RUNNING'   # manager is running
+    S_ADAPTING = 'ADAPTING' # manager is in a transient state - frontend will 
+                            # keep polling until manager out of transient state
+    S_PROFILING = 'PROFILING'  
+    S_EPILOGUE = 'EPILOGUE' # manager is shutting down
+    S_STOPPED = 'STOPPED'   # manager stopped
+    S_ERROR = 'ERROR'       # manager is in error state
+
+
     def __init__(self, httpsserver, config_parser, **kwargs):
+        self.state = self.S_INIT
         ConpaasRequestHandlerComponent.__init__(self)
         self.logger = create_logger(__name__)
         self.httpsserver = httpsserver
         self.config_parser = config_parser
+        self.cache = config_parser.get('manager', 'VAR_CACHE')
 
         #TODO:(genc): You might consider to remove the controller from the base manager and use only this one.
         #self.controller = Controller(config_parser)
         self.instance_id = 0
         self.kwargs = kwargs
-
+        self.state = self.S_RUNNING
         #TODO:(genc) Put some order in this parsing, it is horrible
         #sloconent = file_get_contents(kwargs['slo'])
         #self.slo = SLOParser.parse(simplejson.loads(sloconent))
@@ -65,13 +78,14 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
 
     @expose('GET')
     def get_profiling_info(self, kwargs):
-        return HttpJsonResponse(Traces.Experiments)    
-
+        return HttpJsonResponse({'state':self.state, 'profile':{'experiments': Traces.Experiments, 'pareto':Traces.ParetoExperiments}})    
 
     def run_am(self, cloud):
         if self.manifest.PerformanceModel == None:
+            self.state = self.S_PROFILING
             profiler = Profiler(self, cloud)
             profiler.run()
+            self.state = self.S_RUNNING
         sys.stdout.flush()
 
 
@@ -97,15 +111,15 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
         return details
 
     @expose('UPLOAD')
-    def upload_manifest_slo(self, kwargs):
+    def upload_manifest(self, kwargs):
 
         manifestfile = kwargs.pop('manifest')
         manifestconent = manifestfile.file
         self.manifest = ManifestParser.parse(simplejson.loads(manifestconent.read()))
 
-        slofile = kwargs.pop('slo')
-        sloconent = slofile.file
-        self.slo = SLOParser.parse(simplejson.loads(sloconent.getvalue()))
+        # slofile = kwargs.pop('slo')
+        # sloconent = slofile.file
+        # self.slo = SLOParser.parse(simplejson.loads(sloconent.getvalue()))
         
 
         #Note that I am assuming that an application has only ONE generic service    
@@ -232,3 +246,9 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
         except:
             #self.__logger.exception('Failed to deduct credit')
             return False    
+
+    # def save_profile(self):
+    #     f=open(os.path.join(self.cache, 'profile'), 'a')
+    #     f.write("{ 'experiments': %s, \n" % Traces.TrainingSet)
+    #     f.write("'pareto': %s\n }" % Traces.ParetoExperiments)
+    #     f.close()

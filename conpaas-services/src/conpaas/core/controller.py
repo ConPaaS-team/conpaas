@@ -122,8 +122,7 @@ class Controller(object):
             host = str(host)
 
             if host not in running_hosts:
-                self.__logger.debug("get_available_ipop_address: returning %s" 
-                    % host)
+                self.__logger.debug("get_available_ipop_address: returning %s" % host)
                 return host
 
     def create_reservation_test(self, reservation, test_managent, port, cloud=None):
@@ -159,7 +158,7 @@ class Controller(object):
                 time.sleep(sleep_interval)
                 iteration += 1    
             if nr_not_started == 0:
-                reservation['Resources'] = status['Nodes']
+                reservation['Nodes'] = status['Nodes']
                 return reservation
         
         raise Exception('Timeout while creating a reservation: %s nodes did not start' % nr_not_started)

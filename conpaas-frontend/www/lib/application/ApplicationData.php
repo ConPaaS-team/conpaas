@@ -16,6 +16,15 @@ class ApplicationData {
 		}
 		return $applications;
 	}
+
+	public static function getApplicationById($uid, $aid) {
+		$applications = ApplicationData::getApplications($uid);
+		foreach($applications as $app) {
+			if ($app['aid'] == $aid)
+				return $app;
+		}
+		return null;
+	}
 }
 
 ?>

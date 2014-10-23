@@ -70,7 +70,7 @@ $support_external_idp = Director::getSupportExternalIdp();
                 <li> it monitors its own performance </li>
                 <li> it can increase or decrease its processing capacity by dynamically (de-)provisioning instances of itself in the cloud </li>
             </ul>
-            <em>Copyright &copy;2011-<?php echo date('Y')?> Contrail consortium.<br />All rights reserved.<br />ConPaaS <?php echo Director::getVersion(); ?>.</em>
+            <em>Copyright &copy;2011-<?php echo date('Y')?> Contrail and Harness consortia.<br />All rights reserved.<br />ConPaaS <?php echo Director::getVersion(); ?>.</em>
             </p>
         </td>
         <td class="formwrap">

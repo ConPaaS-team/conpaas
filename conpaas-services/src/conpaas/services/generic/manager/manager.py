@@ -183,7 +183,8 @@ class GenericManager(BaseManager):
             ##for i in range(1, nr_instances):
             ##    nodes.append( self.controller.create_nodes(1, client.check_agent_process, self.AGENT_PORT))
             #nodes = self.controller.create_nodes(nr_instances, client.check_agent_process, self.AGENT_PORT)
-            self.nodes = configuration['Resources']
+            
+            self.nodes = configuration['Nodes']
 
             #config = self._configuration_get()
             
@@ -193,9 +194,9 @@ class GenericManager(BaseManager):
             
             #this was when init was executed before ssending the rest of the code  
             #self._init_agents()
-            
+            insances = self._conv_res_to_instance(configuration)
             self._update_code(self.nodes)
-            self._init_agents(args)
+            self._init_agents(insances, args)
 
             ## Extend the nodes list with the newly created one
             #self.nodes += nodes
@@ -233,12 +234,29 @@ class GenericManager(BaseManager):
     def get_check_agent_funct(self):
         return client.check_agent_process
  
-    def _init_agents(self, args=None):
+    # TODO:(genc):maybe this is not the best place to put this method
+    # this method converts resources as received from AM in to a format that can be saved on the agents
+    def _conv_res_to_instance(self, json):
+        out = {'Instances':[]}
+        for node in json['Nodes']:
+            for resource in json['Resources']:
+                if node['GroupID'] == resource['GroupID']:
+                    instance = {}
+                    instance['Type'] = resource['Type']
+                    instance['GroupID'] = resource['GroupID']
+                    instance['Attributes'] = resource['Attributes']
+                    instance['Address'] = node['IP']
+                    out['Instances'].append(instance)
+                    break
+        return out
+
+
+    def _init_agents(self, insances, args=None):
         for node in self.nodes:                                                                        
             try:                                           
                 #initpath = os.path.join(self.code_repo, 'init.sh')                                              
                 #client.init_agent(node['IP'], 5555, initpath, self.nodes)            
-                client.init_agent(node['IP'], 5555, self.nodes, args)            
+                client.init_agent(node['IP'], 5555, insances, args)            
             except client.AgentException:                                                                
                 self.logger.exception('Failed initialize agent at node %s' % str(node))             
                 self._state_set(self.S_ERROR, msg='Failed to initialize agent at node %s' % str(node))

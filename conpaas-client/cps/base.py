@@ -477,7 +477,7 @@ class BaseClient(object):
         res = self.callmanager(app_id, 0, "get_profiling_info", False, { 'method': "get_profiling_info", 'manager_id':0 })
         print "Print profiling_info for appid %s" % res
 
-    def manifest(self, manifestfile, slofile, appfile):
+    def manifest(self, manifestfile, appfile):
         print "Uploading the manifest and slo... "
         sys.stdout.flush()
 
@@ -485,9 +485,9 @@ class BaseClient(object):
         manifest = f.read()
         f.close()
 
-        f = open(slofile, 'r')
-        slo = f.read()
-        f.close()
+        # f = open(slofile, 'r')
+        # slo = f.read()
+        # f.close()
 
         f = open(appfile, 'r')
         app_tar = f.read()
@@ -495,7 +495,7 @@ class BaseClient(object):
         
         app_tar = string_to_hex(app_tar) 
       
-        res = self.callapi("upload_manifest", True, {'thread':True, 'manifest': manifest, 'slo':slo, 'app_tar':app_tar })
+        res = self.callapi("upload_manifest", True, {'thread':True, 'manifest': manifest, 'app_tar':app_tar })
         #res = self.callapi("upload_manifest", True, {'manifest': manifest, 'slo':slo, 'app_tar':app_tar })
         if res:
             print "done."
@@ -594,7 +594,7 @@ Do you want to continue? (y/N): """
         print "    startapp          [appid]                       # start an application"
         print "    renameapp         appid       newname           # rename an application"
         print "    profiling_info    appid                         # get profiling experiments information"
-        print "    manifest          manifest    slo     app_tar   # upload a new manifest"
+        print "    manifest          manifest    app_tar           # upload a new manifest"
         print "    download_manifest appid                         # download an existing manifest"
         print "    create            servicetype [appid]           # create a new service [inside a specific application]"
         print "    start             serviceid   appid   [cloud]   # startup the given service [on a specific cloud]"
@@ -701,8 +701,7 @@ Do you want to continue? (y/N): """
                     # and if it is acceptable.
                     open(argv[2])
                     open(argv[3])
-                    open(argv[4])
-                    return getattr(self, command)(argv[2], argv[3], argv[4])
+                    return getattr(self, command)(argv[2], argv[3])
                 except (IndexError, IOError):
                     self.usage(argv[0])
                     sys.exit(0)

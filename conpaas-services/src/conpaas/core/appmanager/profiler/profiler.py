@@ -41,6 +41,9 @@ class Profiler:
             self.__profile(implementations, module_managers)    
         print "\nProfiling process ended!\n\n"
 
+        # save profile 
+        # self.appmanager.save_profile()
+
     
     
     def __profile(self, implementations, module_managers):

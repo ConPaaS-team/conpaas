@@ -16,6 +16,7 @@ from .base import Cloud
 import httplib2
 import simplejson
 import base64
+import os.path
 
 class HarnessCloud(Cloud):
     '''Support for "harness" clouds'''
@@ -26,7 +27,8 @@ class HarnessCloud(Cloud):
         self.conn = httplib2.Http()
         self.img = iaas_config.get(cloud_name, 'IMAGE_ID') 
         #self.url = "http://127.0.0.1:5558/method" 
-        self.url = "http://172.16.0.1:5558/method" 
+        
+        self.url = os.path.join(iaas_config.get(cloud_name, 'HOST'), 'method') 
 
     def get_cloud_type(self):
         return 'harness'

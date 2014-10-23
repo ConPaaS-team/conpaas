@@ -31,7 +31,7 @@ $backendType = $service->getType();
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>ConPaaS - configure PHP Service</title>
-<link type="text/css" rel="stylesheet" href="conpaas.css" />
+<link type="text/css" rel="stylesheet" href="css/conpaas.css" />
 <script src="js/jquery-1.5.js"></script>
 <script src="js/jquery.form.js"></script>
 <script src="js/user.js"></script>

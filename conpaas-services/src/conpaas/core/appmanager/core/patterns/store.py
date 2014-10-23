@@ -3,3 +3,4 @@
 class Traces:
     TrainingSet = []
     Experiments = {}
+    ParetoExperiments = {}

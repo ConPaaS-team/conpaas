@@ -99,8 +99,8 @@ class Page {
 
 	public function renderHeaderCSS() {
 		$cssHeaders =  '';
-		$cssHeaders .= self::renderCSSLink('conpaas.css');
-		$cssHeaders .= self::renderCSSLink('autoscaling.css');
+		$cssHeaders .= self::renderCSSLink('css/conpaas.css');
+		$cssHeaders .= self::renderCSSLink('css/autoscaling.css');
 		
 		return $cssHeaders;
 	}
@@ -161,11 +161,11 @@ class Page {
 				.'<img class="loading" src="images/icon_loading.gif" style="vertical-align: middle;" /> '
 			.'</div>'
 			.'<div id="pgstatTimer" class="invisible">'
-				.'<img src="images/refresh.png" /> recheck in '
+				.'<img src="images/refresh.gif" /> recheck in '
 				.'<i id="pgstatTimerSeconds">6</i> seconds '
 			.'</div>'
 				.'<div id="pgstatInfo" class="invisible">'
-					.'<img src="images/info.png" style="margin-right: 5px;"/>'
+					.'<img src="images/info.png" style="margin-right: 5px; margin-top: -3px;"/>'
 					.'<span id="pgstatInfoText">service is starting</span>'
 				.'</div>'
 				.'<div id="pgstatError" class="invisible">'
@@ -215,7 +215,7 @@ class Page {
 	public function renderFooter() {
 		return
 			'<div class="footer">'.
-				'Copyright &copy;2011-'.date('Y').' Contrail consortium - <a href="http://www.conpaas.eu/">ConPaaS</a> is the PaaS component of <a href="http://contrail-project.eu/">Contrail</a>. ConPaaS '.Director::getVersion().'.'.
+				'Copyright &copy;2011-'.date('Y').' Contrail and Harness consortium <br/> <a target="blank" href="http://www.conpaas.eu/">ConPaaS</a> is the PaaS component of <a target="blank" href="http://contrail-project.eu/">Contrail</a> and <a target="blank" href="http://www.harness-project.eu/">Harness</a>. ConPaaS '.Director::getVersion().'.'.
 			'</div>';
 	}
 

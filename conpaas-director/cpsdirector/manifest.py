@@ -32,7 +32,7 @@ from multiprocessing import Process
 @cert_required(role='user')
 def upload_manifest():
     manifest = request.values.get('manifest')
-    slo = request.values.get('slo')
+    # slo = request.values.get('slo')
     app_tar = request.values.get('app_tar')
     #app_tar = hex_to_string(app_tar.encode('utf-8'))
     #app_tar = app_tar.decode("hex")
@@ -58,13 +58,13 @@ def upload_manifest():
     #uncomment this when done (genc)
     if request.values.get('thread'):
         log('Starting a new process for the manifest')
-        p = Process(target=new_manifest, args=(manifest,slo,app_tar,appid))
+        p = Process(target=new_manifest, args=(manifest,app_tar,appid))
         p.start()
         log('Process started, now return')
         return simplejson.dumps({'appid':appid})
 
 
-    msg = new_manifest(manifest, slo, app_tar, appid)
+    msg = new_manifest(manifest, app_tar, appid)
     
 
     if msg != 'ok':
@@ -1017,21 +1017,21 @@ def get_app_id(manifest, cloud='default'):
     return 'ok', appid
 
 
-def new_manifest(manifest, slo, app_tar, appid, cloud='default'):
-    try:
-        simplejson.loads(slo)
-    except:
-        return 'Error parsing manifest or slo'
+def new_manifest(manifest, app_tar, appid, cloud='default'):
+    # try:
+    #     simplejson.loads(slo)
+    # except:
+    #     return 'Error parsing manifest or slo'
 
     #res = startapp(g.user.uid, appid, "default", manifest, slo) 
     res = startapp(g.user.uid, appid, cloud) 
     # log('Res %s' % res)    
     
-    files = [ ( 'slo', 'slo', slo ), ( 'manifest', 'manifest', manifest ), ( 'app_tar', 'app_tar', app_tar ) ]
+    files = [ ( 'manifest', 'manifest', manifest ), ( 'app_tar', 'app_tar', app_tar ) ]
     app = get_app_by_id(g.user.uid, appid)
     # TODO:(genc): make post files to read the method and manager id from the actual paramaters and not params
-    log('####Application: %s' % app.to_dict())    
-    res = callmanager(app.to_dict(), 0, 'upload_manifest_slo', True, { 'method': 'upload_manifest_slo', 'manager_id':'0', 'appid':appid, 'cloud':cloud }, files)
+    # log('####Application: %s' % app.to_dict())    
+    res = callmanager(app.to_dict(), 0, 'upload_manifest', True, { 'method': 'upload_manifest', 'manager_id':'0', 'appid':appid, 'cloud':cloud }, files)
     
     return 'ok'
  

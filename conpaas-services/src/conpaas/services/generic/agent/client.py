@@ -105,12 +105,12 @@ def update_code(host, port, codeVersionId, filetype, filepath):
     return _check(https.client.https_post(host, port, '/', params))                 
 
 
-def init_agent(host, port, agents_info, args):
+def init_agent(host, port, instances, args):
     """POST run"""
     method = 'init_agent'
     params = {
         'method' : 'init_agent',    
-        'agents_info': json.dumps(agents_info),
+        'instances': json.dumps(instances),
         'ip' : host
     }
     if args:

@@ -124,7 +124,7 @@ class BaseStrategy:
         #check cost reservation['Cost'] and contiune
         #cost = reservation['Cost']
         reservation = self.module_manager.controller.create_reservation_test(reservation, self.module_manager.get_check_agent_funct(), 5555)
-
+        
         # #reservation = ReservationManager.acquire_resources(configuration)
         if reservation == None:
             print "Experiment failed."
@@ -132,8 +132,8 @@ class BaseStrategy:
         """
            Add roles to the acquired machines
         """
-        for i in range(len(reservation['Resources'])):
-           reservation['Resources'][i]["Role"] = roles[i]
+        for i in range(len(reservation['Nodes'])):
+           reservation['Nodes'][i]["Role"] = roles[i]
 
         # print "\n ~ Acquired Resources ~"
         # print reservation["Resources"]
@@ -143,7 +143,7 @@ class BaseStrategy:
         """
         variables.update(args)
         #get manifest special variables, environment variables
-        variables.update(implementation.Resources.get_special_variables(reservation['Resources']))
+        variables.update(implementation.Resources.get_special_variables(reservation['Nodes']))
 
         reservation["Variables"] = variables
         #print "*** reservation: %s" % (reservation)
@@ -188,7 +188,7 @@ class BaseStrategy:
         #     f = open("/home/aiordache/exps3/exp-%s" % fname, "w")
         #     f.write(unicode(json.dumps(data, ensure_ascii=False)))
         #     f.close()
-        print "GGG> data:%s, reservation: %s" % (data, reservation)
+        # print "GGG> data:%s, reservation: %s" % (data, reservation)
         print "Done experiment."
         "Returns evaluation of the execution based on cost and execution time"
         

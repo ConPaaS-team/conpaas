@@ -21,6 +21,8 @@ class Application {
 		foreach ($data as $key => $value) {
 			$this->$key = $value;
 		}
+		if($this->manager != '')
+			$this->manager = 'https://'.$this->manager;
 	}
 
 	public function getErrorMessage() {
@@ -44,5 +46,21 @@ class Application {
 			'aid' => $this->aid,
 			'name' => $this->name,
 		);
+	}
+
+
+	protected function managerRequest($http_method, $method, $manager_id,  array $params, $ping=false) {
+		$json = HTTPS::jsonrpc($this->manager, $http_method, $method, $manager_id, $params,$ping);
+		// $this->decodeResponse($json, $method);
+		return $json;
+	}
+
+	public function getProfilingInfo() {
+		$json = $this->managerRequest('get', 'get_profiling_info', 0, array('manager_id' => 0), false);
+		$info = json_decode($json, true);
+		if ($info == null) {
+			return false;
+		}
+		return $info['result'];
 	}
 }
