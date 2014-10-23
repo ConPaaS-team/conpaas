@@ -99,6 +99,8 @@ class ServiceCmd(object):
             stype = self.type
         else:
             stype = args.service_type
+        if stype == "mysql":
+            stype = "galera"
         if args.cloud is None:
             res = self.client.call_director_post("start/" + stype, data)
         else:
