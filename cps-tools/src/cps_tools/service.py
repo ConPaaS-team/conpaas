@@ -244,6 +244,20 @@ class ServiceCmd(object):
 
     def delete_serv(self, args):
         service_id = self.get_service_id(args.serv_name_or_id)
+
+        res = self.client.call_manager_get(service_id, "get_service_info")
+        if res['state'] == 'RUNNING':
+            print("Service %s is running, stopping it first..." % service_id)
+            res = self.client.call_manager_post(service_id, "shutdown")
+            if 'error' in res:
+                self.client.error("Error when stopping service %s: %s"
+                                  % (service_id, res['error']))
+            state = self.client.wait_for_state(service_id, ['STOPPED', 'ERROR'])
+            if state == 'ERROR':
+                self.client.error("Failed to stop service %s." % service_id)
+            else:
+                print("Service %s has stopped." % service_id)
+
         print "Deleting service... "
         res = self.client.call_director_post("stop/%s" % service_id)
         if res:
