@@ -158,7 +158,7 @@ class BaseClient(object):
     def create(self, service_type, cloud = None, application_id=None, initial_state='INIT'):
         data = {}
         if service_type == "mysql":
-            service_type == "galera"
+            service_type = "galera"
         if application_id is not None:
             data['appid'] = application_id
         if cloud is None:
