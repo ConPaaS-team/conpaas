@@ -650,11 +650,10 @@ class Controller(object):
 
         return certs
 
-    def __force_terminate_service(self):
+    def force_terminate_service(self):
         # DO NOT release lock after acquiring it
         # to prevent the creation of more nodes
         self.__force_terminate_lock.acquire()
-        self.__logger.debug('OUT OF CREDIT, TERMINATING SERVICE')
 
         # kill all partially created nodes
         self.delete_nodes(self.__partially_created_nodes)
@@ -693,7 +692,8 @@ class Controller(object):
 
     def __deduct_and_check_credit(self, value):
         if not self.deduct_credit(value):
-            self.__force_terminate_service()
+            self.__logger.debug('OUT OF CREDIT, TERMINATING SERVICE')
+            self.force_terminate_service()
 
 
 class ReservationTimer(Thread):

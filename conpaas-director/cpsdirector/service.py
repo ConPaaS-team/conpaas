@@ -274,12 +274,18 @@ def stop(serviceid):
     """
     log('User %s attempting to stop service %s' % (g.user.uid, serviceid))
 
+    # Test if a service with id 'serviceid' exists and user is the owner
     service = get_service(g.user.uid, serviceid)
     if not service:
         return build_response(simplejson.dumps(False))
 
-    # If a service with id 'serviceid' exists and user is the owner
-    service.stop()
+    # Try to cleanly terminate the service by calling the manager
+    try:
+        callmanager(serviceid, "delete", True, {})
+    # If this fails, forcefully terminate the manager VM
+    except:
+        service.stop()
+
     return build_response(simplejson.dumps(True))
 
 @service_page.route("/list", methods=['POST', 'GET'])

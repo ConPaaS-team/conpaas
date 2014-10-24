@@ -131,7 +131,6 @@ def deleteapp(user_id, app_id):
 
     # If an application with id 'app_id' exists and user is the owner
     for service in Service.query.filter_by(application_id=app_id):
-        callmanager(service.sid, "shutdown", True, {})
         stop(service.sid)
 
     db.session.delete(app)

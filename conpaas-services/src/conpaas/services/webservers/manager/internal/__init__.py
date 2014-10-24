@@ -254,7 +254,7 @@ class BasicWebserversManager(BaseManager):
 
         config = self._configuration_get()
         self._state_set(self.S_EPILOGUE, msg='Shutting down')
-        Thread(target=self.do_shutdown, args=[config]).start()
+        Thread(target=self._do_shutdown, args=[config]).start()
         return HttpJsonResponse({'state': self.S_EPILOGUE})
 
     def _update_code(self, config, nodes):
@@ -306,7 +306,7 @@ class BasicWebserversManager(BaseManager):
         self._state_set(self.S_RUNNING)
         self.memcache.set('nodes_additional', [])
 
-    def do_shutdown(self, config):
+    def _do_shutdown(self, config):
         self._stop_proxy(config, config.getProxyServiceNodes())
         self._stop_web(config, config.getWebServiceNodes())
         self._stop_backend(config, config.getBackendServiceNodes())
