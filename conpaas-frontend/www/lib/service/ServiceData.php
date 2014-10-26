@@ -35,6 +35,8 @@ class ServiceData {
        $services = array();
        foreach(json_decode($res) as $service) {
            $service = (array)$service;
+           if ($service['type'] == 'helloworld')
+               continue;
            $service['uid'] = $service['user_id'];
            $service['creation_date'] = $service['created'];
            array_push($services, $service);

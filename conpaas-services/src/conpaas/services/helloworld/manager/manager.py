@@ -54,13 +54,16 @@ class HelloWorldManager(BaseManager):
 
     def _do_shutdown(self):
         self.controller.delete_nodes(self.nodes)
+        self.nodes = []
         self.state = self.S_STOPPED
-        return HttpJsonResponse()
 
     @expose('POST')
     def add_nodes(self, kwargs):
         if self.state != self.S_RUNNING:
             return HttpErrorResponse('ERROR: Wrong state to add_nodes')
+
+        if 'node' in kwargs:
+            kwargs['count'] = kwargs['node']
 
         if not 'count' in kwargs:
             return HttpErrorResponse("ERROR: Required argument doesn't exist")
@@ -109,7 +112,7 @@ class HelloWorldManager(BaseManager):
         if 'serviceNodeId' not in kwargs:
             return HttpErrorResponse('ERROR: Missing arguments')
 
-        serviceNodeId = kwargs['serviceNodeId']
+        serviceNodeId = kwargs.pop('serviceNodeId')
 
         if len(kwargs) != 0:
             return HttpErrorResponse('ERROR: Arguments unexpected')
@@ -134,6 +137,9 @@ class HelloWorldManager(BaseManager):
     def remove_nodes(self, kwargs):
         if self.state != self.S_RUNNING:
             return HttpErrorResponse('ERROR: Wrong state to remove_nodes')
+
+        if 'node' in kwargs:
+            kwargs['count'] = kwargs['node']
 
         if not 'count' in kwargs:
             return HttpErrorResponse("ERROR: Required argument doesn't exist")
@@ -163,7 +169,7 @@ class HelloWorldManager(BaseManager):
         # Just get_helloworld from all the agents
         for node in self.nodes:
             data = client.get_helloworld(node.ip, 5555)
-            message = 'Received %s from %s' % (data, node.id)
+            message = 'Received %s from %s' % (data['result'], node.id)
             self.logger.info(message)
             messages.append(message)
 
