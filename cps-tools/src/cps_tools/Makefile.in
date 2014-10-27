@@ -179,6 +179,7 @@ dist_cpstools_PYTHON = \
 	taskfarm.py \
 	user.py \
 	xtreemfs.py \
+	helloworld.py \
 	web.py
 
 cpstoolsdir = $(pythondir)/cps_tools

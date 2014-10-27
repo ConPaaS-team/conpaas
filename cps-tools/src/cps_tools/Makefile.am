@@ -16,6 +16,7 @@ dist_cpstools_PYTHON = \
 	taskfarm.py \
 	user.py \
 	xtreemfs.py \
+	helloworld.py \
 	web.py
 
 ## destination of byte-compiled files

@@ -78,6 +78,7 @@ Pass option '-h' or '--help' to get the list of sub-commands and options::
         selenium           manage Selenium services
         taskfarm           manage TaskFarm services
         xtreemfs           manage XtreemFS services
+        helloworld         manage HelloWorld services
         help               display the help
 
     optional arguments:
