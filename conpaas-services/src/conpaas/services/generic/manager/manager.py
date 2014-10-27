@@ -184,7 +184,7 @@ class GenericManager(BaseManager):
             ##    nodes.append( self.controller.create_nodes(1, client.check_agent_process, self.AGENT_PORT))
             #nodes = self.controller.create_nodes(nr_instances, client.check_agent_process, self.AGENT_PORT)
             
-            self.nodes = configuration['Nodes']
+            self.nodes = configuration['Instances']
 
             #config = self._configuration_get()
             
@@ -238,14 +238,14 @@ class GenericManager(BaseManager):
     # this method converts resources as received from AM in to a format that can be saved on the agents
     def _conv_res_to_instance(self, json):
         out = {'Instances':[]}
-        for node in json['Nodes']:
+        for node in json['Instances']:
             for resource in json['Resources']:
                 if node['GroupID'] == resource['GroupID']:
                     instance = {}
                     instance['Type'] = resource['Type']
                     instance['GroupID'] = resource['GroupID']
                     instance['Attributes'] = resource['Attributes']
-                    instance['Address'] = node['IP']
+                    instance['Address'] = node['Address']
                     out['Instances'].append(instance)
                     break
         return out
@@ -256,7 +256,7 @@ class GenericManager(BaseManager):
             try:                                           
                 #initpath = os.path.join(self.code_repo, 'init.sh')                                              
                 #client.init_agent(node['IP'], 5555, initpath, self.nodes)            
-                client.init_agent(node['IP'], 5555, insances, args)            
+                client.init_agent(node['Address'], 5555, insances, args)            
             except client.AgentException:                                                                
                 self.logger.exception('Failed initialize agent at node %s' % str(node))             
                 self._state_set(self.S_ERROR, msg='Failed to initialize agent at node %s' % str(node))
@@ -305,7 +305,7 @@ class GenericManager(BaseManager):
     def _do_run(self, args=None):
         for node in self.nodes:     
             try:               
-                client.run(node['IP'], 5555, args)            
+                client.run(node['Address'], 5555, args)            
             except client.AgentException:                                                                
                 self.logger.exception('Failed to start run at node %s' % str(node))             
                 self._state_set(self.S_ERROR, msg='Failed to run code at node %s' % str(node))
@@ -701,7 +701,7 @@ echo "" >> /root/generic.out
         config = self._configuration_get()
         for node in  nodes:                                                                        
             try:               
-                client.update_code(node['IP'], 5555, config.currentCodeVersion,                    
+                client.update_code(node['Address'], 5555, config.currentCodeVersion,                    
                                      config.codeVersions[config.currentCodeVersion].type,                
                                      os.path.join(self.code_repo, config.currentCodeVersion))            
             except client.AgentException:                                                                

@@ -6,7 +6,6 @@ import math
 import time
         
 class Value:
-
     def __init__(self, start = 0, stop = 0, items = None, step = 1):
         self.start = start
         self.stop = stop
@@ -20,7 +19,7 @@ class Value:
             self.value = None
         else:
             self.value = self.value + self.step
-        return self.value    
+        return self.value
 
     
 class Combinations:

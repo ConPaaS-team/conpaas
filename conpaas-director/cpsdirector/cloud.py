@@ -353,7 +353,7 @@ def startapp(user_id, cloud_name, app_id, vpn, controller=None):
 
     # FIXME: test_manager(ip, port) not implemented yet. Just return True.
     #node = controller.create_nodes(1, lambda ip, port: True, None, cloud)[0]
-    manager_configuration = {'Resources' : [{'GroupID' : 0, 'NumInstances' : 1, 'Type' : 'Machine', 'Attributes' : {'Cores' : 1, 'Memory' : 1024}}]}
+    manager_configuration = {'Resources' : [{'GroupID' : '0', 'NumInstances' : 1, 'Type' : 'Machine', 'Attributes' : {'Cores' : 1, 'Memory' : 1024}}]}
     
     reservation = controller.prepare_reservation(manager_configuration)
     if 'ConfigID' not in reservation:
@@ -361,12 +361,12 @@ def startapp(user_id, cloud_name, app_id, vpn, controller=None):
 
     from conpaas.core.appmanager import appclient 
     reservation = controller.create_reservation_test(reservation, appclient.check_manager_process, 443)
-    node = reservation['Nodes'][0]
+    node = reservation['Instances'][0]
     #node = controller.create_reservation(reservation_id, len(manager_configuration['Resources']), lambda ip, port: True, None, cloud)[0]
     #node = {'IP':'123', 'ID':'leshpresh'}
     controller._stop_reservation_timer()
 
-    return node['IP'], reservation['ConfigID'], cloud.get_cloud_name(), controller
+    return node['Address'], reservation['ConfigID'], cloud.get_cloud_name(), controller
     #return node.ip, node.vmid, cloud.get_cloud_name()
 
 

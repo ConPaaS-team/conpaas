@@ -55,6 +55,7 @@ class Profiler:
         """
         
         #print "Profiling process id =", Thread.getName(self)
+        # for implementation in implementations:
         implementation = implementations[0]
         module_manager = module_managers[0]
         arguments = implementation.Arguments

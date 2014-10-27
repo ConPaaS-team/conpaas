@@ -132,8 +132,8 @@ class BaseStrategy:
         """
            Add roles to the acquired machines
         """
-        for i in range(len(reservation['Nodes'])):
-           reservation['Nodes'][i]["Role"] = roles[i]
+        for i in range(len(reservation['Instances'])):
+           reservation['Instances'][i]["Role"] = roles[i]
 
         # print "\n ~ Acquired Resources ~"
         # print reservation["Resources"]
@@ -143,7 +143,7 @@ class BaseStrategy:
         """
         variables.update(args)
         #get manifest special variables, environment variables
-        variables.update(implementation.Resources.get_special_variables(reservation['Nodes']))
+        variables.update(implementation.Resources.get_special_variables(reservation['Instances']))
 
         reservation["Variables"] = variables
         #print "*** reservation: %s" % (reservation)

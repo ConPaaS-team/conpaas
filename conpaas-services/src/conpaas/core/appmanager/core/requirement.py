@@ -242,7 +242,7 @@ class Resources(Base):
         for dev in self.Devices:
             if dev.__dict__.has_key("Addresses") and dev.Addresses.startswith(self.VAR_SIGN):
                 #find machines
-                value = reduce(lambda y,z : y + ";" + z, map(lambda w : w["IP"], filter(lambda x:x["Role"] == dev.Role, machinelist)))
+                value = reduce(lambda y,z : y + ";" + z, map(lambda w : w["Address"], filter(lambda x:x["Role"] == dev.Role, machinelist)))
                 variables.update({dev.Addresses : value.strip(";")})
     
         return variables
