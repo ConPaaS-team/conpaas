@@ -204,7 +204,7 @@ class Controller(object):
                 if self.role == 'manager':
                     role_abbr = 'mgr'
                 else:
-                    role_abbr = 'agn'
+                    role_abbr = 'agt'
 
                 # eg: conpaas-online-u3-s1-xtreemfs-mgr
                 name = "%s-u%s-s%s-%s-%s" % (self.__conpaas_name, self.__conpaas_user_id,

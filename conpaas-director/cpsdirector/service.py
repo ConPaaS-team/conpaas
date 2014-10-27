@@ -279,9 +279,16 @@ def stop(serviceid):
     if not service:
         return build_response(simplejson.dumps(False))
 
-    # Try to cleanly terminate the service by calling the manager
+    # Try to cleanly terminate the service
     try:
-        callmanager(serviceid, "delete", True, {})
+        # If the service is in INIT or STOPPED state, we can just kill
+        # the manager VM
+        res = callmanager(serviceid, "get_service_info", False, {})
+        if res['state'] == 'INIT' or res['state'] == 'STOPPED':
+            service.stop()
+        else:
+            # Else, we should ask the manager to cleanly shut down itself
+            callmanager(serviceid, "delete", True, {})
     # If this fails, forcefully terminate the manager VM
     except:
         service.stop()
