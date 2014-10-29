@@ -880,7 +880,7 @@ and testing environemnt for ConPaaS without the need of accessing a cloud.
 Creating a Nutshell image
 -------------------------
 The procedure for creating a Nutshell image is very similar to the one for 
-creating a standard costumized image described in section :ref:`image-creation`.
+creating a standard customized image described in section :ref:`image-creation`.
 However, there are a few settings in the configuration file which need 
 to be considered.
 
@@ -920,7 +920,7 @@ From the create_vm diretory run::
     $ sudo ./create-img-nutshell.sh
 
 Note that if the nutshell flag is enabled the generated script file is called *create-img-nutshell.sh*.
-Otherwise, the generated script file is called create-img-conpaas.sh as indicated previously.
+Otherwise, the generated script file is called *create-img-conpaas.sh* as indicated previously.
 
 
    
@@ -930,7 +930,7 @@ Creating a Nutshell image for VirtualBox
 As mentioned earlier the Nutshell VM can run on VirtualBox. In order to generate a Nutshell image
 compatible with VirtualBox, you have to set the *cloud* value to *vbox* on the **Customizable** section of the configuration file.
 The rest of the procedure is the same as for other clouds. The result of the image generation script would be a
-nutshell.vdi image file which can be used as a virtual hard drive when creating a new appliance on VirtualBox.
+*nutshell.vdi* image file which can be used as a virtual hard drive when creating a new appliance on VirtualBox.
 
 The procedure for creating a new appliance on VirtualBox is quite standard:
   
@@ -938,7 +938,7 @@ The procedure for creating a new appliance on VirtualBox is quite standard:
 
 #. Memory size: Since the nutshell runs a significat number of services and requires also some memory for the containers we suggest to choose at least 3 GB of RAM.
 
-#. Hard drive: Select "User an existing virtual hard drive file", browse to the location of the nutshell.vdi file generated earlier and press create.
+#. Hard drive: Select "User an existing virtual hard drive file", browse to the location of the *nutshell.vdi* file generated earlier and press create.
 
 Running the Nutshell in VirtualBox
 ----------------------------------
