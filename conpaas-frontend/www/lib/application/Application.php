@@ -55,8 +55,49 @@ class Application {
 		return $json;
 	}
 
-	public function getProfilingInfo() {
-		$json = $this->managerRequest('get', 'get_profiling_info', 0, array('manager_id' => 0), false);
+	public function getProfilingInfo($download) {
+		$json = $this->managerRequest('get', 'get_profiling_info', 0, array('manager_id' => 0, 'download' => $download), false);
+		$info = json_decode($json, true);
+		if ($info == null) {
+			return false;
+		}
+		return $info['result'];
+	}
+
+	public function upload_profile($profile) {
+		$params = array(
+			'manager_id' => 0,
+			'method' => 'upload_profile',
+			'profile' => '@'.$profile
+		);
+
+		$response = HTTPS::post($this->manager, $params);
+		return $response;
+	}
+
+	public function upload_slo($slo) {
+		$params = array(
+			'manager_id' => 0,
+			'method' => 'upload_slo',
+			'slofile' => '@'.$slo
+		);
+
+		$response = HTTPS::post($this->manager, $params);
+		return $response;
+
+	}
+
+	public function execute_slo() {
+		$json = $this->managerRequest('get', 'execute_slo', 0, array('manager_id' => 0), false);
+		$info = json_decode($json, true);
+		if ($info == null) {
+			return false;
+		}
+		return $info['result'];
+	}
+
+	public function infoapp() {
+		$json = $this->managerRequest('get', 'infoapp', 0, array('manager_id' => 0), false);
 		$info = json_decode($json, true);
 		if ($info == null) {
 			return false;

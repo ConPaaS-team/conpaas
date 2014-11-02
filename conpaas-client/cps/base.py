@@ -474,8 +474,32 @@ class BaseClient(object):
     def profiling_info(self, app_id):
         #check if application exists
 
-        res = self.callmanager(app_id, 0, "get_profiling_info", False, { 'method': "get_profiling_info", 'manager_id':0 })
+        res = self.callmanager(app_id, 0, "get_profiling_info", False, { 'method': "get_profiling_info", 'manager_id':0, 'download':True })
         print "Print profiling_info for appid %s" % res
+
+    def execute_slo(self, app_id):
+        #check if application exists
+        res = self.callmanager(app_id, 0, "execute_slo", False, { 'method': "execute_slo", 'manager_id':0 })
+        print "Application started executing. %s" % res
+
+    def infoapp(self, app_id):
+        #check if application exists
+        res = self.callmanager(app_id, 0, "infoapp", False, { 'method': "infoapp", 'manager_id':0 })
+        print "%s" % res
+
+    def upload_profile(self, app_id, proffile):
+        contents = open(proffile).read()
+        files = [ ( 'profile', proffile, contents ) ]
+        #check if application exists
+        res = self.callmanager(app_id, 0, "upload_profile", True, { 'method': "upload_profile", 'manager_id':0 }, files)
+        print "Profile uploaded %s" % res
+
+    def upload_slo(self, app_id, slofile):
+        contents = open(slofile).read()
+        files = [ ( 'slofile', slofile, contents ) ]
+        #check if application exists
+        res = self.callmanager(app_id, 0, "upload_slo", True, { 'method': "upload_slo", 'manager_id':0 }, files)
+        print "Selected configuration %s" % res
 
     def manifest(self, manifestfile, appfile):
         print "Uploading the manifest and slo... "
@@ -594,6 +618,10 @@ Do you want to continue? (y/N): """
         print "    startapp          [appid]                       # start an application"
         print "    renameapp         appid       newname           # rename an application"
         print "    profiling_info    appid                         # get profiling experiments information"
+        print "    upload_profile    appid       profile           # upload profile to the application manager"
+        print "    upload_slo        appid       slo               # upload slo to the application manager"
+        print "    execute_slo       appid                         # execute application according to the uploaded slo"
+        print "    infoapp           appid                         # get information about the application"
         print "    manifest          manifest    app_tar           # upload a new manifest"
         print "    download_manifest appid                         # download an existing manifest"
         print "    create            servicetype [appid]           # create a new service [inside a specific application]"
@@ -624,7 +652,7 @@ Do you want to continue? (y/N): """
         if command in ( "listapp", "createapp", "startapp","manifest", "test_manifest", #genc:delete the last one 
                         "download_manifest", "list", "credentials", 
                         "available", "clouds", "create", "st_usage",
-                        "deleteapp", "renameapp", "getcerts", "profiling_info" ):
+                        "deleteapp", "renameapp", "getcerts", "profiling_info", "upload_profile", "upload_slo", "execute_slo", "infoapp" ):
 
             if command == "st_usage":
                 try:
@@ -682,13 +710,10 @@ Do you want to continue? (y/N): """
                 appname = argv[2]
                 return getattr(self, command)(appname)
 
-            if command == "deleteapp":
+            if command == "startapp" or command == "deleteapp" or command == "execute_slo" or command == "infoapp":
                 appid = argv[2]
                 return getattr(self, command)(appid)
 
-            if command == "startapp":
-                appid = argv[2]
-                return getattr(self, command)(appid)
 
             if command == "renameapp":
                 appid = argv[2]
@@ -742,6 +767,10 @@ Do you want to continue? (y/N): """
             if command == "profiling_info":
                 appid = argv[2]
                 return getattr(self, command)(appid)
+            if command == "upload_profile" or command == "upload_slo":
+                appid = argv[2]
+                filename = argv[3]
+                return getattr(self, command)(appid, filename)
 
             # We need no params, just call the method and leave
             return getattr(self, command)()

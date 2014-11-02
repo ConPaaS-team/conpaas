@@ -28,16 +28,21 @@ try {
 		$res['status'] = 'Starting Application Manager';
 	}else
 	{
-		$res['ready'] = true;
-		$info = $application->getProfilingInfo();
-		$res['profile'] = $info;
+		if(isset($_GET['format']) && $_GET['format'] == 'file'){
+			header("Content-type: application/json");
+			header('Content-Disposition:attachment;filename="' . 'profile.json' . '"');
+			$info = $application->getProfilingInfo(true);
+			$res = $info['pm'];
+		}else{
+			$res['ready'] = true;
+			$info = $application->getProfilingInfo(false);
+			$res['profile'] = $info;
+		}
+		
+
 	}
 
-	if(isset($_GET['format']) && $_GET['format'] == 'file'){
-		header("Content-type: application/json");
-		header('Content-Disposition:attachment;filename="' . 'profile.json' . '"');
-		$res = $res['profile']['profile'];
-	}
+	
 
 	print json_encode($res);
     // print json_encode($application);

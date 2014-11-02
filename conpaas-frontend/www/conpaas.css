@@ -223,6 +223,7 @@ a:hover {
 	border: 1px solid white;
 }
 
+
 .actionsbar .editable {
 	border: 1px solid #ccc;
 	padding: 1px;
@@ -274,6 +275,11 @@ a:hover {
 	display: inline;
 	padding: 3px;
 }
+
+.prediction {
+	border:1px solid;
+}
+
 
 a.button, a.button-disabled {
 	padding: 6px;

@@ -138,7 +138,7 @@ class Controller(object):
 
         while True:
             status = cloud.check_reservation(reservation_id)
-            open('/tmp/out', 'a').write('status: %s\n'%status)
+            # open('/tmp/out', 'a').write('status: %s\n'%status)
             if status['Ready'] or iteration >= max_iteration:
                 break
             else:

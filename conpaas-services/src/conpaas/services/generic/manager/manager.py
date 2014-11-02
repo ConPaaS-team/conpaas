@@ -85,7 +85,9 @@ class GenericManager(BaseManager):
     S_EPILOGUE = 'EPILOGUE' # manager is shutting down
     S_STOPPED = 'STOPPED'   # manager stopped
     S_ERROR = 'ERROR'       # manager is in error state
-    
+    S_TERMINATED = 'TERMINATED'       # manager is in error state
+    S_PROFILED = 'PROFILED'       # manager is in error state
+
     DEPLOYMENT_STATE = 'deployment_state'
 
     # String template for error messages returned when performing actions in
@@ -175,7 +177,7 @@ class GenericManager(BaseManager):
 #        vals = { 'action': '_do_startup', 'count': nr_instances }
 #        self.logger.debug(self.ACTION_REQUESTING_NODES % vals)
 
-        self._state_set(self.S_RUNNING)
+        self._state_set(self.S_ADAPTING)
         self.logger.info("Generic manager started")
         self.logger.info("configuration: %s" % configuration)
         try:
@@ -289,7 +291,7 @@ class GenericManager(BaseManager):
             return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
         
         #self._state_set(self.S_EPILOGUE)
-        Thread(target=self._do_run, args=[]).start()
+        Thread(target=self._do_run, args=[False]).start()
 
         return HttpJsonResponse({ 'state': self._state_get() })    
 
@@ -302,7 +304,7 @@ class GenericManager(BaseManager):
     #             self._state_set(self.S_ERROR, msg='Failed to run code at node %s' % str(starter))
     #             raise   
 
-    def _do_run(self, args=None):
+    def _do_run(self, profiling, args=None):
         for node in self.nodes:     
             try:               
                 client.run(node['Address'], 5555, args)            
@@ -310,6 +312,10 @@ class GenericManager(BaseManager):
                 self.logger.exception('Failed to start run at node %s' % str(node))             
                 self._state_set(self.S_ERROR, msg='Failed to run code at node %s' % str(node))
                 raise   
+        if profiling:
+            self._state_set(self.S_PROFILED)   
+        else:
+            self._state_set(self.S_TERMINATED)
 
 
     @expose('POST')
@@ -590,7 +596,12 @@ echo "" >> /root/generic.out
     @expose('GET')
     def get_service_info(self, kwargs):
         """Return the service state and type"""
-        return HttpJsonResponse({'state': self._state_get(), 'type': 'generic'})
+        return HttpJsonResponse(self.get_info())
+
+    def get_info(self):
+        self.logger.debug('ON GET INFO: %s' % (self._state_get()))
+        return {'state': self._state_get(), 'type': 'generic'}
+
 
     @expose('GET')
     def get_node_info(self, kwargs):

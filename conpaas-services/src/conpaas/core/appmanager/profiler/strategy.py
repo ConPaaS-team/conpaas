@@ -17,14 +17,13 @@ from Queue import Queue
 
 class BaseStrategy:
     
-    def __init__(self, implementation, module_manager, cloud, save_to_log = False):  
+    def __init__(self, appmanager, implementation, save_to_log = False):  
         """
             Base Constructor.
             * Keeps the variable model for resources and for implementation arguments
             
         """
-        self.module_manager = module_manager
-        self.cloud = cloud
+        
         if save_to_log:
             self.listed = False
         else: 
@@ -32,6 +31,7 @@ class BaseStrategy:
             self.EXPERIMENTS = []      
             
         self.implementation = implementation
+        self.appmanager = appmanager
 
         # print "\n == In BaseStrategy =="
 
@@ -93,6 +93,8 @@ class BaseStrategy:
         # print "\nApplication arguments :", args
         data = {}   
         implementation = copy.deepcopy(self.implementation)
+        
+        data["ImplementationID"] = implementation.ImplementationID
         data["Index"] = len(self.EXPERIMENTS)
         data["Configuration"] = copy.deepcopy(variables)
         data["Arguments"] = args
@@ -107,24 +109,27 @@ class BaseStrategy:
                     break                
             if already_done != None:
                 return already_done 
-        Traces.Experiments[data["Index"]] = data 
+        self.appmanager.add_experiment(data)
+        # Traces.Experiments[data["Index"]] = data 
         """
             Get the configuration structure from the implementation
         """
-
+        print "variables %s " % variables
         
         configuration, roles = implementation.Resources.get_configuration(variables)
-        #print "configuration: %s, roles: %s" % (configuration, roles)
+        print "configuration: %s, roles: %s" % (configuration, roles)
         
 
         """"
             Reserving resources
         """
-        reservation = self.module_manager.controller.prepare_reservation(configuration)
+        # reservation = self.module_manager.controller.prepare_reservation(configuration)
         #check cost reservation['Cost'] and contiune
         #cost = reservation['Cost']
-        reservation = self.module_manager.controller.create_reservation_test(reservation, self.module_manager.get_check_agent_funct(), 5555)
-        
+        # reservation = self.module_manager.controller.create_reservation_test(reservation, self.module_manager.get_check_agent_funct(), 5555)
+        reservation = self.appmanager.reserve_resources(configuration)
+
+
         # #reservation = ReservationManager.acquire_resources(configuration)
         if reservation == None:
             print "Experiment failed."
@@ -152,30 +157,29 @@ class BaseStrategy:
         # implementation.deploy(reservation)
         
         # # what anca calls deploy (no variables taken into consideration at this point)
-        self.module_manager._do_startup(self.cloud, reservation, args)
+        # self.module_manager._do_startup(self.cloud, reservation, args)
         
-
-        "Execute implementation"
-        start_time = time.time()
-        self.module_manager._do_run(args)
-        end_time = time.time()
-        execution_time = end_time - start_time
-
+        # "Execute implementation"
+        # start_time = time.time()
+        # self.module_manager._do_run(args)
+        # end_time = time.time()
+        # execution_time = end_time - start_time
+        execution_time, total_cost = self.appmanager.execute_application(reservation, args, True) 
 
         # # execution_time, utilization_data = implementation.execute(reservation)
-        total_cost = execution_time * reservation["Cost"]
+        # total_cost = execution_time * reservation["Cost"]
         
-        """
-            Releasing resources
-        """
+        # """
+        #     Releasing resources
+        # """
         #reservation = ReservationManager.release_resources(reservation["ResID"])
         # genc:uncomment the following line 
         #debug if (delete when done)
-        if execution_time > 2:
-            self.module_manager.controller.release_reservation(reservation['ConfigID'])
+        # if execution_time > 2:
+        #     self.module_manager.controller.release_reservation(reservation['ConfigID'])
 
         "Save output and update experiments list"
-        data["Results"] = {"ExeTime" : round(execution_time, 3), "TotalCost" : round(total_cost, 2)} 
+        data["Results"] = {"ExeTime" : execution_time, "TotalCost" : total_cost} 
         data["Done"] = True
         # data["RuntimeData"] = utilization_data
         if self.listed:

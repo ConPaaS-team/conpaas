@@ -38,13 +38,21 @@ conpaas.ui = (function (this_module) {
         this.poller.poll(function (response) {
             if(response.ready){
                 that.displayInfo_2('Profiling...');
-                var profile = response.profile.profile;
+                var type = 'generic';
+                $("#"+type+"_status").html('Profiling'); 
+                $("#"+type+"_led").attr('src', 'images/ledorange.png');
+
+                var profile = response.profile.pm;
                 that.updateProfileInfo(profile);
                 
                 if(response.profile.state == 'RUNNING'){
                     conpaas.ui.visible('pgstatInfo', false);
-                    var downlink = '<a class="button small" href="ajax/getProfilingInfo.php?aid='+that.application.aid+'&format=file">Download profile</a><br/>';
+                    var downlink = '<a class="button small" href="ajax/getProfilingInfo.php?aid='+that.application.aid+'&format=file">Download profile</a><br/><br/>';
                     $("#downloadProfile").html(downlink); 
+                    $("#downloadProfile").show();
+
+                    $("#"+type+"_status").html('Profiled'); 
+                    $("#"+type+"_led").attr('src', 'images/ledgray.png');
                     return true;
                 }
                 // $("#divProfile").html(JSON.stringify(response));
@@ -58,11 +66,51 @@ conpaas.ui = (function (this_module) {
             return false;
         }, {aid: this.application.aid}, maxInterval);
     },
+    pollApplication: function (onStableState, onInstableState, maxInterval) {
+        var that = this;
+        this.poller.poll(function (response) {
+            that.displayInfo_2('Executing application...');
+            //if terminated return true
+            for (var type in response.servinfo) {
+              if (response.servinfo.hasOwnProperty(type)) {
+                 status = response.servinfo[type].state;
+                 if (status =='TERMINATED'){
+                      $("#"+type+"_status").html('Application terminated'); 
+                      $("#"+type+"_led").attr('src', 'images/ledgray.png');
+                 }else{
+                      $("#"+type+"_status").html('Running'); 
+                      $("#"+type+"_led").attr('src', 'images/ledgreen.png');
+                 }
+              }
+            }
+
+            if(!Array.isArray(response.execinfo)){ //bad way of checking if the application was executed or not
+                var et = that.myround(response.execinfo.execution_time,4),
+                tc = that.myround(response.execinfo.total_cost,4),
+                err = that.myround(((that.et - et) / et) * 100, 2); 
+
+                var html = 'Actual execution time: <span>'+et+'</span> min &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Actual cost: <span>'+tc+'</span> &euro; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &epsilon;: <span>'+err+'</span> %';
+                $("#exeResult").html(html);
+                $("#exeResult").show();
+                conpaas.ui.visible('pgstatInfo', false);
+                return true;
+            }
+
+
+            if (typeof onInstableState === 'function') {
+                onInstableState(response);
+            }
+            return false;
+        // }, {aid: this.application.aid}, maxInterval);
+      }, {aid: 1}, maxInterval);
+    },  
+
+
     updateProfileInfo: function(profile){
 		var str = '<table class="slist" cellpadding="0" cellspacing="0" style="border: 1px solid;">',
 		tdclass = 'wrapper ';
 		
-		str += '<tr style="background:#fffdf6"><th width="30" style="padding:5px">Status</th><th width="255">Configuration</th><th width="50" style="padding:5px">Time(s)</th><th width="50" style="padding:5px">Cost(&euro;)</th></tr>';
+		str += '<tr style="background:#fffdf6"><th width="30" style="padding:5px">Status</th><th width="255">Configuration</th><th width="50" style="padding:5px">Time(min)</th><th width="50" style="padding:5px">Cost(&euro;)</th></tr>';
 
 		var exps = [];
 		var pareto = [];
@@ -72,15 +120,21 @@ conpaas.ui = (function (this_module) {
 			if (i == profile.experiments.length - 1)
 				tdclass += 'last';
 			str += '<tr class="service">';
-			if (profile.experiments[i].Done)
+			if (profile.experiments[i].Done == undefined || profile.experiments[i].Done)
 				img='tick';
 			str += '<td align="center" class="'+tdclass+'" style="border-left: 1px solid #ddd;"><img src="images/' + img + '.gif"/></td>';
 			str += '<td align="center" class="'+tdclass+'">' + this.objToString(profile.experiments[i].Configuration) + '</td>';
 			//str += '<td class="'+tdclass+'">' + that.objToString(response.profiling_info[i].Arguments) + '</td>';
-			if (profile.experiments[i].Done){
-				str += '<td align="center" class="'+tdclass+'">' + profile.experiments[i].Results.ExeTime + '</td>';
-				str += '<td align="center" class="'+tdclass+'">' + profile.experiments[i].Results.TotalCost + '</td>';
-				exps.push([profile.experiments[i].Results.TotalCost, profile.experiments[i].Results.ExeTime]);
+			if (profile.experiments[i].Done == undefined || profile.experiments[i].Done){
+        tc = this.myround(profile.experiments[i].Results.TotalCost,4);
+        et = this.myround(profile.experiments[i].Results.ExeTime, 4);
+
+				str += '<td align="center" class="'+tdclass+'">' + et + '</td>';
+				str += '<td align="center" class="'+tdclass+'">' + tc + '</td>';
+				// exps.push([profile.experiments[i].Results.TotalCost.toFixed(3), profile.experiments[i].Results.ExeTime.toFixed(3)]);
+        // exps.push([profile.experiments[i].Results.TotalCost, profile.experiments[i].Results.ExeTime]);
+        exps.push([tc, et]);
+
 			}else
 				str += '<td colspan="2" class="'+tdclass+'">' + '' + '</td>';
 			str += '</tr>';
@@ -91,12 +145,13 @@ conpaas.ui = (function (this_module) {
 		
 		
 		for (var i = 0; i < profile.pareto.length; i++) 
-			if(profile.pareto[i].Done)
-				pareto.push([profile.pareto[i].Results.TotalCost, profile.pareto[i].Results.ExeTime]);
+			if(profile.pareto[i].Done == undefined || profile.pareto[i].Done)
+			    // pareto.push([profile.pareto[i].Results.TotalCost.toFixed(3), profile.pareto[i].Results.ExeTime.toFixed(3)]);
+          pareto.push([this.myround(profile.pareto[i].Results.TotalCost,4), this.myround(profile.pareto[i].Results.ExeTime,4)]);
 
 		if(exps.length > 0 || pareto.length > 0){
 			$("#divProfileTable").html(str); 
-			this.plot(exps, pareto);
+			this.plot(exps, pareto,[]);
 		}
 	},
     objToString: function(obj){
@@ -109,29 +164,59 @@ conpaas.ui = (function (this_module) {
         
         return str.substring(0, str.length - 2).replace(/%/g, '');
     },
-    plot: function (experiments, pareto){
+    myround: function(nr, dec){
+      return parseFloat(nr.toFixed(dec));
+    },
+
+    highlight: function(selection){
+        var x = this.jplot.axes.xaxis.series_u2p(selection[0]);
+        var y = this.jplot.axes.yaxis.series_u2p(selection[1]);
+        var r = 5;
+        var drawingCanvas = $(".jqplot-highlight-canvas")[0]; //$(".jqplot-series-canvas")[0];
+        var context = drawingCanvas.getContext('2d');
+        context.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height); //plot.replot();            
+        context.strokeStyle = "#ED1515";
+        context.fillStyle = "#ED1515";
+        context.beginPath();
+        context.arc(x, y, r, 0, Math.PI * 2, true);
+        context.closePath();
+        context.stroke();
+        context.fill();
+    },
+    plot: function (experiments, pareto, selected){
         if (this.jplot != null)
         {
+            if(selected.length > 0)
+            {
+                experiments = this.jplot.series[0].data;
+                pareto = this.jplot.series[1].data;
+            }
+
             this.jplot.destroy();
             this.jplot.series[0].data = experiments;
             this.jplot.series[1].data = pareto;
+            this.jplot.series[2].data = selected;
             this.jplot.replot({resetAxes:true});
-
+            // if(selected.length > 0){
+            //   this.highlight(this.jplot.series[2].data[0]);
+            // }
         }else{
-            this.jplot = $.jqplot('divProfileChart',  [experiments, pareto],
+            this.jplot = $.jqplot('divProfileChart',  [experiments, pareto, selected],
             { 
             series:[ 
-                  {showLine:false, markerOptions: { size: 7, style:"circle" }},
-                  {showMarker:false, linePattern: '-.', lineWidth: 2, rendererOptions: {smooth: true} }
+                  {showLine:false, markerOptions: { size: 4, style:"x" }},
+                  {showMarker:false, lineWidth: 3, rendererOptions: {smooth: true} },
+                  {showLine:false, markerOptions: { size: 9, style:"circle" }}
+                  
                   ],
-              seriesColors:['#4990D6', '#3AB5A5'],   
+              seriesColors:['#ED772D', '#4990D6', '#ED1515'],   
               axes:{
                 xaxis:{
                   label:'Cost (euro)',
                   labelRenderer: $.jqplot.CanvasAxisLabelRenderer
                 },
                 yaxis:{
-                  label:'Time (sec)',
+                  label:'Time (min)',
                   labelRenderer: $.jqplot.CanvasAxisLabelRenderer
                 }
               },
@@ -140,10 +225,10 @@ conpaas.ui = (function (this_module) {
                 sizeAdjust: 7.5
               },
               cursor:{
-				show: true,
-				zoom:true,
-				showTooltip:false
-			  } 
+    				show: true,
+    				zoom:true,
+    				showTooltip:false
+    			  } 
             }
 
             );
@@ -219,8 +304,8 @@ conpaas.ui = (function (this_module) {
              <td class="wrapper last"> \
                <div class="icon"><img src="images/'+data.services[i].module_type+'.png" height="64"></div> \
                <div class="content" style="padding-left:20px"> \
-                  <div class="title">'+data.services[i].module_name+'<img class="led" title="initialized" src="images/ledgray.png"></div> \
-                  <div class="actions">Service not initialized</div> \
+                  <div class="title">'+data.services[i].module_name+'<img id="'+data.services[i].module_type+'_led" class="led" title="initialized" src="images/ledgray.png"></div> \
+                  <div id="'+data.services[i].module_type+'_status" class="actions">Service not initialized</div> \
                </div> \
                <div class="statistic"> \
                   <!--div class="statcontent"><img src="images/throbber-on-white.gif"></div> \
@@ -229,6 +314,7 @@ conpaas.ui = (function (this_module) {
                <div class="clear"></div> \
             </td></tr>';
             }
+            html += '<tr><td colspan="2"><div id="exeResult" class="execres" style="display:none">Actual execution time: <span>-</span>,  Actual cost: <span>-</span></div></td></tr>';
             html += '</table></div>';
 
             $('#servicesWrapper').html(html);
@@ -246,6 +332,8 @@ conpaas.ui = (function (this_module) {
         var file = $('#profilefile')[0].files[0];
         var formData = new FormData();
         formData.append('profile', file, file.name);
+        // formData.append('aid', that.application.aid);
+        formData.append('aid', 1);
         $.ajax({
           url: 'ajax/uploadProfile.php',
           data: formData,
@@ -254,17 +342,19 @@ conpaas.ui = (function (this_module) {
           dataType: 'json',
           type: 'POST',
           success: function(data){
-			  that.updateProfileInfo(data);
+			        that.updateProfileInfo(data);
+              $("#downloadProfile").hide();
 				//alert(JSON.stringify(data));
           }
        });
 	},
 	onUploadSLO: function(event)
     {  
-		var that = event.data; 
+		    var that = event.data; 
         var file = $('#slofile')[0].files[0];
         var formData = new FormData();
         formData.append('slo', file, file.name);
+        formData.append('service', 'echo');
         $.ajax({
           url: 'ajax/uploadSLO.php',
           data: formData,
@@ -279,6 +369,64 @@ conpaas.ui = (function (this_module) {
           }
        });
 	},
+
+   onClickShowConfiguration: function(event){
+          var that = event.data; 
+          var formData = new FormData();
+          formData.append('slo', $('#txtSlo').val());
+          formData.append('service', 'upload');
+          formData.append('aid', 1);
+          // formData.append('aid', that.application.aid);
+          $.ajax({
+            url: 'ajax/uploadSLO.php',
+            data: formData,
+            processData: false,
+            contentType: false,
+            dataType: 'json',
+            type: 'POST',
+            success: function(data){
+              // alert(JSON.stringify(data));
+              conf = $.parseJSON( data );
+              conf = conf.result.conf;
+              var html = '';
+              if (conf != null){
+                tc = that.myround(conf.Results.TotalCost,4);
+                et = that.myround(conf.Results.ExeTime, 4);
+                html += 'Selected configuration: <span>'+ that.objToString(conf.Configuration) +'</span> <br/>';
+                html += 'Estimated execution time: <span>'+et+'</span> min &nbsp;&nbsp;&nbsp; Estimated cost: <span>'+tc+'</span> &euro;';
+                
+                // selected = [[conf.Results.TotalCost.toFixed(3) , conf.Results.ExeTime.toFixed(3)]];
+                selected = [[tc , et]];
+                that.tc = tc;
+                that.et = et;
+                that.plot(null, null, selected);
+              }else
+                html += '<span>No configuration can satisfy this SLO</span>';
+              $('#predictionDiv').html(html);
+            }
+         });
+
+
+    },
+    onExecuteSlo: function(event)
+    {  
+
+        var that = event.data; 
+        $.ajax({
+          url: 'ajax/executeSLO.php',
+          data: {'aid': 1},
+          processData: true,
+          contentType: false,
+          dataType: 'json',
+          type: 'GET',
+          success: function(data){
+            that.poller = new conpaas.http.Poller(that.server, 'ajax/getApplicationInfo.php', 'get');
+            that.pollApplication(function () {
+                window.location.reload();
+            }, null, 5);
+          }
+       });
+    },
     attachHandlers: function () {
         var that = this;
         conpaas.ui.Page.prototype.attachHandlers.call(this);
@@ -294,9 +442,12 @@ conpaas.ui = (function (this_module) {
         $('#upappfile').click(this, this.onDialog);
         $('#upprofilefile').click(this, this.onDialog);
         $('#upslofile').click(this, this.onDialog);
+        $('#showConfiguration').click(this, this.onClickShowConfiguration);
+        $('#executeSlo').click(this, this.onExecuteSlo);
         
-    },
-    onDialog: function(event){
+  },
+
+  onDialog: function(event){
 		var idfileinpit = this.id.substring(2);
 		$( "#"+idfileinpit ).trigger( "click" );
 	},

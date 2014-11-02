@@ -58,7 +58,9 @@ $services = ServiceData::getServicesByUser($page->getUID(), $_SESSION['aid']);
              </table-->
              
         </div>
+		
 		<div id="servicesWrapper" style="padding:10px"></div>
+		
 		<hr/>
 		<div style="padding-top:20px; text-align:center">
 		    <!--table border="0" style="width:100%"><tr>
@@ -80,11 +82,11 @@ $services = ServiceData::getServicesByUser($page->getUID(), $_SESSION['aid']);
         <br/><br/>
         <table style="width:100%">
         	<tr>
-        	<td valign="top"><div id="divProfileTable" style="padding: 10px;"></div></td>	
+        	<td valign="top"><div id="divProfileTable" style="padding: 10px;height: 200px; overflow:auto; overflow-x:hidden"></div></td>	
         	<td valign="top" align="right"><div id="divProfileChart" style="height:200px;width:300px; "></div></td>	
         	</tr>
         	<tr>
-        	<td align="center" colspan="2"><div id="downloadProfile"></div></td>
+        	<td align="center" colspan="2"><div id="downloadProfile" style="margin-top: 10px;"></div></td>
         	</tr>
         </table>
 		
@@ -92,7 +94,12 @@ $services = ServiceData::getServicesByUser($page->getUID(), $_SESSION['aid']);
 		<div style="padding:10px">
 		<!--textarea id="txtSlo" class="codepress javascript linenumbers-on" style="width:600px; height:300px"></textarea--> 
 		<input id="slofile" name="slofile" type="file" style="display:none"> 
-		<table border="0" style="width:100%"><tr>
+		<table border="0" style="width:100%">
+		<tr><td><div id="predictionDiv" class="prediction" >
+			Selected configuration: <span>-</span> <br/>
+			Estimated execution time: <span>-</span> &nbsp;&nbsp;&nbsp; Estimated cost: <span>-</span>
+		</div></td><td></td></tr>
+		<tr>
 			<td rowspan="3" valign="top" ><textarea id="txtSlo"  style="width:600px; height:250px; background-color:#fffdf6; border: 1px solid"></textarea> </td>
 			<td valign="top" align="right" style="height:40px; padding-top:10px">
 				<a id="upslofile" class="button small" href="#"><!--img src="images/green-up.png"--></img>Upload SLO...</a>
@@ -100,7 +107,7 @@ $services = ServiceData::getServicesByUser($page->getUID(), $_SESSION['aid']);
 			</td>
 		</tr>
 		<tr><td valign="top" align="right"><a id="showConfiguration" class="button small" href="#"><!--img src="images/service-plus.png"--></img>Show configuration</a></td></tr>
-		<tr><td valign="bottom" align="right" style="padding-bottom:10px"><a id="showConfiguration" class="button" href="#"><img style="margin-top:-3px" src="images/play.png"></img>Execute</a></td></tr>
+		<tr><td valign="bottom" align="right" style="padding-bottom:10px"><a id="executeSlo" class="button" href="#"><img style="margin-top:-3px" src="images/play.png"></img>Execute</a></td></tr>
 		</table>
 		
 		</div>

@@ -24,8 +24,10 @@ from conpaas.core.services import manager_services
 from conpaas.core.misc import file_get_contents
 
 from conpaas.core.appmanager.core.patterns.store import Traces
-from conpaas.core.appmanager.core.context.parser import ManifestParser, SLOParser
+from conpaas.core.appmanager.core.context.parser import ManifestParser
+from conpaas.core.appmanager.slo import User, Objectives, SLOParser
 from conpaas.core.appmanager.profiler.profiler import Profiler
+from conpaas.core.appmanager.selection import SLOEnforcer
 from conpaas.core import https
 import urlparse
 
@@ -49,12 +51,16 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
         self.httpsserver = httpsserver
         self.config_parser = config_parser
         self.cache = config_parser.get('manager', 'VAR_CACHE')
+        self.performance_model = {'experiments':{}, 'pareto':[]}
 
         #TODO:(genc): You might consider to remove the controller from the base manager and use only this one.
         #self.controller = Controller(config_parser)
         self.instance_id = 0
         self.kwargs = kwargs
         self.state = self.S_RUNNING
+
+        self.module_managers = []
+        self.execinfo = {}
         #TODO:(genc) Put some order in this parsing, it is horrible
         #sloconent = file_get_contents(kwargs['slo'])
         #self.slo = SLOParser.parse(simplejson.loads(sloconent))
@@ -77,18 +83,102 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
         return HttpJsonResponse()    
 
     @expose('GET')
-    def get_profiling_info(self, kwargs):
-        return HttpJsonResponse({'state':self.state, 'profile':{'experiments': Traces.Experiments, 'pareto':Traces.ParetoExperiments}})    
+    def execute_slo(self, kwargs):
+        Thread(target=self.execute_application_slo, args=[]).start()
+        # execution_time, total_cost = self.execute_application_slo()
 
-    def run_am(self, cloud):
+        return HttpJsonResponse({"success":True})
+        # return HttpJsonResponse({"execution_time":execution_time, "total_cost":total_cost})    
+
+    @expose('GET')
+    def get_profiling_info(self, kwargs):
+        download = kwargs.pop('download')
+        # return HttpJsonResponse({'state':self.state, 'profile':{'experiments': Traces.Experiments, 'pareto':Traces.ParetoExperiments}})    
+        return HttpJsonResponse({'state':self.state, 'pm': self.perparePerformanceModel(download)})    
+
+    @expose('GET')
+    def infoapp(self, kwargs):
+        info = {}
+        for i in range(len(self.manifest.Modules)):
+            info[self.manifest.Modules[i].ModuleType] = self.module_managers[i].get_info()
+        
+        return HttpJsonResponse({'servinfo':info, 'execinfo': self.execinfo})    
+
+    @expose('UPLOAD')
+    def upload_profile(self, kwargs):
+        profile = kwargs.pop('profile')
+        profile = profile.file.read()
+        self.performance_model = simplejson.loads(profile)
+        # return HttpJsonResponse({'state':self.state, 'profile':{'experiments': Traces.Experiments, 'pareto':Traces.ParetoExperiments}})    
+        return HttpJsonResponse({'len':len(profile)})    
+
+
+    @expose('UPLOAD')
+    def upload_slo(self, kwargs):
+        slofile = kwargs.pop('slofile')
+        slofile = slofile.file.read()
+        self.slo = SLOParser.parse(simplejson.loads(slofile))
+        self.perparePerformanceModel(True)
+        User.Objectives = self.slo.Objective
+        self.sloconf = self.slomanager.select_configuration(User.Objectives, self.performance_model['pareto'])
+        # return HttpJsonResponse({'state':self.state, 'profile':{'experiments': Traces.Experiments, 'pareto':Traces.ParetoExperiments}})    
+        return HttpJsonResponse({'conf':self.sloconf})    
+
+    def run_am(self):
         if self.manifest.PerformanceModel == None:
             self.state = self.S_PROFILING
-            profiler = Profiler(self, cloud)
+            profiler = Profiler(self)
             profiler.run()
+            # self.performance_model['experiments'] = profiler.run()
+
             self.state = self.S_RUNNING
+            self.perparePerformanceModel(True)
         sys.stdout.flush()
 
+    def execute_application_slo(self):
+        implementation = None
+        #genc: again taking the only module here
+        for impl in self.manifest.Modules[0].Implementations:
+            if impl.ImplementationID == self.sloconf['ImplementationID']:
+                implementation = impl
+                break
 
+        configuration, _ = implementation.Resources.get_configuration(self.sloconf['Configuration'])
+        reservation = self.reserve_resources(configuration)
+        execution_time, total_cost = self.execute_application(reservation, self.sloconf['Arguments'], False)
+        self.execinfo = {"execution_time":execution_time, "total_cost":total_cost}
+
+
+    def execute_application(self, reservation, args, profiling):
+        #for now we use only one module, has to be updated when using multiple modules
+        module_manager = self.module_managers[0]
+        print "execute_application: reserv: %s, args: %s" % (reservation, args)
+        module_manager._do_startup(self.cloud, reservation, args)
+        
+        "Execute implementation"
+        start_time = time.time()
+        module_manager._do_run(profiling, args)
+        end_time = time.time()
+        execution_time = end_time - start_time
+        execution_time = execution_time / 60
+        total_cost = execution_time * reservation["Cost"]
+
+        #debug if (delete when done)
+        # if execution_time > 2:
+        # Thread(target=module_manager.controller.release_reservation, args=[reservation['ConfigID']]).start()
+        module_manager.controller.release_reservation(reservation['ConfigID'])
+
+        # return round(execution_time, 4), round(total_cost, 4)
+        return execution_time, total_cost
+
+    def reserve_resources(self, configuration):
+        #for now we use only one module, has to be updated when using multiple modules
+        module_manager = self.module_managers[0]
+        reservation = module_manager.controller.prepare_reservation(configuration)
+        #check cost reservation['Cost'] and contiune
+        #cost = reservation['Cost']
+        reservation = module_manager.controller.create_reservation_test(reservation, module_manager.get_check_agent_funct(), 5555)
+        return reservation
     
     # Details consist of resources(or devices), roles and distance
     def get_details_from_implementation(self, implementation):
@@ -116,7 +206,7 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
         manifestfile = kwargs.pop('manifest')
         manifestconent = manifestfile.file
         self.manifest = ManifestParser.parse(simplejson.loads(manifestconent.read()))
-
+        self.slomanager = SLOEnforcer(self.manifest)
         # slofile = kwargs.pop('slo')
         # sloconent = slofile.file
         # self.slo = SLOParser.parse(simplejson.loads(sloconent.getvalue()))
@@ -128,8 +218,12 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
         #self.app_tar = apptarfile.file
         
         self.appid = kwargs.pop('appid')
-        Thread(target=self.run_am, args=[kwargs['cloud']]).start()
-        #self.run_am(kwargs['cloud'])
+        self.cloud = kwargs['cloud']
+        #genc uncomment this when done
+        Thread(target=self.run_am, args=[]).start()
+        
+
+        #self.run_am()
 
         # resc = {}
         # service_ids=[]
@@ -149,7 +243,32 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
         
         
         return HttpJsonResponse({'success': True})
-  
+    
+
+    def perparePerformanceModel(self, download):
+        flat_pm = {'experiments':[], 'pareto':[]}
+        for impl in self.performance_model['experiments']:
+            for i in range(len(self.performance_model['experiments'][impl])):
+                self.performance_model['experiments'][impl][i]['ImplementationID'] = impl
+            flat_pm['experiments'].extend(self.performance_model['experiments'][impl])        
+
+        if self.state == self.S_RUNNING:
+            flat_pm['pareto'] = self.slomanager.get_pareto_experiments(flat_pm['experiments'])
+            if download:
+                if len(self.performance_model['pareto']) == 0:
+                    self.performance_model['pareto'] = flat_pm['pareto']
+                return self.performance_model
+        if download and self.state != self.S_RUNNING:
+            return {}
+
+        return flat_pm
+
+
+
+    def add_experiment(self, experiment):
+        if experiment['ImplementationID'] not in self.performance_model['experiments']:
+            self.performance_model['experiments'][experiment['ImplementationID']] = []
+        self.performance_model['experiments'][experiment['ImplementationID']].append(experiment)
   
     @expose('POST')
     def create_service(self, kwargs):
