@@ -465,7 +465,7 @@ Configuring ``cps-tools``::
 Installing Python2.7 and virtualenv
 -----------------------------------
 
-Recommended installation order is first ``python2.7``, then ``virtualenv`` (you will need about 0.5GB of free disk space.)
+Recommended installation order is first ``python2.7``, then ``virtualenv`` (you will need about 0.5GB of free disk space).
 Check if the following packages are installed, and install them if not::
 
     apt-get install gcc
@@ -509,10 +509,11 @@ Activate ``virtualenv``::
     Python 2.7.2
     (ve)$
 
-Install python modules::
+Install python argparse and argcomplete modules::
 
     (ve)$ pip install argparse
     (ve)$ pip install argcomplete
+    (ve)$ activate-global-python-argcomplete
 
 
 .. _frontend-installation:
