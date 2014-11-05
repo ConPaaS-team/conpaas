@@ -107,8 +107,9 @@ order to setup your ConPaaS Director installation.
    image suitable for ConPaaS is available in :ref:`conpaas-on-opennebula`.
 
 The installation process will create an `Apache VirtualHost` for the ConPaaS
-director in :file:`/etc/apache2/sites-available/conpaas-director.conf`. There should
-be no need for you to modify such a file, unless its defaults conflict with
+director in :file:`/etc/apache2/sites-available/conpaas-director.conf` for Apache 2.4
+or :file:`/etc/apache2/sites-available/conpaas-director` for older versions of Apache.
+There should be no need for you to modify such a file, unless its defaults conflict with
 your Apache configuration.
 
 Run the following commands as root to start your ConPaaS director for
@@ -116,7 +117,7 @@ the first time::
 
     $ sudo a2enmod ssl
     $ sudo a2enmod wsgi
-    $ sudo a2ensite conpaas-director.conf
+    $ sudo a2ensite conpaas-director
     $ sudo service apache2 restart
 
 If you experience any problems with the previously mentioned commands,
