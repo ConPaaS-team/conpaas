@@ -5,7 +5,7 @@
 
 require_module('ui/page');
 
-class Apppage extends Page {
+class AppPage extends Page {
 
 	public function __construct() {
 		parent::__construct();

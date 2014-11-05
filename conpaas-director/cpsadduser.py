@@ -40,12 +40,12 @@ if __name__ == "__main__":
 
     try:
         create_user(username, "", "", email, "", password, credit, "")
-        # here we don't fill in: fname, lname, affiliation, uuid
+         # here we don't fill in: fname, lname, affiliation, uuid
     except sqlalchemy.exc.IntegrityError as e:
         print "User %s already present" % username
         print "Statement: %s" % e.statement
         print "Orig: %s" % e.orig
         print "Params: %s" % json.dumps(e.params)
- 
+
     common.chown(common.config_parser.get('director',
         'DATABASE_URI').replace('sqlite:///', ''), 'www-data', 'www-data')

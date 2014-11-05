@@ -33,6 +33,7 @@ class BaseManager(object):
     getLog() -- GET
     upload_startup_script() -- UPLOAD
     get_startup_script() -- GET
+    delete() -- POST
     """
 
     # Manager states 
@@ -241,6 +242,7 @@ class BaseManager(object):
         for attempt in range(1, 11):
             try:
                 ret = self.controller.destroy_volume(volume, volume.cloud)
+                break
             except Exception, err:
                 self.logger.info("Attempt %s: %s" % (attempt, err))
                 # It might take a bit for the volume to actually be
@@ -251,8 +253,11 @@ class BaseManager(object):
             self.volumes.remove(volume)
         else:
             raise Exception("Error destroying volume %s" % volume_id)
+   
+    def attach_volume(self, volume_id, vm_id, device_name=None):
+        if device_name is None:
+            device_name=self.config_parser.get('manager', 'DEV_TARGET')
 
-    def attach_volume(self, volume_id, vm_id, device_name):
         self.logger.info("Attaching volume %s to VM %s as %s" % (volume_id,
             vm_id, device_name))
 
@@ -262,7 +267,7 @@ class BaseManager(object):
             id = vm_id
 
         return self.controller.attach_volume(node, volume, device_name,
-                volume.cloud)
+                volume.cloud), device_name
 
     def detach_volume(self, volume_id):
         self.logger.info("Detaching volume %s..." % volume_id)
@@ -277,6 +282,26 @@ class BaseManager(object):
         if cloud is None or cloud == 'default':
             cloud = 'iaas'
         return self.controller.get_cloud_by_name(cloud)
+
+    @expose('POST')
+    def delete(self, kwargs):
+        """
+        Terminate the service after releasing all resources, including cleanly
+        shutting down agent VMs.
+
+        No parameters.
+        """
+        Thread(target=self._do_delete, args=[]).start()
+        return HttpJsonResponse()
+
+    def _do_delete(self):
+        ''' Terminate the service, releasing all resources. '''
+
+        self.logger.info("Shutting down the service...")
+        self._do_shutdown()
+
+        self.logger.info("Terminating the service...")
+        self.controller.force_terminate_service()
 
 
 class ManagerException(Exception):

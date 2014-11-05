@@ -59,6 +59,12 @@ class XtreemFSService extends Service {
  		$volumes = json_decode($json, true);
  		return $volumes['result']['volumes'];
  	}
+
+	public function getAccessLocation() {
+		$dir_node = $this->getNodeInfo($this->nodesLists['dir'][0]);
+		return $dir_node['ip'];
+	}
+
 }
 
 ?>

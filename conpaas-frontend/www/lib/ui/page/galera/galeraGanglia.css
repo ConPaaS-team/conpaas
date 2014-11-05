@@ -1,0 +1,93 @@
+.Information {
+  width: 775px;
+  margin: 0 auto;
+  border-collapse: separate;
+  border-spacing: 0;
+  border-bottom-right-radius: 20px;
+  border-bottom-left-radius: 20px;
+  border-radius-bottomright: 20px;
+  border-radius-bottomleft: 20px; 
+  border-radius-topright: 20px;
+  border-radius-topleft: 20px; 
+  border-top-right-radius: 20px;
+  border-top-left-radius: 20px;
+  border-bottom: 1px solid #dadada;
+  
+  color: #2a2a2a;
+  background: #91d8f4;  
+  background-image: linear-gradient(top, #fff, #eaeaea, #fff);
+}
+
+.Information thead tr td {
+background:#115a8f;
+color:#ffffff;
+}
+
+.Information td {
+  height: 40px;
+  line-height: 40px;
+  padding: 0 10px;
+  border-bottom: 1px solid #cdcdcd;
+  box-shadow: 0 1px 0 white;
+  white-space: nowrap;
+  background: #0088ff;
+  background: rgba(144,144,144,0.15);
+  border-right: 1px solid white;
+  text-align: center;
+  font: bold 14px 'trebuchet MS', 'Lucida Sans', Arial; 
+  color:#555555; 
+}
+
+/*Body*/
+.Information tbody td {
+  text-align: center;
+  font: normal 12px Verdana, Arial, Helvetica;
+  width: 50px;
+}
+
+
+
+/*Header*/
+
+.Information thead td:first-child {
+  border-radius-topleft: 20px; 
+  border-top-left-radius: 20px;
+  border-top: 1px solid #eaeaea; 
+}
+
+.Information thead td:last-child {
+  border-radius-topright: 20px; 
+  border-top-right-radius: 20px;
+  border-top: 1px solid #eaeaea; 
+}
+
+
+tbody tr:nth-child(even)  { background:#c6e8f2; }
+
+tbody tr:nth-child(even):hover { background:#2487ca; }
+
+/*Effetto mouse*/
+.Information tr:hover {
+    background: #2487ca;
+    -o-transition: all 0.1s ease-in-out;
+    -webkit-transition: all 0.1s ease-in-out;
+    -moz-transition: all 0.1s ease-in-out;
+    -ms-transition: all 0.1s ease-in-out;
+    transition: all 0.1s ease-in-out;     
+}    
+
+/*Footer*/
+.Information tbody tr:last-child td:first-child {
+  font: normal 12px Verdana, Arial, Helvetica;  
+  border-radius-bottomleft: 20px; 
+  border-bottom-left-radius: 20px;
+  border-bottom: 1px solid #dadada;
+}
+
+.Information tbody tr:last-child td:last-child {
+  font:normal 12px Verdana, Arial, Helvetica;  
+  border-radius-bottomright: 20px; 
+  border-bottom-right-radius: 20px;
+  border-bottom: 1px solid #dadada;
+}
+

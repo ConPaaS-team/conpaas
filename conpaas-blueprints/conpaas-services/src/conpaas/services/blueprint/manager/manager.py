@@ -97,7 +97,7 @@ class BluePrintManager(BaseManager):
         self.controller.generate_context('blueprint')
 
         self.state = self.S_INIT
-        self.hub_ip = None
+       
 
     @expose('POST')
     def startup(self, kwargs):
@@ -126,19 +126,11 @@ class BluePrintManager(BaseManager):
             nodes = self.controller.create_nodes(1,
                 client.check_agent_process, self.AGENT_PORT)
 
-            hub_node = nodes[0]
-
-            # The first agent is a BluePrint Hub and a BluePrint Node
-            client.create_hub(hub_node.ip, self.AGENT_PORT)
-            client.create_node(hub_node.ip, self.AGENT_PORT, hub_node.ip)
-
-            self.hub_ip = hub_node.ip
-
             # Extend the nodes list with the newly created one
             self.nodes += nodes
             self.state = self.S_RUNNING
         except Exception, err:
-            self.logger.exception('_do_startup: Failed to create hub: %s' % err)
+            self.logger.exception('_do_startup: Failed to start agent: %s' % err)
             self.state = self.S_ERROR
 
     @expose('POST')
@@ -204,7 +196,7 @@ class BluePrintManager(BaseManager):
 
         # Startup agents
         for node in node_instances:
-            client.create_node(node.ip, self.AGENT_PORT, self.hub_ip)
+            client.create_node(node.ip, self.AGENT_PORT)
 
         self.nodes += node_instances
         self.state = self.S_RUNNING
@@ -243,10 +235,6 @@ class BluePrintManager(BaseManager):
 
         self.state = self.S_RUNNING
 
-    def __is_hub(self, node):
-        """Return True if the given node is the BluePrint Hub"""
-        return node.ip == self.hub_ip        
-
     @expose('GET')
     def list_nodes(self, kwargs):
         """Return a list of running nodes"""
@@ -254,16 +242,9 @@ class BluePrintManager(BaseManager):
             vals = { 'curstate': self.state, 'action': 'list_nodes' }
             return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
 
-        blueprint_nodes = [ 
-            node.id for node in self.nodes if not self.__is_hub(node) 
-        ]
-        blueprint_hub = [ 
-            node.id for node in self.nodes if self.__is_hub(node) 
-        ]
-
+        node_ids = [node.id for node in self.nodes ]
         return HttpJsonResponse({
-            'hub': blueprint_hub,
-            'node': blueprint_nodes
+            'node': node_ids
         })
 
     @expose('GET')
@@ -296,7 +277,15 @@ class BluePrintManager(BaseManager):
         return HttpJsonResponse({
             'serviceNode': { 
                 'id': serviceNode.id, 
-                'ip': serviceNode.ip, 
-                'is_hub': self.__is_hub(serviceNode)
+                'ip': serviceNode.ip
             }
         })
+
+    @expose('GET')
+    def test(self, kwargs):
+        """Return test messages from all the agents"""
+        msgsum = ''
+        for node in self.nodes:
+            msgsum += client.test(node.ip, self.AGENT_PORT)['msg'] + '\n'
+
+        return HttpJsonResponse({'msgs': msgsum})

@@ -1,17 +1,20 @@
 ============
 Installation 
 ============
-ConPaaS_ is a Platform-as-a-Service system. It aims at simplifying the
-deployment and management of applications in the Cloud.
 
-The central component of ConPaaS, called *ConPaaS Director* (**cpsdirector**),
-is responsible for handling user authentication, creating new applications,
-handling their life-cycle and much more. **cpsdirector** is a web service
-exposing all its functionalities via an HTTP-based API.
+The central component of ConPaaS is called the *ConPaaS Director*
+(**cpsdirector**). It is responsible for handling user authentication,
+creating new applications, handling their life-cycle and much
+more. **cpsdirector** is a web service exposing all its
+functionalities via an HTTP-based API.
 
-ConPaaS can be used either via a command line interface called **cpsclient** or
-through a web frontend (**cpsfrontend**). This document explains how to install
-and configure all the aforementioned components.
+ConPaaS can be used either via a command line interface (called
+**cpsclient**) or through a web frontend (**cpsfrontend**).  Recently
+a new experimental command line interface called **cps-tools** has
+become available (note: **cps-tools** requires Python 2.7). This
+document explains how to install and configure all the aforementioned
+components.
+
 
 .. _ConPaaS: http://www.conpaas.eu
 .. _Flask: http://flask.pocoo.org/
@@ -43,6 +46,9 @@ Installing ConPaaS requires to take the following steps:
 #. Install and configure **cpsclient** as explained in
    :ref:`cpsclient-installation`.
 
+#. Install and configure **cps-tools** as explained in
+   :ref:`cpstools-installation`.
+
 #. Install **cpsfrontend** and configure it to use your ConPaaS
    director as explained in :ref:`frontend-installation`.
 
@@ -61,7 +67,7 @@ should be enabled in :file:`/etc/apt/sources.list` and
 :file:`/etc/apt/sources.list.d/`. 
 
 **cpsdirector** is available here:
-http://www.conpaas.eu/dl/cpsdirector-1.3.2.tar.gz. The tarball includes an
+http://www.conpaas.eu/dl/cpsdirector-1.x.x.tar.gz. The tarball includes an
 installation script called :file:`install.sh` for your convenience. You can
 either run it as root or follow the installation procedure outlined below in
 order to setup your ConPaaS Director installation.
@@ -70,15 +76,20 @@ order to setup your ConPaaS Director installation.
 
    $ sudo apt-get update
    $ sudo apt-get install build-essential python-setuptools python-dev 
-   $ sudo apt-get install libapache2-mod-wsgi libcurl4-openssl-dev
+   $ sudo apt-get install apache2 libapache2-mod-wsgi libcurl4-openssl-dev
 
 #. Make sure that your system's time and date are set correctly by installing
    and running **ntpdate**::
 
-   $ sudo apt-get install ntpdate
-   $ sudo ntpdate 0.us.pool.ntp.org
+    $ sudo apt-get install ntpdate
+    $ sudo ntpdate 0.us.pool.ntp.org
 
-#. Download http://www.conpaas.eu/dl/cpsdirector-1.3.2.tar.gz and
+    >> If the NTP socket is in use, you can type:
+    $ sudo service ntp stop
+    >> and again
+    $ sudo ntpdate 0.us.pool.ntp.org
+
+#. Download http://www.conpaas.eu/dl/cpsdirector-1.x.x.tar.gz and
    uncompress it
 
 #. Run :command:`make install` as root
@@ -96,14 +107,16 @@ order to setup your ConPaaS Director installation.
    image suitable for ConPaaS is available in :ref:`conpaas-on-opennebula`.
 
 The installation process will create an `Apache VirtualHost` for the ConPaaS
-director in :file:`/etc/apache2/sites-available/conpaas-director`. There should
-be no need for you to modify such a file, unless its defaults conflict with
+director in :file:`/etc/apache2/sites-available/conpaas-director.conf` for Apache 2.4
+or :file:`/etc/apache2/sites-available/conpaas-director` for older versions of Apache.
+There should be no need for you to modify such a file, unless its defaults conflict with
 your Apache configuration.
 
 Run the following commands as root to start your ConPaaS director for
 the first time::
 
     $ sudo a2enmod ssl
+    $ sudo a2enmod wsgi
     $ sudo a2ensite conpaas-director
     $ sudo service apache2 restart
 
@@ -146,11 +159,12 @@ as follows::
     $ sudo apt-get install sqlite3
     $ sudo sqlite3 /etc/cpsdirector/director.db
 
-If you have an existing installation (version 1.3.1 and earlier) you 
+If you have an existing installation (version 1.4.0 and earlier) you
 should upgrade your database to contain the extra ``uuid`` field needed 
-for external IdP usage (see next topic)::
+for external IdP usage (see next topic) and the extra ``openid`` field
+needed for OpenID support::
 
-    $ sudo add-uuid-column-to-db.sh
+    $ sudo add-user-columns-to-db.sh
 
 This script will warn you when you try to upgrade an already upgraded database.
 
@@ -158,16 +172,17 @@ On a fresh installation the database will be created on the fly.
 
 Contrail IdP and SimpleSAML
 ---------------------------
-For registration and login through the Contrail Identification Provider 
-you have to install the SimpleSAML package simplesamlphp-1.11.0 as 
-follows::
+ConPaaS can optionally delegate its user authentication to an external
+service. For registration and login through the Contrail
+Identification Provider you have to install the SimpleSAML package
+simplesamlphp-1.11.0 as follows::
 
     $ wget http://simplesamlphp.googlecode.com/files/simplesamlphp-1.11.0.tar.gz
     $ tar xzf simplesamlphp-1.11.0.tar.gz
     $ cd simplesamlphp-1.11.0
     $ cd cert ; openssl req -newkey rsa:2048 -new -x509 -days 3652 -nodes -out saml.crt -keyout saml.pem
 
-Edit file :file:`metadata/saml20-idp-remote.php` and replace the ``$metadata 
+Edit file :file:`../metadata/saml20-idp-remote.php` and replace the ``$metadata
 array`` by the code found in the simpleSAMLphp flat file format part at 
 the end of the browser output of
 https://multi.contrail.xlab.si/simplesaml/saml2/idp/metadata.php?output=xhtml .
@@ -194,7 +209,7 @@ Change ownerships::
     $ sudo chown www-data www log
     $ sudo chgrp www-data www log
 
-Now edit :file:`/etc/apache2/sites-enabled/default-ssl` to contain the 
+Now edit :file:`/etc/apache2/sites-enabled/default-ssl.conf` to contain the
 following lines (line numbers may vary depending on your current 
 situation)::
 
@@ -224,20 +239,19 @@ after the cloud itself. Please refer to
 
 Virtual Private Networks with IPOP
 ----------------------------------
-
-Network connectivity between private clouds running on different networks can
-be achieved in ConPaaS by using IPOP_ (IP over P2P). 
-
-IPOP is useful when you need to deploy ConPaaS instances across multiple
+Network connectivity between private clouds running on different
+networks can be achieved in ConPaaS by using IPOP_ (IP over P2P). This
+is useful in particular to deploy ConPaaS instances across multiple
 clouds. IPOP adds a virtual network interface to all ConPaaS instances
-belonging to an application, allowing services to communicate over a virtual
-private network as if they were deployed on the same LAN. This is achieved
-transparently to the user and applications - the only configuration needed to
-enable IPOP is to determine the network's base IP address, mask, and the number
-of IP addresses in this virtual network that are allocated to each service.
+belonging to an application, allowing services to communicate over a
+virtual private network as if they were deployed on the same LAN. This
+is achieved transparently to the user and applications - the only
+configuration needed to enable IPOP is to determine the network's base
+IP address, mask, and the number of IP addresses in this virtual
+network that are allocated to each service.
 
 VPN support in ConPaaS is per-application: each application you create will get
-its own IPOP Virtual Private Network. VMs running in the same application will
+its own isolated IPOP Virtual Private Network. VMs running in the same application will
 be able to communicate with each other.
 
 In order to enable IPOP you need to set the following variables in
@@ -285,11 +299,9 @@ For example::
 
 Troubleshooting
 ---------------
-There are a few things you can check if for some reason your Director
-installation is not behaving as expected.
+If for some reason your Director installation is not behaving as expected, here are a few frequent issues and their solutions.
 
-If you cannot create services, this is what you should try to do on your
-Director:
+If you cannot create services, try to run this on the machine holding your Director:
 
 1. Run the **cpscheck.py** command as root to attempt an automatic detection of
    possible misconfigurations.
@@ -323,6 +335,7 @@ ssh into your manager VM as root and:
    Director. In the following example, our manager's IP address is 192.168.122.15
    and we are checking if *the director* can contact *the manager* on port 443::
 
+    root@conpaas-director:~# apt-get install nmap
     root@conpaas-director:~# nmap -p443 192.168.122.15
     Starting Nmap 6.00 ( http://nmap.org ) at 2013-05-14 16:17 CEST
     Nmap scan report for 192.168.122.15
@@ -334,7 +347,34 @@ ssh into your manager VM as root and:
 
 4. Check the contents of :file:`/root/manager.err`, :file:`/root/manager.out`
    and :file:`/var/log/cpsmanager.log`.
+   
+5. If the Director fails to respond to requests and you receive errors such as
+   ``No ConPaaS Director at the provided URL: HTTP Error 403: Forbidden`` or
+   ``403 Access Denied``, you need to allow access to the root file system,
+   which is denied by default in newer versions of **apache2**.
+   You can fix this by modifying the file :file:`/etc/apache2/apache2.conf`.
+   In particular, you need to replace these lines::
 
+
+             <Directory />
+                     Options FollowSymLinks
+                     AllowOverride all
+                     Order deny,allow
+                     Allow from all
+             </Directory>
+             
+             
+   with these others::
+
+
+             <Directory />
+                     Options Indexes FollowSymLinks Includes ExecCGI
+                     AllowOverride all
+                     Order deny,allow
+                     Allow from all
+             </Directory> 
+             
+             
 Command line tool installation
 ================================
 
@@ -353,7 +393,9 @@ your system.
 
 As root::
     
-    $ sudo easy_install http://www.conpaas.eu/dl/cpsclient-1.3.2.tar.gz
+    $ sudo easy_install http://www.conpaas.eu/dl/cpsclient-1.x.x.tar.gz
+
+(do not forget to replace 1.x.x with the exact number of the ConPaaS release you are using)
 
 Or, if you do not have root privileges, ``cpsclient`` can also be installed in
 a Python virtual environment if ``virtualenv`` is available on your machine::
@@ -361,15 +403,16 @@ a Python virtual environment if ``virtualenv`` is available on your machine::
     $ virtualenv conpaas # create the 'conpaas' virtualenv
     $ cd conpaas
     $ source bin/activate # activate it
-    $ easy_install http://www.conpaas.eu/dl/cpsclient-1.3.2.tar.gz
+    $ easy_install http://www.conpaas.eu/dl/cpsclient-1.x.x.tar.gz
 
-Configuring ``cpsclient.py``:
-::
+Configuring ``cpsclient.py``::
+
     $ cpsclient.py credentials
-    Enter the director URL: https://parapide-16.rennes.grid5000.fr:5555
-    Enter your username: xcv
+    Enter the director URL: https://your.director.name:5555
+    Enter your username: xxxxx
     Enter your password: 
     Authentication succeeded
+
 
 
 .. _cpstools-installation:
@@ -379,28 +422,36 @@ Installing and configuring cps-tools
 
 The command line ``cps-tools`` is a more recent command line client to interact
 with ConPaaS.
-It has essentially a modular internal architecture easier to extend.
+It has essentially a modular internal architecture that is easier to extend.
 It has also "object-oriented" arguments where "ConPaaS" objects are services, users, clouds and applications.
 The argument consists in stating the "object" first and then calling a sub-command on it.
 It also replaces the command line tool ``cpsadduser.py``.
 
-``cps-tools`` requires::
-:
+``cps-tools`` requires:
+
     * Python 2.7 
-    * Python module argparse
-    * Python module argcomplete
+    * Python argparse module
+    * Python argcomplete module
 
+If these are not yet installed, first follow the guidelines in :ref:`python-and-ve`.
 
-Installing ``cps-tools``:
-::
-    $ pip install argcomplete activate-global-python-argcomplete argparse
-    $ tar -xaf cps-tools-1.3.2.tar.gz
-    $ cd cps-tools-1.3.2
+Installing ``cps-tools``::
+
+    $ tar -xaf cps-tools-1.x.x.tar.gz
+    $ cd cps-tools-1.x.x
     $ ./configure --sysconf=/etc
     $ sudo make install
 
-Configuring ``cps-tools``:
-::
+or::
+	
+    $ make prefix=$HOME/src/virtualenv-1.11.4/ve install |& tee my-make-install.log
+    $  cd ..
+    $  pip install simplejson |& tee sjson.log
+    $  apt-get install libffi-dev |& tee libffi.log
+    $  pip install cpslib-1.x.x.tar.gz |& tee my-ve-cpslib.log
+
+Configuring ``cps-tools``::
+
     $ mkdir -p $HOME/.conpaas
     $ cp /etc/cps-tools.conf $HOME/.conpaas/
     $ vim $HOME/.conpaas/cps-tools.conf
@@ -410,9 +461,61 @@ Configuring ``cps-tools``:
     >> enter you password
     >> now you can use cps-tools commands
 
-In case you need to install python2.7 in a virtual env:
+.. _python-and-ve:
 
-https://gist.github.com/2xyo/6026136
+Installing Python2.7 and virtualenv
+-----------------------------------
+
+Recommended installation order is first ``python2.7``, then ``virtualenv`` (you will need about 0.5GB of free disk space).
+Check if the following packages are installed, and install them if not::
+
+    apt-get install gcc
+    apt-get install libreadline-dev
+    apt-get install -t squeeze-backports libsqlite3-dev libsqlite3-0
+    apt-get install tk8.4-dev libgdbm-dev libdb-dev libncurses-dev
+
+Installing ``python2.7``::
+
+    $ mkdir ~/src        (choose a directory)
+    $ cd ~/src
+    $ wget --no-check-certificate http://www.python.org/ftp/python/2.7.2/Python-2.7.2.tgz
+    $ tar xzf Python-2.7.2.tgz
+    $ cd Python-2.7.2
+    $ mkdir $HOME/.localpython
+    $ ./configure --prefix=$HOME/.localpython |& tee my-config.log
+    $ make |& tee my-make.log
+    >> here you may safely ignore complaints about missing modules: bsddb185   bz2   dl   imageop   sunaudiodev  
+    $ make install |& tee my-make-install.log
+
+Installing ``virtualenv`` (here version 1.11.4)::
+
+    $ cd ~/src
+    $ wget --no-check-certificate http://pypi.python.org/packages/source/v/virtualenv/virtualenv-1.11.4.tar.gz
+    $ tar xzf virtualenv-1.11.4.tar.gz
+    $ cd virtualenv-1.11.4
+    $ $HOME/.localpython/bin/python setup.py install     (install virtualenv using P2.7)
+    
+    $ $HOME/.localpython/bin/virtualenv ve -p $HOME/.localpython/bin/python2.7 
+    New python executable in ve/bin/python2.7
+    Also creating executable in ve/bin/python
+    Installing setuptools, pip...done.
+    Running virtualenv with interpreter $HOME/.localpython/bin/python2.7
+
+Activate ``virtualenv``::
+
+    $ alias startVE='source $HOME/src/virtualenv-1.11.4/ve/bin/activate'
+    $ alias stopVE='deactivate'
+    $ startVE
+    (ve)$ python -V
+    Python 2.7.2
+    (ve)$
+
+Install python argparse and argcomplete modules::
+
+    (ve)$ pip install argparse
+    (ve)$ pip install argcomplete
+    (ve)$ activate-global-python-argcomplete
+
 
 .. _frontend-installation:
 
@@ -424,7 +527,7 @@ Director and Frontend are installed on the same host, but such does not need to
 be the case.
 
 The ConPaaS Frontend can be downloaded from
-http://www.conpaas.eu/dl/cpsfrontend-1.3.2.tar.gz. 
+http://www.conpaas.eu/dl/cpsfrontend-1.x.x.tar.gz. 
 
 After having uncompressed it you should install the required Debian packages::
 
@@ -433,7 +536,7 @@ After having uncompressed it you should install the required Debian packages::
 Copy all the files contained in the :file:`www` directory underneath your web
 server document root. For example::
 
-   $ sudo cp -a www/ /var/www/conpaas/
+   $ sudo cp -a www/ /var/www/
 
 Copy :file:`conf/main.ini` and :file:`conf/welcome.txt` in your ConPaaS
 Director configuration folder (:file:`/etc/cpsdirector`). Modify those files to
@@ -445,7 +548,7 @@ Create a :file:`config.php` file in the web server directory where you have
 chosen to install the frontend. :file:`config-example.php` is a good starting
 point::
 
-   $ sudo cp www/config-example.php /var/www/conpaas/config.php
+   $ sudo cp www/config-example.php /var/www/config.php
 
 Note that :file:`config.php` must contain the :envvar:`CONPAAS_CONF_DIR`
 option, pointing to the directory mentioned in the previous step
@@ -505,6 +608,11 @@ disabled, its package dependencies are not installed in the VM image. Paired
 with the *optimize* flag, the end result will be a minimal VM image that runs
 only what you need.
 
+Note that te configuration file contains also a **NUTSHELL** section. The 
+settings in this section are explained in details in :ref:`conpaas-in-a-nutshell`.
+However, in order to generete a regular customized VM image make sure that both 
+*container* and *nutshell* flags in this section are set to false.
+
 Once you are done with the configuration, you should run this command in the
 create_vm directory:: 
 
@@ -527,9 +635,7 @@ virtualization technology, or running a Debian/Ubuntu instance in the cloud.
    mkfs.ext3 tune2fs mount debootstrap chroot umount grub-install*
 
 #. It is particularly important that you use Grub version 2. To install
-   it:
-
-   ::
+   it::
 
          sudo apt-get install grub2
          
@@ -552,30 +658,22 @@ everything the script has done, follow these instructions:
    the form of ``/tmp/tmp.X``.
 
 #. There may be a ``dev`` and a ``proc`` directories mounted inside it.
-   Unmount everything using:
-
-   ::
+   Unmount everything using::
 
            sudo umount /tmp/tmp.X/dev /tmp/tmp.X/proc /tmp/tmp.X
          
 
-#. Find which loop device you are using:
-
-   ::
+#. Find which loop device you are using::
 
            sudo losetup -a
          
 
-#. Remove the device mapping:
-
-   ::
+#. Remove the device mapping::
 
            sudo kpartx -d /dev/loopX
          
 
-#. Remove the binding of the loop device:
-
-   ::
+#. Remove the binding of the loop device::
 
            sudo losetup -d /dev/loopX
          
@@ -607,11 +705,11 @@ dependencies of its processes. For your convenience we provide a pre-built
 public AMI, already configured and ready to be used on Amazon EC2, for each
 availability zone supported by ConPaaS. The AMI IDs of said images are:
 
--  ``ami-f4c75fc4`` United States West (Oregon)
+-  ``ami-e31d52d3`` United States West (Oregon)
 
--  ``ami-c3045aaa`` United States East (Northern Virginia)
+-  ``ami-22cc4b4a`` United States East (Northern Virginia)
 
--  ``ami-b79271c0`` Europe West (Ireland)
+-  ``ami-5058f627`` Europe West (Ireland)
 
 You can use one of these values when configuring your ConPaaS director
 installation as described in :ref:`director-installation`.
@@ -655,7 +753,8 @@ The following ports should be open for all running instances:
 -  TCP ports 80, 443, 5555, 8000, 8080 and 9000 – used by the Web
    Hosting service
 
--  TCP port 3306 – used by the MySQL service
+-  TCP ports 3306, 4444, 4567, 4568 – used by the MySQL service with
+   Galera extensions
 
 -  TCP ports 8020, 8021, 8088, 50010, 50020, 50030, 50060, 50070, 50075,
    50090, 50105, 54310 and 54311 – used by the Map Reduce service
@@ -684,11 +783,17 @@ This section assumed that you already have created a ConPaaS services image as
 explained in :ref:`image-creation`. Upload your image (i.e. *conpaas.img*) to
 your OpenNebula headnode. The headnode is where OpenNebula services are
 running. You need have a valid OpenNebula account on the headnode (i.e. onevm
-list works!).
+list works!). Although you have a valid account on OpenNebula, you may have a problem similar to this:
+
+*/usr/lib/one/ruby/opennebula/client.rb:119:in `initialize': ONE_AUTH file not present (RuntimeError)*
+
+You can fix it setting the ONE_AUT variable like follows::
+
+    $  export ONE_AUTH="/var/lib/one/.one/one_auth"
 
 To register your image, you should execute *register-image-opennebula.sh* on
 the headnode. *register-image-opennebula.sh* needs the path to *conpaas.img* as
-well as OpenNebula's datastore ID.
+well as OpenNebula's datastore ID and  architecture Type.
 
 To get the datastore ID, you should execute this command on the headnode::
     
@@ -700,12 +805,17 @@ image ID.
 Make sure OpenNebula is properly configured
 -------------------------------------------
 OpenNebula’s OCCI daemon is used by ConPaaS to communicate with your
-OpenNebula cluster.
+OpenNebula cluster. The OCCI daemon is included in OpenNebula only up to
+version 4.6 (inclusive), so later versions of OpenNebula are not officially
+supported at the moment.
+
+#. The OCCI server should be configured to listen on the correct interface so that
+   it can receive connections from the managers located on the VMs. This can be 
+   achieved by modifying the "host" IP (or FQDN - fully qualified domain name) 
+   parameter from ``/etc/one/occi-server.conf`` and restarting the OCCI server.
 
 #. Ensure the OCCI server configuration file ``/etc/one/occi-server.conf``
-   contains the following lines in section instance\_types:
-
-   ::
+   contains the following lines in section instance\_types::
 
        :custom:
          :template: custom.erb
@@ -716,9 +826,7 @@ achieved by modifying the "host" IP (or FQDN - fully qualified domain name)
 parameter from /etc/one/occi-server.conf and restarting the OCCI server.
 
 #. At the end of the OCCI profile file ``/etc/one/occi_templates/common.erb``
-   from your OpenNebula installation, append the following lines:
-   
-   ::
+   from your OpenNebula installation, append the following lines::
    
        <% @vm_info.each('OS') do |os| %>
             <% if os.attr('TYPE', 'arch') %>
@@ -737,9 +845,7 @@ parameter from /etc/one/occi-server.conf and restarting the OCCI server.
       is very useful for debugging purposes and is not necessary once
       testing is complete.
 
-#. Make sure you started OpenNebula’s OCCI daemon:
-
-   ::
+#. Make sure you started OpenNebula’s OCCI daemon::
 
        sudo occi-server start
 
@@ -760,3 +866,95 @@ suggest to disable reverse lookups on your OCCI server by editing
 with::
 
     :DoNotReverseLookup => true,
+
+.. _conpaas-in-a-nutshell:
+
+ConPaaS in a Nutshell
+=====================
+ConPaaS in a Nutshell is an extension to the ConPaaS project which aims at 
+providing a cloud environent and a ConPaaS installation running on it, all
+in a single VM, called the Nutshell. More specifically, this VM has an 
+all-in-one OpenStack installation running on top of LXC containers, as well 
+as a ConPaaS installation, including all of its components, already configured 
+to work in this environment.
+
+The Nutshell VM can be deployed on various virtual environments, not only
+standard clouds such as OpenNebula, OpenStack and EC2 but also on simpler 
+virtualization tools such as VirtualBox. Therefore, it provides a great developing 
+and testing environemnt for ConPaaS without the need of accessing a cloud. 
+
+
+Creating a Nutshell image
+-------------------------
+The procedure for creating a Nutshell image is very similar to the one for 
+creating a standard customized image described in section :ref:`image-creation`.
+However, there are a few settings in the configuration file which need 
+to be considered.
+
+Most importantly, there are two flags in the **Nutshell** section of the 
+configuration file, *nutshell* and *container* which control the kind of image
+that is going to be generated. Since these two flags can take either value
+true of false, we distinguish four cases:
+
+#. nutshell = false, container = false: In this case a standard ConPaaS VM
+   image is generated and the nutshell configurations are not taken into consideration.
+   This is the default configuration which should be used when ConPaaS is deployed on a
+   standard cloud.
+
+#. nutshell = false, container = true: In this case the user indicates that the
+   image that will be generated will be a LXC container image. This image is similar
+   to a standard VM one, but it does not contain a kernel installation. 
+
+#. nutshell = true, container = false. In this case a Nutshell image is generated
+   and a standard ConPaaS VM image will be embedded in it. This configuraiton should be
+   used for deploying ConPaaS in nested standard VMs within a single VM.
+
+#. nutshell = true, container = true. Similar to the previous case, a Nutshell image
+   is generated but this time a container image is embedded in it instead of a VM one.
+   Therefore, in order to generate a Nutshell based on contaners make sure to set these 
+   flags to this configuration. This is the default configuraiton for our distribution of
+   nutshell.
+
+Another important setting for generating the Nutshell image is also the path to a direcotry
+containing the ConPaaS tarballs (cps*.tar.gz files). 
+The rest of the settings specify the distro and kernel versions that the Nutshell VM would have.
+For the moment we have tested it only for Ubuntu 12.04 with kernel 3.5.0.
+
+In order to run the image generating script, the procedure is almost the same as for a standard image.
+From the create_vm diretory run:: 
+
+    $ python create-img-script.py
+    $ sudo ./create-img-nutshell.sh
+
+Note that if the nutshell flag is enabled the generated script file is called *create-img-nutshell.sh*.
+Otherwise, the generated script file is called *create-img-conpaas.sh* as indicated previously.
+
+
+   
+Creating a Nutshell image for VirtualBox
+----------------------------------------
+
+As mentioned earlier the Nutshell VM can run on VirtualBox. In order to generate a Nutshell image
+compatible with VirtualBox, you have to set the *cloud* value to *vbox* on the **Customizable** section of the configuration file.
+The rest of the procedure is the same as for other clouds. The result of the image generation script would be a
+*nutshell.vdi* image file which can be used as a virtual hard drive when creating a new appliance on VirtualBox.
+
+The procedure for creating a new appliance on VirtualBox is quite standard:
+  
+#. Name and OS: You choose a custom name for the appliance but use *Linux* and *Ubuntu (64 bit)* for the type and version.
+
+#. Memory size: Since the nutshell runs a significat number of services and requires also some memory for the containers we suggest to choose at least 3 GB of RAM.
+
+#. Hard drive: Select "User an existing virtual hard drive file", browse to the location of the *nutshell.vdi* file generated earlier and press create.
+
+Running the Nutshell in VirtualBox
+----------------------------------
+  
+From the 1.4.1 release though, ConPaaS is shipped together with a VirtualBox appliance containing the Nutshell
+VM image as well. 
+
+Before running the appliance it is strongly suggested to 
+create a host-only network on VirtualBox in case there is not already one created. To do so from the VirtualBox GUI, go to: File>Preferences>Network>Host-only Networks and click add.  Then use the File>Import appliance menu to import the image in VirtualBox.
+
+
+For more information regarding the usage of the Nutshell please consult the :ref:`nutshell-guide` section in the guide.

@@ -14,7 +14,7 @@ try {
 		throw new Exception('you already have an user');
 	}
 	// check for missing fields first
-	$fields = array('username', 'password', 'email', 'fname', 'lname', 'affiliation', 'uuid');
+	$fields = array('username', 'password', 'email', 'fname', 'lname', 'affiliation', 'uuid', 'openid');
 
     if (defined('CAPTCHA_PUBLIC_KEY') && defined('CAPTCHA_PRIVATE_KEY')) {
         // only require recaptcha fields if checks are enabled
@@ -53,8 +53,9 @@ try {
 	$conf = Logging::loadConf();
 	UserData::createUser($_POST['username'], $_POST['email'], $_POST['fname'],
 		$_POST['lname'], $_POST['affiliation'], $_POST['password'],
-	    $conf['initial_credit'], $_POST['uuid']);
+	    $conf['initial_credit'], $_POST['uuid'], $_POST['openid']);
 	$_SESSION['uuid'] = $_POST['uuid'];
+	$_SESSION['openid'] = $_POST['openid'];
 	$_SESSION['username'] = $_POST['username'];
 	$_SESSION['password'] = $_POST['password'];
 	$user->loadByName($_POST['username']);

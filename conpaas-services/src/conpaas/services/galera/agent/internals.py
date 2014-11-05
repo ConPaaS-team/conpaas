@@ -17,6 +17,8 @@ from conpaas.core.https.server import HttpErrorResponse, HttpJsonResponse, FileU
 from conpaas.core.expose import expose
 from conpaas.core.misc import check_arguments, is_list, is_string, is_uploaded_file
 
+#logging
+import logging
 
 # daemons identifier
 MYSQLD = 'mysqld'
@@ -56,24 +58,27 @@ class GaleraAgent(BaseAgent):
             list of IP addresses and port of other nodes of this
             synchronization group. If empty or absent, then a new
             synchronization group will be created by Galera.
-        """
+        device_name : string
+            the block device where the disks are attached to
+        """        
         try:
-            exp_params = [('nodes', is_list, [])]
-            nodes = check_arguments(exp_params, kwargs)
+            exp_params = [('nodes', is_list, []),
+                          ('device_name', is_string)]
+            nodes, device_name = check_arguments(exp_params, kwargs)
             with self.lock:
                 mysql_role = role.MySQLServer
-                self._start(mysql_role, nodes)
+                self._start(mysql_role, nodes, device_name)
                 self.running_roles.append(mysql_role)
         except Exception as ex:
             return HttpErrorResponse("%s" % ex)
         else:
             return HttpJsonResponse()
 
-    def _start(self, roleClass, nodes):
+    def _start(self, roleClass, nodes, device_name=None):
         if exists(roleClass.class_file):
             raise AgentException('Cannot start %s: file %s already exists.'
                                  % (roleClass, roleClass.class_file))
-        p = roleClass(self.config_parser, nodes)
+        p = roleClass(self.config_parser, nodes, device_name)
         try:
             fd = open(roleClass.class_file, 'w')
             pickle.dump(p, fd)
@@ -212,13 +217,13 @@ class GaleraAgent(BaseAgent):
         if not role.GLBNode in self.running_roles:
             raise AgentException("Cannot add nodes: agent is not running a glbd daemon.")
         try:
-            exp_params = [('nodes', is_list, [])]
+            exp_params = [('nodesIp', is_list, [])]
             nodes = check_arguments(exp_params, kwargs)
-            with self.lock:
-                fd = open(role.GLBNode.class_file, 'r')
+	    with self.lock:
+		fd = open(role.GLBNode.class_file, 'r')
                 p = pickle.load(fd)
-                p.add(nodes)
-                fd.close()
+		p.add(  nodes)
+                fd.close()		
         except Exception as ex:
             return HttpErrorResponse("%s" % ex)
         else:
@@ -248,3 +253,25 @@ class GaleraAgent(BaseAgent):
             return HttpErrorResponse("%s" % ex)
         else:
             return HttpJsonResponse()
+
+    @expose('GET')
+    def getLoad(self, kwargs):
+        """
+        Returns the local load of the single nodes.
+
+        """
+	if len(kwargs) > 0:
+            self.logger.warning('Galera agent "stop" was called with arguments that will be ignored: "%s"' % kwargs)
+        try:
+	    exp_params = []
+	    check_arguments(exp_params, kwargs)
+	    fd = open(role.MySQLServer.class_file, 'r')
+	    p = pickle.load(fd)
+	    load=p.getLoad()
+            fd.close()
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
+        else:
+            return HttpJsonResponse({
+                                 'load': load 
+                                     })

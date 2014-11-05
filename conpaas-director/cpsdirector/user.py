@@ -100,6 +100,7 @@ class User(db.Model):
     created = db.Column(db.DateTime)
     credit = db.Column(db.Integer)
     uuid = db.Column(db.String(80))
+    openid = db.Column(db.String(200))
 
     def __init__(self, **kwargs):
         # Default values
@@ -117,6 +118,7 @@ class User(db.Model):
             'password': self.password, 'credit': self.credit,
             'created': self.created.isoformat(),
             'uuid': self.uuid,
+            'openid': self.openid,
         }
 
 
@@ -132,6 +134,11 @@ def get_user_by_uuid(uuid):
     log('uuid login attempt with uuid %s' % uuid)
     return User.query.filter_by(uuid=uuid).first()
 
+def get_user_by_openid(openid):
+    """Return a User object if the specified openid is found."""
+    log('openid login attempt with openid %s' % openid)
+    return User.query.filter_by(openid=openid).first()
+
 from cpsdirector.application import Application
 
 
@@ -141,7 +148,7 @@ def list_users():
     """
     return User.query.all()
 
-def create_user(username, fname, lname, email, affiliation, password, credit, uuid):
+def create_user(username, fname, lname, email, affiliation, password, credit, uuid = None, openid = None):
     """Create a new user with the given attributes. Return a new User object
     in case of successful creation. None otherwise."""
     new_user = User(username=username,
@@ -151,7 +158,8 @@ def create_user(username, fname, lname, email, affiliation, password, credit, uu
                     affiliation=affiliation,
                     password=hashlib.md5(password).hexdigest(),
                     credit=credit,
-                    uuid=uuid)
+                    uuid=uuid,
+                    openid=openid)
 
     app = Application(user=new_user)
 
@@ -174,10 +182,13 @@ def login_required(fn):
         uuid = request.values.get('uuid', '')
         if uuid == '<none>':
             uuid = ''
+        openid = request.values.get('openid', '')
+        if openid == '<none>':
+            openid = ''
 
         # Getting user data from DB through username and password
         if len(username.strip()):
-            log('authentication attempt for <%s, %s> ' % (username, password) )
+            log('username authentication attempt for <%s, %s> ' % (username, password) )
             g.user = get_user(username, password)
 
             if g.user:
@@ -187,11 +198,21 @@ def login_required(fn):
         # authentication failed, try uuid
         # Getting user data from DB through uuid
         if len(uuid.strip()):
-            log('authentication attempt for <%s> ' % (uuid) )
+            log('uuid authentication attempt for <%s> ' % (uuid) )
             g.user = get_user_by_uuid(uuid)
 
             if g.user:
                 # user authenticated through uuid
+                return fn(*args, **kwargs)
+
+        # authentication failed, try openid
+        # Getting user data from DB through openid
+        if len(openid.strip()):
+            log('openid authentication attempt for <%s> ' % (openid) )
+            g.user = get_user_by_openid(openid)
+
+            if g.user:
+                # user authenticated through openid
                 return fn(*args, **kwargs)
 
         # authentication failed
@@ -204,7 +225,7 @@ def login_required(fn):
 def new_user():
     values = {}
     required_fields = ('username', 'fname', 'lname', 'email',
-                       'affiliation', 'password', 'credit', 'uuid')
+                       'affiliation', 'password', 'credit', 'uuid', 'openid')
 
     log('New user "%s <%s>" creation attempt' % (
         request.values.get('username'), request.values.get('email')))
@@ -232,7 +253,7 @@ def new_user():
         }))
 
     # check if the provided email already exists
-    if User.query.filter_by(email=values['email']).first():
+    if False and User.query.filter_by(email=values['email']).first(): # for debugging purposes allow duplicate email address
         log('Duplicate email: %s' % values['email'])
 
         return build_response(jsonify({

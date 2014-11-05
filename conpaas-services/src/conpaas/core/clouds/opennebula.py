@@ -66,6 +66,12 @@ class OpenNebulaCloud(Cloud):
         self.logger.info('OpenNebula cloud ready. API_VERSION=%s' % 
             self.api_version)
 
+        # The libcloud driver in use accepts OpenNebula versions only up to 3.8,
+        # however we need to support versions up to 4.6 (inclusive). Versions
+        # newer than 3.8 work well with the libcloud driver for OpenNebula 3.8.
+        if self.api_version in ['4.0', '4.2', '4.4', '4.6']:
+            self.api_version = '3.8'
+
     def get_cloud_type(self):
         return 'opennebula'
 
@@ -103,7 +109,7 @@ class OpenNebulaCloud(Cloud):
     def list_vms(self):
         return Cloud.list_vms(self, False)
 
-    def list_instace_types(self):
+    def list_instance_types(self):
         return self.inst_types
 
     def new_instances(self, count, name='conpaas', inst_type=None):

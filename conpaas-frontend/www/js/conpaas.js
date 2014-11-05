@@ -130,7 +130,7 @@ conpaas.http = (function (this_module) {
         conpaas.ui.visible('pgstatInfo', false);
     },
     req: function (url, params, method, responseCallback, errorCallback,
-            dataType, isAsync = true) {
+            dataType, isAsync) {
         var that = this,
             params = params || {},
             method = method || 'get',
@@ -311,6 +311,7 @@ conpaas.ui = (function (this_module) {
 
                 var username = 'UnKnOwN';
                 var uuid = '';
+                var openid = '';
 
                 // figure out if uuid is set
 
@@ -318,6 +319,7 @@ conpaas.ui = (function (this_module) {
                     function (response) {
                         username = response.username;
                         uuid = response.uuid;
+                        openid = response.openid;
                         //console.log('ConPaaS: logout OK (' + username + ', ' + uuid + ')');
                         //alert('ConPaaS logged out ( hopefully )');
                         //window.location = 'index.php'; 
@@ -332,7 +334,11 @@ conpaas.ui = (function (this_module) {
                     false /* wait for request to complete */
                 );
 
-                if (loggedOutFromConPaaS && uuid && uuid.length > 0) {
+                /* TODO add openid logout */
+                if (loggedOutFromConPaaS && openid && openid.length > 0) {
+                    window.location = 'contrail/contrail-logout.php?returnTo=/index.php';
+                    // window.location = 'index.php'; 
+                } else if (loggedOutFromConPaaS && uuid && uuid.length > 0) {
                     window.location = 'contrail/contrail-logout.php?returnTo=/index.php';
                 } else {
                     window.location = 'index.php'; 

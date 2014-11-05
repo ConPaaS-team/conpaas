@@ -19,7 +19,7 @@ PASSWORD = UTWhOHoqoYYnZ9pbUT2aZMp75RTJmkLimPxz8uTy
 # https://console.aws.amazon.com/ec2/home?region=us-east-1#s=Images 
 # Unless you have a specific reason to do otherwise, you should use 
 # the same value as field "ami" from configuration file aws.ini.
-IMAGE_ID = ami-4dac7f24
+IMAGE_ID = ami-22cc4b4a
 
 # This variable should contain the type of EC2 instances to use. A
 # good value to use inexpensive, low-performance instances is
@@ -51,7 +51,7 @@ KEY_NAME = conpaas
 # - ec2.us-east-1.amazonaws.com # United States East (Northern Virginia) 
 # - ec2.eu-west-1.amazonaws.com # Europe West (Ireland)
 
-REGION = ec2.us-west-2.amazonaws.com
+REGION = ec2.us-east-1.amazonaws.com
 
 # This variable contains the identifier of the ConPaaS Amazon Machine Image.
 # 

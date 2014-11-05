@@ -56,7 +56,7 @@ class Dashboard extends Page {
 	}
 
 	protected function renderBackLinks() {
-		$app = LinkUI('Applications', 'index.php')
+		$app = LinkUI('Dashboard', 'index.php')
 			->setIconPosition(LinkUI::POS_LEFT)
 			->setIconURL('images/link_s_back.png');
 

@@ -162,8 +162,14 @@ def _start(servicetype, cloudname, appid):
     # Do we have to assign a VPN subnet to this service?
     vpn = app.get_available_vpn_subnet()
 
+    # Default name
+    if servicetype == 'galera':
+        defaultname = 'New MySQL service';
+    else:
+        defaultname = "New %s service" % servicetype
+
     # New service with default name, proper servicetype and user relationship
-    s = Service(name="New %s service" % servicetype, type=servicetype,
+    s = Service(name=defaultname, type=servicetype,
         user=g.user, application=app, subnet=vpn)
 
     db.session.add(s)
@@ -182,7 +188,7 @@ def _start(servicetype, cloudname, appid):
         exc_type, exc_value, exc_traceback = sys.exc_info()
         lines = traceback.format_exception(exc_type, exc_value, exc_traceback)
         log(''.join('!! ' + line for line in lines))
-        error_msg = 'Error upon service creation: %s %s' % (type(err), err)
+        error_msg = 'Error upon service creation: %s' % err
         log(error_msg)
         return build_response(jsonify({ 'error': True, 'msg': error_msg }))
 
@@ -209,7 +215,12 @@ def start(servicetype, cloudname="default"):
 
     # Use default application id if no appid was specified
     if not appid:
-        appid = get_default_app(g.user.uid).aid
+        app = get_default_app(g.user.uid)
+        if not app:
+            return build_response(jsonify({ 'error': True,
+		                        'msg': "No existing applications" }))
+        else:
+            appid = app.aid
 
     return _start(servicetype, cloudname, appid)
 
@@ -263,12 +274,25 @@ def stop(serviceid):
     """
     log('User %s attempting to stop service %s' % (g.user.uid, serviceid))
 
+    # Test if a service with id 'serviceid' exists and user is the owner
     service = get_service(g.user.uid, serviceid)
     if not service:
         return build_response(simplejson.dumps(False))
 
-    # If a service with id 'serviceid' exists and user is the owner
-    service.stop()
+    # Try to cleanly terminate the service
+    try:
+        # If the service is in INIT or STOPPED state, we can just kill
+        # the manager VM
+        res = callmanager(serviceid, "get_service_info", False, {})
+        if res['state'] == 'INIT' or res['state'] == 'STOPPED':
+            service.stop()
+        else:
+            # Else, we should ask the manager to cleanly shut down itself
+            callmanager(serviceid, "delete", True, {})
+    # If this fails, forcefully terminate the manager VM
+    except:
+        service.stop()
+
     return build_response(simplejson.dumps(True))
 
 @service_page.route("/list", methods=['POST', 'GET'])

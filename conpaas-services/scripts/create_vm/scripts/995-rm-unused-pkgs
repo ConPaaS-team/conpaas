@@ -32,8 +32,6 @@ php_pkgs = ['php5-fpm', 'php5-curl', 'php5-mcrypt', 'php5-mysql', 'php5-odbc',
             'git', 'tomcat6-user', 'memcached', 'python-scipy', 'python-simplejson',
             'libatlas-base-dev', 'libatlas3gf-base', 'python-dev', 'python-setuptools']
 
-mysql_pkgs = ['mysql-server', 'python-mysqldb']
-
 galera_pkgs = ['galera', 'mysql-server-wsrep', 'python-mysqldb', 'rsync']
 
 if "$DEBIAN_DIST" == "squeeze":
@@ -129,7 +127,7 @@ pkgs.extend(core_pkgs)
 
 if len(args) == 0:
     sys.exit('The script needs at least one of the arguments: '
-    '--all, --none, --php, --mysql, --condor, --selenium, --hadoop, --scalaris, --xtreemfs, --cds, --debug.')
+    '--all, --none, --php, --condor, --selenium, --hadoop, --scalaris, --xtreemfs, --cds, --debug.')
 
 if '--debug' in args:
 	dbg = True
@@ -139,7 +137,6 @@ else:
 
 if '--all' in args:
     pkgs.extend(php_pkgs)
-    pkgs.extend(mysql_pkgs)
     pkgs.extend(condor_pkgs)
     pkgs.extend(selenium_pkgs)
     pkgs.extend(hadoop_pkgs)
@@ -153,9 +150,6 @@ else:
     if '--php' in args:
         pkgs.extend(php_pkgs)
         args.remove('--php')
-    if '--mysql' in args:
-        pkgs.extend(mysql_pkgs)
-        args.remove('--mysql')
     if '--galera' in args:
         pkgs.extend(galera_pkgs)
         args.remove('--galera')

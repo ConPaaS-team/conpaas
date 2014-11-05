@@ -35,7 +35,8 @@ class SQLServiceNode(ServiceNode):
     :type runMySQL: boolean
 
     '''
-
+    isNode=True
+    isGlb_node=False;
     def __init__(self, node):
         ServiceNode.__init__(self, node.vmid,
                              node.ip, node.private_ip,
@@ -59,7 +60,8 @@ class GLBServiceNode(ServiceNode):
     :type runMySQL: boolean
 
     '''
-
+    isGlb_node=True
+    isNode=False
     def __init__(self, node):
         ServiceNode.__init__(self, node.vmid,
                              node.ip, node.private_ip,
@@ -110,7 +112,13 @@ class Configuration(object):
         return [serviceNode for serviceNode in self.glb_service_nodes.values()]
 
     def getMySQLNode(self, id):
-        return self.serviceNodes[id]
+	self.logger.debug('Entering getMysqlNodes id= %s ' % id)
+	if self.serviceNodes.has_key(id) :
+        	node = self.serviceNodes[id]
+	else:
+		node = self.glb_service_nodes[id]
+	self.logger.debug('Exit getMySQlNode node = %s' %node)
+	return node
 
     def addGLBServiceNodes(self, nodes):
         '''
@@ -145,5 +153,11 @@ class Configuration(object):
         del self.serviceNodes[id]
 
     def remove_nodes(self, nodes):
-        for node in nodes:
-            self.serviceNodes.pop(node.id, None)
+         for node in nodes:
+		self.logger.debug('RemoveNodes node.id=%s' % node.id )
+         	self.logger.debug('RemoveNodes node=%s' % node )
+         	self.logger.debug('RemoveNodes self.ServiceNodes=%s' % self.serviceNodes )
+	    	if self.serviceNodes.has_key(node.id) :
+			self.serviceNodes.pop(node.id, None)
+	    	else : 
+			self.glb_service_nodes.pop(node.id,None)

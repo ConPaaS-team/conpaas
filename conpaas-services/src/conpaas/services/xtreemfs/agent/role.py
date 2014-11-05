@@ -82,7 +82,7 @@ class DIR():
         conf_fd.close()
 
 class MRC:
-    def __init__(self, dir_serviceHost, uuid):
+    def __init__(self, dir_serviceHost, uuid, hostname):
         self.state = S_INIT         
         self.start_args = [MRC_STARTUP,'start']        
         self.stop_args = [MRC_STARTUP, 'stop']
@@ -90,7 +90,7 @@ class MRC:
         logger = create_logger(__name__)
         logger.info('MRC server initialized.')
         self.uuid = uuid
-        self.configure(dir_serviceHost)
+        self.configure(dir_serviceHost, hostname)
         self.start()
 
     def start(self):
@@ -115,28 +115,31 @@ class MRC:
         else:
             logger.warning('Request to stop MRC service while it is not running')      
         
-    def configure(self, dir_serviceHost):
-        self.dir_serviceHost = dir_serviceHost    
+    def configure(self, dir_serviceHost, hostname):
+        self.dir_serviceHost = dir_serviceHost
+        self.hostname = hostname
         self._write_config()
         
     def _write_config(self):
         tmpl = open(self.config_template).read()
         template = Template(tmpl,{
                             'dir_serviceHost' : self.dir_serviceHost,
-                            'uuid' : self.uuid
+                            'uuid' : self.uuid,
+                            'hostname' : self.hostname
                         })
         conf_fd = open('/etc/xos/xtreemfs/mrcconfig.properties','w')
         conf_fd.write(str(template))
         conf_fd.close()
 
 class OSD:
-    def __init__(self, dir_serviceHost, uuid, mkfs):
+    def __init__(self, dir_serviceHost, uuid, hostname, mkfs, device_name):
         self.state = S_INIT         
         self.uuid = uuid
+        self.hostname = hostname
         self.dir_serviceHost = dir_serviceHost
         self.config_template = join(ETC, 'osdconfig.properties')
         self.dir_servicePort = 32638
-        self.dev_name = "/dev/sdb"
+        self.dev_name = "/dev/%s" % device_name
         self.mount_point = "/media/xtreemfs-objs"
 
         # To be filled once we get a dev_name
@@ -158,6 +161,7 @@ class OSD:
         devnull_fd = open(devnull,'w')
         # waiting for our block device to be available
         dev_found = False
+        dev_prefix = self.dev_name.split('/')[2][:-1]
 
         for attempt in range(1, 11):
             logger.info("OSD node waiting for block device %s" % self.dev_name)
@@ -167,12 +171,10 @@ class OSD:
             else:
                 # On EC2 the device name gets changed 
                 # from /dev/sd[a-z] to /dev/xvd[a-z]
-                self.dev_name = self.dev_name.replace('sd', 'xvd')
-                if lexists(self.dev_name):
+                if lexists(self.dev_name.replace(dev_prefix, 'xvd')):
                     dev_found = True
+                    self.dev_name = self.dev_name.replace(dev_prefix, 'xvd')
                     break
-                else:
-                    self.dev_name = self.dev_name.replace('xvd', 'sd')
 
             time.sleep(10)
 
@@ -232,6 +234,7 @@ class OSD:
         template = Template(tmpl,{
                             'dir_serviceHost' : self.dir_serviceHost,
                             'uuid' : self.uuid,
+                            'hostname' : self.hostname,
                             'object_dir' : self.mount_point
                         })
         conf_fd = open('/etc/xos/xtreemfs/osdconfig.properties','w')

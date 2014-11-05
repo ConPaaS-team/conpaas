@@ -110,6 +110,10 @@ def get_log(host, port):
     method = 'getLog'
     return _check(https.client.jsonrpc_get(host, port, '/', method))
 
+def getLog(host, port):
+    method = 'getLog'
+    return _check(https.client.jsonrpc_get(host, port, '/', method))
+
 
 def remove_nodes(host, port, serviceNodeId):
     method = 'remove_nodes'
@@ -119,7 +123,7 @@ def remove_nodes(host, port, serviceNodeId):
 
 
 def remove_glb_nodes(host, port, serviceNodeId):
-    method = 'remove_glb_nodes'
+    method = 'remove_nodes'
     params = {}
     params['serviceNodeId'] = serviceNodeId
     return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
@@ -130,7 +134,30 @@ def get_service_performance(host, port):
     return _check(https.client.jsonrpc_get(host, port, '/', method))
 
 
+def getMeanLoad(host, port):
+    method = 'getMeanLoad'
+    return _check(https.client.jsonrpc_get(host, port, '/', method))
+
+
+def getGangliaParams(host, port):
+    method = 'getGangliaParams'
+    return _check(https.client.jsonrpc_get(host, port, '/', method))
+
+
 def load_dump(host, port, mysqldump_path):
     params = {'method': 'load_dump'}
     files = [('mysqldump_file', mysqldump_path, file_get_contents(mysqldump_path))]
     return _check(https.client.https_post(host, port, '/', params, files=files))
+
+
+def remove_specific_nodes(host, port, ip):
+    method = 'remove_specific_nodes'
+    params = {'ip': ip}
+    return _check(https.client.jsonrpc_get(host, port, '/', method, params=params))
+
+def setMySqlParams (host, port, variable,value):
+    method = 'setMySqlParams'
+    params = {'variable': variable, 'value': value}
+    return _check(https.client.jsonrpc_get(host, port, '/', method, params=params))
+
+

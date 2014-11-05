@@ -65,7 +65,7 @@ rm -rf cpsfrontend-$CPSVERSION
 echo '###### build cps-tools'
 cd cps-tools
 sed -i "s/AC_INIT(\[cps-tools\], \[\(.*\)\]/AC_INIT(\[cps-tools\], \[$CPSVERSION\]/" configure.ac
-./configure && make dist
+autoconf && ./configure && make dist
 mv cps-tools-$CPSVERSION.tar.gz ..
 cd ..
 

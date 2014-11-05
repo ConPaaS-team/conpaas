@@ -95,6 +95,9 @@ class BaseClient(object):
         except (ssl.SSLError, urllib2.URLError):
             print "E: Cannot perform the requested action.\nTry updating your client certificates with %s credentials" % sys.argv[0]
             sys.exit(1)
+        except Exception as e:
+            print "E: %s" % e
+            sys.exit(1)
 
     def callmanager(self, service_id, method, post, data, files=[]):
         """Call the manager API.
@@ -154,6 +157,8 @@ class BaseClient(object):
 
     def create(self, service_type, cloud = None, application_id=None, initial_state='INIT'):
         data = {}
+        if service_type == "mysql":
+            service_type = "galera"
         if application_id is not None:
             data['appid'] = application_id
         if cloud is None:
@@ -228,6 +233,8 @@ class BaseClient(object):
         additional information needed. Returns service_dict"""
         service = self.service_dict(service_id)
         for key, value in service.items():
+            if key == 'type' and value == 'galera':
+                value = 'mysql'
             print "%s: %s" % (key, value)
 
         res = self.callmanager(service['sid'], "get_service_info", False, {})
@@ -330,7 +337,10 @@ class BaseClient(object):
                 print cloud
         else:
             for service in self.available_services():
-                print service
+                if service == 'galera':
+                    print 'mysql'
+                else:
+                    print service
 
     def upload_startup_script(self, service_id, filename):
         contents = open(filename).read()
@@ -461,6 +471,9 @@ Do you want to continue? (y/N): """
             services = self.callapi("list/%s" % appid, True, {})
 
         if services:
+            for row in services:
+                if row['type'] == 'galera':
+                    row['type'] = 'mysql'
             print self.prettytable(( 'type', 'sid', 'application_id', 'vmid', 
                                      'name', 'manager' ), services)
         else:
@@ -521,6 +534,8 @@ Do you want to continue? (y/N): """
                     # St_usage wants a service type. Check if we got one, and if
                     # it is acceptable.
                     service_type = argv[2]
+                    if service_type == 'mysql':
+                        service_type = 'galera'
                     if service_type not in self.available_services():
                         raise IndexError
                     # normal service usage
@@ -536,12 +551,19 @@ Do you want to continue? (y/N): """
                     # Create wants a service type. Check if we got one, and if
                     # it is acceptable.
                     service_type = argv[2]
+                    if service_type == 'mysql':
+                        service_type = 'galera'
                     if service_type not in self.available_services():
                         raise IndexError
 
+                    applist = self.listapp(False)
+                    if not applist:
+                        print "E: No existing applications"
+                        sys.exit(1)
+
                     try:
                         appid = int(argv[3])
-                        if appid not in self.listapp(False):
+                        if appid not in applist:
                             print "E: Unknown application id: %s" % appid
                             sys.exit(1)
                     except IndexError:

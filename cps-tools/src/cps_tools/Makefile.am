@@ -9,7 +9,6 @@ dist_cpstools_PYTHON = \
 	java.py \
 	galera.py \
 	htc.py \
-	mysql.py \
 	php.py \
 	scalaris.py \
 	selenium.py \
@@ -17,6 +16,7 @@ dist_cpstools_PYTHON = \
 	taskfarm.py \
 	user.py \
 	xtreemfs.py \
+	helloworld.py \
 	web.py
 
 ## destination of byte-compiled files

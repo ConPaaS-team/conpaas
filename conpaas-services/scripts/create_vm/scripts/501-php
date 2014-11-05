@@ -12,12 +12,16 @@ apt-get -f -y --no-install-recommends --no-upgrade install php5-fpm php5-curl \
 
 # For autoscaling
 apt-get -f -y --no-install-recommends --no-upgrade install libatlas-base-dev libatlas3gf-base \
-    python-dev python-scipy python-setuptools python-simplejson gfortran g++
+    python-dev python-scipy python-setuptools python-simplejson gfortran gcc g++
 easy_install numpy
 easy_install -U numpy
 easy_install pandas 
 easy_install patsy 
-easy_install statsmodels
+easy_install statsmodels==0.5.0
+
+# Fix a bug in the scipy python module
+sed -i 's/from scipy import factorial/from scipy.misc import factorial/g' \
+    /usr/lib/python2.6/dist-packages/scipy/interpolate/polyint.py
 
 update-rc.d php5-fpm disable
 update-rc.d memcached disable

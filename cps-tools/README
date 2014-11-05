@@ -70,7 +70,7 @@ Pass option '-h' or '--help' to get the list of sub-commands and options::
         application        manage applications
         service            manage services
         mysql              manage MySQL services
-        galera             manage MySQL Galera services
+        galera             manage MySQL services
         htc                manage HTC services
         php                manage PHP services
         java               manage Java services
@@ -78,6 +78,7 @@ Pass option '-h' or '--help' to get the list of sub-commands and options::
         selenium           manage Selenium services
         taskfarm           manage TaskFarm services
         xtreemfs           manage XtreemFS services
+        helloworld         manage HelloWorld services
         help               display the help
 
     optional arguments:

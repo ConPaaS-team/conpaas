@@ -1,0 +1,143 @@
+%Why is automatic scaling in the cloud important/useful? (give a real-world example)
+
+
+%Current possibilities for users who want to run web applications in the
+%cloud: 
+
+%1) Systems currently available in clouds: most of them define triggers for 
+%adding and removing VMs from the application, based on the monitoring 
+%data available in the cloud. Most of these systems are recent and there 
+%is a lack of documentation on best practices
+%and performance reports of web applications using these systems. 
+
+%2) At the other end of the spectrum: several research works on resource 
+%provisioning, proposing more sophisticated techniques based on
+%queuing models, prediction and workload analysis. However most of these
+%research techniques are tested with synthetic (or partially synthetic)
+%benchmarks and it is difficult to estimate how they would perform
+%for a real-world application; also not all of them are compatible
+%with the current cloud environments.
+
+%Our goal is to bridge the gap between the state-of the art research in
+%resource provisioning and the real-world web application deployments.
+%In order to achieve this goal:
+
+%\begin{itemize}
+%\item we built a Platform-as-a-Service system that can be readily used
+%on top of some of today's most popular clouds (Amazon EC2, OpenNebula)
+%\item we integrated and adapted in our system some resource  provisioning 
+%mechanisms developed in previous research from our group [Jiang]
+%\item we tested our system with a Wikipedia deployment and access
+%traces  
+%\end{itemize}   
+
+%{\em \textbf{Guillaume's version:}
+ % \begin{enumerate}
+ % \item The cloud is a great place to run Web application. In
+  %  particular it opens the door to resource provisioning, since
+   % computing resources are available on-demand.
+ % \item There are lots of research papers dedicated to sophisticated
+  %  techniques to handle resource provisioning. However, if we look at
+  %  real deployments we see that they rely on extremely simple
+  %  techniques, and completely ignore the results from academic
+  %  research on the topic.
+ % \item There can be two explanations for this discrepancy: (i) the
+ %   gains of using sophisticated techniques are too low for anyone to
+ %   bother; (ii) implementing these techniques is a difficult
+  %  exercise, which is why real cloud systems rely on simpler
+  %  techniques.
+ % \item This paper tries to identify the real cause. We do this by
+ %   implementing a sophisticated provisioning system in realistic
+   % conditions, and reporting on (i) how hard implementation was; and
+  %  (ii) potential gains from using the better technique as compared
+  %  to a simple strawman.
+ % \end{enumerate}
+% }
+
+%With the rise of cloud computing, more and more applications started to be deployed over clouds.
+% infinite pool of resources
+
+
+%\lettrine{O}{ne of} the major innovations provided by Cloud computing
+%platforms is their pay-per-use model where applications can request
+%and release resources at any time according to their needs --- and pay
+%only for the resources they actually used. This business model is
+%particularly favorable for application domains where workloads vary
+%widely over time, such as the domain of Web applications.
+
+\lettrine{O}{ne of} the major innovations provided by Cloud computing
+platforms is their pay-per-use model where clients pay only for the
+resources they actually use. This business model is particularly
+favorable for application domains where workloads vary widely over
+time, such as the domain of Web application hosting. Web applications
+in the cloud can request and release resources at any time according
+to their needs.
+
+However, provisioning the right volume of resources for a Web
+application is not a simple task. Web applications are usually
+composed of multiple types of components such as Web servers,
+application servers, database servers and load balancers that
+distribute the incoming traffic across them. Complex performance
+behavior of these components makes it difficult to find the optimal
+resource allocation, even when the application workload is perfectly
+stable. The magnitude of the problem is further increased by the fact
+that Web application workloads are often very unstable and hard to
+predict. In the case of a sudden load increase there is a necessary
+tradeoff between reacting as early as possible to minimize the
+duration when the application underperforms because of insufficient
+processing capacity, and a slower approach to avoid situations where
+the load has already decreased when the new resources become
+available.
+
+Faced with this difficult scientific challenge, the academic community
+has proposed a wide range of sophisticated resource provisioning
+algorithms~\cite{dejun2011,muppala_regression-based_2012, urgaonkar_agile_2008, vasic_dejavu_2012}. 
+%However, we observe a wide discrepancy
+%between these academic proposals and the very simple techniques
+%actually used by the cloud industry where provisioning decisions are
+%usually triggered by lower/upper thresholds on resource
+%utilization. 
+However, we observe a wide discrepancy between these academic
+propositions and the very simple mechanisms that are currently
+available to cloud customers. These mechanisms are usually based on
+lower or upper thresholds on resource utilization. Crossing one of the
+thresholds triggers a pre-defined resource provisioning action such as
+adding or removing one machine.
+
+We postulate three possible reasons why sophisticated techniques are
+not more widely deployed: \emph{(i)} the gains of using
+sophisticated provisioning strategies are too low to be worth the
+effort; \emph{(ii)} implementing and evaluating these techniques is a
+difficult exercise, which is why real cloud systems rely on simpler
+techniques; and \emph{(iii)} academic approaches mostly focus on
+unrealistic evaluations using simple applications and artificial
+workloads~\cite{do_profiling_2011, islam_empirical_2012}. % By using
+% real production applications, new
+% limitations could be detected and solved in the provisioning systems
+% due to the peculiarity and heterogeneity of real workloads. Indeed,
+% these workloads have several interesting properties such as a variable
+% amount of request volumes, a large diversity of request mix and
+% different execution times between requests, which increase the
+% difficulties to make scaling decisions.
+
+This paper investigate which of these possible causes are the real
+problems, and aims to propose automatic scaling algorithms which
+provide better results than the simple ones without overly increasing
+complexity.
+%This paper aims to identify the real cause of why cloud providers use simpler provisioning techniques.
+We implemented several resource provisioning mechanisms in ConPaaS, an
+open source platform-as-a-service environment for hosting cloud
+applications~\cite{conpaasIC}. Our techniques use several levels of
+thresholds to predict future performance degradations, workload trend
+detection to better handle traffic spikes and dynamic load balancing
+weights to handle resources heterogeneity. We exercised these
+algorithms in realistic unstable workload situations by deploying a
+copy of Wikipedia and replaying a fraction of the real access traces
+to its official web site. Finally, we report on \emph{(i)}
+implementation complexity; and \emph{(ii)} potential gains compared to
+the threshold-based solution. 
+%For the sake of comparison and discussion, we deployed the MediaWiki application and used real access traces to validate our technique, opening doors to real implementation of promising auto-scaling systems.
+
+
+%Section~\ref{conpaas} introduces the ConPaaS runtime environment. Section~\ref{wikipedia} describes the MediaWiki application, its realistic benchmark, and the peculiarities of the Wikipedia workload-mix utilized to validate our system. Section~\ref{provisioning} focus on the different resource provisioning techniques implemented in ConPaaS. Section~\ref{experiments} details the experimental campaign and its results. Section~\ref{studies} discusses related works. Section~\ref{conclu} draws a conclusion.
+

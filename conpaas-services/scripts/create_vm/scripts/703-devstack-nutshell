@@ -15,7 +15,7 @@ grep -q "^#includedir.*/etc/sudoers.d" /etc/sudoers ||
 
 echo "stack:contrail" | chpasswd
 su - stack -c "git clone https://github.com/openstack-dev/devstack.git"
-sed --in-place 's/:80/:8080/' $DEST/devstack/files/apache-horizon.template
+#sed --in-place 's/:80/:8080/' $DEST/devstack/files/apache-horizon.template
 
 exit 0
 EOF
@@ -27,7 +27,6 @@ rm -f $ROOT_DIR/devstack_config
 rm -f $ROOT_DIR/usr/sbin/policy-rc.d
 
 cat <<EOF >> $ROOT_DIR/opt/stack/.bashrc
-/opt/stack/devstack/my-rejoin-stack.sh
 source /opt/stack/devstack/openrc admin admin  &>/dev/null
 EOF
 
@@ -42,3 +41,4 @@ cp $DIR/nutshell-config/scripts/my-rejoin-stack.sh $ROOT_DIR/$DEST/devstack/
 mkdir -p $ROOT_DIR/nutshell/img-creation
 cp -r $DIR/nutshell-config $ROOT_DIR/nutshell/img-creation
 cp $DIR/create-img-script.{cfg,py} $ROOT_DIR/nutshell/img-creation
+cp $CONPASS_TAR_PATH/*.tar.gz $ROOT_DIR/nutshell/

@@ -164,7 +164,10 @@ class MGeneral(object):
 
     def get_service_manifest(self, service):
         tmp = {}
-        tmp['Type'] = service.type
+        if service.type == "galera":
+            tmp['Type'] = "mysql"
+        else:
+            tmp['Type'] = service.type
         tmp['ServiceName'] = service.name
         tmp['Cloud'] = service.cloud
 
@@ -218,19 +221,22 @@ class MGeneral(object):
     def update_environment(self, appid):
         env = ''
 
-        # Find mysql ip address
+        # Find galera ip address
         try:
-            sid = Service.query.filter_by(application_id=appid, type='mysql').first().sid
+            sid = Service.query.filter_by(application_id=appid, type='galera').first().sid
             nodes = callmanager(sid, "list_nodes", False, {})
 
-            params = { 'serviceNodeId': nodes['masters'][0] }
+            if nodes['glb_nodes']:
+                params = { 'serviceNodeId': nodes['glb_nodes'][0] }
+            else:
+                params = { 'serviceNodeId': nodes['nodes'][0] }
             details = callmanager(sid, "get_node_info", False, params)
             env = env + 'echo "env[MYSQL_IP]=\'%s\'" >> /root/ConPaaS/src/conpaas/services/webservers/etc/fpm.tmpl\n' % details['serviceNode']['ip']
             env = env + 'export MYSQL_IP=\'%s\'\n' % details['serviceNode']['ip']
         except:
             env = env + ''
 
-        # Find xtreemfs ip address
+        # Find xtreemfs ip address and generate certificate
         try:
             sid = Service.query.filter_by(application_id=appid, type='xtreemfs').first().sid
             nodes = callmanager(sid, "list_nodes", False, {})
@@ -239,6 +245,13 @@ class MGeneral(object):
             details = callmanager(sid, "get_node_info", False, params)
             env = env + 'echo "env[XTREEMFS_IP]=\'%s\'" >> /root/ConPaaS/src/conpaas/services/webservers/etc/fpm.tmpl\n' % details['serviceNode']['ip']
             env = env + 'export XTREEMFS_IP=\'%s\'\n' % details['serviceNode']['ip']
+
+            passphrase = 'contrail123';
+            env = env + 'export XTREEMFS_PASSPHRASE=\'%s\'\n' % passphrase
+
+            params = { 'passphrase': passphrase, 'adminflag': False }
+            res = callmanager(sid, "get_client_cert", True, params)
+            env = env + 'export XTREEMFS_CERT=\'%s\'\n' % res['cert']
         except:
             env = env + ''
 
@@ -488,15 +501,19 @@ class MMySql(MGeneral):
 
         if json.get('StartupInstances'):
             params = {
-                    'slaves': 0
+                    'nodes': 0,
+                    'glb_nodes': 0
             }
 
-            if json.get('StartupInstances').get('slaves'):
-                params['slaves'] = int(json.get('StartupInstances').get('slaves'))
+            if json.get('StartupInstances').get('nodes'):
+                params['nodes'] = int(json.get('StartupInstances').get('nodes'))
+            if json.get('StartupInstances').get('glb_nodes'):
+                params['glb_nodes'] = int(json.get('StartupInstances').get('glb_nodes'))
 
-            res = self.add_nodes(sid, params)
-            if 'error' in res:
-                return res['error']
+            if params['nodes'] or params['glb_nodes']:
+                res = self.add_nodes(sid, params)
+                if 'error' in res:
+                    return res['error']
 
         return 'ok'
 
@@ -728,7 +745,7 @@ def get_manifest_class(service_type):
         return MPhp
     elif service_type == 'java':
         return MJava
-    elif service_type == 'mysql' or service_type == 'galera':
+    elif service_type == 'galera':
         return MMySql
     elif service_type == 'scalaris':
         return MScalaris
@@ -779,6 +796,9 @@ def new_manifest(json):
         return 'ok'
 
     for service in parse.get('Services'):
+        if service.get('Type') == "mysql":
+            service['Type'] = "galera"
+
         try:
             cls = get_manifest_class(service.get('Type'))
         except Exception:

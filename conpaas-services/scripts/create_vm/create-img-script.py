@@ -114,6 +114,7 @@ if __name__ == '__main__':
         append_str_to_output('DEBIAN_DIST=' + config.get('NUTSHELL', 'ubuntu_dist') + '\n')
         append_str_to_output('DEBIAN_MIRROR=' + config.get('NUTSHELL', 'ubuntu_mirror') + '\n\n')
         append_str_to_output('CREATE_CONT=' + config.get('NUTSHELL', 'container') + '\n\n')
+        append_str_to_output('CONPASS_TAR_PATH=' + config.get('NUTSHELL', 'conpaas_tar_path') + '\n\n')
         container = False;
     else:
         append_str_to_output('FILENAME=' + config.get('CUSTOMIZABLE', 'filename') + '\n')
@@ -135,7 +136,7 @@ if __name__ == '__main__':
         error('Unknown hypervisor "%s".' % hypervisor)
     
     cloud = config.get('CUSTOMIZABLE', 'cloud')
-    if cloud == 'opennebula' or cloud == 'openstack':
+    if cloud == 'opennebula' or cloud == 'vbox' or cloud == 'openstack':
         pass
     elif cloud == 'ec2':
         if hypervisor != 'xen':
@@ -247,6 +248,8 @@ if __name__ == '__main__':
         filename = config.get('SCRIPT_FILE_NAMES', 'ec2_script'+suffix)
     elif cloud == 'openstack':
        filename = config.get('SCRIPT_FILE_NAMES', 'openstack_script') 
+    elif cloud == 'vbox':
+        filename = config.get('SCRIPT_FILE_NAMES', 'vbox_script'+suffix)
     append_file_to_output(root_dir + filename)
 
     if not nutshell:

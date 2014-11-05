@@ -44,10 +44,10 @@ function cleanup() {
 }
 
 
-
+[ "$CLOUD" == "vbox" ] && VBOX=vboxmanage
 
 # Check if required binaries are in $PATH
-for bin in dd parted losetup kpartx mkfs.ext3 tune2fs mount debootstrap chroot umount grub-install lxc-start
+for bin in dd parted losetup kpartx mkfs.ext3 tune2fs mount debootstrap chroot umount grub-install lxc-start $VBOX
 do
   if [ -z `which $bin` ]
   then
@@ -60,6 +60,14 @@ do
     exit 1
   fi
 done
+
+modprobe -q iscsi_tcp
+#check if open-iscsi is installed 
+if [ -z `lsmod | grep -o -m 1 iscsi` ] ; then
+echo 'Please install open-iscsi before proceeding: sudo apt-get install open-iscsi'
+exit 1
+fi
+
 
 cecho "Creating empty disk image at" $FILENAME
 dd if=/dev/zero of=$FILENAME bs=1M count=1 seek=$FILESIZE
@@ -117,10 +125,22 @@ iface eth0 inet dhcp
 EOF
 )
 
+vbox_specific=$(cat <<EOF
+allow-hotplug eth0
+iface eth0 inet dhcp
+
+auto eth1
+allow-hotplug eth1
+iface eth1 inet dhcp
+EOF
+)
+
 if [ "$CLOUD" == "opennebula" ] ; then
     net_config="$opennebula_specific"
 elif [ "$CLOUD" == "ec2" ] ; then
     net_config="$ec2_specific"
+elif [ "$CLOUD" == "vbox" ] ; then
+    net_config="$vbox_specific"
 else
   cecho 'Something went wrong. "CLOUD" shell variable is not properly defined.';
   exit 1;

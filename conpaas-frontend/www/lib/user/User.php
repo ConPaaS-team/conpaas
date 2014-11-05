@@ -14,6 +14,7 @@ class User {
 	private $affiliation;
 	private $email;
 	private $uuid;
+	private $openid;
 
 	public function __construct() {
 		$this->uid = isset($_SESSION['uid']) ? $_SESSION['uid'] : false;
@@ -31,6 +32,7 @@ class User {
 		$this->email = $uinfo['email'];
 		$this->affiliation = $uinfo['affiliation'];
 		$this->uuid = $uinfo['uuid'];
+		$this->openid = $uinfo['openid'];
 	}
 
 	public function getUID() {
@@ -46,10 +48,25 @@ class User {
 	}
 
 	public function closeSession() {
+		unset($_SESSION['openid']);
 		unset($_SESSION['uuid']);
 		unset($_SESSION['uid']);
 		unset($_SESSION['username']);
 		unset($_SESSION['password']);
+	}
+
+	public function authenticate_openid($openid) {
+                $_SESSION['openid'] = $openid;
+
+		$uinfo = UserData::getUserByOpenid($openid, true);
+                user_error('getUserByOpenid ' . json_encode($uinfo), E_USER_NOTICE);
+		if ($uinfo === false) {
+			return false;
+		}
+                $_SESSION['username'] = $uinfo['username'];
+		$this->uid = $uinfo['uid'];
+		$this->establishSession();
+		return true;
 	}
 
 	public function authenticate_uuid($uuid) {

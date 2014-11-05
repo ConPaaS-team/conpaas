@@ -2,7 +2,7 @@
 
 from setuptools import setup
 
-CPSVERSION = '1.4.x'
+CPSVERSION = '1.4.1'
 
 long_description = """
 Command line client to ConPaaS, an integrated runtime environment for elastic

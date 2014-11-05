@@ -1,13 +1,11 @@
 <?php
 /* Copyright (C) 2010-2013 by Contrail Consortium. */
 
-
-
 require_once('__init__.php');
-require_module('ui/page');
+require_module('ui/page/createpage');
 
 
-$page = new Page();
+$page = new CreatePage();
 
 ?>
 
@@ -38,12 +36,12 @@ $page = new Page();
               <tr class="service">
                   <td class="description"> <img src="images/php.png" height="32" /></td>
                   <td class="radio"><input type="radio" name="type" value="php" /> php</td>
-                  <td class="info"> PHP version 5.2 under Nginx </td>
+                  <td class="info"> PHP version 5.3 with Nginx </td>
               </tr>
               <tr class="service">
                   <td class="description"> <img src="images/java.png" height="32" /></td>
                   <td class="radio"><input type="radio" name="type" value="java" /> java</td>
-                  <td class="info"> Java Servlet container using Apache Tomcat 7.2</td>
+                  <td class="info"> Apache Tomcat 6.0 servlet container </td>
               </tr>
           </table>
           <table class="form" cellspacing="0" cellpading="0">
@@ -52,18 +50,18 @@ $page = new Page();
               </div>
               <tr class="service">
                   <td class="description"> <img src="images/mysql.png" height="32" /></td>
-                  <td class="radio"><input type="radio" name="type" value="mysql" /> mysql</td>
-                  <td class="info"> MySQL 5.2 Database </td>
+                  <td class="radio"><input type="radio" name="type" value="galera" /> mysql</td>
+                  <td class="info"> MySQL-5.5 database with Galera extensions </td>
               </tr>
               <tr class="service">
                   <td class="description"> <img src="images/scalaris.png" height="32" /></td>
                   <td class="radio"><input type="radio" name="type" value="scalaris" /> scalarix</td>
-                  <td class="info"> In-memory key-value store </td>
+                  <td class="info"> Scalaris-0.7 in-memory key-value store </td>
               </tr>
               <tr class="service">
                   <td class="description"> <img src="images/xtreemfs.png" height="32" /></td>
                   <td class="radio"><input type="radio" name="type" value="xtreemfs" /> xtreemfs</td>
-                  <td class="info"> Distributed file system </td>
+                  <td class="info"> XtreemFS-1.5 distributed file system </td>
               </tr>
           </table>
           <table class="form" cellspacing="0" cellpading="0">

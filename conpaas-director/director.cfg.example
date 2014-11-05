@@ -5,6 +5,12 @@ CONF_DIR = /etc/cpsdirector
 # Path to certificates
 CERT_DIR = /etc/cpsdirector/certs
 
+# Unique name of the current ConPaaS deployment
+DEPLOYMENT_NAME = conpaas-online
+
+# Support for external identity providers
+support_external_idp = false
+
 # Uncomment the following directives in case you want to use per-application
 # Virtual Private Networks. In the default config presented below, the maximum
 # number of services per application is 32 (2^5), with no more than 32767
@@ -102,11 +108,11 @@ CERT_DIR = /etc/cpsdirector/certs
 #
 # ConPaaS official AMI ids are: 
 #
-# - ami-c3045aaa United States East (Northern Virginia)
-# - ami-f4c75fc4 United States West (Oregon)
-# - ami-b79271c0 Europe West (Ireland)
+# - ami-22cc4b4a United States East (Northern Virginia)
+# - ami-e31d52d3 United States West (Oregon)
+# - ami-5058f627 Europe West (Ireland)
 
-# IMAGE_ID = ami-c3045aaa
+# IMAGE_ID = ami-22cc4b4a
 
 # This variable contains the type of EC2 instances to use. A good value to use
 # inexpensive, low-performance instances is "t1.micro".
@@ -221,7 +227,7 @@ CERT_DIR = /etc/cpsdirector/certs
 # ConPaaS features. This value has to match exactly the version of OpenNebula
 # you are running. If omitted it will default to 2.2.
 
-# OPENNEBULA_VERSION = 3.8
+# OPENNEBULA_VERSION = 4.6
 
 # specify COST_PER_TIME as currency amount / ATU (in seconds)
 # so            $ 6.00 / 3600  is 6 dollar per hour             (or part thereof)

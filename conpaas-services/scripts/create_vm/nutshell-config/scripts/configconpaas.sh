@@ -18,6 +18,9 @@ fi
 done < creds
 
 #source /devstack/eucarc
+export EC2_ACCESS_KEY=$access
+export EC2_SECRET_KEY=$secret
+export EC2_URL=$(keystone catalog --service ec2 | awk '/ publicURL / { print $4 }')
 euca-describe-images > imgs
 while read line
 do

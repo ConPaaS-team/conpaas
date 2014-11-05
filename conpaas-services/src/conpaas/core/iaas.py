@@ -25,6 +25,7 @@ def get_cloud_instance(cloud_name, cloud_type, iaas_config):
     elif cloud_type == 'federation':
         # ConPaaS running in federation mode
         pass
+    raise Exception('Cannot get_cloud_instance(%s, %s): No module found for cloud_type %s' % (cloud_name, cloud_type, cloud_type) )
 
 
 def get_clouds(iaas_config):

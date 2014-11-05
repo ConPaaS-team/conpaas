@@ -8,7 +8,7 @@ require_module('logging');
 
 class UserData {
     public static function createUser($username, $email, $fname, $lname,
-    		$affiliation, $passwd, $credit, $uuid) {
+    		$affiliation, $passwd, $credit, $uuid, $openid) {
 
         $data = array(
             'username'    => $username, 
@@ -18,6 +18,7 @@ class UserData {
             'affiliation' => $affiliation,
             'password'    => $passwd,
             'credit'      => $credit,
+            'openid'      => $openid,
             'uuid'        => $uuid);
 
         $res = json_decode(HTTPS::post(Conf::DIRECTOR . '/new_user', $data));
@@ -27,6 +28,15 @@ class UserData {
         }
 
     	return $res->uid;
+    }
+
+    public static function getUserByOpenid($openid, $refresh_certs=false) {
+       $res = HTTPS::post(Conf::DIRECTOR . '/login', array('openid' => $openid 
+           /* 'password' => (isset($_SESSION['password']) ? $_SESSION['password'] : 'avoid "Undefined index: password" message')  */
+           ));
+
+       user_error('getUserByOpenid: HTTPS on director /login with openid = <' . $openid . '> returns ' . $res, E_USER_NOTICE);
+       return self::set_up_user(null, $res, $refresh_certs);
     }
 
     public static function getUserByUuid($uuid, $refresh_certs=false) {
@@ -63,6 +73,7 @@ class UserData {
                            'lname' => $user->lname,
                            'email' => $user->email,
                            'affiliation' => $user->affiliation,
+                           'openid' => $user->openid,
                            'uuid' => $user->uuid);
 
        $uid = $user->uid;
@@ -80,6 +91,9 @@ class UserData {
        } elseif (isset($_SESSION['uuid'])) {
            $res = HTTPS::post(Conf::DIRECTOR . '/getcerts',
                array('username' => $username, 'uuid' => $_SESSION['uuid']));
+       } elseif (isset($_SESSION['openid'])) {
+           $res = HTTPS::post(Conf::DIRECTOR . '/getcerts',
+               array('username' => $username, 'openid' => $_SESSION['openid']));
        }
 
        $zip_filename = sys_get_temp_dir() . "/conpaas_cert_$uid.zip";

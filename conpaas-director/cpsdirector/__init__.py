@@ -2,6 +2,8 @@
 
 from flask import Flask
 from flask.ext.sqlalchemy import SQLAlchemy
+from flask.ext.openid import OpenID
+from openid.extensions import pape
 
 import sys
 reload(sys)
@@ -9,7 +11,17 @@ sys.setdefaultencoding('utf-8')
 
 from cpsdirector import common
 
-app = Flask(__name__)
+
+app = Flask(__name__, template_folder="/etc/cpsdirector/templates", static_folder="/var/www/static")
+
+# copied from OpenID example
+app.config.update(
+#    DATABASE_URI = 'sqlite:////tmp/flask-openid.db',
+    SECRET_KEY = 'development key',
+    DEBUG = True
+)
+
+oid = OpenID(app, safe_roots=[], extension_responses=[pape.Response])
 
 app.config['SQLALCHEMY_DATABASE_URI'] = common.config_parser.get(
     'director', 'DATABASE_URI')
@@ -35,6 +47,9 @@ app.register_blueprint(manifest.manifest_page)
 
 from cpsdirector import director
 app.register_blueprint(director.director_page)
+
+from cpsdirector import idp
+app.register_blueprint(idp.idp_page, app=app)
 
 if __name__ == "__main__":
     db.create_all()

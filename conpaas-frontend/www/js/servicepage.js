@@ -18,6 +18,9 @@ conpaas.ui = (function (this_module) {
         this.setupPoller_();
     },
     /* methods */{
+    getStopWarningText: function () {
+        return 'Are you sure you want to stop the service?';
+    },
     setupPoller_: function () {
         this.statePoller = new conpaas.http.Poller(this.server,
                 'ajax/getService.php', 'get');
@@ -165,7 +168,7 @@ conpaas.ui = (function (this_module) {
     },
     onClickStop: function (event) {
         var page = event.data;
-        var ack = confirm('Are you sure you want to stop the service?');
+        var ack = confirm(page.getStopWarningText());
         if (!ack) {
             return;
         }

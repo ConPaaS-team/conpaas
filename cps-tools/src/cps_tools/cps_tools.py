@@ -16,7 +16,6 @@ from .base import BaseClient
 from .user import UserCmd
 from .application import ApplicationCmd
 from .service import ServiceCmd
-from .mysql import MySQLCmd
 from .galera import GaleraCmd
 from .htc import HTCCmd
 from .cloud import CloudCmd
@@ -27,6 +26,7 @@ from .scalaris import ScalarisCmd
 from .selenium import SeleniumCmd
 from .taskfarm import TaskFarmCmd
 from .xtreemfs import XtreemFSCmd
+from .helloworld import HelloWorldCmd
 
 CONF_FILE = "cps-tools.conf"
 
@@ -69,8 +69,8 @@ def main():
     add_sub_command('cloud', "manage clouds", CloudCmd)
     add_sub_command('application', "manage applications", ApplicationCmd)
     add_sub_command('service', "manage services", ServiceCmd)
-    add_sub_command('mysql', "manage MySQL services", MySQLCmd)
-    add_sub_command('galera', "manage MySQL Galera services", GaleraCmd)
+    add_sub_command('mysql', "manage MySQL services", GaleraCmd)
+    add_sub_command('galera', "manage MySQL services", GaleraCmd)
     add_sub_command('htc', "manage HTC services", HTCCmd)
     add_sub_command('php', "manage PHP services", PHPCmd)
     add_sub_command('java', "manage Java services", JavaCmd)
@@ -78,6 +78,7 @@ def main():
     add_sub_command('selenium', "manage Selenium services", SeleniumCmd)
     add_sub_command('taskfarm', "manage TaskFarm services", TaskFarmCmd)
     add_sub_command('xtreemfs', "manage XtreemFS services", XtreemFSCmd)
+    add_sub_command('helloworld', "manage HelloWorld services", HelloWorldCmd)
 
     _help_cmd = HelpCmd(subparsers, parser)
 

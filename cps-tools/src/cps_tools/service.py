@@ -99,6 +99,8 @@ class ServiceCmd(object):
             stype = self.type
         else:
             stype = args.service_type
+        if stype == "mysql":
+            stype = "galera"
         if args.cloud is None:
             res = self.client.call_director_post("start/" + stype, data)
         else:
@@ -126,6 +128,9 @@ class ServiceCmd(object):
     def list_serv(self, args):
         services = self.client.get_services(self.type)
         sorted_serv = services
+        for row in sorted_serv:
+            if row['type'] == 'galera':
+                row['type'] = 'mysql'
         # tertiary sort per service id
         sorted_serv = sorted(sorted_serv, key=lambda k: k['sid'])
         # secondary sort per service types
@@ -173,11 +178,11 @@ class ServiceCmd(object):
         service_id = self.get_service_id(args.serv_name_or_id)
         print("Stopping service %s..." % service_id)
         res = self.client.call_manager_post(service_id, "shutdown")
-        if res:
-            print("Service %s is stopping." % service_id)
-        else:
+        if 'error' in res:
             self.client.error("Error when stopping service %s: %s"
                               % (service_id, res['error']))
+        else:
+            print("Service %s is stopping." % service_id)
 
     # ========== get_config
     def _add_get_config(self):
@@ -205,6 +210,8 @@ class ServiceCmd(object):
         res = self.client.call_manager_get(service_id, "get_service_info")
 
         for key, value in res.items():
+            if key == 'type' and value == 'galera':
+                value = 'mysql'
             print "%s: %s" % (key, value)
 
     # ========== rename
@@ -270,7 +277,10 @@ class ServiceCmd(object):
     def get_types(self, args):
         res = self.client.call_director_get("available_services")
         for serv_type in res:
-            print("%s" % serv_type)
+            if serv_type == 'galera':
+                print 'mysql'
+            else:
+                print("%s" % serv_type)
 
     # ========== list_nodes
     def _add_list_nodes(self):
@@ -294,8 +304,12 @@ class ServiceCmd(object):
                     print "Warning: got node identifier from list_nodes but failed on get_node_info: %s" % details['error']
                 else:
                     node = details['serviceNode']
-                    print "%s: node %s from cloud %s with IP address %s" \
-                          % (role, node['vmid'], node['cloud'], node['ip'])
+                    if 'vmid' in node and 'cloud' in node:
+                        print "%s: node %s from cloud %s with IP address %s" \
+                              % (role, node['vmid'], node['cloud'], node['ip'])
+                    else:
+                        print "%s: node %s with IP address %s" \
+                              % (role, node['id'], node['ip'])
 
     def _get_roles_nb(self, args):
         total_nodes = 0
@@ -360,7 +374,7 @@ class ServiceCmd(object):
                               % (service_id, res['error']))
         else:
             print("%s nodes have been successfully removed from service %s."
-                  % (args.number, service_id))
+                  % (total_nodes, service_id))
             state = self.client.wait_for_state(service_id, ['RUNNING', 'ERROR'])
             if state in ['ERROR']:
                 self.client.error("Failed to remove nodes from service %s." % service_id)

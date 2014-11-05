@@ -9,15 +9,15 @@ class PageFactory {
 		$type = $service->getType();
 
 		switch ($type) {
+			case 'galera':
+                                require_module('ui/page/galera');
+                                return new GaleraPage($service);
 			case 'php':
 				require_module('ui/page/hosting');
 				return new PhpPage($service);
 			case 'java':
 				require_module('ui/page/hosting');
 				return new JavaPage($service);
-			case 'mysql':
-				require_module('ui/page/mysql');
-				return new MysqlPage($service);
 			case 'taskfarm':
 				require_module('ui/page/taskfarm');
 				return new TaskFarmPage($service);

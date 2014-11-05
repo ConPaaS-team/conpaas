@@ -26,9 +26,15 @@ class DashboardServiceUI {
 	}
 
 	private function renderImage() {
+		if ($this->service->getType() == 'galera') {
+			$filename = 'mysql.png';
+		} else {
+			$filename = $this->service->getType().'.png';
+		}
+
 		return
 			'<div class="icon">'
-				.'<img src="images/'.$this->service->getType().'.png" height="64" />'
+				.'<img src="images/'.$filename.'" height="64" />'
 			.'</div>';
 	}
 
@@ -106,7 +112,7 @@ class DashboardServiceUI {
 		}
 		$monitor = $this->service->fetchHighLevelMonitoringInfo();
 
-		if ($this->service->getType() == 'php') {
+		if ($this->service->getType() == 'php<monitoring-disabled>') {
 			$resptime =
 				'<i class="text">'.$monitor['throughput'].'ms</i>'.
 				'<img src="images/green-down.png" />';

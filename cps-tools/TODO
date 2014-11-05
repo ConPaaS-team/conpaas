@@ -21,7 +21,7 @@ TODO list for the cps-tools ConPaaS command line command.
   for every new user.
   
 * Create several services at once. For example, creating 3 services at once::
-  $ cps-tools service create xtreemfs mysql php --cloud=mycloud
+  $ cps-tools service create xtreemfs galera php --cloud=mycloud
 
   Idem for starting or stopping:
   $ cps-tools service start 2 5 6 --cloud=mycloud

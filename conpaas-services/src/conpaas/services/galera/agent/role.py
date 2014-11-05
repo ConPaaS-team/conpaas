@@ -10,18 +10,18 @@ import time
 import ConfigParser
 import MySQLdb
 
-from os.path import devnull
-from subprocess import Popen
+from os.path import devnull, join, lexists
+from subprocess import Popen, PIPE
 
 from conpaas.core.log import create_logger
-from conpaas.core.misc import run_cmd_code
+from conpaas.core.misc import run_cmd_code, run_cmd
 
 S_INIT = 'INIT'
 S_STARTING = 'STARTING'
 S_RUNNING = 'RUNNING'
 S_STOPPING = 'STOPPING'
 S_STOPPED = 'STOPPED'
-
+import logging 
 sql_logger = create_logger(__name__)
 
 
@@ -32,7 +32,7 @@ class MySQLServer(object):
 
     class_file = 'mysqld.pickle'
 
-    def __init__(self, config, nodes):
+    def __init__(self, config, nodes, device_name):
         """
         Creates a configuration from `config`.
 
@@ -41,7 +41,15 @@ class MySQLServer(object):
         :param  _dummy_config: Set to `True` when used in unit testing.
         :type boolean: boolean value.
         """
-
+	sql_logger.debug("Trying to Mount the device.")
+        try:
+            # Mount device
+            self.dev_name = "/dev/%s" % device_name
+            self.mount_point = "/media/GaleraDisk"
+            self.mkdir_cmd = "mkdir -p %s" % self.mount_point
+            self.mount(True)
+        except ConfigParser.Error:
+            sql_logger.exception('Could not mount the device')
         sql_logger.debug("Entering init MySQLServerConfiguration")
         try:
             #hostname = socket.gethostname()
@@ -65,11 +73,22 @@ class MySQLServer(object):
             lines = f.readlines()
             f.close()
             f = open(self.mycnf_filepath, "w")
+	    #Creating the MySQL directory tree in the external disk
+	    sql_logger.debug("Creating the MySQL directory tree in the external disk")
+	    run_cmd("mkdir -p %s/data/" % self.mount_point)
+	    run_cmd("mkdir -p %s/tmp/" % self.mount_point)	    
+	    run_cmd("cp -a /var/lib/mysql/* %s/data/" % self.mount_point)
+            run_cmd("chown  -R mysql:mysql  %s/" % self.mount_point)
+
             for line in lines:
-                if not "bind-address" in line:
+                if "datadir" in line:
+                    f.write("datadir=%s/data/\n" % self.mount_point)
+                #elif "socket" in line:
+                #    f.write("socket=%s/data/\n" % self.mount_point)
+                elif not "bind-address" in line:
                     f.write(line)
                 if "expire_logs_days" in line:
-                    f.write("log_error=/root/mysql.log\n")
+                    f.write("log_error=/root/mysql.log\n" )
             f.close()
 
             self.wsrep_filepath = config.get("Galera_configuration", "wsrep_file")
@@ -95,7 +114,6 @@ class MySQLServer(object):
             newf.close()
 
             self.state = S_STOPPED
-
             # Start
             self.start()
 
@@ -179,6 +197,11 @@ class MySQLServer(object):
                 sql_logger.info('Daemon mysqld stopped')
             except Exception as e:
                 sql_logger.exception('Failed to stop MySQL daemon: %s' % e)
+                raise e
+            try:
+                self.unmount()                
+            except Exception as e:
+                sql_logger.exception('Failed to unmount disk %s' % self.dev_name)
                 raise e
         else:
             sql_logger.warning('Requested to stop MySQL daemon'
@@ -290,6 +313,86 @@ class MySQLServer(object):
         exc.execute("set password for '" + username + "'@'%' = password('" + password + "')")
         db.close()
 
+    def getLoad (self):
+        db = MySQLdb.connect(self.conn_location, 'root', self.conn_password)
+        exc = db.cursor()
+        exc.execute("SHOW STATUS LIKE 'wsrep_local_recv_queue_avg';")
+    	result=exc.fetchone()[1]        
+	db.close()
+	return result
+
+    def mount(self, mkfs):
+        self.state = S_STARTING
+        devnull_fd = open(devnull,'w')
+        # waiting for our block device to be available
+        dev_found = False
+        dev_prefix = self.dev_name.split('/')[2][:-1]
+
+        for attempt in range(1, 11):
+            sql_logger.info("Galera node waiting for block device %s" % self.dev_name)
+            if lexists(self.dev_name):
+                dev_found = True
+                break
+            else:
+                # On EC2 the device name gets changed 
+                # from /dev/sd[a-z] to /dev/xvd[a-z]
+                if lexists(self.dev_name.replace(dev_prefix, 'xvd')):
+                    dev_found = True
+                    self.dev_name = self.dev_name.replace(dev_prefix, 'xvd')
+                    break
+
+            time.sleep(10)
+
+        # create mount point
+        run_cmd(self.mkdir_cmd)
+
+        if dev_found:
+            sql_logger.info("Galera node has now access to %s" % self.dev_name)
+
+            # prepare block device
+            if mkfs:
+                sql_logger.info("Creating new file system on %s" % self.dev_name)
+                self.prepare_args = ['mkfs.ext4', '-q', '-m0', self.dev_name]
+                proc = Popen(self.prepare_args, stdin=PIPE, stdout=devnull_fd,
+                        stderr=devnull_fd, close_fds=True)
+
+                proc.communicate(input="y") # answer interactive question with y
+                if proc.wait() != 0:
+                    sql_logger.critical('Failed to prepare storage device:(code=%d)' %
+                            proc.returncode)
+                else:
+                    sql_logger.info('File system created successfully')
+            else:
+                sql_logger.info(
+                  "Not creating a new file system on %s" % self.dev_name)
+                time.sleep(10)
+
+            # mount
+            self.mount_args = ['mount', self.dev_name, self.mount_point]
+            mount_cmd = ' '.join(self.mount_args)
+            sql_logger.debug('Running command %s' % mount_cmd)
+            _, err = run_cmd(mount_cmd)
+
+            if err:
+                sql_logger.critical('Failed to mount storage device: %s' % err)
+            else:
+                sql_logger.info("OSD node has prepared and mounted %s" % self.dev_name)
+        else:
+            sql_logger.critical("Block device %s unavailable, falling back to image space" 
+                    % self.dev_name)
+
+    def unmount(self):
+        # unmount
+        sql_logger.info("Trying to unmount the Galera Disk")
+        self.unmount_args = ['umount', self.dev_name]
+        unmount_cmd = ' '.join(self.unmount_args)
+        sql_logger.debug('Running command %s' % unmount_cmd)
+        _, err = run_cmd(unmount_cmd)
+        if err:
+            sql_logger.critical('Failed to unmount storage device: %s' % err)
+        else:
+            sql_logger.info("OSD node has succesfully unmounted %s" % self.dev_name)
+
 
 class GLBNode(object):
     """
@@ -298,11 +401,13 @@ class GLBNode(object):
 
     class_file = 'glbd.pickle'
 
-    def __init__(self, config, nodes):
+    def __init__(self, config, nodes, device_name=None):
+        sql_logger.debug('GLB: __init__: %s, %s' % (config, nodes))
         self.galera_nodes = nodes
         self.state = S_STOPPED
+        self.glbd_location = config.get('Galera_configuration', 'glbd_location')
         self.start(nodes)
-        self.glbd_location = config.get("Galera_configuration", "glbd_location")
+        
 
     def start(self, hosts=None):
         hosts = hosts or []
@@ -312,9 +417,10 @@ class GLBNode(object):
         proc = Popen(command, stdout=devnull_fd, stderr=devnull_fd, close_fds=True)
         proc.wait()
         sql_logger.debug('GLB node started')
+        self.state = S_RUNNING
         if hosts:
             self.add(hosts)
-        self.state = S_RUNNING
+        
 
     def stop(self):
         self.state = S_STOPPING
@@ -327,14 +433,17 @@ class GLBNode(object):
 
     def add(self, hosts=None):
         hosts = hosts or []
+	sql_logger.debug('GLB: try to add nodes to balance: %s' % hosts)
         if self.state != S_RUNNING:
             raise Exception("Wrong state to add nodes to GLB: state is %s, instead of expected %s." % (self.state, S_RUNNING))
         devnull_fd = open(devnull, 'w')
         command = [self.glbd_location, "add"]
-        command.extend(hosts)
-        proc = Popen(command, stdout=devnull_fd, stderr=devnull_fd, close_fds=True)
-        proc.wait()
-        sql_logger.debug('GLB: added nodes to balance: %s' % hosts)
+        for i in hosts:
+		command.extend([i])
+        	proc = Popen(command, stdout=devnull_fd, stderr=devnull_fd, close_fds=True)
+        	proc.wait()
+		command.pop()
+	sql_logger.debug('GLB: added nodes to balance: %s' % hosts)
 
     def remove(self, hosts=None):
         hosts = hosts or []
@@ -342,7 +451,10 @@ class GLBNode(object):
             raise Exception("Wrong state to remove nodes to GLB: state is %s, instead of expected %s." % (self.state, S_RUNNING))
         devnull_fd = open(devnull, 'w')
         command = [self.glbd_location, "remove"]
-        command.extend(hosts)
-        proc = Popen(command, stdout=devnull_fd, stderr=devnull_fd, close_fds=True)
-        proc.wait()
+        for i in hosts:
+                command.extend([i])
+                proc = Popen(command, stdout=devnull_fd, stderr=devnull_fd, close_fds=True)
+                proc.wait()
+                command.pop()
         sql_logger.debug('GLB: removed nodes to balance: %s' % hosts)
+

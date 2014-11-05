@@ -18,7 +18,8 @@ import socket
 import urlparse
 from string import Template
 
-from conpaas.core.log import create_logger
+import logging
+from conpaas.core.log import create_logger, init
 from conpaas.core import iaas
 from conpaas.core import https
 
@@ -33,7 +34,13 @@ class Controller(object):
     """
 
     def __init__(self, config_parser, **kwargs):
+        # TODO: retrieve this file name from the director.cfg configuration file & create the log file if it is not yet present
+        init('/var/log/cpsdirector/debugging.log')
+        self.__logger = create_logger(__name__)
+        self.__logger.setLevel(logging.DEBUG)
         # Params for director callback
+        self.__conpaas_name = config_parser.get('manager',
+                                                'DEPLOYMENT_NAME')
         self.__conpaas_creditUrl = config_parser.get('manager',
                                                 'CREDIT_URL')
         self.__conpaas_terminateUrl = config_parser.get('manager',
@@ -90,7 +97,6 @@ class Controller(object):
         self.config_parser = config_parser
         self.__created_nodes = []
         self.__partially_created_nodes = []
-        self.__logger = create_logger(__name__)
 
         self.__available_clouds = []
         self.__default_cloud = None
@@ -102,7 +108,14 @@ class Controller(object):
             self.__available_clouds.append(self.__default_cloud)
 
         if config_parser.has_option('iaas', 'OTHER_CLOUDS'):
-            self.__available_clouds.extend(iaas.get_clouds(config_parser))
+            self.__logger.debug("attempt iaas.get_clouds()")
+            try:
+                self.__available_clouds.extend(iaas.get_clouds(config_parser))
+            except Exception as e:
+                self.__logger.debug("failed iaas.get_clouds()")
+                self.__reservation_map['manager'].stop()
+                raise e
+            self.__logger.debug("succeeded iaas.get_clouds()")
 
         # Setting VM role
         self.role = 'agent'
@@ -155,6 +168,7 @@ class Controller(object):
         @return A list of nodes of type node.ServiceNode
 
         """
+        self.__logger.debug('[create_nodes]')
         ready = []
         poll = []
         iteration = 0
@@ -184,10 +198,17 @@ class Controller(object):
                     request_start = time.time()
 
                 service_type = self.config_parser.get('manager', 'TYPE')
+                if service_type == 'galera':
+                    service_type = 'mysql'
 
-                # eg: conpaas-agent-php-u34-s316
-                name = "conpaas-%s-%s-u%s-s%s" % (self.role, service_type,
-                       self.__conpaas_user_id, self.__conpaas_service_id)
+                if self.role == 'manager':
+                    role_abbr = 'mgr'
+                else:
+                    role_abbr = 'agt'
+
+                # eg: conpaas-online-u3-s1-xtreemfs-mgr
+                name = "%s-u%s-s%s-%s-%s" % (self.__conpaas_name, self.__conpaas_user_id,
+                        self.__conpaas_service_id, service_type, role_abbr)
 
                 if (service_type == 'htc'):
                     # If HTC is used we need to update here as well (as I see no way to do this elsewhere)
@@ -217,15 +238,16 @@ class Controller(object):
 
                             self.__partially_created_nodes.append(newinst)
                 else:
+                    self.__logger.debug("[create_nodes]: cloud.new_instances(%d, %s, %s)" % ( count - len(ready), name, inst_type ) )
                     self.__partially_created_nodes = cloud.new_instances(
                         count - len(ready), name, inst_type)
 
-                self.__logger.debug("cloud.new_instances returned %s" %
+                self.__logger.debug("[create_nodes]: cloud.new_instances returned %s" %
                         self.__partially_created_nodes)
 
             except Exception as e:
                 self.__logger.exception(
-                    '[_create_nodes]: Failed to request new nodes')
+                    '[create_nodes]: Failed to request new nodes')
                 self.delete_nodes(ready)
                 self.__partially_created_nodes = []
                 raise e
@@ -238,7 +260,7 @@ class Controller(object):
 
             poll = []
             if failed:
-                self.__logger.debug('[_create_nodes]: %d nodes '
+                self.__logger.debug('[create_nodes]: %d nodes '
                                     'failed to startup properly: %s'
                                     % (len(failed), str(failed)))
                 self.__partially_created_nodes = []
@@ -407,6 +429,7 @@ class Controller(object):
         """Return True if the given node has properly started an agent on the
         given port"""
         if node.ip == '' or node.private_ip == '':
+            self.__logger.debug('[__check_node]: node.ip = %s, node.private_ip = %s: return False' % (node.ip, node.private_ip))
             return False
 
         try:
@@ -414,6 +437,7 @@ class Controller(object):
                 node.ip, port))
 
             test_agent(node.ip, port)
+            self.__logger.debug('[__check_node]: node = %s' % node.__repr__())
             return True
         except socket.error, err:
             self.__logger.debug('[__check_node]: %s' % err)
@@ -421,7 +445,7 @@ class Controller(object):
         return False
 
     def __wait_for_nodes(self, nodes, test_agent, port, poll_interval=10):
-        self.__logger.debug('[__wait_for_nodes]: going to start polling')
+        self.__logger.debug('[__wait_for_nodes]: going to start polling for %d nodes' % len(nodes))
 
         done = []
         poll_cycles = 0
@@ -487,21 +511,21 @@ class Controller(object):
             cloud = self.__default_cloud
 
         self.__logger.debug("attach_volume(node=%s, volume=%s, device=%s)" % 
-                (node, volume, device))
+                (node, volume.id, device))
         return cloud.attach_volume(node, volume, device)
 
     def detach_volume(self, volume, cloud=None):
         if cloud is None:
             cloud = self.__default_cloud
 
-        self.__logger.debug("detach_volume(volume=%s)" % volume)
+        self.__logger.debug("detach_volume(volume=%s)" % volume.id)
         return cloud.driver.detach_volume(volume)
 
     def destroy_volume(self, volume, cloud=None):
         if cloud is None:
             cloud = self.__default_cloud
 
-        self.__logger.debug("destroy_volume(volume=%s)" % volume)
+        self.__logger.debug("destroy_volume(volume=%s)" % volume.id)
         return cloud.driver.destroy_volume(volume)
 
     def _get_context_file(self, service_name, cloud_type):
@@ -626,11 +650,10 @@ class Controller(object):
 
         return certs
 
-    def __force_terminate_service(self):
+    def force_terminate_service(self):
         # DO NOT release lock after acquiring it
         # to prevent the creation of more nodes
         self.__force_terminate_lock.acquire()
-        self.__logger.debug('OUT OF CREDIT, TERMINATING SERVICE')
 
         # kill all partially created nodes
         self.delete_nodes(self.__partially_created_nodes)
@@ -669,7 +692,8 @@ class Controller(object):
 
     def __deduct_and_check_credit(self, value):
         if not self.deduct_credit(value):
-            self.__force_terminate_service()
+            self.__logger.debug('OUT OF CREDIT, TERMINATING SERVICE')
+            self.force_terminate_service()
 
 
 class ReservationTimer(Thread):
@@ -707,4 +731,6 @@ class ReservationTimer(Thread):
             self.event.wait(self.interval)
 
     def stop(self):
+        self.reservation_logger.debug('RTIMER Stopping timer for %s'
+                                      % (str(self.nodes)))
         self.event.set()
