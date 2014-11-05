@@ -820,11 +820,6 @@ supported at the moment.
        :custom:
          :template: custom.erb
 
-The OCCI server should be configured to listen on the correct interface so that
-it can receive connections from the managers located on the VMs. This can be 
-achieved by modifying the "host" IP (or FQDN - fully qualified domain name) 
-parameter from /etc/one/occi-server.conf and restarting the OCCI server.
-
 #. At the end of the OCCI profile file ``/etc/one/occi_templates/common.erb``
    from your OpenNebula installation, append the following lines::
    
