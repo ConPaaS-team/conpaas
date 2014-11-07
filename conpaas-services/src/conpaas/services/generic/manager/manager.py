@@ -146,8 +146,8 @@ class GenericManager(BaseManager):
     def _do_startup(self, kwargs):
         """Start up the service. The first node will be an agent running a
         Generic Hub and a Stem Node."""
-        
-#        nr_instances = 1
+
+        nr_instances = 1
 #        nr_instances = 0
 #        if kwargs and kwargs.get('manifest'):
 #            instances = kwargs.get('manifest').get('StartupInstances')
@@ -155,34 +155,32 @@ class GenericManager(BaseManager):
 #            for role in instances:
 #                nr_instances += int(instances[role])
 
+        vals = { 'action': '_do_startup', 'count': nr_instances }
+        self.logger.debug(self.ACTION_REQUESTING_NODES % vals)
 
-#        vals = { 'action': '_do_startup', 'count': nr_instances }
-#        self.logger.debug(self.ACTION_REQUESTING_NODES % vals)
+        try:
+            #nodes = []
+            #for i in range(1, nr_instances):
+            #    nodes.append( self.controller.create_nodes(1, client.check_agent_process, self.AGENT_PORT))
+            nodes = self.controller.create_nodes(nr_instances, client.check_agent_process, self.AGENT_PORT)
 
-        self._state_set(self.S_RUNNING)
-        #try:
-            ##nodes = []
-            ##for i in range(1, nr_instances):
-            ##    nodes.append( self.controller.create_nodes(1, client.check_agent_process, self.AGENT_PORT))
-            #nodes = self.controller.create_nodes(nr_instances, client.check_agent_process, self.AGENT_PORT)
+            config = self._configuration_get()
 
-            #config = self._configuration_get()
-            
-            #roles = {'master':'1'}
-            
-            #agents_info = self._update_agents_info(nodes, roles)
-            
-            #self._init_agents(config, nodes, agents_info)
-            
-            #self._update_code(config, nodes)
+            roles = {'master':'1'}
 
-            ## Extend the nodes list with the newly created one
-            #self.nodes += nodes
-            ##self.agents_info += agents_info
-            #self._state_set(self.S_RUNNING)
-        #except Exception, err:
-            #self.logger.exception('_do_startup: Failed to create agents: %s' % err)
-            #self._state_set(self.S_ERROR) 
+            agents_info = self._update_agents_info(nodes, roles)
+
+            self._init_agents(config, nodes, agents_info)
+
+            self._update_code(config, agents_info)
+
+            # Extend the nodes list with the newly created one
+            self.nodes += nodes
+            #self.agents_info += agents_info
+            self._state_set(self.S_RUNNING)
+        except Exception, err:
+            self.logger.exception('_do_startup: Failed to create agents: %s' % err)
+            self._state_set(self.S_ERROR)
 
     def _update_agents_info(self, nodes, roles):
         id_ip = []
@@ -579,7 +577,7 @@ echo "" >> /root/generic.out
         self._state_set(self.S_RUNNING)
         self._configuration_set(config)                                   
 
-    def _update_code(self, config, agents_info, start_role):                                                               
+    def _update_code(self, config, agents_info, start_role='*'):
         for agent in agents_info:                                                                        
             # Push the current code version via GIT if necessary                                         
             #if config.codeVersions[config.currentCodeVersion].type == 'git':                             
