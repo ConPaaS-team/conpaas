@@ -320,6 +320,8 @@ def https_post(host, port, uri, params={}, files=[]):
         and the response to the HTTP request
     """
     content_type, body = _encode_multipart_formdata(params, files)
+    #open('/tmp/out', 'a').write('type: %s\n' % type(body))
+    #open('/tmp/out', 'a').write('body: %s\n' % body)
     h = HTTPSConnection(host, port=port, ssl_context=__client_ctx)
     h.putrequest('POST', uri)
     h.putheader('content-type', content_type)
@@ -368,13 +370,13 @@ def _encode_multipart_formdata(params, files):
         #     f = open('/tmp/'+key,'a')
         #     f.write("from client: encod: %s, type: %s, len: %s, contents: %s\n" % (sys.getdefaultencoding(), type(value), len(value), value))
         #     f.close()
-
+        open('/tmp/out', 'a').write('key:%s, filename:%s, value:%s \n' % (type(key), type(filename), type(value) ))
         L.append('--' + BOUNDARY)
         L.append('Content-Disposition: form-data; name="%s"; filename="%s"' \
                 % (key, filename.encode('ascii')))
         L.append('Content-Type: %s' % _get_content_type(filename))
         L.append('')
-        L.append(value)
+        L.append(value.encode('ascii'))
     L.append('--' + BOUNDARY + '--')
     L.append('')
 
