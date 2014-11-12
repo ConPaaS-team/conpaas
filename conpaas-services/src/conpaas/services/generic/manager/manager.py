@@ -369,7 +369,7 @@ class GenericManager(BaseManager):
     def list_nodes(self, kwargs):
         """Return a list of running nodes"""
         if self._state_get() != self.S_RUNNING:
-            vals = { 'curstate': self._state_set(self.S_STOPPED), 'action': 'list_nodes' }
+            vals = { 'curstate': self._state_get(), 'action': 'list_nodes' }
             return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
 
         generic_nodes = [ 
