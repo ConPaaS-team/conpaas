@@ -432,7 +432,6 @@ echo "" >> /root/generic.out
         config.codeVersions['code-default'] = CodeVersion('code-default', 'code-default.tar', 'tar', description='Initial version')
         config.currentCodeVersion = 'code-default'
         self._configuration_set(config)
-        self._state_set(self.S_INIT)
    
     @expose('UPLOAD')
     def upload_code_version(self, kwargs):
