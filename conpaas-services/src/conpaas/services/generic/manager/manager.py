@@ -2,7 +2,7 @@
 Copyright (c) 2010-2012, Contrail consortium.
 All rights reserved.
 
-Redistribution and use in source and binary forms, 
+Redistribution and use in source and binary forms,
 with or without modification, are permitted provided
 that the following conditions are met:
 
@@ -10,13 +10,13 @@ that the following conditions are met:
     above copyright notice, this list of conditions
     and the following disclaimer.
  2. Redistributions in binary form must reproduce
-    the above copyright notice, this list of 
+    the above copyright notice, this list of
     conditions and the following disclaimer in the
     documentation and/or other materials provided
     with the distribution.
  3. Neither the name of the Contrail consortium nor the
     names of its contributors may be used to endorse
-    or promote products derived from this software 
+    or promote products derived from this software
     without specific prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
@@ -25,9 +25,9 @@ INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
 MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
 DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
 CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
-BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
 INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
 WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
@@ -35,21 +35,16 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 """
 
-# TODO: as this file was created from a BLUEPRINT file,
-# 	you may want to change ports, paths and/or methods (e.g. for hub)
-#	to meet your specific service/server needs
-
 from threading import Thread
 import memcache
 from shutil import rmtree
-import pickle 
+import pickle
 import zipfile
 import tarfile
 import tempfile
 import stat
 import os.path
 import time
-
 
 from conpaas.core.expose import expose
 from conpaas.core.controller import Controller
@@ -59,7 +54,6 @@ from conpaas.core import git
 from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse, FileUploadField
 from conpaas.services.generic.misc import archive_open, archive_get_members, archive_close, archive_get_type, archive_extract_file
 
-                          
 from conpaas.core.log import create_logger
 from conpaas.services.generic.agent import client
 from conpaas.services.generic.manager.config import CodeVersion, ServiceConfiguration
@@ -75,16 +69,16 @@ class GenericManager(BaseManager):
     get_service_info() -- GET
     get_node_info(serviceNodeId) -- GET
     """
-    # Manager states 
+    # Manager states
     S_INIT = 'INIT'         # manager initialized but not yet started
     S_PROLOGUE = 'PROLOGUE' # manager is starting up
     S_RUNNING = 'RUNNING'   # manager is running
-    S_ADAPTING = 'ADAPTING' # manager is in a transient state - frontend will 
+    S_ADAPTING = 'ADAPTING' # manager is in a transient state - frontend will
                             # keep polling until manager out of transient state
     S_EPILOGUE = 'EPILOGUE' # manager is shutting down
     S_STOPPED = 'STOPPED'   # manager stopped
     S_ERROR = 'ERROR'       # manager is in error state
-    
+
     DEPLOYMENT_STATE = 'deployment_state'
 
     # String template for error messages returned when performing actions in
@@ -99,26 +93,26 @@ class GenericManager(BaseManager):
     ACTION_REQUESTING_NODES = "requesting %(count)s nodes in %(action)s"
 
     AGENT_PORT = 5555
-  
+
     # memcache keys
     CONFIG = 'config'
 
     def __init__(self, config_parser, **kwargs):
-        """Initialize a Generic Manager. 
+        """Initialize a Generic Manager.
 
-        'config_parser' represents the manager config file. 
+        'config_parser' represents the manager config file.
         **kwargs holds anything that can't be sent in config_parser."""
         BaseManager.__init__(self, config_parser)
-        self.controller.generate_context('generic')    
+        self.controller.generate_context('generic')
 
-        memcache_addr = config_parser.get('manager', 'MEMCACHE_ADDR')        
+        memcache_addr = config_parser.get('manager', 'MEMCACHE_ADDR')
         self.memcache = memcache.Client([memcache_addr])
         self.code_repo = config_parser.get('manager', 'CODE_REPO')
 
-        self.state_log = []        
+        self.state_log = []
         if kwargs['reset_config']:
             self._create_initial_configuration()
-        
+
         self.nodes = []
         self.agents_info = []
         self.starters = []
@@ -136,7 +130,7 @@ class GenericManager(BaseManager):
         if dstate != self.S_INIT and dstate != self.S_STOPPED:
             ex = ManagerException(ManagerException.E_STATE_ERROR)
             return HttpErrorResponse(ex.message)
-        
+
         self._state_set(self.S_PROLOGUE, msg='Starting up')
 
         Thread(target=self._do_startup, args=[kwargs]).start()
@@ -198,42 +192,42 @@ class GenericManager(BaseManager):
 
     def _init_agents(self, config, nodes, agents_info):
         self._extract_init(config)
-        for serviceNode in nodes:                                                                        
-            try:                                           
-                initpath = os.path.join(self.code_repo, 'init.sh')                                              
-                client.init_agent(serviceNode.ip, 5555, initpath, agents_info)            
-            except client.AgentException:                                                                
-                self.logger.exception('Failed initialize agent at node %s' % str(serviceNode))             
+        for serviceNode in nodes:
+            try:
+                initpath = os.path.join(self.code_repo, 'init.sh')
+                client.init_agent(serviceNode.ip, 5555, initpath, agents_info)
+            except client.AgentException:
+                self.logger.exception('Failed initialize agent at node %s' % str(serviceNode))
                 self._state_set(self.S_ERROR, msg='Failed to initialize agent at node %s' % str(serviceNode))
-                raise        
+                raise
 
     def _extract_init(self, config):
         #current_code = config.codeVersions[config.currentCodeVersion]
         filepath = os.path.join(self.code_repo, config.currentCodeVersion)
         arch = archive_open(filepath)
-        
+
         archive_extract_file(arch, self.code_repo,'init.sh')
-        
+
     @expose('POST')
     def run(self, kwargs):
-        
+
         if self._state_get() != self.S_RUNNING:
             vals = { 'curstate': self._state_get(), 'action': 'run' }
             return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
-        
+
         #self._state_set(self.S_EPILOGUE)
         Thread(target=self._do_run, args=[]).start()
 
-        return HttpJsonResponse({ 'state': self._state_get() })    
+        return HttpJsonResponse({ 'state': self._state_get() })
 
     def _do_run(self):
-        for starter in self.starters:     
-            try:               
-                client.run(starter['ip'], 5555)            
-            except client.AgentException:                                                                
-                self.logger.exception('Failed to start run at node %s' % str(starter))             
+        for starter in self.starters:
+            try:
+                client.run(starter['ip'], 5555)
+            except client.AgentException:
+                self.logger.exception('Failed to start run at node %s' % str(starter))
                 self._state_set(self.S_ERROR, msg='Failed to run code at node %s' % str(starter))
-                raise   
+                raise
 
     @expose('POST')
     def shutdown(self, kwargs):
@@ -242,7 +236,7 @@ class GenericManager(BaseManager):
         if self._state_get() != self.S_RUNNING:
             vals = { 'curstate': self._state_get(), 'action': 'shutdown' }
             return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
-        
+
         self._state_set(self.S_EPILOGUE)
         Thread(target=self._do_shutdown, args=[]).start()
 
@@ -251,7 +245,7 @@ class GenericManager(BaseManager):
     def _do_shutdown(self):
         """Delete all nodes and switch to status STOPPED"""
         self.controller.delete_nodes(self.nodes)
-        self.nodes = []		# Not only delete the nodes, but clear the list too
+        self.nodes = []        # Not only delete the nodes, but clear the list too
         self._state_set(self.S_STOPPED)
 
     def __check_count_in_args(self, kwargs):
@@ -280,7 +274,7 @@ class GenericManager(BaseManager):
             return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
 
         # Ensure 'count' is valid
-        #count_or_err = self.__check_count_in_args(kwargs)        
+        #count_or_err = self.__check_count_in_args(kwargs)
         #if isinstance(count_or_err, HttpErrorResponse):
         #    return count_or_err
 
@@ -288,8 +282,8 @@ class GenericManager(BaseManager):
             nodes = kwargs['nodes']
         else:
             return HttpErrorResponse(self.REQUIRED_ARG_MSG % { 'arg': 'count' })
-        
-        #TODO: sanitize 
+
+        #TODO: sanitize
         start_role = kwargs['start_role']
         #count = count_or_err
 
@@ -303,16 +297,16 @@ class GenericManager(BaseManager):
         count = 0
         for node in nodes:
                 count += int(nodes[node])
-        
+
         if count:
-            node_instances = self.controller.create_nodes(count, 
+            node_instances = self.controller.create_nodes(count,
                 client.check_agent_process, self.AGENT_PORT)
 
             config = self._configuration_get()
             agents_info = self._update_agents_info(node_instances, nodes)
             self._init_agents(config, node_instances, agents_info)
             self._update_code(config, agents_info, start_role)
-        
+
             # Startup agents
             #for node in node_instances:
             #    client.create_node(node.ip, self.AGENT_PORT, self.hub_ip)
@@ -324,9 +318,6 @@ class GenericManager(BaseManager):
 
         self._state_set(self.S_RUNNING)
 
-    
-        
-
     @expose('POST')
     def remove_nodes(self, kwargs):
         """Remove kwargs['count'] nodes from this deployment"""
@@ -337,7 +328,7 @@ class GenericManager(BaseManager):
             return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
 
         # Ensure 'count' is valid
-        count_or_err = self.__check_count_in_args(kwargs)        
+        count_or_err = self.__check_count_in_args(kwargs)
         if isinstance(count_or_err, HttpErrorResponse):
             return count_or_err
 
@@ -345,9 +336,9 @@ class GenericManager(BaseManager):
 
         if count > len(self.nodes) - 1:
             return HttpErrorResponse("ERROR: Cannot remove so many nodes")
- 
+
         self._state_set(self.S_ADAPTING)
-       
+
         Thread(target=self._do_remove_nodes, args=[count]).start()
 
         return HttpJsonResponse({ 'state': self._state_get() })
@@ -363,7 +354,7 @@ class GenericManager(BaseManager):
 
     def __is_hub(self, node):
         """Return True if the given node is the Generic Hub"""
-        return node.ip == self.hub_ip        
+        return node.ip == self.hub_ip
 
     @expose('GET')
     def list_nodes(self, kwargs):
@@ -372,11 +363,11 @@ class GenericManager(BaseManager):
             vals = { 'curstate': self._state_get(), 'action': 'list_nodes' }
             return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
 
-        generic_nodes = [ 
-            node.id for node in self.nodes if not self.__is_hub(node) 
+        generic_nodes = [
+            node.id for node in self.nodes if not self.__is_hub(node)
         ]
-        generic_hub = [ 
-            node.id for node in self.nodes if self.__is_hub(node) 
+        generic_hub = [
+            node.id for node in self.nodes if self.__is_hub(node)
         ]
 
         return HttpJsonResponse({
@@ -386,15 +377,15 @@ class GenericManager(BaseManager):
 
     def _create_initial_configuration(self):
         print 'CREATING INIT CONFIG'
- 
+
         config = ServiceConfiguration()
-        
+
         if len(config.codeVersions) > 0:
             return
-            
+
         if not os.path.exists(self.code_repo):
             os.makedirs(self.code_repo)
-            
+
         tfile = tarfile.TarFile(name=os.path.join(self.code_repo, 'code-default'), mode='w')
 
         fileno, path = tempfile.mkstemp()
@@ -411,7 +402,7 @@ echo "" >> /root/generic.out
         fd.close()
         os.chmod(path, stat.S_IRWXU | stat.S_IROTH | stat.S_IXOTH)
         tfile.add(path, 'init.sh')
-        
+
         fileno, path = tempfile.mkstemp()
         fd = os.fdopen(fileno, 'w')
         fd.write('''#/bin/bash
@@ -426,13 +417,13 @@ echo "" >> /root/generic.out
         fd.close()
         os.chmod(path, stat.S_IRWXU | stat.S_IROTH | stat.S_IXOTH)
         tfile.add(path, 'start.sh')
-        
+
         tfile.close()
         os.remove(path)
         config.codeVersions['code-default'] = CodeVersion('code-default', 'code-default.tar', 'tar', description='Initial version')
         config.currentCodeVersion = 'code-default'
         self._configuration_set(config)
-   
+
     @expose('UPLOAD')
     def upload_code_version(self, kwargs):
         if 'code' not in kwargs:
@@ -485,7 +476,6 @@ echo "" >> /root/generic.out
         self._configuration_set(config)
         return HttpJsonResponse({'codeVersionId': os.path.basename(codeVersionId)})
 
-
     @expose('GET')
     def get_service_info(self, kwargs):
         """Return the service state and type"""
@@ -514,9 +504,9 @@ echo "" >> /root/generic.out
                 'ERROR: Cannot find node with serviceNode=%s' % serviceNodeId)
 
         return HttpJsonResponse({
-            'serviceNode': { 
-                'id': serviceNode.id, 
-                'ip': serviceNode.ip, 
+            'serviceNode': {
+                'id': serviceNode.id,
+                'ip': serviceNode.ip,
                 'is_hub': self.__is_hub(serviceNode)
             }
         })
@@ -539,62 +529,60 @@ echo "" >> /root/generic.out
             cmp=(lambda x, y: cmp(x['time'], y['time'])), reverse=True)
         return HttpJsonResponse({'codeVersions': versions})
 
-    @expose('POST')                                                                                      
-    def enable_code(self, kwargs):                                                          
+    @expose('POST')
+    def enable_code(self, kwargs):
         codeVersionId = None
         if 'codeVersionId' in kwargs:
-            codeVersionId = kwargs.pop('codeVersionId')                                                  
-        config = self._configuration_get()                                                               
-        phpconf = {}                                                                                     
-                                                                                                         
-        if len(kwargs) != 0:                                                                             
-            return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_UNEXPECTED, kwargs.keys()).message)                                                                                                 
-                                                                                                         
-        if codeVersionId is None:                                                        
-            return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_MISSING, '"codeVersionId" is not specified').message)                                                                   
-                                                                                                         
-        if codeVersionId and codeVersionId not in config.codeVersions:                                   
-            return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_INVALID, detail='Unknown code version identifier "%s"' % codeVersionId).message)                                                    
-                                                                                                         
-        dstate = self._state_get()                                                                      
-        if dstate == self.S_INIT or dstate == self.S_STOPPED:                                            
-            if codeVersionId:                                                                            
-                config.currentCodeVersion = codeVersionId                                                
-            self._configuration_set(config)                                                              
-        elif dstate == self.S_RUNNING:                                                                   
-            self._state_set(self.S_ADAPTING, msg='Updating configuration')
-            Thread(target=self.do_enable_code, args=[config, codeVersionId]).start()   
-        else:                                                                                            
-            return HttpErrorResponse(ManagerException(ManagerException.E_STATE_ERROR).message)           
-        return HttpJsonResponse()                                                                        
+            codeVersionId = kwargs.pop('codeVersionId')
+        config = self._configuration_get()
+        phpconf = {}
 
-    def do_enable_code(self, config, codeVersionId):    
-        if codeVersionId is not None:                                     
-            self.prevCodeVersion = config.currentCodeVersion              
-            config.currentCodeVersion = codeVersionId                     
-            #self._update_code(config, self.nodes)       
+        if len(kwargs) != 0:
+            return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
+
+        if codeVersionId is None:
+            return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_MISSING, '"codeVersionId" is not specified').message)
+
+        if codeVersionId and codeVersionId not in config.codeVersions:
+            return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_INVALID, detail='Unknown code version identifier "%s"' % codeVersionId).message)
+
+        dstate = self._state_get()
+        if dstate == self.S_INIT or dstate == self.S_STOPPED:
+            if codeVersionId:
+                config.currentCodeVersion = codeVersionId
+            self._configuration_set(config)
+        elif dstate == self.S_RUNNING:
+            self._state_set(self.S_ADAPTING, msg='Updating configuration')
+            Thread(target=self.do_enable_code, args=[config, codeVersionId]).start()
+        else:
+            return HttpErrorResponse(ManagerException(ManagerException.E_STATE_ERROR).message)
+        return HttpJsonResponse()
+
+    def do_enable_code(self, config, codeVersionId):
+        if codeVersionId is not None:
+            self.prevCodeVersion = config.currentCodeVersion
+            config.currentCodeVersion = codeVersionId
+            #self._update_code(config, self.nodes)
         self._state_set(self.S_RUNNING)
-        self._configuration_set(config)                                   
+        self._configuration_set(config)
 
     def _update_code(self, config, agents_info, start_role='*'):
-        for agent in agents_info:                                                                        
-            # Push the current code version via GIT if necessary                                         
-            #if config.codeVersions[config.currentCodeVersion].type == 'git':                             
-            #    _, err = git.git_push(git.DEFAULT_CODE_REPO, agent['ip'])                             
-            #    if err:                                                                                  
-            #        self.logger.debug('git-push to %s: %s' % (agent['ip'], err))                      
+        for agent in agents_info:
+            # Push the current code version via GIT if necessary
+            #if config.codeVersions[config.currentCodeVersion].type == 'git':
+            #    _, err = git.git_push(git.DEFAULT_CODE_REPO, agent['ip'])
+            #    if err:
+            #        self.logger.debug('git-push to %s: %s' % (agent['ip'], err))
             if start_role == '*' or start_role == agent['role']:
-                try:               
+                try:
                     self.starters.append(agent)
-                    client.update_code(agent['ip'], 5555, config.currentCodeVersion,                    
-                                         config.codeVersions[config.currentCodeVersion].type,                
-                                         os.path.join(self.code_repo, config.currentCodeVersion))            
-                except client.AgentException:                                                                
-                    self.logger.exception('Failed to update code at node %s' % str(agent))             
+                    client.update_code(agent['ip'], 5555, config.currentCodeVersion,
+                                         config.codeVersions[config.currentCodeVersion].type,
+                                         os.path.join(self.code_repo, config.currentCodeVersion))
+                except client.AgentException:
+                    self.logger.exception('Failed to update code at node %s' % str(agent))
                     self._state_set(self.S_ERROR, msg='Failed to update code at node %s' % str(agent))
-                    raise                                                                                    
-                                                                                                         
-    
+                    raise
 
     def _configuration_get(self):
         return self.memcache.get(self.CONFIG)
