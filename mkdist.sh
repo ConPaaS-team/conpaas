@@ -1,5 +1,4 @@
 #!/bin/bash
-
 if [ -z "$1" ]
 then
     echo "Usage: $0 conpaas_version (eg: $0 1.1.0)"
@@ -15,11 +14,11 @@ cp -a conpaas-services/config/ conpaas-director/conpaas
 cp -a conpaas-services/scripts/ conpaas-director/conpaas
 
 # build PDF manual
-cd docs 
-make latexpdf 
-cp _build/latex/ConPaaS.pdf ../conpaas-director 
-make clean
-cd ..
+#cd docs 
+#make latexpdf 
+#cp _build/latex/ConPaaS.pdf ../conpaas-director 
+#make clean
+#cd ..
 
 # build conpaas archive and ship it with the director
 echo '###### build conpaas archive and ship it with the director'
@@ -62,12 +61,15 @@ tar cfz cpsfrontend-$CPSVERSION.tar.gz cpsfrontend-$CPSVERSION
 rm -rf cpsfrontend-$CPSVERSION
 
 # build cps-tools
-echo '###### build cps-tools'
-cd cps-tools
-sed -i "s/AC_INIT(\[cps-tools\], \[\(.*\)\]/AC_INIT(\[cps-tools\], \[$CPSVERSION\]/" configure.ac
-./configure && make dist
-mv cps-tools-$CPSVERSION.tar.gz ..
-cd ..
+# TODO(genc): generation of cps-tools tarball is currently commented due to the usage of python 2.6 on the director vm of the testbed
+# uncomment when upgrading to 2.7
+#echo '###### build cps-tools'
+#cd cps-tools
+#sed -i "s/AC_INIT(\[cps-tools\], \[\(.*\)\]/AC_INIT(\[cps-tools\], \[$CPSVERSION\]/" configure.ac
+#./configure && make dist
+#mv cps-tools-$CPSVERSION.tar.gz ..
+#cd ..
+
 
 for f in `find conpaas-{client,director,services/src}/dist -type f -name \*.tar.gz` 
 do 
