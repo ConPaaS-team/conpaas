@@ -569,6 +569,8 @@ echo "" >> /root/generic.out
             self.prevCodeVersion = config.currentCodeVersion
             config.currentCodeVersion = codeVersionId
             self._update_code(config, self.nodes)
+            # If a new code version is enabled, run the init.sh script again
+            self._init_agents(config, self.nodes, self.agents_info)
         self._state_set(self.S_RUNNING)
         self._configuration_set(config)
 
