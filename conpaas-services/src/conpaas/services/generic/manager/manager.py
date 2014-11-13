@@ -115,9 +115,8 @@ class GenericManager(BaseManager):
 
         self.nodes = []
         self.agents_info = []
-        self.starters = []
+        self.master_ip = None
         self._state_set(self.S_INIT)
-        #self.hub_ip = None
 
     @expose('POST')
     def startup(self, kwargs):
@@ -138,8 +137,7 @@ class GenericManager(BaseManager):
         return HttpJsonResponse({ 'state': self._state_get() })
 
     def _do_startup(self, kwargs):
-        """Start up the service. The first node will be an agent running a
-        Generic Hub and a Stem Node."""
+        """Start up the service. The first node will be the master node."""
 
         nr_instances = 1
 #        nr_instances = 0
@@ -171,6 +169,7 @@ class GenericManager(BaseManager):
             # Extend the nodes list with the newly created one
             self.nodes += nodes
             self.agents_info += agents_info
+            self.master_ip = nodes[0].ip
             self._state_set(self.S_RUNNING)
         except Exception, err:
             self.logger.exception('_do_startup: Failed to create agents: %s' % err)
@@ -221,12 +220,12 @@ class GenericManager(BaseManager):
         return HttpJsonResponse({ 'state': self._state_get() })
 
     def _do_run(self):
-        for starter in self.starters:
+        for node in self.nodes:
             try:
-                client.run(starter['ip'], 5555)
+                client.run(node.ip, 5555)
             except client.AgentException:
-                self.logger.exception('Failed to start run at node %s' % str(starter))
-                self._state_set(self.S_ERROR, msg='Failed to run code at node %s' % str(starter))
+                self.logger.exception('Failed to start run at node %s' % str(node))
+                self._state_set(self.S_ERROR, msg='Failed to run code at node %s' % str(node))
                 raise
 
     @expose('POST')
@@ -247,6 +246,7 @@ class GenericManager(BaseManager):
         self.controller.delete_nodes(self.nodes)
         self.nodes = []        # Not only delete the nodes, but clear the list too
         self.agents_info = []
+        self.master_ip = None
         self._state_set(self.S_STOPPED)
 
     def __check_count_in_args(self, kwargs):
@@ -310,7 +310,7 @@ class GenericManager(BaseManager):
 
             # Startup agents
             #for node in node_instances:
-            #    client.create_node(node.ip, self.AGENT_PORT, self.hub_ip)
+            #    client.create_node(node.ip, self.AGENT_PORT, self.master_ip)
             #config = self._configuration_get()
             #self._update_code(config, node_instances)
 
@@ -346,17 +346,21 @@ class GenericManager(BaseManager):
 
     def _do_remove_nodes(self, count):
         """Remove 'count' nodes, starting from the end of the list. This way
-        the Generic Hub gets removed last."""
+        the Generic master gets removed last."""
         for _ in range(count):
             node = self.nodes.pop()
             self.agents_info.pop()
             self.logger.info("Removing node with IP %s" % node.ip)
             self.controller.delete_nodes([ node ])
-        self._state_set(self.S_RUNNING)
+        if not self.nodes:
+            self.master_ip = None
+            self._state_set(self.S_STOPPED)
+        else:
+            self._state_set(self.S_RUNNING)
 
-    def __is_hub(self, node):
-        """Return True if the given node is the Generic Hub"""
-        return node.ip == self.hub_ip
+    def __is_master(self, node):
+        """Return True if the given node is the Generic master"""
+        return node.ip == self.master_ip
 
     @expose('GET')
     def list_nodes(self, kwargs):
@@ -366,14 +370,14 @@ class GenericManager(BaseManager):
             return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
 
         generic_nodes = [
-            node.id for node in self.nodes if not self.__is_hub(node)
+            node.id for node in self.nodes if not self.__is_master(node)
         ]
-        generic_hub = [
-            node.id for node in self.nodes if self.__is_hub(node)
+        generic_master = [
+            node.id for node in self.nodes if self.__is_master(node)
         ]
 
         return HttpJsonResponse({
-            'hub': generic_hub,
+            'master': generic_master,
             'node': generic_nodes
         })
 
@@ -509,7 +513,7 @@ echo "" >> /root/generic.out
             'serviceNode': {
                 'id': serviceNode.id,
                 'ip': serviceNode.ip,
-                'is_hub': self.__is_hub(serviceNode)
+                'is_master': self.__is_master(serviceNode)
             }
         })
 
@@ -572,12 +576,11 @@ echo "" >> /root/generic.out
         for node in nodes:
             # Push the current code version via GIT if necessary
             #if config.codeVersions[config.currentCodeVersion].type == 'git':
-            #    _, err = git.git_push(git.DEFAULT_CODE_REPO, node['ip'])
+            #    _, err = git.git_push(git.DEFAULT_CODE_REPO, node.ip)
             #    if err:
-            #        self.logger.debug('git-push to %s: %s' % (node['ip'], err))
+            #        self.logger.debug('git-push to %s: %s' % (node.ip, err))
             try:
-                self.starters.append(node)
-                client.update_code(node['ip'], 5555, config.currentCodeVersion,
+                client.update_code(node.ip, 5555, config.currentCodeVersion,
                                      config.codeVersions[config.currentCodeVersion].type,
                                      os.path.join(self.code_repo, config.currentCodeVersion))
             except client.AgentException:

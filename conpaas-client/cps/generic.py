@@ -3,30 +3,25 @@ import os
 
 from cps.base import BaseClient
 
-# TODO: as this file was created from a BLUEPRINT file,
-# 	you may want to change ports, paths and/or methods (e.g. for hub)
-#	to meet your specific service/server needs
-
 class Client(BaseClient):
 
     def info(self, service_id):
         service = BaseClient.info(self, service_id)
         
         nodes = self.callmanager(service['sid'], "list_nodes", False, {})
-        if 'hub' in nodes and nodes['hub']:
-            # Only one HUB
-            hub = nodes['hub'][0]
-            params = { 'serviceNodeId': hub }
+        if 'master' in nodes and nodes['master']:
+            # Only one master
+            master = nodes['master'][0]
+            params = { 'serviceNodeId': master }
             details = self.callmanager(service['sid'], "get_node_info", False, params)
-            print "hub url: ", "http://%s:4444" % details['serviceNode']['ip']
-            print "node url:", "http://%s:3306" % details['serviceNode']['ip']
+            print "master:", details['serviceNode']['ip']
 
         if 'node' in nodes:
             # Multiple nodes
             for node in nodes['node']:
                 params = { 'serviceNodeId': node }
                 details = self.callmanager(service['sid'], "get_node_info", False, params)
-                print "node url:", "http://%s:3306" % details['serviceNode']['ip']
+                print "node:", details['serviceNode']['ip']
 
     def usage(self, cmdname):
         BaseClient.usage(self, cmdname)
