@@ -351,7 +351,7 @@ class Controller(object):
         """Add a variable replacement to the variable replacements to apply to
            the context template for the default/given cloud.
 
-            @param replace A dictionary that specifies which words shoud be
+            @param replace A dictionary that specifies which words should be
                            replaced with what. For example:
                            replace = dict(name='A', age='57')
                            context1 =  '$name , $age'
