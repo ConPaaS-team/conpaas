@@ -275,18 +275,14 @@ class GenericManager(BaseManager):
             return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
 
         # Ensure 'count' is valid
-        #count_or_err = self.__check_count_in_args(kwargs)
-        #if isinstance(count_or_err, HttpErrorResponse):
-        #    return count_or_err
+        count_or_err = self.__check_count_in_args(kwargs)
+        if isinstance(count_or_err, HttpErrorResponse):
+            return count_or_err
 
-        if 'nodes' in kwargs:
-            nodes = kwargs['nodes']
-        else:
-            return HttpErrorResponse(self.REQUIRED_ARG_MSG % { 'arg': 'count' })
+        count = count_or_err
 
-        #TODO: sanitize
-        start_role = kwargs['start_role']
-        #count = count_or_err
+        start_role = 'node'
+        nodes = {start_role: str(count)}
 
         self._state_set(self.S_ADAPTING)
         Thread(target=self._do_add_nodes, args=[nodes, start_role]).start()
@@ -302,10 +298,13 @@ class GenericManager(BaseManager):
         if count:
             node_instances = self.controller.create_nodes(count,
                 client.check_agent_process, self.AGENT_PORT)
+            agents_info = self._update_agents_info(node_instances, nodes)
+
+            self.nodes += node_instances
+            self.agents_info += agents_info
 
             config = self._configuration_get()
-            agents_info = self._update_agents_info(node_instances, nodes)
-            self._init_agents(config, node_instances, agents_info)
+            self._init_agents(config, node_instances, self.agents_info)
             self._update_code(config, node_instances)
 
             # Startup agents
@@ -313,9 +312,6 @@ class GenericManager(BaseManager):
             #    client.create_node(node.ip, self.AGENT_PORT, self.master_ip)
             #config = self._configuration_get()
             #self._update_code(config, node_instances)
-
-            self.nodes += node_instances
-            self.agents_info += agents_info
 
         self._state_set(self.S_RUNNING)
 
