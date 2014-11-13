@@ -182,10 +182,11 @@ class GenericManager(BaseManager):
 
         id_ip_role = []
         for role in roles:
-            if len(id_ip):
-                node_ip_id = id_ip.pop()
-                node_ip_id.update({'role':role})
-                id_ip_role.append(node_ip_id)
+            for _ in range(int(roles[role])):
+                if len(id_ip):
+                    node_ip_id = id_ip.pop()
+                    node_ip_id.update({'role':role})
+                    id_ip_role.append(node_ip_id)
 
         return id_ip_role
 
