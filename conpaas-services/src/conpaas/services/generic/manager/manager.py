@@ -48,7 +48,7 @@ import time
 
 from conpaas.core.expose import expose
 from conpaas.core.controller import Controller
-from conpaas.core.manager import BaseManager
+from conpaas.core.manager import BaseManager, ManagerException
 
 from conpaas.core import git
 from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse, FileUploadField
