@@ -170,7 +170,7 @@ class GenericManager(BaseManager):
 
             # Extend the nodes list with the newly created one
             self.nodes += nodes
-            #self.agents_info += agents_info
+            self.agents_info += agents_info
             self._state_set(self.S_RUNNING)
         except Exception, err:
             self.logger.exception('_do_startup: Failed to create agents: %s' % err)
@@ -246,6 +246,7 @@ class GenericManager(BaseManager):
         """Delete all nodes and switch to status STOPPED"""
         self.controller.delete_nodes(self.nodes)
         self.nodes = []        # Not only delete the nodes, but clear the list too
+        self.agents_info = []
         self._state_set(self.S_STOPPED)
 
     def __check_count_in_args(self, kwargs):
@@ -313,8 +314,8 @@ class GenericManager(BaseManager):
             #config = self._configuration_get()
             #self._update_code(config, node_instances)
 
-            self.agents_info += agents_info
             self.nodes += node_instances
+            self.agents_info += agents_info
 
         self._state_set(self.S_RUNNING)
 
@@ -348,6 +349,7 @@ class GenericManager(BaseManager):
         the Generic Hub gets removed last."""
         for _ in range(count):
             node = self.nodes.pop()
+            self.agents_info.pop()
             self.logger.info("Removing node with IP %s" % node.ip)
             self.controller.delete_nodes([ node ])
         self._state_set(self.S_RUNNING)
