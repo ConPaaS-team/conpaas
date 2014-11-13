@@ -166,7 +166,7 @@ class GenericManager(BaseManager):
 
             self._init_agents(config, nodes, agents_info)
 
-            self._update_code(config, agents_info)
+            self._update_code(config, nodes)
 
             # Extend the nodes list with the newly created one
             self.nodes += nodes
@@ -206,7 +206,7 @@ class GenericManager(BaseManager):
         filepath = os.path.join(self.code_repo, config.currentCodeVersion)
         arch = archive_open(filepath)
 
-        archive_extract_file(arch, self.code_repo,'init.sh')
+        archive_extract_file(arch, self.code_repo, 'init.sh')
 
     @expose('POST')
     def run(self, kwargs):
@@ -305,7 +305,7 @@ class GenericManager(BaseManager):
             config = self._configuration_get()
             agents_info = self._update_agents_info(node_instances, nodes)
             self._init_agents(config, node_instances, agents_info)
-            self._update_code(config, agents_info, start_role)
+            self._update_code(config, node_instances)
 
             # Startup agents
             #for node in node_instances:
@@ -562,27 +562,26 @@ echo "" >> /root/generic.out
         if codeVersionId is not None:
             self.prevCodeVersion = config.currentCodeVersion
             config.currentCodeVersion = codeVersionId
-            #self._update_code(config, self.nodes)
+            self._update_code(config, self.nodes)
         self._state_set(self.S_RUNNING)
         self._configuration_set(config)
 
-    def _update_code(self, config, agents_info, start_role='*'):
-        for agent in agents_info:
+    def _update_code(self, config, nodes):
+        for node in nodes:
             # Push the current code version via GIT if necessary
             #if config.codeVersions[config.currentCodeVersion].type == 'git':
-            #    _, err = git.git_push(git.DEFAULT_CODE_REPO, agent['ip'])
+            #    _, err = git.git_push(git.DEFAULT_CODE_REPO, node['ip'])
             #    if err:
-            #        self.logger.debug('git-push to %s: %s' % (agent['ip'], err))
-            if start_role == '*' or start_role == agent['role']:
-                try:
-                    self.starters.append(agent)
-                    client.update_code(agent['ip'], 5555, config.currentCodeVersion,
-                                         config.codeVersions[config.currentCodeVersion].type,
-                                         os.path.join(self.code_repo, config.currentCodeVersion))
-                except client.AgentException:
-                    self.logger.exception('Failed to update code at node %s' % str(agent))
-                    self._state_set(self.S_ERROR, msg='Failed to update code at node %s' % str(agent))
-                    raise
+            #        self.logger.debug('git-push to %s: %s' % (node['ip'], err))
+            try:
+                self.starters.append(node)
+                client.update_code(node['ip'], 5555, config.currentCodeVersion,
+                                     config.codeVersions[config.currentCodeVersion].type,
+                                     os.path.join(self.code_repo, config.currentCodeVersion))
+            except client.AgentException:
+                self.logger.exception('Failed to update code at node %s' % str(node))
+                self._state_set(self.S_ERROR, msg='Failed to update code at node %s' % str(node))
+                raise
 
     def _configuration_get(self):
         return self.memcache.get(self.CONFIG)
