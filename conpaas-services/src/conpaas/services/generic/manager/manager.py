@@ -184,7 +184,7 @@ class GenericManager(BaseManager):
         for role in roles:
             for _ in range(int(roles[role])):
                 if len(id_ip):
-                    node_ip_id = id_ip.pop()
+                    node_ip_id = id_ip.pop(0)
                     node_ip_id.update({'role':role})
                     id_ip_role.append(node_ip_id)
 
