@@ -79,10 +79,11 @@ def create_node(host, port, hub_ip):
     params = { 'my_ip': host, 'hub_ip': hub_ip }
     return _check(https.client.jsonrpc_post(host, port, '/', method, params))
 
-def run(host, port):
-    """POST run"""
+def run(host, port, agents_info):
+    """POST (agents_info) run"""
     method = 'run'
-    return _check(https.client.jsonrpc_post(host, port, '/', method))
+    params = { 'agents_info': json.dumps(agents_info) }
+    return _check(https.client.jsonrpc_post(host, port, '/', method, params))
 
 def update_code(host, port, codeVersionId, filetype, filepath):                   
     params = {                                                                      

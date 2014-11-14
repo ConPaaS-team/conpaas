@@ -216,14 +216,14 @@ class GenericManager(BaseManager):
             return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
 
         #self._state_set(self.S_EPILOGUE)
-        Thread(target=self._do_run, args=[]).start()
+        Thread(target=self._do_run, args=[self.agents_info]).start()
 
         return HttpJsonResponse({ 'state': self._state_get() })
 
-    def _do_run(self):
+    def _do_run(self, agents_info):
         for node in self.nodes:
             try:
-                client.run(node.ip, 5555)
+                client.run(node.ip, 5555, agents_info)
             except client.AgentException:
                 self.logger.exception('Failed to start run at node %s' % str(node))
                 self._state_set(self.S_ERROR, msg='Failed to run code at node %s' % str(node))

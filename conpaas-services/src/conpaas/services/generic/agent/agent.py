@@ -235,7 +235,14 @@ class GenericAgent(BaseAgent):
 
     @expose('POST')
     def run(self, kwargs):
-        
+
+        agents_info = simplejson.loads(kwargs.pop('agents_info'))
+
+        target_dir = self.VAR_CACHE
+        with open(join(target_dir, 'agents.json'), 'w') as outfile:
+            simplejson.dump(agents_info, outfile)
+
+
         startpath = join(self.VAR_CACHE, 'bin', 'start.sh')
         start_args = [ "bash",  startpath ]
         
