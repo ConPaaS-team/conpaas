@@ -393,7 +393,7 @@ class GenericManager(BaseManager):
 
         fileno, path = tempfile.mkstemp()
         fd = os.fdopen(fileno, 'w')
-        fd.write('''#/bin/bash
+        fd.write('''#!/bin/bash
 echo "Initializing Generic Service!" >> /root/generic.out
 echo "My IP is $MY_IP" >> /root/generic.out
 echo "My role is $MY_ROLE" >> /root/generic.out
@@ -408,7 +408,7 @@ echo "" >> /root/generic.out
 
         fileno, path = tempfile.mkstemp()
         fd = os.fdopen(fileno, 'w')
-        fd.write('''#/bin/bash
+        fd.write('''#!/bin/bash
 echo "Starting Generic Service!" >> /root/generic.out
 echo "My IP is $MY_IP" >> /root/generic.out
 echo "My role is $MY_ROLE" >> /root/generic.out
