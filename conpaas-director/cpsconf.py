@@ -144,9 +144,9 @@ conf += """
 
 try:
     config_path = '/etc/apache2/sites-available/conpaas-director'
-    if version >= 2.4:
+    if StrictVersion(version) >= StrictVersion('2.4'):
         config_path += ".conf" 
-        open(config_path, 'w').write(conf)
+    open(config_path, 'w').write(conf)
 except IOError:
     print "W: Cannot write Apache config file. Are you root?"
     sys.exit(0)
