@@ -14,6 +14,7 @@ import subprocess
 
 from urlparse import urlparse
 from distutils.spawn import find_executable
+from distutils.version import StrictVersion
 
 CERT_DIR = common.config_parser.get('conpaas', 'CERT_DIR')
 
@@ -91,12 +92,13 @@ conf_values = {
 }
 
 apache2_info = subprocess.check_output(["apache2", "-v"])
-match = re.search(r'\d\.\d\.\d', apache2_info)
+match = re.search(r'Apache/(\d+\.\d+\.\d+)', apache2_info)
 if match:
-    digits = match.group().split(".")
-    version = '.'.join(digits[:2])
+    version = match.group(1)
+else:
+    version = '2.4'
 
-if version >= 2.4:
+if StrictVersion(version) >= StrictVersion('2.4'):
     access_control = """
         Require all granted"""
 else:
