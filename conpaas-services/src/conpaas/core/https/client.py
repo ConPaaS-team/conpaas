@@ -368,7 +368,8 @@ def _encode_multipart_formdata(params, files):
                 % (key, filename.encode('ascii')))
         L.append('Content-Type: %s' % _get_content_type(filename))
         L.append('')
-        L.append(value.encode('ascii'))
+        # L.append(value.encode('ascii'))
+        L.append(value)
     L.append('--' + BOUNDARY + '--')
     L.append('')
 
