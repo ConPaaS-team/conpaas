@@ -196,9 +196,9 @@ class GenericManager(BaseManager):
             
             #this was when init was executed before ssending the rest of the code  
             #self._init_agents()
-            insances = self._conv_res_to_instance(configuration)
-            self._update_code(self.nodes)
-            self._init_agents(insances, args)
+            self.instances = self._conv_res_to_instance(configuration)
+            self._update_code()
+            self._init_agents(args)
 
             ## Extend the nodes list with the newly created one
             #self.nodes += nodes
@@ -253,16 +253,17 @@ class GenericManager(BaseManager):
         return out
 
 
-    def _init_agents(self, insances, args=None):
-        for node in self.nodes:                                                                        
-            try:                                           
-                #initpath = os.path.join(self.code_repo, 'init.sh')                                              
-                #client.init_agent(node['IP'], 5555, initpath, self.nodes)            
-                client.init_agent(node['Address'], 5555, insances, args)            
-            except client.AgentException:                                                                
-                self.logger.exception('Failed initialize agent at node %s' % str(node))             
-                self._state_set(self.S_ERROR, msg='Failed to initialize agent at node %s' % str(node))
-                raise        
+    def _init_agents(self, args=None):
+        for instance in self.instances['Instances']: 
+            if instance['Type'] == 'Machine':
+                try:                                           
+                    #initpath = os.path.join(self.code_repo, 'init.sh')                                              
+                    #client.init_agent(node['IP'], 5555, initpath, self.nodes)            
+                    client.init_agent(instance['Address'], 5555, self.instances, args)            
+                except client.AgentException:                                                                
+                    self.logger.exception('Failed initialize agent at node %s' % str(instance))             
+                    self._state_set(self.S_ERROR, msg='Failed to initialize agent at node %s' % str(instance))
+                    raise        
 
     # def _init_agents(self):
     #     self._extract_init()
@@ -561,11 +562,11 @@ echo "" >> /root/generic.out
         self.logger.info("upload is an instance of %s" % upload)
 
         bytes = upload.read(2048)
-        self.logger.info("byte has len: %s" % len(bytes))
+        # self.logger.info("byte has len: %s" % len(bytes))
         while len(bytes) != 0:
             fd.write(bytes)
             bytes = upload.read(2048)
-            self.logger.info("byte has len: %s" % len(bytes))
+            # self.logger.info("byte has len: %s" % len(bytes))
         fd.close()
 
         arch = archive_open(name)
@@ -708,17 +709,19 @@ echo "" >> /root/generic.out
     #                 self._state_set(self.S_ERROR, msg='Failed to update code at node %s' % str(node))
     #                 raise                                                                                    
                                                                                                          
-    def _update_code(self, nodes):                                                               
+    def _update_code(self):                                                               
         config = self._configuration_get()
-        for node in  nodes:                                                                        
-            try:               
-                client.update_code(node['Address'], 5555, config.currentCodeVersion,                    
-                                     config.codeVersions[config.currentCodeVersion].type,                
-                                     os.path.join(self.code_repo, config.currentCodeVersion))            
-            except client.AgentException:                                                                
-                self.logger.exception('Failed to update code at node %s' % str(node))             
-                self._state_set(self.S_ERROR, msg='Failed to update code at node %s' % str(node))
-                raise                                                                                    
+        self.logger.debug('on update nodes: %s' % (self.instances))
+        for instance in  self.instances['Instances']:                                                                        
+            if instance['Type'] == 'Machine':
+                try:               
+                    client.update_code(instance['Address'], 5555, config.currentCodeVersion,                    
+                                            config.codeVersions[config.currentCodeVersion].type,                
+                                            os.path.join(self.code_repo, config.currentCodeVersion))            
+                except client.AgentException:                                                                
+                    self.logger.exception('Failed to update code at node %s' % str(instance))             
+                    self._state_set(self.S_ERROR, msg='Failed to update code at node %s' % str(instance))
+                    raise                                                                                    
 
     def _configuration_get(self):
         return self.memcache.get(self.CONFIG)

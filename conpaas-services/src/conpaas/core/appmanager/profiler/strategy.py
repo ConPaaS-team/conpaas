@@ -39,17 +39,17 @@ class BaseStrategy:
         # print "\n ~ ResModel ~"
         str(self.ResModel)
 
-        # print "\n ~ Mapping for variables ~"
-        # print self.ResVarMap, "\n"
+        print "\n ~ Mapping for variables ~"
+        print self.ResVarMap, "\n"
 
         self.generate_arguments_model()
-        # print "\n ~ ArgModel ~"
+        print "\n ~ ArgModel ~"
         str(self.ArgModel)
 
-        # print "\n ~ Order ~"
+        print "\n ~ Order ~"
         self.VarOrder = self.ResModel.get_keys()
-        # print self.VarOrder
-        # print "\n =====\n"
+        print self.VarOrder
+        print "\n =====\n"
         
 
     def generate_resource_model(self):
@@ -223,6 +223,7 @@ class BaseStrategy:
     def assign_keys(self, values):
         """Isolate variable names of their values such that we apply mathematical methods on vectors and remap them back later 
         to the names"""
+        print "in assign keys values: %s, varOrder: %s" % (values, self.VarOrder)
         variables = {}
         for i in range(len(self.VarOrder)):
             key = self.VarOrder[i]
@@ -244,6 +245,7 @@ class SimulatedAnnealingStrategy(BaseStrategy):
                         )#, schedule = "boltzmann")#"fast") #default = fast   
         
         # self.execute([0,0])
+        # self.execute([0,0,0])
         print "\n\nStrategy Done!\n"
         print "Num iterations :", len(self.EXPERIMENTS)
         # print solution

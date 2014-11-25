@@ -148,9 +148,14 @@ class Controller(object):
         if status['Ready']:
             iteration = 0
             nr_not_started = len(status['Instances'])
+
             while True:
                 for node in status['Instances']:
-                    if self.__check_node(node, test_managent, port):
+                    isvm = False
+                    for res in reservation['Resources']:
+                        if res['GroupID'] == node['GroupID']:
+                            isvm = res['Type'] == 'Machine'
+                    if isvm and self.__check_node(node, test_managent, port):
                         nr_not_started -= 1
 
                 if nr_not_started == 0 or iteration >= max_iteration:
