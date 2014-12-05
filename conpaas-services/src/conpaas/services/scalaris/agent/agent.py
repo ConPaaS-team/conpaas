@@ -52,6 +52,7 @@ class ScalarisAgent(BaseAgent):
       known_hosts = ""
       mgmt_server = ""
       my_erlang_addr = self.ip.replace('.', ',')
+
       if self.first_node == 'true':
           flags = '-f -m -s'
           known_hosts = '[{{' + my_erlang_addr + '}, 14195, service_per_vm}]'
@@ -60,10 +61,20 @@ class ScalarisAgent(BaseAgent):
           flags = '-s'
           known_hosts = self.known_hosts
           mgmt_server = self.mgmt_server
+
+      # if the node is the first node in the cloud group it joins at an specific id
+      join_at = ""
+      if kwargs.get('is_firstnode'):
+          key = {0: 3, 1: 7, 2: 'B', 3: 'F'}[kwargs.get('cloud_group')]  # translate cloud_group to key for the id
+          node_id = "16#" + str(key) + "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
+          join_at = ' -k ' + node_id + ' '
+
+
       self.logger.info('writing config')
-      self._write_config(known_hosts, mgmt_server)
+      self._write_config(known_hosts, mgmt_server, kwargs.pop('cloud_group'))
       dist_erlang_port = ' -e "-kernel inet_dist_listen_min 14194 inet_dist_listen_max 14194"'
-      cmd_wo_d = 'sudo -u scalaris /usr/bin/scalarisctl -n node@' + self.ip + ' -p 14195 -y 8000 ' + flags + dist_erlang_port + ' start'
+      cmd_wo_d = 'sudo -u scalaris /usr/bin/scalarisctl -n node@' + self.ip + ' -p 14195 -y 8000 ' + join_at + flags + dist_erlang_port + ' start'
+      self.logger.info('Starting Scalaris node with: %s' % cmd_wo_d)
       (stdout, stderr) = subprocess.Popen(["screen", "-d", "-m", "/bin/bash", "-v", "-c", cmd_wo_d], \
                                           stdout=subprocess.PIPE).communicate()
       self.logger.info('Started scalaris: %s; %s', stdout, stderr)
@@ -79,12 +90,14 @@ class ScalarisAgent(BaseAgent):
       self.logger.info('called shutdownVM %s', res)
       return HttpJsonResponse(res)
 
-    def _write_config(self, known_hosts, mgmt_server):
+    def _write_config(self, known_hosts, mgmt_server, cloud_group):
         tmpl = open(self.config_template).read()
         conf_fd = open(self.config_file, 'w')
+        key = {0: 0, 1: 4, 2: 8, 3: 'C'}[cloud_group]  # translate cloud_group to key for the bitmask
         template = Template(tmpl, {
                 'known_hosts'      : known_hosts,
                 'mgmt_server'      : mgmt_server,
+                'key'              : key,
                 })
         conf_fd.write(str(template))
         conf_fd.close()
