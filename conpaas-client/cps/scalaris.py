@@ -17,7 +17,8 @@ class Client(BaseClient):
 
     def usage(self, cmdname):
         BaseClient.usage(self, cmdname)
-        print "    add_nodes         serviceid count [cloud] # add the specified number of scalaris nodes"
+        print "    add_nodes         serviceid count [cloud] # add the specified number of scalaris nodes."
+        print "                                              # Set \'cloud\' to \'auto\' to automatically place nodes across multiple clouds."
         print "    remove_nodes      serviceid count [cloud] # remove the specified number of scalaris nodes"
         print "    list_nodes        serviceid               # list all nodes"
         print "    get_node_info     serviceid nodeid        # get information about the specified node"
@@ -35,15 +36,20 @@ class Client(BaseClient):
 
             self.check_service_id(sid)
 
-        if command in ( 'add_nodes', 'remove_nodes' ):
+        if command in ('add_nodes', 'remove_nodes'):
             try:
                 params = {'scalaris' : int(argv[3])}
             except (IndexError, ValueError):
                 print_usage_and_exit(argv[0])
 
             if len(argv) == 4:
+                params['auto_placement'] = True
+                params['cloud'] = 'default'
+            elif argv[4] == 'auto':
+                params['auto_placement'] = True
                 params['cloud'] = 'default'
             else:
+                params['auto_placement'] = False
                 params['cloud'] = argv[4]
 
             res = self.callmanager(sid, command, True, params)
