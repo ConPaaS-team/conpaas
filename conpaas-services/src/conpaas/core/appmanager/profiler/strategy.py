@@ -244,7 +244,7 @@ class SimulatedAnnealingStrategy(BaseStrategy):
                         T0 = 100, maxeval = 5, dwell = 1
                         )#, schedule = "boltzmann")#"fast") #default = fast   
         
-        # self.execute([0,0])
+#        self.execute([0]*len(self.VarOrder))
         # self.execute([0,0,0])
         print "\n\nStrategy Done!\n"
         print "Num iterations :", len(self.EXPERIMENTS)
