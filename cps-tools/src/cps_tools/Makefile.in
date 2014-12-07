@@ -180,6 +180,7 @@ dist_cpstools_PYTHON = \
 	user.py \
 	xtreemfs.py \
 	helloworld.py \
+	generic.py \
 	web.py
 
 cpstoolsdir = $(pythondir)/cps_tools

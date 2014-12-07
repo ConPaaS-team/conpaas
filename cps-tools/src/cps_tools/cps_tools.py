@@ -27,6 +27,7 @@ from .selenium import SeleniumCmd
 from .taskfarm import TaskFarmCmd
 from .xtreemfs import XtreemFSCmd
 from .helloworld import HelloWorldCmd
+from .generic import GenericCmd
 
 CONF_FILE = "cps-tools.conf"
 
@@ -79,6 +80,7 @@ def main():
     add_sub_command('taskfarm', "manage TaskFarm services", TaskFarmCmd)
     add_sub_command('xtreemfs', "manage XtreemFS services", XtreemFSCmd)
     add_sub_command('helloworld', "manage HelloWorld services", HelloWorldCmd)
+    add_sub_command('generic', "manage Generic services", GenericCmd)
 
     _help_cmd = HelpCmd(subparsers, parser)
 
