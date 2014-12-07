@@ -96,7 +96,7 @@ class WebCmd(ServiceCmd):
             self.client.error("Cannot list code versions: %s" % res['error'])
 
         for code in res['codeVersions']:
-            current = "*" if 'current' in res else ""
+            current = "*" if 'current' in code else ""
             print " %s %s: %s \"%s\"" % (current, code['codeVersionId'],
                                          code['filename'], code['description'])
 
