@@ -51,6 +51,9 @@ class ServiceFactory {
 			case 'htc':
 				require_module('service/htc');
 				return new HTCService($service_data, $manager);
+			case 'generic':
+				require_module('service/generic');
+				return new GenericService($service_data, $manager);
 /* BLUE_PRINT_INSERT		do not remove this line: it is a placeholder for installing new services */
 			default:
                                 throw new Exception('ServiceFactory: Unknown service type "' . $type . '"');

@@ -93,6 +93,11 @@ $page = new CreatePage();
                   <td class="radio"><input type="radio" name="type" value="selenium" /> selenium</td>
                   <td class="info"> Selenium functional testing service </td>
               </tr>
+              <tr class="service">
+                  <td class="description"> <img src="images/generic.png" height="32" /></td>
+                  <td class="radio"><input type="radio" name="type" value="generic" /> generic</td>
+                  <td class="info"> Generic service </td>
+              </tr>
 <!--
               <tr class="service">
                   <td class="description"> <img src="images/cds.png" height="32" /></td>

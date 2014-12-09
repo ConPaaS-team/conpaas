@@ -44,6 +44,9 @@ class PageFactory {
 			case 'htc':
 				require_module('ui/page/htc');
 				return new HTCPage($service);
+			case 'generic':
+				require_module('ui/page/generic');
+				return new GenericPage($service);
 /* BLUE_PRINT_INSERT		do not remove this line: it is a placeholder for installing new services */
 			default:
                                 throw new Exception('PageFactory: Unknown service type "' . $type . '"');
