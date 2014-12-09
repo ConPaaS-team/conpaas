@@ -5,8 +5,8 @@
 """
 
 from threading import Thread
-from random import choice
 from Queue import Queue
+from cloudgroups import CloudGroups
 
 from conpaas.core.expose import expose
 from conpaas.core.manager import BaseManager
@@ -26,7 +26,8 @@ class ScalarisManager(BaseManager):
         # Setup the clouds' controller
         self.controller.generate_context('scalaris')
         self.cloud_groups = CloudGroups(self.controller.get_clouds())
-        self.logger.info('Cloud-Groups: %s', self.cloud_groups.number_to_name)
+        self.logger.info('Cloud-Groups: %s', self.cloud_groups.get_groups())
+
 
     def _do_startup(self, cloud):
         ''' Starts up the service. At least one node should be running scalaris
@@ -35,19 +36,13 @@ class ScalarisManager(BaseManager):
         startCloud = self._init_cloud(cloud)
         try:
             self.controller.add_context_replacement(self.context, startCloud)
-            instance = self.controller.create_nodes(1, \
-                                                    client.check_agent_process, 5555, startCloud)
+            instance = self.controller.create_nodes(1, client.check_agent_process, 5555, startCloud)
             self.nodes += instance
             self.logger.info('Created node: %s', instance[0])
-
             cloud_number = self.cloud_groups.number(cloud)
-            is_firstnode = self.cloud_groups.is_firstnode(cloud)
-            client.startup(instance[0].ip, 5555, instance[0].ip, cloud_number, is_firstnode)
-
-            # increment iterator, so the next node is not started in the same cloud group in case of auto-placement
-            self.cloud_groups.next()
-
-            self.logger.info('Started node %s in cloud %s (cloud group %s)', instance[0], cloud, cloud_number)
+            self.cloud_groups.added_node(cloud)
+            client.startup(instance[0].ip, 5555, instance[0].ip, cloud_number, self.cloud_groups.first_in_group(cloud))
+            self.logger.info('Started node %s in cloud %s (cloud group: %s)', instance[0].id, cloud, cloud_number)
             self.context['FIRST'] = 'false'
             self.context['MGMT_SERVER'] = self._render_node(instance[0], 'mgmt_server')
             self.logger.info('Finished first node')
@@ -86,7 +81,7 @@ class ScalarisManager(BaseManager):
         # create at least one node
         if count < 1:
             return HttpErrorResponse('ERROR: Expected a positive integer value for "count"')
-        if kwargs['cloud'] not in self.cloud_groups.clouds:
+        if kwargs['cloud'] not in self.cloud_groups.get_clouds():
             return HttpErrorResponse("A cloud named '%s' could not be found" % kwargs['cloud'])
         self.state = self.S_ADAPTING
         Thread(target=self._do_add_nodes, args=[count, kwargs['cloud'], kwargs.get('auto_placement', False)]).start()
@@ -104,6 +99,7 @@ class ScalarisManager(BaseManager):
                 count = 1
             else:
                 queue = Queue(maxsize=1)
+                self.cloud_groups.added_node(cloud, count)
                 self._do_create_node(cloud, queue, count)
 
             # wait for the completion of the node creation
@@ -115,11 +111,11 @@ class ScalarisManager(BaseManager):
             for (nodes, cloud) in node_instances:
                 for node in nodes:
                     cloud_group = self.cloud_groups.number(cloud)
-                    firstnode = self.cloud_groups.is_firstnode(cloud)
+                    first_in_group = self.cloud_groups.first_in_group(cloud)
                     self.nodes.append(node)
-                    client.startup(node.ip, 5555, node.ip, cloud_group, firstnode)
-                    self.logger.info('Started node %s on cloud %s (cloud group %s)', count, cloud, cloud_group)
-                    self.logger.info('Node was first node in cloud group: %s', firstnode)
+                    client.startup(node.ip, 5555, node.ip, cloud_group, first_in_group)
+                    self.logger.info('Started node %s on cloud %s (cloud group: %s)', node.id, cloud, cloud_group)
+                    self.logger.info('%s was first node in cloud group: %s', node.id, first_in_group)
             self.state = self.S_RUNNING
 
 
@@ -233,64 +229,6 @@ class ScalarisManager(BaseManager):
                 self.controller.delete_nodes([node])
             self.state = self.S_RUNNING
             return HttpJsonResponse()
-
-
-# multicloud datastructure (implements iterator protocol)
-class CloudGroups():
-    def __init__(self, clouds):
-        self.counter = 0
-
-        if len(clouds) < 4:
-            self.no_of_cloudsgroups = len(clouds)
-        elif len(clouds) >= 4:
-            self.no_of_cloudsgroups = 4
-
-        # build the internal datastructures:
-        #   number_to_names: maps the cloud group numbers (0,1,2,3) to the cloud names
-        #   names_to_numbers: maps the name of a cloud to its cloud group number
-        self.name_to_number = {}
-        number_to_name = [[], [], [], []]
-        self.clouds = []
-        for index, cloud in enumerate(clouds):
-            cloud_name = cloud.get_cloud_name()
-            self.name_to_number[cloud_name] = index % self.no_of_cloudsgroups
-            number_to_name[index % self.no_of_cloudsgroups].append(cloud_name)
-            self.clouds.append(cloud_name)
-        self.number_to_name = tuple(number_to_name)
-
-        # add 'default' as an alias to 'iaas'
-        #todo: use controller.__default_cloud (would need accessor for __default_cloud)?
-        self.name_to_number['default'] = self.name_to_number['iaas']
-        self.clouds.append('default')
-
-        # track if a cloud group already has a node started within the cloud group
-        self.firstnode = {0: True, 1: True, 2: True, 3: True}
-
-
-    def __iter__(self):
-        return self
-
-    # cycling iterator, returns a cloud name of the next cloud group
-    # (if a group contains multiple names a random name is returned)
-    def next(self):
-        cloud = choice(self.number_to_name[self.counter])
-        self.counter = (self.counter + 1) % self.no_of_cloudsgroups
-        return cloud
-
-    # returns the cloud group number for a given cloud name
-    def number(self, cloud):
-        return self.name_to_number[cloud]
-
-    # returns true, if the cloud group for the given cloud is empty,
-    # i.e. if the node to be added is the first node in the cloud group)
-    def is_firstnode(self, cloud):
-
-        number = self.name_to_number[cloud]
-        if self.firstnode[number]:
-            self.firstnode[number] = False
-            return True
-        else:
-            return False
 
 
 
