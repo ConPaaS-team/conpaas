@@ -51,7 +51,8 @@ from conpaas.core.controller import Controller
 from conpaas.core.manager import BaseManager, ManagerException
 
 from conpaas.core import git
-from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse, FileUploadField
+from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse,\
+    HttpFileDownloadResponse, FileUploadField
 from conpaas.services.generic.misc import archive_open, archive_get_members, archive_close, archive_get_type, archive_extract_file
 
 from conpaas.core.log import create_logger
@@ -426,6 +427,36 @@ echo "" >> /root/generic.out
         config.codeVersions['code-default'] = CodeVersion('code-default', 'code-default.tar', 'tar', description='Initial version')
         config.currentCodeVersion = 'code-default'
         self._configuration_set(config)
+
+    @expose('GET')
+    def download_code_version(self, kwargs):
+        if 'codeVersionId' not in kwargs:
+            ex = ManagerException(ManagerException.E_ARGS_MISSING,
+                                  'codeVersionId')
+            return HttpErrorResponse(ex.message)
+        if isinstance(kwargs['codeVersionId'], dict):
+            ex = ManagerException(ManagerException.E_ARGS_INVALID,
+                                  detail='codeVersionId should be a string')
+            return HttpErrorResponse(ex.message)
+        codeVersion = kwargs.pop('codeVersionId')
+        if len(kwargs) != 0:
+            ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
+                                  kwargs.keys())
+            return HttpErrorResponse(ex.message)
+
+        config = self._configuration_get()
+
+        if codeVersion not in config.codeVersions:
+            ex = ManagerException(ManagerException.E_ARGS_INVALID,
+                                  detail='Invalid codeVersionId')
+            return HttpErrorResponse(ex.message)
+
+        filename = os.path.abspath(os.path.join(self.code_repo, codeVersion))
+        if not filename.startswith(self.code_repo + '/') or not os.path.exists(filename):
+            ex = ManagerException(ManagerException.E_ARGS_INVALID,
+                                  detail='Invalid codeVersionId')
+            return HttpErrorResponse(ex.message)
+        return HttpFileDownloadResponse(config.codeVersions[codeVersion].filename, filename)
 
     @expose('UPLOAD')
     def upload_code_version(self, kwargs):

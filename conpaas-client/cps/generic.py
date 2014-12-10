@@ -29,13 +29,15 @@ class Client(BaseClient):
         print "    remove_nodes      serviceid count"
         print "    upload_code       serviceid filename  # upload a new code version"
         print "    list_uploads      serviceid           # list uploaded code versions"
+        print "    download_code     serviceid version   # download a specific code version"
         print "    enable_code       serviceid version   # set a specific code version active"
         print "    run               serviceid           # deploy the application"
 
     def main(self, argv):
         command = argv[1]
    
-        if command in ( 'add_nodes', 'remove_nodes', 'upload_code', 'list_uploads', 'enable_code', 'run' ): 
+        if command in ( 'add_nodes', 'remove_nodes', 'upload_code', 'list_uploads',
+                        'download_code', 'enable_code', 'run' ):
             try:                                                      
                 sid = int(argv[2])                                    
             except (IndexError, ValueError):                          
@@ -86,7 +88,7 @@ class Client(BaseClient):
             data = [ add_cur(el) for el in res['codeVersions'] ]                                   
             print self.prettytable(( 'current', 'codeVersionId', 'filename', 'description' ), data)
         
-        if command == 'enable_code':
+        if command in ( 'enable_code', 'download_code' ):
             try:                                         
                 code_version = argv[3]                   
             except IndexError:                           
@@ -106,6 +108,21 @@ class Client(BaseClient):
             print res['error']
         else:
             print "Code version %(codeVersionId)s uploaded" % res
+
+
+    def download_code(self, service_id, version):
+        params = { 'codeVersionId': version }
+
+        res = self.callmanager(service_id, "download_code_version",
+            False, params)
+
+        if 'error' in res:
+            print res['error']
+
+        else:
+            destfile = os.path.join(os.getenv('TMPDIR', '/tmp'), version) + '.tar.gz'
+            open(destfile, 'w').write(res)
+            print destfile, 'written'
 
 
     def enable_code(self, service_id, code_version):

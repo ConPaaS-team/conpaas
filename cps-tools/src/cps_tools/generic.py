@@ -10,6 +10,7 @@ class GenericCmd(ServiceCmd):
                             ['count'], "Generic service sub-commands help")
         self._add_upload_code()
         self._add_list_uploads()
+        self._add_download_code()
         self._add_enable_code()
         self._add_run()
 
@@ -61,6 +62,32 @@ class GenericCmd(ServiceCmd):
             current = "*" if 'current' in code else ""
             print " %s %s: %s \"%s\"" % (current, code['codeVersionId'],
                                          code['filename'], code['description'])
+
+    # ========== download_code
+    def _add_download_code(self):
+        subparser = self.add_parser('download_code',
+                                    help="download code from Generic service")
+        subparser.set_defaults(run_cmd=self.download_code, parser=subparser)
+        subparser.add_argument('serv_name_or_id',
+                               help="Name or identifier of a service")
+        # TODO: make version optional to retrieve the last version by default
+        subparser.add_argument('version',
+                               help="Version of code to download")
+
+    def download_code(self, args):
+        service_id = self.get_service_id(args.serv_name_or_id)
+        params = {'codeVersionId': args.version}
+
+        res = self.client.call_manager_get(service_id, "download_code_version",
+                                           params)
+
+        if 'error' in res:
+            self.client.error("Cannot download code: %s" % res['error'])
+
+        else:
+            destfile = os.path.join(os.getenv('TMPDIR', '/tmp'), args.version) + '.tar.gz'
+            open(destfile, 'w').write(res)
+            print destfile, 'written'
 
     # ========== enable_code
     def _add_enable_code(self):
