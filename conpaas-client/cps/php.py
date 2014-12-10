@@ -99,6 +99,3 @@ class Client(WebClient):
 
         elif command == 'off_autoscaling':
             self.off_autoscaling(sid)
-
-        else:
-            print "Error: unknown sub-command '%s'." % command
