@@ -102,7 +102,7 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
         for i in range(len(self.manifest.Modules)):
             info[self.manifest.Modules[i].ModuleType] = self.module_managers[i].get_info()
         
-        return HttpJsonResponse({'servinfo':info, 'execinfo': self.execinfo})    
+        return HttpJsonResponse({'servinfo':info, 'execinfo': self.execinfo, 'frontend':self.frontend})    
 
     @expose('UPLOAD')
     def upload_profile(self, kwargs):
@@ -153,7 +153,7 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
         #for now we use only one module, has to be updated when using multiple modules
         module_manager = self.module_managers[0]
         print "execute_application: reserv: %s, args: %s" % (reservation, args)
-        module_manager._do_startup(self.cloud, reservation, args)
+        self.frontend = module_manager._do_startup(self.cloud, reservation, args)
         
         "Execute implementation"
         start_time = time.time()
@@ -166,7 +166,7 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
         #debug if (delete when done)
         # if execution_time > 2:
         # Thread(target=module_manager.controller.release_reservation, args=[reservation['ConfigID']]).start()
-        module_manager.controller.release_reservation(reservation['ConfigID'])
+        # module_manager.controller.release_reservation(reservation['ConfigID'])
 
         # return round(execution_time, 4), round(total_cost, 4)
         return execution_time, total_cost

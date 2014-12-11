@@ -236,15 +236,15 @@ class SimulatedAnnealingStrategy(BaseStrategy):
         
     def explore(self):
         print "\n ~ Running Simulated Annealing ~ "
-        result = anneal(
-                        self.execute,# self.simulate
-                        [0]*len(self.VarOrder), 
-                        lower = float(self.ResModel.Interval[0]), 
-                        upper = float(self.ResModel.Interval[1]),
-                        T0 = 100, maxeval = 5, dwell = 1
-                        )#, schedule = "boltzmann")#"fast") #default = fast   
+        # result = anneal(
+        #                 self.execute,# self.simulate
+        #                 [0]*len(self.VarOrder), 
+        #                 lower = float(self.ResModel.Interval[0]), 
+        #                 upper = float(self.ResModel.Interval[1]),
+        #                 T0 = 100, maxeval = 5, dwell = 1
+        #                 )#, schedule = "boltzmann")#"fast") #default = fast   
         
-#        self.execute([0]*len(self.VarOrder))
+        self.execute([0]*len(self.VarOrder))
         # self.execute([0,0,0])
         print "\n\nStrategy Done!\n"
         print "Num iterations :", len(self.EXPERIMENTS)

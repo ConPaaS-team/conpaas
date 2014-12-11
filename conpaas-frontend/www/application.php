@@ -102,11 +102,11 @@ $services = ServiceData::getServicesByUser($page->getUID(), $_SESSION['aid']);
 		<tr>
 			<td rowspan="3" valign="top" ><textarea id="txtSlo"  style="width:600px; height:250px; background-color:#fffdf6; border: 1px solid"></textarea> </td>
 			<td valign="top" align="right" style="height:40px; padding-top:10px">
-				<a id="upslofile" class="button small" href="#"><!--img src="images/green-up.png"--></img>Upload SLO...</a>
+				<a id="upslofile" class="button small" href="#divProfileTable"><!--img src="images/green-up.png"--></img>Upload SLO...</a>
 				
 			</td>
 		</tr>
-		<tr><td valign="top" align="right"><a id="showConfiguration" class="button small" href="#"><!--img src="images/service-plus.png"--></img>Show configuration</a></td></tr>
+		<tr><td valign="top" align="right"><a id="showConfiguration" class="button small" href="#divProfileTable"><!--img src="images/service-plus.png"--></img>Show configuration</a></td></tr>
 		<tr><td valign="bottom" align="right" style="padding-bottom:10px"><a id="executeSlo" class="button" href="#"><img style="margin-top:-3px" src="images/play.png"></img>Execute</a></td></tr>
 		</table>
 		

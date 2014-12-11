@@ -289,3 +289,14 @@ class GenericAgent(BaseAgent):
         self.state = 'RUNNING'
         self.logger.info('Starter is running')
         return HttpJsonResponse()
+
+    @expose('GET')
+    def frontend_url(self, kwargs):
+        url_path = join(self.VAR_CACHE, 'bin', 'frontend_url')
+        url=''
+        self.logger.info('frontend came here ')
+        if exists(url_path):
+            url=open(url_path, 'r').readline()
+            self.logger.info('frontend came here 2 ')
+        self.logger.info('url %s '  % url)
+        return HttpJsonResponse({'url':url})

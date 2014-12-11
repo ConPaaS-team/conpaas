@@ -84,6 +84,11 @@ conpaas.ui = (function (this_module) {
               }
             }
 
+            if (response.frontend.length > 0) {
+                $("#applink").attr("href", response.frontend)
+                $("#applink").show()
+            }
+
             if(!Array.isArray(response.execinfo)){ //bad way of checking if the application was executed or not
                 var et = that.myround(response.execinfo.execution_time,4),
                 tc = that.myround(response.execinfo.total_cost,4),
@@ -101,8 +106,9 @@ conpaas.ui = (function (this_module) {
                 onInstableState(response);
             }
             return false;
-        // }, {aid: this.application.aid}, maxInterval);
-      }, {aid: 1}, maxInterval);
+            // }
+         }, {aid: this.application.aid}, maxInterval);
+      // }, {aid: 1}, maxInterval);
     },  
 
 
@@ -308,6 +314,7 @@ conpaas.ui = (function (this_module) {
                   <div id="'+data.services[i].module_type+'_status" class="actions">Service not initialized</div> \
                </div> \
                <div class="statistic"> \
+                  <a id="applink" style="display:none;" target="blank" href="#"><img style="width:32px; margin-top:7px;" src="images/link.png"></a> \
                   <!--div class="statcontent"><img src="images/throbber-on-white.gif"></div> \
                   <div class="note">loading...</div--> \
                </div> \
@@ -332,8 +339,8 @@ conpaas.ui = (function (this_module) {
         var file = $('#profilefile')[0].files[0];
         var formData = new FormData();
         formData.append('profile', file, file.name);
-        // formData.append('aid', that.application.aid);
-        formData.append('aid', 1);
+        formData.append('aid', that.application.aid);
+        // formData.append('aid', 1);
         $.ajax({
           url: 'ajax/uploadProfile.php',
           data: formData,
@@ -375,8 +382,8 @@ conpaas.ui = (function (this_module) {
           var formData = new FormData();
           formData.append('slo', $('#txtSlo').val());
           formData.append('service', 'upload');
-          formData.append('aid', 1);
-          // formData.append('aid', that.application.aid);
+          // formData.append('aid', 1);
+          formData.append('aid', that.application.aid);
           $.ajax({
             url: 'ajax/uploadSLO.php',
             data: formData,
@@ -414,7 +421,8 @@ conpaas.ui = (function (this_module) {
         var that = event.data; 
         $.ajax({
           url: 'ajax/executeSLO.php',
-          data: {'aid': 1},
+          data: {'aid': that.application.aid},
+          // data: {'aid': 1},
           processData: true,
           contentType: false,
           dataType: 'json',

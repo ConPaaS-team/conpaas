@@ -180,6 +180,7 @@ class GenericManager(BaseManager):
         self._state_set(self.S_ADAPTING)
         self.logger.info("Generic manager started")
         self.logger.info("configuration: %s" % configuration)
+        frontend_url = ''
         try:
             ##nodes = []
             ##for i in range(1, nr_instances):
@@ -199,7 +200,8 @@ class GenericManager(BaseManager):
             self.instances = self._conv_res_to_instance(configuration)
             self._update_code()
             self._init_agents(args)
-
+            frontend_url = self._get_frontend_url()
+        
             ## Extend the nodes list with the newly created one
             #self.nodes += nodes
             ##self.agents_info += agents_info
@@ -207,6 +209,7 @@ class GenericManager(BaseManager):
         except Exception, err:
             self.logger.exception('_do_startup: Failed to create agents: %s' % err)
             self._state_set(self.S_ERROR) 
+        return frontend_url
 
     # def _update_agents_info(self, nodes, roles):
     #     id_ip = []
@@ -265,6 +268,7 @@ class GenericManager(BaseManager):
                     self._state_set(self.S_ERROR, msg='Failed to initialize agent at node %s' % str(instance))
                     raise        
 
+
     # def _init_agents(self):
     #     self._extract_init()
     #     for node in self.nodes:                                                                        
@@ -306,13 +310,14 @@ class GenericManager(BaseManager):
     #             raise   
 
     def _do_run(self, profiling, args=None):
-        for node in self.nodes:     
-            try:               
-                client.run(node['Address'], 5555, args)            
-            except client.AgentException:                                                                
-                self.logger.exception('Failed to start run at node %s' % str(node))             
-                self._state_set(self.S_ERROR, msg='Failed to run code at node %s' % str(node))
-                raise   
+        for instance in self.instances['Instances']: 
+            if instance['Type'] == 'Machine':
+                try:               
+                    client.run(instance['Address'], 5555, args)            
+                except client.AgentException:                                                                
+                    self.logger.exception('Failed to start run at node %s' % str(instance))             
+                    self._state_set(self.S_ERROR, msg='Failed to run code at node %s' % str(instance))
+                    raise   
         if profiling:
             self._state_set(self.S_PROFILED)   
         else:
@@ -739,3 +744,17 @@ echo "" >> /root/generic.out
                                'reason': msg})
         self.logger.debug('STATE %s: %s' % (target_state, msg))
 
+    def _get_frontend_url(self):
+        url = ''
+        for instance in  self.instances['Instances']:                                                                        
+            if instance['Type'] == 'Machine':
+                try:               
+                    url = client.frontend_url(instance['Address'], 5555)    
+                    if len(url) > 0:
+                        break        
+                except client.AgentException:                                                                
+                    self.logger.exception('Failed to receive front-end url from node %s' % str(instance))             
+                    self._state_set(self.S_ERROR, msg='Failed to receive front-end url from node %s' % str(instance))
+                    raise 
+        self.logger.info('the front-end url is %s' % str(url))             
+        return url['url']

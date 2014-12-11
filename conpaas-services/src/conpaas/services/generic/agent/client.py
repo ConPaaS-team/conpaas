@@ -118,6 +118,9 @@ def init_agent(host, port, instances, args):
     return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
 
 
+def frontend_url(host, port):
+    method = 'frontend_url'
+    return _check(https.client.jsonrpc_get(host, port, '/', method))
 
 # def init_agent(host, port, init_path, agents_info):                   
 #     """POST (agents_info) init_agent"""
