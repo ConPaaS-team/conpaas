@@ -82,7 +82,7 @@ def archive_extract(arch, path):
 
 def archive_extract_file(arch, path, filename):
     if isinstance(arch, zipfile.ZipFile):
-        arch.extractall(filename, path)
+        arch.extract(filename, path)
     elif isinstance(arch, tarfile.TarFile):
         files = [
         tarinfo for tarinfo in arch.getmembers()
