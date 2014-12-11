@@ -52,8 +52,8 @@ class GenericService extends Service {
 	}
 
 	public function sendConfiguration($params) {
-		// we ignore this for now
-		return '{}';
+		return $this->managerRequest('post', 'enable_code',
+			$params);
 	}
 
 	public function fetchHighLevelMonitoringInfo() {
