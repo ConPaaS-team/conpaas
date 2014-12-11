@@ -1,4 +1,5 @@
 import os
+import sys
 
 from .service import ServiceCmd
 
@@ -76,8 +77,22 @@ class GenericCmd(ServiceCmd):
 
     def download_code(self, args):
         service_id = self.get_service_id(args.serv_name_or_id)
-        params = {'codeVersionId': args.version}
 
+        res = self.client.call_manager_get(service_id, "list_code_versions")
+
+        if 'error' in res:
+            self.client.error("Cannot list code versions: %s" % res['error'])
+            sys.exit(0)
+
+        filenames = [ code['filename'] for code in res['codeVersions']
+                if code['codeVersionId'] == args.version ]
+        if not filenames:
+            self.client.error("Cannot download code: invalid version %s" % args.version)
+            sys.exit(0)
+
+        destfile = filenames[0]
+
+        params = {'codeVersionId': args.version}
         res = self.client.call_manager_get(service_id, "download_code_version",
                                            params)
 
@@ -85,7 +100,6 @@ class GenericCmd(ServiceCmd):
             self.client.error("Cannot download code: %s" % res['error'])
 
         else:
-            destfile = os.path.join(os.getenv('TMPDIR', '/tmp'), args.version) + '.tar.gz'
             open(destfile, 'w').write(res)
             print destfile, 'written'
 

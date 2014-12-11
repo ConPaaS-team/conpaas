@@ -111,8 +111,22 @@ class Client(BaseClient):
 
 
     def download_code(self, service_id, version):
-        params = { 'codeVersionId': version }
+        res = self.callmanager(service_id, 'list_code_versions', False, {})
 
+        if 'error' in res:
+            print res['error']
+            sys.exit(0)
+
+        filenames = [ code['filename'] for code in res['codeVersions']
+                if code['codeVersionId'] == version ]
+
+        if not filenames:
+            print "ERROR: Cannot download code: invalid version %s" % version
+            sys.exit(0)
+
+        destfile = filenames[0]
+
+        params = { 'codeVersionId': version }
         res = self.callmanager(service_id, "download_code_version",
             False, params)
 
@@ -120,7 +134,6 @@ class Client(BaseClient):
             print res['error']
 
         else:
-            destfile = os.path.join(os.getenv('TMPDIR', '/tmp'), version) + '.tar.gz'
             open(destfile, 'w').write(res)
             print destfile, 'written'
 
