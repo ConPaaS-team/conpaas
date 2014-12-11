@@ -53,6 +53,12 @@ if (preg_match('/\.(zip|war)$/', $filename)) {
 else if (preg_match('/\.tar$/', $filename)) {
     $content_type = 'application/x-tar';
 }
+else if (preg_match('/(\.tar\.gz|\.tgz)$/', $filename)) {
+    $content_type = 'application/x-gzip';
+}
+else if (preg_match('/(\.tar\.bz2|\.tbz|\.tbz2|\.tb2)$/', $filename)) {
+    $content_type = 'application/x-bzip2';
+}
 else {
     throw new Exception("Cannot determine content-type for '$filename', code version '$codeVersionId'");
 }
