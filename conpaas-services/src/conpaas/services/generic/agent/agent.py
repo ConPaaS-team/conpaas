@@ -290,6 +290,20 @@ class GenericAgent(BaseAgent):
         self.logger.info('Starter is running')
         return HttpJsonResponse()
 
+    @expose('GET') 
+    def cleanup_agent(self, kwargs):
+        """Set the environment variables"""
+        
+        self.logger.info('Cleaning up agent environment')
+        self.state = 'ADAPTING'
+        cleanup_path = join(self.VAR_CACHE, 'bin', 'cleanup.sh')
+        cleanup_args = [ "bash",  cleanup_path ]
+        proc = Popen(cleanup_args, cwd=self.generic_dir, env=self.env, close_fds=True)
+        proc.wait()
+        self.state = 'RUNNING'
+        self.logger.info('Agent cleaned up')
+        return HttpJsonResponse()
+
     @expose('GET')
     def frontend_url(self, kwargs):
         url_path = join(self.VAR_CACHE, 'bin', 'frontend_url')

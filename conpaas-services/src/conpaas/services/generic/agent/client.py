@@ -106,7 +106,7 @@ def update_code(host, port, codeVersionId, filetype, filepath):
 
 
 def init_agent(host, port, instances, args):
-    """POST run"""
+    """POST init_agent"""
     method = 'init_agent'
     params = {
         'method' : 'init_agent',    
@@ -116,6 +116,12 @@ def init_agent(host, port, instances, args):
     if args:
         params['args'] = args 
     return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
+
+
+def cleanup_agent(host, port):
+    """GET cleanup_agent"""
+    method = 'cleanup_agent'
+    return _check(https.client.jsonrpc_get(host, port, '/', method))
 
 
 def frontend_url(host, port):

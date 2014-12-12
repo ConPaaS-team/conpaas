@@ -166,7 +166,8 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
         #debug if (delete when done)
         # if execution_time > 2:
         # Thread(target=module_manager.controller.release_reservation, args=[reservation['ConfigID']]).start()
-        # module_manager.controller.release_reservation(reservation['ConfigID'])
+        module_manager.cleanup_agents()
+        module_manager.controller.release_reservation(reservation['ConfigID'])
 
         # return round(execution_time, 4), round(total_cost, 4)
         return execution_time, total_cost
