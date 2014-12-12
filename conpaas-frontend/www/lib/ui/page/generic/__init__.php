@@ -190,9 +190,30 @@ class GenericPage extends ServicePage {
 			.'</div>';
 	}
 
-    public function renderContent() {
-        return $this->renderInstancesSection()
-            .$this->renderCodeSection();
-    }
+	public function renderDeployAppSection() {
+		return
+			'<div class="form-section">'
+				.'<div class="form-header">'
+					.'<div class="title">Deploy the application</div>'
+					.'<div class="clear"></div>'
+				.'</div>'
+				.'<input id="deployApp" type="button" value="start" />'
+				.'<i id="deployAppStat" class="invisible"></i><br />'
+				.'<div class="brief">pressing this button will '
+				.'execute the <i>start.sh</i> script from the active '
+				.'code tarball on each agent</div>'
+			.'</div>';
+	}
+
+	public function renderContent() {
+		$html = $this->renderInstancesSection()
+			.$this->renderCodeSection();
+
+		if ($this->service->isRunning()) {
+			$html .= $this->renderDeployAppSection();
+		}
+
+		return $html;
+	}
 }
 ?>

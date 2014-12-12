@@ -77,6 +77,11 @@ class GenericService extends Service {
 		$master_node = $this->getNodeInfo($this->nodesLists['master'][0]);
 		return $master_node['ip'];
 	}
+
+	public function deployApp() {
+		$resp = $this->managerRequest('post', 'run', array());
+		return $resp;
+	}
 }
 
 ?>

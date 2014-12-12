@@ -55,7 +55,7 @@ conpaas.ui = (function (this_module) {
      */
     freezeInput: function (freeze) {
         var linksSelector = '.versions .activate',
-            buttons = []; // TODO add 'run' button
+            buttons = ['deployApp'];
         conpaas.ui.ServicePage.prototype.freezeInput.call(this, freeze);
         this.freezeButtons(buttons, freeze);
         if (freeze) {
@@ -104,7 +104,19 @@ conpaas.ui = (function (this_module) {
         $('.deployoption input[type=radio]').change(function() {
             $('.deployactions').toggleClass('invisible');
         });
+        $('#deployApp').click(that, that.onDeployApp);
     },
+
+    showStatus: function (statusId, type, message) {
+        var otherType = (type === 'positive') ? 'error' : 'positive';
+        $(statusId).removeClass(otherType).addClass(type)
+            .html(message)
+            .show();
+        setTimeout(function () {
+            $(statusId).fadeOut();
+        }, 3000);
+    },
+
     // handlers
     onActivateVersion: function (event) {
         var page = event.data,
@@ -121,6 +133,24 @@ conpaas.ui = (function (this_module) {
             page.freezeInput(false);
         });
     },
+
+    onDeployApp: function (event) {
+        var page = event.data;
+
+        page.freezeInput(true);
+        page.server.req('ajax/genericDeployApp.php', {
+            sid: page.service.sid
+        }, 'post', function (response) {
+            // successful
+            page.showStatus('#deployAppStat', 'positive', 'Script started successfully');
+            page.freezeInput(false);
+        }, function (response) {
+            // error
+            page.showStatus('#deployAppStat', 'error', 'The script was not started');
+            page.freezeInput(false);
+        });
+    },
+
     /**
      * load the rendered HTML for the versions container
      */
