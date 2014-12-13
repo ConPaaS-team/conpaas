@@ -78,6 +78,18 @@ class WebClient(BaseClient):
             open(destfile, 'w').write(res)
             print destfile, 'written'
 
+    def delete_code(self, service_id, code_version):
+        params = { 'codeVersionId': code_version }
+
+        res = self.callmanager(service_id, "delete_code_version",
+            True, params)
+
+        if 'error' in res:
+            print res['error']
+
+        else:
+            print code_version, 'deleted'
+
     def migrate_nodes(self, service_id, migration_plan, delay=None):
         data = {}
         data['migration_plan'] = migration_plan
@@ -95,6 +107,7 @@ class WebClient(BaseClient):
         print "    list_uploads      serviceid           # list uploaded code versions"
         print "    upload_code       serviceid filename  # upload a new code version"
         print "    download_code     serviceid version   # download a specific code version"
+        print "    delete_code       serviceid version   # delete a specific code version"
         # implemented in {php,java}.py
         print "    enable_code       serviceid version   # set a specific code version active"
         print "    migrate_nodes     serviceid from_cloud:vmid:to_cloud[,from_cloud:vmid:to_cloud]*  [delay]"
@@ -105,7 +118,7 @@ class WebClient(BaseClient):
         # Check serviceid for all the commands requiring one
         if command in ( 'add_nodes', 'remove_nodes', 'list_keys', 
                         'upload_key', 'list_uploads', 'upload_code',
-                        'enable_code', 'download_code' ):
+                        'enable_code', 'download_code', 'delete_code' ):
             try:
                 sid = int(argv[2])
             except (IndexError, ValueError):
@@ -144,7 +157,7 @@ class WebClient(BaseClient):
             data = [ add_cur(el) for el in res['codeVersions'] ]
             print self.prettytable(( 'current', 'codeVersionId', 'filename', 'description' ), data)
 
-        if command in ( 'enable_code', 'download_code' ):
+        if command in ( 'enable_code', 'download_code', 'delete_code' ):
             try:
                 code_version = argv[3]
             except IndexError:

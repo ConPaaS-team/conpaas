@@ -1149,6 +1149,46 @@ class BasicWebserversManager(BaseManager):
         self._configuration_set(config)
         return HttpJsonResponse({'codeVersionId': os.path.basename(codeVersionId)})
 
+    @expose('POST')
+    def delete_code_version(self, kwargs):
+        if 'codeVersionId' not in kwargs:
+            ex = ManagerException(ManagerException.E_ARGS_MISSING,
+                                  'codeVersionId')
+            return HttpErrorResponse(ex.message)
+        if isinstance(kwargs['codeVersionId'], dict):
+            ex = ManagerException(ManagerException.E_ARGS_INVALID,
+                                  detail='codeVersionId should be a string')
+            return HttpErrorResponse(ex.message)
+        codeVersion = kwargs.pop('codeVersionId')
+        if len(kwargs) != 0:
+            ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
+                                  kwargs.keys())
+            return HttpErrorResponse(ex.message)
+
+        config = self._configuration_get()
+
+        if codeVersion not in config.codeVersions:
+            ex = ManagerException(ManagerException.E_ARGS_INVALID,
+                                  detail='Invalid codeVersionId')
+            return HttpErrorResponse(ex.message)
+
+        if codeVersion == config.currentCodeVersion:
+            ex = ManagerException(ManagerException.E_ARGS_INVALID,
+                                  detail='Cannot remove the active code version')
+            return HttpErrorResponse(ex.message)
+
+        filename = os.path.abspath(os.path.join(self.code_repo, codeVersion))
+        if not filename.startswith(self.code_repo + '/') or not os.path.exists(filename):
+            ex = ManagerException(ManagerException.E_ARGS_INVALID,
+                                  detail='Invalid codeVersionId')
+            return HttpErrorResponse(ex.message)
+
+        config.codeVersions.pop(codeVersion)
+        self._configuration_set(config)
+        os.remove(filename)
+
+        return HttpJsonResponse()
+
     @expose('UPLOAD')
     def upload_authorized_key(self, kwargs):
         if 'key' not in kwargs:
