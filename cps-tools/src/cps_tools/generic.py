@@ -13,6 +13,7 @@ class GenericCmd(ServiceCmd):
         self._add_list_uploads()
         self._add_download_code()
         self._add_enable_code()
+        self._add_delete_code()
         self._add_run()
 
     # ========== upload_code
@@ -125,6 +126,29 @@ class GenericCmd(ServiceCmd):
             print res['error']
         else:
             print code_version, 'enabled'
+
+    # ========== delete_code
+    def _add_delete_code(self):
+        subparser = self.add_parser('delete_code',
+                                    help="delete a specific code version")
+        subparser.set_defaults(run_cmd=self.delete_code, parser=subparser)
+        subparser.add_argument('serv_name_or_id',
+                               help="Name or identifier of a service")
+        subparser.add_argument('code_version',
+                               help="Code version to be deleted")
+
+    def delete_code(self, args):
+        service_id = self.get_service_id(args.serv_name_or_id)
+        code_version = args.code_version
+
+        params = { 'codeVersionId': code_version }
+
+        res = self.client.call_manager_post(service_id, "delete_code_version", params)
+
+        if 'error' in res:
+            print res['error']
+        else:
+            print code_version, 'deleted'
 
     # ========== run
     def _add_run(self):

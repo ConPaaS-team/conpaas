@@ -31,13 +31,14 @@ class Client(BaseClient):
         print "    list_uploads      serviceid           # list uploaded code versions"
         print "    download_code     serviceid version   # download a specific code version"
         print "    enable_code       serviceid version   # set a specific code version active"
+        print "    delete_code       serviceid version   # delete a specific code version"
         print "    run               serviceid           # deploy the application"
 
     def main(self, argv):
         command = argv[1]
    
         if command in ( 'add_nodes', 'remove_nodes', 'upload_code', 'list_uploads',
-                        'download_code', 'enable_code', 'run' ):
+                        'download_code', 'enable_code', 'delete_code', 'run' ):
             try:                                                      
                 sid = int(argv[2])                                    
             except (IndexError, ValueError):                          
@@ -88,7 +89,7 @@ class Client(BaseClient):
             data = [ add_cur(el) for el in res['codeVersions'] ]                                   
             print self.prettytable(( 'current', 'codeVersionId', 'filename', 'description' ), data)
         
-        if command in ( 'enable_code', 'download_code' ):
+        if command in ( 'enable_code', 'download_code', 'delete_code' ):
             try:                                         
                 code_version = argv[3]                   
             except IndexError:                           
@@ -149,7 +150,21 @@ class Client(BaseClient):
 
         else:
             print code_version, 'enabled'
-    
+
+
+    def delete_code(self, service_id, code_version):
+        params = { 'codeVersionId': code_version }
+
+        res = self.callmanager(service_id, "delete_code_version",
+            True, params)
+
+        if 'error' in res:
+            print res['error']
+
+        else:
+            print code_version, 'deleted'
+
+
     def run(self, service_id):
         params = {}
         res = self.callmanager(service_id, "run", True, params)
