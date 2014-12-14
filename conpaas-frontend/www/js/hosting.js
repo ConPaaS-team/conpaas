@@ -22,15 +22,11 @@ conpaas.ui = (function (this_module) {
      * @override conpaas.ui.ServicePage.freezeInput
      */
     freezeInput: function (freeze) {
-        var linksSelector = '.versions .activate',
+        var linksSelectors = ['.activate', '.download', '.delete', '.dot'],
             buttons = ['cds_subscribe', 'cds_unsubscribe'];
         conpaas.ui.ServicePage.prototype.freezeInput.call(this, freeze);
         this.freezeButtons(buttons, freeze);
-        if (freeze) {
-            $(linksSelector).hide();
-        } else {
-            $(linksSelector).show();
-        }
+        this.hideLinks(linksSelectors, freeze);
     },
     /**
      * @override conpaas.ui.ServicePage.attachHandlers
@@ -70,6 +66,7 @@ conpaas.ui = (function (this_module) {
             $('#fileForm').submit();
         });
         $('.versions .activate').click(that, that.onActivateVersion);
+        $('.versions .delete').click(that, that.onDeleteVersion);
         $('.deployoption input[type=radio]').change(function() {
             $('.deployactions').toggleClass('invisible');
         });
@@ -160,7 +157,6 @@ conpaas.ui = (function (this_module) {
     onActivateVersion: function (event) {
         var page = event.data,
             versionId = $(event.target).attr('name');
-        $('.versions .activate').hide();
         $(event.target).parent().find('.loading').show();
         page.freezeInput(true);
         page.updateConfiguration({codeVersionId: versionId}, function () {
@@ -169,6 +165,31 @@ conpaas.ui = (function (this_module) {
                 window.location.reload();
             });
         }, function () {
+            $(event.target).parent().find('.loading').hide();
+            page.freezeInput(false);
+        });
+    },
+    onDeleteVersion: function (event) {
+        var page = event.data,
+            versionId = $(event.target).attr('name');
+        if (!confirm('Are you sure you want to delete the version ' +
+                versionId + '?')) {
+            return;
+        }
+        $(event.target).parent().find('.loading').show();
+        page.freezeInput(true);
+        page.server.req('ajax/deleteCodeVersion.php', {
+            sid: page.service.sid,
+            codeVersionId: versionId
+        }, 'post', function (response) {
+            // successful
+            page.displayInfo('updating all the instances...');
+            page.pollState(function () {
+                window.location.reload();
+            });
+        }, function (response) {
+            // error
+            $(event.target).parent().find('.loading').hide();
             page.freezeInput(false);
         });
     },
@@ -318,6 +339,8 @@ conpaas.ui = (function (this_module) {
                     $('#versionsWrapper').html(response);
                     $('.versions .activate').click(that,
                             that.onActivateVersion);
+                    $('.versions .delete').click(that,
+                            that.onDeleteVersion);
                 });
     }
     });
