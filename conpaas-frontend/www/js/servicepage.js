@@ -61,6 +61,15 @@ conpaas.ui = (function (this_module) {
             }
         });
     },
+    hideLinks: function (linkSelectors, freeze) {
+        linkSelectors.forEach(function (linkSelector) {
+            if (freeze) {
+                $(linkSelector).hide();
+            } else {
+                $(linkSelector).show();
+            }
+        });
+    },
     pollState: function (onStableState, onInstableState, maxInterval) {
         var that = this;
         this.statePoller.poll(function (response) {

@@ -1,5 +1,5 @@
-
 import os
+import sys
 
 from .service import ServiceCmd
 
@@ -16,6 +16,7 @@ class WebCmd(ServiceCmd):
         self._add_upload_code()
         self._add_list_codes()
         self._add_download_code()
+        self._add_delete_code()
         self._add_migrate_nodes()
 
     # ========== upload_key
@@ -96,7 +97,7 @@ class WebCmd(ServiceCmd):
             self.client.error("Cannot list code versions: %s" % res['error'])
 
         for code in res['codeVersions']:
-            current = "*" if 'current' in res else ""
+            current = "*" if 'current' in code else ""
             print " %s %s: %s \"%s\"" % (current, code['codeVersionId'],
                                          code['filename'], code['description'])
 
@@ -113,8 +114,22 @@ class WebCmd(ServiceCmd):
 
     def download_code(self, args):
         service_id = self.get_service_id(args.serv_name_or_id)
-        params = {'codeVersionId': args.version}
 
+        res = self.client.call_manager_get(service_id, "list_code_versions")
+
+        if 'error' in res:
+            self.client.error("Cannot list code versions: %s" % res['error'])
+            sys.exit(0)
+
+        filenames = [ code['filename'] for code in res['codeVersions']
+                if code['codeVersionId'] == args.version ]
+        if not filenames:
+            self.client.error("Cannot download code: invalid version %s" % args.version)
+            sys.exit(0)
+
+        destfile = filenames[0]
+
+        params = {'codeVersionId': args.version}
         res = self.client.call_manager_get(service_id, "download_code_version",
                                            params)
 
@@ -122,9 +137,31 @@ class WebCmd(ServiceCmd):
             self.client.error("Cannot download code: %s" % res['error'])
 
         else:
-            destfile = os.path.join(os.getenv('TMPDIR', '/tmp'), args.version) + '.tar.gz'
             open(destfile, 'w').write(res)
             print destfile, 'written'
+
+    # ========== delete_code
+    def _add_delete_code(self):
+        subparser = self.add_parser('delete_code',
+                                    help="delete a specific code version")
+        subparser.set_defaults(run_cmd=self.delete_code, parser=subparser)
+        subparser.add_argument('serv_name_or_id',
+                               help="Name or identifier of a service")
+        subparser.add_argument('code_version',
+                               help="Code version to be deleted")
+
+    def delete_code(self, args):
+        service_id = self.get_service_id(args.serv_name_or_id)
+        code_version = args.code_version
+
+        params = { 'codeVersionId': code_version }
+
+        res = self.client.call_manager_post(service_id, "delete_code_version", params)
+
+        if 'error' in res:
+            print res['error']
+        else:
+            print code_version, 'deleted'
 
     # ========== migrate_nodes
     def _add_migrate_nodes(self):

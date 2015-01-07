@@ -17,6 +17,7 @@ dist_cpstools_PYTHON = \
 	user.py \
 	xtreemfs.py \
 	helloworld.py \
+	generic.py \
 	web.py
 
 ## destination of byte-compiled files

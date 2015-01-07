@@ -921,7 +921,11 @@ ul.versions li a.link {
 	margin-left: 5px;
 }
 
-ul.versions li a.activate,ul.versions li .status {
+ul.versions li a.activate,
+ul.versions li a.download,
+ul.versions li a.delete,
+ul.versions li .status,
+ul.versions li .dot {
 	
 }
 

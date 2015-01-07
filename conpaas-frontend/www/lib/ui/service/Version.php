@@ -52,19 +52,20 @@ class Version {
 		return $class;
 	}
 
+	private function renderLodingGif() {
+		return '<img class="loading" align="middle" style="display: none;" '
+				.' src="images/icon_loading.gif" />';
+	}
+
 	private function renderActivateLink() {
-		$dot = ' &middot; ';
 		if ($this->active) {
-			return $dot.'<div class="status active">active</div>';
+			return ' &middot; <div class="status active">active</div>';
 		}
-		return
-			$dot
+		return '<span class="dot"> &middot; </span>'
 			.'<a class="link activate" href="javascript: void(0);" '
 				.' name="'.$this->name.'">'
 				.'set active'
-			.'</a>'
-			.'<img class="loading" align="middle" style="display: none;" '
-				.' src="images/icon_loading.gif" />';
+			.'</a>';
 	}
 
 	private function renderName() {
@@ -83,9 +84,22 @@ class Version {
 	}
 
 	private function renderDownloadLink() {
-		return
-			' &middot; <a href="'.$this->downloadURL.'" '
-			.' class="link" title="download code version archive">download</a>';
+		return '<span class="dot"> &middot; </span>'
+			.'<a href="'.$this->downloadURL.'" '
+			.' class="link download" title="download code version archive">'
+			.'download</a>';
+	}
+
+	private function renderDeleteLink() {
+		if (!$this->active) {
+			return '<span class="dot"> &middot; </span>'
+					.'<a class="link delete" href="javascript: void(0);" '
+					.' name="'.$this->name.'">'
+					.'delete'
+				.'</a>';
+		} else {
+			return '';
+		}
 	}
 
 	public function __toString() {
@@ -94,8 +108,10 @@ class Version {
 			.$this->renderName()
 			.$this->renderFilename()
 			.'<div class="left version-actions">'
+				.$this->renderLodingGif()
 				.$this->renderActivateLink()
 				.$this->renderDownloadLink()
+				.$this->renderDeleteLink()
 			.'</div>'
 			.'<div class="timestamp">'
 				.TimeHelper::timeRelativeDescr($this->timestamp).' ago'
