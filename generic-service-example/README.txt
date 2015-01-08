@@ -1,12 +1,15 @@
 generic-service-example
 
-Files in the directory are meant to show the use of ConPaaS generic service.
+Files in this directory are meant to show the use of ConPaaS generic service.
 The use case is in development (not yet completely finished) and files are as is.
 The goal is to start a shemdros (see https://github.com/Dans-labs/shemdros) service.
 In the tests run so far, it turned out that the image used to deploy and run the ConPaaS generic service for shemdros needs to have a disk size of at least 4GB.
 
+The testrun script depends on the availability of the ConPaaS cpsclient.py script.
+
 Description of files
 ====================
+All files with a * are not in the repository, but will be created once scripts are run.
 
 testrun
 -------
@@ -18,6 +21,7 @@ If this file has been uploaded before, the testrun script will select the newest
 code-test.tar   *
 -------------
 File created by testrun script, contains all files needed to start and run the generic service.
+This file will be uploaded to the generic service by the testrun script.
 
 init.sh
 -------
@@ -71,7 +75,8 @@ README.txt
 ----------
 This file.
 
-shemdros.zip
+shemdros.zip    *
 ------------
-Contains shemdros files as found on the shemdros repository on github.
+You have to create shemdros.zip from the files that can currently be found on 
+https://www.dropbox.com/sh/nhwuvghc3afui8j/AAB4wndZKeBicdE-gP8qsr16a?dl=0
 
