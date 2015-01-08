@@ -1,0 +1,92 @@
+#!/bin/bash
+echo '==>' `date` : Start CPS
+CL=cpsclient.py
+CODE="code-test.tar"
+tar cf $CODE *.sh shemdros.zip
+
+# check if generic is already running
+RES=`$CL list | grep generic | tail -n 1`
+SID="`echo $RES | cut -f 2 -d\ `"
+
+echo SID = $SID
+
+if [ ! -z "$SID" ]
+then
+        echo "Already testing generic service, continuing with SID = 1"
+else
+        echo '==>' `date` : Start CPS generic service creation
+        # Not running, create one
+        $CL create generic || exit 1
+        RES=`$CL list | grep generic | tail -n 1`
+        SID="`echo $RES | cut -f 2 -d\ `"
+fi
+
+        echo '==>' `date` : 'Start CPS generic service agent(s)'
+$CL start $SID || exit 1
+
+WAITING=true
+while $WAITING
+do
+    STATE="`$CL info $SID | grep state | cut -f 2 -d:`"
+    echo state = $STATE
+    [ $STATE = RUNNING ] && WAITING=false
+    sleep 2
+done
+
+        echo '==>' `date` : "Uploading tarball ..."
+
+RES="`$CL upload_code $SID $CODE`"
+VERSION="`echo $RES | cut -f 2 -d\ `"
+
+
+echo "List uploads ..."
+$CL list_uploads $SID
+VERSION="`$CL list_uploads $SID | grep $CODE | head -1 | sed 's/[ *]*\([^ ]*\).*/\1/'`"
+
+echo "Select uploaded code $VERSION ..."
+
+$CL enable_code $SID $VERSION
+echo "List uploads ..."
+$CL list_uploads $SID
+
+sleep 3
+        echo '==>' `date` : "run CPS service ..."
+$CL run $SID
+echo '==>' `date` : Finished CPS generic service startup
+
+#sleep 3
+#$CL run $SID
+
+# $CL stop $SID
+
+exit
+
+Usage: /usr/local/bin/cpsclient.py COMMAND [params]
+COMMAND is one of the following
+
+    credentials                           # set your ConPaaS credentials
+    version                               # show director's version
+    listapp                               # list all applications
+    available                             # list supported services
+    clouds                                # list available clouds
+    list              [appid]             # list running services under an application
+    deleteapp         appid               # delete an application
+    createapp         appname             # create a new application
+    renameapp         appid newname       # rename an application
+    manifest          filename            # upload a new manifest
+    download_manifest appid               # download an existing manifest
+    create            servicetype [appid] # create a new service [inside a specific application]
+    start             serviceid [cloud]   # startup the given service [on a specific cloud]
+    info              serviceid           # get service details
+    logs              serviceid           # get service logs
+    stop              serviceid           # stop the specified service
+    terminate         serviceid           # delete the specified service
+    rename            serviceid newname   # rename the specified service
+    startup_script    serviceid filename  # upload a startup script
+    usage             serviceid           # show service-specific options
+    add_nodes         serviceid count
+    remove_nodes      serviceid count
+    upload_code       serviceid filename  # upload a new code version
+    list_uploads      serviceid           # list uploaded code versions
+    enable_code       serviceid version   # set a specific code version active
+    run               serviceid           # deploy the application
