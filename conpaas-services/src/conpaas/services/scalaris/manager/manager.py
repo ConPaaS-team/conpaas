@@ -41,7 +41,8 @@ class ScalarisManager(BaseManager):
             self.logger.info('Created node: %s', instance[0])
             cloud_number = self.cloud_groups.number(cloud)
             self.cloud_groups.added_node(cloud)
-            client.startup(instance[0].ip, 5555, instance[0].ip, cloud_number, self.cloud_groups.first_in_group(cloud))
+            client.startup(instance[0].ip, 5555, instance[0].ip, cloud_number, self.cloud_groups.no_of_groups,
+                           self.cloud_groups.first_in_group(cloud))
             self.logger.info('Started node %s in cloud %s (cloud group: %s)', instance[0].id, cloud, cloud_number)
             self.context['FIRST'] = 'false'
             self.context['MGMT_SERVER'] = self._render_node(instance[0], 'mgmt_server')
@@ -113,7 +114,7 @@ class ScalarisManager(BaseManager):
                     cloud_group = self.cloud_groups.number(cloud)
                     first_in_group = self.cloud_groups.first_in_group(cloud)
                     self.nodes.append(node)
-                    client.startup(node.ip, 5555, node.ip, cloud_group, first_in_group)
+                    client.startup(node.ip, 5555, node.ip, cloud_group, self.cloud_groups.no_of_groups, first_in_group)
                     self.logger.info('Started node %s on cloud %s (cloud group: %s)', node.id, cloud, cloud_group)
                     self.logger.info('%s was first node in cloud group: %s', node.id, first_in_group)
             self.state = self.S_RUNNING

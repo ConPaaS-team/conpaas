@@ -23,10 +23,12 @@ def get_service_info(host, port):
   method = 'get_service_info'
   return _check(https.client.jsonrpc_get(host, port, '/', method))
 
-def startup(host, port, ip, cloud_group, is_firstnode):
+def startup(host, port, ip, cloud_group, number_of_cloudgroups, first_in_group):
   method = 'startup'
   return _check(https.client.jsonrpc_post(host, port, '/', method,
-                                          {'ip': ip, 'cloud_group': cloud_group, 'is_firstnode': is_firstnode}))
+                                          {'ip': ip, 'cloud_group': cloud_group,
+                                           'first_in_group': first_in_group,
+                                           'number_of_cloudgroups': number_of_cloudgroups}))
 
 def graceful_leave(host, port):
   method = 'graceful_leave'
