@@ -157,6 +157,7 @@ conpaas.ui = (function (this_module) {
 
 		if(exps.length > 0 || pareto.length > 0){
 			$("#divProfileTable").html(str); 
+      $("#divProfileTable").animate({ scrollTop: $('#divProfileTable')[0].scrollHeight}, 1000);
 			this.plot(exps, pareto,[]);
 		}
 	},
@@ -510,6 +511,15 @@ $(document).ready(function () {
     page = new conpaas.ui.Dashboard(server, null);
     page.attachHandlers();
     
+    page.server.req('ajax/checkApplications.php', {}, 'get', function (response) {
+      
+      aid = GET_PARAMS['aid']
+      alert(aid);
+    }, function (error) {
+        page.displayError(error.name, error.details);
+    });
+
+
     // page.checkServices();
     // if (true) {
     //   // page.freezeInput(true);

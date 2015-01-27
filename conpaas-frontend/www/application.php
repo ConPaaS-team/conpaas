@@ -24,9 +24,11 @@ $services = ServiceData::getServicesByUser($page->getUID(), $_SESSION['aid']);
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <?php echo $page->renderContentType(); ?>
-    <?php echo $page->renderTitle(' - Services'); ?>
+    <?php echo $page->renderTitle(' - Application'); ?>
     <?php echo $page->renderIcon(); ?>
     <?php echo $page->renderHeaderCSS(); ?>
+    <?php echo $page->generateJSGetParams(); ?>
+    
   </head>
   <body class="<?php echo $page->getBrowserClass(); ?>">
 	<?php echo $page->renderHeader(); ?>

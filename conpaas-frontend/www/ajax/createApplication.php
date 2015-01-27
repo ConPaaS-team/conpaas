@@ -37,7 +37,8 @@ try {
 		));
 	} else {
 		echo json_encode(array(
-			'create' => 1
+			'create' => 1,
+			'application' => $res
 		));
 	}
 } catch (Exception $e) {

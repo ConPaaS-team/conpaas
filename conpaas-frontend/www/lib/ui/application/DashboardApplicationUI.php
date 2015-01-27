@@ -38,7 +38,7 @@ class DashboardApplicationUI {
 
 	private function renderTitle() {
 		$title =
-			'<a href="services.php?aid='.$this->application->getAID().'">'
+			'<a href="application.php?aid='.$this->application->getAID().'">'
 			.$this->application->getName()
 			.'</a>';
 

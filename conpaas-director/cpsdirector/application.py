@@ -115,6 +115,21 @@ def check_app_exists(app_name):
 def _createapp(app_name):
     log('User %s creating a new application %s' % (g.user.username, app_name))
 
+    if check_app_exists(app_name):
+        # Try different application names
+        for i in range(2, 99):
+            new_name = "%s (%d)" % (app_name, i)
+            if not check_app_exists(new_name):
+                app_name = new_name
+                break
+
+
+        # If all the applications exists, then exit
+        if i is 99:
+            return jsonify({
+                            'error': True,
+                            'msg': 'Too many applications with this name: "%s"' % app_name })
+
     # check if the application already exists
     if check_app_exists(app_name):
         log('Application name %s already exists' % app_name)

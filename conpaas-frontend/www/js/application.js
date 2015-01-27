@@ -33,12 +33,11 @@ conpaas.ui = (function (this_module) {
         this.poller.setLoadingText('checking applications...').poll(
                 function (response) {
             var application,
-                applications,
                 i;
-            applications = response.data;
+            that.applications = response.data;
             $('#servicesWrapper').html(response.html);
-            for (i = 0; i < applications.length; i++) {
-                application = new conpaas.model.Application(applications[i].aid);
+            for (i = 0; i < that.applications.length; i++) {
+                application = new conpaas.model.Application(that.applications[i].aid);
                 // HACK: attach handlers for delete buttons;
                 // without using the id trick we cannot avoid using global vars
 		$('.deleteApplication-' + application.aid).click(
@@ -57,15 +56,17 @@ conpaas.ui = (function (this_module) {
  //                return;
  //        }   
     var newapp = "New Application";
-    window.location = 'application.php';
-	// this.server.req('ajax/createApplication.php', {
-	// 	name: newapp
-	// }, 'post', function (response) {
-	// 	window.location = 'index.php';
-	// 	return;
-	// }, function (error) {
-	// 	page.displayError(error.name, error.details);
-	// });
+
+    //window.location = 'application.php';
+	this.server.req('ajax/createApplication.php', {
+		name: newapp
+	}, 'post', function (response) {
+		window.location = 'application.php?aid=' + response.application.aid;
+        
+		return;
+	}, function (error) {
+		page.displayError(error.name, error.details);
+	});
     },
     deleteApplication: function (application) {
 	var r = confirm('Are you sure to delete the application?');

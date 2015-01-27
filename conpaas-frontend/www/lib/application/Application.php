@@ -45,6 +45,7 @@ class Application {
 		return array(
 			'aid' => $this->aid,
 			'name' => $this->name,
+			'manager' => $this->manager,
 		);
 	}
 

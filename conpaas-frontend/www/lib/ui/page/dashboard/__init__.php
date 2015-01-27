@@ -18,8 +18,10 @@ class Dashboard extends Page {
 		$this->addJS('js/jqplot/jqplot.canvasTextRenderer.js');
 		$this->addJS('js/jqplot/jqplot.highlighter.min.js');
 		$this->addJS('js/jqplot/jqplot.cursor.min.js');
-
+		
 		$this->addJS('js/codepress/codepress.js');
+
+
 	}
 
 	public function renderPageHeader() {
@@ -69,13 +71,15 @@ class Dashboard extends Page {
 	public function renderTopMenu() {
 		return
     	'<div class="pageheader">'
-    		.'<div class="info">'
+    		.'<div class="info" style="display:inline">'
     			.$this->renderName()
     		.'</div>'
+    		.'<a class="button" style="float:right; display:none" href="#"><img src="images/service-plus.png" /> add services</a>'
+    		.'<a id="btnStartApp" class="button" style="float:right" href="#"><img src="images/service-plus.png" /> start</a>'
   		.'<div class="clear"></div>'
   	.'</div>';
 	}
-
+// '<a class="button" href="#"><img src="images/service-plus.png" /> add services</a>'
 	protected function renderBackLinks() {
 		$app = LinkUI('Applications', 'index.php')
 			->setIconPosition(LinkUI::POS_LEFT)

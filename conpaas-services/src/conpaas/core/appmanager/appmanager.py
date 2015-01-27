@@ -214,14 +214,14 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
         
 
         #Note that I am assuming that an application has only ONE generic service    
-        self.app_tar = kwargs.pop('app_tar')
+        # self.app_tar = kwargs.pop('app_tar')
         #apptarfile = kwargs.pop('app_tar')
         #self.app_tar = apptarfile.file
         
-        self.appid = kwargs.pop('appid')
-        self.cloud = kwargs['cloud']
+        # self.appid = kwargs.pop('appid')
+        # self.cloud = kwargs['cloud']
         #genc uncomment this when done
-        Thread(target=self.run_am, args=[]).start()
+        # Thread(target=self.run_am, args=[]).start()
         
 
         #self.run_am()
@@ -246,6 +246,29 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
         return HttpJsonResponse({'success': True})
     
 
+    @expose('UPLOAD')
+    def upload_application(self, kwargs):
+
+        # manifestfile = kwargs.pop('manifest')
+        # manifestconent = manifestfile.file
+        # self.manifest = ManifestParser.parse(simplejson.loads(manifestconent.read()))
+        # self.slomanager = SLOEnforcer(self.manifest)
+        # slofile = kwargs.pop('slo')
+        # sloconent = slofile.file
+        # self.slo = SLOParser.parse(simplejson.loads(sloconent.getvalue()))
+        
+
+        #Note that I am assuming that an application has only ONE generic service    
+        self.app_tar = kwargs.pop('app_tar')
+        # self.appid = kwargs.pop('appid')
+        # self.cloud = kwargs['cloud']
+        
+        return HttpJsonResponse({'success': True})
+
+    @expose('GET')
+    def profile(self, kwargs):
+        Thread(target=self.run_am, args=[]).start()
+        
     def perparePerformanceModel(self, download):
         flat_pm = {'experiments':[], 'pareto':[]}
         for impl in self.performance_model['experiments']:
@@ -359,8 +382,7 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
             _, body = https.client.https_post(parsed_url.hostname,
                                               parsed_url.port or 443,
                                               parsed_url.path,
-                                              params={'service_type': service_type, 'appid':self.appid, 'sid':sid})
-                                              
+                                              params={'service_type': service_type, 'appid':self.config_parser.get('manager', 'APP_ID'), 'sid':sid})
             obj = simplejson.loads(body)
             return not obj['error']
         except:
