@@ -9,7 +9,7 @@ CERT_DIR = /etc/cpsdirector/certs
 DEPLOYMENT_NAME = conpaas-online
 
 # Support for external identity providers
-support_external_idp = false
+SUPPORT_EXTERNAL_IDP = false
 
 # Uncomment the following directives in case you want to use per-application
 # Virtual Private Networks. In the default config presented below, the maximum
@@ -108,11 +108,11 @@ support_external_idp = false
 #
 # ConPaaS official AMI ids are: 
 #
-# - ami-22cc4b4a United States East (Northern Virginia)
-# - ami-e31d52d3 United States West (Oregon)
-# - ami-5058f627 Europe West (Ireland)
+# - ami-802e6ce8 United States East (Northern Virginia)
+# - ami-dd8bd0ed United States West (Oregon)
+# - ami-f158d686 Europe West (Ireland)
 
-# IMAGE_ID = ami-22cc4b4a
+# IMAGE_ID = ami-802e6ce8
 
 # This variable contains the type of EC2 instances to use. A good value to use
 # inexpensive, low-performance instances is "t1.micro".
