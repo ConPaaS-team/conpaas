@@ -245,6 +245,29 @@ class BaseClient(object):
 
         return service
 
+    def list_nodes(self, service_id):
+        """List the nodes of a service"""
+        nodes = self.callmanager(service_id, "list_nodes", False, {})
+        if 'error' in nodes:
+            print "E: Cannot get list of nodes: %s" % nodes['error']
+
+        for role, role_nodes in nodes.items():
+            for node in role_nodes:
+                params = {'serviceNodeId': node}
+                details = self.callmanager(service_id, "get_node_info", False,
+                        params)
+                if 'error' in details:
+                    print "Warning: got node identifier from list_nodes but " \
+                            "failed on get_node_info: %s" % details['error']
+                else:
+                    node = details['serviceNode']
+                    if 'vmid' in node and 'cloud' in node:
+                        print "%s: node %s from cloud %s with IP address %s" \
+                              % (role, node['vmid'], node['cloud'], node['ip'])
+                    else:
+                        print "%s: node %s with IP address %s" \
+                              % (role, node['id'], node['ip'])
+
     def logs(self, service_id):
         res = self.callmanager(service_id, "getLog", False, {})
         print res['log']
@@ -508,6 +531,7 @@ Do you want to continue? (y/N): """
         print "    rename            serviceid newname   # rename the specified service"
         print "    startup_script    serviceid filename  # upload a startup script"
         print "    usage             serviceid           # show service-specific options"
+        print "    list_nodes        serviceid           # list the nodes of a service"
 
     def main(self, argv):
         """What to do when invoked from the command line. Clients should extend
@@ -673,7 +697,8 @@ Do you want to continue? (y/N): """
             # We have all been there
             command = "usage"
 
-        if command in ( 'start', 'stop', 'terminate', 'info', 'logs', 'usage' ):
+        if command in ( 'start', 'stop', 'terminate', 'info', 'logs', 'usage',
+                        'list_nodes' ):
             # Call the method 
             if command == "start":
                 if len(sys.argv) == 3:
