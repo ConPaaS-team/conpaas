@@ -250,6 +250,7 @@ class BaseClient(object):
         nodes = self.callmanager(service_id, "list_nodes", False, {})
         if 'error' in nodes:
             print "E: Cannot get list of nodes: %s" % nodes['error']
+            sys.exit(1)
 
         for role, role_nodes in nodes.items():
             for node in role_nodes:
