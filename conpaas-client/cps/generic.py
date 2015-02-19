@@ -32,13 +32,17 @@ class Client(BaseClient):
         print "    download_code     serviceid version   # download a specific code version"
         print "    enable_code       serviceid version   # set a specific code version active"
         print "    delete_code       serviceid version   # delete a specific code version"
+        print "    list_volumes      serviceid           # list the volumes in use by the Generic agents"
+        print "    create_volume     serviceid vol_name size(MB) agent_id # create a volume and attatch it to a Generic agent"
+        print "    delete_volume     serviceid vol_name  # detach and delete a volume"
         print "    run               serviceid           # deploy the application"
 
     def main(self, argv):
         command = argv[1]
    
         if command in ( 'add_nodes', 'remove_nodes', 'upload_code', 'list_uploads',
-                        'download_code', 'enable_code', 'delete_code', 'run' ):
+                        'download_code', 'enable_code', 'delete_code',
+                        'list_volumes', 'create_volume', 'delete_volume', 'run' ):
             try:                                                      
                 sid = int(argv[2])                                    
             except (IndexError, ValueError):                          
@@ -88,7 +92,7 @@ class Client(BaseClient):
                                                                                            
             data = [ add_cur(el) for el in res['codeVersions'] ]                                   
             print self.prettytable(( 'current', 'codeVersionId', 'filename', 'description' ), data)
-        
+
         if command in ( 'enable_code', 'download_code', 'delete_code' ):
             try:                                         
                 code_version = argv[3]                   
@@ -97,6 +101,36 @@ class Client(BaseClient):
                 sys.exit(0)                              
                                                  
             getattr(self, command)(sid, code_version)    
+
+        if command == 'list_volumes':
+            res = self.callmanager(sid, 'list_volumes', False, {})
+            if 'error' in res:
+                print res['error']
+            elif res['volumes']:
+                print self.prettytable(( 'volumeName', 'volumeSize',
+                                         'agentId' ), res['volumes'])
+            else:
+                print 'No volumes defined'
+
+        if command == 'create_volume':
+            try:
+                volumeName = argv[3]
+                volumeSize = argv[4]
+                agentId = argv[5]
+            except IndexError:
+                self.usage(argv[0])
+                sys.exit(0)
+
+            getattr(self, command)(sid, volumeName, volumeSize, agentId)
+
+        if command == 'delete_volume':
+            try:
+                volumeName = argv[3]
+            except IndexError:
+                self.usage(argv[0])
+                sys.exit(0)
+
+            getattr(self, command)(sid, volumeName)
 
 
     def upload_code(self, service_id, filename):
@@ -163,6 +197,46 @@ class Client(BaseClient):
 
         else:
             print code_version, 'deleted'
+
+
+    def create_volume(self, service_id, volumeName, volumeSize, agentId):
+        params = { 'volumeName': volumeName,
+                   'volumeSize': volumeSize,
+                   'agentId': agentId}
+
+        res = self.callmanager(service_id, "generic_create_volume",
+            True, params)
+
+        if 'error' in res:
+            print 'E: %s' % res['error']
+        else:
+            print ("Creating volume %s and attaching it to %s... " %
+                    (volumeName, agentId))
+            sys.stdout.flush()
+
+            self.wait_for_state(service_id, "RUNNING")
+
+            print "done."
+            sys.stdout.flush()
+
+
+    def delete_volume(self, service_id, volumeName):
+        params = { 'volumeName': volumeName }
+
+        res = self.callmanager(service_id, "generic_delete_volume",
+            True, params)
+
+        if 'error' in res:
+            print 'E: %s' % res['error']
+        else:
+            print ("Detaching and deleting volume %s... " %
+                    volumeName)
+            sys.stdout.flush()
+
+            self.wait_for_state(service_id, "RUNNING")
+
+            print "done."
+            sys.stdout.flush()
 
 
     def run(self, service_id):

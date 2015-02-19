@@ -41,6 +41,7 @@ class ServiceConfiguration(object):
         self.codeVersions = {}
         self.currentCodeVersion = None
 #        self.serviceNodes = {}
+        self.volumes = {}
 
 class AgentInfo(object):
 
@@ -48,3 +49,12 @@ class AgentInfo(object):
         self.id = id
         self.ip = ip
         self.role = role
+
+class VolumeInfo(object):
+
+    def __init__(self, volumeName, volumeId, volumeSize, agentId, devName):
+        self.volumeName = volumeName
+        self.volumeId = volumeId
+        self.volumeSize = volumeSize
+        self.agentId = agentId
+        self.devName = devName

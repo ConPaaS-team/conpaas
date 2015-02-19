@@ -57,7 +57,7 @@ from conpaas.services.generic.misc import archive_open, archive_get_members, arc
 
 from conpaas.core.log import create_logger
 from conpaas.services.generic.agent import client
-from conpaas.services.generic.manager.config import CodeVersion, ServiceConfiguration
+from conpaas.services.generic.manager.config import CodeVersion, ServiceConfiguration, VolumeInfo
 
 class GenericManager(BaseManager):
     """Manager class with the following exposed methods:
@@ -196,7 +196,7 @@ class GenericManager(BaseManager):
         for serviceNode in nodes:
             try:
                 initpath = os.path.join(self.code_repo, 'init.sh')
-                client.init_agent(serviceNode.ip, 5555, initpath, agents_info)
+                client.init_agent(serviceNode.ip, self.AGENT_PORT, initpath, agents_info)
             except client.AgentException:
                 self.logger.exception('Failed initialize agent at node %s' % str(serviceNode))
                 self._state_set(self.S_ERROR, msg='Failed to initialize agent at node %s' % str(serviceNode))
@@ -224,7 +224,7 @@ class GenericManager(BaseManager):
     def _do_run(self, agents_info):
         for node in self.nodes:
             try:
-                client.run(node.ip, 5555, agents_info)
+                client.run(node.ip, self.AGENT_PORT, agents_info)
             except client.AgentException:
                 self.logger.exception('Failed to start run at node %s' % str(node))
                 self._state_set(self.S_ERROR, msg='Failed to run code at node %s' % str(node))
@@ -245,6 +245,13 @@ class GenericManager(BaseManager):
 
     def _do_shutdown(self):
         """Delete all nodes and switch to status STOPPED"""
+        # Detach and delete all volumes
+        config = self._configuration_get()
+        for volume in config.volumes.values():
+            self.__delete_volume_internal(volume)
+        config.volumes = {}
+        self._configuration_set(config)
+
         self.controller.delete_nodes(self.nodes)
         self.nodes = []        # Not only delete the nodes, but clear the list too
         self.agents_info = []
@@ -346,7 +353,19 @@ class GenericManager(BaseManager):
         """Remove 'count' nodes, starting from the end of the list. This way
         the Generic master gets removed last."""
         for _ in range(count):
-            node = self.nodes.pop()
+            # detach and delete any attached volumes
+            node = self.nodes[-1]
+            config = self._configuration_get()
+            attached_volumes = [
+                volume for volume in config.volumes.values()
+                       if volume.agentId == node.id
+            ]
+            for volume in attached_volumes:
+                self.__delete_volume_internal(volume)
+                config.volumes.pop(volume.volumeName)
+            self._configuration_set(config)
+
+            self.nodes.pop()
             self.agents_info.pop()
             self.logger.info("Removing node with IP %s" % node.ip)
             self.controller.delete_nodes([ node ])
@@ -650,13 +669,202 @@ echo "" >> /root/generic.out
             #    if err:
             #        self.logger.debug('git-push to %s: %s' % (node.ip, err))
             try:
-                client.update_code(node.ip, 5555, config.currentCodeVersion,
+                client.update_code(node.ip, self.AGENT_PORT, config.currentCodeVersion,
                                      config.codeVersions[config.currentCodeVersion].type,
                                      os.path.join(self.code_repo, config.currentCodeVersion))
             except client.AgentException:
                 self.logger.exception('Failed to update code at node %s' % str(node))
                 self._state_set(self.S_ERROR, msg='Failed to update code at node %s' % str(node))
                 raise
+
+    @expose('GET')
+    def list_volumes(self, kwargs):
+        if len(kwargs) != 0:
+            ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
+                                  kwargs.keys())
+            return HttpErrorResponse(ex.message)
+        config = self._configuration_get()
+        volumes = []
+        for volume in config.volumes.values():
+            item = {'volumeName': volume.volumeName,
+                    'volumeSize': volume.volumeSize,
+                    'agentId': volume.agentId}
+            volumes.append(item)
+        return HttpJsonResponse({'volumes': volumes})
+
+    @expose('POST')
+    def generic_create_volume(self, kwargs):
+        if self._state_get() != self.S_RUNNING:
+            vals = { 'curstate': self._state_get(),
+                     'action': 'generic_create_volume' }
+            return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
+
+        if 'volumeName' not in kwargs:
+            ex = ManagerException(ManagerException.E_ARGS_MISSING,
+                                  'volumeName')
+            return HttpErrorResponse(ex.message)
+        if isinstance(kwargs['volumeName'], dict):
+            ex = ManagerException(ManagerException.E_ARGS_INVALID,
+                                  detail='volumeName should be a string')
+            return HttpErrorResponse(ex.message)
+        volumeName = kwargs.pop('volumeName')
+
+        if 'volumeSize' not in kwargs:
+            ex = ManagerException(ManagerException.E_ARGS_MISSING,
+                                  'volumeSize')
+            return HttpErrorResponse(ex.message)
+        try:
+            volumeSize = int(kwargs.pop('volumeSize'))
+            if volumeSize <= 0:
+                raise ValueError()
+        except ValueError:
+            ex = ManagerException(ManagerException.E_ARGS_INVALID,
+                            detail='volumeSize should be a positive integer')
+            return HttpErrorResponse(ex.message)
+
+        if 'agentId' not in kwargs:
+            ex = ManagerException(ManagerException.E_ARGS_MISSING,
+                                  'agentId')
+            return HttpErrorResponse(ex.message)
+        if isinstance(kwargs['agentId'], dict):
+            ex = ManagerException(ManagerException.E_ARGS_INVALID,
+                                  detail='agentId should be a string')
+            return HttpErrorResponse(ex.message)
+        agentId = kwargs.pop('agentId')
+
+        if len(kwargs) != 0:
+            ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
+                                  kwargs.keys())
+            return HttpErrorResponse(ex.message)
+
+        config = self._configuration_get()
+        if volumeName in config.volumes:
+            ex = ManagerException(ManagerException.E_ARGS_INVALID,
+                                  detail='volumeName already exists')
+            return HttpErrorResponse(ex.message)
+
+        if agentId not in [ node.id for node in self.nodes ]:
+            ex = ManagerException(ManagerException.E_ARGS_INVALID,
+                                  detail='Invalid agentId')
+            return HttpErrorResponse(ex.message)
+
+        self._state_set(self.S_ADAPTING)
+        Thread(target=self._do_create_volume, args=[volumeName, volumeSize,
+               agentId]).start()
+
+        return HttpJsonResponse({ 'state': self._state_get() })
+
+    def _do_create_volume(self, volumeName, volumeSize, agentId):
+        """Create a new volume and attach it to the specified agent"""
+
+        self.logger.debug("do_create_volume: Going to create a new volume")
+
+        dev_name = None
+        try:
+            try:
+                # We try to create a new volume.
+                volume_name = "generic-%s" % volumeName
+                node_id = agentId.replace("iaas", "")
+                self.logger.debug("Trying to create a volume for the node_id=%s"
+                                  % node_id)
+                volume = self.create_volume(volumeSize, volume_name, node_id)
+            except Exception, ex:
+                self.logger.exception("Failed to create volume %s: %s"
+                                      % (volume_name, ex))
+                raise
+            try:
+                _, dev_name = self.attach_volume(volume.id, node_id)
+            except Exception, ex:
+                self.logger.exception("Failed to attach disk to Generic node %s: %s"
+                                      % (node_id, ex))
+                self.destroy_volume(volume.id)
+                raise
+            try:
+                node_ip = [ node.ip for node in self.nodes
+                            if node.id == agentId ][0]
+                client.mount_volume(node_ip, self.AGENT_PORT, dev_name, volumeName)
+            except client.AgentException, ex:
+                self.logger.exception('Failed to configure Generic node %s: %s'
+                                      % (node_id, ex))
+                self.detach_volume(volume.id)
+                self.destroy_volume(volume.id)
+                raise
+        except Exception, ex:
+            self.logger.exception('do_create_volume: Failed to create volume: %s.'
+                                  % ex)
+            self._state_set(self.S_ERROR)
+            return
+
+        config = self._configuration_get()
+        config.volumes[volumeName] = VolumeInfo(volumeName, volume.id,
+                                                 volumeSize, agentId, dev_name)
+        self._configuration_set(config)
+        self.logger.debug('Volume %s created and attached successfully'
+                          % volume_name)
+        self._state_set(self.S_RUNNING)
+
+    @expose('POST')
+    def generic_delete_volume(self, kwargs):
+        if self._state_get() != self.S_RUNNING:
+            vals = { 'curstate': self._state_get(),
+                     'action': 'generic_delete_volume' }
+            return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
+
+        if 'volumeName' not in kwargs:
+            ex = ManagerException(ManagerException.E_ARGS_MISSING,
+                                  'volumeName')
+            return HttpErrorResponse(ex.message)
+        if isinstance(kwargs['volumeName'], dict):
+            ex = ManagerException(ManagerException.E_ARGS_INVALID,
+                                  detail='volumeName should be a string')
+            return HttpErrorResponse(ex.message)
+        volumeName = kwargs.pop('volumeName')
+
+        if len(kwargs) != 0:
+            ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
+                                  kwargs.keys())
+            return HttpErrorResponse(ex.message)
+
+        config = self._configuration_get()
+
+        if volumeName not in config.volumes:
+            ex = ManagerException(ManagerException.E_ARGS_INVALID,
+                                  detail='Invalid volumeName')
+            return HttpErrorResponse(ex.message)
+
+        self._state_set(self.S_ADAPTING)
+        Thread(target=self._do_delete_volume, args=[volumeName]).start()
+
+        return HttpJsonResponse({ 'state': self._state_get() })
+
+
+    def _do_delete_volume(self, volumeName):
+        """Detach a volume and delete it"""
+        self.logger.debug("do_delete_volume: Going to remove volume generic-%s",
+                          volumeName)
+
+        config = self._configuration_get()
+        self.__delete_volume_internal(config.volumes[volumeName])
+        config.volumes.pop(volumeName)
+        self._configuration_set(config)
+
+        self.logger.debug('Volume generic-%s removed successfully'
+                          % volumeName)
+        self._state_set(self.S_RUNNING)
+
+    def __delete_volume_internal(self, volume):
+        self.logger.debug("Detaching and deleting volume %s"
+                % volume.volumeName)
+        try:
+            node_id = volume.agentId.replace("iaas", "")
+            node_ip = [ node.ip for node in self.nodes
+                        if node.id == volume.agentId ][0]
+            client.unmount_volume(node_ip, self.AGENT_PORT, volume.devName)
+        except client.AgentException, ex:
+            self.logger.exception('Failed to configure Generic node %s: %s'
+                                  % (node_id, ex))
+        self.detach_volume(volume.volumeId)
+        self.destroy_volume(volume.volumeId)
 
     def _configuration_get(self):
         return self.memcache.get(self.CONFIG)

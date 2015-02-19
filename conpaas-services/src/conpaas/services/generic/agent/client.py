@@ -79,6 +79,18 @@ def create_node(host, port, hub_ip):
     params = { 'my_ip': host, 'hub_ip': hub_ip }
     return _check(https.client.jsonrpc_post(host, port, '/', method, params))
 
+def mount_volume(host, port, dev_name, vol_name):
+    """POST (dev_name, vol_name) mount_volume"""
+    method = 'mount_volume'
+    params = { 'dev_name': dev_name, 'vol_name': vol_name }
+    return _check(https.client.jsonrpc_post(host, port, '/', method, params))
+
+def unmount_volume(host, port, dev_name):
+    """POST (dev_name) unmount_volume"""
+    method = 'unmount_volume'
+    params = { 'dev_name': dev_name }
+    return _check(https.client.jsonrpc_post(host, port, '/', method, params))
+
 def run(host, port, agents_info):
     """POST (agents_info) run"""
     method = 'run'
