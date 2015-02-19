@@ -258,7 +258,7 @@ class GenericAgent(BaseAgent):
         self.state = 'ADAPTING'
         try:
             mount_point = "/media/%s" % vol_name
-            self.mount(dev_name, mount_point, True)
+            self._mount(dev_name, mount_point, True)
         except Exception as e:
             self.logger.exception('Failed to mount disk %s' % dev_name)
             self.state = 'ERROR'
@@ -285,7 +285,7 @@ class GenericAgent(BaseAgent):
 
         self.state = 'ADAPTING'
         try:
-            self.unmount(dev_name)
+            self._unmount(dev_name)
         except Exception as e:
             self.logger.exception('Failed to unmount disk %s' % dev_name)
             self.state = 'ERROR'
@@ -295,7 +295,22 @@ class GenericAgent(BaseAgent):
         self.logger.info('Unmount operation completed.')
         return HttpJsonResponse()
 
-    def mount(self, dev_name, mount_point, mkfs):
+    def _check_dev_is_attached(self, dev_name):
+        # if the device file does not exist, the volume is definitely not
+        # attached yet
+        if not lexists(dev_name):
+            return False
+
+        # force the kernel to re-read the partition table
+        # this allows reusing the device name after a volume was detached
+        run_cmd('sfdisk -R %s' % dev_name)
+
+        # check if the device appears in the partitions list
+        short_dev_name = dev_name.split('/')[2]
+        output, _ = run_cmd('cat /proc/partitions')
+        return short_dev_name in output
+
+    def _mount(self, dev_name, mount_point, mkfs):
         devnull_fd = open(devnull, 'w')
         # waiting for our block device to be available
         dev_found = False
@@ -303,13 +318,13 @@ class GenericAgent(BaseAgent):
 
         for attempt in range(1, 11):
             self.logger.info("Generic node waiting for block device %s" % dev_name)
-            if lexists(dev_name):
+            if self._check_dev_is_attached(dev_name):
                 dev_found = True
                 break
             else:
                 # On EC2 the device name gets changed
                 # from /dev/sd[a-z] to /dev/xvd[a-z]
-                if lexists(dev_name.replace(dev_prefix, 'xvd')):
+                if self._check_dev_is_attached(dev_name.replace(dev_prefix, 'xvd')):
                     dev_found = True
                     dev_name = dev_name.replace(dev_prefix, 'xvd')
                     break
@@ -354,7 +369,7 @@ class GenericAgent(BaseAgent):
         else:
             self.logger.critical("Block device %s unavailable" % dev_name)
 
-    def unmount(self, dev_name):
+    def _unmount(self, dev_name):
         # kill all processes still using the volume
         fuser_args = ['fuser', '-km', dev_name]
         fuser_cmd = ' '.join(fuser_args)
