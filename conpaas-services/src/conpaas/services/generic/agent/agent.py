@@ -344,7 +344,7 @@ class GenericAgent(BaseAgent):
             # mount
             mount_args = ['mount', dev_name, mount_point]
             mount_cmd = ' '.join(mount_args)
-            self.logger.debug('Running command %s' % mount_cmd)
+            self.logger.debug("Running command '%s'" % mount_cmd)
             _, err = run_cmd(mount_cmd)
 
             if err:
@@ -355,10 +355,16 @@ class GenericAgent(BaseAgent):
             self.logger.critical("Block device %s unavailable" % dev_name)
 
     def unmount(self, dev_name):
+        # kill all processes still using the volume
+        fuser_args = ['fuser', '-km', dev_name]
+        fuser_cmd = ' '.join(fuser_args)
+        self.logger.debug("Running command '%s'" % fuser_cmd)
+        run_cmd(fuser_cmd)
+
         # unmount
         unmount_args = ['umount', dev_name]
         unmount_cmd = ' '.join(unmount_args)
-        self.logger.debug('Running command %s' % unmount_cmd)
+        self.logger.debug("Running command '%s'" % unmount_cmd)
         _, err = run_cmd(unmount_cmd)
         if err:
             self.logger.critical('Failed to unmount storage device: %s' % err)
