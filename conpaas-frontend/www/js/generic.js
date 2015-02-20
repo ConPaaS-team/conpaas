@@ -55,7 +55,7 @@ conpaas.ui = (function (this_module) {
      */
     freezeInput: function (freeze) {
         var linksSelectors = ['.activate', '.download', '.delete', '.dot'],
-            buttons = ['deployApp'];
+            buttons = ['refreshVolumeList', 'createVolume', 'deployApp'];
         conpaas.ui.ServicePage.prototype.freezeInput.call(this, freeze);
         this.freezeButtons(buttons, freeze);
         this.hideLinks(linksSelectors, freeze);
@@ -101,6 +101,9 @@ conpaas.ui = (function (this_module) {
         $('.deployoption input[type=radio]').change(function() {
             $('.deployactions').toggleClass('invisible');
         });
+        $('#createVolume').click(that, that.onCreateVolume);
+        $('#refreshVolumeList').click(that, that.onRefreshVolumesList);
+        $('#linkVolumes').click(this, this.onClickLinkVolumes);
         $('#deployApp').click(that, that.onDeployApp);
     },
 
@@ -112,6 +115,93 @@ conpaas.ui = (function (this_module) {
         setTimeout(function () {
             $(statusId).fadeOut();
         }, 3000);
+    },
+
+    deleteVolume: function (event, volumeName) {
+		var page = event.data;
+		if (volumeName.length == 0) {
+			return;
+		}
+        if (!confirm('Are you sure you want to delete the volume ' + volumeName +
+                '? All data contained within will be lost.')) {
+            return;
+        }
+        page.freezeInput(true);
+		//send the request
+        page.server.req('ajax/genericRequest.php', {
+            sid: page.service.sid,
+            method: 'deleteVolume',
+            volumeName: volumeName
+        }, 'post', function (response) {
+            // successful
+            window.location.reload();
+        }, function (response) {
+            // error
+            page.showStatus('#listVolumeStat', 'error', 'Volume was not deleted');
+            page.freezeInput(false);
+        });
+    },
+
+    makeDeleteHandler_: function (page, volumeName) {
+        return function (event) {
+            page.deleteVolume(event, volumeName);
+        };
+    },
+
+    refreshVolumesList: function (showResult) {
+        var page = this;
+		//send the request
+		page.freezeInput(true);
+        page.server.req('ajax/genericRequest.php', {
+            sid: page.service.sid,
+            method: 'listVolumes'
+        }, 'post', function (response) {
+            // successful
+            var volumes = response.result.volumes,
+                listHTML = '';
+            volumes.sort(function(a, b) {
+                if (a.volumeName < b.volumeName)
+                    return -1;
+                if (a.volumeName > b.volumeName)
+                    return 1;
+                return 0;
+            });
+            for	(var i = 0; i < volumes.length; i++) {
+                listHTML += '<tr class="service"><td class="wrapper'
+                listHTML += (i == volumes.length - 1 ? ' last' : '') + '">';
+                listHTML += '<div class="content generic-details">';
+                listHTML += '<img src="images/volume.png">&nbsp;&nbsp;';
+                listHTML += '<b>' + volumes[i].volumeName + '</b>';
+                listHTML += ' (size <b>' + volumes[i].volumeSize + 'MB</b>,';
+                listHTML += ' attached to <b>' + volumes[i].agentId + '</b>)';
+                listHTML += '</div>';
+                listHTML += '<div class="statistic"><div class="statcontent">';
+                listHTML += '<img id="';
+                listHTML += 'deleteVolume-' + volumes[i].volumeName;
+                listHTML += '" src="images/remove.png">';
+                listHTML += '</div></div>';
+                listHTML += '<div class="clear"></div>';
+                listHTML += '</td></tr>';
+            }
+            $('#volumesList').html(listHTML);
+            for	(var i = 0; i < volumes.length; i++) {
+                $('#deleteVolume-' + volumes[i].volumeName).click(page,
+                        page.makeDeleteHandler_(page, volumes[i].volumeName));
+            }
+            if (!listHTML) {
+				$('#noVolumesBox').show();
+			} else {
+                $('#noVolumesBox').hide();
+            }
+            if (showResult) {
+                page.showStatus('#listVolumeStat', 'positive', 'Volume list refreshed');
+            }
+            page.freezeInput(false);
+        }, function (response) {
+            // error
+            page.showStatus('#listVolumeStat', 'error', 'Volumes information not available');
+            page.freezeInput(false);
+        });
     },
 
     // handlers
@@ -129,6 +219,52 @@ conpaas.ui = (function (this_module) {
             $(event.target).parent().find('.loading').hide();
             page.freezeInput(false);
         });
+    },
+
+    onCreateVolume: function (event) {
+		var page = event.data,
+			volumeName = $('#volumeName').val(),
+	        volumeSize = $('#volumeSize').val(),
+	        agentId = $('#selectAgent').val();
+
+		if (volumeName.length == 0) {
+			page.showStatus('#VolumeStat', 'error', 'There is no volume name');	
+			return;
+		}
+        if (!/^[1-9]\d*$/.test(volumeSize)) {
+			page.showStatus('#VolumeStat', 'error', 'Volume size must be a positive integer');	
+			return;
+        }
+		if (selectAgent.length == 0) {
+			page.showStatus('#VolumeStat', 'error', 'There is no agent selected');	
+			return;
+		}
+		//send the request
+		page.freezeInput(true);
+        page.server.req('ajax/genericRequest.php', {
+            sid: page.service.sid,
+            method: 'createVolume',
+            volumeName: volumeName,
+            volumeSize: volumeSize,
+            agentId: agentId
+        }, 'post', function (response) {
+            // successful
+            window.location.reload();
+        }, function (response) {
+            // error
+            page.showStatus('#VolumeStat', 'error', response.details);
+            page.freezeInput(false);
+        });
+    },
+
+    onClickLinkVolumes: function (event) {
+        $('#volumeName').focus();
+        return false;
+    },
+
+    onRefreshVolumesList: function (event) {
+        var page = event.data;
+        page.refreshVolumesList(true);
     },
 
     onDeployApp: function (event) {
@@ -209,6 +345,7 @@ $(document).ready(function () {
                 window.location.reload();
             });
         }
+        page.refreshVolumesList(false);
     }, function () {
         // error
         window.location = 'services.php';

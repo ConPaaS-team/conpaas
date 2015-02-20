@@ -179,7 +179,9 @@ class GenericPage extends ServicePage {
 		return
 			'<div class="form-section">'
 				.'<div class="form-header">'
-					.'<div class="title">Code management</div>'
+					.'<div class="title">'
+						.'<img src="images/archive.png" />Code management'
+					.'</div>'
 					.'<div class="clear"></div>'
 				.'</div>'
 				.$this->renderCodeForm()
@@ -190,11 +192,125 @@ class GenericPage extends ServicePage {
 			.'</div>';
 	}
 
-	public function renderDeployAppSection() {
+	private function renderAvailableVolumes() {
+		return
+			'<div id="availableVolumesForm">'
+				.'<div class="left-stack name">available volumes</div>'
+				.'<div class="left-stack details">'
+					.'<div class="generic-list">'
+						.'<div id="noVolumesBox" class="box generic-box invisible">'
+							.'You have no volumes in this Generic service. '
+							.'Go ahead and '
+							.'<a id="linkVolumes" href="javascript:void(0);">'
+							.'create a volume'
+							.'</a>.'
+						.'</div>'
+						.'<table id="volumesList" class="slist" '
+							.'cellpadding="0" cellspacing="1">'
+						.'</table>'
+					.'</div>'
+				.'</div>'
+				.'<div class="clear"></div>'
+				.'<div class="left-stack name"></div>'
+				.'<div class="left-stack details">'
+					.'<input id="refreshVolumeList" '
+						.'type="button" value="refresh volumes" />'
+					.'<i id="listVolumeStat" class="invisible"></i>'
+				.'</div>'
+				.'<div class="clear"></div>'
+			.'</div>';
+	}
+
+	private function renderVolumeInput() {
+		return
+			'<div>'
+				.'<div class="left-stack name">volume name</div>'
+				.'<div class="left-stack details">'
+					.'<input id="volumeName" type="text" />'
+				.'</div>'
+				.'<div class="clear"></div>'
+			.'</div>';
+	}
+
+	private function renderSizeInput() {
+		return
+			'<div>'
+			.'<div class="left-stack name">size (MB)</div>'
+			.'<div class="left-stack details">'
+					.'<input id="volumeSize" type="text" />'
+				.'</div>'
+				.'<div class="clear"></div>'
+			.'</div>';
+	}
+
+	private function renderAgentSelect() {
+		$nodesLists = $this->service->getNodesLists();
+		$selectOptions = '';
+		$roles = array_keys($nodesLists);
+		sort($roles);
+		foreach ($roles as $role) {
+			foreach ($nodesLists[$role] as $node) {
+				$selectOptions .= '<option value="';
+				$selectOptions .= $node;
+				$selectOptions .= '">';
+				$selectOptions .= $node.' ['.$role.']';
+				$selectOptions .= '</option>';
+			}
+		}
+		return
+			'<div>'
+				.'<div class="left-stack name">attach to agent</div>'
+				.'<div class="left-stack details">'
+					.'<select id="selectAgent">'
+					.$selectOptions
+					.'</select>'
+				.'</div>'
+				.'<div class="clear"></div>'
+			.'</div>';
+	}
+
+	private function renderVolumeCreate() {
+		return $this->renderVolumeInput()
+           .$this->renderSizeInput()
+           .$this->renderAgentSelect()
+           .'<div id="createVolumeForm">'
+				.'<div class="left-stack name"></div>'
+				.'<div class="left-stack details">'
+					.'<input id="createVolume" type="button" '
+					.' value="create volume" />'
+					.'<input id="deleteVolume" type="button" '
+					.' value="delete volume" class="invisible" />'
+                    .'<i id="VolumeStat" class="invisible"></i>'
+				.'</div>'
+				.'<div class="clear"></div>'
+			.'</div>';
+	}
+
+	public function renderManageVolumesSection() {
+		return
+		'<div id="Manage_Generic_Volumes" '
+				.'class="form-section generic-volume generic-available">'
+			.'<div class="form-header">'
+				.'<div class="title">'
+					.'<img src="images/volume.png" />Volumes management'
+				.'</div>'
+				.'<div class="clear"></div>'
+			.'</div>'
+			.$this->renderAvailableVolumes()
+		.'</div>'
+		.'<div class="form-section generic-volume generic-create">'
+			.$this->renderVolumeCreate()
+		.'</div>';
+	}
+
+	public function renderAppLifecycle() {
 		return
 			'<div class="form-section">'
 				.'<div class="form-header">'
-					.'<div class="title">Deploy the application</div>'
+					.'<div class="title">'
+						.'<img src="images/lifecycle.png" />'
+						.'Application lifecycle management'
+					.'</div>'
 					.'<div class="clear"></div>'
 				.'</div>'
 				.'<input id="deployApp" type="button" value="start" />'
@@ -210,7 +326,8 @@ class GenericPage extends ServicePage {
 			.$this->renderCodeSection();
 
 		if ($this->service->isRunning()) {
-			$html .= $this->renderDeployAppSection();
+			$html .= $this->renderManageVolumesSection();
+			$html .= $this->renderAppLifecycle();
 		}
 
 		return $html;

@@ -78,6 +78,21 @@ class GenericService extends Service {
 		return $master_node['ip'];
 	}
 
+	public function createVolume($params) {
+		$resp = $this->managerRequest('post', 'generic_create_volume', $params);
+		return $resp;
+	}
+
+	public function listVolumes($params) {
+		$resp = $this->managerRequest('get', 'list_volumes', $params);
+		return $resp;
+	}
+
+	public function deleteVolume($params) {
+		$resp = $this->managerRequest('post', 'generic_delete_volume', $params);
+		return $resp;
+	}
+
 	public function deployApp() {
 		$resp = $this->managerRequest('post', 'run', array());
 		return $resp;

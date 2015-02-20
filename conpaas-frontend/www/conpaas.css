@@ -761,6 +761,38 @@ input.button {
 	padding: 3px;
 }
 
+.generic-volume .name {
+	width: 120px;
+}
+
+.generic-available {
+	padding-bottom: 0px;
+}
+
+.generic-create {
+	padding-top: 15px;
+}
+
+.generic-list {
+	width: 450px;
+}
+
+.generic-list table.slist {
+	width: 100%;
+}
+
+.generic-box {
+	border-color: #ccc;
+	background-color: #eee;
+	margin-left: 2px;
+}
+
+.generic-details {
+	color: #333;
+	font-weight: normal;
+	margin-top: 5px;
+}
+
 .form-section .form-header {
 	margin-bottom: 10px;
 }
