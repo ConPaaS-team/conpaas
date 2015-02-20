@@ -288,8 +288,7 @@ class GenericPage extends ServicePage {
 
 	public function renderManageVolumesSection() {
 		return
-		'<div id="Manage_Generic_Volumes" '
-				.'class="form-section generic-volume generic-available">'
+		'<div class="form-section generic-volume generic-available">'
 			.'<div class="form-header">'
 				.'<div class="title">'
 					.'<img src="images/volume.png" />Volumes management'
@@ -303,7 +302,7 @@ class GenericPage extends ServicePage {
 		.'</div>';
 	}
 
-	public function renderAppLifecycle() {
+	public function renderAppLifecycleSection() {
 		return
 			'<div class="form-section">'
 				.'<div class="form-header">'
@@ -327,7 +326,7 @@ class GenericPage extends ServicePage {
 
 		if ($this->service->isRunning()) {
 			$html .= $this->renderManageVolumesSection();
-			$html .= $this->renderAppLifecycle();
+			$html .= $this->renderAppLifecycleSection();
 		}
 
 		return $html;

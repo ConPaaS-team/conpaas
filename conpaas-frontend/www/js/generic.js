@@ -134,7 +134,12 @@ conpaas.ui = (function (this_module) {
             volumeName: volumeName
         }, 'post', function (response) {
             // successful
-            window.location.reload();
+            var message = "Command sent, waiting for the service to apply changes...";
+            page.showStatus('#listVolumeStat', 'positive', message);
+            page.displayInfo(message);
+            page.pollState(function () {
+                window.location.reload();
+            });
         }, function (response) {
             // error
             page.showStatus('#listVolumeStat', 'error', 'Volume was not deleted');
@@ -249,7 +254,12 @@ conpaas.ui = (function (this_module) {
             agentId: agentId
         }, 'post', function (response) {
             // successful
-            window.location.reload();
+            var message = "Command sent, waiting for the service to apply changes...";
+            page.showStatus('#VolumeStat', 'positive', message);
+            page.displayInfo(message);
+            page.pollState(function () {
+                window.location.reload();
+            });
         }, function (response) {
             // error
             page.showStatus('#VolumeStat', 'error', response.details);
