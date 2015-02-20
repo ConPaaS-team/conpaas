@@ -1,18 +1,35 @@
 import random
+import uuid
+from conpaas.core.log import create_logger
 
 
 class CloudGroups():
-    """ data structure for a collection of cloud groups.
+    """Data structure for a collection of cloud groups.
 
      Implements iterator protocol. The iterator has the following properties:
         1) It is a cycling iterator, i.e. it cycles endlessly through its contents
         2) The cloud names returned by next() are ordered firstly by number of nodes and secondly by time of last usage
-            (measured with a logical clock). This aims at spreading the nodes as even as possible across the cloud groups,
-            even when placing clouds explicitly (i.e. not using 'auto') or deleting random nodes.
-        3) If a group contains multiple clouds a random one is returned)
-    """
+            (measured with a logical clock). This aims at spreading the nodes as even as possible across the cloud
+            groups, even when placing clouds explicitly (i.e. not using 'auto') or deleting random nodes.
+        3) If a group contains multiple clouds a random one is returned)"""
+
+    @property
+    def groups(self):
+        """ returns a list of cloud groups in the form {group number : group} """
+        return dict((group.number, group.clouds) for group in self._groups)
+
+    @property
+    def clouds(self):
+        """ returns an list of cloud names"""
+        return self._cloud2group.keys()
+
+    @property
+    def nodes(self):
+        """Returns an list of all the nodes (from all cloud groups)"""
+        return [node for group in self._groups for node in group.nodes]
 
     def __init__(self, clouds):
+        self.logger = create_logger(__name__)
 
         if len(clouds) == 1:
             self.no_of_groups = 1
@@ -22,11 +39,9 @@ class CloudGroups():
         elif len(clouds) >= 4:
             self.no_of_groups = 4
 
-        """
-        build the internal data structures:
-            a list of up to four CloudGroup objects
-            cloud2number: an index that maps the name of a cloud to its cloud group, used as access method
-        """
+        # build the internal data structures:
+        #   a list of up to four CloudGroup objects
+        #   cloud2number: an index that maps the name of a cloud to its cloud group, used as access method
         self._groups = [CloudGroup(group_number) for group_number in range(self.no_of_groups)]
         self._cloud2group = {}
         for index, cloud in enumerate(clouds):
@@ -40,9 +55,6 @@ class CloudGroups():
         # init logical clock
         self._clock = 0
 
-        # List for tracking the first node in a cloud group
-        self._firstnodes = [True for _ in range(self.no_of_groups)]
-
     def __repr__(self):
         str_reprs = 'CloudsGroups[\n'
         for group in self._groups:
@@ -54,58 +66,71 @@ class CloudGroups():
         return self
 
     def next(self):
-        """ return a cloud from the next cloud group.
+        """Get a cloud from the next cloud group.
 
-        Also calls added_node(cloud).
+        Also calls register_node(cloud).
+
+        :return: a cloud, the registration key for the node to be added
         """
-        next_group = min(self._groups, key=lambda group: (group.nodes, group.timestamp))
-        cloud = next_group.random_cloud()
-        self.added_node(cloud)
-        return cloud
+        group = min(self._groups, key=lambda group: (group.node_counter, group.timestamp))
+        cloud = group.random_cloud()
+        reg_key = self.register_node(cloud)
+        return cloud, reg_key
 
     def number(self, cloud):
         """ return the cloud group number for a given cloud name """
         return self._cloud2group[cloud].number
 
-    def added_node(self, cloud, count=1):
-        """inform CloudGroups, that a node has been added to 'cloud' (demotes the priority of the given cloud).
+    def register_node(self, cloud):
+        """Inform CloudGroups, that a node will be added to the given cloud.
 
         This method needs to be called whenever a node is added explicitly, i.e. when a node is added without calling
         CloudGroups.next(). For nodes added with auto placement, this method is implicitly called through next().
         :param cloud: the cloud in which a node was added
         """
         group = self._cloud2group[cloud]
-        group.nodes += count
         self._clock += 1
         group.timestamp = self._clock
+        reg_key = uuid.uuid4()
+        group.reg_keys.append(reg_key)
+        return reg_key
 
-    def first_in_group(self, cloud):
-        """ returns true, if the the given cloud has only one node """
+    def complete_registration(self, node, reg_key, cloud):
+        """Inform CloudGroups, that a node as been created.
+
+        :return: true, if the given node is the first node in the group
+        """
         group = self._cloud2group[cloud]
-        first_in_group = self._firstnodes[group.number]
-        self._firstnodes[group.number] = False
-        return first_in_group
+        group.reg_keys.remove(reg_key)
+        group.nodes.append(node)
+        if group.firstnode is None:
+            group.firstnode = node
+        return node == group.firstnode
 
-    def get_groups(self):
-        """ returns a list of cloud groups in the form {group number : group} """
-        return dict((group.number, group.clouds) for group in self._groups)
+    def remove_node(self):
+        node = self.nodes.pop(1)
+        for group in self._groups:
+            if node in group.nodes:
+                group.nodes.remove(node)
+                break
 
-    def get_clouds(self):
-        """ returns an unordered list of clouds"""
-        return self._cloud2group.keys()
+        return node
 
 
-class CloudGroup():
-    """ datastructure for a single cloud group """
+class CloudGroup(object):
+    """Datastructure for a single cloud group"""
 
     def __init__(self, group_number):
         self.number = group_number
         self.clouds = []
-        self.nodes = 0
+        self.nodes = []
         self.timestamp = 0
+        self.reg_keys = []
+        self.firstnode = None
 
     def __repr__(self):
-        return "CloudGroup(number=%s, clouds=%s, nodes=%s, timestamp=%s)" % (self.number, self.clouds, self.nodes, self.timestamp)
+        return "CloudGroup(number=%s, clouds=%s, nodes=%s, timestamp=%s, firstnode: %s)" \
+               % (self.number, self.clouds, self.node_counter, self.timestamp, self.firstnode)
 
     def add_cloud(self, name):
         self.clouds.append(name)
@@ -113,4 +138,7 @@ class CloudGroup():
     def random_cloud(self):
         return random.choice(self.clouds)
 
+    @property
+    def node_counter(self):
+        return len(self.nodes) + len(self.reg_keys)
 
