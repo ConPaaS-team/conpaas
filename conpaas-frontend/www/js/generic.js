@@ -136,13 +136,12 @@ conpaas.ui = (function (this_module) {
             // successful
             var message = "Command sent, waiting for the service to apply changes...";
             page.showStatus('#listVolumeStat', 'positive', message);
-            page.displayInfo(message);
             page.pollState(function () {
                 window.location.reload();
             });
         }, function (response) {
             // error
-            page.showStatus('#listVolumeStat', 'error', 'Volume was not deleted');
+            page.showStatus('#listVolumeStat', 'error', response.details);
             page.freezeInput(false);
         });
     },
@@ -233,15 +232,18 @@ conpaas.ui = (function (this_module) {
 	        agentId = $('#selectAgent').val();
 
 		if (volumeName.length == 0) {
-			page.showStatus('#VolumeStat', 'error', 'There is no volume name');	
+			page.showStatus('#VolumeStat', 'error', 'There is no volume name');
+			$('#volumeName').focus();
 			return;
 		}
         if (!/^[1-9]\d*$/.test(volumeSize)) {
-			page.showStatus('#VolumeStat', 'error', 'Volume size must be a positive integer');	
+			page.showStatus('#VolumeStat', 'error', 'Volume size must be a positive integer');
+			$('#volumeSize').val('');
+			$('#volumeSize').focus();
 			return;
         }
 		if (selectAgent.length == 0) {
-			page.showStatus('#VolumeStat', 'error', 'There is no agent selected');	
+			page.showStatus('#VolumeStat', 'error', 'There is no agent selected');
 			return;
 		}
 		//send the request
@@ -256,7 +258,6 @@ conpaas.ui = (function (this_module) {
             // successful
             var message = "Command sent, waiting for the service to apply changes...";
             page.showStatus('#VolumeStat', 'positive', message);
-            page.displayInfo(message);
             page.pollState(function () {
                 window.location.reload();
             });
