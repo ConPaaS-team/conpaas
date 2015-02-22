@@ -759,7 +759,7 @@ echo "" >> /root/generic.out
 
         self.logger.debug("do_create_volume: Going to create a new volume")
 
-        dev_name = None
+        config = self._configuration_get()
         try:
             try:
                 # We try to create a new volume.
@@ -773,7 +773,15 @@ echo "" >> /root/generic.out
                                       % (volume_name, ex))
                 raise
             try:
-                _, dev_name = self.attach_volume(volume.id, node_id)
+                # try to find a dev name that is not already in use by the node
+                dev_names_in_use = [ vol.devName for vol in config.volumes.values()
+                            if vol.agentId == agentId ]
+                dev_name = self.config_parser.get('manager', 'DEV_TARGET')
+                while dev_name in dev_names_in_use:
+                    # increment the last char from dev_name
+                    dev_name = dev_name[:-1] + chr(ord(dev_name[-1]) + 1)
+                # attach the volume
+                _, dev_name = self.attach_volume(volume.id, node_id, dev_name)
             except Exception, ex:
                 self.logger.exception("Failed to attach disk to Generic node %s: %s"
                                       % (node_id, ex))
@@ -795,7 +803,6 @@ echo "" >> /root/generic.out
             self._state_set(self.S_ERROR)
             return
 
-        config = self._configuration_get()
         config.volumes[volumeName] = VolumeInfo(volumeName, volume.id,
                                                  volumeSize, agentId, dev_name)
         self._configuration_set(config)
