@@ -75,6 +75,7 @@ $support_openid = Director::getSupportOpenID();
         </td>
         <td class="formwrap">
         <div id="user-form">
+        <form>
             <h2 class="title" id="login-title">Login</h2>
             <h2 class="title invisible" id="register-title">Register</h2>
             <table>
@@ -108,12 +109,6 @@ $support_openid = Director::getSupportOpenID();
                         <input type="text" id="username" />
                     </td>
                 </tr>
-                <tr class="register_form" style="display: none">
-                    <td class="name">email</td>
-                    <td class="input">
-                        <input type="text" id="email" />
-                    </td>
-                </tr>
                 <tr>
                     <td class="name">password</td>
                     <td class="input">
@@ -124,6 +119,12 @@ $support_openid = Director::getSupportOpenID();
                     <td class="name">retype password</td>
                     <td class="input">
                         <input type="password" id="password2" />
+                    </td>
+                </tr>
+                <tr class="register_form" style="display: none">
+                    <td class="name">email</td>
+                    <td class="input">
+                        <input type="text" id="email" />
                     </td>
                 </tr>
                 <tr class="register_form" style="display: none">
@@ -189,7 +190,7 @@ $support_openid = Director::getSupportOpenID();
                     <img class="loading invisible" src="images/icon_loading.gif" />
                     </td>
                     <td class="actions">
-                        <input class="active" type="button" value="login" id="login" />
+                        <input class="active" type="submit" value="login" id="login" onclick="return false;" />
                         <input type="button" class="invisible" value="register" id="register" />
                         <!-- <input type="button" value="myregister" id="myregister" /> -->
                         <a id="toregister" href="javascript: void(0);">register</a>
@@ -201,6 +202,7 @@ $support_openid = Director::getSupportOpenID();
                 </tr>
             </table>
             <div id="error" class="invisible"></div>
+        </form>
         </div>
         </td>
         </tr>
