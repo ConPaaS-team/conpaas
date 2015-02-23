@@ -192,22 +192,43 @@ class GenericPage extends ServicePage {
 			.'</div>';
 	}
 
+	public function renderVolumeList() {
+		$volumes = $this->service->listVolumes();
+		if ($volumes === false) {
+			return '<h3> Volume information not available </h3>';
+		}
+		if (count($volumes) == 0) {
+			return '<div id="noVolumesBox" class="box generic-box">'
+						.'You have no volumes in this Generic service. '
+						.'Go ahead and '
+						.'<a id="linkVolumes" href="javascript:void(0);">'
+						.'create a volume'
+						.'</a>.'
+					.'</div>';
+		}
+		usort($volumes, function ($a, $b) {
+			return strcmp($a['volumeName'], $b['volumeName']);
+		});
+		$html = '<table id="volumesListWrapper" class="slist volumes" '
+				.'cellpadding="0" cellspacing="1">';
+		for ($i = 0; $i < count($volumes); $i++) {
+			$volumeUI = GenericVolume($volumes[$i]);
+			if ($i == count($volumes) - 1) {
+				$volumeUI->setLast();
+			}
+			$html .= $volumeUI;
+		}
+		$html .= '</table>';
+		return $html;
+	}
+
 	private function renderAvailableVolumes() {
 		return
 			'<div id="availableVolumesForm">'
 				.'<div class="left-stack name">available volumes</div>'
 				.'<div class="left-stack details">'
 					.'<div class="generic-list">'
-						.'<div id="noVolumesBox" class="box generic-box invisible">'
-							.'You have no volumes in this Generic service. '
-							.'Go ahead and '
-							.'<a id="linkVolumes" href="javascript:void(0);">'
-							.'create a volume'
-							.'</a>.'
-						.'</div>'
-						.'<table id="volumesList" class="slist" '
-							.'cellpadding="0" cellspacing="1">'
-						.'</table>'
+						.$this->renderVolumeList()
 					.'</div>'
 				.'</div>'
 				.'<div class="clear"></div>'

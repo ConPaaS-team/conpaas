@@ -78,13 +78,17 @@ class GenericService extends Service {
 		return $master_node['ip'];
 	}
 
-	public function createVolume($params) {
-		$resp = $this->managerRequest('post', 'generic_create_volume', $params);
-		return $resp;
+	public function listVolumes() {
+		$json = $this->managerRequest('get', 'list_volumes', array());
+		$volumes = json_decode($json, true);
+		if ($volumes == null) {
+			return false;
+		}
+		return $volumes['result']['volumes'];
 	}
 
-	public function listVolumes($params) {
-		$resp = $this->managerRequest('get', 'list_volumes', $params);
+	public function createVolume($params) {
+		$resp = $this->managerRequest('post', 'generic_create_volume', $params);
 		return $resp;
 	}
 

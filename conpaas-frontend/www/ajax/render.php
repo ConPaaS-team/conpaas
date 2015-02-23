@@ -29,13 +29,17 @@ switch ($target) {
 		$page = new HostingPage($service);
 		echo $page->renderCodeVersions();
 		break;
+	case 'instances':
+		$page = new ServicePage($service);
+		echo $page->renderInstances();
+		break;
 	case 'generic_versions':
 		$page = new GenericPage($service);
 		echo $page->renderCodeVersions();
 		break;
-	case 'instances':
-		$page = new ServicePage($service);
-		echo $page->renderInstances();
+	case 'generic_volumes':
+		$page = new GenericPage($service);
+		echo $page->renderVolumeList();
 		break;
 	default:
 		echo "error: unknow target $target for rendering";

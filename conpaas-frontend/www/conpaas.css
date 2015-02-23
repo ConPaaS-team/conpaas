@@ -785,12 +785,13 @@ input.button {
 	border-color: #ccc;
 	background-color: #eee;
 	margin-left: 2px;
+	width: 465px;
 }
 
 .generic-details {
 	color: #333;
 	font-weight: normal;
-	margin-top: 5px;
+	margin-top: 6px;
 }
 
 .form-section .form-header {
@@ -958,6 +959,11 @@ ul.versions li a.download,
 ul.versions li a.delete,
 ul.versions li .status,
 ul.versions li .dot {
+	
+}
+
+table.volumes,
+table.volumes tr td img.delete {
 	
 }
 

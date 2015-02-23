@@ -8,3 +8,4 @@ $dir = dirname(__FILE__).'/';
 require_once($dir.'DashboardServiceUI.php');
 require_once($dir.'ServicesListUI.php');
 require_once($dir.'Version.php');
+require_once($dir.'GenericVolume.php');

@@ -19,7 +19,7 @@ try {
     }
 
     $method = $_POST['method'];
-    $allowed_methods = array("createVolume", "listVolumes", "deleteVolume");
+    $allowed_methods = array("createVolume", "deleteVolume");
     if (!in_array($method, $allowed_methods)) {
         throw new Exception('Invalid method');
     }
