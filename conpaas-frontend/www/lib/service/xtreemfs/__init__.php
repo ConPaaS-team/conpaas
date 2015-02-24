@@ -17,7 +17,7 @@ class XtreemFSService extends Service {
 		return true;
 	}
 
-	public function sendConfiguration($params){
+	public function sendConfiguration($params) {
 		return '{}';
 	}
 
@@ -26,7 +26,7 @@ class XtreemFSService extends Service {
 	}
 
 	public function getInstanceRoles() {
-		return array('dir', 'mrc','osd');
+		return array('dir', 'mrc', 'osd');
 	}
 
 	public function fetchStateLog() {
@@ -43,13 +43,13 @@ class XtreemFSService extends Service {
 	}
 
 	public function createVolume($volumeName,$owner) {
-		$resp = $this->managerRequest('post','createVolume',array(
+		$resp = $this->managerRequest('post', 'createVolume', array(
                 'volumeName' => $volumeName,
                 'owner' => $owner));
 		return $resp;
 	}
 	public function deleteVolume($volumeName) {
-		$resp = $this->managerRequest('post','deleteVolume',array(
+		$resp = $this->managerRequest('post', 'deleteVolume', array(
 				'volumeName' => $volumeName));
 		return $resp;
 	}
@@ -59,6 +59,21 @@ class XtreemFSService extends Service {
  		$volumes = json_decode($json, true);
  		return $volumes['result']['volumes'];
  	}
+
+	public function listVolumes() {
+		$volumesText = $this->viewVolumes();
+		preg_match_all("/^\t(.+)\t->\t(.+)$/m", $volumesText,
+				$out, PREG_PATTERN_ORDER);
+		for($i = 0; $i < count($out[1]); $i++) {
+			$volume['volumeName'] = $out[1][$i];
+			$volume['volumeUUID'] = $out[2][$i];
+			$volumes[$i] = $volume;
+		}
+		usort($volumes, function ($a, $b) {
+			return strcmp($a['volumeName'], $b['volumeName']);
+		});
+		return $volumes;
+	}
 
 	public function getAccessLocation() {
 		$dir_node = $this->getNodeInfo($this->nodesLists['dir'][0]);

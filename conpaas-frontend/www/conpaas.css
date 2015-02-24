@@ -719,7 +719,7 @@ input.button {
 .xtreemfs-details {
 	color: #333;
 	font-weight: bold;
-	margin-top: 5px;
+	margin-top: 6px;
 }
 
 .xtreemfs-available {
@@ -734,6 +734,7 @@ input.button {
 	border-color: #ccc;
 	background-color: #eee;
 	margin-left: 2px;
+	width: 285px;
 }
 
 .xtreemfs-select {
@@ -964,6 +965,10 @@ ul.versions li .dot {
 
 table.volumes,
 table.volumes tr td img.delete {
+	
+}
+
+a.linkVolumes {
 	
 }
 

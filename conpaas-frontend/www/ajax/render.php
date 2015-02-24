@@ -10,6 +10,7 @@ require_module('ui/service');
 require_module('ui/page');
 require_module('ui/page/hosting');
 require_module('ui/page/generic');
+require_module('ui/page/xtreemfs');
 
 if (!isset($_SESSION['uid'])) {
 	throw new Exception('User not logged in');
@@ -40,6 +41,15 @@ switch ($target) {
 	case 'generic_volumes':
 		$page = new GenericPage($service);
 		echo $page->renderVolumeList();
+		break;
+	case 'xtreemfs_volumes':
+		$page = new XtreemFSPage($service);
+		$volumes = $service->listVolumes();
+		$volumeList = $page->renderVolumeList($volumes);
+		$volumeSelector = $page->renderVolumeSelectorOptions($volumes);
+		$response = array("volumeList"=>$volumeList,
+		                  "volumeSelector"=>$volumeSelector);
+		echo json_encode($response);
 		break;
 	default:
 		echo "error: unknow target $target for rendering";
