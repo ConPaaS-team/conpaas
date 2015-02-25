@@ -209,8 +209,7 @@ class GenericPage extends ServicePage {
 		usort($volumes, function ($a, $b) {
 			return strcmp($a['volumeName'], $b['volumeName']);
 		});
-		$html = '<table id="volumesListWrapper" class="slist volumes" '
-				.'cellpadding="0" cellspacing="1">';
+		$html = '<table class="slist volumes" cellpadding="0" cellspacing="1">';
 		for ($i = 0; $i < count($volumes); $i++) {
 			$volumeUI = GenericVolume($volumes[$i]);
 			if ($i == count($volumes) - 1) {
@@ -227,7 +226,7 @@ class GenericPage extends ServicePage {
 			'<div id="availableVolumesForm">'
 				.'<div class="left-stack name">available volumes</div>'
 				.'<div class="left-stack details">'
-					.'<div class="generic-list">'
+					.'<div id="volumesListWrapper" class="generic-list">'
 						.$this->renderVolumeList()
 					.'</div>'
 				.'</div>'
@@ -271,9 +270,7 @@ class GenericPage extends ServicePage {
 		sort($roles);
 		foreach ($roles as $role) {
 			foreach ($nodesLists[$role] as $node) {
-				$selectOptions .= '<option value="';
-				$selectOptions .= $node;
-				$selectOptions .= '">';
+				$selectOptions .= '<option value="'.$node.'">';
 				$selectOptions .= $node.' ['.$role.']';
 				$selectOptions .= '</option>';
 			}
@@ -283,7 +280,7 @@ class GenericPage extends ServicePage {
 				.'<div class="left-stack name">attach to agent</div>'
 				.'<div class="left-stack details">'
 					.'<select id="selectAgent">'
-					.$selectOptions
+						.$selectOptions
 					.'</select>'
 				.'</div>'
 				.'<div class="clear"></div>'
