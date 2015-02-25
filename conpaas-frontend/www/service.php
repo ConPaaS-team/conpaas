@@ -10,6 +10,11 @@ require_module('ui');
 require_module('ui/page');
 require_module('ui/service');
 
+if (!isset($_SESSION['uid'])) {
+    // not logged in
+    Page::redirect('login.php');
+}
+
 $sid = $_GET['sid'];
 $service_data = ServiceData::getServiceById($sid);
 $service = ServiceFactory::create($service_data);
