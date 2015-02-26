@@ -243,6 +243,11 @@ class GenericManager(BaseManager):
     @expose('POST')
     def shutdown(self, kwargs):
         """Switch to EPILOGUE and call a thread to delete all nodes"""
+        if len(kwargs) != 0:
+            ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
+                                  kwargs.keys())
+            return HttpErrorResponse(ex.message)
+
         # Shutdown only if RUNNING
         if self._state_get() != self.S_RUNNING:
             vals = { 'curstate': self._state_get(), 'action': 'shutdown' }
@@ -270,18 +275,21 @@ class GenericManager(BaseManager):
 
     def __check_count_in_args(self, kwargs):
         """Return 'count' if all is good. HttpErrorResponse otherwise."""
-        # The frontend sends count under 'node'.
-        if 'node' in kwargs:
-            kwargs['count'] = kwargs['node']
+        count = None
 
-        if not 'count' in kwargs:
+        if 'count' in kwargs:
+            count = kwargs.pop('count')
+        # The frontend sends count under 'node'.
+        elif 'node' in kwargs:
+            count = kwargs.pop('node')
+        else:
             return HttpErrorResponse(self.REQUIRED_ARG_MSG % { 'arg': 'count' })
 
-        if not isinstance(kwargs['count'], int):
+        if not isinstance(count, int):
             return HttpErrorResponse(
                 "ERROR: Expected an integer value for 'count'")
 
-        return int(kwargs['count'])
+        return count
 
     @expose('POST')
     def add_nodes(self, kwargs):
@@ -399,6 +407,11 @@ class GenericManager(BaseManager):
             vals = { 'curstate': self._state_get(), 'action': 'list_nodes' }
             return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
 
+        if len(kwargs) != 0:
+            ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
+                                  kwargs.keys())
+            return HttpErrorResponse(ex.message)
+
         generic_nodes = [
             node.id for node in self.nodes if not self.__is_master(node)
         ]
@@ -464,6 +477,7 @@ echo "" >> /root/generic.out
                                   detail='codeVersionId should be a string')
             return HttpErrorResponse(ex.message)
         codeVersion = kwargs.pop('codeVersionId')
+
         if len(kwargs) != 0:
             ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
                                   kwargs.keys())
@@ -489,6 +503,11 @@ echo "" >> /root/generic.out
             ex = ManagerException(ManagerException.E_ARGS_MISSING, 'code')
             return HttpErrorResponse(ex.message)
         code = kwargs.pop('code')
+        if not isinstance(code, FileUploadField):
+            ex = ManagerException(ManagerException.E_ARGS_INVALID,
+                                  detail='codeVersionId should be a file')
+            return HttpErrorResponse(ex.message)
+
         if 'description' in kwargs:
             description = kwargs.pop('description')
         else:
@@ -497,10 +516,6 @@ echo "" >> /root/generic.out
         if len(kwargs) != 0:
             ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
                                   kwargs.keys())
-            return HttpErrorResponse(ex.message)
-        if not isinstance(code, FileUploadField):
-            ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                  detail='codeVersionId should be a file')
             return HttpErrorResponse(ex.message)
 
         config = self._configuration_get()
@@ -546,6 +561,7 @@ echo "" >> /root/generic.out
                                   detail='codeVersionId should be a string')
             return HttpErrorResponse(ex.message)
         codeVersion = kwargs.pop('codeVersionId')
+
         if len(kwargs) != 0:
             ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
                                   kwargs.keys())
@@ -578,6 +594,11 @@ echo "" >> /root/generic.out
     @expose('GET')
     def get_service_info(self, kwargs):
         """Return the service state and type"""
+        if len(kwargs) != 0:
+            ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
+                                  kwargs.keys())
+            return HttpErrorResponse(ex.message)
+
         return HttpJsonResponse({'state': self._state_get(), 'type': 'generic'})
 
     @expose('GET')
@@ -589,8 +610,12 @@ echo "" >> /root/generic.out
         if 'serviceNodeId' not in kwargs:
             vals = { 'arg': 'serviceNodeId' }
             return HttpErrorResponse(self.REQUIRED_ARG_MSG % vals)
-
         serviceNodeId = kwargs.pop('serviceNodeId')
+
+        if len(kwargs) != 0:
+            ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
+                                  kwargs.keys())
+            return HttpErrorResponse(ex.message)
 
         serviceNode = None
         for node in self.nodes:
@@ -616,6 +641,7 @@ echo "" >> /root/generic.out
             ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
                                   kwargs.keys())
             return HttpErrorResponse(ex.message)
+
         config = self._configuration_get()
         versions = []
         for version in config.codeVersions.values():
@@ -687,6 +713,7 @@ echo "" >> /root/generic.out
             ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
                                   kwargs.keys())
             return HttpErrorResponse(ex.message)
+
         config = self._configuration_get()
         volumes = []
         for volume in config.volumes.values():

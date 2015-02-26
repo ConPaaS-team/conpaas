@@ -185,16 +185,25 @@ class GenericAgent(BaseAgent):
 
         return HttpJsonResponse()
 
-    @expose('UPLOAD')
+    @expose('POST')
     def init_agent(self, kwargs):
         """Set the environment variables"""
 
         self.logger.info('Setting agent environment')
 
-        #TODO: do some checks on the arguments
+        if 'agents_info' not in kwargs:
+            return HttpErrorResponse(AgentException(
+                AgentException.E_ARGS_MISSING, 'agents_info').message)
         agents_info = simplejson.loads(kwargs.pop('agents_info'))
-        #agents_info = kwargs.pop('agents_info')
+
+        if 'ip' not in kwargs:
+            return HttpErrorResponse(AgentException(
+                AgentException.E_ARGS_MISSING, 'ip').message)
         agent_ip = kwargs.pop('ip')
+
+        if len(kwargs) != 0:
+            return HttpErrorResponse(AgentException(
+                AgentException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
 
         self.state = 'ADAPTING'
 
