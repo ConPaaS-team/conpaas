@@ -114,14 +114,11 @@ def update_code(host, port, codeVersionId, filetype, filepath):
     params['file'] = filepath                                                       
     return _check(https.client.https_post(host, port, '/', params))                 
 
-
-def init_agent(host, port, init_path, agents_info):                   
+def init_agent(host, port, agents_info):
     """POST (agents_info) init_agent"""
-    
     params = {
-        'method' : 'init_agent',    
+        'method' : 'init_agent',
         'agents_info': json.dumps(agents_info),
         'ip' : host
     }
-    files = [('file', init_path, file_get_contents(init_path))]
-    return _check(https.client.https_post(host, port, '/', params, files=files))                 
+    return _check(https.client.https_post(host, port, '/', params))

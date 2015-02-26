@@ -164,7 +164,6 @@ class GenericManager(BaseManager):
             agents_info = self._update_agents_info(nodes, roles)
 
             self._init_agents(config, nodes, agents_info)
-
             self._update_code(config, nodes)
 
             # Extend the nodes list with the newly created one
@@ -192,22 +191,13 @@ class GenericManager(BaseManager):
         return id_ip_role
 
     def _init_agents(self, config, nodes, agents_info):
-        self._extract_init(config)
         for serviceNode in nodes:
             try:
-                initpath = os.path.join(self.code_repo, 'init.sh')
-                client.init_agent(serviceNode.ip, self.AGENT_PORT, initpath, agents_info)
+                client.init_agent(serviceNode.ip, self.AGENT_PORT, agents_info)
             except client.AgentException:
                 self.logger.exception('Failed initialize agent at node %s' % str(serviceNode))
                 self._state_set(self.S_ERROR, msg='Failed to initialize agent at node %s' % str(serviceNode))
                 raise
-
-    def _extract_init(self, config):
-        #current_code = config.codeVersions[config.currentCodeVersion]
-        filepath = os.path.join(self.code_repo, config.currentCodeVersion)
-        arch = archive_open(filepath)
-
-        archive_extract_file(arch, self.code_repo, 'init.sh')
 
     @expose('POST')
     def execute_script(self, kwargs):
@@ -672,8 +662,6 @@ echo "" >> /root/generic.out
             self.prevCodeVersion = config.currentCodeVersion
             config.currentCodeVersion = codeVersionId
             self._update_code(config, self.nodes)
-            # If a new code version is enabled, run the init.sh script again
-            self._init_agents(config, self.nodes, self.agents_info)
         self._state_set(self.S_RUNNING)
         self._configuration_set(config)
 

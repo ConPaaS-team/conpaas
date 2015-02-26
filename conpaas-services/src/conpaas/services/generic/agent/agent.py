@@ -177,6 +177,9 @@ class GenericAgent(BaseAgent):
         else:
             source.extractall(target_dir)
 
+        # every time a new code tarball is activated, execute the init.sh script
+        self._execute_script('init')
+
         # Fix session handlers
         #self.fix_session_handlers(target_dir)
 
@@ -191,33 +194,18 @@ class GenericAgent(BaseAgent):
         #TODO: do some checks on the arguments
         agents_info = simplejson.loads(kwargs.pop('agents_info'))
         #agents_info = kwargs.pop('agents_info')
-        file = kwargs.pop('file')
         agent_ip = kwargs.pop('ip')
+
         self.state = 'ADAPTING'
 
         #maybe some permission issues
         #if not exists(join(self.VAR_CACHE, 'init')):
         #    makedirs(join(self.VAR_CACHE, 'init'))
 
-        #target_dir = join(self.VAR_CACHE, 'init')
-        #if exists(target_dir):
-        #    rmtree(target_dir)
-
-        target_dir = self.VAR_CACHE
-
-        fd, name = tempfile.mkstemp(prefix='init-', dir=target_dir)
-        fd = fdopen(fd, 'w')
-        upload = file.file
-
         #self.logger.info('agents info = %s' % agents_info)
         #self.logger.info('agents info[0] = %s' % agents_info[0])
 
-        bytes = upload.read(2048)
-        while len(bytes) != 0:
-            fd.write(bytes)
-            bytes = upload.read(2048)
-        fd.close()
-
+        target_dir = self.VAR_CACHE
         with open(join(target_dir, 'agents.json'), 'w') as outfile:
             simplejson.dump(agents_info, outfile)
 
@@ -227,12 +215,6 @@ class GenericAgent(BaseAgent):
         self.env.update({'MY_IP':agent_ip})
         self.env.update({'MY_ROLE':agent_role})
         self.env.update({'MASTER_IP':master_ip})
-
-        initpath = join(target_dir, name)
-        start_args = [ "bash",  initpath ]
-
-        proc = Popen(start_args, cwd=self.generic_dir, env=self.env, close_fds=True)
-        self.logger.info("Script 'init.sh' is running")
 
         self.state = 'RUNNING'
         self.logger.info('Agent initialized')
