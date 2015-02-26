@@ -97,8 +97,8 @@ class GenericService extends Service {
 		return $resp;
 	}
 
-	public function deployApp() {
-		$resp = $this->managerRequest('post', 'run', array());
+	public function executeScript($params) {
+		$resp = $this->managerRequest('post', 'execute_script', $params);
 		return $resp;
 	}
 }

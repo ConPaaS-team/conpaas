@@ -795,6 +795,10 @@ input.button {
 	margin-top: 6px;
 }
 
+.generic-button {
+	width: 100px;
+}
+
 .form-section .form-header {
 	margin-bottom: 10px;
 }

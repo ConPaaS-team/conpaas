@@ -320,6 +320,20 @@ class GenericPage extends ServicePage {
 		.'</div>';
 	}
 
+	private function renderAppLifecycleButton($command) {
+		$additionalText = '';
+		if ($command == 'interrupt') {
+			$additionalText = "kill the 'run.sh' script and all its"
+					." child processes and ";
+		}
+		$tooltipText = "pressing this button will ".$additionalText."execute "
+					."the '".$command.".sh' script from the active "
+					."code tarball on each agent";
+		return '<input class="generic-button" title="'.$tooltipText.'" '
+					.'id="'.$command.'App" name="'.$command.'" type="button" '
+					.'value="'.$command.'" />&nbsp;&nbsp;';
+	}
+
 	public function renderAppLifecycleSection() {
 		return
 			'<div class="form-section">'
@@ -330,11 +344,10 @@ class GenericPage extends ServicePage {
 					.'</div>'
 					.'<div class="clear"></div>'
 				.'</div>'
-				.'<input id="deployApp" type="button" value="start" />'
-				.'<i id="deployAppStat" class="invisible"></i><br />'
-				.'<div class="brief">pressing this button will '
-				.'execute the <i>start.sh</i> script from the active '
-				.'code tarball on each agent</div>'
+				.$this->renderAppLifecycleButton('run')
+				.$this->renderAppLifecycleButton('interrupt')
+				.$this->renderAppLifecycleButton('cleanup')
+				.'<i id="appLifecycleStat" class="invisible"></i><br />'
 			.'</div>';
 	}
 

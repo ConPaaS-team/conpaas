@@ -55,7 +55,8 @@ conpaas.ui = (function (this_module) {
      */
     freezeInput: function (freeze) {
         var linksSelectors = ['.activate', '.download', '.delete', '.dot'],
-            buttons = ['refreshVolumeList', 'createVolume', 'deployApp'];
+            buttons = ['refreshVolumeList', 'createVolume', 'runApp',
+                        'interruptApp', 'cleanupApp'];
         conpaas.ui.ServicePage.prototype.freezeInput.call(this, freeze);
         this.freezeButtons(buttons, freeze);
         this.hideLinks(linksSelectors, freeze);
@@ -105,7 +106,8 @@ conpaas.ui = (function (this_module) {
         $('.volumes .delete').click(page, page.onDeleteVolume);
         $('#refreshVolumeList').click(page, page.onRefreshVolumesList);
         $('#createVolume').click(page, page.onCreateVolume);
-        $('#deployApp').click(page, page.onDeployApp);
+        $('#runApp, #interruptApp, #cleanupApp').click(page,
+                                                    page.onExecuteScript);
     },
 
     showStatus: function (statusId, type, message) {
@@ -230,19 +232,23 @@ conpaas.ui = (function (this_module) {
         });
     },
 
-    onDeployApp: function (event) {
-        var page = event.data;
+    onExecuteScript: function (event) {
+        var page = event.data,
+            command = $(event.target).attr('name');
 
         page.freezeInput(true);
-        page.server.req('ajax/genericDeployApp.php', {
-            sid: page.service.sid
+        page.server.req('ajax/genericRequest.php', {
+            sid: page.service.sid,
+            method: 'executeScript',
+            command: command
         }, 'post', function (response) {
             // successful
-            page.showStatus('#deployAppStat', 'positive', 'Script started successfully');
+            page.showStatus('#appLifecycleStat', 'positive',
+                    "Script '" + command + ".sh' started successfully");
             page.freezeInput(false);
         }, function (response) {
             // error
-            page.showStatus('#deployAppStat', 'error', 'The script was not started');
+            page.showStatus('#appLifecycleStat', 'error', 'The script was not started');
             page.freezeInput(false);
         });
     },
