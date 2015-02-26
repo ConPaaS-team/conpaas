@@ -18,6 +18,8 @@ class GenericCmd(ServiceCmd):
         self._add_create_volume()
         self._add_delete_volume()
         self._add_run()
+        self._add_interrupt()
+        self._add_cleanup()
 
     # ========== upload_code
     def _add_upload_code(self):
@@ -249,7 +251,7 @@ class GenericCmd(ServiceCmd):
     # ========== run
     def _add_run(self):
         subparser = self.add_parser('run',
-                                    help="deploy the application")
+                                    help="execute the run.sh script")
         subparser.set_defaults(run_cmd=self.run, parser=subparser)
         subparser.add_argument('serv_name_or_id',
                                help="Name or identifier of a service")
@@ -257,9 +259,48 @@ class GenericCmd(ServiceCmd):
     def run(self, args):
         service_id = self.get_service_id(args.serv_name_or_id)
 
-        res = self.client.call_manager_post(service_id, "run")
+        params = { 'command': 'run' }
+        res = self.client.call_manager_post(service_id, "execute_script", params)
 
         if 'error' in res:
             print res['error']
         else:
-            print 'Service running'
+            print "Service started executing 'run.sh' on all the agents..."
+
+    # ========== interrupt
+    def _add_interrupt(self):
+        subparser = self.add_parser('interrupt',
+                                    help="execute the interrupt.sh script")
+        subparser.set_defaults(run_cmd=self.interrupt, parser=subparser)
+        subparser.add_argument('serv_name_or_id',
+                               help="Name or identifier of a service")
+
+    def interrupt(self, args):
+        service_id = self.get_service_id(args.serv_name_or_id)
+
+        params = { 'command': 'interrupt' }
+        res = self.client.call_manager_post(service_id, "execute_script", params)
+
+        if 'error' in res:
+            print res['error']
+        else:
+            print "Service started executing 'interrupt.sh' on all the agents..."
+
+    # ========== cleanup
+    def _add_cleanup(self):
+        subparser = self.add_parser('cleanup',
+                                    help="execute the cleanup.sh script")
+        subparser.set_defaults(run_cmd=self.cleanup, parser=subparser)
+        subparser.add_argument('serv_name_or_id',
+                               help="Name or identifier of a service")
+
+    def cleanup(self, args):
+        service_id = self.get_service_id(args.serv_name_or_id)
+
+        params = { 'command': 'cleanup' }
+        res = self.client.call_manager_post(service_id, "execute_script", params)
+
+        if 'error' in res:
+            print res['error']
+        else:
+            print "Service started executing 'cleanup.sh' on all the agents..."
