@@ -210,24 +210,44 @@ class GenericManager(BaseManager):
         archive_extract_file(arch, self.code_repo, 'init.sh')
 
     @expose('POST')
-    def run(self, kwargs):
-
+    def execute_script(self, kwargs):
         if self._state_get() != self.S_RUNNING:
-            vals = { 'curstate': self._state_get(), 'action': 'run' }
+            vals = { 'curstate': self._state_get(), 'action': 'execute_script' }
             return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
 
-        #self._state_set(self.S_EPILOGUE)
-        Thread(target=self._do_run, args=[self.agents_info]).start()
+        if 'command' not in kwargs:
+            ex = ManagerException(ManagerException.E_ARGS_MISSING,
+                                  'command')
+            return HttpErrorResponse(ex.message)
+        if isinstance(kwargs['command'], dict):
+            ex = ManagerException(ManagerException.E_ARGS_INVALID,
+                                  detail='command should be a string')
+            return HttpErrorResponse(ex.message)
+        command = kwargs.pop('command')
+        if command not in ( 'run', 'interrupt', 'cleanup' ):
+            ex = ManagerException(ManagerException.E_ARGS_INVALID,
+                                  detail='invalid command')
+            return HttpErrorResponse(ex.message)
+
+        if len(kwargs) != 0:
+            ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
+                                  kwargs.keys())
+            return HttpErrorResponse(ex.message)
+
+        Thread(target=self._do_execute_script, args=[command, self.nodes]).start()
 
         return HttpJsonResponse({ 'state': self._state_get() })
 
-    def _do_run(self, agents_info):
-        for node in self.nodes:
+    def _do_execute_script(self, command, nodes):
+        for node in nodes:
             try:
-                client.run(node.ip, self.AGENT_PORT, agents_info)
+                client.execute_script(node.ip, self.AGENT_PORT, command,
+                        self.agents_info)
             except client.AgentException:
-                self.logger.exception('Failed to start run at node %s' % str(node))
-                self._state_set(self.S_ERROR, msg='Failed to run code at node %s' % str(node))
+                message = ('Failed to execute script %s at node %s' %
+                        (command, str(node)));
+                self.logger.exception(message)
+                self._state_set(self.S_ERROR, msg=message)
                 raise
 
     @expose('POST')
@@ -309,6 +329,7 @@ class GenericManager(BaseManager):
                 client.check_agent_process, self.AGENT_PORT)
             agents_info = self._update_agents_info(node_instances, nodes)
 
+            nodes_before = list(self.nodes)
             self.nodes += node_instances
             self.agents_info += agents_info
 
@@ -322,6 +343,7 @@ class GenericManager(BaseManager):
             #config = self._configuration_get()
             #self._update_code(config, node_instances)
 
+        self._do_execute_script('notify', nodes_before)
         self._state_set(self.S_RUNNING)
 
     @expose('POST')
@@ -373,6 +395,7 @@ class GenericManager(BaseManager):
             self.master_ip = None
             self._state_set(self.S_STOPPED)
         else:
+            self._do_execute_script('notify', self.nodes)
             self._state_set(self.S_RUNNING)
 
     def __is_master(self, node):
@@ -398,6 +421,24 @@ class GenericManager(BaseManager):
             'node': generic_nodes
         })
 
+    def _prepare_default_config_script(self, script_name):
+        fileno, path = tempfile.mkstemp()
+        fd = os.fdopen(fileno, 'w')
+        fd.write('''#!/bin/bash
+date >> /root/generic.out
+echo "Executing script %s" >> /root/generic.out
+echo "My IP is $MY_IP" >> /root/generic.out
+echo "My role is $MY_ROLE" >> /root/generic.out
+echo "My master IP is $MASTER_IP" >> /root/generic.out
+echo "Information about other agents is stored at /var/cache/cpsagent/agents.json" >> /root/generic.out
+cat /var/cache/cpsagent/agents.json >> /root/generic.out
+echo "" >> /root/generic.out
+echo "" >> /root/generic.out
+''' % script_name)
+        fd.close()
+        os.chmod(path, stat.S_IRWXU | stat.S_IROTH | stat.S_IXOTH)
+        return path
+
     def _create_initial_configuration(self):
         print 'CREATING INIT CONFIG'
 
@@ -411,35 +452,10 @@ class GenericManager(BaseManager):
 
         tfile = tarfile.TarFile(name=os.path.join(self.code_repo, 'code-default'), mode='w')
 
-        fileno, path = tempfile.mkstemp()
-        fd = os.fdopen(fileno, 'w')
-        fd.write('''#!/bin/bash
-echo "Initializing Generic Service!" >> /root/generic.out
-echo "My IP is $MY_IP" >> /root/generic.out
-echo "My role is $MY_ROLE" >> /root/generic.out
-echo "My master IP is $MASTER_IP" >> /root/generic.out
-echo "Information about other agents is stored at /var/cache/cpsagent/agents.json" >> /root/generic.out
-cat /var/cache/cpsagent/agents.json >> /root/generic.out
-echo "" >> /root/generic.out
-''')
-        fd.close()
-        os.chmod(path, stat.S_IRWXU | stat.S_IROTH | stat.S_IXOTH)
-        tfile.add(path, 'init.sh')
-
-        fileno, path = tempfile.mkstemp()
-        fd = os.fdopen(fileno, 'w')
-        fd.write('''#!/bin/bash
-echo "Starting Generic Service!" >> /root/generic.out
-echo "My IP is $MY_IP" >> /root/generic.out
-echo "My role is $MY_ROLE" >> /root/generic.out
-echo "My master IP is $MASTER_IP" >> /root/generic.out
-echo "Information about other agents is stored at /var/cache/cpsagent/agents.json" >> /root/generic.out
-cat /var/cache/cpsagent/agents.json >> /root/generic.out
-echo "" >> /root/generic.out
-''')
-        fd.close()
-        os.chmod(path, stat.S_IRWXU | stat.S_IROTH | stat.S_IXOTH)
-        tfile.add(path, 'start.sh')
+        scripts = ['init.sh', 'notify.sh', 'run.sh', 'interrupt.sh', 'cleanup.sh']
+        for script in scripts:
+            path = self._prepare_default_config_script(script)
+            tfile.add(path, script)
 
         tfile.close()
         os.remove(path)

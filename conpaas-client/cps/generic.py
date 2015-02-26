@@ -7,7 +7,7 @@ class Client(BaseClient):
 
     def info(self, service_id):
         service = BaseClient.info(self, service_id)
-        
+
         nodes = self.callmanager(service['sid'], "list_nodes", False, {})
         if 'master' in nodes and nodes['master']:
             # Only one master
@@ -35,23 +35,26 @@ class Client(BaseClient):
         print "    list_volumes      serviceid           # list the volumes in use by the Generic agents"
         print "    create_volume     serviceid vol_name size(MB) agent_id # create a volume and attatch it to a Generic agent"
         print "    delete_volume     serviceid vol_name  # detach and delete a volume"
-        print "    run               serviceid           # deploy the application"
+        print "    run               serviceid           # execute the run.sh script"
+        print "    interrupt         serviceid           # execute the interrupt.sh script"
+        print "    cleanup           serviceid           # execute the cleanup.sh script"
 
     def main(self, argv):
         command = argv[1]
-   
+
         if command in ( 'add_nodes', 'remove_nodes', 'upload_code', 'list_uploads',
                         'download_code', 'enable_code', 'delete_code',
-                        'list_volumes', 'create_volume', 'delete_volume', 'run' ):
-            try:                                                      
-                sid = int(argv[2])                                    
-            except (IndexError, ValueError):                          
-                self.usage(argv[0])                                   
-                sys.exit(0)                                           
-                                                              
-            self.check_service_id(sid)                                
+                        'list_volumes', 'create_volume', 'delete_volume',
+                        'run', 'interrupt', 'cleanup' ):
+            try:
+                sid = int(argv[2])
+            except (IndexError, ValueError):
+                self.usage(argv[0])
+                sys.exit(0)
 
-  
+            self.check_service_id(sid)
+
+
         if command in ( 'add_nodes', 'remove_nodes'):
             try:
                 count = int(argv[3])
@@ -67,40 +70,37 @@ class Client(BaseClient):
                 print "Service", sid, "is performing the requested operation (%s)" % command
 
         if command == 'upload_code':
-            try: 
+            try:
                 filename = argv[3]
                 if not (os.path.isfile(filename) and os.access(filename, os.R_OK)):
-                    raise IndexError                                               
-            except IndexError:                                                     
-                self.usage(argv[0])                                                
-                sys.exit(0)                                                        
-                                                                       
-            getattr(self, command)(sid, filename)                    
-        
-        if command == 'run':            
-            getattr(self, command)(sid)                    
-    
-        if command == 'list_uploads':                                                              
-            res = self.callmanager(sid, 'list_code_versions', False, {})                           
-                                                                                           
-            def add_cur(row):                                                                      
-                if 'current' in row:                                                               
-            	    row['current'] = '      *'                                                     
-        	else:                                                                              
-                    row['current'] = ''                                                            
-                return row                                                                         
-                                                                                           
-            data = [ add_cur(el) for el in res['codeVersions'] ]                                   
+                    raise IndexError
+            except IndexError:
+                self.usage(argv[0])
+                sys.exit(0)
+
+            getattr(self, command)(sid, filename)
+
+        if command == 'list_uploads':
+            res = self.callmanager(sid, 'list_code_versions', False, {})
+
+            def add_cur(row):
+                if 'current' in row:
+                    row['current'] = '      *'
+                else:
+                    row['current'] = ''
+                return row
+
+            data = [ add_cur(el) for el in res['codeVersions'] ]
             print self.prettytable(( 'current', 'codeVersionId', 'filename', 'description' ), data)
 
         if command in ( 'enable_code', 'download_code', 'delete_code' ):
-            try:                                         
-                code_version = argv[3]                   
-            except IndexError:                           
-                self.usage(argv[0])                      
-                sys.exit(0)                              
-                                                 
-            getattr(self, command)(sid, code_version)    
+            try:
+                code_version = argv[3]
+            except IndexError:
+                self.usage(argv[0])
+                sys.exit(0)
+
+            getattr(self, command)(sid, code_version)
 
         if command == 'list_volumes':
             res = self.callmanager(sid, 'list_volumes', False, {})
@@ -131,6 +131,9 @@ class Client(BaseClient):
                 sys.exit(0)
 
             getattr(self, command)(sid, volumeName)
+
+        if command in ( 'run', 'interrupt', 'cleanup' ):
+            self.execute_script(sid, command)
 
 
     def upload_code(self, service_id, filename):
@@ -239,11 +242,12 @@ class Client(BaseClient):
             sys.stdout.flush()
 
 
-    def run(self, service_id):
-        params = {}
-        res = self.callmanager(service_id, "run", True, params)
+    def execute_script(self, service_id, command):
+        params = { 'command': command }
+        res = self.callmanager(service_id, "execute_script", True, params)
 
         if 'error' in res:
             print res['error']
         else:
-            print 'Service running'
+            print ("Service started executing '%s.sh' on all the agents..."
+                    % command)

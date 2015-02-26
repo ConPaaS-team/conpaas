@@ -34,7 +34,9 @@ WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 """
+import os
 import time
+import signal
 
 from subprocess import Popen, PIPE
 from os.path import exists, devnull, join, lexists
@@ -71,6 +73,7 @@ class GenericAgent(BaseAgent):
         self.generic_dir = config_parser.get('agent', 'CONPAAS_HOME')
         self.VAR_CACHE = config_parser.get('agent', 'VAR_CACHE')
         self.env = {}
+        self.run_process = None
         # The following two variables have the same value on the Hub
       #  self.my_ip_address = None
       #  self.hub_ip_address = None
@@ -229,7 +232,7 @@ class GenericAgent(BaseAgent):
         start_args = [ "bash",  initpath ]
 
         proc = Popen(start_args, cwd=self.generic_dir, env=self.env, close_fds=True)
-
+        self.logger.info("Script 'init.sh' is running")
 
         self.state = 'RUNNING'
         self.logger.info('Agent initialized')
@@ -387,20 +390,57 @@ class GenericAgent(BaseAgent):
             self.logger.info("Generic node has succesfully unmounted %s" % dev_name)
 
     @expose('POST')
-    def run(self, kwargs):
+    def execute_script(self, kwargs):
+        if 'command' not in kwargs:
+            return HttpErrorResponse(AgentException(
+                AgentException.E_ARGS_MISSING, 'command').message)
+        command = kwargs.pop('command')
+        if command not in ( 'notify', 'run', 'interrupt', 'cleanup' ):
+            return HttpErrorResponse('Invalid command: %s' % command)
 
+        if 'agents_info' not in kwargs:
+            return HttpErrorResponse(AgentException(
+                AgentException.E_ARGS_MISSING, 'agents_info').message)
         agents_info = simplejson.loads(kwargs.pop('agents_info'))
+
+        if len(kwargs) != 0:
+            return HttpErrorResponse(AgentException(
+                AgentException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
+
+        self.logger.info("Executing the %s command" % command)
+
+        self.state = 'ADAPTING'
 
         target_dir = self.VAR_CACHE
         with open(join(target_dir, 'agents.json'), 'w') as outfile:
             simplejson.dump(agents_info, outfile)
 
-
-        startpath = join(self.VAR_CACHE, 'bin', 'start.sh')
-        start_args = [ "bash",  startpath ]
-
-        proc = Popen(start_args, cwd=self.generic_dir, env=self.env, close_fds=True)
+        self._execute_script(command)
 
         self.state = 'RUNNING'
-        self.logger.info('Starter is running')
         return HttpJsonResponse()
+
+    def _execute_script(self, command):
+        if command == 'interrupt' and self.run_process is not None:
+            pgrp = self.run_process.pid
+            self.logger.info("Killing process group %s" % pgrp)
+            os.killpg(pgrp, signal.SIGTERM)
+            self.run_process = None
+
+        script_name = '%s.sh' % command
+        script_path = join(self.VAR_CACHE, 'bin', script_name)
+
+        if not exists(script_path):
+            self.logger.critical("Script '%s' does not exist in the active code tarball"
+                    % script_name)
+            return
+
+        start_args = [ "bash",  script_path ]
+        if command == 'run':
+            self.run_process = Popen(start_args, cwd=self.generic_dir,
+                    env=self.env, close_fds=True, preexec_fn=os.setsid)
+        else:
+            Popen(start_args, cwd=self.generic_dir, env=self.env,
+                    close_fds=True)
+
+        self.logger.info("Script '%s' is running" % script_name)
