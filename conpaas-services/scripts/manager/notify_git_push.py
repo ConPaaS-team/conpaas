@@ -2,14 +2,14 @@
 
 import simplejson
 
-from conpaas.core import https
+from conpaas.core.https import client
 
 
 def main():
-    https.client.conpaas_init_ssl_ctx('/etc/cpsmanager/certs', 'user')
+    client.conpaas_init_ssl_ctx('/etc/cpsmanager/certs', 'user')
     method = 'git_push_hook'
     manager_ip = '127.0.0.1'
-    res = https.client.jsonrpc_post(manager_ip, 443, '/', method)
+    res = client.jsonrpc_post(manager_ip, 443, '/', method)
 
     if res[0] == 200:
         try:
