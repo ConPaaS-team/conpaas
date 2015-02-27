@@ -149,7 +149,7 @@ echo "" >> /root/generic.out
         return path
 
     def _create_initial_configuration(self):
-        print 'CREATING INIT CONFIG'
+        self.logger.info("Creating initial configuration")
 
         config = ServiceConfiguration()
 
@@ -248,6 +248,9 @@ echo "" >> /root/generic.out
         return id_ip_role
 
     def _init_agents(self, config, nodes, agents_info):
+        self.logger.info("Initializing agents %s" %
+                [ node.id for node in nodes ])
+
         for serviceNode in nodes:
             try:
                 client.init_agent(serviceNode.ip, self.AGENT_PORT, agents_info)
@@ -271,6 +274,8 @@ echo "" >> /root/generic.out
             vals = { 'curstate': self._state_get(), 'action': 'shutdown' }
             return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
 
+        self.logger.info('Manager shutting down')
+
         self._state_set(self.S_EPILOGUE)
         Thread(target=self._do_shutdown, args=[]).start()
 
@@ -279,12 +284,17 @@ echo "" >> /root/generic.out
     def _do_shutdown(self):
         """Delete all nodes and switch to status STOPPED"""
         # Detach and delete all volumes
+
         config = self._configuration_get()
+        self.logger.info("Deleting volumes: %s" %
+                [ volume.volumeName for volume in config.volumes.values() ])
         for volume in config.volumes.values():
             self.__delete_volume_internal(volume)
         config.volumes = {}
         self._configuration_set(config)
 
+        self.logger.info("Removing nodes: %s" %
+                [ node.id for node in self.nodes ])
         self.controller.delete_nodes(self.nodes)
         self.nodes = []        # Not only delete the nodes, but clear the list too
         self.agents_info = []
@@ -324,6 +334,8 @@ echo "" >> /root/generic.out
             return count_or_err
 
         count = count_or_err
+
+        self.logger.info('Going to add %s new nodes' % count)
 
         start_role = 'node'
         nodes = {start_role: str(count)}
@@ -374,6 +386,8 @@ echo "" >> /root/generic.out
 
         if count > len(self.nodes) - 1:
             return HttpErrorResponse("ERROR: Cannot remove so many nodes")
+
+        self.logger.info('Going to remove %s nodes' % count)
 
         self._state_set(self.S_ADAPTING)
 
@@ -622,6 +636,9 @@ echo "" >> /root/generic.out
         self._configuration_set(config)
 
     def _update_code(self, config, nodes):
+        self.logger.info("Updating code to version '%s' at agents %s" %
+                (config.currentCodeVersion, [ node.id for node in nodes ]))
+
         for node in nodes:
             # Push the current code version via GIT if necessary
             #if config.codeVersions[config.currentCodeVersion].type == 'git':
@@ -759,7 +776,7 @@ echo "" >> /root/generic.out
     def _do_create_volume(self, volumeName, volumeSize, agentId):
         """Create a new volume and attach it to the specified agent"""
 
-        self.logger.debug("do_create_volume: Going to create a new volume")
+        self.logger.info("Going to create a new volume")
 
         config = self._configuration_get()
         try:
@@ -800,16 +817,14 @@ echo "" >> /root/generic.out
                 self.destroy_volume(volume.id)
                 raise
         except Exception, ex:
-            self.logger.exception('do_create_volume: Failed to create volume: %s.'
-                                  % ex)
+            self.logger.exception('Failed to create volume: %s.' % ex)
             self._state_set(self.S_ERROR)
             return
 
         config.volumes[volumeName] = VolumeInfo(volumeName, volume.id,
                                                  volumeSize, agentId, dev_name)
         self._configuration_set(config)
-        self.logger.debug('Volume %s created and attached successfully'
-                          % volume_name)
+        self.logger.info('Volume %s created and attached' % volume_name)
         self._state_set(self.S_RUNNING)
 
     @expose('POST')
@@ -848,16 +863,14 @@ echo "" >> /root/generic.out
 
     def _do_delete_volume(self, volumeName):
         """Detach a volume and delete it"""
-        self.logger.debug("do_delete_volume: Going to remove volume generic-%s",
-                          volumeName)
+        self.logger.info("Going to remove volume generic-%s" % volumeName)
 
         config = self._configuration_get()
         self.__delete_volume_internal(config.volumes[volumeName])
         config.volumes.pop(volumeName)
         self._configuration_set(config)
 
-        self.logger.debug('Volume generic-%s removed successfully'
-                          % volumeName)
+        self.logger.info('Volume generic-%s removed' % volumeName)
         self._state_set(self.S_RUNNING)
 
     def __delete_volume_internal(self, volume):
@@ -904,12 +917,15 @@ echo "" >> /root/generic.out
         return HttpJsonResponse({ 'state': self._state_get() })
 
     def _do_execute_script(self, command, nodes):
+        self.logger.info("Executing the '%s' command at agents %s" %
+                (command, [ node.id for node in nodes ]))
+
         for node in nodes:
             try:
                 client.execute_script(node.ip, self.AGENT_PORT, command,
                         self.agents_info)
             except client.AgentException:
-                message = ('Failed to execute script %s at node %s' %
+                message = ("Failed to execute the '%s' command at node %s" %
                         (command, str(node)));
                 self.logger.exception(message)
                 self._state_set(self.S_ERROR, msg=message)

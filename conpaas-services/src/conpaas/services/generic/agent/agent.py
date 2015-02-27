@@ -138,6 +138,8 @@ class GenericAgent(BaseAgent):
             return HttpErrorResponse(AgentException(
                 AgentException.E_ARGS_INVALID, detail='"file" should be a file').message)
 
+        self.logger.info('Updating code to version %s' % codeVersionId)
+
         if len(kwargs) != 0:
             return HttpErrorResponse(AgentException(
                 AgentException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
@@ -165,6 +167,8 @@ class GenericAgent(BaseAgent):
             git.git_enable_revision(target_dir, source, codeVersionId)
         else:
             source.extractall(target_dir)
+
+        self.logger.info("Code updated, executing the 'init' command")
 
         # every time a new code tarball is activated, execute the init.sh script
         self._execute_script('init')
@@ -340,7 +344,7 @@ class GenericAgent(BaseAgent):
             return HttpErrorResponse(AgentException(
                 AgentException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
 
-        self.logger.info("Executing the %s command" % command)
+        self.logger.info("Executing the '%s' command" % command)
 
         self.state = 'ADAPTING'
 
