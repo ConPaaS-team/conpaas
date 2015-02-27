@@ -28,6 +28,8 @@ class Client(BaseClient):
         print "    add_nodes         serviceid count"
         print "    remove_nodes      serviceid count"
         print "    upload_code       serviceid filename  # upload a new code version"
+        print "    list_keys         serviceid           # list authorized SSH keys"
+        print "    upload_key        serviceid filename  # upload an SSH key"
         print "    list_uploads      serviceid           # list uploaded code versions"
         print "    download_code     serviceid version   # download a specific code version"
         print "    enable_code       serviceid version   # set a specific code version active"
@@ -42,7 +44,8 @@ class Client(BaseClient):
     def main(self, argv):
         command = argv[1]
 
-        if command in ( 'add_nodes', 'remove_nodes', 'upload_code', 'list_uploads',
+        if command in ( 'add_nodes', 'remove_nodes', 'list_keys',
+                        'upload_key', 'upload_code', 'list_uploads',
                         'download_code', 'enable_code', 'delete_code',
                         'list_volumes', 'create_volume', 'delete_volume',
                         'run', 'interrupt', 'cleanup' ):
@@ -69,7 +72,7 @@ class Client(BaseClient):
             else:
                 print "Service", sid, "is performing the requested operation (%s)" % command
 
-        if command == 'upload_code':
+        if command in ( 'upload_key', 'upload_code' ):
             try:
                 filename = argv[3]
                 if not (os.path.isfile(filename) and os.access(filename, os.R_OK)):
@@ -79,6 +82,11 @@ class Client(BaseClient):
                 sys.exit(0)
 
             getattr(self, command)(sid, filename)
+
+        if command == 'list_keys':
+            res = self.callmanager(sid, 'list_authorized_keys', False, {})
+            for key in res['authorizedKeys']:
+                print key
 
         if command == 'list_uploads':
             res = self.callmanager(sid, 'list_code_versions', False, {})
@@ -135,6 +143,17 @@ class Client(BaseClient):
         if command in ( 'run', 'interrupt', 'cleanup' ):
             self.execute_script(sid, command)
 
+
+    def upload_key(self, service_id, filename):
+        contents = open(filename).read()
+
+        files = [ ( 'key', filename, contents ) ]
+
+        res = self.callmanager(service_id, "/", True, { 'method': "upload_authorized_key",  }, files)
+        if 'error' in res:
+            print res['error']
+        else:
+            print res['outcome']
 
     def upload_code(self, service_id, filename):
         contents = open(filename).read()

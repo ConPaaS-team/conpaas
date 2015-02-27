@@ -72,6 +72,9 @@ class GenericManager(BaseManager):
     get_service_info() -- GET
     get_node_info(serviceNodeId) -- GET
     list_code_versions() -- GET
+    list_authorized_keys() -- GET
+    upload_authorized_key(key) -- UPLOAD
+    git_push_hook() -- POST
     upload_code_version(code, description) -- UPLOAD
     download_code_version(codeVersionId) -- GET
     enable_code(codeVersionId) -- POST
@@ -513,6 +516,57 @@ echo "" >> /root/generic.out
             cmp=(lambda x, y: cmp(x['time'], y['time'])), reverse=True)
         return HttpJsonResponse({'codeVersions': versions})
 
+    @expose('GET')
+    def list_authorized_keys(self, kwargs):
+        if len(kwargs) != 0:
+            ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
+                                  kwargs.keys())
+            return HttpErrorResponse(ex.message)
+
+        return HttpJsonResponse({'authorizedKeys' : git.get_authorized_keys()})
+
+    @expose('UPLOAD')
+    def upload_authorized_key(self, kwargs):
+        if 'key' not in kwargs:
+            ex = ManagerException(ManagerException.E_ARGS_MISSING, 'key')
+            return HttpErrorResponse(ex.message)
+
+        key = kwargs.pop('key')
+
+        if len(kwargs) != 0:
+            ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
+                                  kwargs.keys())
+            return HttpErrorResponse(ex.message)
+        if not isinstance(key, FileUploadField):
+            ex = ManagerException(
+                ManagerException.E_ARGS_INVALID, detail='key should be a file')
+            return HttpErrorResponse(ex.message)
+
+        key_lines = key.file.readlines()
+        num_added = git.add_authorized_keys(key_lines)
+
+        return HttpJsonResponse({'outcome': "%s keys added to authorized_keys" % num_added})
+
+    @expose('POST')
+    def git_push_hook(self, kwargs):
+        if len(kwargs) != 0:
+            ex = ManagerException(
+                ManagerException.E_ARGS_UNEXPECTED, kwargs.keys())
+            return HttpErrorResponse(ex.message)
+
+        config = self._configuration_get()
+
+        repo = git.DEFAULT_CODE_REPO
+        codeVersionId = git.git_code_version(repo)
+
+        config.codeVersions[codeVersionId] = CodeVersion(id=codeVersionId,
+                                                         filename=codeVersionId,
+                                                         atype="git",
+                                                         description=git.git_last_description(repo))
+
+        self._configuration_set(config)
+        return HttpJsonResponse({'codeVersionId': codeVersionId})
+
     @expose('UPLOAD')
     def upload_code_version(self, kwargs):
         if 'code' not in kwargs:
@@ -641,10 +695,10 @@ echo "" >> /root/generic.out
 
         for node in nodes:
             # Push the current code version via GIT if necessary
-            #if config.codeVersions[config.currentCodeVersion].type == 'git':
-            #    _, err = git.git_push(git.DEFAULT_CODE_REPO, node.ip)
-            #    if err:
-            #        self.logger.debug('git-push to %s: %s' % (node.ip, err))
+            if config.codeVersions[config.currentCodeVersion].type == 'git':
+                _, err = git.git_push(git.DEFAULT_CODE_REPO, node.ip)
+                if err:
+                    self.logger.debug('git-push to %s: %s' % (node.ip, err))
             try:
                 client.update_code(node.ip, self.AGENT_PORT, config.currentCodeVersion,
                                      config.codeVersions[config.currentCodeVersion].type,

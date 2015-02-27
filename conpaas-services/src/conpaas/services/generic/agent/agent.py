@@ -41,7 +41,7 @@ import signal
 
 from subprocess import Popen, PIPE
 from os.path import exists, devnull, join, lexists
-from os import remove, makedirs, fdopen
+from os import remove, makedirs, fdopen, rename
 from shutil import rmtree
 import pickle
 import zipfile
@@ -76,6 +76,7 @@ class GenericAgent(BaseAgent):
 
         self.generic_dir = config_parser.get('agent', 'CONPAAS_HOME')
         self.VAR_CACHE = config_parser.get('agent', 'VAR_CACHE')
+        self.CODE_DIR = join(self.VAR_CACHE, 'bin')
         self.env = {}
         self.run_process = None
 
@@ -138,7 +139,7 @@ class GenericAgent(BaseAgent):
             return HttpErrorResponse(AgentException(
                 AgentException.E_ARGS_INVALID, detail='"file" should be a file').message)
 
-        self.logger.info('Updating code to version %s' % codeVersionId)
+        self.logger.info("Updating code to version '%s'" % codeVersionId)
 
         if len(kwargs) != 0:
             return HttpErrorResponse(AgentException(
@@ -153,18 +154,16 @@ class GenericAgent(BaseAgent):
         else:
             return HttpErrorResponse('Unknown archive type ' + str(filetype))
 
-        if not exists(join(self.VAR_CACHE, 'bin')):
-            makedirs(join(self.VAR_CACHE, 'bin'))
+        target_dir = self.CODE_DIR
 
-        target_dir = join(self.VAR_CACHE, 'bin')
         if exists(target_dir):
             rmtree(target_dir)
 
         if filetype == 'git':
-            target_dir = join(self.VAR_CACHE, 'bin')
             self.logger.debug("git_enable_revision('%s', '%s', '%s')" %
-                    (target_dir, source, codeVersionId))
-            git.git_enable_revision(target_dir, source, codeVersionId)
+                    (self.VAR_CACHE, source, codeVersionId))
+            git_dir = git.git_enable_revision(self.VAR_CACHE, source, codeVersionId)
+            rename(git_dir, target_dir)
         else:
             source.extractall(target_dir)
 
@@ -365,7 +364,7 @@ class GenericAgent(BaseAgent):
             self.run_process = None
 
         script_name = '%s.sh' % command
-        script_path = join(self.VAR_CACHE, 'bin', script_name)
+        script_path = join(self.CODE_DIR, script_name)
 
         if not exists(script_path):
             self.logger.critical("Script '%s' does not exist in the active code tarball"

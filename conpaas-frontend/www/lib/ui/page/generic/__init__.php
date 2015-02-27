@@ -100,11 +100,11 @@ class GenericPage extends ServicePage {
 						.'<input type="radio" name="method" checked/>'
 						.'uploading archive'
 					.'</div>'
-/*					.'<i>or by</i>'
+					.'<i>or by</i>'
 					.'<div class="deployoption">'
-					.'<input type="radio" name="method" />'
-						.'checking out repository'
-					.'</div>' */
+						.'<input type="radio" name="method" />'
+							.'checking out repository'
+					.'</div>'
 				.'</div>'
 				.'<div class="deployactions">'
 					.$this->renderFileForm()
@@ -120,7 +120,7 @@ class GenericPage extends ServicePage {
 						.' (max '.$this->minSize(ini_get('upload_max_filesize'), ini_get('post_max_size')).')'
 					.'</div>'
 				.'</div>'
-/*				// this one is invisible for now
+				// this one is invisible for now
 				.'<div class="deployactions invisible">'
 					.'<textarea id="pubkey" cols="50" rows="5" name="pubkey"></textarea><br />'
 					.'<div class="additional">'
@@ -138,7 +138,7 @@ class GenericPage extends ServicePage {
                     .'You will then be able to checkout your repository as follows:<br />'
                     .'<b>git clone git@'.$this->service->getManagerInstance()->getHostAddress().':code</b>'
                     .'</div>'
-				.'</div>' */
+				.'</div>'
 				.'<div class="clear"></div>'
 			.'</div>';
 	}

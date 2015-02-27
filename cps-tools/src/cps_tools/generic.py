@@ -9,6 +9,8 @@ class GenericCmd(ServiceCmd):
     def __init__(self, generic_parser, client):
         ServiceCmd.__init__(self, generic_parser, client, "generic",
                             ['count'], "Generic service sub-commands help")
+        self._add_upload_key()
+        self._add_list_keys()
         self._add_upload_code()
         self._add_list_uploads()
         self._add_download_code()
@@ -20,6 +22,44 @@ class GenericCmd(ServiceCmd):
         self._add_run()
         self._add_interrupt()
         self._add_cleanup()
+
+    # ========== upload_key
+    def _add_upload_key(self):
+        subparser = self.add_parser('upload_key',
+                                    help="upload key to Generic server")
+        subparser.set_defaults(run_cmd=self.upload_key, parser=subparser)
+        subparser.add_argument('serv_name_or_id',
+                               help="Name or identifier of a service")
+        subparser.add_argument('filename',
+                               help="File containing the key")
+
+    def upload_key(self, args):
+        service_id = self.get_service_id(args.serv_name_or_id)
+        contents = open(args.filename).read()
+        params = {'method': "upload_authorized_key"}
+        files = [('key', args.filename, contents)]
+        res = self.client.call_manager_post(service_id, "/", params, files)
+        if 'error' in res:
+            print res['error']
+        else:
+            print res['outcome']
+
+    # ========== list_keys
+    def _add_list_keys(self):
+        subparser = self.add_parser('list_keys',
+                                    help="list authorized keys of Generic service")
+        subparser.set_defaults(run_cmd=self.list_keys, parser=subparser)
+        subparser.add_argument('serv_name_or_id',
+                               help="Name or identifier of a service")
+
+    def list_keys(self, args):
+        service_id = self.get_service_id(args.serv_name_or_id)
+        res = self.client.call_manager_get(service_id, "list_authorized_keys")
+
+        if 'error' in res:
+            self.client.error("Cannot list keys: %s" % res['error'])
+        else:
+            print "%s" % res['authorizedKeys']
 
     # ========== upload_code
     def _add_upload_code(self):

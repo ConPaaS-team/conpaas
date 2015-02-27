@@ -97,6 +97,22 @@ def list_code_versions(host, port):
     method = 'list_code_versions'
     return _check(https.client.jsonrpc_get(host, port, '/', method))
 
+def list_authorized_keys(host, port):
+    """GET () list_authorized_keys"""
+    method = 'list_authorized_keys'
+    return _check(https.client.jsonrpc_get(host, port, '/', method))
+
+def upload_authorized_key(host, port, filepath):
+    """UPLOAD (key) upload_authorized_key"""
+    params = {'method': 'upload_authorized_key'}
+    files = [('key', filepath, file_get_contents(filepath))]
+    return _check(https.client.https_post(host, port, '/', params, files=files))
+
+def git_push_hook(host, port):
+    """POST () git_push_hook"""
+    method = 'git_push_hook'
+    return _check(https.client.jsonrpc_post(host, port, '/', method))
+
 def upload_code_version(host, port, filepath):
     """UPLOAD (code) upload_code_version"""
     params = { 'method' : 'upload_code_version' }

@@ -97,6 +97,7 @@ conpaas.ui = (function (this_module) {
             $('.additional .loading').toggleClass('invisible');
             $('#fileForm').submit();
         });
+        $('#submitPubKey').click(page, page.onSubmitPubKey);
         $('.versions .activate').click(page, page.onActivateVersion);
         $('.versions .delete').click(page, page.onDeleteVersion);
         $('.deployoption input[type=radio]').change(function() {
@@ -276,6 +277,49 @@ conpaas.ui = (function (this_module) {
             $(event.target).parent().find('.loading').hide();
             page.freezeInput(false);
         });
+    },
+
+    uploadTextArea: function (page, url, params, additionalClass) {
+        page.freezeInput(true);
+        $(additionalClass + ' .loading').toggleClass('invisible');
+
+        page.server.req(url, params,
+                'post', function (response) {
+                    page.freezeInput(false);
+                    if (response.error) {
+                        $(additionalClass + ' .error').html(response.error);
+                        $(additionalClass + ' .error').show();
+                        return false;
+                    }
+
+                    $(additionalClass + ' .loading').toggleClass('invisible');
+                    $(additionalClass + ' .positive').show();
+
+                    setTimeout(function () {
+                        $(additionalClass + ' .positive').fadeOut();
+                    }, 1000);
+
+                }, function () {
+                    page.freezeInput(false);
+                    $(additionalClass + ' .loading').toggleClass('invisible');
+                }
+        );
+    },
+
+    onSubmitPubKey: function (event) {
+        var page = event.data;
+        var pubkey = $('#pubkey').val();
+
+        $('.additional .error').html("");
+        $('.additional .error').hide();
+
+        if (!pubkey.match(/^ssh-(rsa|dss)/)) {
+            $('.additional .error').html("Key is invalid. It must begin with 'ssh-rsa' or 'ssh-dss'");
+            $('.additional .error').show();
+            return false;
+        }
+
+        page.uploadTextArea(page, 'ajax/uploadSshPubKey.php', { sid: page.service.sid, sshkey: pubkey }, '.additional');
     },
 
     /**
