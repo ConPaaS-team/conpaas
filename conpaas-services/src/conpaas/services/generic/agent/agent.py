@@ -138,6 +138,8 @@ class GenericAgent(BaseAgent):
         if filetype != 'git' and not isinstance(file, FileUploadField):
             return HttpErrorResponse(AgentException(
                 AgentException.E_ARGS_INVALID, detail='"file" should be a file').message)
+        else:
+            revision = file
 
         self.logger.info("Updating code to version '%s'" % codeVersionId)
 
@@ -161,8 +163,8 @@ class GenericAgent(BaseAgent):
 
         if filetype == 'git':
             self.logger.debug("git_enable_revision('%s', '%s', '%s')" %
-                    (self.VAR_CACHE, source, codeVersionId))
-            git_dir = git.git_enable_revision(self.VAR_CACHE, source, codeVersionId)
+                    (self.VAR_CACHE, source, revision))
+            git_dir = git.git_enable_revision(self.VAR_CACHE, source, revision)
             rename(git_dir, target_dir)
         else:
             source.extractall(target_dir)

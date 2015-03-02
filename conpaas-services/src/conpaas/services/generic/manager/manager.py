@@ -557,10 +557,11 @@ echo "" >> /root/generic.out
         config = self._configuration_get()
 
         repo = git.DEFAULT_CODE_REPO
-        codeVersionId = git.git_code_version(repo)
+        revision = git.git_code_version(repo)
+        codeVersionId = "git-%s" % revision
 
         config.codeVersions[codeVersionId] = CodeVersion(id=codeVersionId,
-                                                         filename=codeVersionId,
+                                                         filename=revision,
                                                          atype="git",
                                                          description=git.git_last_description(repo))
 
@@ -645,6 +646,10 @@ echo "" >> /root/generic.out
                                   detail='Invalid codeVersionId')
             return HttpErrorResponse(ex.message)
 
+        if config.codeVersions[codeVersionId].type == 'git':
+            return HttpErrorResponse(
+                'ERROR: To download this code, please clone the git repository');
+
         filename = os.path.abspath(os.path.join(self.code_repo, codeVersionId))
         if not filename.startswith(self.code_repo + '/') or not os.path.exists(filename):
             ex = ManagerException(ManagerException.E_ARGS_INVALID,
@@ -696,13 +701,16 @@ echo "" >> /root/generic.out
         for node in nodes:
             # Push the current code version via GIT if necessary
             if config.codeVersions[config.currentCodeVersion].type == 'git':
+                filepath = config.codeVersions[config.currentCodeVersion].filename
                 _, err = git.git_push(git.DEFAULT_CODE_REPO, node.ip)
                 if err:
                     self.logger.debug('git-push to %s: %s' % (node.ip, err))
+            else:
+                filepath = os.path.join(self.code_repo, config.currentCodeVersion)
             try:
                 client.update_code(node.ip, self.AGENT_PORT, config.currentCodeVersion,
                                      config.codeVersions[config.currentCodeVersion].type,
-                                     os.path.join(self.code_repo, config.currentCodeVersion))
+                                     filepath)
             except client.AgentException:
                 self.logger.exception('Failed to update code at node %s' % str(node))
                 self._state_set(self.S_ERROR, msg='Failed to update code at node %s' % str(node))
@@ -737,15 +745,17 @@ echo "" >> /root/generic.out
                                   detail='Cannot remove the active code version')
             return HttpErrorResponse(ex.message)
 
-        filename = os.path.abspath(os.path.join(self.code_repo, codeVersionId))
-        if not filename.startswith(self.code_repo + '/') or not os.path.exists(filename):
-            ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                  detail='Invalid codeVersionId')
-            return HttpErrorResponse(ex.message)
+        if not config.codeVersions[codeVersionId].type == 'git':
+            filename = os.path.abspath(os.path.join(self.code_repo, codeVersionId))
+            if not filename.startswith(self.code_repo + '/') or not os.path.exists(filename):
+                ex = ManagerException(ManagerException.E_ARGS_INVALID,
+                                      detail='Invalid codeVersionId')
+                return HttpErrorResponse(ex.message)
+
+            os.remove(filename)
 
         config.codeVersions.pop(codeVersionId)
         self._configuration_set(config)
-        os.remove(filename)
 
         return HttpJsonResponse()
 

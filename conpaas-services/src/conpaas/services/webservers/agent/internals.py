@@ -364,6 +364,8 @@ class WebServersAgent(BaseAgent):
         if filetype != 'git' and not isinstance(file, FileUploadField):
             return HttpErrorResponse(AgentException(
                 AgentException.E_ARGS_INVALID, detail='"file" should be a file').message)
+        else:
+            revision = file
 
         if len(kwargs) != 0:
             return HttpErrorResponse(AgentException(
@@ -387,8 +389,8 @@ class WebServersAgent(BaseAgent):
 
         if filetype == 'git':
             target_dir = join(self.VAR_CACHE, 'www')
-            self.logger.debug("git_enable_revision('%s', '%s', '%s')" % (target_dir, source, codeVersionId))
-            git.git_enable_revision(target_dir, source, codeVersionId)
+            self.logger.debug("git_enable_revision('%s', '%s', '%s')" % (target_dir, source, revision))
+            git.git_enable_revision(target_dir, source, revision)
         else:
             source.extractall(target_dir)
 
@@ -451,6 +453,8 @@ class WebServersAgent(BaseAgent):
         if filetype != 'git' and not isinstance(file, FileUploadField):
             return HttpErrorResponse(AgentException(
                 AgentException.E_ARGS_INVALID, detail='"file" should be a file').message)
+        else:
+            revision = file
 
         if len(kwargs) != 0:
             return HttpErrorResponse(AgentException(
@@ -471,8 +475,8 @@ class WebServersAgent(BaseAgent):
 
         if filetype == 'git':
             target_dir = join(self.VAR_CACHE, 'tomcat_instance', 'webapps')
-            self.logger.debug("git_enable_revision('%s', '%s', '%s')" % (target_dir, source, codeVersionId))
-            git.git_enable_revision(target_dir, source, codeVersionId)
+            self.logger.debug("git_enable_revision('%s', '%s', '%s')" % (target_dir, source, revision))
+            git.git_enable_revision(target_dir, source, revision)
         else:
             source.extractall(target_dir)
 

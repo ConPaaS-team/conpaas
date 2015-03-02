@@ -15,6 +15,7 @@ class Version {
 	private $name;
 	private $filename;
 	private $timestamp;
+	private $type;
 	private $downloadURL =  '';
 	private $active = false;
 	private $linkAddress = true;
@@ -26,6 +27,11 @@ class Version {
 		$this->timestamp = $data['time'];
 		$this->filename = $data['filename'];
 		$this->downloadURL = $data['downloadURL'];
+		if (substr($this->name, 0, 4) === 'git-') {
+			$this->type = 'git';
+		} else {
+			$this->type = 'archive';
+		}
 	}
 
 	public function setLast() {
@@ -79,11 +85,21 @@ class Version {
 	}
 
 	private function renderFilename() {
+		if ($this->type == 'git') {
+			$toolTipText = 'git commit';
+			$filename = 'commit '.$this->filename;
+		} else {
+			$toolTipText = 'file name';
+			$filename = $this->filename;
+		}
 		return
-			'<b class="filename" title="filename">'.$this->filename.'</b>';
+			'<b class="filename" title="'.$toolTipText.'">'.$filename.'</b>';
 	}
 
 	private function renderDownloadLink() {
+		if ($this->type == 'git') {
+			return '';
+		}
 		return '<span class="dot"> &middot; </span>'
 			.'<a href="'.$this->downloadURL.'" '
 			.' class="link download" title="download code version archive">'
