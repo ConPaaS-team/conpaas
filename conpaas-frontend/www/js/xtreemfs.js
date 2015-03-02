@@ -30,6 +30,27 @@ conpaas.ui = (function (this_module) {
     },
 
     /**
+     * @override conpaas.ui.ServicePage.showStatus
+     */
+    showStatus: function (statusSelector, type, message) {
+        var otherType = (type === 'positive') ? 'error' : 'positive';
+        $(statusSelector).removeClass(otherType).addClass(type)
+            .html(message)
+            .show();
+        if (statusSelector == "#selectVolumeStat") {
+            $('#hintVolume').hide();
+        }
+        setTimeout(function () {
+            if (statusSelector == "#selectVolumeStat") {
+                $(statusSelector).hide();
+                $('#hintVolume').show();
+            } else {
+                $(statusSelector).fadeOut();
+            }
+        }, 3000);
+    },
+
+    /**
      * @override conpaas.ui.ServicePage.getStopWarningText
      */
     getStopWarningText: function () {
@@ -74,24 +95,6 @@ conpaas.ui = (function (this_module) {
                 'downloadUserCert', this.onEnterPressed); */
     },
 
-    showStatus: function (statusId, type, message) {
-        var otherType = (type === 'positive') ? 'error' : 'positive';
-        $(statusId).removeClass(otherType).addClass(type)
-            .html(message)
-            .show();
-        if (statusId == "#selectVolumeStat") {
-            $('#hintVolume').hide();
-        }
-        setTimeout(function () {
-            if (statusId == "#selectVolumeStat") {
-                $(statusId).hide();
-                $('#hintVolume').show();
-            } else {
-                $(statusId).fadeOut();
-            }
-        }, 3000);
-    },
-
     refreshCommand: function () {
         var dirAddress = $('#dirAddress').text(),
             volume = $('#selectVolume').val(),
@@ -122,7 +125,7 @@ conpaas.ui = (function (this_module) {
             $('#unmountCommand').val('fusermount -u ' + mountPoint);
     },
 
-    refreshVolumes: function (statusId, selectedVolume) {
+    refreshVolumes: function (statusSelector, selectedVolume) {
         var page = this;
 
         if (!selectedVolume) {
@@ -141,8 +144,8 @@ conpaas.ui = (function (this_module) {
             $('.volumes .delete').click(page, page.onDeleteVolume);
             $('#selectVolume').click(this.refreshCommand);
             $('#refreshSelect').click(page, page.onRefreshSelect);
-            if (statusId) {
-                page.showStatus(statusId, 'positive', 'Volume list refreshed');
+            if (statusSelector) {
+                page.showStatus(statusSelector, 'positive', 'Volume list refreshed');
             }
             if (selectedVolume) {
                 $('#selectVolume option[value="' + selectedVolume + '"]')
@@ -152,8 +155,8 @@ conpaas.ui = (function (this_module) {
             page.freezeInput(false);
          }, function (response) {
             // error
-            if (statusId) {
-                page.showStatus(statusId, 'error', 'Volumes information not available');
+            if (statusSelector) {
+                page.showStatus(statusSelector, 'error', 'Volumes information not available');
             }
             page.freezeInput(false);
         });

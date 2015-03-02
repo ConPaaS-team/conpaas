@@ -49,6 +49,7 @@ conpaas.ui = (function (this_module) {
         this.service = service;
         this.setupPoller_();
     },
+
     /* methods */{
     /**
      * @override conpaas.ui.ServicePage.freezeInput
@@ -61,6 +62,7 @@ conpaas.ui = (function (this_module) {
         this.freezeButtons(buttons, freeze);
         this.hideLinks(linksSelectors, freeze);
     },
+
     /**
      * @override conpaas.ui.ServicePage.attachHandlers
      */
@@ -75,14 +77,10 @@ conpaas.ui = (function (this_module) {
                 // we need to perform error checking here, as we don't use
                 // the server object that normally does that for us
                 if (response.error) {
-                    $('.additional .error').html(response.error);
-                    $('.additional .error').show();
+                    page.showStatus('#uploadFileStat', 'error', response.error);
                     return;
                 }
-                $('.additional .positive').show();
-                setTimeout(function () {
-                    $('.additional .positive').fadeOut();
-                }, 1000);
+                page.showStatus('#uploadFileStat', 'positive', "Submitted successfully");
                 page.reloadVersions();
             },
             error: function (response) {
@@ -93,32 +91,24 @@ conpaas.ui = (function (this_module) {
            }
         });
         $('#fileForm input:file').change(function() {
-            $('.additional .error').hide();
+            page.freezeInput(true);
             $('.additional .loading').toggleClass('invisible');
             $('#fileForm').submit();
+            page.freezeInput(false);
         });
         $('#submitPubKey').click(page, page.onSubmitPubKey);
-        $('.versions .activate').click(page, page.onActivateVersion);
-        $('.versions .delete').click(page, page.onDeleteVersion);
         $('.deployoption input[type=radio]').change(function() {
+            $('#uploadFileStat, #uploadKeyStat').hide();
             $('.deployactions').toggleClass('invisible');
         });
+        $('.versions .activate').click(page, page.onActivateVersion);
+        $('.versions .delete').click(page, page.onDeleteVersion);
         $('#linkVolumes').click(page, page.onClickLinkVolumes);
         $('.volumes .delete').click(page, page.onDeleteVolume);
         $('#refreshVolumeList').click(page, page.onRefreshVolumesList);
         $('#createVolume').click(page, page.onCreateVolume);
         $('#runApp, #interruptApp, #cleanupApp').click(page,
                                                     page.onExecuteScript);
-    },
-
-    showStatus: function (statusId, type, message) {
-        var otherType = (type === 'positive') ? 'error' : 'positive';
-        $(statusId).removeClass(otherType).addClass(type)
-            .html(message)
-            .show();
-        setTimeout(function () {
-            $(statusId).fadeOut();
-        }, 3000);
     },
 
     // handlers
@@ -279,47 +269,35 @@ conpaas.ui = (function (this_module) {
         });
     },
 
-    uploadTextArea: function (page, url, params, additionalClass) {
-        page.freezeInput(true);
-        $(additionalClass + ' .loading').toggleClass('invisible');
-
-        page.server.req(url, params,
-                'post', function (response) {
-                    page.freezeInput(false);
-                    if (response.error) {
-                        $(additionalClass + ' .error').html(response.error);
-                        $(additionalClass + ' .error').show();
-                        return false;
-                    }
-
-                    $(additionalClass + ' .loading').toggleClass('invisible');
-                    $(additionalClass + ' .positive').show();
-
-                    setTimeout(function () {
-                        $(additionalClass + ' .positive').fadeOut();
-                    }, 1000);
-
-                }, function () {
-                    page.freezeInput(false);
-                    $(additionalClass + ' .loading').toggleClass('invisible');
-                }
-        );
-    },
-
     onSubmitPubKey: function (event) {
         var page = event.data;
         var pubkey = $('#pubkey').val();
 
-        $('.additional .error').html("");
-        $('.additional .error').hide();
-
         if (!pubkey.match(/^ssh-(rsa|dss)/)) {
-            $('.additional .error').html("Key is invalid. It must begin with 'ssh-rsa' or 'ssh-dss'");
-            $('.additional .error').show();
+            page.showStatus('#uploadKeyStat', 'error',
+                    "Key is invalid. It must begin with 'ssh-rsa' or 'ssh-dss'.");
+            $('#pubkey').val('');
+            $('#pubkey').focus();
             return false;
         }
 
-        page.uploadTextArea(page, 'ajax/uploadSshPubKey.php', { sid: page.service.sid, sshkey: pubkey }, '.additional');
+        page.freezeInput(true);
+        $('.additional .loading').toggleClass('invisible');
+
+        page.server.req('ajax/uploadSshPubKey.php', {
+            sid: page.service.sid,
+            sshkey: pubkey
+        }, 'post', function (response) {
+            // successful
+            page.showStatus('#uploadKeyStat', 'positive', "Submitted successfully");
+            $('.additional .loading').toggleClass('invisible');
+            page.freezeInput(false);
+        }, function (response) {
+            // error
+            page.showStatus('#uploadKeyStat', 'error', response.error);
+            $('.additional .loading').toggleClass('invisible');
+            page.freezeInput(false);
+        });
     },
 
     /**

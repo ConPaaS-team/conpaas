@@ -66,15 +66,6 @@ conpaas.ui = (function (this_module) {
         $('#loadform .loading').hide();
         $('#loadform .error').html('Error: <b>' + error + '</b>').show();        
     },
-    showResetStatus: function (type, message) {
-        var otherType = (type === 'positive') ? 'error' : 'positive';
-        $('#resetStatus').removeClass(otherType).addClass(type)
-            .html(message)
-            .show();
-        setTimeout(function () {
-            $('#resetStatus').fadeOut();
-        }, 3000);
-    },
     // handlers
     onResetPassword: function (event) {
         var page = event.data,
@@ -83,12 +74,12 @@ conpaas.ui = (function (this_module) {
             user = $('#user').html();
 
         if (passwd.length < 8) {
-            page.showResetStatus('error', 'Password too short');
+            page.showStatus('#resetStatus', 'error', 'Password too short');
             $('#passwd').focus();
             return;
         }
         if (passwd !== passwdRe) {
-            page.showResetStatus('error', 'Retyped password does not match');
+            page.showStatus('#resetStatus', 'error', 'Retyped password does not match');
             $('#passwdRe').focus();
             return;
         }
@@ -100,14 +91,14 @@ conpaas.ui = (function (this_module) {
             password: passwd
         }, 'post', function (response) {
             // successful
-            page.showResetStatus('positive', 'Password was reset successfuly');
+            page.showStatus('#resetStatus', 'positive', 'Password was reset successfuly');
             $('#resetPassword').removeAttr('disabled');
             $('#passwd').val('');
             $('#passwdRe').val('');
             $('.selectHint, .msgbox').hide();
         }, function (response) {
             // error
-            page.showResetStatus('error', 'Password was not reset');
+            page.showStatus('#resetStatus', 'error', 'Password was not reset');
             $('#resetPassword').removeAttr('disabled');
         });
     }
@@ -179,7 +170,7 @@ google.setOnLoadCallback(drawChart);
         //inizialization of the stats var       
         var stats= new Array(10);
 	var statsPS= new Array(10);
-        stats[0]=['10s', 'Select%', 'Update%','Insert%','Delete%'];
+        stats[0]=['10s', 'Select%', 'Update%', 'Insert%', 'Delete%'];
         for ( var i =1; i<10;i++){
            stats[i]=[''+10-i+'s',0,0,0,0];
 	   statsPS[i]=[''+10-i+'s',0,0,0,0];
