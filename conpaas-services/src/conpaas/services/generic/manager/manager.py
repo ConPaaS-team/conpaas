@@ -83,6 +83,7 @@ class GenericManager(BaseManager):
     generic_create_volume(volumeName, volumeSize, agentId) -- POST
     generic_delete_volume(volumeName) -- POST
     execute_script(command) -- POST
+    get_script_status() -- GET
     """
     # Manager states
     S_INIT = 'INIT'         # manager initialized but not yet started
@@ -994,6 +995,29 @@ echo "" >> /root/generic.out
                 self.logger.exception(message)
                 self._state_set(self.S_ERROR, msg=message)
                 raise
+
+    @expose('GET')
+    def get_script_status(self, kwargs):
+        if self._state_get() != self.S_RUNNING:
+            vals = { 'curstate': self._state_get(), 'action': 'get_script_status' }
+            return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
+
+        if len(kwargs) != 0:
+            ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
+                                  kwargs.keys())
+            return HttpErrorResponse(ex.message)
+
+        agents = {}
+        for node in self.nodes:
+            try:
+                res = client.get_script_status(node.ip, self.AGENT_PORT)
+                agents[node.id] = res['scripts']
+            except client.AgentException:
+                message = ("Failed to obtain script status at node %s" % str(node));
+                self.logger.exception(message)
+                self._state_set(self.S_ERROR, msg=message)
+                return HttpErrorResponse(ex.message)
+        return HttpJsonResponse({ 'agents' : agents })
 
     def _configuration_get(self):
         return self.memcache.get(self.CONFIG)

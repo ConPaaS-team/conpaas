@@ -40,6 +40,7 @@ class Client(BaseClient):
         print "    run               serviceid           # execute the run.sh script"
         print "    interrupt         serviceid           # execute the interrupt.sh script"
         print "    cleanup           serviceid           # execute the cleanup.sh script"
+        print "    get_script_status serviceid           # get the status of the scripts for each Generic agent"
 
     def main(self, argv):
         command = argv[1]
@@ -48,7 +49,7 @@ class Client(BaseClient):
                         'upload_key', 'upload_code', 'list_uploads',
                         'download_code', 'enable_code', 'delete_code',
                         'list_volumes', 'create_volume', 'delete_volume',
-                        'run', 'interrupt', 'cleanup' ):
+                        'run', 'interrupt', 'cleanup', 'get_script_status' ):
             try:
                 sid = int(argv[2])
             except (IndexError, ValueError):
@@ -142,6 +143,20 @@ class Client(BaseClient):
 
         if command in ( 'run', 'interrupt', 'cleanup' ):
             self.execute_script(sid, command)
+
+        if command == 'get_script_status':
+            res = self.callmanager(sid, 'get_script_status', False, {})
+            if 'error' in res:
+                print res['error']
+            elif res['agents']:
+                print
+                for agent in sorted(res['agents']):
+                    print "Agent %s:" % agent
+                    status = res['agents'][agent]
+                    for script in ('init.sh', 'notify.sh', 'run.sh',
+                                    'interrupt.sh', 'cleanup.sh'):
+                        print "  %s\t%s" % (script, status[script])
+                    print
 
 
     def upload_key(self, service_id, filename):

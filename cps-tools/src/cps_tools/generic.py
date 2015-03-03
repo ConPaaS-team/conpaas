@@ -22,6 +22,7 @@ class GenericCmd(ServiceCmd):
         self._add_run()
         self._add_interrupt()
         self._add_cleanup()
+        self._add_get_script_status()
 
     # ========== upload_key
     def _add_upload_key(self):
@@ -344,3 +345,28 @@ class GenericCmd(ServiceCmd):
             print res['error']
         else:
             print "Service started executing 'cleanup.sh' on all the agents..."
+
+    # ========== get_script_status
+    def _add_get_script_status(self):
+        subparser = self.add_parser('get_script_status',
+                                    help="get the status of the scripts for each agent")
+        subparser.set_defaults(run_cmd=self.get_script_status, parser=subparser)
+        subparser.add_argument('serv_name_or_id',
+                               help="Name or identifier of a service")
+
+    def get_script_status(self, args):
+        service_id = self.get_service_id(args.serv_name_or_id)
+
+        res = self.client.call_manager_get(service_id, "get_script_status")
+
+        if 'error' in res:
+            print res['error']
+        elif res['agents']:
+            print
+            for agent in sorted(res['agents']):
+                print "Agent %s:" % agent
+                status = res['agents'][agent]
+                for script in ('init.sh', 'notify.sh', 'run.sh',
+                                'interrupt.sh', 'cleanup.sh'):
+                    print "  %s\t%s" % (script, status[script])
+                print

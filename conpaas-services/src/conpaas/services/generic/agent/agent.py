@@ -65,6 +65,7 @@ class GenericAgent(BaseAgent):
     mount_volume(dev_name, vol_name) -- POST
     unmount_volume(dev_name) -- POST
     execute_script(command, agents_info) -- POST
+    get_script_status() -- GET
     """
     def __init__(self, config_parser, **kwargs):
         """Initialize Generic Agent.
@@ -78,7 +79,7 @@ class GenericAgent(BaseAgent):
         self.VAR_CACHE = config_parser.get('agent', 'VAR_CACHE')
         self.CODE_DIR = join(self.VAR_CACHE, 'bin')
         self.env = {}
-        self.run_process = None
+        self.processes = {}
 
     @expose('POST')
     def init_agent(self, kwargs):
@@ -155,6 +156,11 @@ class GenericAgent(BaseAgent):
             source = git.DEFAULT_CODE_REPO
         else:
             return HttpErrorResponse('Unknown archive type ' + str(filetype))
+
+        # kill all scripts that may still be running
+        if self.processes:
+            self._kill_all_processes()
+            self.processes = {}
 
         target_dir = self.CODE_DIR
 
@@ -359,11 +365,8 @@ class GenericAgent(BaseAgent):
         return HttpJsonResponse()
 
     def _execute_script(self, command):
-        if command == 'interrupt' and self.run_process is not None:
-            pgrp = self.run_process.pid
-            self.logger.info("Killing process group %s" % pgrp)
-            os.killpg(pgrp, signal.SIGTERM)
-            self.run_process = None
+        if command == 'interrupt':
+            self._kill_process('run')
 
         script_name = '%s.sh' % command
         script_path = join(self.CODE_DIR, script_name)
@@ -374,11 +377,52 @@ class GenericAgent(BaseAgent):
             return
 
         start_args = [ "bash",  script_path ]
-        if command == 'run':
-            self.run_process = Popen(start_args, cwd=self.generic_dir,
-                    env=self.env, close_fds=True, preexec_fn=os.setsid)
-        else:
-            Popen(start_args, cwd=self.generic_dir, env=self.env,
-                    close_fds=True)
+        self.processes[command] = Popen(start_args, cwd=self.generic_dir,
+                env=self.env, close_fds=True, preexec_fn=os.setsid)
 
         self.logger.info("Script '%s' is running" % script_name)
+
+    def _kill_process(self, command):
+        if command not in self.processes or self.processes[command] is None:
+            self.logger.debug("The script '%s.sh' was never started" % command)
+            return
+
+        returncode = self.processes[command].poll()
+        if returncode is not None:
+            self.logger.debug("The script '%s.sh' already finished with return code %s"
+                    % (command, returncode))
+            return
+
+        pgrp = self.processes[command].pid
+        self.logger.info("Killing the script '%s.sh' (process group %s)"
+                % (command, pgrp))
+        os.killpg(pgrp, signal.SIGTERM)
+
+    def _kill_all_processes(self):
+        self.logger.info("Killing all running processes")
+        for process in self.processes.values():
+            if process is not None:
+                pgrp = process.pid
+                os.killpg(pgrp, signal.SIGTERM)
+
+    @expose('GET')
+    def get_script_status(self, kwargs):
+        if len(kwargs) != 0:
+            return HttpErrorResponse(AgentException(
+                AgentException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
+
+        scripts = {}
+        for command in ( 'init', 'notify', 'run', 'interrupt', 'cleanup' ):
+            script_name = "%s.sh" % command
+            scripts[script_name] = self._get_script_status(command)
+        return HttpJsonResponse({ 'scripts' : scripts })
+
+    def _get_script_status(self, command):
+        if command not in self.processes or self.processes[command] is None:
+            return "NEVER STARTED"
+
+        returncode = self.processes[command].poll()
+        if returncode is not None:
+            return "STOPPED (return code %s)" % returncode
+        else:
+            return "RUNNING"

@@ -107,3 +107,8 @@ def execute_script(host, port, command, agents_info):
     method = 'execute_script'
     params = { 'command' : command, 'agents_info': json.dumps(agents_info) }
     return _check(https.client.jsonrpc_post(host, port, '/', method, params))
+
+def get_script_status(host, port):
+    """GET () get_script_status"""
+    method = 'get_script_status'
+    return _check(https.client.jsonrpc_get(host, port, '/', method))
