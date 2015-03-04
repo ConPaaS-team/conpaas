@@ -401,6 +401,12 @@ class Controller(object):
                 cloud_name, self.__available_clouds))
 
     #=========================================================================#
+    #               get_default_cloud(self)                                   #
+    #=========================================================================#
+    def get_default_cloud(self):
+        return self.__default_cloud
+
+    #=========================================================================#
     #               config_cloud(self, cloud, config_params)                  #
     #=========================================================================#
     def config_cloud(self, cloud, config_params):
