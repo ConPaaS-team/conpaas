@@ -82,7 +82,7 @@ class GenericManager(BaseManager):
     list_volumes() -- GET
     generic_create_volume(volumeName, volumeSize, agentId) -- POST
     generic_delete_volume(volumeName) -- POST
-    execute_script(command) -- POST
+    execute_script(command, parameters) -- POST
     get_script_status() -- GET
     """
     # Manager states
@@ -139,7 +139,8 @@ class GenericManager(BaseManager):
         fd = os.fdopen(fileno, 'w')
         fd.write('''#!/bin/bash
 date >> /root/generic.out
-echo "Executing script %s" >> /root/generic.out
+echo "Executing script ${0##*/}" >> /root/generic.out
+echo "Parameters ($#): $@" >> /root/generic.out
 echo "My IP is $MY_IP" >> /root/generic.out
 echo "My role is $MY_ROLE" >> /root/generic.out
 echo "My master IP is $MASTER_IP" >> /root/generic.out
@@ -147,7 +148,7 @@ echo "Information about other agents is stored at /var/cache/cpsagent/agents.jso
 cat /var/cache/cpsagent/agents.json >> /root/generic.out
 echo "" >> /root/generic.out
 echo "" >> /root/generic.out
-''' % script_name)
+''')
         fd.close()
         os.chmod(path, stat.S_IRWXU | stat.S_IROTH | stat.S_IXOTH)
         return path
@@ -972,23 +973,34 @@ echo "" >> /root/generic.out
                                   detail='invalid command')
             return HttpErrorResponse(ex.message)
 
+        if 'parameters' not in kwargs:
+            parameters = ''
+        else:
+            if isinstance(kwargs['parameters'], dict):
+                ex = ManagerException(ManagerException.E_ARGS_INVALID,
+                                      detail='parameters should be a string')
+                return HttpErrorResponse(ex.message)
+            parameters = kwargs.pop('parameters')
+
         if len(kwargs) != 0:
             ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
                                   kwargs.keys())
             return HttpErrorResponse(ex.message)
 
-        Thread(target=self._do_execute_script, args=[command, self.nodes]).start()
+        Thread(target=self._do_execute_script, args=[command,
+                                                        self.nodes,
+                                                        parameters]).start()
 
         return HttpJsonResponse({ 'state': self._state_get() })
 
-    def _do_execute_script(self, command, nodes):
+    def _do_execute_script(self, command, nodes, parameters=''):
         self.logger.info("Executing the '%s' command at agents %s" %
                 (command, [ node.id for node in nodes ]))
 
         for node in nodes:
             try:
                 client.execute_script(node.ip, self.AGENT_PORT, command,
-                        self.agents_info)
+                        parameters, self.agents_info)
             except client.AgentException:
                 message = ("Failed to execute the '%s' command at node %s" %
                         (command, str(node)));

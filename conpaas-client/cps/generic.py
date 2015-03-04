@@ -37,9 +37,9 @@ class Client(BaseClient):
         print "    list_volumes      serviceid           # list the volumes in use by the Generic agents"
         print "    create_volume     serviceid vol_name size(MB) agent_id # create a volume and attatch it to a Generic agent"
         print "    delete_volume     serviceid vol_name  # detach and delete a volume"
-        print "    run               serviceid           # execute the run.sh script"
-        print "    interrupt         serviceid           # execute the interrupt.sh script"
-        print "    cleanup           serviceid           # execute the cleanup.sh script"
+        print "    run               serviceid [param]   # execute the run.sh script"
+        print "    interrupt         serviceid [param]   # execute the interrupt.sh script"
+        print "    cleanup           serviceid [param]   # execute the cleanup.sh script"
         print "    get_script_status serviceid           # get the status of the scripts for each Generic agent"
 
     def main(self, argv):
@@ -142,7 +142,11 @@ class Client(BaseClient):
             getattr(self, command)(sid, volumeName)
 
         if command in ( 'run', 'interrupt', 'cleanup' ):
-            self.execute_script(sid, command)
+            if len(sys.argv) == 3:
+                parameters = ''
+            else:
+                parameters = argv[3]
+            self.execute_script(sid, command, parameters)
 
         if command == 'get_script_status':
             res = self.callmanager(sid, 'get_script_status', False, {})
@@ -276,8 +280,8 @@ class Client(BaseClient):
             sys.stdout.flush()
 
 
-    def execute_script(self, service_id, command):
-        params = { 'command': command }
+    def execute_script(self, service_id, command, parameters):
+        params = { 'command': command, 'parameters': parameters }
         res = self.callmanager(service_id, "execute_script", True, params)
 
         if 'error' in res:

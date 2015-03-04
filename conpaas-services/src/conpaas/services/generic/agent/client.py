@@ -102,10 +102,14 @@ def unmount_volume(host, port, dev_name):
     params = { 'dev_name': dev_name }
     return _check(https.client.jsonrpc_post(host, port, '/', method, params))
 
-def execute_script(host, port, command, agents_info):
-    """POST (command, agents_info) execute_script"""
+def execute_script(host, port, command, parameters, agents_info):
+    """POST (command, parameters, agents_info) execute_script"""
     method = 'execute_script'
-    params = { 'command' : command, 'agents_info': json.dumps(agents_info) }
+    params = {
+        'command' : command,
+        'parameters' : parameters,
+        'agents_info': json.dumps(agents_info)
+    }
     return _check(https.client.jsonrpc_post(host, port, '/', method, params))
 
 def get_script_status(host, port):

@@ -64,7 +64,7 @@ class GenericAgent(BaseAgent):
     update_code(filetype, codeVersionId, file) -- UPLOAD
     mount_volume(dev_name, vol_name) -- POST
     unmount_volume(dev_name) -- POST
-    execute_script(command, agents_info) -- POST
+    execute_script(command, parameters, agents_info) -- POST
     get_script_status() -- GET
     """
     def __init__(self, config_parser, **kwargs):
@@ -342,6 +342,11 @@ class GenericAgent(BaseAgent):
         if command not in ( 'notify', 'run', 'interrupt', 'cleanup' ):
             return HttpErrorResponse('Invalid command: %s' % command)
 
+        if 'parameters' not in kwargs:
+            parameters = ''
+        else:
+            parameters = kwargs.pop('parameters')
+
         if 'agents_info' not in kwargs:
             return HttpErrorResponse(AgentException(
                 AgentException.E_ARGS_MISSING, 'agents_info').message)
@@ -359,12 +364,12 @@ class GenericAgent(BaseAgent):
         with open(join(target_dir, 'agents.json'), 'w') as outfile:
             simplejson.dump(agents_info, outfile)
 
-        self._execute_script(command)
+        self._execute_script(command, parameters)
 
         self.state = 'RUNNING'
         return HttpJsonResponse()
 
-    def _execute_script(self, command):
+    def _execute_script(self, command, parameters=''):
         if command == 'interrupt':
             self._kill_process('run')
 
@@ -376,7 +381,7 @@ class GenericAgent(BaseAgent):
                     % script_name)
             return
 
-        start_args = [ "bash",  script_path ]
+        start_args = [ "bash",  script_path ] + parameters.split()
         self.processes[command] = Popen(start_args, cwd=self.generic_dir,
                 env=self.env, close_fds=True, preexec_fn=os.setsid)
 

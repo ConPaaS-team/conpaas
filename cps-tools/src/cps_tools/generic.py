@@ -296,11 +296,13 @@ class GenericCmd(ServiceCmd):
         subparser.set_defaults(run_cmd=self.run, parser=subparser)
         subparser.add_argument('serv_name_or_id',
                                help="Name or identifier of a service")
+        subparser.add_argument('-p', '--parameters', metavar='PARAMETERS',
+                               default='', help="parameters for the script")
 
     def run(self, args):
         service_id = self.get_service_id(args.serv_name_or_id)
 
-        params = { 'command': 'run' }
+        params = { 'command': 'run', 'parameters': args.param }
         res = self.client.call_manager_post(service_id, "execute_script", params)
 
         if 'error' in res:
@@ -315,11 +317,13 @@ class GenericCmd(ServiceCmd):
         subparser.set_defaults(run_cmd=self.interrupt, parser=subparser)
         subparser.add_argument('serv_name_or_id',
                                help="Name or identifier of a service")
+        subparser.add_argument('-p', '--parameters', metavar='PARAMETERS',
+                               default='', help="parameters for the script")
 
     def interrupt(self, args):
         service_id = self.get_service_id(args.serv_name_or_id)
 
-        params = { 'command': 'interrupt' }
+        params = { 'command': 'interrupt', 'parameters': args.param }
         res = self.client.call_manager_post(service_id, "execute_script", params)
 
         if 'error' in res:
@@ -334,11 +338,13 @@ class GenericCmd(ServiceCmd):
         subparser.set_defaults(run_cmd=self.cleanup, parser=subparser)
         subparser.add_argument('serv_name_or_id',
                                help="Name or identifier of a service")
+        subparser.add_argument('-p', '--parameters', metavar='PARAMETERS',
+                               default='', help="parameters for the script")
 
     def cleanup(self, args):
         service_id = self.get_service_id(args.serv_name_or_id)
 
-        params = { 'command': 'cleanup' }
+        params = { 'command': 'cleanup', 'parameters': args.param }
         res = self.client.call_manager_post(service_id, "execute_script", params)
 
         if 'error' in res:

@@ -156,10 +156,13 @@ def generic_delete_volume(host, port, volumeName):
     params = { 'volumeName' : volumeName }
     return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
 
-def execute_script(host, port, command):
+def execute_script(host, port, command, parameters=''):
     """POST (command) execute_script"""
     method = 'execute_script'
-    params = { 'command' : command }
+    params = {
+        'command' : command,
+        'parameters' : parameters
+    }
     return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
 
 def get_script_status(host, port):
