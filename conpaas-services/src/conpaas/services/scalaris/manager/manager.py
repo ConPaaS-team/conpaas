@@ -24,7 +24,7 @@ class ScalarisManager(BaseManager):
         self.context = {'FIRST': 'true', 'MGMT_SERVER': '', 'KNOWN_HOSTS': ''}
         # Setup the clouds' controller
         self.controller.generate_context('scalaris')
-        self.cloud_groups = CloudGroups(self.controller.get_clouds())
+        self.cloud_groups = CloudGroups(self.controller.get_clouds(), self.controller.get_default_cloud().get_cloud_name())
         self.logger.info('Cloud-Groups: %s', self.cloud_groups.groups)
 
     def _do_startup(self, cloud):

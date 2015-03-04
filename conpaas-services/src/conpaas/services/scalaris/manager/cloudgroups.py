@@ -28,7 +28,7 @@ class CloudGroups():
         """Returns an list of all the nodes (from all cloud groups)"""
         return [node for group in self._groups for node in group.nodes]
 
-    def __init__(self, clouds):
+    def __init__(self, clouds, default_cloud):
         self.logger = create_logger(__name__)
 
         if len(clouds) == 1:
@@ -50,7 +50,7 @@ class CloudGroups():
             self._cloud2group[cloud.get_cloud_name()] = cloud_group
 
         # add 'default' as an alias to 'iaas'
-        self._cloud2group['default'] = self._cloud2group['iaas']
+        self._cloud2group['default'] = self._cloud2group[default_cloud]
 
         # init logical clock
         self._clock = 0
