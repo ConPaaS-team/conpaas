@@ -108,12 +108,27 @@ class CloudGroups():
         return node == group.firstnode
 
     def remove_node(self):
-        node = self.nodes.pop(1)
-        for group in self._groups:
-            if node in group.nodes:
-                group.nodes.remove(node)
-                break
+        """Remove a node from the cloud groups.
 
+        The removal is ordered by number of nodes of nodes per group (first remove from cloud groups with more nodes)
+        and timestamp (first remove from groups with oldest timestamp). Within in cloud groups a random node is removed,
+        but the node added first to a group will be removed last. Only removes the node from  the cloud groups data
+        structures, they still need to be removed from the controller.
+
+        :return: the removed node
+        """
+        def max_count_min_time(group1, group2):
+            """Order cloud groups by 1) max number of nodes 2) oldest (min) timestamp"""
+            if group1.node_counter == group2.node_counter:
+                return group1.timestamp - group2.timestamp
+            else:
+                return group2.node_counter - group1.node_counter
+        group = sorted(self._groups, cmp=max_count_min_time).pop(0)
+
+        self._clock += 1
+        group.timestamp = self._clock
+
+        node = group.remove_node()
         return node
 
 
@@ -127,10 +142,22 @@ class CloudGroup(object):
         self.timestamp = 0
         self.reg_keys = []
         self.firstnode = None
+        self.logger = create_logger(__name__)
 
     def __repr__(self):
         return "CloudGroup(number=%s, clouds=%s, nodes=%s, timestamp=%s, firstnode: %s)" \
                % (self.number, self.clouds, self.node_counter, self.timestamp, self.firstnode)
+
+    def remove_node(self):
+        if len(self.nodes) == 1:
+            node = self.nodes.pop()
+            self.firstnode = None
+        else:
+            node = random.choice(self.nodes)
+            while node == self.firstnode:
+                node = random.choice(self.nodes)
+            self.nodes.remove(node)
+        return node
 
     def add_cloud(self, name):
         self.clouds.append(name)

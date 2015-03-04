@@ -210,14 +210,8 @@ class ScalarisManager(BaseManager):
         nodes = self.cloud_groups.nodes
         if count > len(nodes) - 1:
             self.state = self.S_RUNNING
+            self.logger.info('Cannot delete so many workers')
             return HttpErrorResponse('ERROR: Cannot delete so many workers')
-        if count == len(nodes):
-            self.logger.info('killing the nodes')
-            for i in range(0, count):
-                node = self.cloud_groups.remove_node()
-                self.controller.delete_nodes([node])
-            self.state = self.S_RUNNING
-            return HttpJsonResponse()
         else:
             for i in range(0, count):
                 node = self.cloud_groups.remove_node()
