@@ -342,6 +342,14 @@ class GenericPage extends ServicePage {
 					.'</div>'
 					.'<div class="clear"></div>'
 				.'</div>'
+				.'<div class="left-stack name">'
+					.'parameters'
+				.'</div>'
+				.'<div class="left-stack details">'
+					.'<input id="scriptParameters" type="text"'
+						.' class="generic-script-parameters" />'
+				.'</div>'
+				.'<div class="clear"></div>'
 				.$this->renderAppLifecycleButton('run')
 				.$this->renderAppLifecycleButton('interrupt')
 				.$this->renderAppLifecycleButton('cleanup')

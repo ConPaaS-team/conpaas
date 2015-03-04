@@ -799,6 +799,10 @@ input.button {
 	width: 100px;
 }
 
+.generic-script-parameters {
+	width: 210px;
+}
+
 .form-section .form-header {
 	margin-bottom: 10px;
 }

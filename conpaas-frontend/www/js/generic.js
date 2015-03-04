@@ -225,13 +225,15 @@ conpaas.ui = (function (this_module) {
 
     onExecuteScript: function (event) {
         var page = event.data,
-            command = $(event.target).attr('name');
+            command = $(event.target).attr('name'),
+            parameters = $('#scriptParameters').val();
 
         page.freezeInput(true);
         page.server.req('ajax/genericRequest.php', {
             sid: page.service.sid,
             method: 'executeScript',
-            command: command
+            command: command,
+            parameters: parameters
         }, 'post', function (response) {
             // successful
             page.showStatus('#appLifecycleStat', 'positive',
