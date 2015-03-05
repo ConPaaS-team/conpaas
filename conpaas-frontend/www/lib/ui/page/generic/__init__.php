@@ -340,13 +340,13 @@ class GenericPage extends ServicePage {
 	public function renderAppLifecycleSection() {
 		return
 			'<div class="form-section">'
-				.'<div class="form-header">'
+/*				.'<div class="form-header">'
 					.'<div class="title">'
 						.'<img src="images/lifecycle.png" />'
 						.'Application lifecycle management'
 					.'</div>'
 					.'<div class="clear"></div>'
-				.'</div>'
+				.'</div>' */
 				.'<div class="left-stack name">'
 					.'parameters'
 				.'</div>'
@@ -363,12 +363,15 @@ class GenericPage extends ServicePage {
 	}
 
 	public function renderContent() {
-		$html = $this->renderInstancesSection()
-			.$this->renderCodeSection();
+		$html = '';
 
 		if ($this->service->isRunning()) {
-			$html .= $this->renderManageVolumesSection();
 			$html .= $this->renderAppLifecycleSection();
+		}
+		$html .= $this->renderInstancesSection()
+			.$this->renderCodeSection();
+		if ($this->service->isRunning()) {
+			$html .= $this->renderManageVolumesSection();
 		}
 
 		return $html;
