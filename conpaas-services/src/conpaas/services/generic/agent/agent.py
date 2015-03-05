@@ -406,9 +406,12 @@ class GenericAgent(BaseAgent):
     def _kill_all_processes(self):
         self.logger.info("Killing all running processes")
         for process in self.processes.values():
-            if process is not None:
-                pgrp = process.pid
-                os.killpg(pgrp, signal.SIGTERM)
+            if process is not None and process.poll() is None:
+                try:
+                    pgrp = process.pid
+                    os.killpg(pgrp, signal.SIGTERM)
+                except Exception as e:
+                    self.logger.critical('Failed to kill process group %s' % pgrp)
 
     @expose('GET')
     def get_script_status(self, kwargs):
