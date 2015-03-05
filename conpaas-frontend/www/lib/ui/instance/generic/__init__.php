@@ -40,20 +40,97 @@ require_module('ui/instance');
 
 class GenericInstance extends Instance {
 
-	public function __construct($info) {
-		parent::__construct($info);
-	}
+    private $scriptStatus = null;
 
-	protected function renderCapabs() {
-		$html = '';
+    public function __construct($info, $scriptStatus) {
+        parent::__construct($info);
+        $this->scriptStatus = $scriptStatus;
+    }
+
+    protected function renderCapabs() {
+        $html = '';
         if ($this->info['is_master']) {
-            $html .= '<div class="tag blue">master</div>';
-        }
-        else {
+            $html .= '<div class="tag blue">&nbsp;master&nbsp;</div>';
+        } else {
             $html .= '<div class="tag orange">node</div>';
         }
-		return $html;
-	}
+        return $html;
+    }
+
+    public function renderScriptStatus($script) {
+        $text = $this->scriptStatus[$script];
+        $toolTipText = '';
+        $img = 'ledgray.png';
+        if (strpos($text, 'STOPPED') !== false) {
+            $toolTipText = substr($text, 9, strlen($text) - 10);
+            $text = 'STOPPED';
+            $img = 'ledred.png';
+        } elseif ($text == 'RUNNING') {
+            $img = 'ledgreen.png';
+        } elseif ($text == 'NEVER STARTED') {
+            $img = 'ledlightblue.png';
+        }
+        return
+            '<tr>'
+                .'<td><b>'.$script.'</b>&nbsp;&nbsp;&nbsp;</td>'
+                .'<td title="'.$toolTipText.'">'
+                    .'<img width="10" height="10" src="images/'.$img.'">&nbsp;'
+                    .$text
+                .'</td>'
+            .'</tr>';
+    }
+
+    public function renderScriptStatusTable() {
+        if ($this->scriptStatus == null) {
+            return '';
+        }
+        $html =
+            '<div class="generic-script-status">'
+                .'<table cellspacing="0" cellpadding="0">'
+                    .$this->renderScriptStatus('init.sh')
+                    .$this->renderScriptStatus('notify.sh')
+                    .$this->renderScriptStatus('run.sh')
+                    .$this->renderScriptStatus('interrupt.sh')
+                    .$this->renderScriptStatus('cleanup.sh')
+                .'</table>'
+            .'</div>';
+        return $html;
+    }
+
+    public function render() {
+        return
+        '<div class="instance dualbox">'
+            .'<div class="left">'
+                .'<i class="title">Instance '.$this->info['id'].'</i>'
+                .$this->renderCapabs()
+                .'<div class="brief">running</div>'
+            .'</div>'
+            .'<div class="left">'
+                .$this->renderScriptStatusTable()
+            .'</div>'
+            .'<div class="right">'
+                .'<i class="address">'.$this->info['ip'].'</i>'
+            .'</div>'
+            .'<div class="clear"></div>'
+        .'</div>';
+    }
+
+    public function renderInCluster() {
+        return
+        '<div class="instance dualbox">'
+            .'<div class="left">'
+                .'<i class="title">Instance '.$this->info['id'].'</i>'
+                .'<span class="timestamp">running</span>'
+            .'</div>'
+            .'<div class="left">'
+                .$this->renderScriptStatusTable()
+            .'</div>'
+            .'<div class="right">'
+                .'<i class="address">'.$this->info['ip'].'</i>'
+            .'</div>'
+            .'<div class="clear"></div>'
+        .'</div>';
+    }
 }
 
 ?>

@@ -63,6 +63,11 @@ class GenericPage extends ServicePage {
         return EditableTag()->setColor('purple')->setID('node')->setValue('0')->setText('Generic Nodes');
     }
 
+	public function renderInstances() {
+		$this->service->updateScriptStatus();
+		return parent::renderInstances();
+	}
+
 	private function renderFileForm() {
 		$url = 'ajax/uploadCodeVersion.php?sid='.$this->service->getSID();
 		return

@@ -803,6 +803,13 @@ input.button {
 	width: 210px;
 }
 
+.generic-script-status {
+	padding-left: 30px;
+	font-weight: normal;
+	color: #666;
+	font-size: 10px;
+}
+
 .form-section .form-header {
 	margin-bottom: 10px;
 }

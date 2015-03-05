@@ -238,6 +238,7 @@ conpaas.ui = (function (this_module) {
             // successful
             page.showStatus('#appLifecycleStat', 'positive',
                     "Script '" + command + ".sh' started successfully");
+            page.reloadInstances();
             page.freezeInput(false);
         }, function (response) {
             // error
@@ -306,16 +307,35 @@ conpaas.ui = (function (this_module) {
      * load the rendered HTML for the versions container
      */
     reloadVersions: function () {
-        var that = this;
-        this.server.reqHTML('ajax/render.php',
-                {sid: this.service.sid, target: 'generic_versions'}, 'get',
-                function (response) {
-                    $('#versionsWrapper').html(response);
-                    $('.versions .activate').click(that,
-                            that.onActivateVersion);
-                    $('.versions .delete').click(that,
-                            that.onDeleteVersion);
-                });
+        var page = this;
+        page.server.reqHTML('ajax/render.php', {
+            sid: this.service.sid,
+            target: 'generic_versions'
+        }, 'get', function (response) {
+            $('#versionsWrapper').html(response);
+            $('.versions .activate').click(page,
+                    page.onActivateVersion);
+            $('.versions .delete').click(page,
+                    page.onDeleteVersion);
+        });
+    },
+
+    /**
+     * load the rendered HTML for the instances container
+     */
+    reloadInstances: function () {
+        var page = this;
+        page.server.reqHTML('ajax/render.php', {
+            sid: this.service.sid,
+            target: 'generic_instances'
+        }, 'get', function (response) {
+            $('#instancesWrapper').html(response);
+            if (response.indexOf("RUNNING") != -1) {
+                setTimeout(function () {
+                    page.reloadInstances();
+                }, 1000);
+            }
+        });
     }
     });
 

@@ -191,7 +191,7 @@ class ServicePage extends Page {
 			$html .= $node->render();
 		}
 		$html .= '</div>';
-		return '<div class="instancesWrapper">'.$html.'</div>';
+		return $html;
 	}
 
 	protected function getTypeImage() {
@@ -322,7 +322,9 @@ class ServicePage extends Page {
 		}
 		return
 			'<div class="form-section">'
-				.$this->renderInstances()
+				.'<div id="instancesWrapper">'
+					.$this->renderInstances()
+				.'</div>'
 				.$this->renderInstanceActionsSection()
                                 .$this->renderIncompleteGUI()
 			.'</div>';

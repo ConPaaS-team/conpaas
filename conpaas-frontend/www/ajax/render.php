@@ -42,6 +42,10 @@ switch ($target) {
 		$page = new GenericPage($service);
 		echo $page->renderVolumeList();
 		break;
+	case 'generic_instances':
+		$page = new GenericPage($service);
+		echo $page->renderInstances();
+		break;
 	case 'xtreemfs_volumes':
 		$page = new XtreemFSPage($service);
 		$volumes = $service->listVolumes();
