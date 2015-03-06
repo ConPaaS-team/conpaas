@@ -218,7 +218,7 @@ conpaas.ui = (function (this_module) {
         page.freezeInput(true);
         page.server.reqHTML('ajax/render.php', {
             sid: page.service.sid,
-            target: 'generic_volumes'},
+            target: 'volumes'},
         'get', function (response) {
             $('#volumesListWrapper').html(response);
             $('#linkVolumes').click(page, page.onClickLinkVolumes);
@@ -318,7 +318,7 @@ conpaas.ui = (function (this_module) {
         var page = this;
         page.server.reqHTML('ajax/render.php', {
             sid: this.service.sid,
-            target: 'generic_versions'
+            target: 'versions'
         }, 'get', function (response) {
             $('#versionsWrapper').html(response);
             $('.versions .activate').click(page,
@@ -337,7 +337,7 @@ conpaas.ui = (function (this_module) {
             url: 'ajax/render.php',
             data: {
                 sid: this.service.sid,
-                target: 'generic_instances'
+                target: 'instances'
             },
             success: function (response) {
                 if (response.error) {

@@ -8,9 +8,6 @@ require_module('service');
 require_module('service/factory');
 require_module('ui/service');
 require_module('ui/page');
-require_module('ui/page/hosting');
-require_module('ui/page/generic');
-require_module('ui/page/xtreemfs');
 
 if (!isset($_SESSION['uid'])) {
 	throw new Exception('User not logged in');
@@ -25,29 +22,19 @@ if($service->getUID() !== $_SESSION['uid']) {
     throw new Exception('Not allowed');
 }
 
+$page = PageFactory::create($service);
+
 switch ($target) {
 	case 'versions':
-		$page = new HostingPage($service);
 		echo $page->renderCodeVersions();
 		break;
 	case 'instances':
-		$page = new ServicePage($service);
 		echo $page->renderInstances();
 		break;
-	case 'generic_versions':
-		$page = new GenericPage($service);
-		echo $page->renderCodeVersions();
-		break;
-	case 'generic_volumes':
-		$page = new GenericPage($service);
+	case 'volumes':
 		echo $page->renderVolumeList();
 		break;
-	case 'generic_instances':
-		$page = new GenericPage($service);
-		echo $page->renderInstances();
-		break;
 	case 'xtreemfs_volumes':
-		$page = new XtreemFSPage($service);
 		$volumes = $service->listVolumes();
 		$volumeList = $page->renderVolumeList($volumes);
 		$volumeSelector = $page->renderVolumeSelectorOptions($volumes);
