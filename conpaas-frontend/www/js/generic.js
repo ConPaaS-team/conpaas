@@ -333,15 +333,22 @@ conpaas.ui = (function (this_module) {
      */
     reloadInstances: function () {
         var page = this;
-        page.server.reqHTML('ajax/render.php', {
-            sid: this.service.sid,
-            target: 'generic_instances'
-        }, 'get', function (response) {
-            $('#instancesWrapper').html(response);
-            if (page.needsScriptStatePolling()) {
-                page.startScriptStatePolling();
-            } else {
-                page.stopScriptStatePolling();
+        $.ajax({
+            url: 'ajax/render.php',
+            data: {
+                sid: this.service.sid,
+                target: 'generic_instances'
+            },
+            success: function (response) {
+                if (response.error) {
+                    return;
+                }
+                $('#instancesWrapper').html(response);
+                if (page.needsScriptStatePolling()) {
+                    page.startScriptStatePolling();
+                } else {
+                    page.stopScriptStatePolling();
+                }
             }
         });
     },
