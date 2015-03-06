@@ -48,6 +48,7 @@ conpaas.ui = (function (this_module) {
         this.server = server;
         this.service = service;
         this.setupPoller_();
+        this.scriptStatusIntervalId_ = null;
     },
 
     /* methods */{
@@ -61,6 +62,11 @@ conpaas.ui = (function (this_module) {
         conpaas.ui.ServicePage.prototype.freezeInput.call(this, freeze);
         this.freezeButtons(buttons, freeze);
         this.hideLinks(linksSelectors, freeze);
+        if (freeze) {
+            this.stopScriptStatePolling();
+        } else {
+            this.reloadInstances();
+        }
     },
 
     /**
@@ -109,6 +115,9 @@ conpaas.ui = (function (this_module) {
         $('#createVolume').click(page, page.onCreateVolume);
         $('#runApp, #interruptApp, #cleanupApp').click(page,
                                                     page.onExecuteScript);
+        if (page.needsScriptStatePolling()) {
+            page.startScriptStatePolling();
+        }
     },
 
     // handlers
@@ -238,7 +247,6 @@ conpaas.ui = (function (this_module) {
             // successful
             page.showStatus('#appLifecycleStat', 'positive',
                     "Script '" + command + ".sh' started successfully");
-            page.reloadInstances();
             page.freezeInput(false);
         }, function (response) {
             // error
@@ -330,13 +338,50 @@ conpaas.ui = (function (this_module) {
             target: 'generic_instances'
         }, 'get', function (response) {
             $('#instancesWrapper').html(response);
-            if (response.indexOf("RUNNING") != -1) {
-                setTimeout(function () {
-                    page.reloadInstances();
-                }, 1000);
+            if (page.needsScriptStatePolling()) {
+                page.startScriptStatePolling();
+            } else {
+                page.stopScriptStatePolling();
             }
         });
+    },
+
+    /**
+     * check if we need to continue polling the script states
+     */
+    needsScriptStatePolling: function () {
+        var instancesHTML = $('#instancesWrapper').html();
+        // we need to continue polling if at least one script is RUNNING
+        return instancesHTML.indexOf("RUNNING") != -1;
+    },
+
+    /**
+     * start polling the script states
+     */
+    startScriptStatePolling: function () {
+        var page = this;
+        if (page.scriptStatusIntervalId_ !== null) {
+            // polling already started
+            return;
+        }
+        page.scriptStatusIntervalId_ = setInterval(function () {
+            page.reloadInstances();
+        }, 1000);
+    },
+
+    /**
+     * stop polling the script states
+     */
+    stopScriptStatePolling: function () {
+        var page = this;
+        if (page.scriptStatusIntervalId_ == null) {
+            // polling already stopped
+            return;
+        }
+        clearInterval(page.scriptStatusIntervalId_);
+        page.scriptStatusIntervalId_ = null;
     }
+
     });
 
     return this_module;
