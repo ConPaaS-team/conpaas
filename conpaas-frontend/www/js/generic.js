@@ -360,6 +360,8 @@ conpaas.ui = (function (this_module) {
      */
     startScriptStatePolling: function () {
         var page = this;
+        // animate the 'RUNNING' icon
+        $('.running').fadeOut(500).fadeIn(500);
         if (page.scriptStatusIntervalId_ !== null) {
             // polling already started
             return;

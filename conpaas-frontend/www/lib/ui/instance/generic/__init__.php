@@ -61,12 +61,14 @@ class GenericInstance extends Instance {
         $text = $this->scriptStatus[$script];
         $toolTipText = '';
         $img = 'ledgray.png';
+        $class = '';
         if (strpos($text, 'STOPPED') !== false) {
             $toolTipText = substr($text, 9, strlen($text) - 10);
             $text = 'STOPPED';
             $img = 'ledred.png';
         } elseif ($text == 'RUNNING') {
             $img = 'ledgreen.png';
+            $class = ' class="running"';
         } elseif ($text == 'NEVER STARTED') {
             $img = 'ledlightblue.png';
         }
@@ -74,8 +76,8 @@ class GenericInstance extends Instance {
             '<tr>'
                 .'<td><b>'.$script.'</b>&nbsp;&nbsp;&nbsp;</td>'
                 .'<td title="'.$toolTipText.'">'
-                    .'<img width="10" height="10" src="images/'.$img.'">&nbsp;'
-                    .$text
+                    .'<img'.$class.' width="10" height="10" src="images/'.$img.'">'
+                    .'&nbsp;'.$text
                 .'</td>'
             .'</tr>';
     }
