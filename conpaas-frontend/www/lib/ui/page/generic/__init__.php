@@ -326,12 +326,11 @@ class GenericPage extends ServicePage {
 	private function renderAppLifecycleButton($command) {
 		$additionalText = '';
 		if ($command == 'interrupt') {
-			$additionalText = "kill the 'run.sh' script and all its"
-					." child processes and ";
+			$additionalText = " and kill all the running processes afterwards";
 		}
-		$tooltipText = "pressing this button will ".$additionalText."execute "
+		$tooltipText = "pressing this button will execute "
 					."the '".$command.".sh' script from the active "
-					."code tarball on each agent";
+					."code tarball on each agent".$additionalText;
 		return '<input class="generic-button" title="'.$tooltipText.'" '
 					.'id="'.$command.'App" name="'.$command.'" type="button" '
 					.'value="'.$command.'" />&nbsp;&nbsp;';

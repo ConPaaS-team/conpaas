@@ -115,7 +115,7 @@ conpaas.ui = (function (this_module) {
         $('#createVolume').click(page, page.onCreateVolume);
         $('#runApp, #interruptApp, #cleanupApp').click(page,
                                                     page.onExecuteScript);
-        if (page.needsScriptStatePolling()) {
+        if (page.areScriptsRunning()) {
             page.startScriptStatePolling();
         }
     },
@@ -124,6 +124,13 @@ conpaas.ui = (function (this_module) {
     onActivateVersion: function (event) {
         var page = event.data,
             versionId = $(event.target).attr('name');
+
+        if (page.areScriptsRunning()) {
+            alert("Scripts are still running inside at " +
+                                "least one agent. Please wait for them to " +
+                                "finish execution or call 'interrupt' first.");
+            return;
+        }
         $(event.target).parent().find('.loading').show();
         page.freezeInput(true);
         page.updateConfiguration({codeVersionId: versionId}, function () {
@@ -158,6 +165,12 @@ conpaas.ui = (function (this_module) {
 			page.showStatus('#VolumeStat', 'error', 'There is no agent selected');
 			return;
 		}
+        if (page.areScriptsRunning()) {
+            alert("Scripts are still running inside at " +
+                                "least one agent. Please wait for them to " +
+                                "finish execution or call 'interrupt' first.");
+            return;
+        }
 		//send the request
 		page.freezeInput(true);
         page.server.req('ajax/genericRequest.php', {
@@ -183,6 +196,13 @@ conpaas.ui = (function (this_module) {
     onDeleteVolume: function (event) {
 		var page = event.data,
             volumeName = $(event.target).attr('name');
+
+        if (page.areScriptsRunning()) {
+            alert("Scripts are still running inside at " +
+                                "least one agent. Please wait for them to " +
+                                "finish execution or call 'interrupt' first.");
+            return;
+        }
         if (!confirm('Are you sure you want to delete the volume ' + volumeName +
                 '? All data contained within will be lost.')) {
             return;
@@ -237,6 +257,17 @@ conpaas.ui = (function (this_module) {
             command = $(event.target).attr('name'),
             parameters = $('#scriptParameters').val();
 
+        if (command == 'interrupt' && !page.areScriptsRunning()) {
+            page.showStatus('#appLifecycleStat', 'error', 'No scripts are currently ' +
+                    'running inside agents. Nothing to interrupt.');
+            return;
+        }
+        if (command != 'interrupt' && page.isScriptRunning(command + '.sh')) {
+            page.showStatus('#appLifecycleStat', 'error', "Script '" + command +
+                            ".sh' is already running inside at least one agent.");
+            return;
+        }
+
         page.freezeInput(true);
         page.server.req('ajax/genericRequest.php', {
             sid: page.service.sid,
@@ -245,8 +276,13 @@ conpaas.ui = (function (this_module) {
             parameters: parameters
         }, 'post', function (response) {
             // successful
-            page.showStatus('#appLifecycleStat', 'positive',
-                    "Script '" + command + ".sh' started successfully");
+            if (command == 'interrupt' && page.isScriptRunning(command + '.sh')) {
+                page.showStatus('#appLifecycleStat', 'positive', "Script '" + command +
+                                ".sh' is already running, killing all the processes.");
+            } else {
+                page.showStatus('#appLifecycleStat', 'positive',
+                        "Script '" + command + ".sh' started successfully");
+            }
             page.freezeInput(false);
         }, function (response) {
             // error
@@ -344,7 +380,7 @@ conpaas.ui = (function (this_module) {
                     return;
                 }
                 $('#instancesWrapper').html(response);
-                if (page.needsScriptStatePolling()) {
+                if (page.areScriptsRunning()) {
                     page.startScriptStatePolling();
                 } else {
                     page.stopScriptStatePolling();
@@ -354,12 +390,22 @@ conpaas.ui = (function (this_module) {
     },
 
     /**
-     * check if we need to continue polling the script states
+     * check if there are scripts currently RUNNING inside any
+     * of the agents
      */
-    needsScriptStatePolling: function () {
-        var instancesHTML = $('#instancesWrapper').html();
-        // we need to continue polling if at least one script is RUNNING
-        return instancesHTML.indexOf("RUNNING") != -1;
+    areScriptsRunning: function () {
+        var instancesText = $('#instancesWrapper').text();
+        return instancesText.indexOf("RUNNING") != -1;
+    },
+
+    /**
+     * check if a specific script is RUNNING inside any of the
+     * agents
+     */
+    isScriptRunning: function (script) {
+        var instancesText = $('#instancesWrapper').text(),
+            regExp = new RegExp(script + '\\s*RUNNING');
+        return instancesText.search(regExp) != -1;
     },
 
     /**
