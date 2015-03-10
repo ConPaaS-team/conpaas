@@ -41,7 +41,7 @@ class GenericCmd(ServiceCmd):
         files = [('key', args.filename, contents)]
         res = self.client.call_manager_post(service_id, "/", params, files)
         if 'error' in res:
-            print res['error']
+            self.client.error(res['error'])
         else:
             print res['outcome']
 
@@ -76,7 +76,7 @@ class GenericCmd(ServiceCmd):
         service_id = self.get_service_id(args.serv_name_or_id)
         filename = args.filename
         if not (os.path.isfile(filename) and os.access(filename, os.R_OK)):
-            self.client.error("Cannot upload code: filename %s not found or "
+            self.client.error("Cannot upload code: filename '%s' not found or "
                               "access is denied" % filename)
 
         contents = open(filename).read()
@@ -86,7 +86,7 @@ class GenericCmd(ServiceCmd):
                                             {'method': "upload_code_version", },
                                             files)
         if 'error' in res:
-            print res['error']
+            self.client.error(res['error'])
         else:
             print "Code version %(codeVersionId)s uploaded" % res
 
@@ -129,13 +129,12 @@ class GenericCmd(ServiceCmd):
 
         if 'error' in res:
             self.client.error("Cannot list code versions: %s" % res['error'])
-            sys.exit(0)
 
         filenames = [ code['filename'] for code in res['codeVersions']
                 if code['codeVersionId'] == args.version ]
         if not filenames:
-            self.client.error("Cannot download code: invalid version %s" % args.version)
-            sys.exit(0)
+            self.client.error("Cannot download code: invalid version '%s'"
+                    % args.version)
 
         destfile = filenames[0]
 
@@ -169,7 +168,7 @@ class GenericCmd(ServiceCmd):
         res = self.client.call_manager_post(service_id, "enable_code", params)
 
         if 'error' in res:
-            print res['error']
+            self.client.error(res['error'])
         else:
             print code_version, 'enabled'
 
@@ -192,7 +191,7 @@ class GenericCmd(ServiceCmd):
         res = self.client.call_manager_post(service_id, "delete_code_version", params)
 
         if 'error' in res:
-            print res['error']
+            self.client.error(res['error'])
         else:
             print code_version, 'deleted'
 
@@ -243,7 +242,7 @@ class GenericCmd(ServiceCmd):
                 params)
 
         if 'error' in res:
-            self.client.error("Cannot create volume: %s" % res['error'])
+            self.client.error(res['error'])
         else:
             print ("Creating volume %s and attaching it to %s... " %
                     (args.vol_name, args.agent_id))
@@ -276,7 +275,7 @@ class GenericCmd(ServiceCmd):
                 params)
 
         if 'error' in res:
-            self.client.error("Cannot delete volume: %s" % res['error'])
+            self.client.error(res['error'])
         else:
             print ("Detaching and deleting volume %s... " % args.vol_name)
             sys.stdout.flush()
@@ -302,11 +301,11 @@ class GenericCmd(ServiceCmd):
     def run(self, args):
         service_id = self.get_service_id(args.serv_name_or_id)
 
-        params = { 'command': 'run', 'parameters': args.param }
+        params = { 'command': 'run', 'parameters': args.parameters }
         res = self.client.call_manager_post(service_id, "execute_script", params)
 
         if 'error' in res:
-            print res['error']
+            self.client.error(res['error'])
         else:
             print "Service started executing 'run.sh' on all the agents..."
 
@@ -323,11 +322,11 @@ class GenericCmd(ServiceCmd):
     def interrupt(self, args):
         service_id = self.get_service_id(args.serv_name_or_id)
 
-        params = { 'command': 'interrupt', 'parameters': args.param }
+        params = { 'command': 'interrupt', 'parameters': args.parameters }
         res = self.client.call_manager_post(service_id, "execute_script", params)
 
         if 'error' in res:
-            print res['error']
+            self.client.error(res['error'])
         else:
             print "Service started executing 'interrupt.sh' on all the agents..."
 
@@ -344,11 +343,11 @@ class GenericCmd(ServiceCmd):
     def cleanup(self, args):
         service_id = self.get_service_id(args.serv_name_or_id)
 
-        params = { 'command': 'cleanup', 'parameters': args.param }
+        params = { 'command': 'cleanup', 'parameters': args.parameters }
         res = self.client.call_manager_post(service_id, "execute_script", params)
 
         if 'error' in res:
-            print res['error']
+            self.client.error(res['error'])
         else:
             print "Service started executing 'cleanup.sh' on all the agents..."
 
@@ -366,7 +365,7 @@ class GenericCmd(ServiceCmd):
         res = self.client.call_manager_get(service_id, "get_script_status")
 
         if 'error' in res:
-            print res['error']
+            self.client.error(res['error'])
         elif res['agents']:
             print
             for agent in sorted(res['agents']):

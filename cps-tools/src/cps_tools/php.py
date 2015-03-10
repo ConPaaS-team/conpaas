@@ -39,7 +39,7 @@ class PHPCmd(WebCmd):
                                             "update_php_configuration",
                                             params)
         if 'error' in res:
-            print res['error']
+            self.client.error(res['error'])
         else:
             print code_version, 'enabled'
 

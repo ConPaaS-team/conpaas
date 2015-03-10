@@ -35,9 +35,10 @@ class BaseClient(object):
         self.services = None
 
     def error(self, error_msg, error_code=1):
-        """Log an error message and exit."""
-        self.logger.error(error_msg)
-        raise Exception(error_msg)
+        if not error_msg.startswith("ERROR"):
+            error_msg = "ERROR: " + error_msg
+        print error_msg
+        sys.exit(error_code)
 
     def set_director_url(self, dir_url):
         if dir_url is None:
