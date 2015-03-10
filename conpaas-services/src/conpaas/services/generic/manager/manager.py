@@ -108,6 +108,21 @@ class GenericManager(BaseManager):
     # String template for debugging messages logged on nodes creation
     ACTION_REQUESTING_NODES = "requesting %(count)s nodes in %(action)s"
 
+    # String used as an error message when 'interrupt' is called when no
+    # scripts are currently running
+    NO_SCRIPTS_ARE_RUNNING_MSG = "ERROR: No scripts are currently running inside "\
+                                "agents. Nothing to interrupt."
+
+    # String used as an error message when scripts are running inside agents
+    SCRIPTS_ARE_RUNNING_MSG = "ERROR: Scripts are still running inside at "\
+                                "least one agent. Please wait for them to "\
+                                "finish execution or call 'interrupt' first."
+
+    # String used as an error message when the script is already running
+    SCRIPT_IS_RUNNING_MSG = "ERROR: Script '%s.sh' is already running inside "\
+                            "at least one agent. Please wait for it to "\
+                            "finish execution or call 'interrupt' first."
+
     AGENT_PORT = 5555
 
     # memcache keys
@@ -684,6 +699,10 @@ echo "" >> /root/generic.out
             config.currentCodeVersion = codeVersionId
             self._configuration_set(config)
         elif dstate == self.S_RUNNING:
+            if self._are_scripts_running():
+                self.logger.info("Code activation is disabled when scripts are "\
+                        "running")
+                return HttpErrorResponse(self.SCRIPTS_ARE_RUNNING_MSG);
             self._state_set(self.S_ADAPTING, msg='Updating configuration')
             Thread(target=self._do_enable_code, args=[config, codeVersionId]).start()
         else:
@@ -833,6 +852,11 @@ echo "" >> /root/generic.out
                                   detail='Invalid agentId')
             return HttpErrorResponse(ex.message)
 
+        if self._are_scripts_running():
+            self.logger.info("Volume creation is disabled when scripts are "\
+                    "running")
+            return HttpErrorResponse(self.SCRIPTS_ARE_RUNNING_MSG);
+
         self._state_set(self.S_ADAPTING)
         Thread(target=self._do_create_volume, args=[volumeName, volumeSize,
                agentId]).start()
@@ -922,6 +946,11 @@ echo "" >> /root/generic.out
                                   detail='Invalid volumeName')
             return HttpErrorResponse(ex.message)
 
+        if self._are_scripts_running():
+            self.logger.info("Volume removal is disabled when scripts are "\
+                    "running")
+            return HttpErrorResponse(self.SCRIPTS_ARE_RUNNING_MSG);
+
         self._state_set(self.S_ADAPTING)
         Thread(target=self._do_delete_volume, args=[volumeName]).start()
 
@@ -987,11 +1016,48 @@ echo "" >> /root/generic.out
                                   kwargs.keys())
             return HttpErrorResponse(ex.message)
 
+        self.logger.info("Received request for executing the '%s' command"
+                % command)
+
+        # if command is 'interrupt' and no script is running, return an error
+        if command == 'interrupt' and not self._are_scripts_running():
+            self.logger.info("No scripts are currently running inside agents")
+            return HttpErrorResponse(self.NO_SCRIPTS_ARE_RUNNING_MSG)
+
+        # for the other commands, if the script is already running, return an error
+        elif command != 'interrupt' and self._is_script_running(command):
+            self.logger.info(("Script '%s.sh' is already running inside at least "
+                    "one agent.") % command)
+            return HttpErrorResponse(self.SCRIPT_IS_RUNNING_MSG % command)
+
         Thread(target=self._do_execute_script, args=[command,
                                                         self.nodes,
                                                         parameters]).start()
 
         return HttpJsonResponse({ 'state': self._state_get() })
+
+    def _is_script_running(self, command):
+        script_name = "%s.sh" % command
+        for node in self.nodes:
+            try:
+                res = client.get_script_status(node.ip, self.AGENT_PORT)
+                if res['scripts'][script_name] == "RUNNING":
+                    return True
+            except client.AgentException:
+                message = ("Failed to obtain script status at node %s" % str(node));
+                self.logger.exception(message)
+        return False
+
+    def _are_scripts_running(self):
+        for node in self.nodes:
+            try:
+                res = client.get_script_status(node.ip, self.AGENT_PORT)
+                if "RUNNING" in res['scripts'].values():
+                    return True
+            except client.AgentException:
+                message = ("Failed to obtain script status at node %s" % str(node));
+                self.logger.exception(message)
+        return False
 
     def _do_execute_script(self, command, nodes, parameters=''):
         self.logger.info("Executing the '%s' command at agents %s" %

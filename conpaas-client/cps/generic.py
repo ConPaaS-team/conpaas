@@ -249,7 +249,7 @@ class Client(BaseClient):
             True, params)
 
         if 'error' in res:
-            print 'E: %s' % res['error']
+            print res['error']
         else:
             print ("Creating volume %s and attaching it to %s... " %
                     (volumeName, agentId))
@@ -268,7 +268,7 @@ class Client(BaseClient):
             True, params)
 
         if 'error' in res:
-            print 'E: %s' % res['error']
+            print res['error']
         else:
             print ("Detaching and deleting volume %s... " %
                     volumeName)

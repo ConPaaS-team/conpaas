@@ -39,6 +39,7 @@ import os
 import time
 import signal
 
+from threading import Thread
 from subprocess import Popen, PIPE
 from os.path import exists, devnull, join, lexists
 from os import remove, makedirs, fdopen, rename
@@ -364,15 +365,45 @@ class GenericAgent(BaseAgent):
         with open(join(target_dir, 'agents.json'), 'w') as outfile:
             simplejson.dump(agents_info, outfile)
 
-        self._execute_script(command, parameters)
+        if command == 'interrupt':
+            # if no script is running, do nothing
+            if not self._are_scripts_running():
+                self.logger.info("No scripts are currently running")
+
+            # if interrupt is already running, kill all processes
+            elif self._get_script_status('interrupt') == 'RUNNING':
+                self.logger.info("Script 'interrupt.sh' is already running")
+                self._kill_all_processes()
+
+            # execute the script and afterwards kill all processes
+            else:
+                Thread(target=self._do_interrupt, args=[parameters]).start()
+        else:
+            # if script is already running, do nothing
+            if self._get_script_status(command) == 'RUNNING':
+                self.logger.info("Script '%s.sh' is already running"
+                        % command)
+
+            # execute the script
+            else:
+                self._execute_script(command, parameters)
 
         self.state = 'RUNNING'
         return HttpJsonResponse()
 
-    def _execute_script(self, command, parameters=''):
-        if command == 'interrupt':
-            self._kill_process('run')
+    def _do_interrupt(self, parameters):
+        # execute interrupt.sh
+        self._execute_script('interrupt', parameters)
 
+        # wait for it to finish execution
+        process = self.processes['interrupt']
+        if process is not None:
+            process.wait()
+
+        # kill all processes
+        self._kill_all_processes()
+
+    def _execute_script(self, command, parameters=''):
         script_name = '%s.sh' % command
         script_path = join(self.CODE_DIR, script_name)
 
@@ -387,31 +418,22 @@ class GenericAgent(BaseAgent):
 
         self.logger.info("Script '%s' is running" % script_name)
 
-    def _kill_process(self, command):
-        if command not in self.processes or self.processes[command] is None:
-            self.logger.debug("The script '%s.sh' was never started" % command)
-            return
-
-        returncode = self.processes[command].poll()
-        if returncode is not None:
-            self.logger.debug("The script '%s.sh' already finished with return code %s"
-                    % (command, returncode))
-            return
-
-        pgrp = self.processes[command].pid
-        self.logger.info("Killing the script '%s.sh' (process group %s)"
-                % (command, pgrp))
-        os.killpg(pgrp, signal.SIGTERM)
-
     def _kill_all_processes(self):
         self.logger.info("Killing all running processes")
         for process in self.processes.values():
             if process is not None and process.poll() is None:
                 try:
                     pgrp = process.pid
+                    self.logger.debug("Killing process group %s" % pgrp)
                     os.killpg(pgrp, signal.SIGTERM)
                 except Exception as e:
                     self.logger.critical('Failed to kill process group %s' % pgrp)
+
+    def _are_scripts_running(self):
+        for command in ( 'init', 'notify', 'run', 'interrupt', 'cleanup' ):
+            if self._get_script_status(command) == 'RUNNING':
+                return True
+        return False
 
     @expose('GET')
     def get_script_status(self, kwargs):
