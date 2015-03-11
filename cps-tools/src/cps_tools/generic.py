@@ -23,6 +23,7 @@ class GenericCmd(ServiceCmd):
         self._add_interrupt()
         self._add_cleanup()
         self._add_get_script_status()
+        self._add_get_agent_log()
 
     # ========== upload_key
     def _add_upload_key(self):
@@ -375,3 +376,28 @@ class GenericCmd(ServiceCmd):
                                 'interrupt.sh', 'cleanup.sh'):
                     print "  %s\t%s" % (script, status[script])
                 print
+
+    # ========== get_agent_log
+    def _add_get_agent_log(self):
+        subparser = self.add_parser('get_agent_log',
+                                    help="get the agent logs")
+        subparser.set_defaults(run_cmd=self.get_agent_log, parser=subparser)
+        subparser.add_argument('serv_name_or_id',
+                               help="Name or identifier of a service")
+        subparser.add_argument('agent_id',
+                               help="Id of the agent")
+        subparser.add_argument('-f', '--filename', metavar='FILENAME',
+                               default=None, help="log file name")
+
+    def get_agent_log(self, args):
+        service_id = self.get_service_id(args.serv_name_or_id)
+
+        params = { 'agentId': args.agent_id }
+        if args.filename:
+            params['filename'] = args.filename
+        res = self.client.call_manager_get(service_id, "get_agent_log", params)
+
+        if 'error' in res:
+            self.client.error(res['error'])
+        else:
+            print res['log']

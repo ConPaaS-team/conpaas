@@ -42,8 +42,9 @@ class GenericInstance extends Instance {
 
     private $scriptStatus = null;
 
-    public function __construct($info, $scriptStatus) {
+    public function __construct($info, $sid, $scriptStatus) {
         parent::__construct($info);
+        $this->sid = $sid;
         $this->scriptStatus = $scriptStatus;
     }
 
@@ -99,6 +100,30 @@ class GenericInstance extends Instance {
         return $html;
     }
 
+    public function renderAgentLogs() {
+        $linkAgentLogs = LinkUI('agent log',
+            'viewlog.php?sid='.$this->sid
+            .'&agentId='.$this->info['id']
+        )->setExternal(true);
+        $linkAgentOut = LinkUI('agent output',
+            'viewlog.php?sid='.$this->sid
+            .'&agentId='.$this->info['id']
+            .'&filename=agent.out'
+        )->setExternal(true);
+        $linkAgentErr = LinkUI('agent error',
+            'viewlog.php?sid='.$this->sid
+            .'&agentId='.$this->info['id']
+            .'&filename=agent.err'
+        )->setExternal(true);
+        $html =
+            '<div class="generic-agent-logs">'
+                .$linkAgentLogs
+                .$linkAgentOut
+                .$linkAgentErr
+            .'</div>';
+        return $html;
+    }
+
     public function render() {
         return
         '<div class="instance dualbox">'
@@ -109,6 +134,9 @@ class GenericInstance extends Instance {
             .'</div>'
             .'<div class="left">'
                 .$this->renderScriptStatusTable()
+            .'</div>'
+            .'<div class="left">'
+                .$this->renderAgentLogs()
             .'</div>'
             .'<div class="right">'
                 .'<i class="address">'.$this->info['ip'].'</i>'
@@ -126,6 +154,9 @@ class GenericInstance extends Instance {
             .'</div>'
             .'<div class="left">'
                 .$this->renderScriptStatusTable()
+            .'</div>'
+            .'<div class="left">'
+                .$this->renderAgentLogs()
             .'</div>'
             .'<div class="right">'
                 .'<i class="address">'.$this->info['ip'].'</i>'

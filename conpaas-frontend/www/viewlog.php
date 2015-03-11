@@ -14,7 +14,12 @@ try {
 	$service_data = ServiceData::getServiceById($sid);
 	$service = ServiceFactory::create($service_data);
 
-	$log = $service->fetchLog();
+	if (isset($_GET['agentId'])) {
+		unset($_GET['sid']);
+		$log = $service->fetchAgentLog($_GET);
+	} else {
+		$log = $service->fetchLog();
+	}
 } catch (Exception $e) {
 	$log = 'Log information not available';
 }

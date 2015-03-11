@@ -77,7 +77,7 @@ class GenericService extends Service {
 		} else {
 			$scriptStatus = null;
 		}
-		return new GenericInstance($info, $scriptStatus);
+		return new GenericInstance($info, $this->sid, $scriptStatus);
 	}
 
 	public function getMasterAddr() {
@@ -121,6 +121,12 @@ class GenericService extends Service {
 		} else {
 			$this->scriptStatus = $status['result']['agents'];
 		}
+	}
+
+	public function fetchAgentLog($params) {
+		$json = $this->managerRequest('get', 'get_agent_log', $params);
+		$log = json_decode($json, true);
+		return $log['result']['log'];
 	}
 }
 

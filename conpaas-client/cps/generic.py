@@ -41,6 +41,7 @@ class Client(BaseClient):
         print "    interrupt         serviceid [param]   # execute the interrupt.sh script"
         print "    cleanup           serviceid [param]   # execute the cleanup.sh script"
         print "    get_script_status serviceid           # get the status of the scripts for each Generic agent"
+        print "    get_agent_log     serviceid agent_id [filename] # get the agent logs"
 
     def main(self, argv):
         command = argv[1]
@@ -49,7 +50,8 @@ class Client(BaseClient):
                         'upload_key', 'upload_code', 'list_uploads',
                         'download_code', 'enable_code', 'delete_code',
                         'list_volumes', 'create_volume', 'delete_volume',
-                        'run', 'interrupt', 'cleanup', 'get_script_status' ):
+                        'run', 'interrupt', 'cleanup', 'get_script_status',
+                        'get_agent_log' ):
             try:
                 sid = int(argv[2])
             except (IndexError, ValueError):
@@ -161,6 +163,20 @@ class Client(BaseClient):
                                     'interrupt.sh', 'cleanup.sh'):
                         print "  %s\t%s" % (script, status[script])
                     print
+
+        if command == 'get_agent_log':
+            try:
+                agentId = argv[3]
+            except IndexError:
+                self.usage(argv[0])
+                sys.exit(0)
+
+            try:
+                filename = argv[4]
+            except IndexError:
+                filename = None
+
+            getattr(self, command)(sid, agentId, filename)
 
 
     def upload_key(self, service_id, filename):
@@ -289,3 +305,16 @@ class Client(BaseClient):
         else:
             print ("Service started executing '%s.sh' on all the agents..."
                     % command)
+
+
+    def get_agent_log(self, service_id, agentId, filename=None):
+        params = { 'agentId': agentId }
+        if filename:
+            params['filename'] = filename
+
+        res = self.callmanager(service_id, "get_agent_log", False, params)
+
+        if 'error' in res:
+            print res['error']
+        else:
+            print res['log']

@@ -84,6 +84,7 @@ class GenericManager(BaseManager):
     generic_delete_volume(volumeName) -- POST
     execute_script(command, parameters) -- POST
     get_script_status() -- GET
+    get_agent_log(filename) -- GET
     """
     # Manager states
     S_INIT = 'INIT'         # manager initialized but not yet started
@@ -153,16 +154,16 @@ class GenericManager(BaseManager):
         fileno, path = tempfile.mkstemp()
         fd = os.fdopen(fileno, 'w')
         fd.write('''#!/bin/bash
-date >> /root/generic.out
-echo "Executing script ${0##*/}" >> /root/generic.out
-echo "Parameters ($#): $@" >> /root/generic.out
-echo "My IP is $MY_IP" >> /root/generic.out
-echo "My role is $MY_ROLE" >> /root/generic.out
-echo "My master IP is $MASTER_IP" >> /root/generic.out
-echo "Information about other agents is stored at /var/cache/cpsagent/agents.json" >> /root/generic.out
-cat /var/cache/cpsagent/agents.json >> /root/generic.out
-echo "" >> /root/generic.out
-echo "" >> /root/generic.out
+date
+echo "Executing script ${0##*/}"
+echo "Parameters ($#): $@"
+echo "My IP is $MY_IP"
+echo "My role is $MY_ROLE"
+echo "My master IP is $MASTER_IP"
+echo "Information about other agents is stored at /var/cache/cpsagent/agents.json"
+cat /var/cache/cpsagent/agents.json
+echo ""
+echo ""
 ''')
         fd.close()
         os.chmod(path, stat.S_IRWXU | stat.S_IROTH | stat.S_IXOTH)
@@ -1096,6 +1097,46 @@ echo "" >> /root/generic.out
                 self._state_set(self.S_ERROR, msg=message)
                 return HttpErrorResponse(ex.message)
         return HttpJsonResponse({ 'agents' : agents })
+
+    @expose('GET')
+    def get_agent_log(self, kwargs):
+        """Return logfile"""
+        if 'agentId' not in kwargs:
+            ex = ManagerException(ManagerException.E_ARGS_MISSING,
+                                  'agentId')
+            return HttpErrorResponse(ex.message)
+        if isinstance(kwargs['agentId'], dict):
+            ex = ManagerException(ManagerException.E_ARGS_INVALID,
+                                  detail='agentId should be a string')
+            return HttpErrorResponse(ex.message)
+        agentId = kwargs.pop('agentId')
+
+        if agentId not in [ node.id for node in self.nodes ]:
+            ex = ManagerException(ManagerException.E_ARGS_INVALID,
+                                  detail='Invalid agentId')
+            return HttpErrorResponse(ex.message)
+
+        if 'filename' not in kwargs:
+            filename = None
+        else:
+            if isinstance(kwargs['filename'], dict):
+                ex = ManagerException(ManagerException.E_ARGS_INVALID,
+                                      detail='filename should be a string')
+                return HttpErrorResponse(ex.message)
+            filename = kwargs.pop('filename')
+
+        if len(kwargs) != 0:
+            ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
+                                  kwargs.keys())
+            return HttpErrorResponse(ex.message)
+
+        try:
+            node_ip = [ node.ip for node in self.nodes
+                        if node.id == agentId ][0]
+            res = client.get_log(node_ip, self.AGENT_PORT, filename)
+            return HttpJsonResponse(res)
+        except Exception, ex:
+            return HttpErrorResponse(ex.message)
 
     def _configuration_get(self):
         return self.memcache.get(self.CONFIG)

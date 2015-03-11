@@ -804,7 +804,14 @@ input.button {
 }
 
 .generic-script-status {
-	padding-left: 30px;
+	padding-left: 40px;
+	font-weight: normal;
+	color: #666;
+	font-size: 10px;
+}
+
+.generic-agent-logs {
+	padding-left: 40px;
 	font-weight: normal;
 	color: #666;
 	font-size: 10px;

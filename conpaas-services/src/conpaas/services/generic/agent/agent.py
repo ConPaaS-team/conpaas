@@ -67,6 +67,7 @@ class GenericAgent(BaseAgent):
     unmount_volume(dev_name) -- POST
     execute_script(command, parameters, agents_info) -- POST
     get_script_status() -- GET
+    get_log(filename) -- GET
     """
     def __init__(self, config_parser, **kwargs):
         """Initialize Generic Agent.
@@ -78,7 +79,9 @@ class GenericAgent(BaseAgent):
 
         self.generic_dir = config_parser.get('agent', 'CONPAAS_HOME')
         self.VAR_CACHE = config_parser.get('agent', 'VAR_CACHE')
+        self.LOG_FILE = config_parser.get('agent', 'LOG_FILE')
         self.CODE_DIR = join(self.VAR_CACHE, 'bin')
+        self.ROOT_DIR = '/root'
         self.env = {}
         self.processes = {}
 
@@ -456,3 +459,24 @@ class GenericAgent(BaseAgent):
             return "STOPPED (return code %s)" % returncode
         else:
             return "RUNNING"
+
+    @expose('GET')
+    def get_log(self, kwargs):
+        """Return the contents of a logfile"""
+        if 'filename' not in kwargs:
+            filename = self.LOG_FILE
+        else:
+            filename = kwargs.pop('filename')
+            if filename not in ( 'agent.out', 'agent.err' ):
+                return HttpErrorResponse("ERROR: Invalid log filename: '%s'"
+                        % filename)
+            filename = join(self.ROOT_DIR, filename)
+
+        if len(kwargs) != 0:
+            return HttpErrorResponse(AgentException(
+                AgentException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
+
+        try:
+            return HttpJsonResponse({'log': open(filename).read()})
+        except:
+            return HttpErrorResponse("Failed to read log file: '%s'" % filename)
