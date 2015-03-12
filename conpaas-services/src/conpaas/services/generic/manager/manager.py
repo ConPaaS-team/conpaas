@@ -976,7 +976,7 @@ echo ""
             node_id = volume.agentId.replace("iaas", "")
             node_ip = [ node.ip for node in self.nodes
                         if node.id == volume.agentId ][0]
-            client.unmount_volume(node_ip, self.AGENT_PORT, volume.devName)
+            client.unmount_volume(node_ip, self.AGENT_PORT, volume.volumeName)
         except client.AgentException, ex:
             self.logger.exception('Failed to configure Generic node %s: %s'
                                   % (node_id, ex))

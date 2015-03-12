@@ -9,6 +9,7 @@
     :copyright: (C) 2010-2013 by Contrail Consortium.
 """
 
+import math
 import time
 
 from libcloud.compute.types import Provider
@@ -122,7 +123,7 @@ class EC2Cloud(Cloud):
         # EBS expects volume size in GiB.
         size /= 1024.0
 
-        size = int(round(size))
+        size = int(math.ceil(size))
 
         self.logger.debug("self.driver.create_volume(%s, %s, %s)" % (size,
             name, location))

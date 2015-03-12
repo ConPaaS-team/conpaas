@@ -82,6 +82,7 @@ class GenericAgent(BaseAgent):
         self.LOG_FILE = config_parser.get('agent', 'LOG_FILE')
         self.CODE_DIR = join(self.VAR_CACHE, 'bin')
         self.ROOT_DIR = '/root'
+        self.VOLUME_DIR = '/media'
         self.env = {}
         self.processes = {}
 
@@ -204,46 +205,20 @@ class GenericAgent(BaseAgent):
             return HttpErrorResponse(AgentException(
                 AgentException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
 
-        self.logger.info('Mount operation starting up')
+        self.logger.info("Mount operation starting up for volume '%s' on '%s'"
+                % (vol_name, dev_name))
 
         self.state = 'ADAPTING'
         try:
-            mount_point = "/media/%s" % vol_name
+            mount_point = join(self.VOLUME_DIR, vol_name)
             self._mount(dev_name, mount_point, True)
         except Exception as e:
-            self.logger.exception('Failed to mount disk %s' % dev_name)
+            self.logger.exception("Failed to mount volume '%s'" % vol_name)
             self.state = 'ERROR'
             return HttpErrorResponse('Failed to mount volume: ' + e.message)
 
         self.state = 'RUNNING'
-        self.logger.info('Mount operation completed.')
-        return HttpJsonResponse()
-
-    @expose('POST')
-    def unmount_volume(self, kwargs):
-        """Unmount a volume to a Generic node."""
-
-        if 'dev_name' not in kwargs:
-            return HttpErrorResponse(AgentException(
-                AgentException.E_ARGS_MISSING, 'dev_name').message)
-        dev_name = "/dev/%s" % kwargs.pop('dev_name')
-
-        if len(kwargs) != 0:
-            return HttpErrorResponse(AgentException(
-                AgentException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
-
-        self.logger.info('Unmount operation starting up')
-
-        self.state = 'ADAPTING'
-        try:
-            self._unmount(dev_name)
-        except Exception as e:
-            self.logger.exception('Failed to unmount disk %s' % dev_name)
-            self.state = 'ERROR'
-            return HttpErrorResponse('Failed to unmount volume: ' + e.message)
-
-        self.state = 'RUNNING'
-        self.logger.info('Unmount operation completed.')
+        self.logger.info('Mount operation completed')
         return HttpJsonResponse()
 
     def _check_dev_is_attached(self, dev_name):
@@ -268,7 +243,7 @@ class GenericAgent(BaseAgent):
         dev_prefix = dev_name.split('/')[2][:-1]
 
         for attempt in range(1, 11):
-            self.logger.info("Generic node waiting for block device %s" % dev_name)
+            self.logger.info("Generic node waiting for block device '%s'" % dev_name)
             if self._check_dev_is_attached(dev_name):
                 dev_found = True
                 break
@@ -278,6 +253,7 @@ class GenericAgent(BaseAgent):
                 if self._check_dev_is_attached(dev_name.replace(dev_prefix, 'xvd')):
                     dev_found = True
                     dev_name = dev_name.replace(dev_prefix, 'xvd')
+                    self.logger.info("Block device is renamed to'%s'" % dev_name)
                     break
 
             time.sleep(10)
@@ -287,11 +263,11 @@ class GenericAgent(BaseAgent):
         run_cmd(mkdir_cmd)
 
         if dev_found:
-            self.logger.info("Generic node has now access to %s" % dev_name)
+            self.logger.info("Generic node has now access to '%s'" % dev_name)
 
             # prepare block device
             if mkfs:
-                self.logger.info("Creating new file system on %s" % dev_name)
+                self.logger.info("Creating new file system on '%s'" % dev_name)
                 prepare_args = ['mkfs.ext4', '-q', '-m0', dev_name]
                 proc = Popen(prepare_args, stdin=PIPE, stdout=devnull_fd,
                         stderr=devnull_fd, close_fds=True)
@@ -304,7 +280,7 @@ class GenericAgent(BaseAgent):
                     self.logger.info('File system created successfully')
             else:
                 self.logger.info(
-                  "Not creating a new file system on %s" % dev_name)
+                  "Not creating a new file system on '%s'" % dev_name)
                 time.sleep(10)
 
             # mount
@@ -316,26 +292,58 @@ class GenericAgent(BaseAgent):
             if err:
                 self.logger.critical('Failed to mount storage device: %s' % err)
             else:
-                self.logger.info("Generic node has prepared and mounted %s" % dev_name)
+                self.logger.info("Generic node has prepared and mounted '%s'"
+                        % mount_point)
         else:
-            self.logger.critical("Block device %s unavailable" % dev_name)
+            self.logger.critical("Block device '%s' unavailable" % dev_name)
 
-    def _unmount(self, dev_name):
+    @expose('POST')
+    def unmount_volume(self, kwargs):
+        """Unmount a volume to a Generic node."""
+
+        if 'vol_name' not in kwargs:
+            return HttpErrorResponse(AgentException(
+                AgentException.E_ARGS_MISSING, 'vol_name').message)
+        vol_name = kwargs.pop('vol_name')
+
+        if len(kwargs) != 0:
+            return HttpErrorResponse(AgentException(
+                AgentException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
+
+        self.logger.info("Unmount operation starting up for volume '%s'"
+                % vol_name)
+
+        self.state = 'ADAPTING'
+        try:
+            self._unmount(vol_name)
+        except Exception as e:
+            self.logger.exception("Failed to unmount volume '%s'" % vol_name)
+            self.state = 'ERROR'
+            return HttpErrorResponse('Failed to unmount volume: ' + e.message)
+
+        self.state = 'RUNNING'
+        self.logger.info('Unmount operation completed')
+        return HttpJsonResponse()
+
+    def _unmount(self, vol_name):
+        mount_point = join(self.VOLUME_DIR, vol_name)
+
         # kill all processes still using the volume
-        fuser_args = ['fuser', '-km', dev_name]
+        fuser_args = ['fuser', '-km', mount_point]
         fuser_cmd = ' '.join(fuser_args)
         self.logger.debug("Running command '%s'" % fuser_cmd)
         run_cmd(fuser_cmd)
 
         # unmount
-        unmount_args = ['umount', dev_name]
+        unmount_args = ['umount', mount_point]
         unmount_cmd = ' '.join(unmount_args)
         self.logger.debug("Running command '%s'" % unmount_cmd)
         _, err = run_cmd(unmount_cmd)
         if err:
             self.logger.critical('Failed to unmount storage device: %s' % err)
         else:
-            self.logger.info("Generic node has succesfully unmounted %s" % dev_name)
+            self.logger.info("Generic node has succesfully unmounted '%s'"
+                    % mount_point)
 
     @expose('POST')
     def execute_script(self, kwargs):
