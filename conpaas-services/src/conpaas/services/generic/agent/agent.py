@@ -253,7 +253,7 @@ class GenericAgent(BaseAgent):
                 if self._check_dev_is_attached(dev_name.replace(dev_prefix, 'xvd')):
                     dev_found = True
                     dev_name = dev_name.replace(dev_prefix, 'xvd')
-                    self.logger.info("Block device is renamed to'%s'" % dev_name)
+                    self.logger.info("Block device is renamed to '%s'" % dev_name)
                     break
 
             time.sleep(10)
