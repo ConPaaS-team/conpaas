@@ -48,7 +48,7 @@ conpaas.ui = (function (this_module) {
         this.server = server;
         this.service = service;
         this.setupPoller_();
-        this.scriptStatusIntervalId_ = null;
+        this.scriptStatusTimeoutId_ = null;
     },
 
     /* methods */{
@@ -415,11 +415,7 @@ conpaas.ui = (function (this_module) {
         var page = this;
         // animate the 'RUNNING' icon
         $('.running').fadeOut(500).fadeIn(500);
-        if (page.scriptStatusIntervalId_ !== null) {
-            // polling already started
-            return;
-        }
-        page.scriptStatusIntervalId_ = setInterval(function () {
+        page.scriptStatusTimeoutId_ = setTimeout(function () {
             page.reloadInstances();
         }, 1000);
     },
@@ -429,12 +425,12 @@ conpaas.ui = (function (this_module) {
      */
     stopScriptStatePolling: function () {
         var page = this;
-        if (page.scriptStatusIntervalId_ == null) {
+        if (page.scriptStatusTimeoutId_ == null) {
             // polling already stopped
             return;
         }
-        clearInterval(page.scriptStatusIntervalId_);
-        page.scriptStatusIntervalId_ = null;
+        clearTimeout(page.scriptStatusTimeoutId_);
+        page.scriptStatusTimeoutId_ = null;
     }
 
     });
