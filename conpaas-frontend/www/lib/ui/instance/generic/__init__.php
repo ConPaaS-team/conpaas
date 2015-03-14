@@ -53,7 +53,7 @@ class GenericInstance extends Instance {
         if ($this->info['is_master']) {
             $html .= '<div class="tag blue">&nbsp;master&nbsp;</div>';
         } else {
-            $html .= '<div class="tag orange">node</div>';
+            $html .= '<div class="tag orange">&nbsp;&nbsp;node&nbsp;&nbsp;&nbsp;</div>';
         }
         return $html;
     }

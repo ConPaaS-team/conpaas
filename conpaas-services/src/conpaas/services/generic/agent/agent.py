@@ -368,7 +368,11 @@ class GenericAgent(BaseAgent):
             return HttpErrorResponse(AgentException(
                 AgentException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
 
-        self.logger.info("Executing the '%s' command" % command)
+        if command == 'notify':
+            self.logger.info("Executing the '%s' command" % command)
+        else:
+            self.logger.info("Executing the '%s' command with parameters '%s'"
+                    % (command, parameters))
 
         self.state = 'ADAPTING'
 
