@@ -58,8 +58,7 @@ class GenericInstance extends Instance {
         return $html;
     }
 
-    public function renderScriptStatus($script) {
-        $text = $this->scriptStatus[$script];
+    public static function renderScriptStatus($text) {
         $toolTipText = '';
         $img = 'ledgray.png';
         $class = '';
@@ -83,18 +82,18 @@ class GenericInstance extends Instance {
             .'</tr>';
     }
 
-    public function renderScriptStatusTable() {
-        if ($this->scriptStatus == null) {
+    public static function renderScriptStatusTable($scriptStatus) {
+        if ($scriptStatus == null) {
             return '';
         }
         $html =
             '<div class="generic-script-status">'
                 .'<table cellspacing="0" cellpadding="0">'
-                    .$this->renderScriptStatus('init.sh')
-                    .$this->renderScriptStatus('notify.sh')
-                    .$this->renderScriptStatus('run.sh')
-                    .$this->renderScriptStatus('interrupt.sh')
-                    .$this->renderScriptStatus('cleanup.sh')
+                    .self::renderScriptStatus($scriptStatus['init.sh'])
+                    .self::renderScriptStatus($scriptStatus['notify.sh'])
+                    .self::renderScriptStatus($scriptStatus['run.sh'])
+                    .self::renderScriptStatus($scriptStatus['interrupt.sh'])
+                    .self::renderScriptStatus($scriptStatus['cleanup.sh'])
                 .'</table>'
             .'</div>';
         return $html;
@@ -132,8 +131,8 @@ class GenericInstance extends Instance {
                 .$this->renderCapabs()
                 .'<div class="brief">running</div>'
             .'</div>'
-            .'<div class="left">'
-                .$this->renderScriptStatusTable()
+            .'<div id="'.$this->info['id'].'-scriptStatusWrapper" class="left">'
+                .self::renderScriptStatusTable($this->scriptStatus)
             .'</div>'
             .'<div class="left">'
                 .$this->renderAgentLogs()
@@ -152,8 +151,8 @@ class GenericInstance extends Instance {
                 .'<i class="title">Instance '.$this->info['id'].'</i>'
                 .'<span class="timestamp">running</span>'
             .'</div>'
-            .'<div class="left">'
-                .$this->renderScriptStatusTable()
+            .'<div id="'.$this->info['id'].'-scriptStatusWrapper" class="left">'
+                .self::renderScriptStatusTable($this->scriptStatus)
             .'</div>'
             .'<div class="left">'
                 .$this->renderAgentLogs()

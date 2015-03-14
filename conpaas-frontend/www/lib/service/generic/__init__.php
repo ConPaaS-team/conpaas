@@ -80,6 +80,18 @@ class GenericService extends Service {
 		return new GenericInstance($info, $this->sid, $scriptStatus);
 	}
 
+	public function createScriptStatusUI() {
+		$scriptStatusUIArray = array();
+		$this->updateScriptStatus();
+		if ($this->scriptStatus) {
+			foreach ($this->scriptStatus as $node => $status) {
+				$scriptStatusUIArray[$node] =
+						GenericInstance::renderScriptStatusTable($status);
+			}
+		}
+		return $scriptStatusUIArray;
+	}
+
 	public function getMasterAddr() {
 		$master_node = $this->getNodeInfo($this->nodesLists['master'][0]);
 		return $master_node['ip'];

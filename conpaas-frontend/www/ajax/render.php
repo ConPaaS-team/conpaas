@@ -22,19 +22,25 @@ if($service->getUID() !== $_SESSION['uid']) {
     throw new Exception('Not allowed');
 }
 
-$page = PageFactory::create($service);
-
 switch ($target) {
 	case 'versions':
+		$page = PageFactory::create($service);
 		echo $page->renderCodeVersions();
 		break;
 	case 'instances':
+		$page = PageFactory::create($service);
 		echo $page->renderInstances();
 		break;
 	case 'volumes':
+		$page = PageFactory::create($service);
 		echo $page->renderVolumeList();
 		break;
+	case 'generic_script_status':
+		$scriptStatusUIArray = $service->createScriptStatusUI();
+		echo json_encode($scriptStatusUIArray);
+		break;
 	case 'xtreemfs_volumes':
+		$page = PageFactory::create($service);
 		$volumes = $service->listVolumes();
 		$volumeList = $page->renderVolumeList($volumes);
 		$volumeSelector = $page->renderVolumeSelectorOptions($volumes);

@@ -371,15 +371,18 @@ conpaas.ui = (function (this_module) {
         var page = this;
         $.ajax({
             url: 'ajax/render.php',
+            dataType: 'json',
             data: {
                 sid: this.service.sid,
-                target: 'instances'
+                target: 'generic_script_status'
             },
             success: function (response) {
                 if (response.error) {
                     return;
                 }
-                $('#instancesWrapper').html(response);
+                for (var agentId in response) {
+                    $('#' + agentId + '-scriptStatusWrapper').html(response[agentId]);
+                }
                 if (page.areScriptsRunning()) {
                     page.startScriptStatePolling();
                 } else {
