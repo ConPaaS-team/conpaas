@@ -207,6 +207,14 @@ echo ""
             ex = ManagerException(ManagerException.E_STATE_ERROR)
             return HttpErrorResponse(ex.message)
 
+        # Check if the specified cloud, if any, is available
+        if 'cloud' in kwargs:
+            try:
+                self._init_cloud(kwargs['cloud'])
+            except Exception:
+                return HttpErrorResponse(
+                    "A cloud named '%s' could not be found" % kwargs['cloud'])
+
         self._state_set(self.S_PROLOGUE, msg='Starting up')
 
         Thread(target=self._do_startup, args=[kwargs]).start()
@@ -227,13 +235,16 @@ echo ""
         vals = { 'action': '_do_startup', 'count': nr_instances }
         self.logger.debug(self.ACTION_REQUESTING_NODES % vals)
 
+        cloud = kwargs.pop('cloud', 'iaas')
+        cloud = self._init_cloud(cloud)
+
         try:
             #nodes = []
             #for i in range(1, nr_instances):
             #    nodes.append( self.controller.create_nodes(1,
-            #        client.check_agent_process, self.AGENT_PORT))
+            #        client.check_agent_process, self.AGENT_PORT, cloud))
             nodes = self.controller.create_nodes(nr_instances,
-                    client.check_agent_process, self.AGENT_PORT)
+                    client.check_agent_process, self.AGENT_PORT, cloud)
 
             config = self._configuration_get()
 
@@ -356,17 +367,25 @@ echo ""
 
         count = count_or_err
 
-        self.logger.info('Going to add %s new nodes' % count)
+        cloud = kwargs.pop('cloud', 'iaas')
+        try:
+            cloud = self._init_cloud(cloud)
+        except Exception as ex:
+                return HttpErrorResponse(
+                    "A cloud named '%s' could not be found" % cloud)
+
+        self.logger.info("Going to add %s new nodes on cloud '%s'"
+                % (count, cloud))
 
         start_role = 'node'
         nodes = {start_role: str(count)}
 
         self._state_set(self.S_ADAPTING)
-        Thread(target=self._do_add_nodes, args=[nodes, start_role]).start()
+        Thread(target=self._do_add_nodes, args=[nodes, start_role, cloud]).start()
 
         return HttpJsonResponse({ 'state': self._state_get() })
 
-    def _do_add_nodes(self, nodes, start_role):
+    def _do_add_nodes(self, nodes, start_role, cloud):
         """Add 'count' Generic Nodes to this deployment"""
         count = 0
         for node in nodes:
@@ -375,7 +394,7 @@ echo ""
         if count:
             # Startup agents
             node_instances = self.controller.create_nodes(count,
-                client.check_agent_process, self.AGENT_PORT)
+                client.check_agent_process, self.AGENT_PORT, cloud)
             agents_info = self._update_agents_info(node_instances, nodes)
 
             nodes_before = list(self.nodes)

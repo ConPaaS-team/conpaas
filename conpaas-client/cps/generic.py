@@ -25,8 +25,8 @@ class Client(BaseClient):
 
     def usage(self, cmdname):
         BaseClient.usage(self, cmdname)
-        print "    add_nodes         serviceid count"
-        print "    remove_nodes      serviceid count"
+        print "    add_nodes         serviceid count [cloud] # add the specified number of nodes"
+        print "    remove_nodes      serviceid count     # remove the specified number of nodes"
         print "    upload_code       serviceid filename  # upload a new code version"
         print "    list_keys         serviceid           # list authorized SSH keys"
         print "    upload_key        serviceid filename  # upload an SSH key"
@@ -68,8 +68,15 @@ class Client(BaseClient):
                 self.usage(argv[0])
                 sys.exit(0)
 
+            params = { 'count': count }
+
+            if command == 'add_nodes' and len(argv) == 4:
+                params['cloud'] = 'default'
+            else:
+                params['cloud'] = argv[4]
+
             # call the method
-            res = self.callmanager(sid, command, True, { 'count': count })
+            res = self.callmanager(sid, command, True, params)
             if 'error' in res:
                 print res['error']
             else:
