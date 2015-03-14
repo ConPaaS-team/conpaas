@@ -58,7 +58,8 @@ class GenericInstance extends Instance {
         return $html;
     }
 
-    public static function renderScriptStatus($text) {
+    public static function renderScriptStatus($script, $scriptStatus) {
+        $text = $scriptStatus[$script];
         $toolTipText = '';
         $img = 'ledgray.png';
         $class = '';
@@ -89,11 +90,11 @@ class GenericInstance extends Instance {
         $html =
             '<div class="generic-script-status">'
                 .'<table cellspacing="0" cellpadding="0">'
-                    .self::renderScriptStatus($scriptStatus['init.sh'])
-                    .self::renderScriptStatus($scriptStatus['notify.sh'])
-                    .self::renderScriptStatus($scriptStatus['run.sh'])
-                    .self::renderScriptStatus($scriptStatus['interrupt.sh'])
-                    .self::renderScriptStatus($scriptStatus['cleanup.sh'])
+                    .self::renderScriptStatus('init.sh', $scriptStatus)
+                    .self::renderScriptStatus('notify.sh', $scriptStatus)
+                    .self::renderScriptStatus('run.sh', $scriptStatus)
+                    .self::renderScriptStatus('interrupt.sh', $scriptStatus)
+                    .self::renderScriptStatus('cleanup.sh', $scriptStatus)
                 .'</table>'
             .'</div>';
         return $html;
