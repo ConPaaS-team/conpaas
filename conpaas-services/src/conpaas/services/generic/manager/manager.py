@@ -154,16 +154,16 @@ class GenericManager(BaseManager):
         fileno, path = tempfile.mkstemp()
         fd = os.fdopen(fileno, 'w')
         fd.write('''#!/bin/bash
-date
-echo "Executing script ${0##*/}"
-echo "Parameters ($#): $@"
-echo "My IP is $MY_IP"
-echo "My role is $MY_ROLE"
-echo "My master IP is $MASTER_IP"
-echo "Information about other agents is stored at /var/cache/cpsagent/agents.json"
-cat /var/cache/cpsagent/agents.json
-echo ""
-echo ""
+date >> /root/generic.out
+echo "Executing script ${0##*/}" >> /root/generic.out
+echo "Parameters ($#): $@" >> /root/generic.out
+echo "My IP is $MY_IP" >> /root/generic.out
+echo "My role is $MY_ROLE" >> /root/generic.out
+echo "My master IP is $MASTER_IP" >> /root/generic.out
+echo "Information about other agents is stored at /var/cache/cpsagent/agents.json" >> /root/generic.out
+cat /var/cache/cpsagent/agents.json >> /root/generic.out
+echo "" >> /root/generic.out
+echo "" >> /root/generic.out
 ''')
         fd.close()
         os.chmod(path, stat.S_IRWXU | stat.S_IROTH | stat.S_IXOTH)
