@@ -34,6 +34,10 @@ class Manager {
 		return $this->resolveAddress($this->vmid);
 	}
 
+	public function getCloud() {
+		return $this->cloud;
+	}
+
 	public function resolveAddress($vmid) {
         return $this->ipaddr;
 	}

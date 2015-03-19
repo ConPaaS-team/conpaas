@@ -66,13 +66,24 @@ class ServicePage extends Page {
 			->setId('terminate');
 
         $clouds = json_decode(HTTPS::get(Conf::DIRECTOR . '/available_clouds'));
+        if ($this->service->hasDedicatedManager()) {
+            $manager = $this->service->getManagerInstance();
+            $selectedCloud = $manager->getCloud();
+            if ($selectedCloud === 'iaas') {
+                $selectedCloud = 'default';
+            }
+        } else {
+            $selectedCloud = 'default';
+        }
         $radios = '';
         foreach($clouds as $cloud){
             $radio = Radio($cloud);
             $radio->setTitle("available_clouds");
 
-            if ($cloud === 'default') {
+            if ($cloud === $selectedCloud) {
                 $radio->setDefault();
+            }
+            if ($cloud === 'default') {
                 $radios = $radio;
             } else {
                 $radios = $radios.'<br>'.$radio;
