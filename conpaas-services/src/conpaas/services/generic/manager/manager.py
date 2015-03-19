@@ -890,13 +890,15 @@ echo "" >> /root/generic.out
 
         config = self._configuration_get()
         try:
+            node = [ node for node in self.nodes
+                            if node.id == agentId ][0]
             try:
                 # We try to create a new volume.
                 volume_name = "generic-%s" % volumeName
-                node_id = agentId.replace("iaas", "")
-                self.logger.debug("Trying to create a volume for the node_id=%s"
-                                  % node_id)
-                volume = self.create_volume(volumeSize, volume_name, node_id)
+                self.logger.debug("Trying to create a volume for the node=%s"
+                                  % node.id)
+                cloud = self._init_cloud(node.cloud_name)
+                volume = self.create_volume(volumeSize, volume_name, node.vmid, cloud)
             except Exception, ex:
                 self.logger.exception("Failed to create volume %s: %s"
                                       % (volume_name, ex))
@@ -910,19 +912,17 @@ echo "" >> /root/generic.out
                     # increment the last char from dev_name
                     dev_name = dev_name[:-1] + chr(ord(dev_name[-1]) + 1)
                 # attach the volume
-                _, dev_name = self.attach_volume(volume.id, node_id, dev_name)
+                _, dev_name = self.attach_volume(volume.id, node.vmid, dev_name)
             except Exception, ex:
                 self.logger.exception("Failed to attach disk to Generic node %s: %s"
-                                      % (node_id, ex))
+                                      % (node.id, ex))
                 self.destroy_volume(volume.id)
                 raise
             try:
-                node_ip = [ node.ip for node in self.nodes
-                            if node.id == agentId ][0]
-                client.mount_volume(node_ip, self.AGENT_PORT, dev_name, volumeName)
+                client.mount_volume(node.ip, self.AGENT_PORT, dev_name, volumeName)
             except client.AgentException, ex:
                 self.logger.exception('Failed to configure Generic node %s: %s'
-                                      % (node_id, ex))
+                                      % (node.id, ex))
                 self.detach_volume(volume.id)
                 self.destroy_volume(volume.id)
                 raise
@@ -992,13 +992,12 @@ echo "" >> /root/generic.out
         self.logger.debug("Detaching and deleting volume %s"
                 % volume.volumeName)
         try:
-            node_id = volume.agentId.replace("iaas", "")
-            node_ip = [ node.ip for node in self.nodes
+            node = [ node for node in self.nodes
                         if node.id == volume.agentId ][0]
-            client.unmount_volume(node_ip, self.AGENT_PORT, volume.volumeName)
+            client.unmount_volume(node.ip, self.AGENT_PORT, volume.volumeName)
         except client.AgentException, ex:
             self.logger.exception('Failed to configure Generic node %s: %s'
-                                  % (node_id, ex))
+                                  % (node.id, ex))
         self.detach_volume(volume.volumeId)
         self.destroy_volume(volume.volumeId)
 
