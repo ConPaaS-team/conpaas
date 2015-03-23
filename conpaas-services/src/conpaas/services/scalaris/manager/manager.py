@@ -64,6 +64,7 @@ class ScalarisManager(BaseManager):
     def _do_shutdown(self):
         self.controller.delete_nodes(self.cloud_groups.nodes)
         # TODO: solve race condition wih get_service_info?
+        self.cloud_groups = CloudGroups(self.controller.get_clouds(), self.controller.get_default_cloud().get_cloud_name())
         self.state = self.S_STOPPED
         self.context['FIRST'] = 'true'
         self.context['MGMT_SERVER'] = ''
