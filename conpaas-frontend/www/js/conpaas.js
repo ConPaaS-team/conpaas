@@ -156,6 +156,11 @@ conpaas.http = (function (this_module) {
                 responseCallback(response);
             },
             error: function (response) {
+                if (response.status == 0 && response.responseText == "") {
+                    // request was probably cancelled when the user navigated to
+                    // another page; nothing to do
+                    return;
+                }
                 error = {name: 'request error',
                         details: "\nstatus: " + response.status + '; '
                         + "\nresponse:\n" + response.responseText
