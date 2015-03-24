@@ -45,9 +45,9 @@ from . import x509
 
 __client_ctx = None
 __uid = None
-__sid = None
+__aid = None
 
-def conpaas_init_ssl_ctx(dir, role, uid=None, sid=None):
+def conpaas_init_ssl_ctx(dir, role, uid=None, aid=None):
     cert_file = dir + '/cert.pem'
     key_file = dir + '/key.pem'
     ca_cert_file = dir + '/ca_cert.pem'
@@ -65,11 +65,11 @@ def conpaas_init_ssl_ctx(dir, role, uid=None, sid=None):
             # Extract uid from the certificate itself
             uid = x509.get_x509_dn_field(file_get_contents(cert_file), 'UID')
 
-    global __client_ctx, __uid, __sid
+    global __client_ctx, __uid, __aid
     __client_ctx = _init_context(SSL.SSLv23_METHOD, cert_file, key_file,
                         ca_cert_file, verify_callback)
     __uid = uid
-    __sid = sid
+    __aid = aid
 
 class HTTPSConnection(HTTPConnection):
     """
@@ -163,7 +163,7 @@ def _conpaas_callback_agent(connection, x509, errnum, errdepth, ok):
 
     components = x509.get_subject().get_components()
     dict = {}
-
+    
     '''
         Somehow this function gets called twice: once with the CA's
         certificate and once with the peer's certificate. So first
@@ -178,7 +178,8 @@ def _conpaas_callback_agent(connection, x509, errnum, errdepth, ok):
     if dict['role'] != 'agent':
        return False
 
-    if dict['UID'] != __uid or dict['serviceLocator'] != __sid:
+    # if dict['UID'] != __uid or dict['serviceLocator'] != __sid:
+    if dict['UID'] != __uid or dict['serviceLocator'] != __aid:
        return False
         
     return ok 
@@ -215,7 +216,8 @@ def _conpaas_callback_manager(connection, x509, errnum, errdepth, ok):
     if dict['role'] != 'agent' and dict['role'] != 'manager':
        return False
 
-    if dict['UID'] != __uid or dict['serviceLocator'] != __sid:
+    if dict['UID'] != __uid or dict['serviceLocator'] != __aid:
+    # if dict['UID'] != __uid or dict['serviceLocator'] != __sid:
        return False
 
     return ok
@@ -287,6 +289,8 @@ def https_get(host, port, uri, params=None):
     """
     h = HTTPSConnection(host, port=port, ssl_context=__client_ctx)
     if params:
+        if 'service_id' not in params:
+            params['service_id'] = 0
         h.putrequest('GET', '%s?%s' % (uri, urlencode(params)))
     else:
         h.putrequest('GET', uri)
@@ -309,6 +313,9 @@ def https_post(host, port, uri, params={}, files=[]):
         @return A tuple containing the return code
         and the response to the HTTP request
     """
+    if 'service_id' not in params:
+        params['service_id'] = 0
+
     content_type, body = _encode_multipart_formdata(params, files)
     h = HTTPSConnection(host, port=port, ssl_context=__client_ctx)
     h.putrequest('POST', uri)
@@ -361,7 +368,7 @@ def _encode_multipart_formdata(params, files):
 def _get_content_type(filename):
     return mimetypes.guess_type(filename)[0] or 'application/octet-stream'
 
-def jsonrpc_get(host, port, uri, method, params=None):
+def jsonrpc_get(host, port, uri, method, service_id=0, params=None):
     """
         HTTPS GET request as application/json.
 
@@ -374,8 +381,10 @@ def jsonrpc_get(host, port, uri, method, params=None):
         @return A tuple containing the return code
         and the response to the HTTP request
     """
+
     h = HTTPSConnection(host, port=port, ssl_context=__client_ctx)
-    all_params = {'method': method, 'id': '1'}
+    all_params = {'service_id':service_id, 'method': method, 'id': '1'}
+    # all_params = {'method': method, 'id': '1'}
     if params:
         all_params['params'] = json.dumps(params)
     h.putrequest('GET', '%s?%s' % (uri, urlencode(all_params)))
@@ -386,7 +395,7 @@ def jsonrpc_get(host, port, uri, method, params=None):
     h.close()
     return r.status, body 
 
-def jsonrpc_post(host, port, uri, method, params={}):
+def jsonrpc_post(host, port, uri, method, service_id=0, params={}):
     """
         Post params to an HTTPS server as application/json.
 
@@ -399,7 +408,10 @@ def jsonrpc_post(host, port, uri, method, params={}):
         @return A tuple containing the return code
         and the response to the HTTP request
     """
-    body = json.dumps({'method': method, 'params': params, 'id': '1'})
+    all_params = { 'service_id':service_id, 'method': method, 'params': params, 'id': '1'}
+    body = json.dumps(all_params)
+
+    # body = json.dumps({'method': method, 'params': params, 'id': '1'})
     h = HTTPSConnection(host, port=port, ssl_context=__client_ctx)
     h.putrequest('POST', uri)
     h.putheader('content-type', 'application/json')

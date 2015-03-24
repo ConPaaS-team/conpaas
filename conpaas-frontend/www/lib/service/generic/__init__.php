@@ -36,7 +36,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-require_module('cloud');
+// require_module('cloud');
 require_module('http');
 require_module('service');
 require_module('ui/instance/generic');
@@ -47,10 +47,7 @@ class GenericService extends Service {
 		parent::__construct($data, $manager);
 	}
 
-	public function hasDedicatedManager() {
-		return true;
-	}
-
+	
 	public function sendConfiguration($params) {
 		return $this->managerRequest('post', 'enable_code',
 			$params);

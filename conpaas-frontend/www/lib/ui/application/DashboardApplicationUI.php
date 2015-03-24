@@ -33,7 +33,7 @@ class DashboardApplicationUI {
 
     private function renderStats() {
         return $this->renderStatistic('<img class="deleteApplication-'.
-            $this->application->getAID().'" src="images/remove.png" />');
+            $this->application->getAID().'" src="images/remove.png" style="cursor:pointer;"/>');
     }
 
 	private function renderTitle() {

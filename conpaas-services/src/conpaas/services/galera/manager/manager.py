@@ -605,7 +605,7 @@ class GaleraManager(BaseManager):
         return HttpJsonResponse({'state': self.state, 'type': 'galera'})
 
     @expose('POST')
-    def shutdown(self, kwargs):
+    def stop(self, kwargs):
         """
         Stop the service.
 
@@ -621,10 +621,10 @@ class GaleraManager(BaseManager):
             return HttpErrorResponse("%s" % ex)
 
         self.state = self.S_EPILOGUE
-        Thread(target=self._do_shutdown, args=[]).start()
+        Thread(target=self._do_stop, args=[]).start()
         return HttpJsonResponse({'state': self.state})
 
-    def _do_shutdown(self):
+    def _do_stop(self):
         ''' Shuts down the service. '''
         self._do_remove_nodes(self.config.serviceNodes.values(),self.config.glb_service_nodes.values())
         self.config.serviceNodes = {}

@@ -92,7 +92,7 @@ class ManagerGanglia(BaseGanglia):
         """Same as for the base case, but with localhost as manager_ip"""
         BaseGanglia.__init__(self)
    
-        self.service_type = config_parser.get('manager','TYPE')
+        # self.service_type = config_parser.get('manager','TYPE')
         self.manager_ip = '127.0.0.1'
         self.cps_home = config_parser.get('manager', 'CONPAAS_HOME')
 
@@ -122,9 +122,9 @@ class ManagerGanglia(BaseGanglia):
         copyfile(os.path.join(self.cps_home, 'config', 'ganglia', 
             'ganglia_frontend.tmpl'), '/etc/nginx/nginx.conf')
         
-        if 'php' in self.service_type:
-            modules = ['num_machines_provisioning']
-            BaseGanglia.add_modules(self, modules )
+        # if 'php' in self.service_type:
+        #     modules = ['num_machines_provisioning']
+        #     BaseGanglia.add_modules(self, modules )
         
     def start(self):
         """We also need to start gmetad, php5-fpm and nginx"""

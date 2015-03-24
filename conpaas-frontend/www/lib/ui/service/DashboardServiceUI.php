@@ -75,20 +75,21 @@ class DashboardServiceUI {
 		return
 			$this->renderStatistic(
 				'<i class="text">'.$nodes.'</i>'
-				.'<img align="top" src="images/server-icon.png" />',
+				.'<img align="top" src="images/server-icon.png" style="margin-top: 5px;" />',
 				$title);
 	}
 
-	private function renderStats() {
+		private function renderStats() {
+		$delete= '<img class="deleteService" id="delete-'.$this->service->getSID().'" '.
+					'title="delete service" src="images/remove.png" style="margin-top: 12px;" />';
+
 		if (!$this->service->isReachable()) {
 			if ($this->service->getState() == Service::STATE_INIT) {
 				return $this->renderStatistic(
 					'<img src="images/throbber-on-white.gif" />','loading...');
 			} else {
 				return
-				$this->renderStatistic('<img class="deleteService" '.
-					'title="delete service" src="images/remove.png" />',
-					'').
+				$this->renderStatistic($delete,'').
 				$this->renderStatistic(
 					'<img src="images/warning.png" />', 'unreachable');
 			}
@@ -100,15 +101,14 @@ class DashboardServiceUI {
 		/* is reachable */
 		if ($this->service->getState() == Service::STATE_ERROR) {
 			return
-				$this->renderStatistic('<img class="deleteService" '
-					.'title="delete service" src="images/remove.png" '
+				$this->renderStatistic($delete
 					.'name="'.$this->service->getSID()
 						.'" onclick="onDeleteService(this);"/>', '')
 				.$this->renderStatistic('<img src="images/warning.png" />',
 					$this->service->getErrorMessage());
 		}
 		if ($this->service->getState() == Service::STATE_INIT) {
-			return $this->renderInstances();
+			return $this->renderStatistic($delete,'') . $this->renderInstances();
 		}
 		$monitor = $this->service->fetchHighLevelMonitoringInfo();
 
@@ -118,6 +118,7 @@ class DashboardServiceUI {
 				'<img src="images/green-down.png" />';
 
 			return
+			    $this->renderStatistic($delete,'') .
 				$this->renderInstances().
 				$this->renderStatistic(
 					'<i class="text">'
@@ -132,15 +133,16 @@ class DashboardServiceUI {
 		} else if ($this->service->getType() == 'hadoop') {
 			$namenode_data = $this->service->getNamenodeData();
 			return
+			    $this->renderStatistic($delete,'') .
 				$this->renderInstances().
 				$this->renderStatistic('<i class="text">'.
 					$namenode_data['capacity'].'</i>', 'Total Capacity').
 				$this->renderStatistic('<i class="text">'.
 					$namenode_data['used'].'</i>', 'Stored Data');
 		} else if ($this->service->getType() == 'scalaris') {
-			return $this->renderInstances();
+			return $this->renderStatistic($delete,'') . $this->renderInstances();
 		}
-		return $this->renderInstances();
+		return $this->renderStatistic($delete ,'').$this->renderInstances();
 	}
 
 	private function renderColorTag() {

@@ -177,11 +177,7 @@ class TaskFarmService extends Service {
 		return true;
 	}
 
-	public function hasDedicatedManager() {
-		return true;
-	}
-
-	public function fetchHighLevelMonitoringInfo() {
+    public function fetchHighLevelMonitoringInfo() {
 		return array();
 	}
 

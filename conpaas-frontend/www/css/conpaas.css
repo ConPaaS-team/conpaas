@@ -3,12 +3,27 @@
 
 @CHARSET "UTF-8";
 
+html {
+    display: table;
+    margin: auto;
+}
+
 body {
 	margin: 0;
 	font-size: 12px;
 	color: #0055A5;
 	font-family: Verdana, Tahoma, sans serif;
 	width: 800px;
+	display: table-cell;
+	background: url('../images/onclouds-gray.jpg') top no-repeat;
+	border: 6px solid #999	;
+	-webkit-border-bottom-right-radius: 25px;
+	-webkit-border-bottom-left-radius: 25px;
+	-moz-border-radius-bottomright: 25px;
+	-moz-border-radius-bottomleft: 25px;
+	border-bottom-right-radius: 25px;
+	border-bottom-left-radius: 25px;
+	border-top-style: none;
 }
 
 h1 {
@@ -19,10 +34,13 @@ h1 {
 	font-family: Tahoma;
 }
 
+hr {margin:0px;}
+
 .pagecontent {
 	padding: 3px 10px 10px 3px;
 	border: 1px solid #eee;
 	border-top: none;
+	background:#FFF;
 }
 
 a,a:visited {
@@ -46,8 +64,15 @@ a:hover {
 	color: #999;
 	padding: 10px;
 	background-color: #eee;
-	text-align: right;
+	text-align: center;
+	-webkit-border-bottom-right-radius: 19px;
+	-webkit-border-bottom-left-radius: 19px;
+	-moz-border-radius-bottomright: 19px;
+	-moz-border-radius-bottomleft: 19px;
+	border-bottom-right-radius: 19px;
+	border-bottom-left-radius: 19px;
 }
+
 
 .serviceheader {
 	color: #999;
@@ -57,10 +82,10 @@ a:hover {
 }
 
 #logo {
-	width: 100px;
+	width: 138px;
 	height: 32px;
 	margin-left: 5px;
-	background: url('images/conpaas.png') top left no-repeat;
+	background: url('../images/conpaas.png') top left no-repeat;
 	display: block;
 	float: left;
 }
@@ -74,6 +99,7 @@ a:hover {
 	border-top: 1px solid #ccc;
 	border-right: 1px solid #eee;
 	border-left: 1px solid #eee;
+	background:#FFF;
 }
 
 #pgstatTimer {
@@ -103,6 +129,12 @@ a:hover {
 #pgstatInfo {
 	padding: 5px 10px 3px 10px;
 	background-color: #dedede;
+	-webkit-border-bottom-right-radius: 10px;
+	-webkit-border-bottom-left-radius: 10px;
+	-moz-border-radius-bottomright: 10px;
+	-moz-border-radius-bottomleft: 10px;
+	border-bottom-right-radius: 10px;
+	border-bottom-left-radius: 10px;
 }
 
 #pgstatRightWrap {
@@ -145,7 +177,7 @@ a:hover {
 }
 
 .user .usercredit {
-	background: url('images/credits.png') top left no-repeat;
+	background: url('../images/credits.png') top left no-repeat;
 	margin-left: 5px;
 	padding-left: 20px;
 }
@@ -161,21 +193,22 @@ a:hover {
 }
 
 .user .logout {
-	background: url('images/logout.png') top left no-repeat;
+	background: url('../images/logout.png') top left no-repeat;
 }
 
 .user .username {
-	background: url('images/user.png') top left no-repeat;
+	background: url('../images/user.png') top left no-repeat;
 }
 
 .user .help {
-	background: url('images/info.png') top left no-repeat;
+	background: url('../images/info.png') top left no-repeat;
 }
 
 .header {
 	padding: 3px;
 	border-right: 1px solid #eee;
 	border-bottom: 5px solid #eee;
+	background:#FFF;
 }
 
 .pageheader .info {
@@ -289,6 +322,7 @@ a.button-disabled {
 	text-shadow: none;
 	border-color: black;
 	cursor: none;
+	background:-moz-linear-gradient(270deg, #7E7E7E, #A1A1A1) repeat scroll 0px 0px transparent
 }
 
 a.button img, a.button-disabled img {
@@ -357,7 +391,7 @@ tr.service {
 	font-family: Helvetica, Verdana;
 	font-size: 16px;
 	line-height: 20px;
-	background: url('images/server.png') top left no-repeat;
+	background: url('../images/server.png') top left no-repeat;
 	cursor: pointer;
 }
 
@@ -1072,7 +1106,7 @@ ul.versions li .timestamp {
 .instance {
 	border-bottom: 1px solid #999;
 	padding: 10px 10px 5px 30px;
-	background: url('images/server.png') no-repeat 7px 5px;
+	background: url('../images/server.png') no-repeat 7px 5px;
 }
 
 #instances .instance .title {
@@ -1206,7 +1240,7 @@ ul.versions li .timestamp {
 
 /* login */
 body.loginbody {
-	background: url('images/onclouds.jpg') top left no-repeat;
+	background: url('../images/onclouds.jpg') top no-repeat;
 }
 
 .login {
@@ -1214,6 +1248,12 @@ body.loginbody {
 	margin: 10px 10px 10px 10px;
 	border: 3px solid #999;
 	background-color: white;
+	-webkit-border-bottom-right-radius: 25px;
+	-webkit-border-bottom-left-radius: 25px;
+	-moz-border-radius-bottomright: 25px;
+	-moz-border-radius-bottomleft: 25px;
+	border-bottom-right-radius: 25px;
+	border-bottom-left-radius: 25px;
 }
 
 #user-form {
@@ -1236,9 +1276,19 @@ body.loginbody {
 }
 
 .loginbody .logo {
-	margin: 50px 30px 30px 100px;
+	margin: 100px 10px -12px 10px;
+	background: white;
+	border: 3px solid rgb(153, 153, 153);
+	-webkit-border-top-left-radius: 20px;
+	-webkit-border-top-right-radius: 20px;
+	-moz-border-radius-topleft: 20px;
+	-moz-border-radius-topright: 20px;
+	border-top-left-radius: 20px;
+	border-top-right-radius: 20px;
+	text-align: center;
+	padding: 10px;
+	background-color: rgba(255, 255, 255, 0.3);
 }
-
 .login #error {
 	color: red;
 	margin-left: 1px;
@@ -1257,6 +1307,11 @@ body.loginbody {
 	padding: 50px 30px 50px 30px;
 	border-right: 1px dotted #333;
 	background-color: #eee;
+	-webkit-border-top-left-radius: 20px;
+	-webkit-border-bottom-left-radius: 20px;
+	-moz-border-radius-topleft: 20px;
+	-moz-border-radius-bottomleft: 20px;
+	border-bottom-left-radius: 20px;
 }
 
 .login .formwrap {
@@ -1384,21 +1439,21 @@ img {
 }
 
 .msgbox-info {
-	background-image: url('images/info.png');
+	background-image: url('../images/info.png');
 	background-color: #E4ECF5;
 	color: #457299;
     background-position: 10px 13px;
 }
 
 .msgbox-warning {
-    background-image: url('images/warning.png');
+    background-image: url('../images/warning.png');
 	background-color: #F5F5F5;
 	color: #333;
 }
 
 .msgbox-error {
     background-position: 7px 10px;
-    background-image: url('images/error.png');
+    background-image: url('../images/error.png');
 	background-color: #FFEDF4;
 	color: red;
 }
@@ -1417,11 +1472,11 @@ img {
 }
 
 .samplephase {	
-	background: url('images/step1.png') no-repeat 730px 50px;
+	background: url('../images/step1.png') no-repeat 730px 50px;
 }
 
 .execphase {  
-    background: url('images/step2.png') no-repeat 720px 50px;
+    background: url('../images/step2.png') no-repeat 720px 50px;
 }
 
 .form-section .cds-subscribe {

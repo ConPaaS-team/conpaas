@@ -31,13 +31,13 @@ def create_hub(host, port):
     """POST (my_ip) create_hub"""
     method = 'create_hub'
     params = { 'my_ip': host }
-    return _check(https.client.jsonrpc_post(host, port, '/', method, params))
+    return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
 
 def create_node(host, port, hub_ip):
     """POST (my_ip, hub_ip) create_node"""
     method = 'create_node'
     params = { 'my_ip': host, 'hub_ip': hub_ip }
-    return _check(https.client.jsonrpc_post(host, port, '/', method, params))
+    return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
 
 def condor_off(host, port):
     """POST (my_ip) condor_off"""

@@ -65,6 +65,7 @@ conpaas.ui = (function (this_module) {
 		page.displayError(error.name, error.details);
 	});
     },
+    
     deleteApplication: function (application) {
 	var r = confirm('Are you sure to delete the application?');
 	if (r == false) {

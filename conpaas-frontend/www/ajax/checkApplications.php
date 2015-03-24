@@ -13,8 +13,12 @@ try {
 		throw new Exception('User not logged in');
 	}
 	$uid = $_SESSION['uid'];
+	$aid = NULL;
+	if ($_GET['aid'] == 1) {
+		$aid = $_SESSION['aid'];
+	}
 
-	$applications_data = ApplicationData::getApplications($uid);
+	$applications_data = ApplicationData::getApplications($uid, $aid);
 	$applicationsList = new ApplicationsListUI(array());
 	foreach ($applications_data as $application_data) {
 		$application = new Application($application_data);

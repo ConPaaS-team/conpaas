@@ -6,6 +6,7 @@
 require_once('../__init__.php');
 require_module('service');
 require_module('service/factory');
+require_module('logging');
 
 try {
 	if (!isset($_SESSION['uid'])) {
@@ -14,12 +15,9 @@ try {
 	$sid = $_GET['sid'];
 	$service_data = ServiceData::getServiceById($sid);
 	$service = ServiceFactory::create($service_data);
+	
 	if($service->getUID() !== $_SESSION['uid']) {
 	    throw new Exception('Not allowed');
-	}
-	$update = $service->checkManagerInstance();
-	if ($update) {
-		$service_data = ServiceData::getServiceById($sid);
 	}
 	echo json_encode($service->toArray());
 } catch (Exception $e) {

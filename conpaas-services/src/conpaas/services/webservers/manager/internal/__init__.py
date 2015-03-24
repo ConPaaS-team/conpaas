@@ -241,7 +241,7 @@ class BasicWebserversManager(BaseManager):
         return HttpJsonResponse({'state': self.S_PROLOGUE})
 
     @expose('POST')
-    def shutdown(self, kwargs):
+    def stop(self, kwargs):
         if len(kwargs) != 0:
             ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
                                   kwargs.keys())
@@ -253,7 +253,7 @@ class BasicWebserversManager(BaseManager):
             return HttpErrorResponse(ex.message)
 
         self._state_set(self.S_EPILOGUE, msg='Shutting down')
-        Thread(target=self._do_shutdown, args=[]).start()
+        Thread(target=self._do_stop, args=[]).start()
         return HttpJsonResponse({'state': self.S_EPILOGUE})
 
     def _update_code(self, config, nodes):
@@ -305,7 +305,7 @@ class BasicWebserversManager(BaseManager):
         self._state_set(self.S_RUNNING)
         self.memcache.set('nodes_additional', [])
 
-    def _do_shutdown(self):
+    def _do_stop(self):
         config = self._configuration_get()
         self._stop_proxy(config, config.getProxyServiceNodes())
         self._stop_web(config, config.getWebServiceNodes())
@@ -508,7 +508,7 @@ class BasicWebserversManager(BaseManager):
             i += 1
         config.update_mappings()
 
-        # create new service nodes
+        # add new service nodes
         self._start_backend(
             config, [node for node in newNodes if node.isRunningBackend])
         # stage code files in all new VMs

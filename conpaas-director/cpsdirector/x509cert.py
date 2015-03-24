@@ -27,7 +27,8 @@ def create_x509_cert(cert_dir, x509_req):
 
     return crypto.dump_certificate(crypto.FILETYPE_PEM, newcert)
 
-def generate_certificate(cert_dir, uid, sid, role, email, cn, org, ca_cert=None):
+
+def generate_certificate(cert_dir, uid, aid, role, email, cn, org, ca_cert=None):
     """Generates a new x509 certificate for a manager from scratch.
 
     Creates a key, a request and then the certificate."""
@@ -40,7 +41,7 @@ def generate_certificate(cert_dir, uid, sid, role, email, cn, org, ca_cert=None)
     req_key  = x509.gen_rsa_keypair()
 
     # Generate certificate request
-    x509_req = x509.create_x509_req(req_key, userId=uid, serviceLocator=sid, 
+    x509_req = x509.create_x509_req(req_key, userId=uid, serviceLocator=aid, 
         O=org, emailAddress=email, CN=cn, role=role)
 
     # Sign the request
@@ -49,6 +50,29 @@ def generate_certificate(cert_dir, uid, sid, role, email, cn, org, ca_cert=None)
     return { 'ca_cert': ca_cert, 
              'key': crypto.dump_privatekey(crypto.FILETYPE_PEM, req_key), 
              'cert': certificate }
+             
+# def generate_certificate(cert_dir, uid, sid, role, email, cn, org, ca_cert=None):
+#     """Generates a new x509 certificate for a manager from scratch.
+
+#     Creates a key, a request and then the certificate."""
+
+#     # Get CA cert
+#     if ca_cert is None:
+#         ca_cert = file_get_contents(os.path.join(cert_dir, "ca_cert.pem"))
+
+#     # Generate keypair
+#     req_key  = x509.gen_rsa_keypair()
+
+#     # Generate certificate request
+#     x509_req = x509.create_x509_req(req_key, userId=uid, serviceLocator=sid, 
+#         O=org, emailAddress=email, CN=cn, role=role)
+
+#     # Sign the request
+#     certificate = create_x509_cert(cert_dir, x509_req)
+
+#     return { 'ca_cert': ca_cert, 
+#              'key': crypto.dump_privatekey(crypto.FILETYPE_PEM, req_key), 
+#              'cert': certificate }
 
 def get_cert_cname(cert_dir):
     """Return the CNAME value of director's certificate"""

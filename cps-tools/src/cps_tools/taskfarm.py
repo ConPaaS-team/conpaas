@@ -60,7 +60,7 @@ class TaskFarmCmd(ServiceCmd):
         self._add_upload()
         self._add_select_schedule()
 
-    def call_manager(self, service_id, method, data=None):
+    def call_manager(self, app_id, service_id, method, data=None):
         """TaskFarm peculiarities:
 
         1) it works via plain HTTP
@@ -74,8 +74,9 @@ class TaskFarmCmd(ServiceCmd):
         if method == "shutdown":
             method = "terminate_workers"
 
-        service = self.client.service_dict(service_id)
-        res = http_jsonrpc_post(service['manager'], '/', method, params=data)
+
+        service = self.client.service_dict(app_id, service_id)
+        res = http_jsonrpc_post(service['application']['manager'], '/', method, params=data)
 
         try:
             data = simplejson.loads(res[1])
@@ -107,37 +108,43 @@ class TaskFarmCmd(ServiceCmd):
         else:
             print "%s" % res
 
+
+
     # ======= get_mode
     def _add_get_mode(self):
         subparser = self.add_parser('get_mode', help="get TaskFarm mode")
         subparser.set_defaults(run_cmd=self.get_mode, parser=subparser)
+        subparser.add_argument('app_name_or_id',
+                               help="Name or identifier of an application")
         subparser.add_argument('serv_name_or_id',
                                help="Name or identifier of a service")
 
     def get_mode(self, args):
-        service_id = self.get_service_id(args.serv_name_or_id)
-        mode = self.get_string_mode(service_id)
+        app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
+        mode = self.get_string_mode(app_id, service_id)
         print "%s" % mode
 
-    def get_string_mode(self, service_id):
-        res = self.call_manager(service_id, "get_service_info")
+    def get_string_mode(self, app_id, service_id):
+        res = self.call_manager(app_id, service_id, "get_service_info")
         return res['mode']
 
     # ======= set_mode
     def _add_set_mode(self):
         subparser = self.add_parser('set_mode', help="set TaskFarm mode")
         subparser.set_defaults(run_cmd=self.set_mode, parser=subparser)
+        subparser.add_argument('app_name_or_id',
+                               help="Name or identifier of an application")
         subparser.add_argument('serv_name_or_id',
                                help="Name or identifier of a service")
         subparser.add_argument('mode', choices=MODES, help="mode")
 
     def set_mode(self, args):
-        service_id = self.get_service_id(args.serv_name_or_id)
-        old_mode = self.get_string_mode(service_id)
+        app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
+        old_mode = self.get_string_mode(app_id, service_id)
         if old_mode != 'NA':
             res = {'result': {'error': 'ERROR: mode is already set to %s' % old_mode}}
         else:
-            res = self.call_manager(service_id, "set_service_mode", [args.mode])
+            res = self.call_manager(app_id, service_id, "set_service_mode", [args.mode])
         self._print_res(res)
 
     # ========== upload bag of tasks
@@ -145,6 +152,8 @@ class TaskFarmCmd(ServiceCmd):
         subparser = self.add_parser('upload_bot', help="upload bag of tasks")
         subparser.set_defaults(run_cmd=self.upload_bag_of_tasks,
                                parser=subparser)
+        subparser.add_argument('app_name_or_id',
+                               help="Name or identifier of an application")
         subparser.add_argument('serv_name_or_id',
                                help="Name or identifier of a service")
         subparser.add_argument('filename',
@@ -153,16 +162,16 @@ class TaskFarmCmd(ServiceCmd):
                                help="XtreemFS location, e.g., 192.168.122.1/uc3")
 
     def upload_bag_of_tasks(self, args):
-        service_id = self.get_service_id(args.serv_name_or_id)
-        mode = self.get_string_mode(service_id)
+        app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
+        mode = self.get_string_mode(app_id, service_id)
         if mode == 'NA':
             res = {'result': {'error': 'ERROR: to upload bag of task, first specify run mode.'}}
         else:
-            service = self.client.service_dict(service_id)
+            service = self.client.service_dict(app_id, service_id)
             params = {'uriLocation': args.location,
                       'method': 'start_sampling'}
             filecontents = open(args.filename).read()
-            res = http_file_upload_post(service['manager'], '/', params=params,
+            res = http_file_upload_post(service['application']['manager'], '/', params=params,
                                         files=[('botFile', args.filename, filecontents)])
             res = simplejson.loads(res)
         self._print_res(res)
@@ -171,22 +180,24 @@ class TaskFarmCmd(ServiceCmd):
     def _add_select_schedule(self):
         subparser = self.add_parser('upload_bot', help="upload bag of tasks")
         subparser.set_defaults(run_cmd=self.select_schedule, parser=subparser)
+        subparser.add_argument('app_name_or_id',
+                               help="Name or identifier of an application")
         subparser.add_argument('serv_name_or_id',
                                help="Name or identifier of a service")
         subparser.add_argument('schedule', type=int, help="schedule identifier")
 
     def _select_schedule(self, args):
-        service_id = self.get_service_id(args.serv_name_or_id)
-        mode = self.get_mode(service_id)
+        app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
+        mode = self.get_mode(app_id, service_id)
         if mode == 'NA':
             return {'result': {'error': 'ERROR: to select a schedule, first specify run mode DEMO or REAL, then upload a bag of tasks '}}
         # check schedule availability
-        res = self.call_manager(service_id, "get_service_info")
+        res = self.call_manager(app_id, service_id, "get_service_info")
         if res['noCompletedTasks'] == 0:
             return {'message': "No schedule available yet: try again later..."}
         if res['state'] != 'RUNNING':
             return {'message': "Busy %s: try again later..." % res['phase']}
-        sres = self.call_manager(service_id, "get_sampling_results")
+        sres = self.call_manager(app_id, service_id, "get_sampling_results")
         sdata = simplejson.loads(sres)
         if 'timestamp' in sdata:
             # Sampling is ready, check if bag is ready, or if we have to choose a schedule
@@ -207,7 +218,7 @@ class TaskFarmCmd(ServiceCmd):
 
         # start execution
         # "{"method":"start_execution","params":["1371729870918","2"],"jsonrpc":"2.0","id":1}"
-        res = self.call_manager(service_id, "start_execution", [ts, args.schedule - 1])
+        res = self.call_manager(app_id, service_id, "start_execution", [ts, args.schedule - 1])
         return {'result': res}
 
     def select_schedule(self, args):

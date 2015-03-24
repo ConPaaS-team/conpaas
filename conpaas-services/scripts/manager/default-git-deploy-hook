@@ -5,6 +5,7 @@
 # this file should be sourced by the manager script. See for example
 # php-manager-start in this same directory.
 
+
 # Write the post-update hook
 cat <<EOF>~git/code/hooks/post-update
 #!/bin/sh

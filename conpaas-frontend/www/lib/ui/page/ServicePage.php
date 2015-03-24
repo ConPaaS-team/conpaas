@@ -62,8 +62,8 @@ class ServicePage extends Page {
 			->setId('start');
 		$stopButton = InputButton('stop')
 			->setId('stop');
-		$terminateButton = InputButton('terminate')
-			->setId('terminate');
+		$removeButton = InputButton('remove')
+			->setId('remove');
 
         $clouds = json_decode(HTTPS::get(Conf::DIRECTOR . '/available_clouds'));
         $radios = '';
@@ -94,7 +94,7 @@ class ServicePage extends Page {
 				break;
 			case Service::STATE_RUNNING:
 				$startButton->setVisible(false);
-				$terminateButton->setVisible(false);
+				$removeButton->setVisible(false);
                                 if ($serviceSelector != '') {
                                         $serviceSelection->setVisible(false);
                                 }
@@ -109,7 +109,7 @@ class ServicePage extends Page {
 			$stopButton->setVisible(false);
 		}
 
-		return $startButton.' '.$stopButton.' '.$terminateButton.' '.$cloudChoice.$serviceSelection;
+		return $startButton.' '.$stopButton.' '.$removeButton.' '.$cloudChoice.$serviceSelection;
 	}
 
 	public function renderStateClass($state) {
@@ -132,11 +132,12 @@ class ServicePage extends Page {
 		$nodes_info = array();
 		$selected = array();
 		$nodesLists = $this->service->getNodesLists();
-		if ($this->service->hasDedicatedManager()) {
-			$manager = $this->service->getManagerInstance();
-			$nodes_info[] = new ManagerInstance($manager->getID(),
-				$manager->getHostAddress());
-		}
+		// if ($this->service->hasDedicatedManager()) {
+		// 	// $manager = $this->service->getManagerInstance();
+		// 	$application = $this->service->getApplication();
+		// 	$nodes_info[] = new ManagerInstance($application->getVMID(),
+		// 		$application->getManager());
+		// }
 		$roles = $this->service->getInstanceRoles();
 		if ($roles === false) {
 			$roles = array_keys($nodesLists);

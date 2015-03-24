@@ -46,7 +46,8 @@ class cert_required(object):
                 # client is sending.
                 g.cert['UID'] = request.values.get('uid')
                 g.cert['role'] = request.values.get('role')
-                g.cert['serviceLocator'] = request.values.get('sid')
+                # g.cert['serviceLocator'] = request.values.get('sid')
+                g.cert['serviceLocator'] = request.values.get('aid')
             else:
                 cert = request.environ['SSL_CLIENT_CERT']
                 for key in 'serviceLocator', 'UID', 'role':
@@ -76,13 +77,17 @@ class cert_required(object):
                     return make_response(error_msg, 401)
 
                 # check if the service is actually owned by the user
-                from cpsdirector.service import get_service
-                g.service = get_service(uid, service_locator)
-                if not g.service:
+                # from cpsdirector.service import get_service
+                # g.service = get_service(uid, service_locator)
+                # if not g.service:
+                #     return build_response(simplejson.dumps(False))
+
+                from cpsdirector.application import get_app_by_id
+                g.application = get_app_by_id(uid, service_locator)
+                if not g.application:
                     return build_response(simplejson.dumps(False))
 
-                log('cert_required: valid certificate (user %s, service %s)' %
-                    (uid, service_locator))
+                log('cert_required: valid certificate (user %s, application %s)' % (uid, service_locator))
 
             return fn(*args, **kwargs)
         return decorated
@@ -139,7 +144,7 @@ def get_user_by_openid(openid):
     log('openid login attempt with openid %s' % openid)
     return User.query.filter_by(openid=openid).first()
 
-from cpsdirector.application import Application
+# from cpsdirector.application import Application
 
 
 def list_users():
@@ -161,10 +166,15 @@ def create_user(username, fname, lname, email, affiliation, password, credit, uu
                     uuid=uuid,
                     openid=openid)
 
+    from cpsdirector.application import Application
+    # from cpsdirector.application import store_app_controller
+
     app = Application(user=new_user)
 
     db.session.add(new_user)
     db.session.add(app)
+    db.session.flush()
+    # store_app_controller(new_user.uid, app.aid)
 
     try:
         db.session.commit()
@@ -318,7 +328,8 @@ def get_user_certs():
     certs = x509cert.generate_certificate(
         cert_dir=config_parser.get('conpaas', 'CERT_DIR'),
         uid=str(g.user.uid),
-        sid='0',
+        # sid='0',
+        aid='0',
         role='user',
         email=g.user.email,
         cn=g.user.username,
@@ -365,25 +376,29 @@ def credit():
     Returns a dictionary with the 'error' attribute set to False if the user
     had enough credit, True otherwise.
     """
-    service_id = int(request.values.get('sid', -1))
+    # service_id = int(request.values.get('sid', -1))
+    app_id = int(request.values.get('aid', -1))
     decrement = int(request.values.get('decrement', 0))
 
-    log('Decrement user credit: sid=%s, old_credit=%s, decrement=%s' % (
-        service_id, g.service.user.credit, decrement))
+    # log('Decrement user credit: sid=%s, old_credit=%s, decrement=%s' % (service_id, g.service.user.credit, decrement))
+    log('Decrement user credit: aid=%s, old_credit=%s, decrement=%s' % (app_id, g.application.user.credit, decrement))
 
     # Decrement user's credit
-    g.service.user.credit -= decrement
+    # g.service.user.credit -= decrement
+    g.application.user.credit -= decrement
 
-    if g.service.user.credit > -1:
+    #if g.service.user.credit > -1:
+    if g.application.user.credit > -1:
         # User has enough credit
         db.session.commit()
-        log('New credit for user %s: %s' %
-            (g.service.user.uid, g.service.user.credit))
+        # log('New credit for user %s: %s' % (g.service.user.uid, g.service.user.credit))
+        log('New credit for user %s: %s' % (g.application.user.uid, g.application.user.credit))
         return jsonify({'error': False})
 
     # User does not have enough credit
     db.session.rollback()
-    log('User %s does not have enough credit' % g.service.user.uid)
+    log('User %s does not have enough credit' % g.application.user.uid)
+    # log('User %s does not have enough credit' % g.service.user.uid)
     return jsonify({'error': True})
 
 

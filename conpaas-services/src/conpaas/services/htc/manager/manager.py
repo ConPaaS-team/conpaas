@@ -173,20 +173,8 @@ class HTCManager(BaseManager):
             self.logger.exception('_do_startup: Failed to create hub: %s' % err)
             self.state = self.S_ERROR
 
-    @expose('POST')
-    def shutdown(self, kwargs):
-        """Switch to EPILOGUE and call a thread to delete all nodes"""
-        # Shutdown only if RUNNING
-        if self.state != self.S_RUNNING:
-            vals = { 'curstate': self.state, 'action': 'shutdown' }
-            return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
-        
-        self.state = self.S_EPILOGUE
-        Thread(target=self._do_shutdown, args=[]).start()
 
-        return HttpJsonResponse({ 'state': self.state })
-
-    def _do_shutdown(self):
+    def _do_stop(self):
         """Delete all nodes and switch to status STOPPED"""
         self.controller.delete_nodes(self.nodes)
         self.logger.info(self.nodes)

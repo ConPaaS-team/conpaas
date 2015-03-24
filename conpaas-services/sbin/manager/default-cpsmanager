@@ -69,8 +69,8 @@ if __name__ == '__main__':
   Verify some sections and variables that must exist in the configuration file
   """
   config_vars = {
-    'manager': ['TYPE', 'BOOTSTRAP', 'LOG_FILE',
-                'CREDIT_URL', 'TERMINATE_URL', 'SERVICE_ID'],
+    # 'manager': ['TYPE', 'BOOTSTRAP', 'LOG_FILE','CREDIT_URL', 'TERMINATE_URL', 'SERVICE_ID'],
+    'manager': ['BOOTSTRAP', 'LOG_FILE', 'CREDIT_URL', 'TERMINATE_URL'],
     'iaas': ['DRIVER'],
   }
   config_ok = True
@@ -89,14 +89,14 @@ if __name__ == '__main__':
     sys.exit(1)
   
   # Initialize the context for the client   
-  client.conpaas_init_ssl_ctx(config_parser.get('manager', 'CERT_DIR'),
-                                    'manager', config_parser.get('manager', 'USER_ID'),
-                                    config_parser.get('manager', 'SERVICE_ID'))
+  # client.conpaas_init_ssl_ctx(config_parser.get('manager', 'CERT_DIR'),
+  #                                   'manager', config_parser.get('manager', 'USER_ID'),
+  #                                   config_parser.get('manager', 'SERVICE_ID'))
+
+  client.conpaas_init_ssl_ctx(config_parser.get('manager', 'CERT_DIR'), 'manager', config_parser.get('manager', 'USER_ID'), config_parser.get('manager', 'APP_ID'))
+
 
   # Start the manager server
   print options.address, options.port
-  d = server.ConpaasSecureServer((options.address, options.port),
-                     config_parser,
-		     'manager',
-                     reset_config=True)
+  d = server.ConpaasSecureServer((options.address, options.port),config_parser,'manager',reset_config=True)
   d.serve_forever()

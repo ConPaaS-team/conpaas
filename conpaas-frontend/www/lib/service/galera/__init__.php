@@ -14,9 +14,7 @@ class GaleraService extends Service {
 		parent::__construct($data, $manager);
 	}
 
-	public function hasDedicatedManager() {
-		return true;
-	}
+	
 
 	public function sendConfiguration($params) {
 		// we ignore this for now
@@ -83,7 +81,9 @@ class GaleraService extends Service {
 	public function loadFile($file) {
 		return HTTPS::post($this->getManager(), array(
 			'method' => 'load_dump',
-			'mysqldump_file' => '@'.$file));
+			'mysqldump_file' => '@'.$file,
+			'service_id' => $this->getSID()
+			));
 	}
 
 	public function getCPU(){

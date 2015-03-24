@@ -36,7 +36,7 @@ POSSIBILITY OF SUCH DAMAGE.
 """
 
 from threading import Thread
-import memcache
+# import memcache
 from shutil import rmtree
 import pickle
 import zipfile
@@ -96,7 +96,7 @@ class GenericManager(BaseManager):
     AGENT_PORT = 5555
 
     # memcache keys
-    CONFIG = 'config'
+    # CONFIG = 'config'
 
     def __init__(self, config_parser, **kwargs):
         """Initialize a Generic Manager.
@@ -106,8 +106,8 @@ class GenericManager(BaseManager):
         BaseManager.__init__(self, config_parser)
         self.controller.generate_context('generic')
 
-        memcache_addr = config_parser.get('manager', 'MEMCACHE_ADDR')
-        self.memcache = memcache.Client([memcache_addr])
+        # memcache_addr = config_parser.get('manager', 'MEMCACHE_ADDR')
+        # self.memcache = memcache.Client([memcache_addr])
         self.code_repo = config_parser.get('manager', 'CODE_REPO')
 
         self.state_log = []
@@ -230,21 +230,29 @@ class GenericManager(BaseManager):
                 self._state_set(self.S_ERROR, msg='Failed to run code at node %s' % str(node))
                 raise
 
-    @expose('POST')
-    def shutdown(self, kwargs):
-        """Switch to EPILOGUE and call a thread to delete all nodes"""
-        # Shutdown only if RUNNING
-        if self._state_get() != self.S_RUNNING:
-            vals = { 'curstate': self._state_get(), 'action': 'shutdown' }
-            return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
+    # @expose('POST')
+    # def shutdown(self, kwargs):
+    #     """Switch to EPILOGUE and call a thread to delete all nodes"""
+    #     # Shutdown only if RUNNING
+    #     if self._state_get() != self.S_RUNNING:
+    #         vals = { 'curstate': self._state_get(), 'action': 'shutdown' }
+    #         return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
 
-        self._state_set(self.S_EPILOGUE)
-        Thread(target=self._do_shutdown, args=[]).start()
+    #     self._state_set(self.S_EPILOGUE)
+    #     Thread(target=self._do_shutdown, args=[]).start()
 
-        return HttpJsonResponse({ 'state': self._state_get() })
+    #     return HttpJsonResponse({ 'state': self._state_get() })
 
-    def _do_shutdown(self):
-        """Delete all nodes and switch to status STOPPED"""
+    # def _do_shutdown(self):
+    #     """Delete all nodes and switch to status STOPPED"""
+    #     self.controller.delete_nodes(self.nodes)
+    #     self.nodes = []        # Not only delete the nodes, but clear the list too
+    #     self.agents_info = []
+    #     self.master_ip = None
+    #     self._state_set(self.S_STOPPED)
+    
+
+    def _do_stop(self):
         self.controller.delete_nodes(self.nodes)
         self.nodes = []        # Not only delete the nodes, but clear the list too
         self.agents_info = []
@@ -659,16 +667,20 @@ echo "" >> /root/generic.out
                 raise
 
     def _configuration_get(self):
-        return self.memcache.get(self.CONFIG)
+        # return self.memcache.get(self.CONFIG)
+        return self.config_parser
 
     def _configuration_set(self, config):
-        self.memcache.set(self.CONFIG, config)
+        self.config_parser = config
+        # self.memcache.set(self.CONFIG, config)
 
     def _state_get(self):
-        return self.memcache.get(self.DEPLOYMENT_STATE)
+        return self.state
+        # return self.memcache.get(self.DEPLOYMENT_STATE)
 
     def _state_set(self, target_state, msg=''):
-        self.memcache.set(self.DEPLOYMENT_STATE, target_state)
+        # self.memcache.set(self.DEPLOYMENT_STATE, target_state)
+        self.state = target_state
         self.state_log.append({'time': time.time(),
                                'state': target_state,
                                'reason': msg})

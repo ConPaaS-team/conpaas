@@ -53,10 +53,16 @@ class ApplicationCmd:
         self.subparsers = parser.add_subparsers(help=None, title=None,
                                                 description=None,
                                                 metavar="<sub-command>")
-        self._add_create()
         self._add_list()
+        self._add_create()
+        self._add_start()
+        self._add_get_log()
+        self._add_get_info()
         self._add_rename()
+        self._add_stop()
         self._add_delete()
+        
+
         self._add_help(parser)
 
     def add_parser(self, *args, **kwargs):
@@ -92,8 +98,11 @@ class ApplicationCmd:
 
     def list_appl(self, _args):
         apps = self.client.call_director_get("listapp")
+        
         if apps:
-            print(self.client.prettytable(('aid', 'name'), apps))
+            print(self.client.prettytable(('aid', 'name', 'manager'), apps))
+        else:
+            print "No existing applications"
 
     # ========== rename
     def _add_rename(self):
@@ -133,13 +142,95 @@ class ApplicationCmd:
             ex = sys.exc_info()[1]
             self.client.error("%s" % ex)
 
-        res = self.client.call_director_post("delete/%d" % app_id)
+        res = self.client.call_director_post("deleteapp/%d" % app_id)
         if res:
             print("Application \'%s\' with id %s has been deleted." % (app_name, app_id))
         else:
             self.client.error('Failed to delete application \'%s\' (id %s).'
                               % (app_name, app_id))
 
+    # ========== start
+    def _add_start(self):
+        subparser = self.add_parser('start', help="start an application")
+        subparser.set_defaults(run_cmd=self.start_appl, parser=subparser)
+        subparser.add_argument('appl_id',
+                               help="Identifier of the application to start")
+
+    def start_appl(self, args):
+        try:
+            app_id, app_name = check_appl_name(self.client, args.appl_id)
+        except:
+            ex = sys.exc_info()[1]
+            self.client.error("%s" % ex)
+
+        res = self.client.call_director_post("startapp/%d" % app_id)
+        if res:
+            print("Application \'%s\' with id %s has started." % (app_name, app_id))
+        else:
+            self.client.error('Failed to start application \'%s\' (id %s).'
+                              % (app_name, app_id))
+
+    # ========== stop
+    def _add_stop(self):
+        subparser = self.add_parser('stop', help="stop an application")
+        subparser.set_defaults(run_cmd=self.stop_appl, parser=subparser)
+        subparser.add_argument('appl_id',
+                               help="Identifier of the application to start")
+
+    def stop_appl(self, args):
+        try:
+            app_id, app_name = check_appl_name(self.client, args.appl_id)
+        except:
+            ex = sys.exc_info()[1]
+            self.client.error("%s" % ex)
+
+        res = self.client.call_director_post("stopapp/%d" % app_id)
+        if res:
+            print("Application \'%s\' with id %s was stopped." % (app_name, app_id))
+        else:
+            self.client.error('Failed to stop application \'%s\' (id %s).'
+                              % (app_name, app_id))
+
+    # ========== get_log
+    def _add_get_log(self):
+        subparser = self.add_parser('get_log', help="get application log")
+        subparser.set_defaults(run_cmd=self.get_log, parser=subparser)
+        subparser.add_argument('app_name_or_id',
+                               help="Name or identifier of an application")
+        
+    def get_log(self, args):
+        try:
+            app_id, app_name = check_appl_name(self.client, args.app_name_or_id)
+        except:
+            ex = sys.exc_info()[1]
+            self.client.error("%s" % ex)
+
+        res = self.client.call_manager_get(app_id, 0, "getLog")
+        if res:
+            print("%s" % res['log'])
+        else:
+            self.client.error("Failed to get logs for application %s: %s" % (app_id, res['error']))
+
+    # ========== get_info
+    def _add_get_info(self):
+        subparser = self.add_parser('get_info', help="get information about the application")
+        subparser.set_defaults(run_cmd=self.get_info, parser=subparser)
+        subparser.add_argument('app_name_or_id',
+                               help="Name or identifier of an application")
+        
+    def get_info(self, args):
+        try:
+            app_id, app_name = check_appl_name(self.client, args.app_name_or_id)
+        except:
+            ex = sys.exc_info()[1]
+            self.client.error("%s" % ex)
+
+        res = self.client.call_manager_get(app_id, 0, "infoapp")
+        if res:
+            # print("%s" % res['log'])
+            print res
+        else:
+            self.client.error("Failed to get info for application %s: %s" % (app_id, res['error']))
 
 def main():
     logger = logging.getLogger(__name__)

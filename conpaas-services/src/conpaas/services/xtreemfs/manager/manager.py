@@ -305,13 +305,6 @@ class XtreemFSManager(BaseManager):
         self.logger.info('XtreemFS service was started up')    
         self.state = self.S_RUNNING
 
-    @expose('POST')
-    def shutdown(self, kwargs):
-        self.state = self.S_EPILOGUE
-        # start _do_shutdown(stop_services=True) in a thread
-        Thread(target=self._do_shutdown, args=[True]).start()
-        return HttpJsonResponse()
-
     def _start_all(self):
         self._start_dir(self.dirNodes)
         self._start_mrc(self.mrcNodes)
@@ -325,7 +318,7 @@ class XtreemFSManager(BaseManager):
         self._stop_mrc(self.mrcNodes, remove=remove)
         self._stop_dir(self.dirNodes, remove=remove)
 
-    def _do_shutdown(self, stop_services=False):
+    def _do_stop(self, stop_services=False):
         # check if we need to stop the services or not, i.e. when called at 
         # the end of get_snapshot()
         if stop_services:

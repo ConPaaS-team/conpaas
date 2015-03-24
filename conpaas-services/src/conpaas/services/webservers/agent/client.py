@@ -145,12 +145,12 @@ def updatePHPCode(host, port, codeVersionId, filetype, filepath):
     if filetype != 'git':
         # File-based code uploads
         files = [('file', filepath, file_get_contents(filepath))]
-        return _check(https.client.https_post(host, port, '/', params, files=files))
+        return _check(https.client.https_post(host, port, '/', params=params, files=files))
 
     # git-based code uploads do not need a FileUploadField.
     # Pass filepath as a dummy value for the 'file' parameter.
     params['file'] = filepath
-    return _check(https.client.https_post(host, port, '/', params))
+    return _check(https.client.https_post(host, port, '/', params=params))
 
 
 def getTomcatState(host, port):
@@ -181,9 +181,9 @@ def updateTomcatCode(host, port, codeVersionId, filetype, filepath):
     if filetype != 'git':
         # File-based code uploads
         files = [('file', filepath, file_get_contents(filepath))]
-        return _check(https.client.https_post(host, port, '/', params, files=files))
+        return _check(https.client.https_post(host, port, '/', params=params, files=files))
 
     # git-based code uploads do not need a FileUploadField.
     # Pass filepath as a dummy value for the 'file' parameter.
     params['file'] = filepath
-    return _check(https.client.https_post(host, port, '/', params))
+    return _check(https.client.https_post(host, port, '/', params=params))

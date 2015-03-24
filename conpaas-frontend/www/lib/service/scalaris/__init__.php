@@ -13,9 +13,6 @@ class ScalarisService extends Service {
 		parent::__construct($data, $manager);
 	}
 
-	public function hasDedicatedManager() {
-		return true;
-	}
 
 	public function sendConfiguration($params) {
 		// we ignore this for now

@@ -46,9 +46,9 @@ conpaas.ui = (function (this_module) {
         $(button).attr('disabled', 'disabled');
         $(button).removeClass('button');
         $(button).addClass('button-disabled');
-        $('#pgstatLoadingText').html('creating service...');
+        $('#pgstatLoadingText').html('adding service...');
         conpaas.ui.visible('pgstatLoading', true);
-        page.server.req('ajax/createService.php', {
+        page.server.req('ajax/addService.php', {
             type: page.selectedService.find(':radio').val(),
             cloud: $('input[name=available_clouds]:checked').val(),
         }, 'post', function (response) {

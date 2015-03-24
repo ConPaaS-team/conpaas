@@ -34,7 +34,9 @@ class PHPManager(BasicWebserversManager):
         BasicWebserversManager.__init__(self, config_parser)
         if kwargs['reset_config']:
             self._create_initial_configuration()
-        self._register_scalaris(kwargs['scalaris'])
+        
+        self._register_scalaris(config_parser.get('manager', 'SCALARIS'))
+        # self._register_scalaris(kwargs['scalaris'])
 
         if ProvisioningManager is None:
             self.logger.info('Provisioning Manager can not be initialized: %s' % provision_mng_error)

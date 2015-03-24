@@ -20,7 +20,7 @@ try {
         throw new Exception('Not allowed');
     }
 
-	$service->terminateService();
+	$service->removeService();
 	echo json_encode(array(
 		'terminate' => 1,
 	));

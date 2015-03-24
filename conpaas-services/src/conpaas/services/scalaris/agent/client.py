@@ -25,8 +25,8 @@ def get_service_info(host, port):
 
 def startup(host, port, ip):
   method = 'startup'
-  return _check(https.client.jsonrpc_post(host, port, '/', method, {'ip': ip}))
+  return _check(https.client.jsonrpc_post(host, port, '/', method, params={'ip': ip}))
 
 def graceful_leave(host, port):
   method = 'graceful_leave'
-  return _check(https.client.jsonrpc_post(host, port, '/', method, {}))
+  return _check(https.client.jsonrpc_post(host, port, '/', method, params={}))

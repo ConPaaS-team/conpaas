@@ -17,24 +17,42 @@ class Dashboard extends Page {
 	public function renderPageHeader() {
 		return
 			'<div class="menu">'
-  				.'<a class="button" href="create.php">'
-  					.'<img src="images/service-plus.png" /> create new service'
+  				.'<table style="width:100%"><tr><td>'
+  				.'<a id="btnAddService" class="button" href="create.php" style="display:none">'
+  					.'<img  src="images/service-plus.png"/> add new service'
   				.'</a>'
+  				.'<a id="btnStartApp" class="button" href="#" style="display:none">'
+  					.'<img  src="images/play.png"/> start application'
+  				.'</a></td><td align="right">'
+  				.'<a id="btnStopApp" class="button" href="#" style="display:none">'
+  					.'<img  src="images/remove.png"/> stop application'
+  				.'</a>'
+  				.'</td></tr></table>'
   			.'</div>'
   			.'<div class="clear"></div>';
 	}
 
-	private function getApplicationNameByID($aid) {
-		$applications_data = ApplicationData::getApplications($_SESSION['uid']);
-		foreach ($applications_data as $application_data) {
-			$application = new Application($application_data);
-			if ($application->getAID() == $aid) {
-				return $application->getName();
-			}
 
-		}
+
+	private function getApplicationNameByID($aid) {
+		$applications_data = ApplicationData::getApplications($_SESSION['uid'], $aid);
+		if (count($applications_data) > 0)
+			$application = new Application($applications_data[0]);
+			return $application->getName();
 		return '';
 	}
+
+	// private function getApplicationNameByID($aid) {
+	// 	$applications_data = ApplicationData::getApplications($_SESSION['uid']);
+	// 	foreach ($applications_data as $application_data) {
+	// 		$application = new Application($application_data);
+	// 		if ($application->getAID() == $aid) {
+	// 			return $application->getName();
+	// 		}
+
+	// 	}
+	// 	return '';
+	// }
 
 	private function renderName() {
 		return

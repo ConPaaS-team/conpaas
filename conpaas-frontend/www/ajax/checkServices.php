@@ -9,6 +9,7 @@ require_module('service');
 require_module('service/factory');
 require_module('ui/service');
 
+
 try {
 	if (!isset($_SESSION['uid'])) {
 		throw new Exception('User not logged in');
@@ -26,6 +27,7 @@ try {
 		}
 	}
 	$services_data = $servicesList->toArray();
+	
 	echo json_encode(array(
 		'data' => $services_data,
 		'html' => $servicesList->render()

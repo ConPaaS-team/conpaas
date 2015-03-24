@@ -60,19 +60,20 @@ class HTTP {
 		return HTTP::req($url, 'post', $data, $ping, false);
 	}
 
-	public static function jsonrpc($url, $http_method, $rpc_method, $params,
-			$ping=false) {
+	public static function jsonrpc($url, $http_method, $rpc_method, $service_id, $params, $ping=false) {
 		$data = array();
 		if ($http_method == 'get') {
 			// TODO(claudiugh): not sure if this is still part of the protocol
 			$url .= '?'.http_build_query(array(
 						'method' => $rpc_method,
+						'service_id'=>$service_id,
 						'params' => json_encode($params),
 						'id' => 1),
 					null, '&');
 		} else {
 			$data = array(
   				'method' => $rpc_method,
+  				'service_id'=>$service_id,
   				'params' => $params,
 				'jsonrpc' => "2.0",
   				'id' => 1);

@@ -18,14 +18,16 @@ from conpaas.core.ganglia import AgentGanglia
 
 from conpaas.core.https.server import HttpJsonResponse
 from conpaas.core.https.server import HttpErrorResponse
+from conpaas.core.https.server import ConpaasRequestHandlerComponent
                           
-class BaseAgent(object):
+class BaseAgent(ConpaasRequestHandlerComponent):
     """Agent class with the following exposed methods:
 
     check_agent_process() -- GET
     """
 
     def __init__(self, config_parser):
+        ConpaasRequestHandlerComponent.__init__(self)
         self.logger = create_logger(__name__)    
         self.state = 'INIT'
 

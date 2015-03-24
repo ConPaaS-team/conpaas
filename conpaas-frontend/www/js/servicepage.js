@@ -22,8 +22,7 @@ conpaas.ui = (function (this_module) {
         return 'Are you sure you want to stop the service?';
     },
     setupPoller_: function () {
-        this.statePoller = new conpaas.http.Poller(this.server,
-                'ajax/getService.php', 'get');
+        this.statePoller = new conpaas.http.Poller(this.server,'ajax/getService.php', 'get');
         this.statePoller.setLoadingText('checking service...');
     },
     displayInfo: function (info) {
@@ -92,11 +91,14 @@ conpaas.ui = (function (this_module) {
         }, {sid: this.service.sid}, maxInterval);
     },
     freezeInput: function (freeze) {
-        var buttons = ['start', 'stop', 'terminate', 'submitnodes', 'file'];
+        var buttons = ['start', 'stop', 'remove', 'submitnodes', 'file'];
         this.freezeButtons(buttons, freeze);
     },
-    terminate: function (onSuccess, onError) {
-        this.server.req('ajax/terminateService.php',
+    remove: function (onSuccess, onError) {
+        if (!confirm('Are you sure you want to remove this service?')) {
+            return;
+        }
+        this.server.req('ajax/removeService.php',
                 {sid: this.service.sid}, 'post', onSuccess, onError);
     },
     saveName: function (newName, onSuccess, onError) {
@@ -146,7 +148,7 @@ conpaas.ui = (function (this_module) {
         $('#name').click(this, this.onClickName);
         $('#start').click(this, this.onClickStart);
         $('#stop').click(this, this.onClickStop);
-        $('#terminate').click(this, this.onClickTerminate);
+        $('#remove').click(this, this.onClickRemove);
         this.service.instanceRoles.forEach(function (role) {
             $('#' + role).click(that, that.onInstanceRoleClick);
         });
@@ -191,13 +193,10 @@ conpaas.ui = (function (this_module) {
             page.freezeInput(false);
         });
     },
-    onClickTerminate: function (event) {
+    onClickRemove: function (event) {
         var page = event.data;
-        if (!confirm('After termination, the service will be completely'
-                + ' destroyed. Are you sure you want to continue?')) {
-            return;
-        }
-        page.terminate(function (response) {
+        
+        page.remove(function (response) {
             window.location = 'services.php';
         });
     },

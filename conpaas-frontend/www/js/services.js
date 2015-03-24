@@ -12,25 +12,31 @@ conpaas.ui = (function (this_module) {
     /* extends */conpaas.ui.Page,
     /* constructor */function (server) {
         this.server = server;
-        this.poller = new conpaas.http.Poller(server, 'ajax/checkServices.php',
-                'get');
+        this.startingApp = false;
+        this.poller = new conpaas.http.Poller(server, 'ajax/checkApplications.php', 'get');
+        // this.poller = new conpaas.http.Poller(server, 'ajax/checkServices.php', 'get');
     },
     /* methods */{
     /**
      * @param {Service} service that caused the polling to be continued
      */
-    displayInfo_: function (service) {
+
+    displayInfo_: function(info){
+        $('#pgstatInfoText').html(info);
+        conpaas.ui.visible('pgstatInfo', true);
+    },
+
+    displayServiceInfo_: function (service) {
         var info = 'at least one service is in a transient state';
         if (!service.reachable) {
             info = 'at least one service is unreachable'
         }
-        $('#pgstatInfoText').html(info);
-        conpaas.ui.visible('pgstatInfo', true);
+        this.displayInfo_(info);
     },
-    makeDeleteHandler_: function (service) {
+    makeRemoveHandler_: function (service) {
         var that = this;
         return function () {
-            that.deleteService(service);
+            that.removeService(service);
         };
     },
     saveName: function (newName, onSuccess, onError) {
@@ -52,6 +58,8 @@ conpaas.ui = (function (this_module) {
         var that = this;
         conpaas.ui.Page.prototype.attachHandlers.call(this);
         $('#name').click(this, this.onClickName);
+        $('#btnStartApp').click(this, this.onClickStartApp);
+        $('#btnStopApp').click(this, this.onClickStopApp);
     },
     checkServices: function () {
         var that = this;
@@ -68,22 +76,86 @@ conpaas.ui = (function (this_module) {
                         services[i].state, services[i].instanceRoles,
                         services[i].reachable);
                 if (service.needsPolling()) {
-                    that.displayInfo_(service);
+                    that.displayServiceInfo_(service);
                     continuePolling = false;
                 }
                 // HACK: attach handlers for delete buttons;
                 // without using the id trick we cannot avoid using global vars
                 $('#service-' + service.sid + ' .deleteService').click(
-                        that.makeDeleteHandler_(service));
+                        that.makeRemoveHandler_(service));
             }
             conpaas.ui.visible('pgstatInfo', false);
             return continuePolling;
         });
     },
-    deleteService: function (service) {
+    checkApplication: function(){
+        var that = this;
+        this.poller.setLoadingText('checking application...').poll(
+                function (response) {
+                    app = response.data[0];
+                    that.application = app;
+                    if(app.manager == null){
+                        $("#btnAddService").hide();
+                        $("#btnStopApp").hide();
+                        if(that.startingApp)
+                            return false
+                        else
+                            $("#btnStartApp").show();
+
+
+                    }else
+                    {
+                        $("#btnStartApp").hide();
+                        $("#btnAddService").show();
+                        $("#btnStopApp").show();
+                        that.startingApp = false;
+                        that.poller = new conpaas.http.Poller(that.server, 'ajax/checkServices.php', 'get');
+                        that.checkServices();
+                    }
+                    conpaas.ui.visible('pgstatInfo', false);
+                    return true
+        }, {'aid':1});
+    },
+
+    onClickStartApp: function(event){
+        var page = event.data;
+        page.startingApp = true;
+        $("#btnStartApp").hide();
+        page.server.req('ajax/startApplication.php', {}, 'post', 
+            function(){
+                
+            }, 
+            function (){
+                page.showStatus('', 'error', 'Something wrong happened');
+                page.freezeInput(false);
+            }, 'json', true
+        );
+        page.displayInfo_('Starting application manager...');
+        page.checkApplication();
+        
+    },
+
+    onClickStopApp: function(event){
+        var page = event.data;
+        var r = confirm('Are you sure to stop the application?');
+        if (r == false) {
+            return;
+        }
+
+        page.server.req('ajax/stopApplication.php', {
+            aid: page.application.aid
+        }, 'post', function (response) {
+            window.location = 'index.php';
+            return;
+        }, function (error) {
+            page.displayError(error.name, error.details);
+        });
+    },
+
+    removeService: function (service) {
         var that = this,
             servicePage = new conpaas.ui.ServicePage(this.server, service);
-        servicePage.terminate(function () {
+        servicePage.remove(function () {
             $('#service-' + service.sid).hide();
         }, function () {
             // error
@@ -99,5 +171,7 @@ $(document).ready(function () {
     var server = new conpaas.http.Xhr(),
         page = new conpaas.ui.Dashboard(server);
     page.attachHandlers();
-    page.checkServices();
+    page.checkApplication();
+    // page.checkServices();
+
 });

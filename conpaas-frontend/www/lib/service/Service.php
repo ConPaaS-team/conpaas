@@ -14,11 +14,12 @@ class Service {
 		$sw_version,
 		$state,
 		$creation_date,
-		$manager,
-		$uid,
+		// $manager,
+		// $uid,
 		$cloud,
-		$vmid,
-		$manager_instance;
+		// $vmid,
+		// $manager_instance;
+		$application;
 
 	protected $nodesLists;
 	private $nodesCount = 0;
@@ -59,7 +60,7 @@ class Service {
 	}
 
 	private function pingManager() {
-		if (!isset($this->manager)) {
+		if (!isset($this->application)) {
 			return;
 		}
 		try {
@@ -80,8 +81,7 @@ class Service {
 			$this->reachable = true;
 			$this->state = self::STATE_ERROR;
 		} catch (Exception $e) {
-			dlog(__FILE__.': error trying to connect to manager '
-				.$this->manager.': '.$e->getMessage());
+			dlog(__FILE__.': error trying to connect to manager '.$this->application->getManager().': '.$e->getMessage());
 		}
 	}
 
@@ -98,20 +98,24 @@ class Service {
 		}*/
 	}
 
-	public function __construct($data, $manager_instance) {
+	public function __construct($data, $application) {
 		foreach ($data as $key => $value) {
 			$this->$key = $value;
 		}
+        
+        // if ($this->type === 'taskfarm') {
+        // 	$this->manager = 'http://'.$application->getManager();
+        //     // $this->manager = 'http://'.$this->manager;
+        // }
+        // else {
+        // 	$this->manager = 'https://'.$application->getManager();
+        //     // $this->manager = 'https://'.$this->manager;
+        // }
 
-        if ($this->type === 'taskfarm') {
-            $this->manager = 'http://'.$this->manager;
-        }
-        else {
-            $this->manager = 'https://'.$this->manager;
-        }
-
-		$this->manager_instance = $manager_instance;
+		// $this->manager_instance = $manager_instance;
+		$this->application = $application;
 		$this->pingManager();
+		
 		if (!$this->reachable && $this->state == self::STATE_INIT) {
 			$this->checkTimeout();
 		}
@@ -130,9 +134,6 @@ class Service {
 					}
 				}
 			}
-		}
-		if ($this->hasDedicatedManager()) {
-			$this->nodesCount++;
 		}
 	}
 
@@ -168,31 +169,35 @@ class Service {
 				 $this->state == self::STATE_ERROR));
 	}
 
-	private function decodeResponse($json, $method) {
-		$response = json_decode($json, true);
-		if ($response == null) {
-			if (strlen($json) > 256) {
-				$json = substr($json, 0, 256).'...[TRIMMED]';
-			}
-			throw new Exception('Error parsing response for '.$method
-				.': "'.$json.'"');
-		}
-		if (isset($response['error']) && $response['error'] !== null) {
-			$message = $response['error'];
-			if (is_array($response['error'])) {
-				$message = $response['error']['message'];
-			}
-			throw new ManagerException('Remote error: '.$message);
-		}
-		return $response;
-	}
+	// private function decodeResponse($json, $method) {
+	// 	$response = json_decode($json, true);
+	// 	if ($response == null) {
+	// 		if (strlen($json) > 256) {
+	// 			$json = substr($json, 0, 256).'...[TRIMMED]';
+	// 		}
+	// 		throw new Exception('Error parsing response for '.$method
+	// 			.': "'.$json.'"');
+	// 	}
+	// 	if (isset($response['error']) && $response['error'] !== null) {
+	// 		$message = $response['error'];
+	// 		if (is_array($response['error'])) {
+	// 			$message = $response['error']['message'];
+	// 		}
+	// 		throw new ManagerException('Remote error: '.$message);
+	// 	}
+	// 	return $response;
+	// }
 
-	protected function managerRequest($http_method, $method, array $params,
-			$ping=false) {
-		$json = HTTPS::jsonrpc($this->manager, $http_method, $method, $params,
-			$ping);
-		$this->decodeResponse($json, $method);
-		return $json;
+	// protected function managerRequest($http_method, $method, array $params,
+	// 		$ping=false) {
+	// 	$json = HTTPS::jsonrpc($this->manager, $http_method, $method, $params,
+	// 		$ping);
+	// 	$this->decodeResponse($json, $method);
+	// 	return $json;
+	// }
+
+	protected function managerRequest($http_method, $method, array $params, $ping=false) {
+		return $this->application->managerRequest($http_method, $method, $this->sid, $params, $ping);
 	}
 
 	public function getNodeInfo($node) {
@@ -207,7 +212,7 @@ class Service {
 	}
 
 	protected function fetchNodesLists() {
-		if (!isset($this->manager)) {
+		if (! $this->application->isManagerSet()) {
 			return false;
 		}
 		$json = $this->managerRequest('get', 'list_nodes', array());
@@ -287,7 +292,7 @@ class Service {
  	}
 
  	public function requestShutdown() {
- 		return $this->managerRequest('post', 'shutdown', array());
+ 		return $this->managerRequest('post', 'stop', array());
  	}
 
  	public function requestStartup($params) {
@@ -297,8 +302,14 @@ class Service {
  	/**
  	 * Deletes the service entry from the database
  	 */
- 	public function terminateService() {
- 		$this->manager_instance->terminate();
+ 	public function removeService() {
+
+        $res = HTTPS::post(Conf::DIRECTOR . '/remove', 
+            array( 'app_id' => $this->application->getAID(), 'service_id' => $this->sid ), true, $this->application->getUID());
+
+        if (!json_decode($res)) {
+            throw new Exception('Error removing service '. $this->sid);
+        }
  	}
 
  	public function getAccessLocation() {
@@ -331,7 +342,7 @@ class Service {
 	}
 
 	public function getManager() {
-		return $this->manager;
+		return $this->application->getManager();
 	}
 
 	public function getVersion() {
@@ -342,8 +353,11 @@ class Service {
 		return $this->state;
 	}
 
-	public function getManagerInstance() {
-		return $this->manager_instance;
+	// public function getManagerInstance() {
+	// 	return $this->manager_instance;
+	// }
+	public function getApplication() {
+		return $this->application;
 	}
 
 	public function getStatusText() {
@@ -358,7 +372,7 @@ class Service {
 	}
 
 	public function getUID() {
-		return $this->uid;
+		return $this->application->getUID();
 	}
 
 	public function getCloudName() {
@@ -373,7 +387,8 @@ class Service {
 	 * @return true if updated
 	 */
 	public function checkManagerInstance() {
-		$manager_addr = $this->manager_instance->getHostAddress();
+		// $manager_addr = $this->manager_instance->getHostAddress();
+		$manager_addr = $this->application->getManager();
 		return $manager_addr !== false;
 	}
 

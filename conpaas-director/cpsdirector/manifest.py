@@ -118,7 +118,7 @@ def get_service_state(sid):
     return res['state']
 
 from cpsdirector.service import Service
-from cpsdirector.application import get_app_by_id, deleteapp
+from cpsdirector.application import get_app_by_id, _deleteapp as deleteapp
 @manifest_page.route("/download_manifest/<appid>", methods=['POST'])
 @cert_required(role='user')
 def download_manifest(appid):
@@ -287,7 +287,7 @@ class MGeneral(object):
         if json.get('Cloud'):
             cloud = json.get('Cloud')
 
-        res = service_start(servicetype, cloud, appid)
+        res = add_service(servicetype, cloud, appid)
         error = self.check_error(res)
         if error:
             return error
@@ -297,7 +297,7 @@ class MGeneral(object):
         self.wait_for_state(sid, 'INIT')
 
         if json.get('ServiceName'):
-            res = service_rename(sid, json.get('ServiceName'))
+            res = rename_service(sid, json.get('ServiceName'))
             error = self.check_error(res)
             if error:
                 return error
@@ -328,8 +328,8 @@ class MGeneral(object):
         self.wait_for_state(sid, 'RUNNING')
         return sid
 
-from cpsdirector.service import _start as service_start
-from cpsdirector.service import _rename as service_rename
+from cpsdirector.service import _add as add_service
+from cpsdirector.service import _rename as rename_service 
 class MPhp(MGeneral):
     
     def get_service_manifest(self, service):

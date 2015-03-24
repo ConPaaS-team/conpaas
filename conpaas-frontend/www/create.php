@@ -13,8 +13,8 @@ $page = new CreatePage();
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
       <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>ConPaaS - create new service </title>
-    <link type="text/css" rel="stylesheet" href="conpaas.css" />
+    <title>ConPaaS - add new service </title>
+    <link type="text/css" rel="stylesheet" href="css/conpaas.css" />
     <?php echo $page->renderIcon(); ?>
     <script src="js/jquery-1.5.js"></script>
     <script src="js/conpaas.js"></script>
@@ -137,7 +137,7 @@ $page = new CreatePage();
           </table>
           <div class="createWrap">
             <a id="create" class="button" href="javascript: void(0);">
-                  <img src="images/play.png" style="vertical-align: top;"/> create service
+                  <img src="images/service-plus.png" style="vertical-align: top;"/> add service
               </a>
               <div class="clear"></div>
         </div>

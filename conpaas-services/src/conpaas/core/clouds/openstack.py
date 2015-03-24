@@ -52,7 +52,7 @@ class OpenStackCloud(Cloud):
 
         class img:
             id = self.img_id
-
+        
         kwargs = {
             'size': size,
             'image': img,

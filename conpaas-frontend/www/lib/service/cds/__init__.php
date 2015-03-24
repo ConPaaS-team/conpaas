@@ -13,10 +13,7 @@ class ContentDeliveryService extends Service {
 		parent::__construct($data, $manager);
 	}
 
-	public function hasDedicatedManager() {
-		return true;
-	}
-
+	
 	public function subscribe($origin, $country) {
 		return $this->managerRequest('post', 'subscribe',
 			array('origin' => $origin, 'country' => $country));

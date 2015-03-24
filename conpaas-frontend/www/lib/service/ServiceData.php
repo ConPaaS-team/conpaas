@@ -4,6 +4,7 @@
 
 
 require_module('https');
+require_module('logging');
 
 class ServiceData {
 
@@ -31,15 +32,18 @@ class ServiceData {
 
 	public static function getServicesByUser($uid, $aid) {
        $res = HTTPS::post(Conf::DIRECTOR . '/list/' . $aid, array(), false, $uid);
+	
 
        $services = array();
        foreach(json_decode($res) as $service) {
-           $service = (array)$service;
-           if ($service['type'] == 'helloworld')
+           $serv = (array)$service->service;
+           $application = (array)$service->application;
+           if ($serv['type'] == 'helloworld')
                continue;
-           $service['uid'] = $service['user_id'];
-           $service['creation_date'] = $service['created'];
-           array_push($services, $service);
+           // $service['uid'] = $service['user_id'];
+           // $serv['creation_date'] = $serv['created'];
+           $full_serv = array("service" => $serv, "application" => $application,);
+           array_push($services, $full_serv);
        }
        return $services;
 	}
@@ -47,7 +51,7 @@ class ServiceData {
 	public static function getServiceById($sid) {
         $services = ServiceData::getServicesByUser($_SESSION['uid'], $_SESSION['aid']);
         foreach ($services as $service) {
-            if ($service['sid'] == $sid) {
+            if ($service['service']['sid'] == $sid) {
                 return $service;
             }
         }
@@ -64,8 +68,8 @@ class ServiceData {
 	}
 
 	public static function updateName($sid, $name) {
-        $res = HTTPS::post(Conf::DIRECTOR . '/rename/'.$sid, 
-            array('name' => $name), false, $_SESSION['uid']);
+        $res = HTTPS::post(Conf::DIRECTOR . '/rename', 
+            array('name' => $name, 'app_id' => $_SESSION['aid'], 'service_id' => $sid), false, $_SESSION['uid']);
 
 		if (json_decode($res) !== true) {
 			throw new Exception('Cannot rename service');

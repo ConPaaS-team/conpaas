@@ -71,19 +71,19 @@ def create_hub(host, port):
     """POST (my_ip) create_hub"""
     method = 'create_hub'
     params = { 'my_ip': host }
-    return _check(https.client.jsonrpc_post(host, port, '/', method, params))
+    return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
 
 def create_node(host, port, hub_ip):
     """POST (my_ip, hub_ip) create_node"""
     method = 'create_node'
     params = { 'my_ip': host, 'hub_ip': hub_ip }
-    return _check(https.client.jsonrpc_post(host, port, '/', method, params))
+    return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
 
 def run(host, port, agents_info):
     """POST (agents_info) run"""
     method = 'run'
     params = { 'agents_info': json.dumps(agents_info) }
-    return _check(https.client.jsonrpc_post(host, port, '/', method, params))
+    return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
 
 def update_code(host, port, codeVersionId, filetype, filepath):                   
     params = {                                                                      
@@ -95,12 +95,12 @@ def update_code(host, port, codeVersionId, filetype, filepath):
     if filetype != 'git':                                                           
         # File-based code uploads                                                   
         files = [('file', filepath, file_get_contents(filepath))]                   
-        return _check(https.client.https_post(host, port, '/', params, files=files))
+        return _check(https.client.https_post(host, port, '/', params=params, files=files))
                                                                                     
     # git-based code uploads do not need a FileUploadField.                         
     # Pass filepath as a dummy value for the 'file' parameter.                      
     params['file'] = filepath                                                       
-    return _check(https.client.https_post(host, port, '/', params))                 
+    return _check(https.client.https_post(host, port, '/', params=params))                 
 
 
 def init_agent(host, port, init_path, agents_info):                   
@@ -112,4 +112,4 @@ def init_agent(host, port, init_path, agents_info):
         'ip' : host
     }
     files = [('file', init_path, file_get_contents(init_path))]
-    return _check(https.client.https_post(host, port, '/', params, files=files))                 
+    return _check(https.client.https_post(host, port, '/', params=params, files=files))                 

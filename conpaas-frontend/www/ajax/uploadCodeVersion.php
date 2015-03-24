@@ -64,7 +64,8 @@ if (isset($_FILES['code'])) {
 	}
 	$params = array_merge($_POST, array(
 		'code' => '@'.$path,
-		'method' => 'upload_code_version'
+		'method' => 'upload_code_version',
+		'service_id' => $service->getSID()
 	));
 	try {
 		$response = HTTPS::post($service->getManager(), $params);
@@ -94,7 +95,8 @@ if (isset($_FILES['code'])) {
 
 	$params = array_merge($_POST, array(
 		'code' => '@'.$path,
-		'method' => 'upload_code_version'
+		'method' => 'upload_code_version',
+		'service_id' => $service->getSID()
 	));
 	try {
 		$response = HTTPS::post($service->getManager(), $params);

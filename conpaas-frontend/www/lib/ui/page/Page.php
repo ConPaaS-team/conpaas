@@ -102,8 +102,8 @@ class Page {
 
 	public function renderHeaderCSS() {
 		$cssHeaders =  '';
-		$cssHeaders .= self::renderCSSLink('conpaas.css');
-		$cssHeaders .= self::renderCSSLink('autoscaling.css');
+		$cssHeaders .= self::renderCSSLink('css/conpaas.css');
+		$cssHeaders .= self::renderCSSLink('css/autoscaling.css');
 		
 		return $cssHeaders;
 	}
@@ -218,7 +218,7 @@ class Page {
 	public function renderFooter() {
 		return
 			'<div class="footer">'.
-				'Copyright &copy;2011-'.date('Y').' Contrail consortium - <a href="http://www.conpaas.eu/">ConPaaS</a> is the PaaS component of <a href="http://contrail-project.eu/">Contrail</a>. ConPaaS '.Director::getVersion().'.'.
+				'Copyright &copy;2011-'.date('Y').' Contrail consortium <br/> <a href="http://www.conpaas.eu/" target="_blank">ConPaaS</a> is the PaaS component of <a href="http://contrail-project.eu/" target="_blank">Contrail</a>. ConPaaS '.Director::getVersion().'.'.
 			'</div>';
 	}
 

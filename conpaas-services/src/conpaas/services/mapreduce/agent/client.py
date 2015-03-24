@@ -23,4 +23,4 @@ def startup(host, port, ip, private_ip):
   method = 'startup'
   params = {'ip': ip,
             'private_ip': private_ip}
-  return _check(https.client.jsonrpc_post(host, port, '/', method, params))
+  return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))

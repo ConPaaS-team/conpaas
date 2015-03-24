@@ -46,13 +46,18 @@ class HelloWorldManager(BaseManager):
             self.logger.exception('_do_startup: Failed to create node: %s' % err)
             self.state = self.S_ERROR
 
-    @expose('POST')
-    def shutdown(self, kwargs):
-        self.state = self.S_EPILOGUE
-        Thread(target=self._do_shutdown, args=[]).start()
-        return HttpJsonResponse()
 
-    def _do_shutdown(self):
+    # @expose('POST')
+    # def shutdown(self, kwargs):
+    #     self.state = self.S_EPILOGUE
+    #     Thread(target=self._do_shutdown, args=[]).start()
+    #     return HttpJsonResponse()
+
+    # def _do_shutdown(self):
+    #     self.controller.delete_nodes(self.nodes)
+    #     self.nodes = []
+    #     self.state = self.S_STOPPED
+    def _do_stop(self):
         self.controller.delete_nodes(self.nodes)
         self.nodes = []
         self.state = self.S_STOPPED

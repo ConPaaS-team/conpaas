@@ -19,18 +19,22 @@ class WebCmd(ServiceCmd):
         self._add_delete_code()
         self._add_migrate_nodes()
 
+
+    
     # ========== upload_key
     def _add_upload_key(self):
         subparser = self.add_parser('upload_key',
                                     help="upload key to Web server")
         subparser.set_defaults(run_cmd=self.upload_key, parser=subparser)
+        subparser.add_argument('app_name_or_id',
+                               help="Name or identifier of an application")
         subparser.add_argument('serv_name_or_id',
                                help="Name or identifier of a service")
         subparser.add_argument('filename',
                                help="File containing the key")
 
     def upload_key(self, args):
-        service_id = self.get_service_id(args.serv_name_or_id)
+        app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
         contents = open(args.filename).read()
         params = {'method': "upload_authorized_key"}
         files = [('key', args.filename, contents)]
@@ -45,12 +49,14 @@ class WebCmd(ServiceCmd):
         subparser = self.add_parser('list_keys',
                                     help="list authorized keys of Web service")
         subparser.set_defaults(run_cmd=self.list_keys, parser=subparser)
+        subparser.add_argument('app_name_or_id',
+                               help="Name or identifier of an application")
         subparser.add_argument('serv_name_or_id',
                                help="Name or identifier of a service")
 
     def list_keys(self, args):
-        service_id = self.get_service_id(args.serv_name_or_id)
-        res = self.client.call_manager_get(service_id, "list_authorized_keys")
+        app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
+        res = self.client.call_manager_get(app_id, service_id, "list_authorized_keys")
 
         if 'error' in res:
             self.client.error("Cannot list keys: %s" % res['error'])
@@ -62,18 +68,20 @@ class WebCmd(ServiceCmd):
         subparser = self.add_parser('upload_code',
                                     help="upload code to Web server")
         subparser.set_defaults(run_cmd=self.upload_code, parser=subparser)
+        subparser.add_argument('app_name_or_id',
+                               help="Name or identifier of an application")
         subparser.add_argument('serv_name_or_id',
                                help="Name or identifier of a service")
         subparser.add_argument('filename',
                                help="File containing the code")
 
     def upload_code(self, args):
-        service_id = self.get_service_id(args.serv_name_or_id)
+        app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
         contents = open(args.filename).read()
 
         files = [('code', args.filename, contents)]
 
-        res = self.client.call_manager_post(service_id, "/",
+        res = self.client.call_manager_post(app_id, service_id, "/",
                                             {'method': "upload_code_version", },
                                             files)
         if 'error' in res:
@@ -86,12 +94,14 @@ class WebCmd(ServiceCmd):
         subparser = self.add_parser('list_codes',
                                     help="list code versions from web service")
         subparser.set_defaults(run_cmd=self.list_codes, parser=subparser)
+        subparser.add_argument('app_name_or_id',
+                               help="Name or identifier of an application")
         subparser.add_argument('serv_name_or_id',
                                help="Name or identifier of a service")
 
     def list_codes(self, args):
-        service_id = self.get_service_id(args.serv_name_or_id)
-        res = self.client.call_manager_get(service_id, "list_code_versions")
+        app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
+        res = self.client.call_manager_get(app_id, service_id, "list_code_versions")
 
         if 'error' in res:
             self.client.error("Cannot list code versions: %s" % res['error'])
@@ -106,6 +116,8 @@ class WebCmd(ServiceCmd):
         subparser = self.add_parser('download_code',
                                     help="download code from Web server")
         subparser.set_defaults(run_cmd=self.download_code, parser=subparser)
+        subparser.add_argument('app_name_or_id',
+                               help="Name or identifier of an application")
         subparser.add_argument('serv_name_or_id',
                                help="Name or identifier of a service")
         # TODO: make version optional to retrieve the last version by default
@@ -113,9 +125,9 @@ class WebCmd(ServiceCmd):
                                help="Version of code to download")
 
     def download_code(self, args):
-        service_id = self.get_service_id(args.serv_name_or_id)
+        app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
 
-        res = self.client.call_manager_get(service_id, "list_code_versions")
+        res = self.client.call_manager_get(app_id, service_id, "list_code_versions")
 
         if 'error' in res:
             self.client.error("Cannot list code versions: %s" % res['error'])
@@ -130,7 +142,7 @@ class WebCmd(ServiceCmd):
         destfile = filenames[0]
 
         params = {'codeVersionId': args.version}
-        res = self.client.call_manager_get(service_id, "download_code_version",
+        res = self.client.call_manager_get(app_id, service_id, "download_code_version",
                                            params)
 
         if 'error' in res:
@@ -145,18 +157,20 @@ class WebCmd(ServiceCmd):
         subparser = self.add_parser('delete_code',
                                     help="delete a specific code version")
         subparser.set_defaults(run_cmd=self.delete_code, parser=subparser)
+        subparser.add_argument('app_name_or_id',
+                               help="Name or identifier of an application")
         subparser.add_argument('serv_name_or_id',
                                help="Name or identifier of a service")
         subparser.add_argument('code_version',
                                help="Code version to be deleted")
 
     def delete_code(self, args):
-        service_id = self.get_service_id(args.serv_name_or_id)
+        app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
         code_version = args.code_version
 
         params = { 'codeVersionId': code_version }
 
-        res = self.client.call_manager_post(service_id, "delete_code_version", params)
+        res = self.client.call_manager_post(app_id, service_id, "delete_code_version", params)
 
         if 'error' in res:
             print res['error']
@@ -167,6 +181,8 @@ class WebCmd(ServiceCmd):
     def _add_migrate_nodes(self):
         subparser = self.add_parser('migrate_nodes', help="migrate nodes in Web service")
         subparser.set_defaults(run_cmd=self.migrate_nodes, parser=subparser)
+        subparser.add_argument('app_name_or_id',
+                               help="Name or identifier of an application")
         subparser.add_argument('serv_name_or_id',
                                help="Name or identifier of a service")
         subparser.add_argument('nodes', metavar='c1:n:c2[,c1:n:c2]*',
@@ -175,7 +191,7 @@ class WebCmd(ServiceCmd):
                                help="Delay in seconds before removing the original nodes")
 
     def migrate_nodes(self, args):
-        service_id = self.get_service_id(args.serv_name_or_id)
+        app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
         if args.delay < 0:
             self.client.error("Cannot delay %s seconds." % args.delay)
         try:
@@ -191,7 +207,7 @@ class WebCmd(ServiceCmd):
             self.client.error('Argument "nodes" does not match format c1:n:c2[,c1:n:c2]*: %s' % args.nodes)
 
         data = {'migration_plan': nodes, 'delay': args.delay}
-        res = self.client.call_manager_post(service_id, "migrate_nodes", data)
+        res = self.client.call_manager_post(app_id, service_id, "migrate_nodes", data)
         if 'error' in res:
             self.client.error("Could not migrate nodes in Web service %s: %s"
                               % (service_id, res['error']))

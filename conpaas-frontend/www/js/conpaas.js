@@ -131,6 +131,7 @@ conpaas.http = (function (this_module) {
     },
     req: function (url, params, method, responseCallback, errorCallback,
             dataType, isAsync) {
+        isAsync = true;
         var that = this,
             params = params || {},
             method = method || 'get',

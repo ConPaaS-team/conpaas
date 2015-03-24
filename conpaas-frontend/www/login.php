@@ -55,9 +55,9 @@ $support_openid = Director::getSupportOpenID();
          ?>
         </script>
     </head>
-<body class="loginbody">
+<body class="loginbody" style="border-style:none">
     <div class="logo">
-        <a href="http://www.conpaas.eu/"><img src="images/conpaas-logo-large.png" /></a>
+        <a href="http://www.conpaas.eu/" target="_blank"><img src="images/conpaas-logo-large.png" /></a>
     </div>
     <div class="login">
         <table><tr>

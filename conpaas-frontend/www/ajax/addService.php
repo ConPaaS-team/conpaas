@@ -34,7 +34,7 @@ try {
 	$type = $_POST['type'];
     $cloud= $_POST['cloud'];
 
-	$res = json_decode(HTTPS::post(Conf::DIRECTOR . '/start/' . $type. '/' . $cloud,
+	$res = json_decode(HTTPS::post(Conf::DIRECTOR . '/add/' . $type. '/' . $cloud,
 	    array( 'appid' => $appid ), false, $_SESSION['uid']));
 
     if (!$res) {
@@ -53,7 +53,7 @@ try {
 	}
 
 	echo json_encode(array(
-		'sid' => $res->sid,
+		'sid' => $res->service->sid,
 		'create' => 1,
 	));
 } catch (Exception $e) {

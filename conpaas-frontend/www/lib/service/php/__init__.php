@@ -21,9 +21,6 @@ class PHPService extends Service {
 		}
 	}
 
-	public function hasDedicatedManager() {
-		return true;
-	}
 
 	public function getConfiguration() {
 		if (!$this->isReachable()) {

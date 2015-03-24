@@ -35,7 +35,7 @@ def start_mysqld(host, port, nodes=None, device_name=None):
     nodes = nodes or []
     params = {'nodes': nodes,
               'device_name': device_name}
-    return _check(https.client.jsonrpc_post(host, port, '/', method, params))
+    return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
 
 
 def configure_user(host, port, username, password):
@@ -78,7 +78,7 @@ def load_dump(host, port, mysqldump_path):
     filecontent = f.read()
     f.close()
     files = [('mysqldump_file', mysqldump_path, filecontent)]
-    return _check(https.client.https_post(host, port, '/', params, files=files))
+    return _check(https.client.https_post(host, port, '/', params=params, files=files))
 
 
 def stop(host, port):

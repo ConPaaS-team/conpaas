@@ -52,13 +52,8 @@ class MapReduceManager(BaseManager):
           return
         self.state = self.S_RUNNING
 
-    @expose('POST')
-    def shutdown(self, kwargs):
-        self.state = self.S_EPILOGUE
-        Thread(target=self._do_shutdown, args=[]).start()
-        return HttpJsonResponse()
 
-    def _do_shutdown(self):
+    def _do_stop(self):
       self.controller.delete_nodes(self.nodes)
       self.nodes = []
       self.state = self.S_STOPPED

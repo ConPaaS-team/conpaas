@@ -134,10 +134,12 @@ all services, and refer to the next sections for service-specific
 functionality.
 
 Create a service.
-    Click on “create new service”, then select the service you want to
-    create. This operation starts a new “Manager” virtual machine
-    instance. The manager is in charge of taking care of the service,
-    but it does not host applications itself. Other instances in charge
+    Click on “add new service”, then select the service you want to
+    add. This operation adds extra functionalities to the 
+    application manager which are specific to a certain service.
+    These functionalities enable the application manager to be 
+    charge of taking care of the service, but it does not host applications itself. 
+    Other instances in charge
     of running the actual application are called “agent” instances.
 
 Start a service.

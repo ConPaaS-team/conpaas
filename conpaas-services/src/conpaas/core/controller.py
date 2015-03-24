@@ -39,20 +39,13 @@ class Controller(object):
         self.__logger = create_logger(__name__)
         self.__logger.setLevel(logging.DEBUG)
         # Params for director callback
-        self.__conpaas_name = config_parser.get('manager',
-                                                'DEPLOYMENT_NAME')
-        self.__conpaas_creditUrl = config_parser.get('manager',
-                                                'CREDIT_URL')
-        self.__conpaas_terminateUrl = config_parser.get('manager',
-                                                   'TERMINATE_URL')
-        self.__conpaas_service_id = config_parser.get('manager',
-                                                 'SERVICE_ID')
-        self.__conpaas_user_id = config_parser.get('manager',
-                                              'USER_ID')
-        self.__conpaas_app_id = config_parser.get('manager',
-                                              'APP_ID')
-        self.__conpaas_caUrl = config_parser.get('manager',
-                                            'CA_URL')
+        self.__conpaas_name = config_parser.get('manager', 'DEPLOYMENT_NAME')
+        self.__conpaas_creditUrl = config_parser.get('manager', 'CREDIT_URL')
+        self.__conpaas_terminateUrl = config_parser.get('manager', 'TERMINATE_URL')
+        self.__conpaas_service_id = config_parser.get('manager', 'SERVICE_ID') if config_parser.has_option('manager', 'SERVICE_ID') else ''
+        self.__conpaas_user_id = config_parser.get('manager', 'USER_ID')
+        self.__conpaas_app_id = config_parser.get('manager', 'APP_ID')
+        self.__conpaas_caUrl = config_parser.get('manager', 'CA_URL')
 
         # Set the CA URL as IPOP's base namespace
         self.__ipop_base_namespace = self.__conpaas_caUrl
@@ -88,7 +81,8 @@ class Controller(object):
         # For crediting system
         self.__reservation_logger = create_logger('ReservationTimer')
         self.__reservation_map = {'manager': ReservationTimer(['manager'],
-                                  55 * 60,  # 55mins
+                                  # 55 * 60,  # 55mins
+                                  60,
                                   self.__deduct_and_check_credit,
                                   self.__reservation_logger)}
         self.__reservation_map['manager'].start()
@@ -101,10 +95,7 @@ class Controller(object):
         self.__available_clouds = []
         self.__default_cloud = None
         if config_parser.has_option('iaas', 'DRIVER'):
-            self.__default_cloud = iaas.get_cloud_instance(
-                'iaas',
-                config_parser.get('iaas', 'DRIVER').lower(),
-                config_parser)
+            self.__default_cloud = iaas.get_cloud_instance('iaas', config_parser.get('iaas', 'DRIVER').lower(), config_parser)
             self.__available_clouds.append(self.__default_cloud)
 
         if config_parser.has_option('iaas', 'OTHER_CLOUDS'):
@@ -196,20 +187,19 @@ class Controller(object):
                 self.__force_terminate_lock.acquire()
                 if iteration == 1:
                     request_start = time.time()
-
-                service_type = self.config_parser.get('manager', 'TYPE')
-                if service_type == 'galera':
-                    service_type = 'mysql'
-
+                
                 if self.role == 'manager':
                     role_abbr = 'mgr'
+                    service_type = ''
+                    name = "%s-u%s-a%s-r%s" % (self.__conpaas_name, self.__conpaas_user_id, self.__conpaas_app_id, role_abbr)
                 else:
                     role_abbr = 'agt'
+                    service_type = self.config_parser.get('manager', 'TYPE')
+                    name = "%s-u%s-a%s-s%s-t%s-r%s" % (self.__conpaas_name, self.__conpaas_user_id, self.__conpaas_app_id, self.__conpaas_service_id, service_type, role_abbr)
 
-                # eg: conpaas-online-u3-s1-xtreemfs-mgr
-                name = "%s-u%s-s%s-%s-%s" % (self.__conpaas_name, self.__conpaas_user_id,
-                        self.__conpaas_service_id, service_type, role_abbr)
-
+                if service_type == 'galera':
+                    service_type = 'mysql'
+                
                 if (service_type == 'htc'):
                     # If HTC is used we need to update here as well (as I see no way to do this elsewhere)
                     self.add_context_replacement({
@@ -239,8 +229,7 @@ class Controller(object):
                             self.__partially_created_nodes.append(newinst)
                 else:
                     self.__logger.debug("[create_nodes]: cloud.new_instances(%d, %s, %s)" % ( count - len(ready), name, inst_type ) )
-                    self.__partially_created_nodes = cloud.new_instances(
-                        count - len(ready), name, inst_type)
+                    self.__partially_created_nodes = cloud.new_instances(count - len(ready), name, inst_type)
 
                 self.__logger.debug("[create_nodes]: cloud.new_instances returned %s" %
                         self.__partially_created_nodes)
@@ -274,7 +263,8 @@ class Controller(object):
         # this should be enough time to terminate instances before
         # hitting the following hour
         timer = ReservationTimer([i.id for i in ready],
-                                 (55 * 60) - (time.time() - request_start),
+                                 # (55 * 60) - (time.time() - request_start),
+                                 (60) - (time.time() - request_start),
                                  self.__deduct_and_check_credit,
                                  self.__reservation_logger)
         timer.start()
@@ -336,8 +326,7 @@ class Controller(object):
                                 to select
         """
         def __set_cloud_ctx(cloud):
-            contxt = self._get_context_file(service_name,
-                                            cloud.get_cloud_type())
+            contxt = self._get_context_file(service_name, cloud.get_cloud_type())
             cloud.set_context(contxt)
 
         if cloud is None:
@@ -627,7 +616,8 @@ class Controller(object):
         x509_req = https.x509.create_x509_req(
             req_key,
             userId=self.__conpaas_user_id,
-            serviceLocator=self.__conpaas_service_id,
+            # serviceLocator=self.__conpaas_service_id,
+            serviceLocator=self.__conpaas_app_id,
             O='ConPaaS',
             emailAddress='info@conpaas.eu',
             CN='ConPaaS',
@@ -682,8 +672,9 @@ class Controller(object):
             _, body = https.client.https_post(parsed_url.hostname,
                                               parsed_url.port or 443,
                                               parsed_url.path,
-                                              {'sid': self.__conpaas_service_id,
-                                               'decrement': value})
+                                              {'aid': self.__conpaas_app_id, 'decrement': value})
+                                              # {'sid': self.__conpaas_service_id,
+                                              #  'decrement': value})
             obj = json.loads(body)
             return not obj['error']
         except:
@@ -698,8 +689,9 @@ class Controller(object):
 
 class ReservationTimer(Thread):
     def __init__(self, nodes, delay, callback,
-                 reservation_logger, interval=3600):
-
+                reservation_logger, interval=3600):
+                # reservation_logger, interval=60):
+                
         Thread.__init__(self)
         self.nodes = nodes
         self.event = Event()

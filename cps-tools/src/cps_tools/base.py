@@ -73,14 +73,12 @@ class BaseClient(object):
         else:
             return self.password
 
-    def wait_for_state(self, sid, states):
-        """Poll the state of service 'sid' till it matches one of expected
-        'states'."""
+    def wait_for_state(self, aid, sid, states):
+        """Poll the state of service 'sid' till it matches one of expected 'states'."""
         res = {'state': None}
-
         while res['state'] not in states:
             try:
-                res = self.call_manager_get(sid, "get_service_info")
+                res = self.call_manager_get(aid, sid, "get_service_info")
             except (socket.error, urllib2.URLError):
                 time.sleep(2)
         return res['state']
@@ -161,26 +159,40 @@ class BaseClient(object):
         except simplejson.decoder.JSONDecodeError:
             return rawdata
 
-    def get_services(self, serv_type=None):
+    def get_services(self, app_id=None, serv_type=None):
         if self.services is None:
             self.services = self.call_director_get('list')
         services = self.services
+
         # filter out services of unexpected type if a type is specified
         if serv_type is not None:
             services = [service for service in self.services
-                        if service['type'] == serv_type]
+                        if service['service']['type'] == serv_type]
+        if app_id is not None:
+            services = [service for service in self.services
+                        if service['service']['application_id'] == app_id]
         return services
 
-    def service_dict(self, service_id):
+
+    def service_dict(self, app_id, service_id):
         """Return service's data as a dictionary"""
-        services = self.get_services()
+        services = self.get_services(app_id)
         for service in services:
-            if str(service['sid']) == str(service_id):
+            if str(service['service']['sid']) == str(service_id):
                 #service.pop('state')
                 return service
         return []
 
-    def call_manager(self, service_id, method, post, data=None, files=None):
+    def application_dict(self, app_id):
+        """Return application's data as a dictionary"""
+        applications = self.call_director_get("listapp")
+        
+        for application in applications:
+            if str(application['aid']) == str(app_id):
+                return application
+        return None 
+
+    def call_manager(self, app_id, service_id, method, post, data=None, files=None):
         """Call the manager API.
         Loads the manager JSON response and returns it as a Python object.
 
@@ -191,7 +203,11 @@ class BaseClient(object):
         'files': sequence of (name, filename, value) tuples for data to be
                  uploaded as files.
         """
-        service = self.service_dict(service_id)
+
+        application = self.application_dict(app_id)
+
+        if application['manager'] is None:
+            self.error('Application %s has not started. Try to start it first.' % app_id)
 
         if data is None:
             data = {}
@@ -200,13 +216,13 @@ class BaseClient(object):
 
         # File upload
         if files:
-            res = client.https_post(service['manager'], 443, '/', data, files)
+            res = client.https_post(application['manager'], 443, '/', data, files)
         # POST
         elif post:
-            res = client.jsonrpc_post(service['manager'], 443, '/', method, data)
+            res = client.jsonrpc_post(application['manager'], 443, '/', method, service_id, data)
         # GET
         else:
-            res = client.jsonrpc_get(service['manager'], 443, '/', method, data)
+            res = client.jsonrpc_get(application['manager'], 443, '/', method, service_id, data)
 
         if res[0] == 200:
             try:
@@ -218,17 +234,17 @@ class BaseClient(object):
             return data.get('result', data)
 
         raise Exception("Call to method %s on %s failed: %s.\nParams = %s" % (
-            method, service['manager'], res[1], data))
+            method, application['manager'], res[1], data))
 
-    def call_manager_post(self, service_id, method, data=None, files=None):
+    def call_manager_post(self, app_id, service_id, method, data=None, files=None):
         if files is None:
             files = []
-        return self.call_manager(service_id, method, True, data, files)
+        return self.call_manager(app_id, service_id, method, True, data, files)
 
-    def call_manager_get(self, service_id, method, data=None, files=None):
+    def call_manager_get(self, app_id, service_id, method, data=None, files=None):
         if files is None:
             files = []
-        return self.call_manager(service_id, method, False, data, files)
+        return self.call_manager(app_id, service_id, method, False, data, files)
 
     def prettytable(self, print_order, rows):
         if rows == []:

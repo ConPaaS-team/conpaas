@@ -16,11 +16,11 @@ def create_hub(host, port):
     method = 'create_hub'
     params = { 'my_ip': host }
     return client.check_response(client.jsonrpc_post(
-        host, port, '/', method, params))
+        host, port, '/', method, params=params))
 
 def create_node(host, port, hub_ip):
     """POST (my_ip, hub_ip) create_node"""
     method = 'create_node'
     params = { 'my_ip': host, 'hub_ip': hub_ip }
     return client.check_response(client.jsonrpc_post(
-        host, port, '/', method, params))
+        host, port, '/', method, params=params))
