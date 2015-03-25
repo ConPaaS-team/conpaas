@@ -1090,6 +1090,10 @@ class BasicWebserversManager(BaseManager):
                                   detail='Invalid codeVersionId')
             return HttpErrorResponse(ex.message)
 
+        if config.codeVersions[codeVersion].type == 'git':
+            return HttpErrorResponse(
+                'ERROR: To download this code, please clone the git repository');
+
         filename = os.path.abspath(os.path.join(self.code_repo, codeVersion))
         if not filename.startswith(self.code_repo + '/') or not os.path.exists(filename):
             ex = ManagerException(ManagerException.E_ARGS_INVALID,
@@ -1177,15 +1181,17 @@ class BasicWebserversManager(BaseManager):
                                   detail='Cannot remove the active code version')
             return HttpErrorResponse(ex.message)
 
-        filename = os.path.abspath(os.path.join(self.code_repo, codeVersion))
-        if not filename.startswith(self.code_repo + '/') or not os.path.exists(filename):
-            ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                  detail='Invalid codeVersionId')
-            return HttpErrorResponse(ex.message)
+        if not config.codeVersions[codeVersion].type == 'git':
+            filename = os.path.abspath(os.path.join(self.code_repo, codeVersion))
+            if not filename.startswith(self.code_repo + '/') or not os.path.exists(filename):
+                ex = ManagerException(ManagerException.E_ARGS_INVALID,
+                                      detail='Invalid codeVersionId')
+                return HttpErrorResponse(ex.message)
+
+            os.remove(filename)
 
         config.codeVersions.pop(codeVersion)
         self._configuration_set(config)
-        os.remove(filename)
 
         return HttpJsonResponse()
 
@@ -1234,10 +1240,11 @@ class BasicWebserversManager(BaseManager):
         config = self._configuration_get()
 
         repo = git.DEFAULT_CODE_REPO
-        codeVersionId = git.git_code_version(repo)
+        revision = git.git_code_version(repo)
+        codeVersionId = "git-%s" % revision
 
         config.codeVersions[codeVersionId] = CodeVersion(id=codeVersionId,
-                                                         filename=codeVersionId,
+                                                         filename=revision,
                                                          atype="git",
                                                          description=git.git_last_description(repo))
 

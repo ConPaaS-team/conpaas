@@ -43,6 +43,8 @@ require_module('ui/instance/generic');
 
 class GenericService extends Service {
 
+	private $scriptStatus = null;
+
 	public function __construct($data, $manager) {
 		parent::__construct($data, $manager);
 	}
@@ -67,7 +69,24 @@ class GenericService extends Service {
 
 	public function createInstanceUI($node) {
 		$info = $this->getNodeInfo($node);
-		return new GenericInstance($info);
+		if ($this->scriptStatus) {
+			$scriptStatus = $this->scriptStatus[$node];
+		} else {
+			$scriptStatus = null;
+		}
+		return new GenericInstance($info, $this->sid, $scriptStatus);
+	}
+
+	public function createScriptStatusUI() {
+		$scriptStatusUIArray = array();
+		$this->updateScriptStatus();
+		if ($this->scriptStatus) {
+			foreach ($this->scriptStatus as $node => $status) {
+				$scriptStatusUIArray[$node] =
+						GenericInstance::renderScriptStatusTable($status);
+			}
+		}
+		return $scriptStatusUIArray;
 	}
 
 	public function getMasterAddr() {
@@ -75,9 +94,48 @@ class GenericService extends Service {
 		return $master_node['ip'];
 	}
 
-	public function deployApp() {
-		$resp = $this->managerRequest('post', 'run', array());
+	public function listVolumes() {
+		$json = $this->managerRequest('get', 'list_volumes', array());
+		$volumes = json_decode($json, true);
+		if ($volumes == null) {
+			return false;
+		}
+		return $volumes['result']['volumes'];
+	}
+
+	public function createVolume($params) {
+		$resp = $this->managerRequest('post', 'generic_create_volume', $params);
 		return $resp;
+	}
+
+	public function deleteVolume($params) {
+		$resp = $this->managerRequest('post', 'generic_delete_volume', $params);
+		return $resp;
+	}
+
+	public function executeScript($params) {
+		$resp = $this->managerRequest('post', 'execute_script', $params);
+		return $resp;
+	}
+
+	public function updateScriptStatus() {
+		if (!$this->isRunning()) {
+			$this->scriptStatus = null;
+			return;
+		}
+		$json = $this->managerRequest('get', 'get_script_status', array());
+		$status = json_decode($json, true);
+		if ($status == null) {
+			$this->scriptStatus = null;
+		} else {
+			$this->scriptStatus = $status['result']['agents'];
+		}
+	}
+
+	public function fetchAgentLog($params) {
+		$json = $this->managerRequest('get', 'get_agent_log', $params);
+		$log = json_decode($json, true);
+		return $log['result']['log'];
 	}
 }
 

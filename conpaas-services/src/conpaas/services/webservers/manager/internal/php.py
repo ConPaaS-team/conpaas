@@ -51,14 +51,17 @@ class PHPManager(BasicWebserversManager):
         for serviceNode in nodes:
             # Push the current code version via GIT if necessary
             if config.codeVersions[config.currentCodeVersion].type == 'git':
+                filepath = config.codeVersions[config.currentCodeVersion].filename
                 _, err = git.git_push(git.DEFAULT_CODE_REPO, serviceNode.ip)
                 if err:
                     self.logger.debug('git-push to %s: %s' % (serviceNode.ip, err))
+            else:
+                filepath = os.path.join(self.code_repo, config.currentCodeVersion)
 
             try:
                 client.updatePHPCode(serviceNode.ip, 5555, config.currentCodeVersion,
                                      config.codeVersions[config.currentCodeVersion].type,
-                                     os.path.join(self.code_repo, config.currentCodeVersion))
+                                     filepath)
             except client.AgentException:
                 self.logger.exception('Failed to update code at node %s' % str(serviceNode))
                 self._state_set(self.S_ERROR, msg='Failed to update code at node %s' % str(serviceNode))

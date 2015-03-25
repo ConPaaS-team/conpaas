@@ -180,17 +180,16 @@ class BaseClient(object):
     #     raise Exception, "Call to method %s on %s failed: %s.\nParams = %s" % (
     #         method, service['manager'], res[1], data)
 
-    # def wait_for_state(self, sid, state):
-    #     """Poll the state of service 'sid' till it matches 'state'."""
-    #     res = { 'state': None }
+    def wait_for_state(self, aid, sid, state):
+        """Poll the state of service 'sid' till it matches 'state'."""
+        res = { 'state': None }
 
-    #     while res['state'] != state:
-    #         try:
-    #             res = self.callmanager(sid, "get_service_info", False, {})
-    #         except (socket.error, urllib2.URLError):
-    #             time.sleep(2)
+        while res['state'] != state:
+            try:
+                res = self.callmanager(aid, sid, "get_service_info", False, {})
+            except (socket.error, urllib2.URLError):
+                time.sleep(2)
 
-    
     def add(self, service_type, cloud = None, application_id=None, initial_state='INIT'):
         print "Adding a %s service in application %s ..." % (service_type, application_id)
         sys.stdout.flush()
@@ -290,6 +289,30 @@ class BaseClient(object):
             service[key] = value
 
         return service
+
+    def list_nodes(self, app_id, service_id):
+        """List the nodes of a service"""
+        nodes = self.callmanager(app_id, service_id, "list_nodes", False, {})
+        if 'error' in nodes:
+            print "E: Cannot get list of nodes: %s" % nodes['error']
+            sys.exit(1)
+
+        for role, role_nodes in nodes.items():
+            for node in role_nodes:
+                params = {'serviceNodeId': node}
+                details = self.callmanager(app_id, service_id, "get_node_info",
+                         False, params)
+                if 'error' in details:
+                    print "Warning: got node identifier from list_nodes but " \
+                            "failed on get_node_info: %s" % details['error']
+                else:
+                    node = details['serviceNode']
+                    if 'vmid' in node and 'cloud' in node:
+                        print "%s: node %s from cloud %s with IP address %s" \
+                              % (role, node['vmid'], node['cloud'], node['ip'])
+                    else:
+                        print "%s: node %s with IP address %s" \
+                              % (role, node['id'], node['ip'])
 
     def logs(self, app_id, service_id):
         res = self.callmanager(app_id, service_id, "getLog", False, {})
@@ -580,7 +603,7 @@ Do you want to continue? (y/N): """
         print "    list              [appid]                         # list running services under an application"
         print "    deleteapp         appid                           # delete an application"
         print "    createapp         appname                         # create a new application"
-        print "    startapp          appid                           # start an application"
+        print "    startapp          appid       [cloud]             # start an application"
         print "    stopapp           appid                           # stop an application"
         print "    infoapp           appid                           # information about an application"
         print "    renameapp         appid       newname             # rename an application"
@@ -595,6 +618,7 @@ Do you want to continue? (y/N): """
         print "    rename            appid       serviceid newname   # rename the specified service"
         print "    startup_script    appid       serviceid filename  # upload a startup script"
         print "    usage             appid       serviceid           # show service-specific options"
+        print "    list_nodes        appid       serviceid           # list the nodes of a service"
 
     def main(self, argv):
         """What to do when invoked from the command line. Clients should extend
@@ -763,7 +787,8 @@ Do you want to continue? (y/N): """
             # We have all been there
             command = "usage"
 
-        if command in ( 'start', 'stop', 'remove', 'info', 'logs', 'usage' ):
+        if command in ( 'start', 'stop', 'remove', 'info', 'logs', 'usage',
+                        'list_nodes' ):
             # Call the method 
             if command == "start":
                 if len(sys.argv) == 4:

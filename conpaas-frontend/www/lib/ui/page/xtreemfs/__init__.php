@@ -55,22 +55,35 @@ class XtreemFSPage extends ServicePage {
 			.'</div>';
 	}
 
-	private function renderAvailableVolumes() {
+	public function renderVolumeList($volumes) {
+		if (count($volumes) == 0) {
+			return '<div id="noVolumesBox" class="box xtreemfs-box">'
+						.'You have no volumes in this XtreemFS service. '
+						.'Go ahead and '
+						.'<a class="linkVolumes" href="javascript:void(0);">'
+						.'create a volume'
+						.'</a>.'
+					.'</div>';
+		}
+		$html = '<table class="slist volumes" cellpadding="0" cellspacing="1">';
+		for ($i = 0; $i < count($volumes); $i++) {
+			$volumeUI = XtreemFSVolume($volumes[$i]);
+			if ($i == count($volumes) - 1) {
+				$volumeUI->setLast();
+			}
+			$html .= $volumeUI;
+		}
+		$html .= '</table>';
+		return $html;
+	}
+
+	private function renderAvailableVolumes($volumes) {
 		return
 			'<div id="availableVolumesForm">'
 				.'<div class="left-stack name">available volumes</div>'
 				.'<div class="left-stack details">'
-					.'<div class="xtreemfs-list">'
-						.'<div id="noVolumesBox" class="box xtreemfs-box invisible">'
-							.'You have no volumes in this XtreemFS service. '
-							.'Go ahead and '
-							.'<a id="linkVolumes2" href="#Manage_XtreemFS_Volumes">'
-							.'create a volume'
-							.'</a>.'
-						.'</div>'
-						.'<table id="volumesList" class="slist" '
-							.'cellpadding="0" cellspacing="1">'
-						.'</table>'
+					.'<div id="volumeListWrapper" class="xtreemfs-list">'
+						.$this->renderVolumeList($volumes)
 					.'</div>'
 				.'</div>'
 				.'<div class="clear"></div>'
@@ -92,25 +105,22 @@ class XtreemFSPage extends ServicePage {
 				.'<div class="left-stack details">'
 					.'<input id="createVolume" type="button" '
 					.' value="create volume" />'
-					.'<input id="deleteVolume" type="button" '
-					.' value="delete volume" class="invisible" />'
                     .'<i id="VolumeStat" class="invisible"></i>'
 				.'</div>'
 				.'<div class="clear"></div>'
 			.'</div>';
 	}
 
-	public function renderManageVolumesSection() {
+	public function renderManageVolumesSection($volumes) {
 		return
-		'<div id="Manage_XtreemFS_Volumes" '
-				.'class="form-section xtreemfs-volume xtreemfs-available">'
+		'<div class="form-section xtreemfs-volume xtreemfs-available">'
 			.'<div class="form-header">'
 				.'<div class="title">'
 					.'<img src="images/volume.png" />Manage XtreemFS Volumes'
 				.'</div>'
 				.'<div class="clear"></div>'
 			.'</div>'
-			.$this->renderAvailableVolumes()
+			.$this->renderAvailableVolumes($volumes)
 		.'</div>'
 		.'<div class="form-section xtreemfs-volume xtreemfs-create">'
 			.$this->renderVolumeCreate()
@@ -144,7 +154,8 @@ class XtreemFSPage extends ServicePage {
 			'<div>'
 				.'<div class="left-stack name">passphrase</div>'
 				.'<div class="left-stack details">'
-					.'<input type="password" name="passphrase" value="" />'
+					.'<input type="password" name="passphrase" '
+							.'value="" autocomplete="off" />'
 				.'</div>'
 				.'<div class="clear"></div>'
 			.'</div>';
@@ -155,7 +166,8 @@ class XtreemFSPage extends ServicePage {
 			'<div>'
 				.'<div class="left-stack name">retype passphrase</div>'
 				.'<div class="left-stack details">'
-					.'<input type="password" name="passphrase2" value="" />'
+					.'<input type="password" name="passphrase2" '
+							.'value="" autocomplete="off" />'
 				.'</div>'
 				.'<div class="clear"></div>'
 			.'</div>';
@@ -272,20 +284,39 @@ class XtreemFSPage extends ServicePage {
 			.'</div>';
 	}
 
-	private function renderVolumeSelect() {
+	public function renderVolumeSelectorOptions($volumes) {
+		$selectorContent = '';
+		$hint = '';
+		if (count($volumes) == 0) {
+			$hint = '<b id="hintVolume" class="xtreemfs-hint">'
+						.'To access the service you must first '
+						.'<a class="linkVolumes" href="javascript:void(0);">'
+							.'create a volume'
+						.'</a>'
+					.'</b>';
+		} else {
+			for ($i = 0; $i < count($volumes); $i++) {
+				$selectorContent .=
+					'<option value="'.$volumes[$i]['volumeName'].'">'
+						.$volumes[$i]['volumeName']
+					.'</option>';
+			}
+		}
+		return
+			'<select id="selectVolume" class="xtreemfs-select">'
+			.$selectorContent
+			.'</select>'
+			.'<input id="refreshSelect" type="button" value="refresh" />'
+			.$hint
+			.'<i id="selectVolumeStat" class="invisible"></i>';
+	}
+
+	private function renderVolumeSelector($volumes) {	
 		return
 			'<div>'
 				.'<div class="left-stack name">volume</div>'
-				.'<div class="left-stack details">'
-					.'<select id="selectVolume" class="xtreemfs-select" />'
-					.'<input id="refreshSelect" type="button" value="refresh" />'
-					.'<b id="hintVolume" class="xtreemfs-hint invisible">'
-						.'To access the service you must first '
-						.'<a id="linkVolumes" href="#Manage_XtreemFS_Volumes">'
-							.'create a volume'
-						.'</a>'
-					.'</b>'
-					.'<i id="selectVolumeStat" class="invisible"></i>'
+				.'<div id="volumeSelectorWrapper" class="left-stack details">'
+					.$this->renderVolumeSelectorOptions($volumes)
 				.'</div>'
 				.'<div class="clear"></div>'
 			.'</div>';
@@ -336,7 +367,7 @@ class XtreemFSPage extends ServicePage {
 				.'<div class="left-stack details">'
 					.'<input class="command" type="text" readonly="readonly" '
 						.' id="mountCommand" value="'.$cmd.'" title="shell command"/>'
-					.'<b class="xtreemfs-hint"> Click on command to Copy it</b>'
+					.'<b class="xtreemfs-hint"> Click on the command to copy it</b>'
 				.'</div>'
 				.'<div class="clear"></div>'
 			.'</div>';
@@ -356,13 +387,13 @@ class XtreemFSPage extends ServicePage {
 				.'<div class="left-stack details">'
 					.'<input class="command" type="text" readonly="readonly" '
 						.' id="unmountCommand" value="'.$cmd.'" title="shell command"/>'
-					.'<b class="xtreemfs-hint"> Click on command to Copy it</b>'
+					.'<b class="xtreemfs-hint"> Click on the command to copy it</b>'
 				.'</div>'
 				.'<div class="clear"></div>'
 			.'</div>';
 	}
 
-	public function renderAccessSection() {
+	public function renderAccessSection($volumes) {
 		return
 		'<div id="XtreemFS_Access" class="form-section xtreemfs-volume">'
 			.'<div class="form-header">'
@@ -372,7 +403,7 @@ class XtreemFSPage extends ServicePage {
 				.'<div class="clear"></div>'
 			.'</div>'
 			.$this->renderServerAddress()
-			.$this->renderVolumeSelect()
+			.$this->renderVolumeSelector($volumes)
 			.$this->renderMountPointInput()
 			.$this->renderCertFilenameInput()
 			.$this->renderMountCommand()
@@ -385,8 +416,9 @@ class XtreemFSPage extends ServicePage {
 		$html .= $this->renderClientCertificateSection();
 //		$html .= $this->renderUserCertificateSection();
 		if($this->service->isRunning()){
-			$html .= $this->renderManageVolumesSection();
-			$html .= $this->renderAccessSection();
+			$volumes = $this->service->listVolumes();
+			$html .= $this->renderManageVolumesSection($volumes);
+			$html .= $this->renderAccessSection($volumes);
 		}
 
 		return $html;

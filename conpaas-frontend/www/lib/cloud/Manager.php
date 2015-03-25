@@ -11,7 +11,9 @@ class Manager {
 	// protected $sid;
 	protected $aid;
 	protected $uid;
+	protected $id;
 	protected $vmid;
+	protected $cloud;
 	private $instance_type;
 	// private $service_type;
 
@@ -21,15 +23,21 @@ class Manager {
 		$this->aid = $data['aid'];
 		$this->uid = $data['uid'];
 		$this->vmid = $data['vmid'];
+		$this->cloud = $data['cloud'];
+		$this->id = $this->cloud.$this->vmid;
 		$this->ipaddr = $data['manager'];
 	}
 
 	public function getID() {
-		return $this->vmid;
+		return $this->id;
 	}
 
 	public function getHostAddress() {
 		return $this->resolveAddress($this->vmid);
+	}
+
+	public function getCloud() {
+		return $this->cloud;
 	}
 
 	public function resolveAddress($vmid) {

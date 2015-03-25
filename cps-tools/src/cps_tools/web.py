@@ -40,7 +40,7 @@ class WebCmd(ServiceCmd):
         files = [('key', args.filename, contents)]
         res = self.client.call_manager_post(service_id, "/", params, files)
         if 'error' in res:
-            print res['error']
+            self.client.error(res['error'])
         else:
             print res['outcome']
 
@@ -173,7 +173,7 @@ class WebCmd(ServiceCmd):
         res = self.client.call_manager_post(app_id, service_id, "delete_code_version", params)
 
         if 'error' in res:
-            print res['error']
+            self.client.error(res['error'])
         else:
             print code_version, 'deleted'
 

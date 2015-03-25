@@ -9,6 +9,7 @@
     :copyright: (C) 2010-2013 by Contrail Consortium.
 """
 
+import math
 import time
 
 from libcloud.compute.types import Provider
@@ -48,10 +49,20 @@ class EC2Cloud(Cloud):
     def _connect(self):
         if self.ec2_region == "ec2.us-east-1.amazonaws.com":
             EC2Driver = get_driver(Provider.EC2_US_EAST)
+        elif self.ec2_region == "ec2.us-west-1.amazonaws.com":
+            EC2Driver = get_driver(Provider.EC2_US_WEST)
         elif self.ec2_region == "ec2.us-west-2.amazonaws.com":
             EC2Driver = get_driver(Provider.EC2_US_WEST_OREGON)
         elif self.ec2_region == "ec2.eu-west-1.amazonaws.com":
             EC2Driver = get_driver(Provider.EC2_EU_WEST)
+        elif self.ec2_region == "ec2.sa-east-1.amazonaws.com":
+            EC2Driver = get_driver(Provider.EC2_SA_EAST)
+        elif self.ec2_region == "ec2.ap-northeast-1.amazonaws.com":
+            EC2Driver = get_driver(Provider.EC2_AP_NORTHEAST)
+        elif self.ec2_region == "ec2.ap-southeast-1.amazonaws.com":
+            EC2Driver = get_driver(Provider.EC2_AP_SOUTHEAST)
+        elif self.ec2_region == "ec2.ap-southeast-2.amazonaws.com":
+            EC2Driver = get_driver(Provider.EC2_AP_SOUTHEAST2)
         else:
             raise Exception('Unknown EC2 region: %s' % self.ec2_region)
 
@@ -122,7 +133,7 @@ class EC2Cloud(Cloud):
         # EBS expects volume size in GiB.
         size /= 1024.0
 
-        size = int(round(size))
+        size = int(math.ceil(size))
 
         self.logger.debug("self.driver.create_volume(%s, %s, %s)" % (size,
             name, location))

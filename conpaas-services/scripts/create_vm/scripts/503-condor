@@ -7,6 +7,8 @@ cecho "===== install packages required by HTCondor ====="
 wget -O - -q http://mozilla.debian.net/archive.asc | apt-key add -
 # avoid warning: W: GPG error: http://dl.google.com stable Release: The following signatures couldn't be verified because the public key is not available: NO_PUBKEY A040830F7FAC5991 
 wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
+# avoid warning: W: GPG error: http://research.cs.wisc.edu squeeze Release: The following signatures couldn't be verified because the public key is not available: NO_PUBKEY 973FC7D2670079F6
+wget -q -O - https://research.cs.wisc.edu/htcondor/yum/RPM-GPG-KEY-HTCondor | apt-key add -
 
 # If things go wrong, you may want to read  http://research.cs.wisc.edu/htcondor/debian/
 # 

@@ -22,6 +22,6 @@ class HelloWorldCmd(ServiceCmd):
         app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
         res = self.client.call_manager(app_id, service_id, "get_helloworld", False, {})
         if 'error' in res:
-            print res['error']
+            self.client.error(res['error'])
         else:
             print res['helloworld']

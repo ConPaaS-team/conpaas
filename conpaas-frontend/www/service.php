@@ -11,6 +11,11 @@ require_module('ui/page');
 require_module('ui/service');
 require_module('application');
 
+if (!isset($_SESSION['uid'])) {
+    // not logged in
+    Page::redirect('login.php');
+}
+
 $sid = $_GET['sid'];
 $aid = $_SESSION['aid'];
 $uid = $_SESSION['uid'];

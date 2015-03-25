@@ -40,20 +40,130 @@ require_module('ui/instance');
 
 class GenericInstance extends Instance {
 
-	public function __construct($info) {
-		parent::__construct($info);
-	}
+    private $scriptStatus = null;
 
-	protected function renderCapabs() {
-		$html = '';
+    public function __construct($info, $sid, $scriptStatus) {
+        parent::__construct($info);
+        $this->sid = $sid;
+        $this->scriptStatus = $scriptStatus;
+    }
+
+    protected function renderCapabs() {
+        $html = '';
         if ($this->info['is_master']) {
-            $html .= '<div class="tag blue">master</div>';
+            $html .= '<div class="tag blue">&nbsp;master&nbsp;</div>';
+        } else {
+            $html .= '<div class="tag orange">&nbsp;&nbsp;node&nbsp;&nbsp;&nbsp;</div>';
         }
-        else {
-            $html .= '<div class="tag orange">node</div>';
+        return $html;
+    }
+
+    public static function renderScriptStatus($script, $scriptStatus) {
+        $text = $scriptStatus[$script];
+        $toolTipText = '';
+        $img = 'ledgray.png';
+        $class = '';
+        if (strpos($text, 'STOPPED') !== false) {
+            $toolTipText = substr($text, 9, strlen($text) - 10);
+            $text = 'STOPPED';
+            $img = 'ledred.png';
+        } elseif ($text == 'RUNNING') {
+            $img = 'ledgreen.png';
+            $class = ' class="running"';
+        } elseif ($text == 'NEVER STARTED') {
+            $img = 'ledlightblue.png';
         }
-		return $html;
-	}
+        return
+            '<tr>'
+                .'<td><b>'.$script.'</b>&nbsp;&nbsp;&nbsp;</td>'
+                .'<td title="'.$toolTipText.'">'
+                    .'<img'.$class.' width="10" height="10" src="images/'.$img.'">'
+                    .'&nbsp;'.$text
+                .'</td>'
+            .'</tr>';
+    }
+
+    public static function renderScriptStatusTable($scriptStatus) {
+        if ($scriptStatus == null) {
+            return '';
+        }
+        $html =
+            '<div class="generic-script-status">'
+                .'<table cellspacing="0" cellpadding="0">'
+                    .self::renderScriptStatus('init.sh', $scriptStatus)
+                    .self::renderScriptStatus('notify.sh', $scriptStatus)
+                    .self::renderScriptStatus('run.sh', $scriptStatus)
+                    .self::renderScriptStatus('interrupt.sh', $scriptStatus)
+                    .self::renderScriptStatus('cleanup.sh', $scriptStatus)
+                .'</table>'
+            .'</div>';
+        return $html;
+    }
+
+    public function renderAgentLogs() {
+        $linkAgentLogs = LinkUI('agent log',
+            'viewlog.php?sid='.$this->sid
+            .'&agentId='.$this->info['id']
+        )->setExternal(true);
+        $linkAgentOut = LinkUI('agent output',
+            'viewlog.php?sid='.$this->sid
+            .'&agentId='.$this->info['id']
+            .'&filename=agent.out'
+        )->setExternal(true);
+        $linkAgentErr = LinkUI('agent error',
+            'viewlog.php?sid='.$this->sid
+            .'&agentId='.$this->info['id']
+            .'&filename=agent.err'
+        )->setExternal(true);
+        $html =
+            '<div class="generic-agent-logs">'
+                .$linkAgentLogs
+                .$linkAgentOut
+                .$linkAgentErr
+            .'</div>';
+        return $html;
+    }
+
+    public function render() {
+        return
+        '<div class="instance dualbox">'
+            .'<div class="left">'
+                .'<i class="title">Instance '.$this->info['id'].'</i>'
+                .$this->renderCapabs()
+                .'<div class="brief">running</div>'
+            .'</div>'
+            .'<div id="'.$this->info['id'].'-scriptStatusWrapper" class="left">'
+                .self::renderScriptStatusTable($this->scriptStatus)
+            .'</div>'
+            .'<div class="left">'
+                .$this->renderAgentLogs()
+            .'</div>'
+            .'<div class="right">'
+                .'<i class="address">'.$this->info['ip'].'</i>'
+            .'</div>'
+            .'<div class="clear"></div>'
+        .'</div>';
+    }
+
+    public function renderInCluster() {
+        return
+        '<div class="instance dualbox">'
+            .'<div class="left">'
+                .'<i class="title">Instance '.$this->info['id'].'</i>'
+                .'<span class="timestamp">running</span>'
+            .'</div>'
+            .'<div id="'.$this->info['id'].'-scriptStatusWrapper" class="left">'
+                .self::renderScriptStatusTable($this->scriptStatus)
+            .'</div>'
+            .'<div class="left">'
+                .$this->renderAgentLogs()
+            .'</div>'
+            .'<div class="right">'
+                .'<i class="address">'.$this->info['ip'].'</i>'
+            .'</div>'
+            .'<div class="clear"></div>'
+        .'</div>';
+    }
 }
 
 ?>

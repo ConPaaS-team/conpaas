@@ -8,8 +8,6 @@ require_module('service');
 require_module('service/factory');
 require_module('ui/service');
 require_module('ui/page');
-require_module('ui/page/hosting');
-require_module('ui/page/generic');
 
 if (!isset($_SESSION['uid'])) {
 	throw new Exception('User not logged in');
@@ -26,16 +24,29 @@ if($service->getUID() !== $_SESSION['uid']) {
 
 switch ($target) {
 	case 'versions':
-		$page = new HostingPage($service);
-		echo $page->renderCodeVersions();
-		break;
-	case 'generic_versions':
-		$page = new GenericPage($service);
+		$page = PageFactory::create($service);
 		echo $page->renderCodeVersions();
 		break;
 	case 'instances':
-		$page = new ServicePage($service);
+		$page = PageFactory::create($service);
 		echo $page->renderInstances();
+		break;
+	case 'volumes':
+		$page = PageFactory::create($service);
+		echo $page->renderVolumeList();
+		break;
+	case 'generic_script_status':
+		$scriptStatusUIArray = $service->createScriptStatusUI();
+		echo json_encode($scriptStatusUIArray);
+		break;
+	case 'xtreemfs_volumes':
+		$page = PageFactory::create($service);
+		$volumes = $service->listVolumes();
+		$volumeList = $page->renderVolumeList($volumes);
+		$volumeSelector = $page->renderVolumeSelectorOptions($volumes);
+		$response = array("volumeList"=>$volumeList,
+		                  "volumeSelector"=>$volumeSelector);
+		echo json_encode($response);
 		break;
 	default:
 		echo "error: unknow target $target for rendering";

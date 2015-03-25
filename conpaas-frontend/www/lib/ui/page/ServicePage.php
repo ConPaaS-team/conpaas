@@ -66,13 +66,21 @@ class ServicePage extends Page {
 			->setId('remove');
 
         $clouds = json_decode(HTTPS::get(Conf::DIRECTOR . '/available_clouds'));
+	// TODO: select the cloud of the Application Manager
+	// $selectedCloud = $this->service->getApplication()->getCloud();
+        $selectedCloud = 'default';
+        if ($selectedCloud === 'iaas') {
+            $selectedCloud = 'default';
+        }
         $radios = '';
         foreach($clouds as $cloud){
             $radio = Radio($cloud);
             $radio->setTitle("available_clouds");
 
-            if ($cloud === 'default') {
+            if ($cloud === $selectedCloud) {
                 $radio->setDefault();
+            }
+            if ($cloud === 'default') {
                 $radios = $radio;
             } else {
                 $radios = $radios.'<br>'.$radio;
@@ -192,7 +200,7 @@ class ServicePage extends Page {
 			$html .= $node->render();
 		}
 		$html .= '</div>';
-		return '<div class="instancesWrapper">'.$html.'</div>';
+		return $html;
 	}
 
 	protected function getTypeImage() {
@@ -307,8 +315,7 @@ class ServicePage extends Page {
            .'<div class="additionalStartup">'
            .'<img class="loading invisible" '
                .' src="images/icon_loading.gif" />'
-                                .'<i class="positive invisible">Submitted successfully</i>'
-           .'<i class="error invisible"></i>'
+           .'<i class="uploadStatus invisible"></i>'
            .'</div>'
            .'<div class="clear"></div>'
            .'<div class="hint">'
@@ -324,7 +331,9 @@ class ServicePage extends Page {
 		}
 		return
 			'<div class="form-section">'
-				.$this->renderInstances()
+				.'<div id="instancesWrapper">'
+					.$this->renderInstances()
+				.'</div>'
 				.$this->renderInstanceActionsSection()
                                 .$this->renderIncompleteGUI()
 			.'</div>';

@@ -1,8 +1,8 @@
 """
-Copyright (c) 2010-2012, Contrail consortium.
+Copyright (c) 2010-2015, Contrail consortium.
 All rights reserved.
 
-Redistribution and use in source and binary forms, 
+Redistribution and use in source and binary forms,
 with or without modification, are permitted provided
 that the following conditions are met:
 
@@ -10,13 +10,13 @@ that the following conditions are met:
     above copyright notice, this list of conditions
     and the following disclaimer.
  2. Redistributions in binary form must reproduce
-    the above copyright notice, this list of 
+    the above copyright notice, this list of
     conditions and the following disclaimer in the
     documentation and/or other materials provided
     with the distribution.
  3. Neither the name of the Contrail consortium nor the
     names of its contributors may be used to endorse
-    or promote products derived from this software 
+    or promote products derived from this software
     without specific prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
@@ -25,9 +25,9 @@ INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
 MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
 DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
 CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
-BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
 INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
 WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
@@ -35,31 +35,27 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 """
 
-# TODO: as this file was created from a BLUEPRINT file,
-# 	you may want to change ports, paths and/or methods (e.g. for hub)
-#	to meet your specific service/server needs
-
 import json
 import httplib
 
-from conpaas.core import https 
+from conpaas.core import https
 from conpaas.core.misc import file_get_contents
 
 class AgentException(Exception):
-    pass                        
+    pass
 
 
 def _check(response):
     """Check the given HTTP response, returning the result if everything went
     fine"""
     code, body = response
-    if code != httplib.OK: 
+    if code != httplib.OK:
         raise Exception('Received http response code %d' % (code))
 
     data = json.loads(body)
-    if data['error']: 
+    if data['error']:
         raise Exception(data['error'])
-    
+
     return data['result']
 
 def check_agent_process(host, port):
@@ -67,49 +63,64 @@ def check_agent_process(host, port):
     method = 'check_agent_process'
     return _check(https.client.jsonrpc_get(host, port, '/', method))
 
-def create_hub(host, port):
-    """POST (my_ip) create_hub"""
-    method = 'create_hub'
-    params = { 'my_ip': host }
-    return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
-
-def create_node(host, port, hub_ip):
-    """POST (my_ip, hub_ip) create_node"""
-    method = 'create_node'
-    params = { 'my_ip': host, 'hub_ip': hub_ip }
-    return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
-
-def run(host, port, agents_info):
-    """POST (agents_info) run"""
-    method = 'run'
-    params = { 'agents_info': json.dumps(agents_info) }
-    return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
-
-def update_code(host, port, codeVersionId, filetype, filepath):                   
-    params = {                                                                      
-        'method': 'update_code',                                                  
-        'codeVersionId': codeVersionId,                                             
-        'filetype': filetype                                                        
-    }                                                                               
-                                                                                    
-    if filetype != 'git':                                                           
-        # File-based code uploads                                                   
-        files = [('file', filepath, file_get_contents(filepath))]                   
-        return _check(https.client.https_post(host, port, '/', params=params, files=files))
-                                                                                    
-    # git-based code uploads do not need a FileUploadField.                         
-    # Pass filepath as a dummy value for the 'file' parameter.                      
-    params['file'] = filepath                                                       
-    return _check(https.client.https_post(host, port, '/', params=params))                 
-
-
-def init_agent(host, port, init_path, agents_info):                   
-    """POST (agents_info) init_agent"""
-    
+def init_agent(host, port, agents_info):
+    """POST (agents_info, ip) init_agent"""
+    method = 'init_agent'
     params = {
-        'method' : 'init_agent',    
         'agents_info': json.dumps(agents_info),
         'ip' : host
     }
-    files = [('file', init_path, file_get_contents(init_path))]
-    return _check(https.client.https_post(host, port, '/', params=params, files=files))                 
+    return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
+
+def update_code(host, port, codeVersionId, filetype, filepath):
+    """UPLOAD (filetype, codeVersionId, file) update_code"""
+    params = {
+        'method': 'update_code',
+        'codeVersionId': codeVersionId,
+        'filetype': filetype
+    }
+
+    if filetype != 'git':
+        # File-based code uploads
+        files = [('file', filepath, file_get_contents(filepath))]
+        return _check(https.client.https_post(host, port, '/', params=params, files=files))
+
+    # git-based code uploads do not need a FileUploadField.
+    # Pass filepath as a dummy value for the 'file' parameter.
+    params['file'] = filepath
+    return _check(https.client.https_post(host, port, '/', params=params))
+
+def mount_volume(host, port, dev_name, vol_name):
+    """POST (dev_name, vol_name) mount_volume"""
+    method = 'mount_volume'
+    params = { 'dev_name': dev_name, 'vol_name': vol_name }
+    return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
+
+def unmount_volume(host, port, vol_name):
+    """POST (vol_name) unmount_volume"""
+    method = 'unmount_volume'
+    params = { 'vol_name': vol_name }
+    return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
+
+def execute_script(host, port, command, parameters, agents_info):
+    """POST (command, parameters, agents_info) execute_script"""
+    method = 'execute_script'
+    params = {
+        'command' : command,
+        'parameters' : parameters,
+        'agents_info': json.dumps(agents_info)
+    }
+    return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
+
+def get_script_status(host, port):
+    """GET () get_script_status"""
+    method = 'get_script_status'
+    return _check(https.client.jsonrpc_get(host, port, '/', method))
+
+def get_log(host, port, filename=None):
+    """GET (filename) get_log"""
+    method = 'get_log'
+    params = {}
+    if filename:
+        params['filename'] = filename
+    return _check(https.client.jsonrpc_get(host, port, '/', method, params=params))

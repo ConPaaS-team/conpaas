@@ -84,13 +84,7 @@ class GaleraManager(BaseManager):
                                                           agent.check_agent_process,
                                                           self.config.AGENT_PORT,
                                                           start_cloud)
-            # We need to create a new volume.
-            #volume_name = "galera-%s" % node_instances[0].ip
-	    #node_id=node_instances[0].id.replace("iaas", "")
-	    #self.logger.debug("Node_id=%s" % node_id)
-            #volume = self.create_volume(1024, volume_name,node_id, cloud=start_cloud)
-	    #self.attach_volume(volume.id, node_id)
-	    self._start_mysqld(node_instances)
+            self._start_mysqld(node_instances, start_cloud)
             self.config.addMySQLServiceNodes(node_instances)
         except Exception, ex:
             # rollback
@@ -100,21 +94,20 @@ class GaleraManager(BaseManager):
             return
         self.state = self.S_RUNNING
 
-    def _start_mysqld(self, nodes):
+    def _start_mysqld(self, nodes, start_cloud):
         dev_name = None
         existing_nodes = self.config.get_nodes_addr()
         for serviceNode in nodes:
 	    try: 
 		# We try to create a new volume.
             	volume_name = "mysql-%s" % serviceNode.ip
-            	node_id=serviceNode.id.replace("iaas", "")
-	        self.logger.debug("trying to create a volume for the node_id=%s" % node_id)
-        	volume = self.create_volume(1024, volume_name,node_id)
+	        self.logger.debug("trying to create a volume for the node=%s" % serviceNode.id)
+	        volume = self.create_volume(1024, volume_name, serviceNode.vmid, start_cloud)
             except AgentException, ex:
                 self.logger.exception('Failed creating volume   %s: %s' % (volume_name, ex))
                 raise
             try:
-		_, dev_name = self.attach_volume(volume.id, node_id)
+		_, dev_name = self.attach_volume(volume.id, serviceNode.vmid)
 		self.volumes_dict[serviceNode.ip]=volume.id
             except AgentException, ex:
                 self.logger.exception('Failed to attaching disk to Galera node %s: %s' % (str(serviceNode), ex))
@@ -259,7 +252,7 @@ class GaleraManager(BaseManager):
                                                           self.config.AGENT_PORT,
                                                           start_cloud)
 	    if node_type == self.REGULAR_NODE:
-		self._start_mysqld(node_instances)
+		self._start_mysqld(node_instances, start_cloud)
 		self.config.addMySQLServiceNodes(node_instances)
             elif node_type == self.GLB_NODE:
                 self._start_glbd(node_instances)
@@ -543,7 +536,7 @@ class GaleraManager(BaseManager):
                                                               agent.check_agent_process,
                                                               self.config.AGENT_PORT,
                                                               cloud))
-                self._start_mysqld(new_nodes)
+                self._start_mysqld(new_nodes, cloud)
                 self.config.addMySQLServiceNodes(new_nodes)
         except Exception, ex:
             # error happened: rolling back...

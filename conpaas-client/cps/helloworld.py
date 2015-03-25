@@ -20,7 +20,7 @@ class Client(BaseClient):
         print "    ----Service specific commands-------"
         print ""
         print "    get_helloworld appid serviceid"
-        print "    add_nodes      appid serviceid count"
+        print "    add_nodes      appid serviceid count [cloud]"
         print "    remove_nodes   appid serviceid count"
 
     def main(self, argv):
@@ -48,8 +48,15 @@ class Client(BaseClient):
                 self.usage(0,0)
                 sys.exit(0)
 
+            params = { 'count': count }
+
+            if command == 'add_nodes' and len(argv) == 4:
+                params['cloud'] = 'default'
+            else:
+                params['cloud'] = argv[4]
+
             # call the method
-            res = self.callmanager(aid, sid, command, True, { 'count': count })
+            res = self.callmanager(aid, sid, command, True, params)
             if 'error' in res:
                 print res['error']
             else:

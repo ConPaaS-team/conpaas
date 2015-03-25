@@ -69,6 +69,15 @@ conpaas.ui = (function (this_module) {
             }
         });
     },
+    showStatus: function (statusSelector, type, message) {
+        var otherType = (type === 'positive') ? 'error' : 'positive';
+        $(statusSelector).removeClass(otherType).addClass(type)
+            .html(message)
+            .show();
+        setTimeout(function () {
+            $(statusSelector).fadeOut();
+        }, 3000);
+    },
     pollState: function (onStableState, onInstableState, maxInterval) {
         var that = this;
         this.statePoller.poll(function (response) {
@@ -91,7 +100,8 @@ conpaas.ui = (function (this_module) {
         }, {sid: this.service.sid}, maxInterval);
     },
     freezeInput: function (freeze) {
-        var buttons = ['start', 'stop', 'remove', 'submitnodes', 'file'];
+        var buttons = ['start', 'stop', 'remove', 'submitnodes', 'file',
+                'submitPubKey' ];
         this.freezeButtons(buttons, freeze);
     },
     remove: function (onSuccess, onError) {

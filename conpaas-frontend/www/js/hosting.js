@@ -32,7 +32,7 @@ conpaas.ui = (function (this_module) {
      * @override conpaas.ui.ServicePage.attachHandlers
      */
     attachHandlers: function () {
-        var that = this;
+        var page = this;
         conpaas.ui.ServicePage.prototype.attachHandlers.call(this);
         // this is the goofy ajax file submit form provided by a jQuery plugin
         $('#fileForm').ajaxForm({
@@ -43,31 +43,29 @@ conpaas.ui = (function (this_module) {
                 // we need to perform error checking here, as we don't use
                 // the server object that normally does that for us
                 if (response.error) {
-                    $('.additional .error').html(response.error);
-                    $('.additional .error').show();
+                    page.showStatus('.additional .uploadStatus', 'error', response.error);
                     return;
                 }
-                $('.additional .positive').show();
-                setTimeout(function () {
-                    $('.additional .positive').fadeOut();
-                }, 1000);
-                that.reloadVersions();
+                page.showStatus('.additional .uploadStatus', 'positive', "Submitted successfully");
+                page.reloadVersions();
             },
             error: function (response) {
-                that.poller.stop();
+                page.poller.stop();
                 // show the error
-                that.server.handleError({name: 'service error',
+                page.server.handleError({name: 'service error',
                     details: response.error});
            }
         });
         $('#fileForm input:file').change(function() {
-            $('.additional .error').hide();
+            page.freezeInput(true);
             $('.additional .loading').toggleClass('invisible');
             $('#fileForm').submit();
+            page.freezeInput(false);
         });
-        $('.versions .activate').click(that, that.onActivateVersion);
-        $('.versions .delete').click(that, that.onDeleteVersion);
+        $('.versions .activate').click(page, page.onActivateVersion);
+        $('.versions .delete').click(page, page.onDeleteVersion);
         $('.deployoption input[type=radio]').change(function() {
+            $('.uploadStatus').hide();
             $('.deployactions').toggleClass('invisible');
         });
         // configuration handlers
@@ -77,23 +75,14 @@ conpaas.ui = (function (this_module) {
         $('#conf-disablefunctions').focus(function() {
             $('#saveconf').removeAttr('disabled');
         });
-        $('#saveconf').click(that, that.onSaveConfig);
-        $('#scaling').click(that, that.onScaleConfig);
-        $('#cds_subscribe').click(that, that.onCdsSubscribe);
-        $('#cds_unsubscribe').click(that, that.onCdsUnsubscribe);
-        $('#submitPubKey').click(that, that.onSubmitPubKey);        
-        $('#submitStartupScript').click(that, that.onSubmitStartupScript);        
+        $('#saveconf').click(page, page.onSaveConfig);
+        $('#scaling').click(page, page.onScaleConfig);
+        $('#cds_subscribe').click(page, page.onCdsSubscribe);
+        $('#cds_unsubscribe').click(page, page.onCdsUnsubscribe);
+        $('#submitPubKey').click(page, page.onSubmitPubKey);        
+        $('#submitStartupScript').click(page, page.onSubmitStartupScript);        
         $('#mountVolume').click(this, this.onMountVolume);
         $('#umountVolume').click(this, this.onUmountVolume);
-    },
-    showCreateVolStatus: function (type, message) {
-        var otherType = (type === 'positive') ? 'error' : 'positive';
-        $('#VolumeStat').removeClass(otherType).addClass(type)
-            .html(message)
-            .show();
-        setTimeout(function () {
-            $('#VolumeStat').fadeOut();
-        }, 3000);
     },
     // handlers
     onMountVolume: function (event){
@@ -102,29 +91,29 @@ conpaas.ui = (function (this_module) {
             path = $('#path').val();
 
 		if(volume.length == 0){
-			page.showCreateVolStatus('error','There is no volume name');	
+			page.showStatus('#VolumeStat', 'error', 'There is no volume name');	
 			return;
 		}
 
 		if(path.length == 0){
-			page.showCreateVolStatus('error','There is no path');	
+			page.showStatus('#VolumeStat', 'error', 'There is no path');	
 			return;
 		}
 		//send the request
-		$('#createVolume').attr('disabled','disabled');
+		$('#createVolume').attr('disabled', 'disabled');
         page.server.req('ajax/mountVolume.php', {
             sid: page.service.sid,
             volume: volume,
             path :path
         }, 'post', function (response) {
             // successful
-            page.showCreateVolStatus('positive', 'The Volume was successfully mounted');
+            page.showStatus('#VolumeStat', 'positive', 'The volume was successfully mounted');
             $('#mountVolume').removeAttr('disabled');
             $('#volume').val('');
             $('.selectHint, .msgbox').hide();
         }, function (response) {
             // error
-            page.showCreateVolStatus('error', 'Volume was not mounted');
+            page.showStatus('#VolumeStat', 'error', 'Volume was not mounted');
             $('#mountVolume').removeAttr('disabled');
         });
     },
@@ -134,7 +123,7 @@ conpaas.ui = (function (this_module) {
 
 
 		if(path.length == 0){
-			page.showCreateVolStatus('error','There is no path');	
+			page.showStatus('#VolumeStat', 'error', 'There is no path');	
 			return;
 		}
 		//send the request
@@ -144,13 +133,13 @@ conpaas.ui = (function (this_module) {
             path :path
         }, 'post', function (response) {
             // successful
-            page.showCreateVolStatus('positive', 'The Volume was successfully unmounted');
+            page.showStatus('#VolumeStat', 'positive', 'The volume was successfully unmounted');
             $('#umountVolume').removeAttr('disabled');
             $('#volume').val('');
             $('.selectHint, .msgbox').hide();
         }, function (response) {
             // error
-            page.showCreateVolStatus('error', 'Volume was not unmounted');
+            page.showStatus('#VolumeStat', 'error', 'Volume was not unmounted');
             $('#umountVolume').removeAttr('disabled');
         });
     },
@@ -198,37 +187,30 @@ conpaas.ui = (function (this_module) {
         $(additionalClass + ' .loading').toggleClass('invisible');
 
         page.server.req(url, params,
-                'post', function (response) {
-                    page.freezeInput(false);
-                    if (response.error) {
-                        $(additionalClass + ' .error').html(response.error);
-                        $(additionalClass + ' .error').show();
-                        return false;
-                    }
-
-                    $(additionalClass + ' .loading').toggleClass('invisible');
-                    $(additionalClass + ' .positive').show();
-
-                    setTimeout(function () {
-                        $(additionalClass + ' .positive').fadeOut();
-                    }, 1000);
-
-                }, function () {
-                    page.freezeInput(false);
-                    $(additionalClass + ' .loading').toggleClass('invisible');
-                }
+            'post', function (response) {
+                // successful
+                page.showStatus(additionalClass + ' .uploadStatus', 'positive',
+                        "Submitted successfully");
+                $(additionalClass + ' .loading').toggleClass('invisible');
+                page.freezeInput(false);
+            }, function () {
+                // error
+                page.showStatus(additionalClass + ' .uploadStatus', 'error',
+                        response.error);
+                $(additionalClass + ' .loading').toggleClass('invisible');
+                page.freezeInput(false);
+            }
         );
     }, 
     onSubmitPubKey: function (event) {
         var page = event.data;
         var pubkey = $('#pubkey').val();
 
-        $('.additional .error').html("");
-        $('.additional .error').hide();
-
         if (!pubkey.match(/^ssh-(rsa|dss)/)) {
-            $('.additional .error').html("Key is invalid. It must begin with 'ssh-rsa' or 'ssh-dss'");
-            $('.additional .error').show();
+            page.showStatus('.additional .uploadStatus', 'error',
+                    "Key is invalid. It must begin with 'ssh-rsa' or 'ssh-dss'.");
+            $('#pubkey').val('');
+            $('#pubkey').focus();
             return false;
         }
 
@@ -237,9 +219,6 @@ conpaas.ui = (function (this_module) {
     onSubmitStartupScript: function (event) {
         var page = event.data;
         var contents = $('#startupscript').val();
-
-        $('.additional .error').html("");
-        $('.additional .error').hide();
 
         page.uploadTextArea(page, 'ajax/uploadStartupScript.php', { sid: page.service.sid, script: contents }, '.additionalStartup');
     },

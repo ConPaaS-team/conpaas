@@ -19,6 +19,8 @@ class HelloWorldManager(BaseManager):
     S_STOPPED = 'STOPPED'   # manager stopped
     S_ERROR = 'ERROR'       # manager is in error state
 
+    AGENT_PORT = 5555
+
     def __init__(self, config_parser, **kwargs):
         BaseManager.__init__(self, config_parser)
         self.nodes = []
@@ -37,7 +39,7 @@ class HelloWorldManager(BaseManager):
 
             node = nodes[0]
 
-            client.startup(node.ip, 5555)
+            client.startup(node.ip, self.AGENT_PORT)
 
             # Extend the nodes list with the newly created one
             self.nodes += nodes
@@ -77,18 +79,26 @@ class HelloWorldManager(BaseManager):
             return HttpErrorResponse('ERROR: Expected an integer value for "count"')
 
         count = int(kwargs['count'])
+
+        cloud = kwargs.pop('cloud', 'iaas')
+        try:
+            cloud = self._init_cloud(cloud)
+        except Exception as ex:
+                return HttpErrorResponse(
+                    "A cloud named '%s' could not be found" % cloud)
+
         self.state = self.S_ADAPTING
-        Thread(target=self._do_add_nodes, args=[count]).start()
+        Thread(target=self._do_add_nodes, args=[count, cloud]).start()
         return HttpJsonResponse()
 
-    def _do_add_nodes(self, count):
+    def _do_add_nodes(self, count, cloud):
         node_instances = self.controller.create_nodes(count,
-                client.check_agent_process, 5555)
+                client.check_agent_process, self.AGENT_PORT, cloud)
 
         self.nodes += node_instances
         # Startup agents
         for node in node_instances:
-            client.startup(node.ip, 5555)
+            client.startup(node.ip, self.AGENT_PORT)
 
         self.state = self.S_RUNNING
         return HttpJsonResponse()
@@ -173,7 +183,7 @@ class HelloWorldManager(BaseManager):
 
         # Just get_helloworld from all the agents
         for node in self.nodes:
-            data = client.get_helloworld(node.ip, 5555)
+            data = client.get_helloworld(node.ip, self.AGENT_PORT)
             message = 'Received %s from %s' % (data['result'], node.id)
             self.logger.info(message)
             messages.append(message)
