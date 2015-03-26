@@ -16,6 +16,7 @@ body {
 	width: 800px;
 	display: table-cell;
 	background: url('../images/onclouds-gray.jpg') top no-repeat;
+	background-color: #1A1A1A;
 	border: 6px solid #999	;
 	-webkit-border-bottom-right-radius: 25px;
 	-webkit-border-bottom-left-radius: 25px;
