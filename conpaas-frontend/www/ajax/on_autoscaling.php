@@ -81,7 +81,8 @@ $params =  array(
 );
 
 
-	$response = HTTPS::jsonrpc($service->getManager(),'post','on_autoscaling', $params);
+	$response = HTTPS::jsonrpc($service->getManager(), 'post', 'on_autoscaling',
+		$sid, $params);
 	echo json_encode($response);
 } catch (Exception $e) {
 	echo json_encode(array('error' => $e->getMessage()));

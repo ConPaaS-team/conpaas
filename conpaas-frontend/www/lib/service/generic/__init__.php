@@ -49,10 +49,8 @@ class GenericService extends Service {
 		parent::__construct($data, $manager);
 	}
 
-	
 	public function sendConfiguration($params) {
-		return $this->managerRequest('post', 'enable_code',
-			$params);
+		return $this->managerRequest('post', 'enable_code', $params);
 	}
 
 	public function fetchHighLevelMonitoringInfo() {

@@ -25,7 +25,7 @@ if($service->getUID() !== $_SESSION['uid']) {
 /* Get a list of the available code versions */
 try {
     $result = json_decode(HTTPS::jsonrpc($service->getManager(), 'get',
-        'list_code_versions', array()));
+        'list_code_versions', $sid, array()));
 } catch (Exception $e) {
     echo json_encode(array('error' => $e->getMessage()));
     exit();
@@ -67,7 +67,7 @@ else {
 try {
     $params = array('codeVersionId' => $codeVersionId);
     $response = HTTPS::jsonrpc($service->getManager(), 'get',
-        'download_code_version', $params);
+        'download_code_version', $sid, $params);
 
     header("Content-Disposition:attachment;filename=$filename");
     header("Content-Type: $content_type");

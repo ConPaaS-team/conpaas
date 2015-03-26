@@ -24,7 +24,8 @@ if($service->getUID() !== $_SESSION['uid']) {
 $params = array('method' => 'get_startup_script');
 
 try {
-	$response = HTTPS::jsonrpc($service->getManager(), 'get', 'get_startup_script', array());
+	$response = HTTPS::jsonrpc($service->getManager(), 'get', 'get_startup_script',
+	    $sid, array());
 	echo json_encode($response);
 } catch (Exception $e) {
 	echo json_encode(array('error' => $e->getMessage()));

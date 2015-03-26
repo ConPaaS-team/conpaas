@@ -60,8 +60,8 @@ try {
                         'adminflag' => $adminflag);
     }
 
-    $response = HTTPS::jsonrpc($service->getManager(), 'post',
-        $method, $params);
+    $response = HTTPS::jsonrpc($service->getManager(), 'post', $method,
+        $sid, $params);
 
     $json_response = json_decode($response);
 

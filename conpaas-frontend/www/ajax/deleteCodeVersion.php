@@ -21,7 +21,8 @@ try {
 	}
 
 	unset($_POST['sid']);
-	$response = HTTPS::jsonrpc($service->getManager(), 'post', 'delete_code_version', $_POST);
+	$response = HTTPS::jsonrpc($service->getManager(), 'post', 'delete_code_version',
+	    $sid, $_POST);
 	echo $response;
 } catch (Exception $e) {
 	echo json_encode(array('error' => $e->getMessage()));
