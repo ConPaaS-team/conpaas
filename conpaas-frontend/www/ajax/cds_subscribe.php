@@ -31,7 +31,7 @@ try {
 		}
 		// give some time for the configuration to propagate
 		sleep(5);
-		$address = $cds->getManagerInstance()->getHostAddress();
+		$address = $cds->getManager();
 		$hosting_service->cdnEnable(true, $address);
 		echo json_encode(array('subscribe' => 1));
 	} else {

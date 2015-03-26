@@ -20,7 +20,7 @@ class CDSPage extends ServicePage {
 	 * @overrides ServicePage::renderRightMenu()
 	 */
 	protected function renderRightMenu() {
-		$managerHost = $this->service->getManagerInstance()->getHostAddress();
+		$managerHost = $this->service->getManager();
 		return
 			'<div class="rightmenu">'
 				.Address($managerHost)

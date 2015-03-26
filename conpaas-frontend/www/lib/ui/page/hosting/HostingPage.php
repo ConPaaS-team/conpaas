@@ -122,7 +122,7 @@ class HostingPage extends ServicePage {
 					.'<button id="submitPubKey">Submit key</button>'
                     .'<div class="hint"><br />'
                     .'You will then be able to checkout your repository as follows:<br />'
-                    .'<b>git clone git@'.$this->service->getManagerInstance()->getHostAddress().':code</b>'
+                    .'<b>git clone git@'.$this->service->getManager().':code</b>'
                     .'</div>'
 				.'</div>'
 				.'<div class="clear"></div>'
