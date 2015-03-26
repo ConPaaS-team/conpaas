@@ -68,21 +68,6 @@ class TaskFarmManager(BaseManager):
         self.state = self.S_INIT
         self.hub_ip = None
 
-    @expose('POST')
-    def startup(self, kwargs):
-        """Start the TaskFarm service"""
-        self.logger.info('Manager starting up')
-
-        # Starting up the service makes sense only in the INIT or STOPPED
-        # states
-        if self.state != self.S_INIT and self.state != self.S_STOPPED:
-            vals = { 'curstate': self.state, 'action': 'startup' }
-            return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
-
-        self.state = self.S_PROLOGUE
-        Thread(target=self._do_startup, kwargs=kwargs).start()
-
-        return HttpJsonResponse({ 'state': self.state })
 
     def _do_startup(self, cloud):
         """Start up the service. The first node will be an agent running a
