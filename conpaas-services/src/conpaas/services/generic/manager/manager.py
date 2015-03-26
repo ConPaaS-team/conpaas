@@ -1158,10 +1158,10 @@ echo "" >> /root/generic.out
 
     def _configuration_get(self):
         # return self.memcache.get(self.CONFIG)
-        return self.config_parser
+        return self.service_config
 
     def _configuration_set(self, config):
-        self.config_parser = config
+        self.service_config = config
         # self.memcache.set(self.CONFIG, config)
 
     def _state_get(self):
