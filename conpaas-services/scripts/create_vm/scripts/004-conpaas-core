@@ -40,11 +40,11 @@ update-rc.d yaws disable
 update-rc.d gmetad disable
 update-rc.d ganglia-monitor disable
 
-cecho "===== install IPOP package ====="
-echo "deb http://www.grid-appliance.org/files/packages/deb/ stable contrib" >> /etc/apt/sources.list
-wget -O - http://www.grid-appliance.org/files/packages/deb/repo.key | apt-key add -
-apt-get update
-apt-get -f -y install ipop
+# cecho "===== install IPOP package ====="
+# echo "deb http://www.grid-appliance.org/files/packages/deb/ stable contrib" >> /etc/apt/sources.list
+# wget -O - http://www.grid-appliance.org/files/packages/deb/repo.key | apt-key add -
+# apt-get update
+# apt-get -f -y install ipop
 
 # remove cached .debs from /var/cache/apt/archives to save disk space
 apt-get clean
