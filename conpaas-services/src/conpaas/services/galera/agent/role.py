@@ -370,7 +370,7 @@ class MySQLServer(object):
             # mount
             self.mount_args = ['mount', self.dev_name, self.mount_point]
             mount_cmd = ' '.join(self.mount_args)
-            sql_logger.debug('Running command %s' % mount_cmd)
+            sql_logger.debug("Running command '%s'" % mount_cmd)
             _, err = run_cmd(mount_cmd)
 
             if err:
@@ -382,16 +382,23 @@ class MySQLServer(object):
                     % self.dev_name)
 
     def unmount(self):
+        # kill all processes still using the volume
+        sql_logger.info("Killing all processes using the Galera Disk")
+        fuser_args = ['fuser', '-km', self.dev_name]
+        fuser_cmd = ' '.join(fuser_args)
+        sql_logger.debug("Running command '%s'" % fuser_cmd)
+        run_cmd(fuser_cmd)
+
         # unmount
         sql_logger.info("Trying to unmount the Galera Disk")
-        self.unmount_args = ['umount', self.dev_name]
-        unmount_cmd = ' '.join(self.unmount_args)
-        sql_logger.debug('Running command %s' % unmount_cmd)
+        unmount_args = ['umount', self.dev_name]
+        unmount_cmd = ' '.join(unmount_args)
+        sql_logger.debug("Running command '%s'" % unmount_cmd)
         _, err = run_cmd(unmount_cmd)
         if err:
             sql_logger.critical('Failed to unmount storage device: %s' % err)
         else:
-            sql_logger.info("OSD node has succesfully unmounted %s" % self.dev_name)
+            sql_logger.info("Galera node has succesfully unmounted %s" % self.dev_name)
 
 
 class GLBNode(object):

@@ -149,6 +149,7 @@ class OSD:
 #        self.mkdir_args = ['mkdir', '-p', self.mount_point]
         self.mkdir_cmd = "mkdir -p %s" % self.mount_point
         self.umount_args = ['umount', self.mount_point]
+        self.fuser_args = ['fuser', '-km', self.mount_point]
         self.start_args = [OSD_STARTUP, 'start']
         self.stop_args = [OSD_STARTUP, 'stop']
         self.remove_args = [OSD_REMOVE, '-dir ' + str(self.dir_serviceHost) + ':' + str(self.dir_servicePort), 'uuid:' + str(self.uuid)]
@@ -205,7 +206,7 @@ class OSD:
             # mount
             self.mount_args = ['mount', self.dev_name, self.mount_point]
             mount_cmd = ' '.join(self.mount_args)
-            logger.debug('Running command %s' % mount_cmd)
+            logger.debug("Running command '%s'" % mount_cmd)
             _, err = run_cmd(mount_cmd)
 
             if err:
@@ -258,6 +259,10 @@ class OSD:
             if proc.wait() != 0:
                 logger.critical('Failed to stop OSD service:(code=%d)' %proc.returncode)
             logger.info('OSD Service stopped.') 
+            # kill all processes still using the storage block device
+            fuser_cmd = ' '.join(self.fuser_args)
+            logger.debug("Running command '%s'" % fuser_cmd)
+            run_cmd(fuser_cmd)
             # unmount storage block device
             proc = Popen(self.umount_args, stdout = devnull_fd, stderr = devnull_fd, close_fds = True)
             if proc.wait() != 0:
