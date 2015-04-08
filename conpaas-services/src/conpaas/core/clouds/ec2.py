@@ -132,7 +132,6 @@ class EC2Cloud(Cloud):
 
         # EBS expects volume size in GiB.
         size /= 1024.0
-
         size = int(math.ceil(size))
 
         self.logger.debug("self.driver.create_volume(%s, %s, %s)" % (size,
