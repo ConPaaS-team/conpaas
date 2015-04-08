@@ -261,13 +261,30 @@ class BaseManager(object):
         self.logger.info("Attaching volume %s to VM %s as %s" % (volume_id,
             vm_id, device_name))
 
-        volume = self.get_volume(volume_id)
+        try:
+            volume = self.get_volume(volume_id)
+        except Exception:
+            self.logger.info("Volume %s not known" % volume_id)
+            return
 
         class node:
             id = vm_id
 
-        return self.controller.attach_volume(node, volume, device_name,
-                volume.cloud), device_name
+        for attempt in range(1, 11):
+            try:
+                ret = self.controller.attach_volume(node, volume, device_name,
+                        volume.cloud), device_name
+                break;
+            except Exception, err:
+                self.logger.info("Attempt %s: %s" % (attempt, err))
+                # It might take a bit for the volume to actually be
+                # created. Let's wait a little and try again.
+                time.sleep(10)
+
+        if ret:
+            return ret
+        else:
+            raise Exception("Error attaching volume %s" % volume_id)
 
     def detach_volume(self, volume_id):
         self.logger.info("Detaching volume %s..." % volume_id)
