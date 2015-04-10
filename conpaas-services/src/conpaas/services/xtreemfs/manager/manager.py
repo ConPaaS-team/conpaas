@@ -325,7 +325,7 @@ class XtreemFSManager(BaseManager):
         self._stop_mrc(self.mrcNodes, remove=remove)
         self._stop_dir(self.dirNodes, remove=remove)
 
-    def _do_shutdown(self, stop_services=False):
+    def _do_shutdown(self, stop_services=True):
         # check if we need to stop the services or not, i.e. when called at 
         # the end of get_snapshot()
         if stop_services:
