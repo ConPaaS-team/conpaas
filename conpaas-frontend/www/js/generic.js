@@ -57,12 +57,13 @@ conpaas.ui = (function (this_module) {
      */
     freezeInput: function (freeze) {
         var linksSelectors = ['.activate', '.download', '.delete', '.dot'],
-            buttons = ['refreshVolumeList', 'createVolume', 'runApp',
-                        'interruptApp', 'cleanupApp'];
+            buttons = ['refreshVolumeList', 'createVolume'],
+            commandButtons = [ 'runApp', 'interruptApp', 'cleanupApp'];
         conpaas.ui.ServicePage.prototype.freezeInput.call(this, freeze);
         this.freezeButtons(buttons, freeze);
         this.hideLinks(linksSelectors, freeze);
         if (freeze) {
+            this.freezeButtons(commandButtons, freeze);
             this.stopScriptStatePolling();
         } else {
             this.reloadInstances();
@@ -115,6 +116,11 @@ conpaas.ui = (function (this_module) {
         $('#createVolume').click(page, page.onCreateVolume);
         $('#runApp, #interruptApp, #cleanupApp').click(page,
                                                     page.onExecuteScript);
+
+        page.defaultRunTooltip = $('#runApp').attr('title');
+        page.defaultInterruptTooltip = $('#interruptApp').attr('title');
+        page.defaultCleanupTooltip = $('#cleanupApp').attr('title');
+        page.updateCommandButtons();
         if (page.areScriptsRunning()) {
             page.startScriptStatePolling();
         }
@@ -257,17 +263,6 @@ conpaas.ui = (function (this_module) {
             command = $(event.target).attr('name'),
             parameters = $('#scriptParameters').val();
 
-        if (command == 'interrupt' && !page.areScriptsRunning()) {
-            page.showStatus('#appLifecycleStat', 'error', 'No scripts are currently ' +
-                    'running inside agents. Nothing to interrupt.');
-            return;
-        }
-        if (command != 'interrupt' && page.isScriptRunning(command + '.sh')) {
-            page.showStatus('#appLifecycleStat', 'error', "Script '" + command +
-                            ".sh' is already running inside at least one agent.");
-            return;
-        }
-
         page.freezeInput(true);
         page.server.req('ajax/genericRequest.php', {
             sid: page.service.sid,
@@ -383,6 +378,7 @@ conpaas.ui = (function (this_module) {
                 for (var agentId in response) {
                     $('#' + agentId + '-scriptStatusWrapper').html(response[agentId]);
                 }
+                page.updateCommandButtons();
                 if (page.areScriptsRunning()) {
                     page.startScriptStatePolling();
                 } else {
@@ -409,6 +405,52 @@ conpaas.ui = (function (this_module) {
         var instancesText = $('#instancesWrapper').text(),
             regExp = new RegExp(script + '\\s*RUNNING');
         return instancesText.search(regExp) != -1;
+    },
+
+    /**
+     * update execute command buttons according to the state of the scripts
+     */
+    updateCommandButtons: function () {
+        var page = this,
+            killTooltip = "pressing this button will kill all the running processes",
+            runningTooltip = "scripts are running inside at least one agent, " +
+                    "wait for them to finish execution or call 'interrupt' first",
+            notRunningTooltip = "no scripts are currently running inside agents, " +
+                    "nothing to interrupt";
+
+        if (page.areScriptsRunning()) {
+            // disable the 'run' button
+            $('#runApp').attr('disabled', 'disabled');
+            $('#runApp').attr('title', runningTooltip);
+
+            // enable the 'interrupt' button and set its label to 'interrupt'
+            // or 'kill'
+            $('#interruptApp').removeAttr('disabled');
+            if (page.isScriptRunning('interrupt.sh')) {
+                $("#interruptApp").attr('value', 'kill');
+                $('#interruptApp').attr('title', killTooltip);
+            } else {
+                $("#interruptApp").attr('value', 'interrupt');
+                $('#interruptApp').attr('title', page.defaultInterruptTooltip);
+            }
+
+            // disable the 'cleanup' button
+            $('#cleanupApp').attr('disabled', 'disabled');
+            $('#cleanupApp').attr('title', runningTooltip);
+        } else {
+            // enable the 'run' button
+            $('#runApp').removeAttr('disabled');
+            $('#runApp').attr('title', page.defaultRunTooltip);
+
+            // disable the 'interrupt' button and set its label to 'interrupt'
+            $("#interruptApp").attr('value', 'interrupt');
+            $('#interruptApp').attr('disabled', 'disabled');
+            $('#interruptApp').attr('title', notRunningTooltip);
+
+            // enable the 'cleanup' button
+            $('#cleanupApp').removeAttr('disabled');
+            $('#cleanupApp').attr('title', page.defaultCleanupTooltip);
+        }
     },
 
     /**
