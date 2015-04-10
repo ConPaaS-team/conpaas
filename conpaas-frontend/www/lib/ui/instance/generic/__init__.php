@@ -51,9 +51,9 @@ class GenericInstance extends Instance {
     protected function renderCapabs() {
         $html = '';
         if ($this->info['is_master']) {
-            $html .= '<div class="tag blue">&nbsp;master&nbsp;</div>';
+            $html .= '<div class="tag blue">master</div>';
         } else {
-            $html .= '<div class="tag orange">&nbsp;&nbsp;node&nbsp;&nbsp;&nbsp;</div>';
+            $html .= '<div class="tag orange">node</div>';
         }
         return $html;
     }
@@ -115,34 +115,10 @@ class GenericInstance extends Instance {
             .'&agentId='.$this->info['id']
             .'&filename=agent.err'
         )->setExternal(true);
-        $html =
-            '<div class="generic-agent-logs">'
-                .$linkAgentLogs
+        $html = $linkAgentLogs
                 .$linkAgentOut
-                .$linkAgentErr
-            .'</div>';
+                .$linkAgentErr;
         return $html;
-    }
-
-    public function render() {
-        return
-        '<div class="instance dualbox">'
-            .'<div class="left">'
-                .'<i class="title">Instance '.$this->info['id'].'</i>'
-                .$this->renderCapabs()
-                .'<div class="brief">running</div>'
-            .'</div>'
-            .'<div id="'.$this->info['id'].'-scriptStatusWrapper" class="left">'
-                .self::renderScriptStatusTable($this->scriptStatus)
-            .'</div>'
-            .'<div class="left">'
-                .$this->renderAgentLogs()
-            .'</div>'
-            .'<div class="right">'
-                .'<i class="address">'.$this->info['ip'].'</i>'
-            .'</div>'
-            .'<div class="clear"></div>'
-        .'</div>';
     }
 
     public function renderInCluster() {
@@ -150,16 +126,16 @@ class GenericInstance extends Instance {
         '<div class="instance dualbox">'
             .'<div class="left">'
                 .'<i class="title">Instance '.$this->info['id'].'</i>'
-                .'<span class="timestamp">running</span>'
+                .'<span class="brief">running</span>'
             .'</div>'
-            .'<div id="'.$this->info['id'].'-scriptStatusWrapper" class="left">'
-                .self::renderScriptStatusTable($this->scriptStatus)
+            .'<div class="right generic-ip-address">'
+                .'<i class="address">'.$this->info['ip'].'</i>'
             .'</div>'
-            .'<div class="left">'
+            .'<div class="right generic-agent-logs">'
                 .$this->renderAgentLogs()
             .'</div>'
-            .'<div class="right">'
-                .'<i class="address">'.$this->info['ip'].'</i>'
+            .'<div id="'.$this->info['id'].'-scriptStatusWrapper" class="right">'
+                .self::renderScriptStatusTable($this->scriptStatus)
             .'</div>'
             .'<div class="clear"></div>'
         .'</div>';

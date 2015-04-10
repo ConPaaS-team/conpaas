@@ -160,7 +160,7 @@ class ServicePage extends Page {
 			// HACK: empty list for a role
 			if (count($nodesList) == 0) {
 				continue;
-			} elseif (count($nodesList) > 1) {
+			} elseif (count($nodesList) > 1 || $this->service->getType() === 'generic') {
 				$cluster = new Cluster($role);
 				foreach ($nodesList as $node) {
 					$info = $this->service->getNodeInfo($node);

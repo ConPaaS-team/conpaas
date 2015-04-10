@@ -25,6 +25,7 @@ class Cluster {
 			'web' => 'blue',
 			'proxy' => 'orange',
 			'peers' => 'blue',
+			'master' => 'blue',
 			'masters' => 'blue',
 			'scalaris' => 'blue',
 			'slaves' => 'orange',

@@ -804,17 +804,22 @@ input.button {
 }
 
 .generic-script-status {
-	padding-left: 30px;
+	padding-right: 35px;
 	font-weight: normal;
 	color: #666;
 	font-size: 10px;
 }
 
 .generic-agent-logs {
-	padding-left: 30px;
+	padding-right: 25px;
 	font-weight: normal;
 	color: #666;
 	font-size: 10px;
+}
+
+.generic-ip-address {
+	width: 110px;
+	text-align: right;
 }
 
 .form-section .form-header {
@@ -1172,8 +1177,7 @@ ul.versions li .timestamp {
 	padding: 5px 3px 5px 5px;
 }
 
-#instances .cluster-web,#instances .cluster-masters,#instances .cluster-scalaris
-	{
+#instances .cluster-web, #instances .cluster-masters, #instances .cluster-scalaris, #instances .cluster-master {
 	border-color: blue;
 }
 
@@ -1181,7 +1185,7 @@ ul.versions li .timestamp {
 	border-color: purple;
 }
 
-#instances .cluster-proxy,#instances .cluster-workers, #instances .cluster-slaves {
+#instances .cluster-proxy, #instances .cluster-workers, #instances .cluster-slaves, #instances .cluster-node {
 	border-color: orange;
 }
 
