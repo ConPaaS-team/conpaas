@@ -514,7 +514,7 @@ $(document).ready(function () {
     page.server.req('ajax/checkApplications.php', {}, 'get', function (response) {
       
       aid = GET_PARAMS['aid']
-      alert(aid);
+     //alert(aid);
     }, function (error) {
         page.displayError(error.name, error.details);
     });
