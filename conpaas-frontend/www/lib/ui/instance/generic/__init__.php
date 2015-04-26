@@ -41,10 +41,12 @@ require_module('ui/instance');
 class GenericInstance extends Instance {
 
     private $scriptStatus = null;
+    private $volumes = null;
 
-    public function __construct($info, $sid, $scriptStatus) {
+    public function __construct($info, $sid, $volumes, $scriptStatus) {
         parent::__construct($info);
         $this->sid = $sid;
+        $this->volumes = $volumes;
         $this->scriptStatus = $scriptStatus;
     }
 
@@ -58,7 +60,68 @@ class GenericInstance extends Instance {
         return $html;
     }
 
-    public static function renderScriptStatus($script, $scriptStatus) {
+    private function renderVolume($volume) {
+        return
+            '<tr>'
+                .'<td><img src="images/volume.png" width="15" height="15" /></td>'
+                .'<td><b>Volume '.$volume['volumeName'].'</b></td>'
+                .'<td class="size">'.$volume['volumeSize'].'MB</td>'
+                .'<td name="'.$this->info['id'].'">'
+                    .'<img name="'.$volume['volumeName'].'"'
+                            .' width="11" height="11" class="delete"'
+                            .' title="delete '.$volume['volumeName'].'"'
+                            .' src="images/remove.png" />'
+                .'</td>'
+            .'</tr>';
+    }
+
+    public function renderVolumesTable($volumes) {
+        if ($volumes == null) {
+            return '';
+        }
+        $html = '<table class="generic volumes" cellspacing="0" cellpadding="0">';
+        for ($i = 0; $i < count($volumes); $i++) {
+            $html .= self::renderVolume($volumes[$i]);
+        }
+        $html .= '</table>';
+        return $html;
+    }
+
+    private function renderAddVolumeLink() {
+        return
+            '<a href="javascript:void(0);" class="link generic create-volume-link"'
+            .' title="show volume creation form" name="'.$this->info['id'].'">'
+                .'+ add volume'
+            .'</a>';
+    }
+
+    private function renderVolumeCreateForm() {
+        return
+            '<table class="generic create invisible" cellspacing="2" cellpadding="0"'
+            .' name="'.$this->info['id'].'">'
+                .'<tr>'
+                    .'<td><div>volume name</div></td>'
+                    .'<td><input id="'.$this->info['id'].'-volumeName" type="text" /></td>'
+                .'</tr>'
+                .'<tr>'
+                    .'<td><div>size (MB)</div></td>'
+                    .'<td><input id="'.$this->info['id'].'-volumeSize" type="text" /></td>'
+                .'</tr>'
+            .'</table>';
+        }
+
+    private function renderVolumeCreateButton() {
+        return
+            '<span class="generic create invisible" name="'.$this->info['id'].'">'
+                .'<input type="button"'
+                        .' class="create-volume-button"'
+                        .' value="create volume"'
+                        .' name="'.$this->info['id'].'" />'
+            .'</span>'
+            .'<i id="'.$this->info['id'].'-VolumeStat" class="invisible"></i>';
+    }
+
+    private static function renderScriptStatus($script, $scriptStatus) {
         $text = $scriptStatus[$script];
         $toolTipText = '';
         $img = 'ledgray.png';
@@ -88,19 +151,17 @@ class GenericInstance extends Instance {
             return '';
         }
         $html =
-            '<div class="generic-script-status">'
-                .'<table cellspacing="0" cellpadding="0">'
-                    .self::renderScriptStatus('init.sh', $scriptStatus)
-                    .self::renderScriptStatus('notify.sh', $scriptStatus)
-                    .self::renderScriptStatus('run.sh', $scriptStatus)
-                    .self::renderScriptStatus('interrupt.sh', $scriptStatus)
-                    .self::renderScriptStatus('cleanup.sh', $scriptStatus)
-                .'</table>'
-            .'</div>';
+            '<table cellspacing="0" cellpadding="0">'
+                .self::renderScriptStatus('init.sh', $scriptStatus)
+                .self::renderScriptStatus('notify.sh', $scriptStatus)
+                .self::renderScriptStatus('run.sh', $scriptStatus)
+                .self::renderScriptStatus('interrupt.sh', $scriptStatus)
+                .self::renderScriptStatus('cleanup.sh', $scriptStatus)
+            .'</table>';
         return $html;
     }
 
-    public function renderAgentLogs() {
+    private function renderAgentLogs() {
         $linkAgentLogs = LinkUI('agent log',
             'viewlog.php?sid='.$this->sid
             .'&agentId='.$this->info['id']
@@ -127,6 +188,11 @@ class GenericInstance extends Instance {
             .'<div class="left">'
                 .'<i class="title">Instance '.$this->info['id'].'</i>'
                 .'<span class="brief">running</span>'
+                .'<div id="'.$this->info['id'].'-volumesWrapper">'
+                    .$this->renderVolumesTable($this->volumes)
+                .'</div>'
+                .$this->renderAddVolumeLink()
+                .$this->renderVolumeCreateForm()
             .'</div>'
             .'<div class="right generic-ip-address">'
                 .'<i class="address">'.$this->info['ip'].'</i>'
@@ -134,10 +200,11 @@ class GenericInstance extends Instance {
             .'<div class="right generic-agent-logs">'
                 .$this->renderAgentLogs()
             .'</div>'
-            .'<div id="'.$this->info['id'].'-scriptStatusWrapper" class="right">'
+            .'<div id="'.$this->info['id'].'-scriptStatusWrapper" class="right generic-script-status">'
                 .self::renderScriptStatusTable($this->scriptStatus)
             .'</div>'
             .'<div class="clear"></div>'
+            .$this->renderVolumeCreateButton()
         .'</div>';
     }
 }

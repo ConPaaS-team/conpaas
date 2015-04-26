@@ -64,6 +64,7 @@ class GenericPage extends ServicePage {
     }
 
 	public function renderInstances() {
+		$this->service->updateVolumes();
 		$this->service->updateScriptStatus();
 		return parent::renderInstances();
 	}
@@ -195,134 +196,6 @@ class GenericPage extends ServicePage {
 			.'</div>';
 	}
 
-	public function renderVolumeList() {
-		$volumes = $this->service->listVolumes();
-		if ($volumes === false) {
-			return '<h3> Volume information not available </h3>';
-		}
-		if (count($volumes) == 0) {
-			return '<div id="noVolumesBox" class="box generic-box">'
-						.'You have no volumes in this Generic service. '
-						.'Go ahead and '
-						.'<a id="linkVolumes" href="javascript:void(0);">'
-						.'create a volume'
-						.'</a>.'
-					.'</div>';
-		}
-		usort($volumes, function ($a, $b) {
-			return strcmp($a['volumeName'], $b['volumeName']);
-		});
-		$html = '<table class="slist volumes" cellpadding="0" cellspacing="1">';
-		for ($i = 0; $i < count($volumes); $i++) {
-			$volumeUI = GenericVolume($volumes[$i]);
-			if ($i == count($volumes) - 1) {
-				$volumeUI->setLast();
-			}
-			$html .= $volumeUI;
-		}
-		$html .= '</table>';
-		return $html;
-	}
-
-	private function renderAvailableVolumes() {
-		return
-			'<div id="availableVolumesForm">'
-				.'<div class="left-stack name">available volumes</div>'
-				.'<div class="left-stack details">'
-					.'<div id="volumesListWrapper" class="generic-list">'
-						.$this->renderVolumeList()
-					.'</div>'
-				.'</div>'
-				.'<div class="clear"></div>'
-				.'<div class="left-stack name"></div>'
-				.'<div class="left-stack details">'
-					.'<input id="refreshVolumeList" '
-						.'type="button" value="refresh volumes" />'
-					.'<i id="listVolumeStat" class="invisible"></i>'
-				.'</div>'
-				.'<div class="clear"></div>'
-			.'</div>';
-	}
-
-	private function renderVolumeInput() {
-		return
-			'<div>'
-				.'<div class="left-stack name">volume name</div>'
-				.'<div class="left-stack details">'
-					.'<input id="volumeName" type="text" />'
-				.'</div>'
-				.'<div class="clear"></div>'
-			.'</div>';
-	}
-
-	private function renderSizeInput() {
-		return
-			'<div>'
-			.'<div class="left-stack name">size (MB)</div>'
-			.'<div class="left-stack details">'
-					.'<input id="volumeSize" type="text" />'
-				.'</div>'
-				.'<div class="clear"></div>'
-			.'</div>';
-	}
-
-	private function renderAgentSelect() {
-		$nodesLists = $this->service->getNodesLists();
-		$selectOptions = '';
-		$roles = array_keys($nodesLists);
-		sort($roles);
-		foreach ($roles as $role) {
-			foreach ($nodesLists[$role] as $node) {
-				$selectOptions .= '<option value="'.$node.'">';
-				$selectOptions .= $node.' ['.$role.']';
-				$selectOptions .= '</option>';
-			}
-		}
-		return
-			'<div>'
-				.'<div class="left-stack name">attach to agent</div>'
-				.'<div class="left-stack details">'
-					.'<select id="selectAgent">'
-						.$selectOptions
-					.'</select>'
-				.'</div>'
-				.'<div class="clear"></div>'
-			.'</div>';
-	}
-
-	private function renderVolumeCreate() {
-		return $this->renderVolumeInput()
-           .$this->renderSizeInput()
-           .$this->renderAgentSelect()
-           .'<div id="createVolumeForm">'
-				.'<div class="left-stack name"></div>'
-				.'<div class="left-stack details">'
-					.'<input id="createVolume" type="button" '
-					.' value="create volume" />'
-					.'<input id="deleteVolume" type="button" '
-					.' value="delete volume" class="invisible" />'
-                    .'<i id="VolumeStat" class="invisible"></i>'
-				.'</div>'
-				.'<div class="clear"></div>'
-			.'</div>';
-	}
-
-	public function renderManageVolumesSection() {
-		return
-		'<div class="form-section generic-volume generic-available">'
-			.'<div class="form-header">'
-				.'<div class="title">'
-					.'<img src="images/volume.png" />Volumes management'
-				.'</div>'
-				.'<div class="clear"></div>'
-			.'</div>'
-			.$this->renderAvailableVolumes()
-		.'</div>'
-		.'<div class="form-section generic-volume generic-create">'
-			.$this->renderVolumeCreate()
-		.'</div>';
-	}
-
 	private function renderAppLifecycleButton($command) {
 		$additionalText = '';
 		if ($command == 'interrupt') {
@@ -331,7 +204,7 @@ class GenericPage extends ServicePage {
 		$tooltipText = "pressing this button will execute "
 					."the '".$command.".sh' script from the active "
 					."code tarball on each agent".$additionalText;
-		return '<input class="generic-button" title="'.$tooltipText.'" '
+		return '<input class="generic-script-button" title="'.$tooltipText.'" '
 					.'id="'.$command.'App" name="'.$command.'" type="button" '
 					.'value="'.$command.'" />&nbsp;&nbsp;';
 	}
@@ -369,9 +242,6 @@ class GenericPage extends ServicePage {
 		}
 		$html .= $this->renderInstancesSection()
 			.$this->renderCodeSection();
-		if ($this->service->isRunning()) {
-			$html .= $this->renderManageVolumesSection();
-		}
 
 		return $html;
 	}

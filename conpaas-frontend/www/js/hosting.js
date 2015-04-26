@@ -22,11 +22,11 @@ conpaas.ui = (function (this_module) {
      * @override conpaas.ui.ServicePage.freezeInput
      */
     freezeInput: function (freeze) {
-        var linksSelectors = ['.activate', '.download', '.delete', '.dot'],
-            buttons = ['cds_subscribe', 'cds_unsubscribe'];
+        var links = ['.activate', '.download', '.delete', '.dot'],
+            buttons = ['#cds_subscribe', '#cds_unsubscribe'];
         conpaas.ui.ServicePage.prototype.freezeInput.call(this, freeze);
         this.freezeButtons(buttons, freeze);
-        this.hideLinks(linksSelectors, freeze);
+        this.hideLinks(links, freeze);
     },
     /**
      * @override conpaas.ui.ServicePage.attachHandlers

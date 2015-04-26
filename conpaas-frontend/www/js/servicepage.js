@@ -52,21 +52,21 @@ conpaas.ui = (function (this_module) {
         }
         this.displayInfo(reason);
     },
-    freezeButtons: function (buttons, freeze) {
-        buttons.forEach(function (id) {
+    freezeButtons: function (selectors, freeze) {
+        selectors.forEach(function (selector) {
             if (freeze) {
-                $('#' + id).attr('disabled', 'disabled');
+                $(selector).attr('disabled', 'disabled');
             } else {
-                $('#' + id).removeAttr('disabled');
+                $(selector).removeAttr('disabled');
             }
         });
     },
-    hideLinks: function (linkSelectors, freeze) {
-        linkSelectors.forEach(function (linkSelector) {
+    hideLinks: function (selectors, freeze) {
+        selectors.forEach(function (selector) {
             if (freeze) {
-                $(linkSelector).hide();
+                $(selector).hide();
             } else {
-                $(linkSelector).show();
+                $(selector).show();
             }
         });
     },
@@ -101,8 +101,8 @@ conpaas.ui = (function (this_module) {
         }, {sid: this.service.sid}, maxInterval);
     },
     freezeInput: function (freeze) {
-        var buttons = ['start', 'stop', 'terminate', 'submitnodes',
-                'file', 'submitPubKey' ];
+        var buttons = ['#start', '#stop', '#terminate', '#submitnodes',
+                '#file', '#submitPubKey' ];
         this.freezeButtons(buttons, freeze);
     },
     terminate: function (onSuccess, onError) {
