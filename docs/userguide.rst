@@ -2,7 +2,7 @@
 User Guide
 ==========
 
-ConPaaS currently contains nine services:
+ConPaaS currently contains for following services:
 
 -  **Two Web hosting services** respectively specialized for hosting PHP
    and JSP applications;
@@ -23,6 +23,8 @@ ConPaaS currently contains nine services:
 
 -  **HTC service** providing a throughput-oriented scheduler for bags of tasks
    submitted on demand.
+
+   - **Generic service** allowing the execution of arbitrary applications.
 
 ConPaaS applications can be composed of any number of services. For
 example, a bio-informatics application may make use of a PHP and a MySQL
@@ -905,54 +907,119 @@ with the current configuration of workers.
 demand.  The bag is executed with the existing configuration.
 
 
+The Generic service
+===================
+
+TBD
 
 .. _nutshell-guide:
 
 ConPaaS in a VirtualBox Nutshell
 ================================
 
-After the host-only network has been set up and the tarball has been extracted, you can import the appliance on VirtualBox by double clicking on it. In case you genereated a custom appliance, it is already imported so you can start it.
+ConPaaS in a Nutshell is a version of ConPaaS which runs inside a
+single VirtualBox VM. It is the recommended way to test the system
+and/or to run it in a single physical machine.
 
-The login credentials are::
+Starting the Nutshell
+---------------------
+
+The easiest way to start the nutshell is using VirtualBox:
+
+#. If you haven't done this already, create a host-only network on
+   VirtualBox. To do so from the VirtualBox GUI, go to:
+   File>Preferences>Network>Host-only Networks and click add. If you
+   already see a host-only network (probably called *vboxnet0*), then
+   you do not need to add another one.
+
+#. Import the Nutshell appliance using the menu File->Import
+   Appliance, or by simply double-clicking on the file in your file
+   manager.
+
+#. Once the Nutshell has been imported, you may adjust the amount of
+   memory and the number of CPUs you want to dedicate to it by
+   clicking on the Nutshell, then
+   Settings->System->Motherboard/Processor.
+
+#. Start the Nutshell by clicking "Start".
+
+#. Once the Nutshell is started, you can log into it. Wait a few
+   seconds until you see a login prompt. The login credentials are::
 
     Username: stack
     Password: contrail
 
-In order to have a more interactive inteface we suggest to connect to it through *ssh* from the host machine. 
-Depending on how your host-only network is configured the IP might be different. However, for a default configuration
-the IP is in the range 192.168.56.101/32. 
 
-The credentials for the Opensack and ConPaaS users are::
+Using the Nutshell via the graphical frontend
+---------------------------------------------
+
+The most important information is the IP address at which you can
+access the frontend. To find it, type the following command::
+
+  ifconfig br200
+
+The IP address will appear in the second line of text. You can access
+the frontend by copy-pasting this IP address in your Web browser,
+*making sure to add https:// in front of it*::
+
+  https://192.168.56.xxx 
+
+Note that the frontend is accessible only from your local
+machine. Other machines will not be able to access it. A default user
+is available for you, its credentials are::
+  
+  ConPaaS
+  Username: test
+  Password: password
+
+You can now use the frontend in the same way as any ConPaaS system,
+creating applications, services etc. Note that the services are also
+only accessible from your local machine.
+
+You can also use the command-line to control your Nutshell
+installation.  A simple test would be to start a *helloworld* service
+by running::
+
+    cpsclient.py create helloworld
+
+
+Using the Nutshell via the command-line interface
+-------------------------------------------------
+
+In case you are curious and you want to look inside the system, the
+credentials for the Opensack user are::
 
     Openstack
     Username: admin
     Password: password
 
-    ConPaaS
-    Username: test
-    Password: password
-
-However, on login, both the users are authenticated and you are able to execute Openstack command such as::
+However, on login, the ConPaaS and OpenStack users will already be
+authenticated.  You should be able to execute Openstack commands such
+as::
 
     nova list
 
-In case an empty table is shown, everything is ready and ConPaaS components can be used. A simple test would be to
-start a *helloworld* service by running::
+In case an empty table is shown, everything is ready and ConPaaS
+components can be used. A simple test would be to start a *helloworld*
+service by running::
 
     cpsclient.py create helloworld
 
-In addition to the ConPaaS CLI, the Nutshell contains also the ConPaaS front-end isntallation. You can reach the front-end from the host machine by going to::
-
-    https://192.168.56.xxx 
-
-Note that also *Horizon* (the Openstack dashboard) is running on it as well. Horizon can be reached at::
+Note that also *Horizon* (the Openstack dashboard) is running on it as
+well. Horizon can be reached (using HTTP, not HTTPS) at::
  
     http://192.168.56.xxx
 
-The Nutshell contains a *Devstack* installation of Openstack, therefore different services run and log on different tabs of a *screen* session. In order to stop, start or consult the logs of these services, connect to the screen session by executing::
+The Nutshell contains a *Devstack* installation of Openstack,
+therefore different services run and log on different tabs of a
+*screen* session. In order to stop, start or consult the logs of these
+services, connect to the screen session by executing::
 
      /opt/stack/devstack/rejoin-stack.sh
 
-Every tab in the screen session is labeled with the name of the service it belongs to. For more information on how to navigate between tabs and scroll up and down the logs, please consult the manual page for the screen command.
+Every tab in the screen session is labeled with the name of the
+service it belongs to. For more information on how to navigate between
+tabs and scroll up and down the logs, please consult the manual page
+for the screen command.
 
  
