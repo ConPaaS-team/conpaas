@@ -2,7 +2,7 @@
 User Guide
 ==========
 
-ConPaaS currently contains for following services:
+ConPaaS currently contains the following services:
 
 -  **Two Web hosting services** respectively specialized for hosting PHP
    and JSP applications;
