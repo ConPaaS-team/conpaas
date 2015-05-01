@@ -22,9 +22,9 @@ ConPaaS currently contains the following services:
    system;
 
 -  **HTC service** providing a throughput-oriented scheduler for bags of tasks
-   submitted on demand.
+   submitted on demand;
 
-   - **Generic service** allowing the execution of arbitrary applications.
+-  **Generic service** allowing the execution of arbitrary applications.
 
 ConPaaS applications can be composed of any number of services. For
 example, a bio-informatics application may make use of a PHP and a MySQL
@@ -147,7 +147,7 @@ Start a service.
     host applications, depending on the type of service.
 
 Rename the service.
-    By default all new services are named “New service.” To give a
+    By default all new services are named “New service”. To give a
     meaningful name to a service, click on this name in the
     service-specific page and enter a new name.
 
@@ -307,8 +307,8 @@ Uploading application code
 PHP applications can be uploaded as an archive or via the Git version
 control system.
 
-Archives can be either in the ``tar`` or ``zip`` format. Attention: the
-archive must expand *in the current directory* rather than in a
+Archives can be either in the ``tar``, ``zip``, ``gzip`` or ``bzip2`` format.
+Attention: the archive must expand *in the current directory* rather than in a
 subdirectory. The service does not immediately use new applications when
 they are uploaded. The frontend shows the list of versions that have
 been uploaded; choose one version and click “make active” to activate
@@ -431,9 +431,9 @@ For example, the following command will remove one backend node::
 Autoscaling
 -----------
 
-One of the worries of a service owner, is the trade-off between the performance
-of the service, and the cost of running it. The service owner can add nodes to
-improve the performance of the service which will have more nodes to balance the
+One of the worries of a service owner is the trade-off between the performance
+of the service and the cost of running it. The service owner can add nodes to
+improve the performance of the service, which will have more nodes to balance the
 load, or remove nodes from the service to decrease the cost per hour, but
 increase the load per node.
 
@@ -556,7 +556,7 @@ The Database Nodes and Load Balancer Nodes
 
 The MySQL service offers the capability to instantiate multiple
 instances of database nodes, which can be used to increase the
-througput and to improve features of fault tolerance throws
+throughput and to improve features of fault tolerance through
 replication. The multi-master structure allows any database node to
 process incoming updates, because the replication system is
 responsible for propagating the data modifications made by each member
@@ -590,11 +590,11 @@ Accessing the database
 
 The frontend provides the command-line to access the database cluster.
 Copy-paste this command in a terminal. You will be asked for the user
-password, after which you can use the database as you wish.  Note
-that, in case the service has instantiate a load balancer the, command
-refers to the load balancer ip and its specifical port, so the load
+password, after which you can use the database as you wish. Note
+that, in case the service has instantiated a load balancer, the command
+refers to the load balancer IP and its specific port, so the load
 balancer can receive all the queries and distributes them across the
-ordinary nodes.  Note, again, that the mysqldb user has extended
+ordinary nodes. Note, again, that the *mysqldb* user has extended
 privileges. It can create new databases, new users etc.
 
 Uploading a Database Dump
@@ -611,16 +611,16 @@ Performance Monitoring
 ----------------------
 
 The MySQL service interface provides a sophisticated mechanism to monitor the
-service.  The user interface, in the frontend, shows a monitoring control,
-called "Performance Monitor," that can be used to monitor a large cluster's
-behaviour.  It interacts with "Ganglia", "Galera" and “MySQL” to obtain various
-kinds of information.  Thus, Performance Monitor provides a solution for
+service. The user interface, in the frontend, shows a monitoring control,
+called "Performance Monitor", that can be used to monitor a large cluster's
+behaviour. It interacts with "Ganglia", "Galera" and "MySQL" to obtain various
+kinds of information. Thus, "Performance Monitor" provides a solution for
 maintaining control and visibility of all nodes, with a monitoring dynamic data
 every few seconds. 
 
 It consists of three main components.
 
-- "Cluster usage" monitors the number of incoming SQL queries.  This
+- "Cluster usage" monitors the number of incoming SQL queries. This
   will let you know in advance about any overload of the resources.
   You will also be able to spot usage trends over time so as to get
   insights on when you need to add new nodes, serving the MySQL
@@ -635,18 +635,18 @@ It consists of three main components.
   if CPU utilization is high, or free memory is very low this is shown
   clearly. This may mean that processes on this node will start to
   slow down, and that it may be time to add additional nodes to the
-  cluster.  On the other hand this may indicate a malfunction on the
+  cluster. On the other hand this may indicate a malfunction of the
   specific node.
 
-  In this last case, in a multimaster system, it may be a good idea to
-  kill the node and replace it with another one.  The monitoring
-  system simplifys also this kind of operations through buttons which
-  allows to directly kill a specific node.  Keep in mind, however,
+  In this latter case, in a multimaster system, it may be a good idea to
+  kill the node and replace it with another one. The monitoring
+  system also simplifies this kind of operations through buttons which
+  allow to directly kill a specific node. Keep in mind, however,
   that high CPU utilization may not necessarily affect application
   performance.
 
-- "Galera Mean Misalignment" draws a realtime measure of the mean
-  misalignment accross the nodes.  This information is derived by
+- "Galera Mean Misalignment" draws a real-time measure of the mean
+  misalignment across the nodes. This information is derived by
   Galera metrics about the average length of the receive queue since
   the most recent status query. If this value is noticeably larger
   than zero, the nodes are likely to be overloaded, and cannot apply
@@ -703,7 +703,7 @@ phase, where its agents sample the runtime of the given tasks on
 different cloud instances. The service then based on the sampled
 runtimes, provides the user with a list of schedules. Schedules are
 presented in a graph and the user can choose between cost/makespan of
-different schedules for the given set of tasks.fter the choice is made
+different schedules for the given set of tasks. After the choice is made,
 the service enters the execution phase and completes the execution of
 the rest of the tasks according to the user’s choice.
 
@@ -767,7 +767,7 @@ can be found at http://xtreemfs.org/userguide.php.
 SSL Certificates
 ----------------
 
-The XtreemFS service uses SSL certificates for authorisation and authentication.
+The XtreemFS service uses SSL certificates for authorization and authentication.
 There are two types of certificates, user-certificates and client-certificates.
 Both certificates can additionally be flagged as administrator certificates which
 allows performing administrative file-systems tasks when using them to access
@@ -781,7 +781,7 @@ volume is accessed. So multiple users might share a single client-certificate.
 On the other hand, user-certificates contain a user and group inside the certificate.
 So usually, each user has her personal user-certificate. Both kinds of certificate can
 be used in parallel. Client-certificates are less secure, since the user and group with
-whom files are accessed can be arbitrarly changed if the mounting user has local 
+whom files are accessed can be arbitrarily changed if the mounting user has local
 superuser rights. So client-certificates should only be used in trusted environments.
 
 Using the command line client, certificates can be created like this, where <adminflag>
@@ -960,7 +960,7 @@ access the frontend. To find it, type the following command::
 
 The IP address will appear in the second line of text. You can access
 the frontend by copy-pasting this IP address in your Web browser,
-*making sure to add https:// in front of it*::
+*making sure to add **https://** in front of it*::
 
   https://192.168.56.xxx 
 
@@ -977,7 +977,7 @@ creating applications, services etc. Note that the services are also
 only accessible from your local machine.
 
 You can also use the command-line to control your Nutshell
-installation.  A simple test would be to start a *helloworld* service
+installation. A simple test would be to start a *helloworld* service
 by running::
 
     cpsclient.py create helloworld
@@ -994,7 +994,7 @@ credentials for the Opensack user are::
     Password: password
 
 However, on login, the ConPaaS and OpenStack users will already be
-authenticated.  You should be able to execute Openstack commands such
+authenticated. You should be able to execute Openstack commands such
 as::
 
     nova list
@@ -1007,7 +1007,7 @@ service by running::
 
 Note that also *Horizon* (the Openstack dashboard) is running on it as
 well. Horizon can be reached (using HTTP, not HTTPS) at::
- 
+
     http://192.168.56.xxx
 
 The Nutshell contains a *Devstack* installation of Openstack,
@@ -1020,6 +1020,4 @@ services, connect to the screen session by executing::
 Every tab in the screen session is labeled with the name of the
 service it belongs to. For more information on how to navigate between
 tabs and scroll up and down the logs, please consult the manual page
-for the screen command.
-
- 
+for the *screen* command.

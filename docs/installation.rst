@@ -21,11 +21,8 @@ components.
 
 ConPaaS's **cpsdirector** and its two clients, **cpsclient** and **cpsfrontend**,
 can be installed on your own hardware or on virtual machines running on public
-or private clouds. If you wish to install them on Amazon EC2, the `Official Debian
-Wheezy EC2 image (ami-1d620e74)`_ is known to work well. Please note that the
-*root* account is disabled and that you should instead login as *admin*.
-
-.. _Official Debian Wheezy EC2 image (ami-1d620e74): https://console.aws.amazon.com/ec2/v2/home?region=us-east-1#Images:filter=all-images;platform=all-platforms;visibility=public-images;search=ami-1d620e74
+or private clouds. If you wish to install them on Amazon EC2, the Official Debian
+Wheezy, Ubuntu 12.04 or Ubuntu 14.04 images are known to work well.
 
 ConPaaS services are designed to run either in an `OpenNebula` cloud
 installation or in the `Amazon Web Services` cloud.
@@ -60,10 +57,10 @@ Director installation
 The ConPaaS Director is a web service that allows users to manage their ConPaaS
 applications. Users can create, configure and terminate their cloud
 applications through it. This section describes the process of setting up a
-ConPaaS director on a Debian GNU/Linux system. Although the ConPaaS director
-might run on other distributions, only Debian versions 6.0 (Squeeze) and 7.0
-(Wheezy) are officially supported. Also, only official Debian APT repositories
-should be enabled in :file:`/etc/apt/sources.list` and
+ConPaaS director on a Debian/Ubuntu GNU/Linux system. Although the ConPaaS director
+might run on other distributions, only Debian versions 6.0 (Squeeze) and 7.0 (Wheezy),
+and Ubuntu versions 12.04 (Precise Pangolin) and 14.04 (Trusty Tahr) are officially supported.
+Also, only official APT repositories should be enabled in :file:`/etc/apt/sources.list` and
 :file:`/etc/apt/sources.list.d/`. 
 
 **cpsdirector** is available here:
@@ -521,7 +518,8 @@ Install python argparse and argcomplete modules::
 
 Frontend installation
 =====================
-As for the Director, only Debian versions 6.0 (Squeeze) and 7.0 (Wheezy) are
+As for the Director, only Debian versions 6.0 (Squeeze) and 7.0 (Wheezy), and
+Ubuntu versions 12.04 (Precise Pangolin) and 14.04 (Trusty Tahr) are officially
 supported, and no external APT repository should be enabled. In a typical setup
 Director and Frontend are installed on the same host, but such does not need to
 be the case.
@@ -529,7 +527,7 @@ be the case.
 The ConPaaS Frontend can be downloaded from
 http://www.conpaas.eu/dl/cpsfrontend-1.x.x.tar.gz. 
 
-After having uncompressed it you should install the required Debian packages::
+After having uncompressed it you should install the required packages::
 
    $ sudo apt-get install libapache2-mod-php5 php5-curl
 
@@ -610,7 +608,7 @@ only what you need.
 
 Note that te configuration file contains also a **NUTSHELL** section. The 
 settings in this section are explained in details in :ref:`conpaas-in-a-nutshell`.
-However, in order to generete a regular customized VM image make sure that both 
+However, in order to generate a regular customized VM image, make sure that both
 *container* and *nutshell* flags in this section are set to false.
 
 Once you are done with the configuration, you should run this command in the
@@ -749,7 +747,7 @@ For a S3-backed AMI, you do not need to register your image from an EC2
 instance. Simply run *register-image-ec2-s3.sh* where you have created your
 *conpaas.img*. Note that you need an EC2 certificate with private key to be
 able to do so. Registering an S3-backed AMI requires administrator privileges.
-More information on Amazon credetials can be found at 
+More information on Amazon credentials can be found at
 `About AWS Security Credentials <http://docs.aws.amazon.com/AWSSecurityCredentials/1.0/AboutAWSCredentials.html>`_.
 
 Security Group
@@ -877,7 +875,7 @@ with::
 ConPaaS in a Nutshell
 =====================
 ConPaaS in a Nutshell is an extension to the ConPaaS project which aims at 
-providing a cloud environent and a ConPaaS installation running on it, all
+providing a cloud environment and a ConPaaS installation running on it, all
 in a single VM, called the Nutshell. More specifically, this VM has an 
 all-in-one OpenStack installation running on top of LXC containers, as well 
 as a ConPaaS installation, including all of its components, already configured 
@@ -886,7 +884,7 @@ to work in this environment.
 The Nutshell VM can be deployed on various virtual environments, not only
 standard clouds such as OpenNebula, OpenStack and EC2 but also on simpler 
 virtualization tools such as VirtualBox. Therefore, it provides a great developing 
-and testing environemnt for ConPaaS without the need of accessing a cloud. 
+and testing environment for ConPaaS without the need of accessing a cloud.
 
 
 Creating a Nutshell image
@@ -911,16 +909,16 @@ true of false, we distinguish four cases:
    to a standard VM one, but it does not contain a kernel installation. 
 
 #. nutshell = true, container = false. In this case a Nutshell image is generated
-   and a standard ConPaaS VM image will be embedded in it. This configuraiton should be
+   and a standard ConPaaS VM image will be embedded in it. This configuration should be
    used for deploying ConPaaS in nested standard VMs within a single VM.
 
 #. nutshell = true, container = true. Similar to the previous case, a Nutshell image
    is generated but this time a container image is embedded in it instead of a VM one.
-   Therefore, in order to generate a Nutshell based on contaners make sure to set these 
-   flags to this configuration. This is the default configuraiton for our distribution of
-   nutshell.
+   Therefore, in order to generate a Nutshell based on containers, make sure to set these
+   flags to this configuration. This is the default configuration for our distribution of
+   the Nutshell.
 
-Another important setting for generating the Nutshell image is also the path to a direcotry
+Another important setting for generating the Nutshell image is also the path to a directory
 containing the ConPaaS tarballs (cps*.tar.gz files). 
 The rest of the settings specify the distro and kernel versions that the Nutshell VM would have.
 For the moment we have tested it only for Ubuntu 12.04 with kernel 3.5.0.
@@ -931,7 +929,7 @@ From the create_vm diretory run::
     $ python create-img-script.py
     $ sudo ./create-img-nutshell.sh
 
-Note that if the nutshell flag is enabled the generated script file is called *create-img-nutshell.sh*.
+Note that if the *nutshell* flag is enabled the generated script file is called *create-img-nutshell.sh*.
 Otherwise, the generated script file is called *create-img-conpaas.sh* as indicated previously.
 
 
@@ -945,10 +943,10 @@ The rest of the procedure is the same as for other clouds. The result of the ima
 *nutshell.vdi* image file which can be used as a virtual hard drive when creating a new appliance on VirtualBox.
 
 The procedure for creating a new appliance on VirtualBox is quite standard:
-  
+
 #. Name and OS: You choose a custom name for the appliance but use *Linux* and *Ubuntu (64 bit)* for the type and version.
 
-#. Memory size: Since the nutshell runs a significat number of services and requires also some memory for the containers we suggest to choose at least 3 GB of RAM.
+#. Memory size: Since the Nutshell runs a significant number of services and also requires some memory for the containers, we suggest to choose at least 3 GB of RAM.
 
 #. Hard drive: Select "User an existing virtual hard drive file", browse to the location of the *nutshell.vdi* file generated earlier and press create.
 

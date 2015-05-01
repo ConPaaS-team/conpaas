@@ -6,7 +6,7 @@
 # the manager service. 
 
 # This file is the default manager-start file. It can be
-# customized as needed by the sevice.  
+# customized as needed by the service.
 
 $CPS_HOME/sbin/manager/default-cpsmanager -c $ROOT_DIR/config.cfg 1>$ROOT_DIR/manager.out 2>$ROOT_DIR/manager.err &
 manager_pid=$!
