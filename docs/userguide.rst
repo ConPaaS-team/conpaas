@@ -1008,7 +1008,7 @@ You should be able to execute ConPaaS commands, for example starting a
 
   cpsclient.py create helloworld
 
-or
+or::
 
   cps-tools service create helloworld
 
@@ -1040,13 +1040,13 @@ Changing the IP address space used by the Nutshell
 
 The Nutshell VM uses an IP address assigned by the DHCP server of the
 host-only network of VirtualBox. In the default settings, the DHCP server
-uses a range from 192.168.56.101 to 192.168.56.254. If you want to change
+uses a range from ``192.168.56.101`` to ``192.168.56.254``. If you want to change
 this IP range, you can go to: File>Preferences>Network>Host-only Networks,
 select *vboxnet0* and click the edit button and afterwards "DHCP server".
 
 Note that ConPaaS services running inside the Nutshell VM also need to have
 IP addresses assigned. This is done using OpenStack's floating IP mechanism.
-The default configuration uses an IP range from 192.168.56.10 to 192.168.56.99,
+The default configuration uses an IP range from ``192.168.56.10`` to ``192.168.56.99``,
 which does not overlap with the default one used by the DHCP server of the
 host-only network in VirtualBox. If you want to modify this IP range, execute
 the following commands on the Nutshell as the *stack* user::
