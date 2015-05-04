@@ -69,23 +69,23 @@ It exists two command line clients: ``cpsclient.py`` and ``cps-tools``.
 
     Command arguments::
 
-        cpsclient.py usage
+        $ cpsclient.py usage
 
     Available service types::
 
-        cpsclient.py available
+        $ cpsclient.py available
 
     Service command specific arguments::
 
-        cpsclient.py usage <service_type>
+        $ cpsclient.py usage <service_type>
 
     Create a service::
 
-        cpsclient.py create <service_type>
+        $ cpsclient.py create <service_type>
 
     List services::
 
-        cpsclient.py list
+        $ cpsclient.py list
 
 ``cps-tools``
     Installation and configuration:
@@ -93,38 +93,38 @@ It exists two command line clients: ``cpsclient.py`` and ``cps-tools``.
 
     Command arguments::
 
-        cps-tools --help
+        $ cps-tools --help
 
     Available service types::
 
-        cps-tools service get_types
-        cps-service get-types
+        $ cps-tools service get_types
+        $ cps-service get-types
 
     Service command specific arguments::
 
-        cps-tools <service_type> --help
-        cps-<service_type> --help
+        $ cps-tools <service_type> --help
+        $ cps-<service_type> --help
 
     Create a service::
 
-        cps-tools service create <service_type>
-        cps-tools <service_type> create
-        cps-<service_type> create
+        $ cps-tools service create <service_type>
+        $ cps-tools <service_type> create
+        $ cps-<service_type> create
 
     List services::
 
-        cps-tools service list
-        cps-service list
+        $ cps-tools service list
+        $ cps-service list
 
     List applications::
 
-        cps-tools application list
-        cps-application list
+        $ cps-tools application list
+        $ cps-application list
 
     List clouds::
 
-       cps-tools cloud list
-       cps-cloud list
+       $ cps-tools cloud list
+       $ cps-cloud list
 
 
 Controlling services using the front-end
@@ -308,10 +308,14 @@ PHP applications can be uploaded as an archive or via the Git version
 control system.
 
 Archives can be either in the ``tar``, ``zip``, ``gzip`` or ``bzip2`` format.
-Attention: the archive must expand *in the current directory* rather than in a
-subdirectory. The service does not immediately use new applications when
+
+.. warning::
+  the archive must expand **in the current directory** rather than in a
+  subdirectory.
+
+The service does not immediately use new applications when
 they are uploaded. The frontend shows the list of versions that have
-been uploaded; choose one version and click “make active” to activate
+been uploaded; choose one version and click “set active” to activate
 it.
 
 Note that the frontend only allows uploading archives smaller than a
@@ -362,8 +366,8 @@ states can be transparently stored. To overwrite PHP session functions
 such that they make use of the shared key-value store, the PHP service
 includes a standard “phpsession.php” file at the beginning of every .php
 file of your application that uses sessions, i.e. in which function
-session\_start() is encountered. This file overwrites the session
-handlers using the session\_set\_save\_handler() function.
+*session\_start()* is encountered. This file overwrites the session
+handlers using the *session\_set\_save\_handler()* function.
 
 This modification is transparent to your application so no particular
 action is necessary to use PHP sessions in ConPaaS.
@@ -384,7 +388,7 @@ let PHP display errors.
 Adding and removing nodes
 -------------------------
 
-Like all ConPaaS service, the PHP service is elastic:
+Like all ConPaaS services, the PHP service is elastic:
 service owner can add or remove nodes.
 The PHP service (like the Java service) belongs to a class of web services
 that deals with three types of nodes:
@@ -408,16 +412,16 @@ the number of backend nodes, the number of web nodes and the number of proxy nod
 It also take a 5th optional argument that specify in which cloud nodes will be created.
 For example, adding two backend nodes to PHP service id 1::
 
-  cpsclient.py add_nodes 1 2 0 0
+  $ cpsclient.py add_nodes 1 2 0 0
 
 Adding one backend node and one web node in a cloud provider called ``mycloud``::
 
-  cpsclient.py add_nodes 1 1 1 0 mycloud
+  $ cpsclient.py add_nodes 1 1 1 0 mycloud
 
 You can also remove nodes using ``cpsclient.py``.
 For example, the following command will remove one backend node::
 
-  cpsclient.py remove_nodes 1 1 0 0
+  $ cpsclient.py remove_nodes 1 1 0 0
 
 
 .. warning::
@@ -458,7 +462,7 @@ select different kind of nodes depending on the service owner strategy choice.
 
 To enable autoscaling for the PHP service, run the command::
 
-    cpsclient.py on_autoscaling <sid> <adapt_interval> <response_time_threshold> <strategy>
+    $ cpsclient.py on_autoscaling <sid> <adapt_interval> <response_time_threshold> <strategy>
     
 where:
   * <sid> is the service identifier
@@ -474,7 +478,7 @@ where:
 
 For example::
 
-    cpsclient.py on_autoscaling 1 5 2000 low
+    $ cpsclient.py on_autoscaling 1 5 2000 low
 
 enables autoscaling for PHP service 1, with an adaptation every 5 minutes, a
 response time threshold of 2000 milliseconds (2 seconds), and using the strategy
@@ -486,7 +490,7 @@ smallest instance from the cloud provider.
 
 Any time, the service owner may re-run the "on_autoscaling" command to tune autoscaling with different parameters::
 
-    cpsclient.py on_autoscaling 1 10 1500 low
+    $ cpsclient.py on_autoscaling 1 10 1500 low
 
 this command updates the previous call to "on_autoscaling" and changes the
 adaptation interval to 10 minutes, and setting a lower threshold to 15000
@@ -494,7 +498,7 @@ milliseconds.
 
 Autoscaling may be disabled by running command::
 
-    cpsclient.py off_autoscaling <sid>
+    $ cpsclient.py off_autoscaling <sid>
 
 
 The Java Web hosting service
@@ -511,7 +515,7 @@ Applications in the Java Web hosting service can be uploaded in the form
 of a ``war`` file or via the Git version control system. The service
 does not immediately use new applications when they are uploaded. The
 frontend shows the list of versions that have been uploaded; choose one
-version and click “make active” to activate it.
+version and click “set active” to activate it.
 
 Note that the frontend only allows uploading archives smaller than a
 certain size. To upload large archives, you must use the command-line
@@ -689,8 +693,9 @@ front-end provides useful links to the Hadoop namenode, the job tracker,
 and to a graphical interface which allows to upload/download data
 to/from the service and issue MapReduce jobs. 
 
-**IMPORTANT:** This service requires virtual machines with *at least* 384 MB of
-RAM to function properly.
+.. warning::
+  This service requires virtual machines with **at least** 384 MB of RAM to
+  function properly.
 
 The TaskFarming service
 ====================
@@ -787,8 +792,8 @@ superuser rights. So client-certificates should only be used in trusted environm
 Using the command line client, certificates can be created like this, where <adminflag>
 can be "true", "yes", or "1" to grant administrator rights::
 
-    cpsclient.py get_client_cert <service-id> <passphrase> <adminflag> <filename.p12>
-    cpsclient.py get_user_cert <service-id> <user> <group> <passphrase> <adminflag> <filename.p12>
+    $ cpsclient.py get_client_cert <service-id> <passphrase> <adminflag> <filename.p12>
+    $ cpsclient.py get_user_cert <service-id> <user> <group> <passphrase> <adminflag> <filename.p12>
 
 Accessing volumes directly
 --------------------------
@@ -799,11 +804,11 @@ POSIX-compatible filesystem. You need a certificate for mounting (see last secti
 The command looks like this, where <address> is the IP of an agent running
 an XtreemFS directory service (usually the first agent)::
 
-    mount.xtreemfs <address>/<volume> <mount-point> --pkcs12-file-path <filename.p12> --pkcs12-passphrase <passphrase> 
+    $ mount.xtreemfs <address>/<volume> <mount-point> --pkcs12-file-path <filename.p12> --pkcs12-passphrase <passphrase> 
 
 The volume can be unmounted with the following command::
 
-    fusermount -u <mount-point> 
+    $ fusermount -u <mount-point>
 
 Please refer to the XtreemFS user guide (http://xtreemfs.org/userguide.php) for further details.
 
@@ -816,8 +821,8 @@ ConPaaS command line client (recommended) or directly via xtfsutil (see the
 XtreemFS user guide). The commands are like follows, were <policy_type> is
 "osd_sel", "replica_sel", or "replication"::
 
-   cpsclient.py list_policies <service-id> <policy_type> 
-   cpsclient.py set_policy <service-id> <policy_type> <volume> <policy> [factor] 
+   $ cpsclient.py list_policies <service-id> <policy_type>
+   $ cpsclient.py set_policy <service-id> <policy_type> <volume> <policy> [factor]
 
 Persistency
 -----------
@@ -825,16 +830,19 @@ Persistency
 If the XtreemFS service is shut down, all its data is permanently lost. If 
 persistency beyond the service runtime is needed, the XtreemFS service can be
 moved into a snapshot by using the download_manifest operation of the command
-line client. WARNING: This operation will automatically shut down the service
-and its application.  
+line client.
+
+.. warning::
+  This operation will automatically shut down the service and its application.
+
 The whole application containing the service and all of its stored volumes 
 with their data can be moved back into a running ConPaaS application by using
 the manifest operation.
 
 The commands are::
 
-    cpsclient.py download_manifest <application-id> > <filename>
-    cpsclient.py manifest <filename>
+    $ cpsclient.py download_manifest <application-id> > <filename>
+    $ cpsclient.py manifest <filename>
 
 
 Important notes
@@ -864,7 +872,7 @@ to the target throughput.
 
 Available commands
 ------------------
-start service_id - prompts the user to specify a mode (’real’ or ’demo’) and
+``start service_id``: prompts the user to specify a mode (’real’ or ’demo’) and
 type (’batch’, ’online’ or ’workflow’) for the service. Starts the service
 under the selected context and initializes all the internal data structures for
 running the service.
@@ -956,7 +964,7 @@ The easiest way to start the Nutshell is using VirtualBox:
    VM in order to execute command-line interface commands or to copy files.
    To find it, type the following command::
 
-    ifconfig br200
+    $ ifconfig br200
 
    The IP address will appear in the second line of text.
 
@@ -1006,19 +1014,19 @@ On login, both the ConPaaS and OpenStack users will already be authenticated.
 You should be able to execute ConPaaS commands, for example starting a
 *helloworld* service can be done with::
 
-  cpsclient.py create helloworld
+  $ cpsclient.py create helloworld
 
 or::
 
-  cps-tools service create helloworld
+  $ cps-tools service create helloworld
 
 OpenStack commands are also available. For example::
 
-  nova list
+  $ nova list
 
 lists all the active instances and::
 
-  cinder list
+  $ cinder list
 
 lists all the existing volumes.
 
@@ -1027,7 +1035,7 @@ therefore different services run and log on different tabs of a
 *screen* session. In order to stop, start or consult the logs of these
 services, connect to the screen session by executing::
 
-  /opt/stack/devstack/rejoin-stack.sh
+  $ /opt/stack/devstack/rejoin-stack.sh
 
 Every tab in the screen session is labeled with the name of the
 service it belongs to. For more information on how to navigate between
@@ -1051,14 +1059,14 @@ which does not overlap with the default one used by the DHCP server of the
 host-only network in VirtualBox. If you want to modify this IP range, execute
 the following commands on the Nutshell as the *stack* user::
 
-  nova floating-ip-bulk-delete 192.168.56.0/25
-  nova floating-ip-bulk-create --pool public --interface br200 <new_range>
+  $ nova floating-ip-bulk-delete 192.168.56.0/25
+  $ nova floating-ip-bulk-create --pool public --interface br200 <new_range>
 
 The first command removes the default IP range for floating IPs and the
 second adds the new range. After executing these two commands, do not
 forget to restart the Nutshell so the changes take effect::
 
-  sudo reboot
+  $ sudo reboot
 
 
 Using the Nutshell to host a publicly accessible ConPaaS installation
