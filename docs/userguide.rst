@@ -918,7 +918,347 @@ demand.  The bag is executed with the existing configuration.
 The Generic service
 ===================
 
-TBD
+The Generic service facilitates the deployment of arbitrary server-side
+applications in the cloud. A Generic service may contain multiple Generic
+agents, each of them running an instance of the application.
+
+The users can control the application's life cycle by installing or removing
+code versions, running or interrupting the execution of the application or
+checking the status of each of the Generic agents. New Generic agents can be
+added or old ones removed at any time, based on the needs of the application.
+Moreover, additional storage volumes can be attached to agents if additional
+storage space is needed.
+
+To package an application for the Generic service, the user has to provide
+simple scripts that guide the process of installing, running, scaling up
+and down, interrupting or removing an application to/form a Generic agent.
+
+Agent roles
+-----------
+Generic agents assume two roles: the first agent started is always a “master”
+and all the other agents assume the role of regular “nodes”. This distinction
+is purely informational: there is no real difference between the two agent
+types, both run the same version of the application's code and are treated by
+the ConPaaS system in exactly the same way. This distinction may be useful,
+however, when implementing some distributed algorithms in which one node must
+assume a specific role, such as leader or coordinator.
+
+It is guaranteed that, as long as the Generic service is running, there will
+always be exactly one agent with the “master” role and the same agent will
+assume this role until the Generic service is stopped. Adding or removing nodes
+will only affect the number of regular nodes.
+
+Packaging an application
+------------------------
+To package an application for the Generic service, one needs to write various
+scripts which are automatically called inside agents whenever the corresponding
+events happen. The following scripts may be used:
+
+``init.sh`` – called whenever a new code version is activated. The script is
+automatically called for each agent as soon as the corresponding code version
+becomes active. The script should contain commands that initialize the
+environment and prepare it for the execution of the application. It is guaranteed
+that this script is is called before any other scripts in a specific code version.
+
+``notify.sh`` – called whenever a new agent is added or removed. The script
+is automatically called whenever a new agent is added and becomes active or
+is removed from the Generic service. The script may configure the application
+to take into account the addition or removal of a specific node or group of
+nodes. In order to retrieve the updated list of nodes along with their IP
+addresses, the script may check the content of the following file, which always
+contains the current list of nodes in JSON format: ``/var/cache/cpsagent/agents.json``.
+Note that when multiple nodes are added or removed in a single operation, the
+script will be called only once for each of the remaining nodes.
+
+``run.sh`` – called whenever the user requests that the application starts
+running. The script should start executing the application and after the execution
+completes, it may return an error code that will be shown to the user. It is
+guaranteed that the ``init.sh`` script already finished execution before ``run.sh``
+is called.
+
+``interrupt.sh`` – called whenever the user requests that the application is
+interrupted. The script should notify the application that the interruption was
+requested and allow it to gracefully terminate execution. It is guaranteed that
+``interrupt.sh`` is only called when the application is actually running.
+
+``cleanup.sh`` – called whenever the user requests that the application's code
+is removed from the agent. The script should remove any files that the
+application generated during execution and are not longer needed. After the
+script completes execution, a new version of the code may be activated and the
+``init.sh`` script called again, so the agent needs to be reverted to a clean
+state.
+
+To create an application's package, all the previous scripts must be added to
+an archive in the ``tar``, ``zip``, ``gzip`` or ``bzip2`` format. If there is
+no need to execute any tasks when a specific type of event happens, some of
+the previous scripts may be left empty or may even be missing completely from
+the application's archive.
+
+.. warning::
+  the archive must expand **in the current directory** rather than in a subdirectory.
+
+The application's binaries can be included in the archive only if they are small
+enough.
+
+.. warning::
+  the archive is stored on the manager and its contents are extracted in each
+  agent's root file system which usually has a very limited amount of free
+  space (usually a little more than 100 MB), so application's binaries can
+  be included only if they are really small (a few MBs).
+
+A better idea would be to attach an additional storage volume where the ``init.sh``
+script can download the application's binaries from an external location for each
+Generic agent. This will render the archive very small as it only contains a few
+scripts. This is the recommended approach.
+
+Uploading the archive
+---------------------
+An application's package can be uploaded to the Generic service either as an
+archive or via the Git version control system. Either way, the code does not
+immediately become active and must be activated first.
+
+Using the web frontend, the “Code management” section offers the possibility
+to upload a new archive to the Generic service. After the upload succeeds,
+the interface shows the list of versions that have been uploaded; choose one
+version and click “set active” to activate it. Note that the frontend only
+allows uploading archives smaller than a certain size. To upload large archives,
+you must use the command-line tools or Git. The web frontend also allows
+downloading or deleting a specific code version. Note that the active code
+version cannot be deleted.
+
+Using the command-line interface, uploading and enabling a new code version
+is just as simple. The following example illustrates how to upload and activate
+an archive to the service with id 1 using the ``cpsclient.py`` command line tool::
+
+  $ cpsclient.py upload_code 1 test-code.tar.gz
+  Code version code-pw1LKs uploaded
+  $ cpsclient.py enable_code 1 code-pw1LKs
+  code-pw1LKs enabled
+  $ cpsclient.py list_uploads 1
+  current codeVersionId filename         description
+  ------------------------------------------------------
+        * code-pw1LKs   test-code.tar.gz
+          code-default  code-default.tar Initial version
+
+To download a specific code version, the following command may be used::
+
+  $ cpsclient.py download_code <serviceid> <code-version>
+
+The archive will be downloaded using the original name in the current directory.
+
+.. warning::
+  if another file with the same name is present in the current directory,
+  it will be overwritten.
+
+The command-line client also allows deleting a code version, with the exception
+of the currently active version::
+
+  $ cpsclient.py delete_code <serviceid> <code-version>
+
+It is a good idea to delete the code versions which are not needed anymore, as
+all the available code versions are stored in the Generic manager's file system,
+which has a very limited amount of available space. In contrast to the manager,
+the agents only store the active code version, which is replaced every time a new
+version becomes active.
+
+Uploading the code using git
+----------------------------
+As an alternative to uploading the application's package as stated above, the
+Generic service also supports uploading the package's content using Git.
+
+To enable Git-based code uploads, you first need to upload your SSH public key.
+This can be done either using the web frontend, in the “Code management” section,
+after selecting “checking out repository” or using the command-line client::
+
+  $ cpsclient.py upload_key <serviceid> <filename>
+
+You can check that the key was successfully uploaded by listing the trusted
+SSH keys:
+
+  $ cpsclient.py list_keys <serviceid>
+
+Once the key is uploaded, the following command has to be executed in order to
+obtain a copy of the repository::
+
+  $ git clone git@<generic-manager-ip>:code
+
+The repository itself can then be used as usual. A new version of your
+application can be uploaded with ``git push``::
+
+  $ cd code
+  $ git add {init,notify,run,interrupt,cleanup}.sh
+  $ git commit -m "New code version"
+  $ git push origin master
+
+The ``git push`` command will trigger the updating of the available code versions.
+To activate the new code version, the same procedure as before must be followed.
+Note that, when using the web frontend, you may need to refresh the page in
+order to see the new code version.
+
+To download a code version uploaded using Git, you must clone the repository
+and checkout a specific commit. The version number represents the first part
+of the commit hash, so you can use that as a parameter for the ``git checkout``
+command::
+
+  $ cpsclient.py list_uploads 1
+  current codeVersionId filename            description
+  ---------------------------------------------------------
+          git-7235de9   7235de9             Git upload
+        * code-default  code-default.tar    Initial version
+  $ git clone git@192.168.56.10:code
+  $ cd code
+  $ git checkout 7235de9
+
+Deleting a specific code version uploaded using Git is not possible.
+
+Managing storage volumes
+------------------------
+Storage volumes of arbitrary size can be attached to any Generic agent.
+Note that, for some clouds such as Amazon EC2 and OpenStack, the volume
+size must be a multiple of  1 GB. In this case, if the requested size does
+not satisfy this constraint, it will be rounded up to the smallest size
+multiple of 1 GB that is greater than the requested size.
+
+The attach or detach operations are permitted only if there are no scripts
+running inside the agents. This guarantees that a volume is never in use when
+it is detached.
+
+To create and attach a storage volume using the web frontend, you must click
+the “+ add volume” link below the instance name of the agent that should have
+this volume attached to. A small form will expand where you can enter the
+volume name and the requested size. Note that the volume name must be unique,
+or else the volume will not be created. The volume is created and attached
+after pressing the “create volume” button. Depending on the cloud in use and
+the volume size, this operation may take a little while. Additional volumes
+can be attached later to the same agent if more storage space is needed.
+
+The list of volumes attached to a specific agent is shown in the instance
+view of the agent, right under the instance name. For each volume, the name
+of the volume and the requested size is shown. To detach and delete a volume,
+you can press the red X icon after the volume's size.
+
+.. warning::
+  after a volume is detached, all data contained within is lost forever.
+
+Using the command-line client, a volume can be created and attached to a
+specific agent with the following command::
+
+  $ cpsclient.py create_volume <serviceid> <vol_name> <size> <agent_id>
+
+Size must always be specified in MB. To find out the *agent_id* of a specific
+instance, you may issue the following command::
+
+  $ cpsclient.py list_nodes <serviceid>
+
+The list of all storage volumes can be retrieved with::
+
+  $ cpsclient.py list_volumes <serviceid>
+
+This command detaches and deletes a storage volume::
+
+  $ cpsclient.py delete_volume <serviceid> <agent_id>
+
+Controlling the application's life cycle
+----------------------------------------
+A newly started Generic service contains only one agent with the role
+“master”.  As in the case of other ConPaaS services, nodes can be added
+to the service (or removed from the service) at any point in time.
+
+In the web frontend, new Generic nodes can be added by entering the number
+of new nodes (in a small cell below the list of instances) and pressing
+the “submit” button. Entering a negative number of nodes will lead to the
+removal of the specified number of nodes.
+
+On the command-line, nodes can be added with the following command::
+
+  $ cpsclient.py add_nodes <serviceid> <number_of_nodes>
+
+Immediately after the new nodes are ready, the active code version is copied
+to the new nodes and the ``init.sh`` script is executed in each of the new
+nodes. All the other nodes which were already up before the execution of the
+command will be notified about the addition of the new nodes to the service,
+so ``notify.sh`` is executed in their case. The ``init.sh`` script is never
+executed twice for the same agent and the same code version.
+
+Nodes can be removed with::
+
+  $ cpsclient.py remove_nodes <serviceid> <number_of_nodes>
+
+After the command completes and the specified number of nodes are terminated,
+the ``notify.sh`` script is executed for all the remaining nodes to notify
+them of the change.
+
+The Generic service also offers an easy way to run the application on every
+agent, interrupt a running application or cleanup the agents after the
+execution is completed.
+
+In the web frontend, the ``run``, ``interrupt`` and ``cleanup`` buttons
+are conveniently located on the top of the page, above the instances view.
+Pressing such a button will execute the corresponding script in all the agents.
+Above the buttons there is also a parameters field which allow the user to
+specify parameters which will be forwarded to the script during the execution.
+
+On the command line, the following commands may be used::
+
+  $ cpsclient.py run <serviceid> [parameters]
+  $ cpsclient.py interrupt <serviceid> [parameters]
+  $ cpsclient.py cleanup <serviceid> [parameters]
+
+The parameters are optional and, if not present, will be replaced by an empty
+list.
+
+The ``run`` and ``cleanup`` commands cannot be issued if any scripts are
+still running inside at least one agent. In this case, if it is not desired
+to wait for them to complete execution, ``interrupt`` may be called first.
+
+In turn, ``interrupt`` cannot be called if no scripts are running (there is
+nothing to interrupt). The ``interrupt`` command will execute the ``interrupt.sh``
+script that tries to cleanly shut down the application. If the ``interrupt.sh``
+completes execution and the application is still running, the application will
+be automatically killed. When ``interrupt.sh`` itself has to be
+killed, the ``interrupt`` command can be issued again. In this case, it will
+kill all the running scripts (including ``interrupt.sh``). In the web frontend,
+this is highlighted by renaiming the ``interrupt`` button to ``kill``.
+
+.. warning::
+  issuing the ``interrupt`` command twice kills all the running
+  scripts, including the child processes started by them!
+
+Enabling a new code version is allowed only when no script from the current
+code version is currently running. If it is not desired to wait for them
+to complete execution, ``interrupt`` may be called first. When enabling a
+new code version, immediately after copying the new code to the agents,
+the new ``init.sh`` script is called.
+
+Checking the status of the agents
+---------------------------------
+The running status of the various scripts for each agent can easily be
+checked in both the web frontend and using the command-line interface.
+
+In the web frontend, the instance view of each agent contains a table with
+the 5 scripts and each script's running status, along with a led that codes
+the status using colors: *light blue* when the current version of the script
+was never executed, *blinking green* when the script is currently running
+and *red* when the script finished execution. In the latter case, hovering
+the mouse pointer over the led will indicate the return code in  a tool-tip
+text.
+
+With the command-line interface, the status of the scripts for each agent
+can be listed using the following command::
+
+  $ cpsclient.py get_script_status <serviceid>
+
+The Generic service also facilitates retrieving the agent's log file and
+the contents of standard output and error streams. In the web frontend,
+three links are present in the instance's view of each agent. Using the
+command line, the logs can be retrieved with the following command::
+
+  $ cpsclient.py get_script_status <serviceid> <agent_id>
+
+To find out the agent_id of a specific instance, you may issue the following command::
+
+  $ cpsclient.py list_nodes <serviceid>
+
 
 .. _nutshell-guide:
 
