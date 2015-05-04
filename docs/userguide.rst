@@ -924,7 +924,7 @@ and/or to run it in a single physical machine.
 Starting the Nutshell
 ---------------------
 
-The easiest way to start the nutshell is using VirtualBox:
+The easiest way to start the Nutshell is using VirtualBox:
 
 #. If you haven't done this already, create a host-only network on
    VirtualBox. To do so from the VirtualBox GUI, go to:
@@ -938,8 +938,9 @@ The easiest way to start the nutshell is using VirtualBox:
 
 #. Once the Nutshell has been imported, you may adjust the amount of
    memory and the number of CPUs you want to dedicate to it by
-   clicking on the Nutshell, then
-   Settings->System->Motherboard/Processor.
+   clicking on the Nutshell, then Settings->System->Motherboard/Processor.
+   We recommend allocating at least 3 GB of RAM for the Nutshell to
+   function properly.
 
 #. Start the Nutshell by clicking "Start".
 
@@ -949,18 +950,23 @@ The easiest way to start the nutshell is using VirtualBox:
     Username: stack
     Password: contrail
 
+#. One important piece of information which you may want to note down is
+   the IP address assigned to the Nutshell VM. This can be used to access
+   the web frontend directly from your machine or to SSH into the Nutshell
+   VM in order to execute command-line interface commands or to copy files.
+   To find it, type the following command::
+
+    ifconfig br200
+
+   The IP address will appear in the second line of text.
+
 
 Using the Nutshell via the graphical frontend
 ---------------------------------------------
 
-The most important information is the IP address at which you can
-access the frontend. To find it, type the following command::
-
-  ifconfig br200
-
-The IP address will appear in the second line of text. You can access
-the frontend by copy-pasting this IP address in your Web browser,
-*making sure to add **https://** in front of it*::
+You can access the ConPaaS frontend by inserting the IP address of the
+Nutshell VM in your Web browser, making sure to add **https://** in front of
+it::
 
   https://192.168.56.xxx 
 
@@ -976,48 +982,102 @@ You can now use the frontend in the same way as any ConPaaS system,
 creating applications, services etc. Note that the services are also
 only accessible from your local machine.
 
-You can also use the command-line to control your Nutshell
-installation. A simple test would be to start a *helloworld* service
-by running::
+Note that also *Horizon* (the Openstack dashboard) is running on it as
+well. In case you are curious and you want to look inside the system, 
+Horizon can be reached (using HTTP, not HTTPS) at the same IP address::
 
-    cpsclient.py create helloworld
+  http://192.168.56.xxx
+
+The credentials for Horizon are::
+
+  Openstack
+  Username: admin
+  Password: password
 
 
 Using the Nutshell via the command-line interface
 -------------------------------------------------
 
-In case you are curious and you want to look inside the system, the
-credentials for the Opensack user are::
+You can also use the command-line to control your Nutshell installation.
+You need to log in as the *stack* user directly in the VirtualBox window
+or using SSH to connect to the Nutshell VM's IP address.
 
-    Openstack
-    Username: admin
-    Password: password
+On login, both the ConPaaS and OpenStack users will already be authenticated.
+You should be able to execute ConPaaS commands, for example starting a
+*helloworld* service can be done with::
 
-However, on login, the ConPaaS and OpenStack users will already be
-authenticated. You should be able to execute Openstack commands such
-as::
+  cpsclient.py create helloworld
 
-    nova list
+or
 
-In case an empty table is shown, everything is ready and ConPaaS
-components can be used. A simple test would be to start a *helloworld*
-service by running::
+  cps-tools service create helloworld
 
-    cpsclient.py create helloworld
+OpenStack commands are also available. For example::
 
-Note that also *Horizon* (the Openstack dashboard) is running on it as
-well. Horizon can be reached (using HTTP, not HTTPS) at::
+  nova list
 
-    http://192.168.56.xxx
+lists all the active instances and::
+
+  cinder list
+
+lists all the existing volumes.
 
 The Nutshell contains a *Devstack* installation of Openstack,
 therefore different services run and log on different tabs of a
 *screen* session. In order to stop, start or consult the logs of these
 services, connect to the screen session by executing::
 
-     /opt/stack/devstack/rejoin-stack.sh
+  /opt/stack/devstack/rejoin-stack.sh
 
 Every tab in the screen session is labeled with the name of the
 service it belongs to. For more information on how to navigate between
 tabs and scroll up and down the logs, please consult the manual page
 for the *screen* command.
+
+
+Changing the IP address space used by the Nutshell
+--------------------------------------------------
+
+The Nutshell VM uses an IP address assigned by the DHCP server of the
+host-only network of VirtualBox. In the default settings, the DHCP server
+uses a range from 192.168.56.101 to 192.168.56.254. If you want to change
+this IP range, you can go to: File>Preferences>Network>Host-only Networks,
+select *vboxnet0* and click the edit button and afterwards "DHCP server".
+
+Note that ConPaaS services running inside the Nutshell VM also need to have
+IP addresses assigned. This is done using OpenStack's floating IP mechanism.
+The default configuration uses an IP range from 192.168.56.10 to 192.168.56.99,
+which does not overlap with the default one used by the DHCP server of the
+host-only network in VirtualBox. If you want to modify this IP range, execute
+the following commands on the Nutshell as the *stack* user::
+
+  nova floating-ip-bulk-delete 192.168.56.0/25
+  nova floating-ip-bulk-create --pool public --interface br200 <new_range>
+
+The first command removes the default IP range for floating IPs and the
+second adds the new range. After executing these two commands, do not
+forget to restart the Nutshell so the changes take effect::
+
+  sudo reboot
+
+
+Using the Nutshell to host a publicly accessible ConPaaS installation
+---------------------------------------------------------------------
+
+The Nutshell can also be configured to host services which are accessible from
+the public Internet. In this case, the floating IP pool in use by OpenStack
+needs to be configured with an IP range that contains public IP addresses.
+The procedure for using such an IP range is the same as the one described
+above. Care must be taken so that these public IP addresses are not in use by
+other machines in the network and routing for this range is correctly implemented.
+
+If the ConPaaS frontend itself needs to be publicly accessible, the host-only
+network of VirtualBox can be replaced with a bridged network connected to a
+physical network interface that provides Internet access. Note that this
+bridge network must use a DHCP server that assigns a public IP address to the
+Nutshell or, alternatively, the Nutshell can be configured to use a static IP
+address (for example by editing the file ``/etc/network/interfaces``). If the
+Nutshell is publicly accessible, you may want to make sure that tighter security
+is implemented: the default user for the ConPaaS frontend is removed and access
+to SSH and OpenStack dashboard is blocked.
+
