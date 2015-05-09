@@ -6,10 +6,10 @@ import shutil
 from pwd import getpwnam
 from grp import getgrnam
 
-from setuptools import setup
+from setuptools import setup, find_packages
 from pkg_resources import Requirement, resource_filename
 
-CPSVERSION = '1.3.1'
+CPSVERSION = '555'
 
 CONFDIR = '/etc/cpsdirector'
 LOGDIR = '/var/log/cpsdirector'
@@ -29,10 +29,11 @@ setup(name='cpsdirector',
       url='http://www.conpaas.eu/',
       download_url='http://www.conpaas.eu/download/',
       license='BSD',
-      packages=[ 'cpsdirector', ],
+      # packages=[ 'cpsdirector', ],
+      packages=find_packages(),
       include_package_data=True,
       zip_safe=False,
-      package_data={ 'cpsdirector': [ 'ConPaaS.tar.gz', ] },
+      package_data={ 'cpsdirector': [ 'ConPaaS.tar.gz',] },
       data_files=[ ( CONFDIR, [ 'director.cfg.example', 'director.cfg.multicloud-example', 'ConPaaS.tar.gz' ] ), ],
       scripts=[ 'cpsadduser.py', 'director.wsgi', 'cpsconf.py', 'cpscheck.py', 'add-user-columns-to-db.sh' ],
       install_requires=[ 'cpslib', 'flask-sqlalchemy', 'apache-libcloud', 'netaddr', 'flask-openid' ],
@@ -80,3 +81,4 @@ if __name__ == "__main__" and sys.argv[1] == "install":
             getgrnam('www-data').gr_gid)
     except OSError:
         print "W: 'chown www-data:www-data %s' failed" % CONFDIR + '/data'
+print 'hellasdfldflsdf fadfasdf  %s' %sys.argv[1]

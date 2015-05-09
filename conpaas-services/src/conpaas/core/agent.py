@@ -62,7 +62,7 @@ class BaseAgent(ConpaasRequestHandlerComponent):
             self.logger.info('Ganglia started successfully')
 
     @expose('GET')
-    def check_agent_process(self, kwargs):
+    def check_process(self, kwargs):
         """Check if agent process started - just return an empty response"""
         if len(kwargs) != 0:
             return HttpErrorResponse('ERROR: Arguments unexpected')

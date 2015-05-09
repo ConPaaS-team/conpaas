@@ -14,15 +14,16 @@ import StringIO, ConfigParser
 import time, copy
 import os.path
 
-import json, httplib, libcloud, subprocess
+import subprocess
 
 from conpaas.core import https 
 from conpaas.core.log import create_logger
 from conpaas.core.expose import expose
-from conpaas.core.controller import Controller
+from conpaas.core.callbacker import DirectorCallbacker
 from conpaas.core.https.server import HttpJsonResponse
 from conpaas.core.https.server import HttpErrorResponse
 from conpaas.core.https.server import FileUploadField
+from conpaas.core.node import ServiceNode
 from conpaas.core.https.server import ConpaasRequestHandlerComponent
 
 from conpaas.core import ipop
@@ -66,9 +67,9 @@ class BaseManager(ConpaasRequestHandlerComponent):
     def __init__(self, config_parser):
         ConpaasRequestHandlerComponent.__init__(self)
         self.logger = create_logger(__name__)
-        self.logger.debug('Using libcloud version %s' % libcloud.__version__)
+        # self.logger.debug('Using libcloud version %s' % libcloud.__version__)
 
-        self.controller = Controller(config_parser)
+        # self.controller = Controller(config_parser)
         self.logfile = config_parser.get('manager', 'LOG_FILE')
         self.config_parser = config_parser
         self.state = self.S_INIT
@@ -95,28 +96,57 @@ class BaseManager(ConpaasRequestHandlerComponent):
                             " while waiting for manager state to become one of %s."
                             % (timeout, polling_interval, expected_states))
 
-    @expose('POST')
-    def startup(self, kwargs):
-        """Start the given service"""
-        # Starting up the service makes sense only in the INIT or STOPPED
-        # states
-        if self.state != self.S_INIT and self.state != self.S_STOPPED:
-            vals = { 'curstate': self.state, 'action': 'startup' }
-            return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
+    # @expose('POST')
+    # def startup(self, kwargs):
+    #     """Start the given service"""
+    #     # Starting up the service makes sense only in the INIT or STOPPED
+    #     # states
+    #     if self.state != self.S_INIT and self.state != self.S_STOPPED:
+    #         vals = { 'curstate': self.state, 'action': 'startup' }
+    #         return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
 
-        # Check if the specified cloud, if any, is available
-        if 'cloud' in kwargs:
-            try:
-                self._init_cloud(kwargs['cloud'])
-            except Exception:
-                return HttpErrorResponse(
-                    "A cloud named '%s' could not be found" % kwargs['cloud'])
+    #     # Check if the specified cloud, if any, is available
+    #     if 'cloud' in kwargs:
+    #         try:
+    #             self._init_cloud(kwargs['cloud'])
+    #         except Exception:
+    #             return HttpErrorResponse(
+    #                 "A cloud named '%s' could not be found" % kwargs['cloud'])
 
-        self.logger.info('Manager starting up')
-        self.state = self.S_PROLOGUE
-        Thread(target=self._do_startup, kwargs=kwargs).start()
+    #     self.logger.info('Manager starting up')
+    #     self.state = self.S_PROLOGUE
+    #     Thread(target=self._do_startup, kwargs=kwargs).start()
 
-        return HttpJsonResponse({ 'state': self.state })
+    #     return HttpJsonResponse({ 'state': self.state })
+
+    # @expose('POST')
+    def start(self, nodes):
+        raise Exception("start method not implemented for this service")
+
+    def stop(self, kwargs):
+        raise Exception("stop method not implemented for this service")
+
+    def add_nodes(self, nodes):
+        raise Exception("add_nodes method not implemented for this service")
+
+    def remove_nodes(self, nodes):
+        raise Exception("remove_nodes method not implemented for this service")
+
+    def get_nr_starting_agents(self):
+        return 1
+
+    # this should be overwritten from the service managers if applicable 
+    def get_context_replacement(self):
+        return {}
+        # raise Exception("get_context_replacement method not implemented for this service")
+
+    # this should be overwritten from all the service managers 
+    def get_service_type(self):
+        raise Exception("get_service_type method not implemented for this service")
+
+    # def config_replacement(self, replacement):
+
+
 
     @expose('GET')
     def getLog(self, kwargs):
@@ -174,7 +204,8 @@ class BaseManager(ConpaasRequestHandlerComponent):
             return ret
 
         # Rebuild context script 
-        self.controller.generate_context("web")
+        # TODO (genc): fix this
+        # self.controller.generate_context("web")
 
         # All is good. Return the filename of the uploaded script
         return HttpJsonResponse({'filename': ret})
@@ -193,18 +224,19 @@ class BaseManager(ConpaasRequestHandlerComponent):
     def create_volume(self, size, name, vm_id, cloud=None):
         self.logger.info('Creating a volume named %s (%s MBs)' % (
             name, size))
+        # TODO (genc) call the director for this 
 
-        # If cloud is None, the controller will create this volume on the
-        # default cloud
-        volume = self.controller.create_volume(size, name, vm_id, cloud)
+        # # If cloud is None, the controller will create this volume on the
+        # # default cloud
+        # volume = self.controller.create_volume(size, name, vm_id, cloud)
 
-        # Keep track of the cloud this volume has been created on
-        volume.cloud = cloud
+        # # Keep track of the cloud this volume has been created on
+        # volume.cloud = cloud
 
-        # Keep track of this volume
-        self.volumes.append(volume)
+        # # Keep track of this volume
+        # self.volumes.append(volume)
 
-        return volume
+        # return volume
 
     def get_volume(self, volume_id):
         for vol in self.volumes:
@@ -218,71 +250,81 @@ class BaseManager(ConpaasRequestHandlerComponent):
 
     def destroy_volume(self, volume_id):
         self.logger.info("Destroying volume with id %s" % volume_id)
+        # TODO (genc) also this call should go through the director
 
-        try:
-            volume = self.get_volume(volume_id)
-        except Exception:
-            self.logger.info("Volume %s not known" % volume_id)
-            return
+        # try:
+        #     volume = self.get_volume(volume_id)
+        # except Exception:
+        #     self.logger.info("Volume %s not known" % volume_id)
+        #     return
 
-        for attempt in range(1, 11):
-            try:
-                ret = self.controller.destroy_volume(volume, volume.cloud)
-                break
-            except Exception, err:
-                self.logger.info("Attempt %s: %s" % (attempt, err))
-                # It might take a bit for the volume to actually be
-                # detached. Let's wait a little and try again.
-                time.sleep(10)
+        # for attempt in range(1, 11):
+        #     try:
+        #         ret = self.controller.destroy_volume(volume, volume.cloud)
+        #         break
+        #     except Exception, err:
+        #         self.logger.info("Attempt %s: %s" % (attempt, err))
+        #         # It might take a bit for the volume to actually be
+        #         # detached. Let's wait a little and try again.
+        #         time.sleep(10)
 
-        if ret:
-            self.volumes.remove(volume)
-        else:
-            raise Exception("Error destroying volume %s" % volume_id)
+        # if ret:
+        #     self.volumes.remove(volume)
+        # else:
+        #     raise Exception("Error destroying volume %s" % volume_id)
    
     def attach_volume(self, volume_id, vm_id, device_name=None):
-        if device_name is None:
-            device_name=self.config_parser.get('manager', 'DEV_TARGET')
 
-        self.logger.info("Attaching volume %s to VM %s as %s" % (volume_id,
-            vm_id, device_name))
+        # TODO (genc) also this call should go through the director
+        pass
+        # if device_name is None:
+        #     device_name=self.config_parser.get('manager', 'DEV_TARGET')
 
-        volume = self.get_volume(volume_id)
+        # self.logger.info("Attaching volume %s to VM %s as %s" % (volume_id,
+        #     vm_id, device_name))
 
-        class node:
-            id = vm_id
+        # volume = self.get_volume(volume_id)
 
-        return self.controller.attach_volume(node, volume, device_name,
-                volume.cloud), device_name
+        # class node:
+        #     id = vm_id
+
+        # return self.controller.attach_volume(node, volume, device_name,
+        #         volume.cloud), device_name
 
     def detach_volume(self, volume_id):
+        # TODO (genc) also this call should go through the director
+
         self.logger.info("Detaching volume %s..." % volume_id)
 
-        volume = self.get_volume(volume_id)
-        ret = self.controller.detach_volume(volume, volume.cloud)
 
-        self.logger.info("Volume %s detached" % volume_id)
-        return ret
+        # volume = self.get_volume(volume_id)
+        # ret = self.controller.detach_volume(volume, volume.cloud)
+
+        # self.logger.info("Volume %s detached" % volume_id)
+        # return ret
 
     def _init_cloud(self, cloud=None):
-        if cloud is None or cloud == 'default':
-            cloud = 'iaas'
-        return self.controller.get_cloud_by_name(cloud)
+        # TODO (genc): fix thsi with the dirctor calls
+        pass
+        # if cloud is None or cloud == 'default':
+        #     cloud = 'iaas'
+        # return self.controller.get_cloud_by_name(cloud)
 
-    @expose('POST')
-    def stop(self, kwargs):
-        """Switch to EPILOGUE and call a thread to delete all nodes"""
-        # Shutdown only if RUNNING
-        if self.state != self.S_RUNNING:
-            vals = { 'curstate': self.state, 'action': 'stop' }
-            return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
+    # @expose('POST')
+    # def stop(self, kwargs):
+    #     """Switch to EPILOGUE and call a thread to delete all nodes"""
+    #     # Shutdown only if RUNNING
+    #     if self.state != self.S_RUNNING:
+    #         vals = { 'curstate': self.state, 'action': 'stop' }
+    #         return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
         
-        self.state = self.S_EPILOGUE
-        Thread(target=self._do_stop, args=[]).start()
-
-        return HttpJsonResponse({ 'state': self.state })
-
-
+    #     self.state = self.S_EPILOGUE
+    #     # Thread(target=self._do_stop, args=[]).start()
+    #     return self._do_stop()
+    #     # return HttpJsonResponse({ 'state': self.state })
+    
+    
+    
     # @expose('POST')
     # def delete(self, kwargs):
     #     """
@@ -306,11 +348,15 @@ class BaseManager(ConpaasRequestHandlerComponent):
 class ApplicationManager(BaseManager):
     def __init__(self, httpsserver, config_parser, **kwargs):
         BaseManager.__init__(self, config_parser)
+
+        # self.controller = Controller(config_parser)
+        self.callbacker = DirectorCallbacker(config_parser)
         self.service_id = 0
         self.httpsserver = httpsserver
-        self.config_parser = config_parser
+        # self.config_parser = config_parser
         self.kwargs = kwargs
         self.state = self.S_INIT
+        self.config_parsers = {}
 
         # IPOP setup
         ipop.configure_conpaas_node(config_parser)
@@ -333,8 +379,12 @@ class ApplicationManager(BaseManager):
         else:
             self.logger.info('Ganglia started successfully')
 
+
+    # def create_agent(self, count, cloud_name, instance_type):
+    #     self.callbacker
+
     @expose('GET')
-    def check_manager_process(self, kwargs):
+    def check_process(self, kwargs):
         """Check if manager process started - just return an empty response"""
         if len(kwargs) != 0:
             return HttpErrorResponse('ERROR: Arguments unexpected')
@@ -383,6 +433,8 @@ class ApplicationManager(BaseManager):
         service_config_parser = copy.copy(self.config_parser)
         self._add_manager_configuration(service_config_parser, str(self.service_id), service_type)
         self._run_manager_start_script(service_config_parser, service_type)
+
+        self.config_parsers[self.service_id] = service_config_parser
         
         #Create an instance of the service class
         service_insance = instance_class(service_config_parser, **self.kwargs)
@@ -413,6 +465,83 @@ class ApplicationManager(BaseManager):
         self.httpsserver._deregister_methods(service_id)
         self.state = self.S_RUNNING
         return HttpJsonResponse()
+
+    @expose('POST')
+    def start_service(self, kwargs):
+        # (genc) check parameters         
+
+        service_id = kwargs.pop('service_id')
+        service_manager = self.httpsserver.instances[service_id]
+        
+
+        if service_manager.state != self.S_INIT and service_manager.state != self.S_STOPPED:
+            vals = { 'curstate': service_manager.state, 'action': 'startup' }
+            return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
+
+        service_manager.logger.info('Manager starting up')
+        service_manager.state = self.S_PROLOGUE
+
+        Thread(target=self._do_start_service, args=[service_id]).start()
+        
+        return HttpJsonResponse({ 'state': service_manager.state })
+
+    def _do_start_service(self, service_id):
+        service_manager = self.httpsserver.instances[service_id]
+        count = service_manager.get_nr_starting_agents()
+        nodes = self.callbacker.create_nodes(count, service_id, service_manager)
+        service_manager.start(nodes)
+
+
+    @expose('POST')
+    def stop_service(self, kwargs):
+        service_id = kwargs.pop('service_id')
+        service_manager = self.httpsserver.instances[service_id]
+        service_manager.state = self.S_EPILOGUE
+        Thread(target=self._do_stop_service, args=[service_id]).start()
+        return HttpJsonResponse({ 'state': service_manager.state })
+
+    def _do_stop_service(self, service_id):
+        service_manager = self.httpsserver.instances[service_id]
+        nodes = service_manager.stop()
+        self.callbacker.remove_nodes(nodes)
+        service_manager.state = self.S_STOPPED
+
+    @expose('POST')
+    def add_nodes(self, kwargs):
+        # COMMENT(genc): how are roles going to be managed here?
+        service_id = kwargs.pop('service_id')
+        cloud = kwargs.pop('cloud')
+        count = int(kwargs.pop('node')) # change this when supporting roles
+        service_manager = self.httpsserver.instances[service_id]
+        service_manager.state = self.S_ADAPTING
+        Thread(target=self._do_add_nodes, args=[service_id, count, cloud]).start()
+        return HttpJsonResponse({ 'state': service_manager.state })
+
+    def _do_add_nodes(self, service_id, count, cloud):
+        service_manager = self.httpsserver.instances[service_id]
+        nodes = self.callbacker.create_nodes(count, service_id, service_manager)
+        service_manager.add_nodes(nodes)
+        service_manager.state = self.S_RUNNING
+
+
+    @expose('POST')
+    def remove_nodes(self, kwargs):
+        # COMMENT(genc): how are roles going to be managed here?
+        # (genc): parameter checks here obviously
+        service_id = kwargs.pop('service_id')
+        count = int(kwargs.pop('node'))
+        service_manager = self.httpsserver.instances[service_id]
+        service_manager.state = self.S_ADAPTING
+        Thread(target=self._do_remove_nodes, args=[service_id, count]).start()
+        return HttpJsonResponse({ 'state': service_manager.state })
+
+
+    def _do_remove_nodes(self, service_id, count):
+        service_manager = self.httpsserver.instances[service_id]
+        nodes = service_manager.remove_nodes(count)
+        self.callbacker.remove_nodes(nodes)
+        # (genc) check here if there are no more nodes left and stop if needed
+
 
     @expose('POST')
     def stopall(self, kwargs):
@@ -471,19 +600,6 @@ class ApplicationManager(BaseManager):
             proc = subprocess.Popen(['bash', mngr_startup_scriptname] , close_fds=True)
             proc.wait()
 
-
-# the following two methods are the application manager client
-def _check(response):
-    code, body = response
-    if code != httplib.OK: raise HttpError('Received http response code %d' % (code))
-    data = json.loads(body)
-    if data['error']: raise Exception(data['error']) 
-    else : return data['result']
-
-def check_manager_process(host, port):
-  method = 'check_manager_process'
-  https.client.conpaas_init_ssl_ctx('/etc/cpsdirector/certs', 'director') 
-  return _check(https.client.jsonrpc_get(host, port, '/', method))
         
 class ManagerException(Exception):
 

@@ -25,17 +25,19 @@ class HelloWorldManager(BaseManager):
         BaseManager.__init__(self, config_parser)
         self.nodes = []
         # Setup the clouds' controller
-        self.controller.generate_context('helloworld')
+        # self.controller.generate_context('helloworld')
         self.state = self.S_INIT
 
-    def _do_startup(self, cloud):
-        startCloud = self._init_cloud(cloud)
+    def _do_startup(self, nodes):
+        self.logger.info('nodes: %s' % nodes)
+        
+        # startCloud = self._init_cloud(cloud)
 
-        self.controller.add_context_replacement(dict(STRING='helloworld'))
+        # self.controller.add_context_replacement(dict(STRING='helloworld'))
 
         try:
-            nodes = self.controller.create_nodes(1,
-                client.check_agent_process, self.AGENT_PORT, startCloud)
+            # nodes = self.controller.create_nodes(1,
+            #     client.check_agent_process, self.AGENT_PORT, startCloud)
 
             node = nodes[0]
 
@@ -59,49 +61,97 @@ class HelloWorldManager(BaseManager):
     #     self.controller.delete_nodes(self.nodes)
     #     self.nodes = []
     #     self.state = self.S_STOPPED
+    
+
     def _do_stop(self):
         self.controller.delete_nodes(self.nodes)
         self.nodes = []
         self.state = self.S_STOPPED
 
-    @expose('POST')
-    def add_nodes(self, kwargs):
-        if self.state != self.S_RUNNING:
-            return HttpErrorResponse('ERROR: Wrong state to add_nodes')
+    def get_service_type(self):
+        return 'helloworld'
 
-        if 'node' in kwargs:
-            kwargs['count'] = kwargs['node']
+    def get_context_replacement(self):
+        return dict(STRING='helloworld')
 
-        if not 'count' in kwargs:
-            return HttpErrorResponse("ERROR: Required argument doesn't exist")
+    # @expose('POST')
+    # def add_nodes(self, kwargs):
+    #     if self.state != self.S_RUNNING:
+    #         return HttpErrorResponse('ERROR: Wrong state to add_nodes')
 
-        if not isinstance(kwargs['count'], int):
-            return HttpErrorResponse('ERROR: Expected an integer value for "count"')
+    #     if 'node' in kwargs:
+    #         kwargs['count'] = kwargs['node']
 
-        count = int(kwargs['count'])
+    #     if not 'count' in kwargs:
+    #         return HttpErrorResponse("ERROR: Required argument doesn't exist")
 
-        cloud = kwargs.pop('cloud', 'iaas')
-        try:
-            cloud = self._init_cloud(cloud)
-        except Exception as ex:
-                return HttpErrorResponse(
-                    "A cloud named '%s' could not be found" % cloud)
+    #     if not isinstance(kwargs['count'], int):
+    #         return HttpErrorResponse('ERROR: Expected an integer value for "count"')
 
-        self.state = self.S_ADAPTING
-        Thread(target=self._do_add_nodes, args=[count, cloud]).start()
-        return HttpJsonResponse()
+    #     count = int(kwargs['count'])
 
-    def _do_add_nodes(self, count, cloud):
-        node_instances = self.controller.create_nodes(count,
-                client.check_agent_process, self.AGENT_PORT, cloud)
+    #     cloud = kwargs.pop('cloud', 'iaas')
+    #     try:
+    #         cloud = self._init_cloud(cloud)
+    #     except Exception as ex:
+    #             return HttpErrorResponse(
+    #                 "A cloud named '%s' could not be found" % cloud)
 
-        self.nodes += node_instances
-        # Startup agents
-        for node in node_instances:
+    #     self.state = self.S_ADAPTING
+    #     Thread(target=self._do_add_nodes, args=[count, cloud]).start()
+    #     return HttpJsonResponse()
+
+    # def _do_add_nodes(self, count, cloud):
+    #     node_instances = self.controller.create_nodes(count,
+    #             client.check_agent_process, self.AGENT_PORT, cloud)
+
+    #     self.nodes += node_instances
+    #     # Startup agents
+    #     for node in node_instances:
+    #         client.startup(node.ip, self.AGENT_PORT)
+
+    #     self.state = self.S_RUNNING
+    #     return HttpJsonResponse()
+
+    # @expose('POST')
+    # def remove_nodes(self, kwargs):
+    #     if self.state != self.S_RUNNING:
+    #         return HttpErrorResponse('ERROR: Wrong state to remove_nodes')
+
+    #     if 'node' in kwargs:
+    #         kwargs['count'] = kwargs['node']
+
+    #     if not 'count' in kwargs:
+    #         return HttpErrorResponse("ERROR: Required argument doesn't exist")
+
+    #     if not isinstance(kwargs['count'], int):
+    #         return HttpErrorResponse('ERROR: Expected an integer value for "count"')
+
+    #     count = int(kwargs['count'])
+    #     self.state = self.S_ADAPTING
+    #     Thread(target=self._do_remove_nodes, args=[count]).start()
+    #     return HttpJsonResponse()
+
+    # def _do_remove_nodes(self, count):
+    #     for _ in range(0, count):
+    #         self.controller.delete_nodes([ self.nodes.pop() ])
+
+    #     self.state = self.S_RUNNING
+    #     return HttpJsonResponse()
+
+    def add_nodes(self, nodes):
+        self.nodes += nodes
+        for node in nodes:
             client.startup(node.ip, self.AGENT_PORT)
-
         self.state = self.S_RUNNING
-        return HttpJsonResponse()
+
+    def remove_nodes(self, nodes):
+        # (genc): for the moment i am supposing only the number is passed and not the roles
+        del_nodes = []
+        for _ in range(0, nodes):
+            del_nodes += [ self.nodes.pop() ]
+        return del_nodes
+
 
     @expose('GET')
     def list_nodes(self, kwargs):
@@ -148,31 +198,7 @@ class HelloWorldManager(BaseManager):
                             }
             })
 
-    @expose('POST')
-    def remove_nodes(self, kwargs):
-        if self.state != self.S_RUNNING:
-            return HttpErrorResponse('ERROR: Wrong state to remove_nodes')
-
-        if 'node' in kwargs:
-            kwargs['count'] = kwargs['node']
-
-        if not 'count' in kwargs:
-            return HttpErrorResponse("ERROR: Required argument doesn't exist")
-
-        if not isinstance(kwargs['count'], int):
-            return HttpErrorResponse('ERROR: Expected an integer value for "count"')
-
-        count = int(kwargs['count'])
-        self.state = self.S_ADAPTING
-        Thread(target=self._do_remove_nodes, args=[count]).start()
-        return HttpJsonResponse()
-
-    def _do_remove_nodes(self, count):
-        for _ in range(0, count):
-            self.controller.delete_nodes([ self.nodes.pop() ])
-
-        self.state = self.S_RUNNING
-        return HttpJsonResponse()
+    
 
     @expose('GET')
     def get_helloworld(self, kwargs):

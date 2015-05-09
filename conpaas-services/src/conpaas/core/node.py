@@ -16,7 +16,7 @@ class ServiceNode(object):
     This class represents the abstraction of a node.
     """
 
-    def __init__(self, vmid, ip, private_ip, cloud_name, weightBackend=DEFAULT_WEIGHT):
+    def __init__(self, vmid, ip, private_ip, cloud_name, weight_backend=DEFAULT_WEIGHT):
         """
         Parameters
         ----------
@@ -28,7 +28,7 @@ class ServiceNode(object):
             private IP address of the VM in a VPN
         cloud_name : string
             name of the cloud provider
-        weightBackend : int
+        weight_backend : int
             weight of the VM representing the efficiency of this VM
         """
         self.id = "%s%s" % (cloud_name, vmid)
@@ -36,7 +36,7 @@ class ServiceNode(object):
         self.ip = ip
         self.private_ip = private_ip
         self.cloud_name = cloud_name
-        self.weightBackend = weightBackend
+        self.weight_backend = weight_backend
 
     def __repr__(self):
         return 'ServiceNode(id=%s, ip=%s)' % (str(self.id), self.ip)
@@ -56,3 +56,13 @@ class ServiceNode(object):
         n.id = self.vmid
         n.ip = self.ip
         return n
+
+    def to_dict(self):
+        return {'id':self.id, 
+                'vmid':self.vmid, 
+                'ip':self.ip, 
+                'private_ip':self.private_ip, 
+                'cloud_name':self.cloud_name,
+                'weight_backend':self.weight_backend
+                }
+

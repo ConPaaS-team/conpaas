@@ -1,5 +1,9 @@
 #!/bin/bash
 
+
+DIRECTOR=%DIRECTOR_URL%
+SOURCE=$DIRECTOR/download
+
 ROOT_DIR=/root
 CPS_HOME=$ROOT_DIR/ConPaaS
 

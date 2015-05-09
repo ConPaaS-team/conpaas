@@ -47,7 +47,6 @@ import os.path
 import time
 
 from conpaas.core.expose import expose
-from conpaas.core.controller import Controller
 from conpaas.core.manager import BaseManager, ManagerException
 
 from conpaas.core import git
@@ -135,7 +134,7 @@ class GenericManager(BaseManager):
         'config_parser' represents the manager config file.
         **kwargs holds anything that can't be sent in config_parser."""
         BaseManager.__init__(self, config_parser)
-        self.controller.generate_context('generic')
+        # self.controller.generate_context('generic')
 
         # memcache_addr = config_parser.get('manager', 'MEMCACHE_ADDR')
         # self.memcache = memcache.Client([memcache_addr])
@@ -169,6 +168,9 @@ echo "" >> /root/generic.out
         os.chmod(path, stat.S_IRWXU | stat.S_IROTH | stat.S_IXOTH)
         return path
 
+    def get_service_type(self):
+        return 'generic'
+
     def _create_initial_configuration(self):
         self.logger.info("Creating initial configuration")
 
@@ -195,33 +197,9 @@ echo "" >> /root/generic.out
         config.currentCodeVersion = 'code-default'
         self._configuration_set(config)
 
-    @expose('POST')
-    def startup(self, kwargs):
-        """Start the Generic service"""
-        self.logger.info('Manager starting up')
+   
 
-        # Starting up the service makes sense only in the INIT or STOPPED
-        # states
-        dstate = self._state_get()
-        if dstate != self.S_INIT and dstate != self.S_STOPPED:
-            ex = ManagerException(ManagerException.E_STATE_ERROR)
-            return HttpErrorResponse(ex.message)
-
-        # Check if the specified cloud, if any, is available
-        if 'cloud' in kwargs:
-            try:
-                self._init_cloud(kwargs['cloud'])
-            except Exception:
-                return HttpErrorResponse(
-                    "A cloud named '%s' could not be found" % kwargs['cloud'])
-
-        self._state_set(self.S_PROLOGUE, msg='Starting up')
-
-        Thread(target=self._do_startup, args=[kwargs]).start()
-
-        return HttpJsonResponse({ 'state': self._state_get() })
-
-    def _do_startup(self, kwargs):
+    def start(self, nodes):
         """Start up the service. The first node will be the master node."""
 
         nr_instances = 1
@@ -235,17 +213,17 @@ echo "" >> /root/generic.out
         vals = { 'action': '_do_startup', 'count': nr_instances }
         self.logger.debug(self.ACTION_REQUESTING_NODES % vals)
 
-        cloud = kwargs.pop('cloud', 'iaas')
-        cloud = self._init_cloud(cloud)
+        # cloud = kwargs.pop('cloud', 'iaas')
+        # cloud = self._init_cloud(cloud)
 
         try:
             #nodes = []
             #for i in range(1, nr_instances):
             #    nodes.append( self.controller.create_nodes(1,
             #        client.check_agent_process, self.AGENT_PORT, cloud))
-            nodes = self.controller.create_nodes(nr_instances,
-                    client.check_agent_process, self.AGENT_PORT, cloud)
-
+            # nodes = self.controller.create_nodes(nr_instances,
+            #         client.check_agent_process, self.AGENT_PORT, cloud)
+            
             config = self._configuration_get()
 
             roles = {'master':'1'}
@@ -313,7 +291,8 @@ echo "" >> /root/generic.out
 
     #     return HttpJsonResponse({ 'state': self._state_get() })
 
-    def _do_stop(self):
+    # (genc) maybe this should be wrapped by the application manager methods as well
+    def stop(self):
         """Delete all nodes and switch to status STOPPED"""
         # Detach and delete all volumes
 
@@ -327,11 +306,13 @@ echo "" >> /root/generic.out
 
         self.logger.info("Removing nodes: %s" %
                 [ node.id for node in self.nodes ])
-        self.controller.delete_nodes(self.nodes)
+        # self.controller.delete_nodes(self.nodes)
+        del_nodes = self.nodes
         self.nodes = []        # Not only delete the nodes, but clear the list too
         self.agents_info = []
         self.master_ip = None
-        self._state_set(self.S_STOPPED)
+        # self._state_set(self.S_STOPPED)
+        return del_nodes
 
     def __check_count_in_args(self, kwargs):
         """Return 'count' if all is good. HttpErrorResponse otherwise."""
@@ -351,94 +332,143 @@ echo "" >> /root/generic.out
 
         return count
 
-    @expose('POST')
-    def add_nodes(self, kwargs):
-        """Add kwargs['count'] nodes to this deployment"""
+    # @expose('POST')
+    # def add_nodes(self, kwargs):
+    #     """Add kwargs['count'] nodes to this deployment"""
 
-        # Adding nodes makes sense only in the RUNNING state
-        if self._state_get() != self.S_RUNNING:
-            vals = { 'curstate': self._state_get(), 'action': 'add_nodes' }
-            return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
+    #     # Adding nodes makes sense only in the RUNNING state
+    #     if self._state_get() != self.S_RUNNING:
+    #         vals = { 'curstate': self._state_get(), 'action': 'add_nodes' }
+    #         return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
 
-        # Ensure 'count' is valid
-        count_or_err = self.__check_count_in_args(kwargs)
-        if isinstance(count_or_err, HttpErrorResponse):
-            return count_or_err
+    #     # Ensure 'count' is valid
+    #     count_or_err = self.__check_count_in_args(kwargs)
+    #     if isinstance(count_or_err, HttpErrorResponse):
+    #         return count_or_err
 
-        count = count_or_err
+    #     count = count_or_err
 
-        cloud = kwargs.pop('cloud', 'iaas')
-        try:
-            cloud = self._init_cloud(cloud)
-        except Exception as ex:
-                return HttpErrorResponse(
-                    "A cloud named '%s' could not be found" % cloud)
+    #     cloud = kwargs.pop('cloud', 'iaas')
+    #     try:
+    #         cloud = self._init_cloud(cloud)
+    #     except Exception as ex:
+    #             return HttpErrorResponse(
+    #                 "A cloud named '%s' could not be found" % cloud)
 
-        self.logger.info("Going to add %s new nodes on cloud '%s'"
-                % (count, cloud))
+    #     self.logger.info("Going to add %s new nodes on cloud '%s'"
+    #             % (count, cloud))
 
+    #     start_role = 'node'
+    #     nodes = {start_role: str(count)}
+
+    #     self._state_set(self.S_ADAPTING)
+    #     Thread(target=self._do_add_nodes, args=[nodes, start_role, cloud]).start()
+
+    #     return HttpJsonResponse({ 'state': self._state_get() })
+
+    # def _do_add_nodes(self, nodes, start_role, cloud):
+    #     """Add 'count' Generic Nodes to this deployment"""
+    #     count = 0
+    #     for node in nodes:
+    #             count += int(nodes[node])
+
+    #     if count:
+    #         # Startup agents
+    #         node_instances = self.controller.create_nodes(count,
+    #             client.check_agent_process, self.AGENT_PORT, cloud)
+    #         agents_info = self._update_agents_info(node_instances, nodes)
+
+    #         nodes_before = list(self.nodes)
+    #         self.nodes += node_instances
+    #         self.agents_info += agents_info
+
+    #         config = self._configuration_get()
+    #         self._init_agents(config, node_instances, self.agents_info)
+    #         self._update_code(config, node_instances)
+
+    #     self._do_execute_script('notify', nodes_before)
+    #     self._state_set(self.S_RUNNING)
+
+    # @expose('POST')
+    # def remove_nodes(self, kwargs):
+    #     """Remove kwargs['count'] nodes from this deployment"""
+
+    #     # Removing nodes only if RUNNING
+    #     if self._state_get()!= self.S_RUNNING:
+    #         vals = { 'curstate': self._state_get(), 'action': 'remove_nodes' }
+    #         return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
+
+    #     # Ensure 'count' is valid
+    #     count_or_err = self.__check_count_in_args(kwargs)
+    #     if isinstance(count_or_err, HttpErrorResponse):
+    #         return count_or_err
+
+    #     count = count_or_err
+
+    #     if count > len(self.nodes) - 1:
+    #         return HttpErrorResponse("ERROR: Cannot remove so many nodes")
+
+    #     self.logger.info('Going to remove %s nodes' % count)
+
+    #     self._state_set(self.S_ADAPTING)
+
+    #     Thread(target=self._do_remove_nodes, args=[count]).start()
+
+    #     return HttpJsonResponse({ 'state': self._state_get() })
+
+    # def _do_remove_nodes(self, count):
+    #     """Remove 'count' nodes, starting from the end of the list. This way
+    #     the Generic master gets removed last."""
+    #     for _ in range(count):
+    #         # detach and delete any attached volumes
+    #         node = self.nodes[-1]
+    #         config = self._configuration_get()
+    #         attached_volumes = [
+    #             volume for volume in config.volumes.values()
+    #                    if volume.agentId == node.id
+    #         ]
+    #         for volume in attached_volumes:
+    #             self.__delete_volume_internal(volume)
+    #             config.volumes.pop(volume.volumeName)
+    #         self._configuration_set(config)
+
+    #         self.nodes.pop()
+    #         self.agents_info.pop()
+    #         self.logger.info("Removing node with IP %s" % node.ip)
+    #         self.controller.delete_nodes([ node ])
+    #     if not self.nodes:
+    #         self.master_ip = None
+    #         self._state_set(self.S_STOPPED)
+    #     else:
+    #         self._do_execute_script('notify', self.nodes)
+    #         self._state_set(self.S_RUNNING)
+
+    def add_nodes(self, node_instances):
+        # (genc): i have to figure out how to deal with the roles
         start_role = 'node'
-        nodes = {start_role: str(count)}
+        roles = {start_role: str(len(node_instances))}
+        # Startup agents
+        agents_info = self._update_agents_info(node_instances, roles)
 
-        self._state_set(self.S_ADAPTING)
-        Thread(target=self._do_add_nodes, args=[nodes, start_role, cloud]).start()
+        nodes_before = list(self.nodes)
+        self.nodes += node_instances
+        self.agents_info += agents_info
 
-        return HttpJsonResponse({ 'state': self._state_get() })
-
-    def _do_add_nodes(self, nodes, start_role, cloud):
-        """Add 'count' Generic Nodes to this deployment"""
-        count = 0
-        for node in nodes:
-                count += int(nodes[node])
-
-        if count:
-            # Startup agents
-            node_instances = self.controller.create_nodes(count,
-                client.check_agent_process, self.AGENT_PORT, cloud)
-            agents_info = self._update_agents_info(node_instances, nodes)
-
-            nodes_before = list(self.nodes)
-            self.nodes += node_instances
-            self.agents_info += agents_info
-
-            config = self._configuration_get()
-            self._init_agents(config, node_instances, self.agents_info)
-            self._update_code(config, node_instances)
+        config = self._configuration_get()
+        self._init_agents(config, node_instances, self.agents_info)
+        self._update_code(config, node_instances)
 
         self._do_execute_script('notify', nodes_before)
-        self._state_set(self.S_RUNNING)
+        # self._state_set(self.S_RUNNING)
 
-    @expose('POST')
-    def remove_nodes(self, kwargs):
-        """Remove kwargs['count'] nodes from this deployment"""
 
-        # Removing nodes only if RUNNING
-        if self._state_get()!= self.S_RUNNING:
-            vals = { 'curstate': self._state_get(), 'action': 'remove_nodes' }
-            return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
-
-        # Ensure 'count' is valid
-        count_or_err = self.__check_count_in_args(kwargs)
-        if isinstance(count_or_err, HttpErrorResponse):
-            return count_or_err
-
-        count = count_or_err
-
-        if count > len(self.nodes) - 1:
-            return HttpErrorResponse("ERROR: Cannot remove so many nodes")
-
-        self.logger.info('Going to remove %s nodes' % count)
-
-        self._state_set(self.S_ADAPTING)
-
-        Thread(target=self._do_remove_nodes, args=[count]).start()
-
-        return HttpJsonResponse({ 'state': self._state_get() })
-
-    def _do_remove_nodes(self, count):
-        """Remove 'count' nodes, starting from the end of the list. This way
-        the Generic master gets removed last."""
-        for _ in range(count):
+    def remove_nodes(self, nodes):
+        # (genc): for the moment i am supposing only the number is passed and not the roles
+        del_nodes = []
+        # for _ in range(0, nodes):
+        #     del_nodes += [ self.nodes.pop() ]
+        
+        for _ in range(0, nodes):
             # detach and delete any attached volumes
             node = self.nodes[-1]
             config = self._configuration_get()
@@ -451,16 +481,18 @@ echo "" >> /root/generic.out
                 config.volumes.pop(volume.volumeName)
             self._configuration_set(config)
 
-            self.nodes.pop()
+            del_nodes += [ self.nodes.pop() ]
             self.agents_info.pop()
             self.logger.info("Removing node with IP %s" % node.ip)
-            self.controller.delete_nodes([ node ])
+            # self.controller.delete_nodes([ node ])
         if not self.nodes:
             self.master_ip = None
             self._state_set(self.S_STOPPED)
         else:
             self._do_execute_script('notify', self.nodes)
             self._state_set(self.S_RUNNING)
+
+        return del_nodes
 
     def __is_master(self, node):
         """Return True if the given node is the Generic master"""

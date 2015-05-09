@@ -9,6 +9,8 @@ DIRECTOR=%DIRECTOR_URL%
 SOURCE=$DIRECTOR/download
 ROOT_DIR=/root
 CPS_HOME=$ROOT_DIR/ConPaaS
+DIRECTOR=%DIRECTOR_URL%
+
 
 LOG_FILE=/var/log/cpsmanager.log
 ETC=/etc/cpsmanager

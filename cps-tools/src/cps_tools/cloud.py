@@ -53,6 +53,7 @@ class CloudCmd:
                                                 description=None,
                                                 metavar="<sub-command>")
         self._add_list()
+        self._add_list_resources()
         self._add_help(parser)
 
     def add_parser(self, *args, **kwargs):
@@ -76,6 +77,19 @@ class CloudCmd:
         if clouds:
             for cloud in clouds:
                 print("%s" % cloud)
+
+
+    # ========== list
+    def _add_list_resources(self):
+        subparser = self.add_parser('list_resources', help="list resources")
+        subparser.set_defaults(run_cmd=self.list_resources, parser=subparser)
+
+    def list_resources(self, _args):
+        resources = self.client.call_director_get("list_resources")
+        if resources:
+            print(self.client.prettytable(('rid', 'app_id', 'vmid', 'ip', 'role', 'cloud'), resources))
+        else:
+            print "No existing resources"
 
 
 def main():

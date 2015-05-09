@@ -60,6 +60,7 @@ class Service {
 	}
 
 	private function pingManager() {
+		// dlog($this->manager.': '.$e->getMessage());
 		if (!isset($this->application)) {
 			return;
 		}
@@ -280,7 +281,9 @@ class Service {
         if ($command == 'add_nodes') {
             $nodes['cloud'] = $params['cloud'];
         }
- 		return $this->managerRequest('post', $command, $nodes);
+ 		// return $this->managerRequest('post', $command, $nodes);
+ 		$nodes['service_id'] = $this->sid;
+ 		return $this->application->managerRequest('post', $command, 0, $nodes);
  	}
 
  	public function addServiceNodes($params) {
@@ -292,11 +295,15 @@ class Service {
  	}
 
  	public function requestShutdown() {
- 		return $this->managerRequest('post', 'stop', array());
+ 		$params['service_id'] = $this->sid;
+ 		return $this->application->managerRequest('post', 'stop_service', 0, $params);
+ 		// return $this->managerRequest('post', 'stop', array());
  	}
 
  	public function requestStartup($params) {
- 		return $this->managerRequest('post', 'startup', $params);
+ 		$params['service_id'] = $this->sid;
+ 		return $this->application->managerRequest('post', 'start_service', 0, $params);
+ 		// return $this->managerRequest('post', 'startup', $params);
  	}
 
  	/**

@@ -18,26 +18,36 @@ import ConfigParser
 from netaddr import IPNetwork
 
 from cpsdirector import db
-from cpsdirector import cloud as manager_controller
+#from cpsdirector import cloud as manager_controller
+from cpsdirector.iaas.controller import Controller
 
 from cpsdirector.common import log
 from cpsdirector.common import build_response
 from cpsdirector.common import config_parser
+from cpsdirector.cloud import _create_nodes as create_nodes, Resource
 
 from conpaas.core.manager import BaseManager
+from conpaas.core.node import ServiceNode
+
 
 application_page = Blueprint('application_page', __name__)
-# app_controllers = {}
+
 
 class Application(db.Model):
     aid = db.Column(db.Integer, primary_key=True,
                     autoincrement=True)
     name = db.Column(db.String(256))
-    manager = db.Column(db.String(512))
-    vmid = db.Column(db.String(256))
+    # manager = db.Column(db.String(512))
+    # vmid = db.Column(db.String(256))
     user_id = db.Column(db.Integer, db.ForeignKey('user.uid'))
     user = db.relationship('User', backref=db.backref('applications',
                            lazy="dynamic"))
+    manager = db.relationship('Resource', uselist=False,
+                            primaryjoin="and_(Application.aid==Resource.app_id, Resource.role=='manager')", 
+                            backref='applciation')
+
+    # manager = Resource.query.filter_by(app_id=aid).filter_by(role='manager').first()
+
 
     def __init__(self, **kwargs):
         # Default values
@@ -47,9 +57,12 @@ class Application(db.Model):
             setattr(self, key, val)
 
     def to_dict(self):
-        return  {
-            'aid': self.aid, 'name': self.name, 'manager':self.manager, 'uid':self.user_id, 'vmid':self.vmid,
-        }
+        app_to_dict = {'aid': self.aid, 'name': self.name, 'uid':self.user_id, 'manager':None, 'vmid':None}
+        if self.manager:
+            app_to_dict['manager'] = self.manager.ip
+            app_to_dict['vmid'] = self.manager.vmid
+        return app_to_dict
+       
 
     def get_available_vpn_subnet(self):
         """Find an available VPN subnet for the next service to be created in
@@ -74,15 +87,13 @@ class Application(db.Model):
                 return candidate_network
     def stop(self):
         #TODO (genc): Probably the subnet and cloud name should be stored on the application table
-        cloud_name = 'iaas'
-        vpn = ''
-        controller = manager_controller.ManagerController(self.user_id, self.aid, cloud_name, vpn)
-        controller.stop(self.vmid)
+        controller = Controller()
 
-        self.manager = None
-        self.vmid = None
+        controller.setup_default()
+        controller.delete_nodes([ServiceNode(self.manager.vmid, self.manager.ip,'',self.manager.cloud,'') ])
+        self.manager.remove()
+        #TODO (genc): delete resource 
         db.session.commit()
-
         log('Application %s stopped properly' % self.aid)
         return True
 
@@ -92,7 +103,7 @@ def get_app_by_id(user_id, app_id):
         log('Application %s does not exist' % app_id)
         return
 
-    if app.user_id != user_id:
+    if int(app.user_id) != int(user_id):
         log('Application %s is not owned by user %s' % (app_id, user_id))
         return
 
@@ -119,17 +130,6 @@ def check_app_exists(app_name):
         return True
 
     return False
-
-# def store_app_controller(user_id, app_id, cloud_name='default'):
-#     app = get_app_by_id(user_id, app_id)
-#     if not app:
-#         return None
-#     vpn = app.get_available_vpn_subnet()
-#     if (cloud_name == 'default'):
-#         cloud_name = 'iaas'
-#     controller = manager_controller.ManagerController(user_id, app_id, cloud_name, vpn)
-#     global app_controllers
-#     app_controllers[app_id] = controller
 
 def _createapp(app_name, cloud_name):
     log('User %s creating a new application %s' % (g.user.username, app_name))
@@ -160,24 +160,18 @@ def _startapp(user_id, app_id, cloud_name):
     app = get_app_by_id(user_id, app_id)
     if not app:
         return { 'error': True, 'msg': 'Application not found' }    
-    if app.manager is not None:
+    if app.manager and app.manager.ip is not None:
         return { 'error': True, 'msg': 'Application already started' }
     try:
-        if (cloud_name == 'default'):
-            cloud_name = 'iaas'
         
+       
         vpn = app.get_available_vpn_subnet()
-        controller = manager_controller.ManagerController(user_id, app_id, cloud_name, vpn)
-        cloud = controller.get_cloud_by_name(cloud_name)
-        # Create a context file whith an empty service type
-        controller.generate_context('', cloud)
-
-        from conpaas.core.manager import check_manager_process, BaseManager
-        node = controller.create_nodes(1, check_manager_process, 443, cloud)[0]
-        controller._stop_reservation_timer()
-        app.manager = node.ip
-        app.vmid = node.vmid
-        db.session.commit()
+        # node = create_nodes({'role':'manager','user_id':user_id, 'app_id':app_id, 'vpn':vpn, 'cloud_name':cloud_name})[0]
+        create_nodes({'role':'manager','user_id':user_id, 'app_id':app_id, 'vpn':vpn, 'cloud_name':cloud_name})
+        # log('hello, i like you: %s' % app.manager.ip)
+        # app.manager = node.ip
+        # app.vmid = node.vmid
+        # db.session.commit()
         log('Application %s started properly' % (app_id))
         return True
     except Exception, err:

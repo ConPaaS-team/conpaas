@@ -29,7 +29,10 @@ class Dashboard extends Page {
   				.'</a>'
   				.'</td></tr></table>'
   			.'</div>'
-  			.'<div class="clear"></div>';
+  			.'<div class="clear"></div>'
+  			.'<br>'
+  			.'<div id="instances"></div>'
+  			;
 	}
 
 

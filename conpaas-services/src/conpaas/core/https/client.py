@@ -82,9 +82,11 @@ class HTTPSConnection(HTTPConnection):
 
     def __init__(self, host, port=None, strict=None, **ssl):
         try:
+            # open('/tmp/lesh', 'a').write('createing connection for host: %s \n' % host)
             self.ssl_ctx = ssl['ssl_context']
             assert isinstance(self.ssl_ctx, SSL.Context), self.ssl_ctx
         except KeyError:
+            open('/tmp/lesh', 'a').write('it threw some shit exception\n')
             self.ssl_ctx = SSL.Context(SSL.SSLv23_METHOD)
         HTTPConnection.__init__(self, host, port, strict)
 
@@ -175,6 +177,7 @@ def _conpaas_callback_agent(connection, x509, errnum, errdepth, ok):
             if value == 'CA':
                 return ok
 
+
     if dict['role'] != 'agent':
        return False
 
@@ -228,7 +231,7 @@ def _conpaas_callback_user(connection, x509, errnum, errdepth, ok):
         user's client side. The user might sends requests only to
         its managers.
     '''
-
+    
     components = x509.get_subject().get_components()
     dict = {}
 
@@ -237,6 +240,7 @@ def _conpaas_callback_user(connection, x509, errnum, errdepth, ok):
         certificate and once with the peer's certificate. So first
         we rule out the CA's certificate.
     '''
+
     for key,value in components:
         dict[key] = value
         if key == 'CN':
@@ -244,8 +248,8 @@ def _conpaas_callback_user(connection, x509, errnum, errdepth, ok):
                 return ok
 
     if dict['role'] != 'manager':
-       return False
-
+        return False
+    
     if dict['UID'] != __uid:
        return False
         
@@ -257,7 +261,7 @@ def _conpaas_callback_director(connection, x509, errnum, errdepth, ok):
         director's client side. The director might sends requests only to
         managers.
     '''
-
+    
     components = x509.get_subject().get_components()
     dict = {}
     for key,value in components:
@@ -266,7 +270,8 @@ def _conpaas_callback_director(connection, x509, errnum, errdepth, ok):
             if value == 'CA':
                 return ok
 
-    if dict['role'] != 'manager':
+    if dict['role'] != 'manager' and dict['role'] != 'agent':
+    # if dict['role'] != 'manager':
        return False
 
     return ok 
@@ -381,18 +386,21 @@ def jsonrpc_get(host, port, uri, method, service_id=0, params=None):
         @return A tuple containing the return code
         and the response to the HTTP request
     """
-
     h = HTTPSConnection(host, port=port, ssl_context=__client_ctx)
+    
     all_params = {'service_id':service_id, 'method': method, 'id': '1'}
     # all_params = {'method': method, 'id': '1'}
     if params:
         all_params['params'] = json.dumps(params)
+    
     h.putrequest('GET', '%s?%s' % (uri, urlencode(all_params)))
     h.putheader('content-type', 'application/json')
     h.endheaders()
     r = h.getresponse()
     body = r.read()
     h.close()
+    
+    
     return r.status, body 
 
 def jsonrpc_post(host, port, uri, method, service_id=0, params={}):

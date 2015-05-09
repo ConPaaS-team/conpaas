@@ -73,9 +73,11 @@ class Service(db.Model):
             if type(serv[c.name]) is datetime:
                 serv[c.name] = serv[c.name].isoformat()
 
-        for c in self.application.__table__.columns:
-            app[c.name] = getattr(self.application, c.name)
+        # for c in self.application.__table__.columns:
+        #     app[c.name] = getattr(self.application, c.name)
 
+        app = self.application.to_dict()
+        
         return {'service':serv, 'application':app}
 
     # def stop(self):
@@ -123,6 +125,7 @@ def callmanager(app_id, service_id, method, post, data, files=[]):
     client.conpaas_init_ssl_ctx('/etc/cpsdirector/certs', 'director')
     
     application = get_app_by_id(g.user.uid, app_id)
+    
     if application is None:
        msg = "Application %s not found." % app_id
        log(msg)

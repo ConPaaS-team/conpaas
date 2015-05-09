@@ -30,6 +30,7 @@ class ServiceCmd(object):
         self._add_add()
         self._add_list()
         self._add_start()
+        # self._add_start_test()
         self._add_stop()
         self._add_get_config()
         self._add_get_state()
@@ -39,6 +40,7 @@ class ServiceCmd(object):
         self._add_list_nodes()
         self._add_remove_nodes()
         self._add_help(serv_parser)
+
 
     def add_parser(self, *args, **kwargs):
         return self.subparsers.add_parser(*args, **kwargs)
@@ -151,9 +153,38 @@ class ServiceCmd(object):
         else:
             print "No existing services"
 
+    # # ========== start
+    # def _add_start(self):
+    #     subparser = self.add_parser('start', help="start a service")
+    #     subparser.set_defaults(run_cmd=self.start_serv, parser=subparser)
+    #     subparser.add_argument('--cloud', metavar='NAME', default=None,
+    #                            help="Cloud name where the service will be started.")
+    #     subparser.add_argument('app_name_or_id',
+    #                            help="Name or identifier of an application")
+    #     subparser.add_argument('serv_name_or_id',
+    #                            help="Name or identifier of a service")
+
+    # def start_serv(self, args):
+    #     if args.cloud is None:
+    #         cloud = 'default'
+    #     else:
+    #         cloud = args.cloud
+    #     data = {'cloud': cloud}
+
+    #     app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
+
+    #     res = self.client.call_manager_post(app_id, service_id, "startup", data)
+    #     if 'error' in res:
+    #         self.client.error(res['error'])
+    #     else:
+    #         print("Service %s is starting..." % service_id)
+    #         state = self.client.wait_for_state(app_id, service_id, ['RUNNING', 'STOPPED', 'ERROR'])
+    #         if state in ['STOPPED', 'ERROR']:
+    #             self.client.error("Failed to start service %s." % service_id)
+
     # ========== start
     def _add_start(self):
-        subparser = self.add_parser('start', help="start a service")
+        subparser = self.add_parser('start', help="start a service from the app_manager")
         subparser.set_defaults(run_cmd=self.start_serv, parser=subparser)
         subparser.add_argument('--cloud', metavar='NAME', default=None,
                                help="Cloud name where the service will be started.")
@@ -167,18 +198,16 @@ class ServiceCmd(object):
             cloud = 'default'
         else:
             cloud = args.cloud
-        data = {'cloud': cloud}
-
         app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
-
-        res = self.client.call_manager_post(app_id, service_id, "startup", data)
+        
+        data = {'cloud': cloud, 'service_id':service_id}
+        
+        res = self.client.call_manager_post(app_id, 0, "start_service", data)
         if 'error' in res:
             self.client.error(res['error'])
         else:
             print("Service %s is starting..." % service_id)
-            state = self.client.wait_for_state(app_id, service_id, ['RUNNING', 'STOPPED', 'ERROR'])
-            if state in ['STOPPED', 'ERROR']:
-                self.client.error("Failed to start service %s." % service_id)
+            
 
     # ========== stop
     def _add_stop(self):
@@ -193,7 +222,9 @@ class ServiceCmd(object):
         app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
 
         print("Stopping service %s..." % service_id)
-        res = self.client.call_manager_post(app_id, service_id, "stop")
+        # res = self.client.call_manager_post(app_id, service_id, "stop")
+        data = {'service_id':service_id}
+        res = self.client.call_manager_post(app_id, 0, "stop_service", data)
         if 'error' in res:
             self.client.error("Error when stopping service %s: %s"
                               % (service_id, res['error']))
@@ -335,13 +366,10 @@ class ServiceCmd(object):
 
     # ========== add_nodes
     def _add_add_nodes(self):
-        subparser = self.add_parser('add_nodes',
-                                    help="add nodes to a service")
+        subparser = self.add_parser('add_nodes', help="add nodes to a service")
         subparser.set_defaults(run_cmd=self.add_nodes, parser=subparser)
-        subparser.add_argument('app_name_or_id',
-                               help="Name or identifier of an application")
-        subparser.add_argument('serv_name_or_id',
-                               help="Name or identifier of a service")
+        subparser.add_argument('app_name_or_id', help="Name or identifier of an application")
+        subparser.add_argument('serv_name_or_id', help="Name or identifier of a service")
         for role in self.roles:
             subparser.add_argument('--%s' % role, type=int, default=0,
                                    help="Number of %s nodes to add" % role)
@@ -353,9 +381,12 @@ class ServiceCmd(object):
         total_nodes, data = self._get_roles_nb(args)
         if total_nodes <= 0:
             self.client.error("Cannot add %s nodes." % total_nodes)
-        data['cloud'] = args.cloud
+        
         app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
-        res = self.client.call_manager_post(app_id, service_id, "add_nodes", data)
+        # res = self.client.call_manager_post(app_id, service_id, "add_nodes", data)
+        data['service_id'] = service_id
+        data['cloud'] = args.cloud
+        res = self.client.call_manager_post(app_id, 0, "add_nodes", data)
         if 'error' in res:
             self.client.error("Could not add nodes to service %s of application %s: %s"
                               % (service_id, app_id, res['error']))
@@ -385,7 +416,8 @@ class ServiceCmd(object):
         total_nodes, data = self._get_roles_nb(args)
         if total_nodes <= 0:
             self.client.error("Cannot remove %s nodes." % total_nodes)
-        res = self.client.call_manager_post(app_id, service_id, "remove_nodes", data)
+        data['service_id'] = service_id
+        res = self.client.call_manager_post(app_id, 0, "remove_nodes", data)
         if 'error' in res:
             self.client.error("Could not remove nodes from service %s of application %s: %s"
                               % (service_id, app_id, res['error']))

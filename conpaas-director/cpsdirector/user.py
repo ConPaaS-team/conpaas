@@ -94,8 +94,7 @@ class cert_required(object):
 
 
 class User(db.Model):
-    uid = db.Column(db.Integer, primary_key=True,
-                    autoincrement=True)
+    uid = db.Column(db.Integer, primary_key=True, autoincrement=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     fname = db.Column(db.String(256))
     lname = db.Column(db.String(256))
@@ -362,9 +361,22 @@ def get_manager_cert():
 
     csr = crypto.load_certificate_request(crypto.FILETYPE_PEM,
                                           request.files['csr'].read())
-    return x509cert.create_x509_cert(
-        config_parser.get('conpaas', 'CERT_DIR'), csr)
+    return x509cert.create_x509_cert(config_parser.get('conpaas', 'CERT_DIR'), csr)
 
+
+def _deduct_credit(decrement):
+    
+    log('Decrement user credit: uid=%s, old_credit=%s, decrement=%s' % (g.user.uid, g.user.credit, decrement))
+    g.user.credit -= decrement
+    if g.user.credit > -1:
+        # User has enough credit
+        db.session.commit()
+        log('New credit for user %s: %s' % (g.user.uid, g.user.credit))
+        return True
+        
+    db.session.rollback()
+    log('User %s does not have enough credit' % g.user.uid)
+    return False
 
 @user_page.route("/callback/decrementUserCredit.php", methods=['POST'])
 @cert_required(role='manager')
@@ -376,29 +388,11 @@ def credit():
     Returns a dictionary with the 'error' attribute set to False if the user
     had enough credit, True otherwise.
     """
-    # service_id = int(request.values.get('sid', -1))
     app_id = int(request.values.get('aid', -1))
     decrement = int(request.values.get('decrement', 0))
-
-    # log('Decrement user credit: sid=%s, old_credit=%s, decrement=%s' % (service_id, g.service.user.credit, decrement))
-    log('Decrement user credit: aid=%s, old_credit=%s, decrement=%s' % (app_id, g.application.user.credit, decrement))
-
-    # Decrement user's credit
-    # g.service.user.credit -= decrement
-    g.application.user.credit -= decrement
-
-    #if g.service.user.credit > -1:
-    if g.application.user.credit > -1:
-        # User has enough credit
-        db.session.commit()
-        # log('New credit for user %s: %s' % (g.service.user.uid, g.service.user.credit))
-        log('New credit for user %s: %s' % (g.application.user.uid, g.application.user.credit))
+    success = _deduct_credit(app_id, decrement)
+    if success:
         return jsonify({'error': False})
-
-    # User does not have enough credit
-    db.session.rollback()
-    log('User %s does not have enough credit' % g.application.user.uid)
-    # log('User %s does not have enough credit' % g.service.user.uid)
     return jsonify({'error': True})
 
 

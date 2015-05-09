@@ -2,7 +2,7 @@
 
 from setuptools import setup
 
-CPSVERSION = '1.4.1'
+CPSVERSION = '555'
 
 long_description = """
 ConPaaS: an integrated runtime environment for elastic Cloud applications 

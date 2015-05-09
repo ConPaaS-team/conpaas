@@ -108,6 +108,8 @@ conpaas.ui = (function (this_module) {
                         $("#btnStartApp").hide();
                         $("#btnAddService").show();
                         $("#btnStopApp").show();
+                        html = '<div class="instance dualbox"><div class="left"><i class="title">Instance iaas'+app.vmid+'</i><div class="tag blue">&nbsp;Application manager&nbsp;</div><div class="brief">running</div></div><div class="right"><i class="address">'+app.manager.replace('https://', '')+'</i></div><div class="clear"></div></div>'
+                        $("#instances").html(html);
                         that.startingApp = false;
                         that.poller = new conpaas.http.Poller(that.server, 'ajax/checkServices.php', 'get');
                         that.checkServices();

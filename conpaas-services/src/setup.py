@@ -2,9 +2,9 @@
 
 from setuptools import setup, find_packages
 from setuptools.command import sdist
-del sdist.finders[:]
+# del sdist.finders[:]
 
-CPSVERSION = '1.3.1'
+CPSVERSION = '555'
 
 long_description = """
 ConPaaS: an integrated runtime environment for elastic Cloud applications 

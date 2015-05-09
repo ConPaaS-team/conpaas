@@ -9,3 +9,4 @@ require_once($dir.'PageStatus.php');
 require_once($dir.'Page.php');
 require_once($dir.'PageFactory.php');
 require_once($dir.'ServicePage.php');
+require_once($dir.'ResourcePage.php');

@@ -1,9 +1,9 @@
 import os.path
-import simplejson
-
+import simplejson, copy
+import StringIO
 from netaddr import IPNetwork
 
-from conpaas.core.controller import Controller
+# from conpaas.core.controller import Controller
 from conpaas.core.misc import file_get_contents
 from conpaas.core.node import ServiceNode
 
@@ -12,314 +12,56 @@ from cpsdirector.common import config_parser, log
 from cpsdirector.user import User
 from cpsdirector import db
 
-from flask import Blueprint
+from flask import Blueprint, request, g 
+# from cpsdirector.iaas import iaas
+from cpsdirector.iaas.controller import Controller, ManagerController, AgentController
+# from cpsdirector.iaas.controller import Controller
+from cpsdirector.user import cert_required
+from ConfigParser import ConfigParser
+from conpaas.core.node import ServiceNode
+from cpsdirector.common import build_response
+
+
+
+
 cloud_page = Blueprint('cloud_page', __name__)
 
-class ManagerController(Controller):
-
-    # def __init__(self, service_name, service_id, user_id, cloud_name, app_id, vpn):
-    #     self.config_parser = self.__get_config(str(service_id), str(user_id),
-    #                                            str(app_id), service_name, vpn)
-
-    #     Controller.__init__(self, self.config_parser)
-    #     self.service_name = service_name
-    #     self.service_id = service_id
-    #     self.user_id = user_id
-    #     self.cloud_name = cloud_name
-    #     self.role = "manager"
-
-    def __init__(self, user_id, app_id, cloud_name, vpn):
-        self.config_parser = self.__get_config(str(user_id), str(app_id), vpn)
-        Controller.__init__(self, self.config_parser)
-        self.app_id = app_id
-        self.user_id = user_id
-        self.cloud_name = cloud_name
-        self.role = "manager"
-
-
-    def _get_certificate(self, email, cn, org):
-        user_id = self.config_parser.get("manager", "USER_ID")
-        # service_id = self.config_parser.get("manager", "SERVICE_ID")
-        app_id = self.config_parser.get("manager", "APP_ID")
-        cert_dir = self.config_parser.get('conpaas', 'CERT_DIR')
-
-        # return generate_certificate(cert_dir, user_id, service_id, "manager", email, cn, org)
-        return generate_certificate(cert_dir, user_id, app_id, "manager", email, cn, org)
-
-    def _get_context_file(self, service_name, cloud):
-        """Override default _get_context_file. Here we generate the context
-        file for managers rather than for agents."""
-        # the service_name is not used as this is the context for the application manager
-
-        if self.config_parser.has_option('conpaas', 'DEPLOYMENT_NAME'):
-            conpaas_deployment_name = self.config_parser.get('conpaas', 'DEPLOYMENT_NAME')
-        else:
-            conpaas_deployment_name = 'conpaas'
-
-        conpaas_home = self.config_parser.get('conpaas', 'CONF_DIR')
-
-        cloud_scripts_dir = os.path.join(conpaas_home, 'scripts', 'cloud')
-        mngr_scripts_dir = os.path.join(conpaas_home, 'scripts', 'manager')
-        mngr_cfg_dir = os.path.join(conpaas_home, 'config', 'manager')
-
-        director = self.config_parser.get('director', 'DIRECTOR_URL')
-
-        # Values to be passed to the context file template
-        tmpl_values = {}
-
-        # Get contextualization script for the cloud
-        try:
-            tmpl_values['cloud_script'] = file_get_contents(os.path.join(cloud_scripts_dir, cloud))
-        except IOError:
-            tmpl_values['cloud_script'] = ''
-
-        # Get manager setup file
-        mngr_setup = file_get_contents(
-            os.path.join(mngr_scripts_dir, 'manager-setup'))
-
-        tmpl_values['mngr_setup'] = mngr_setup.replace('%DIRECTOR_URL%',director)
-
-        # Get cloud config values from director.cfg
-        cloud_sections = ['iaas']
-        if self.config_parser.has_option('iaas', 'OTHER_CLOUDS'):
-            cloud_sections.extend(
-                [cloud_name for cloud_name
-                 in self.config_parser.get('iaas', 'OTHER_CLOUDS').split(',')
-                 if self.config_parser.has_section(cloud_name)])
-
-        def __extract_cloud_cfg(section_name):
-            tmpl_values['cloud_cfg'] += "["+section_name+"]\n"
-            for key, value in self.config_parser.items(section_name):
-                tmpl_values['cloud_cfg'] += key.upper() + " = " + value + "\n"
-
-        tmpl_values['cloud_cfg'] = ''
-        for section_name in cloud_sections:
-            __extract_cloud_cfg(section_name)
-
-        # Get manager config file
-        mngr_cfg = file_get_contents(os.path.join(mngr_cfg_dir, 'default-manager.cfg'))
-
-        # Add service-specific config file (if any)
-        # mngr_service_cfg = os.path.join(mngr_cfg_dir,service_name + '-manager.cfg')
-
-        # if os.path.isfile(mngr_service_cfg):
-        #     mngr_cfg += file_get_contents(mngr_service_cfg)
-
-        # Modify manager config file setting the required variables
-        mngr_cfg = mngr_cfg.replace('%CONPAAS_DEPLOYMENT_NAME%', conpaas_deployment_name)
-        mngr_cfg = mngr_cfg.replace('%DIRECTOR_URL%', director)
-        mngr_cfg = mngr_cfg.replace('%CONPAAS_SERVICE_TYPE%', service_name)
-
-        mngr_cfg = mngr_cfg.replace('%CLOUD_NAME%', self.cloud_name);
-        # mngr_cfg = mngr_cfg.replace('%CLOUD_TYPE%', cloud_type);
-        cloud = self.get_cloud_by_name(self.cloud_name)
-
-        # OpenNebula, EC2. etc
-        mngr_cfg = mngr_cfg.replace('%CLOUD_TYPE%', self.config_parser.get(self.cloud_name, 'DRIVER'))  
-
-        if self.config_parser.has_option(self.cloud_name, 'INST_TYPE'):
-            mngr_cfg = mngr_cfg.replace('%CLOUD_MACHINE_TYPE%', self.config_parser.get(self.cloud_name, 'INST_TYPE'))
-
-        if self.config_parser.has_option(self.cloud_name, 'COST_PER_TIME'):
-            mngr_cfg = mngr_cfg.replace('%CLOUD_COST_PER_TIME%', self.config_parser.get(self.cloud_name, 'COST_PER_TIME'))
-
-        if self.config_parser.has_option(self.cloud_name, 'MAX_VMS'):
-            mngr_cfg = mngr_cfg.replace('%CLOUD_MAX_VMS%', self.config_parser.get(self.cloud_name, 'MAX_VMS'))
-
-        if self.config_parser.has_option('iaas', 'MAX_VMS_ALL_CLOUDS'):
-            mngr_cfg = mngr_cfg.replace('%CLOUD_MAX_VMS_ALL_CLOUDS%', self.config_parser.get('iaas', 'MAX_VMS_ALL_CLOUDS'))
-        # mngr_cfg = mngr_cfg.replace('%CLOUD_COST_PER_TIME%', cloud_cost_per_time);
-
-        # for option_name in 'SERVICE_ID', 'USER_ID', 'APP_ID':
-        for option_name in 'USER_ID', 'APP_ID':
-            mngr_cfg = mngr_cfg.replace('%CONPAAS_' + option_name + '%', self.config_parser.get("manager", option_name))
-
-        # Check if we want to use IPOP. If so, add IPOP directives to manager
-        # config file
-        if self.config_parser.has_option('manager', 'IPOP_SUBNET'):
-            ipop_subnet = self.config_parser.get('manager', 'IPOP_SUBNET')
-            mngr_cfg += '\nIPOP_SUBNET = %s' % ipop_subnet
-
-            ipop_network = IPNetwork(ipop_subnet).iter_hosts()
-
-            # Skip the first IP address. IPOP uses it for internal purposes
-            ipop_network.next()
-
-            mngr_cfg += '\nIPOP_IP_ADDRESS = %s' % ipop_network.next()
-
-            mngr_cfg += '\nIPOP_BASE_IP = %s' % self.config_parser.get(
-                'conpaas', 'VPN_BASE_NETWORK')
-
-            mngr_cfg += '\nIPOP_NETMASK = %s' % self.config_parser.get(
-                'conpaas', 'VPN_NETMASK')
-
-            if self.config_parser.has_option('conpaas', 'VPN_BOOTSTRAP_NODES'):
-                mngr_cfg += '\nIPOP_BOOTSTRAP_NODES = %s' % self.config_parser.get(
-                    'conpaas', 'VPN_BOOTSTRAP_NODES')
-
-        tmpl_values['mngr_cfg'] = mngr_cfg
-
-        # Add default manager startup script
-        tmpl_values['mngr_start_script'] = file_get_contents(os.path.join(mngr_scripts_dir, 'default-manager-start'))
-        tmpl_values['mngr_vars_script'] = file_get_contents(os.path.join(mngr_scripts_dir, 'default-manager-vars'))
-
-        # Or the service-specific one (if any)
-        # mngr_startup_scriptname = os.path.join(mngr_scripts_dir, service_name + '-manager-start')
-
-        # if os.path.isfile(mngr_startup_scriptname):
-        #     tmpl_values['mngr_start_script'] = file_get_contents(mngr_startup_scriptname)
-
-        # Get key and a certificate from CA
-        mngr_certs = self._get_certificate(email="info@conpaas.eu",
-                                           cn="ConPaaS",
-                                           org="Contrail")
-
-        tmpl_values['mngr_certs_cert'] = mngr_certs['cert']
-        tmpl_values['mngr_certs_key'] = mngr_certs['key']
-        tmpl_values['mngr_certs_ca_cert'] = mngr_certs['ca_cert']
-
-        # Concatenate the files
-        return """%(cloud_script)s
-
-cat <<EOF > /tmp/cert.pem
-%(mngr_certs_cert)s
-EOF
-
-cat <<EOF > /tmp/key.pem
-%(mngr_certs_key)s
-EOF
-
-cat <<EOF > /tmp/ca_cert.pem
-%(mngr_certs_ca_cert)s
-EOF
-
-%(mngr_setup)s
-
-cat <<EOF > $ROOT_DIR/config.cfg
-%(cloud_cfg)s
-%(mngr_cfg)s
-EOF
-
-%(mngr_start_script)s
-
-%(mngr_vars_script)s """ % tmpl_values
-
-    def deduct_credit(self, value):
-        uid = self.config_parser.get("manager", "USER_ID")
-        # service_id = self.config_parser.get("manager", "SERVICE_ID")
-        app_id = self.config_parser.get("manager", "APP_ID")
-
-        user = User.query.filter_by(uid=uid).one()
-        # log('Decrement user %s credit: sid=%s, old_credit=%s, decrement=%s' % (uid, service_id, user.credit, value))
-        log('Decrement user %s credit: aid=%s, old_credit=%s, decrement=%s' % (uid, app_id, user.credit, value))
-        user.credit -= value
-
-        if user.credit > -1:
-            db.session.commit()
-            log('New credit for user %s: %s' % (uid, user.credit))
-            return True
-
-        db.session.rollback()
-        return False
-
-    def stop(self, vmid):
-        log('Trying to stop application manager %s on cloud %s' % (vmid, self.cloud_name))
-        cloud = self.get_cloud_by_name(self.cloud_name)
-
-        if not cloud.connected:
-            cloud._connect()
-
-        cloud.kill_instance(ServiceNode(vmid, None, None, self.cloud_name))
-        self._stop_reservation_timer()
-
-    def get_cloud_by_name(self, cloud_name):
-        clouds = [ cloud for cloud in self.get_clouds()
-            if cloud.get_cloud_name() == cloud_name ]
-        if not clouds:
-            raise Exception(('There is no cloud named %s. Please check your ' +
-                'Director configuration.') % cloud_name)
-        return clouds[0]
-
-    # def __get_config(self, service_id, user_id, app_id, service_type="", vpn=None):
-    #     """Add manager configuration"""
-    #     if not config_parser.has_section("manager"):
-    #         config_parser.add_section("manager")
-
-    #     if config_parser.has_option('conpaas', 'DEPLOYMENT_NAME'):
-    #         conpaas_deployment_name = config_parser.get('conpaas', 'DEPLOYMENT_NAME')
-    #     else:
-    #         conpaas_deployment_name = 'conpaas'
-
-    #     config_parser.set("manager", "DEPLOYMENT_NAME", conpaas_deployment_name)
-    #     config_parser.set("manager", "SERVICE_ID", service_id)
-    #     config_parser.set("manager", "USER_ID", user_id)
-    #     config_parser.set("manager", "APP_ID", app_id)
-    #     config_parser.set("manager", "CREDIT_URL",
-    #                     config_parser.get('director',
-    #                                         'DIRECTOR_URL') + "/credit")
-    #     config_parser.set("manager", "TERMINATE_URL",
-    #                     config_parser.get('director',
-    #                                         'DIRECTOR_URL') + "/terminate")
-    #     config_parser.set("manager", "CA_URL",
-    #                     config_parser.get('director',
-    #                                         'DIRECTOR_URL') + "/ca")
-    #     config_parser.set("manager", "TYPE", service_type)
-
-    #     if vpn:
-    #         config_parser.set("manager", "IPOP_SUBNET", vpn)
-
-    #     return config_parser
-
-    def __get_config(self, user_id, app_id, vpn=None):
-        """Add manager configuration"""
-        if not config_parser.has_section("manager"):
-            config_parser.add_section("manager")
-
-        if config_parser.has_option('conpaas', 'DEPLOYMENT_NAME'):
-            conpaas_deployment_name = config_parser.get('conpaas', 'DEPLOYMENT_NAME')
-        else:
-            conpaas_deployment_name = 'conpaas'
-
-        config_parser.set("manager", "DEPLOYMENT_NAME", conpaas_deployment_name)
-        config_parser.set("manager", "USER_ID", user_id)
-        config_parser.set("manager", "APP_ID", app_id)
-        config_parser.set("manager", "CREDIT_URL", config_parser.get('director', 'DIRECTOR_URL') + "/credit")
-        config_parser.set("manager", "TERMINATE_URL", config_parser.get('director', 'DIRECTOR_URL') + "/terminate")
-        config_parser.set("manager", "CA_URL", config_parser.get('director', 'DIRECTOR_URL') + "/ca")
-
-        if vpn:
-            config_parser.set("manager", "IPOP_SUBNET", vpn)
-
-        return config_parser
-
-    def _stop_reservation_timer(self):
-        for reservation_timer in self._Controller__reservation_map.values():
-            reservation_timer.stop()
-
-
-# def start(service_name, service_id, user_id, cloud_name, app_id, vpn):
-#     """Start a manager for the given service_name, service_id and user_id,
-#        on cloud_name
-
-#     Return (node_ip, node_id, cloud_name)."""
-
-#     if (cloud_name == 'default'):
-#         cloud_name = 'iaas'
-
-#     # Create a new controller
-#     controller = ManagerController(service_name, service_id, user_id,
-#                                     cloud_name, app_id, vpn)
-
-#     cloud = controller.get_cloud_by_name(cloud_name)
-#     # Create a context file for the specific service
-#     controller.generate_context(service_name, cloud)
-
-#     # FIXME: test_manager(ip, port) not implemented yet. Just return True.
-#     node = controller.create_nodes(1, lambda ip, port: True, None, cloud)[0]
-
-#     controller._stop_reservation_timer()
-
-#     return node.ip, node.vmid, cloud.get_cloud_name()
+class Resource(db.Model):
+    rid = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    vmid = db.Column(db.String(80), unique=True, nullable=False)
+    app_id = db.Column(db.Integer, db.ForeignKey('application.aid'))
+    ip = db.Column(db.String(80))
+    role = db.Column(db.String(10))
+    cloud = db.Column(db.String(20))
+    application = db.relationship('Application', backref=db.backref('resource',
+                                  lazy="dynamic"))
+
+    def __init__(self, **kwargs):
+        # Default values
+        for key, val in kwargs.items():
+            setattr(self, key, val)
+
+    def to_dict(self):
+        res = {}
+        for c in self.__table__.columns:
+            res[c.name] = getattr(self, c.name)
+        res['app_name'] = self.application.name
+        return res
+
+
+    def remove(self):
+        db.session.delete(self)
+        db.session.commit()
+        log('Resource %s removed properly' % self.rid)
+        return True
+
+
+def get_resource_by_id(vmid):
+    res = Resource.query.filter_by(vmid=vmid).first()
+    if not res:
+        log('Resource %s does not exist' % vmid)
+        return
+    return res
 
 @cloud_page.route("/available_clouds", methods=['GET'])
 def available_clouds():
@@ -330,3 +72,101 @@ def available_clouds():
             in config_parser.get('iaas', 'OTHER_CLOUDS').split(',')
             if config_parser.has_section(cloud_name)])
     return simplejson.dumps(clouds)
+
+
+
+def _create_nodes(kwargs):
+    role = kwargs.pop('role')
+    cloud_name = kwargs.pop('cloud_name')
+    
+    app_id = kwargs.pop('app_id')
+    user_id = '%s'%g.user.uid
+    nodes = None
+
+    if role == 'manager':
+        vpn = kwargs.pop('vpn')
+        controller = ManagerController(user_id, app_id, vpn)
+        controller.generate_context(cloud_name)      
+        nodes = controller.create_nodes(1,  cloud_name)
+
+    else:
+        count = kwargs.pop('count')
+        service_id = kwargs.pop('service_id')
+        service_type = kwargs.pop('service_type')
+        manager_ip = kwargs.pop('manager_ip')
+        context = kwargs.pop('context')
+
+        from cpsdirector.application import get_app_by_id
+        application = get_app_by_id(user_id, app_id)
+  
+        controller = AgentController(user_id, app_id, service_id, service_type, manager_ip)
+        controller.generate_context(cloud_name, context)
+        
+        nodes = controller.create_nodes(count, cloud_name)
+    
+    if nodes:
+        for node in nodes:
+            resource = Resource(vmid=node.vmid, ip=node.ip, app_id=app_id, role=role, cloud=cloud_name)
+            db.session.add(resource)
+    
+        # flush() is needed to get auto-incremented rid
+        db.session.flush()
+        db.session.commit()
+      
+    return nodes
+
+
+
+@cloud_page.route("/create_nodes", methods=['POST'])
+@cert_required(role='manager')
+def create_nodes():
+    """GET /create_nodes"""
+    
+    app_id = request.values.get('app_id')
+    service_id = request.values.get('service_id')
+    service_type = request.values.get('service_type')
+    manager_ip = request.values.get('manager_ip')
+    # role = request.values.get('role')
+
+    
+
+    count = int(request.values.get('count'))
+    cloud_name = request.values.get('cloud_name')
+    context = simplejson.loads(request.values.get('context').replace("'", "\""))
+    # inst_type = request.values.get('inst_type')
+    nodes = _create_nodes({'role':'agent', 'app_id':app_id, 'cloud_name':cloud_name, 
+                    'service_id':service_id, 'service_type':service_type, 'count':count, 
+                    'manager_ip':manager_ip, 'context':context})
+    
+    # log('nodes string: %s' % simplejson.dumps([node.to_dict() for node in nodes]))
+    return simplejson.dumps([node.to_dict() for node in nodes])
+
+
+
+@cloud_page.route("/remove_nodes", methods=['POST'])
+@cert_required(role='manager')
+def remove_nodes():
+    """GET /create_nodes"""
+    nodes = simplejson.loads(request.values.get('nodes'))
+    
+    log('Deleting %s nodes' % len(nodes))
+    serv_nodes = [ServiceNode(node['vmid'], node['ip'],node['private_ip'],node['cloud_name'],node['weight_backend']) for node in nodes]        
+    controller = Controller()
+    controller.setup_default()
+    controller.delete_nodes(serv_nodes)
+
+    for node in nodes:
+        res = get_resource_by_id(node['vmid'])
+        res.remove()
+
+    return simplejson.dumps({})
+
+
+
+@cloud_page.route("/list_resources", methods=['GET'])
+@cert_required(role='user')
+def list_resources():
+    from cpsdirector.application import Application
+    res = [res.to_dict() for res in Resource.query.join(Application).filter_by(user_id=g.user.uid)]
+    
+    return build_response(simplejson.dumps(res))

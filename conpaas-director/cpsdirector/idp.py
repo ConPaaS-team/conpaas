@@ -72,7 +72,7 @@ def Xsupport_external_idp():
     return build_response(result.__str__())
 
 
-@idp_page.route('/')
+@idp_page.route('/index', methods=['GET'])
 def index():
     return render_template('cpsindex.html')
 
@@ -230,7 +230,7 @@ def edit_profile():
     return render_template('cpsedit_profile.html', form=form)
 
 
-@idp_page.route('/logout')
+@idp_page.route('/logout', methods=['GET'])
 def logout():
     session.pop('openid', None)
     flash(u'You have been signed out')

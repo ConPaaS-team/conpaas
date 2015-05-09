@@ -39,7 +39,7 @@ class Application {
 	}
 
 	public function getUID() {
-		return $this->user_id;
+		return $this->uid;
 	}
 
 	public function getName() {
@@ -87,6 +87,7 @@ class Application {
 			'aid' => $this->aid,
 			'name' => $this->name,
 			'manager' => $this->manager,
+			'vmid' => $this->vmid,
 		);
 	}
 }

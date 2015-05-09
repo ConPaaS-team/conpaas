@@ -174,9 +174,8 @@ class ConpaasSecureServer(HTTPSServer):
             only from a manager or agent pertaining to the same userid
             and sid.
         '''
-
         components = x509.get_subject().get_components()
-        open('/tmp/lesh', 'a').write("comp %s" % components)
+        
         dict = {}
 
         '''
@@ -184,22 +183,29 @@ class ConpaasSecureServer(HTTPSServer):
             certificate and once with the peer's certificate. So first
             we rule out the CA's certificate.
         '''
+
         for key,value in components:
             dict[key] = value
             if key == 'CN':
                 if value == 'CA':
                     return ok
 
-        if dict['role'] != 'manager' and dict['role'] != 'agent':
-           return False
+        # Check if request from frontend
+        if dict['role'] == 'frontend':
+            return ok
 
+        if dict['role'] not in ('manager', 'agent'):
+            return False
+
+       
         uid = self.config_parser.get('agent', 'USER_ID')
         aid = self.config_parser.get('agent', 'APP_ID')
-        # sid = self.config_parser.get('agent', 'SERVICE_ID')
-        # if dict['UID'] != uid or dict['serviceLocator'] != sid:
+       
+       
         if dict['UID'] != uid or dict['serviceLocator'] != aid:
             return False
-        
+       
+       
         #print 'Received request from %s' % x509.get_subject()
         #sys.stdout.flush()
         return ok
@@ -215,7 +221,7 @@ class ConpaasSecureServer(HTTPSServer):
         '''
         components = x509.get_subject().get_components()
         dict = {}
-
+        
         '''
             Somehow this function gets called twice: once with the CA's
             certificate and once with the peer's certificate. So first
@@ -239,13 +245,6 @@ class ConpaasSecureServer(HTTPSServer):
         if dict['UID'] != uid:
             return False
 
-        # If request from manager, check the SID
-        if dict['role'] == 'manager':
-            # sid = self.config_parser.get('manager', 'SERVICE_ID')
-            aid = self.config_parser.get('manager', 'APP_ID')
-            # if dict['serviceLocator'] != sid:
-            if dict['serviceLocator'] != aid:
-                return False
         
         #print 'Received request from %s' % x509.get_subject()
         #sys.stdout.flush()
@@ -316,6 +315,7 @@ class ConpaasRequestHandler(BaseHTTPRequestHandler):
         commands such as GET and POST.
 
         '''
+
         self.raw_requestline = self.rfile.readline()
         if not self.raw_requestline:
             self.close_connection = 1

@@ -21,6 +21,9 @@ if os.getenv('DIRECTOR_TESTING'):
 
 config_parser.read(CONFFILE)
 
+# from conpaas.core import https
+# https.client.conpaas_init_ssl_ctx('/etc/cpsdirector/certs', 'director') 
+
 if os.getenv('DIRECTOR_TESTING'):
     if not config_parser.has_section('iaas'):
         config_parser.add_section('iaas')

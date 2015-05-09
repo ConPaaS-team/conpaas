@@ -70,7 +70,7 @@ if __name__ == '__main__':
   """
   config_vars = {
     # 'manager': ['TYPE', 'BOOTSTRAP', 'LOG_FILE','CREDIT_URL', 'TERMINATE_URL', 'SERVICE_ID'],
-    'manager': ['BOOTSTRAP', 'LOG_FILE', 'CREDIT_URL', 'TERMINATE_URL'],
+    # 'manager': ['BOOTSTRAP', 'LOG_FILE', 'CREDIT_URL', 'TERMINATE_URL'],
     'iaas': ['DRIVER'],
   }
   config_ok = True

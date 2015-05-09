@@ -1,6 +1,6 @@
 
 
-AC_INIT([cps-tools], [1.4.x])
+AC_INIT([cps-tools], [555])
 
 AM_INIT_AUTOMAKE
 AM_PATH_PYTHON([2.7])  # require at least python 2.7 because of argparse module
