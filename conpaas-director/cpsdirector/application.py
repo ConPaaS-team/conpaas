@@ -227,7 +227,8 @@ def createapp():
         log('"name" is a required argument')
         return build_response(simplejson.dumps(False))
 
-    return build_response(_createapp(app_name))
+    app = _createapp(app_name)
+    return build_response(app)
 
 
 @application_page.route("/startapp/<int:appid>", methods=['POST'])

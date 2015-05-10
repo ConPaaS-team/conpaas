@@ -75,7 +75,7 @@ class Dashboard extends Page {
     			.$this->renderName()
     		.'</div>'
     		.'<a class="button" style="float:right; display:none" href="#"><img src="images/service-plus.png" /> add services</a>'
-    		.'<a id="btnStartApp" class="button" style="float:right" href="#"><img src="images/service-plus.png" /> start</a>'
+    		.'<a id="btnStartApp" class="button" style="float:right; display:none" href="#"><img src="images/service-plus.png" /> start</a>'
   		.'<div class="clear"></div>'
   	.'</div>';
 	}

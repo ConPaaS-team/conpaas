@@ -74,6 +74,7 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
         #self.run_am()
 
         #sys.stdout.flush()
+        self.logger.info('The application manager was started')
     
     @expose('GET')
     def check_manager_process(self, kwargs):
@@ -214,14 +215,15 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
         
 
         #Note that I am assuming that an application has only ONE generic service    
-        # self.app_tar = kwargs.pop('app_tar')
-        #apptarfile = kwargs.pop('app_tar')
-        #self.app_tar = apptarfile.file
+        self.app_tar = kwargs.pop('app_tar')
+        # apptarfile = kwargs.pop('app_tar')
+        # self.app_tar = apptarfile.file
         
-        # self.appid = kwargs.pop('appid')
-        # self.cloud = kwargs['cloud']
-        #genc uncomment this when done
-        # Thread(target=self.run_am, args=[]).start()
+        
+        self.appid = kwargs.pop('appid')
+        self.cloud = kwargs['cloud']
+        Thread(target=self.run_am, args=[]).start()
+        # genc uncomment this when done
         
 
         #self.run_am()
@@ -268,6 +270,7 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
     @expose('GET')
     def profile(self, kwargs):
         Thread(target=self.run_am, args=[]).start()
+        return HttpJsonResponse({'success': True})
         
     def perparePerformanceModel(self, download):
         flat_pm = {'experiments':[], 'pareto':[]}
@@ -343,7 +346,6 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
        
         return HttpJsonResponse({'sid':self.instance_id})
 
-
     def add_manager_configuration(self, service_type):
         # Add service-specific config file (if any)
         conpaas_home = self.config_parser.get('manager', 'conpaas_home')
@@ -364,8 +366,6 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
                 if value.startswith('%') and value.endswith('%'):
                     self.config_parser.set('manager', key, config.get('root', value.strip('%').lower()))
 
-
-
     def run_manager_start_script(self, service_type):
         #before running the manager script get again the variable values from the context
         conpaas_home = self.config_parser.get('manager', 'conpaas_home')
@@ -375,7 +375,6 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
             proc = subprocess.Popen(['bash', mngr_startup_scriptname] , close_fds=True)
             proc.wait()
     
-
     def dir_create_service(self, service_type, sid):
         try:
             parsed_url = urlparse.urlparse(self.config_parser.get('manager', 'START_URL'))

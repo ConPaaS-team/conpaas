@@ -477,6 +477,13 @@ class BaseClient(object):
         res = self.callmanager(app_id, 0, "get_profiling_info", False, { 'method': "get_profiling_info", 'manager_id':0, 'download':True })
         print "Print profiling_info for appid %s" % res
 
+    def profile(self, app_id):
+        #check if application exists
+
+        res = self.callmanager(app_id, 0, "profile", False, { 'method': "get_profiling_info", 'manager_id':0 })
+        print "Profiling started..."
+
+
     def execute_slo(self, app_id):
         #check if application exists
         res = self.callmanager(app_id, 0, "execute_slo", False, { 'method': "execute_slo", 'manager_id':0 })
@@ -500,6 +507,14 @@ class BaseClient(object):
         #check if application exists
         res = self.callmanager(app_id, 0, "upload_slo", True, { 'method': "upload_slo", 'manager_id':0 }, files)
         print "Selected configuration %s" % res
+
+    def upload_application(self, app_id, appfile):
+        contents = open(appfile).read()
+        files = [ ( 'appfile', appfile, contents ) ]
+        #check if application exists
+        res = self.callmanager(app_id, 0, "upload_application", True, { 'method': "upload_application", 'manager_id':0 }, files)
+        print "Selected configuration %s" % res
+
 
     def manifest(self, manifestfile, appfile):
         print "Uploading the manifest and slo... "
@@ -617,6 +632,7 @@ Do you want to continue? (y/N): """
         print "    createapp         appname                       # create a new application"
         print "    startapp          [appid]                       # start an application"
         print "    renameapp         appid       newname           # rename an application"
+        print "    profile           appid                         # start profiling"
         print "    profiling_info    appid                         # get profiling experiments information"
         print "    upload_profile    appid       profile           # upload profile to the application manager"
         print "    upload_slo        appid       slo               # upload slo to the application manager"
@@ -652,7 +668,8 @@ Do you want to continue? (y/N): """
         if command in ( "listapp", "createapp", "startapp","manifest", "test_manifest", #genc:delete the last one 
                         "download_manifest", "list", "credentials", 
                         "available", "clouds", "create", "st_usage",
-                        "deleteapp", "renameapp", "getcerts", "profiling_info", "upload_profile", "upload_slo", "execute_slo", "infoapp" ):
+                        "deleteapp", "renameapp", "getcerts", 
+                        "profiling_info", "upload_profile", "upload_slo", "upload_application", "execute_slo", "infoapp", "profile" ):
 
             if command == "st_usage":
                 try:
@@ -710,7 +727,7 @@ Do you want to continue? (y/N): """
                 appname = argv[2]
                 return getattr(self, command)(appname)
 
-            if command == "startapp" or command == "deleteapp" or command == "execute_slo" or command == "infoapp":
+            if command in ("startapp", "deleteapp", "execute_slo", "infoapp", "profile"):
                 appid = argv[2]
                 return getattr(self, command)(appid)
 
@@ -767,7 +784,7 @@ Do you want to continue? (y/N): """
             if command == "profiling_info":
                 appid = argv[2]
                 return getattr(self, command)(appid)
-            if command == "upload_profile" or command == "upload_slo":
+            if command in ("upload_profile", "upload_slo", 'upload_application'):
                 appid = argv[2]
                 filename = argv[3]
                 return getattr(self, command)(appid, filename)

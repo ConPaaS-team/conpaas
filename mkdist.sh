@@ -63,12 +63,12 @@ rm -rf cpsfrontend-$CPSVERSION
 # build cps-tools
 # TODO(genc): generation of cps-tools tarball is currently commented due to the usage of python 2.6 on the director vm of the testbed
 # uncomment when upgrading to 2.7
-#echo '###### build cps-tools'
-#cd cps-tools
-#sed -i "s/AC_INIT(\[cps-tools\], \[\(.*\)\]/AC_INIT(\[cps-tools\], \[$CPSVERSION\]/" configure.ac
-#./configure && make dist
-#mv cps-tools-$CPSVERSION.tar.gz ..
-#cd ..
+echo '###### build cps-tools'
+cd cps-tools
+sed -i "s/AC_INIT(\[cps-tools\], \[\(.*\)\]/AC_INIT(\[cps-tools\], \[$CPSVERSION\]/" configure.ac
+./configure && make dist
+mv cps-tools-$CPSVERSION.tar.gz ..
+cd ..
 
 
 for f in `find conpaas-{client,director,services/src}/dist -type f -name \*.tar.gz` 
