@@ -40,7 +40,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #	to meet your specific service/server needs
 
 from threading import Thread
-import memcache
+# import memcache
 from shutil import rmtree
 import pickle 
 import zipfile
@@ -114,8 +114,8 @@ class GenericManager(BaseManager):
         BaseManager.__init__(self, config_parser)
         self.controller.generate_context('generic')    
 
-        memcache_addr = config_parser.get('manager', 'MEMCACHE_ADDR')        
-        self.memcache = memcache.Client([memcache_addr])
+        # memcache_addr = config_parser.get('manager', 'MEMCACHE_ADDR')        
+        # self.memcache = memcache.Client([memcache_addr])
         self.code_repo = config_parser.get('manager', 'CODE_REPO')
 
         self.logger.info("kwargs: %s" % kwargs)
@@ -127,7 +127,7 @@ class GenericManager(BaseManager):
             app_tar_fu = kwargs['app_tar']
             import cStringIO
             output = cStringIO.StringIO()
-            #output.write(hex_to_string(app_tar_fu.file.getvalue()))
+            # output.write(hex_to_string(app_tar_fu.file.getvalue()))
             output.write(hex_to_string(app_tar_fu.file.read()))
             #self.logger.info("tar in hex: %s" % app_tar_fu.file.getvalue())
             output.seek(0)
@@ -738,16 +738,20 @@ echo "" >> /root/generic.out
                     raise                                                                                    
 
     def _configuration_get(self):
-        return self.memcache.get(self.CONFIG)
+        return self.config
+        # return self.memcache.get(self.CONFIG)
 
     def _configuration_set(self, config):
-        self.memcache.set(self.CONFIG, config)
+        self.config = config
+        # self.memcache.set(self.CONFIG, config)
 
     def _state_get(self):
-        return self.memcache.get(self.DEPLOYMENT_STATE)
+        return self.state
+        # return self.memcache.get(self.DEPLOYMENT_STATE)
 
     def _state_set(self, target_state, msg=''):
-        self.memcache.set(self.DEPLOYMENT_STATE, target_state)
+        self.state = target_state
+        # self.memcache.set(self.DEPLOYMENT_STATE, target_state)
         self.state_log.append({'time': time.time(),
                                'state': target_state,
                                'reason': msg})

@@ -36,7 +36,8 @@ manager_services = {'php'    : {'class' : 'PHPManager',
                                   'module': 'conpaas.services.htc.manager.manager'},
                     'generic' : {'class' : 'GenericManager',
                                   'module': 'conpaas.services.generic.manager.manager'},
-
+                    'hadoopnaas' : {'class' : 'HadoopNaasManager',
+                                  'module': 'conpaas.services.hadoopnaas.manager.manager'},
 #""" BLUE_PRINT_INSERT_MANAGER 		do not remove this line: it is a placeholder for installing new services """
 		    }
 
@@ -63,5 +64,7 @@ agent_services = {'web' : {'class' : 'WebServersAgent',
                                 'module': 'conpaas.services.htc.agent.agent'},
                   'generic' : {'class' : 'GenericAgent',
                                 'module': 'conpaas.services.generic.agent.agent'},
+                  'hadoopnaas' : {'class' : 'HadoopNaasAgent',
+                                'module': 'conpaas.services.hadoopnaas.agent.agent'},
 #""" BLUE_PRINT_INSERT_AGENT 		do not remove this line: it is a placeholder for installing new services """
 		  }

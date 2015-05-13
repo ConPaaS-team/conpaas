@@ -203,7 +203,6 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
 
     @expose('UPLOAD')
     def upload_manifest(self, kwargs):
-
         manifestfile = kwargs.pop('manifest')
         manifestconent = manifestfile.file
         self.manifest = ManifestParser.parse(simplejson.loads(manifestconent.read()))
@@ -214,14 +213,12 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
         
 
         #Note that I am assuming that an application has only ONE generic service    
-        # self.app_tar = kwargs.pop('app_tar')
-        #apptarfile = kwargs.pop('app_tar')
-        #self.app_tar = apptarfile.file
+        self.app_tar = kwargs.pop('app_tar')
         
-        # self.appid = kwargs.pop('appid')
-        # self.cloud = kwargs['cloud']
-        #genc uncomment this when done
-        # Thread(target=self.run_am, args=[]).start()
+        self.appid = kwargs.pop('appid')
+        self.cloud = kwargs['cloud']
+        # genc uncomment this when done
+        Thread(target=self.run_am, args=[]).start()
         
 
         #self.run_am()
