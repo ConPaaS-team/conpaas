@@ -24,7 +24,7 @@ can be installed on your own hardware or on virtual machines running on public
 or private clouds. If you wish to install them on Amazon EC2, the Official Debian
 Wheezy, Ubuntu 12.04 or Ubuntu 14.04 images are known to work well.
 
-ConPaaS services are designed to run either in an `OpenNebula` cloud
+ConPaaS services are designed to run either in an `OpenStack` or `OpenNebula` cloud
 installation or in the `Amazon Web Services` cloud.
 
 Installing ConPaaS requires to take the following steps:
@@ -33,8 +33,9 @@ Installing ConPaaS requires to take the following steps:
    new one. Details on how to do this vary depending on the choice of cloud
    where ConPaaS will run. Instructions on how to find or create a ConPaaS image
    suitable to run on Amazon EC2 can be found in :ref:`conpaas-on-ec2`.
-   The section :ref:`conpaas-on-opennebula` describes how to create a ConPaaS
-   image for OpenNebula.
+   The section :ref:`conpaas-on-openstack` describes how to create a ConPaaS
+   image for OpenStack and section :ref:`conpaas-on-opennebula` describes how to
+   create an image for OpenNebula.
 
 #. Install and configure **cpsdirector** as explained in
    :ref:`director-installation`. All system configuration takes place in the
@@ -96,12 +97,14 @@ order to setup your ConPaaS Director installation.
 
 #. Edit :file:`/etc/cpsdirector/director.cfg` providing your cloud
    configuration. Among other things, you will have to choose an Amazon
-   Machine Image (AMI) in case you want to use ConPaaS on Amazon EC2, or
+   Machine Image (AMI) in case you want to use ConPaaS on Amazon EC2,
+   an OpenStack image if you want to use ConPaaS on OpenStack, or
    an OpenNebula image if you want to use ConPaaS on OpenNebula.
    Section :ref:`conpaas-on-ec2` explains how to use the Amazon Machine Images
    provided by the ConPaaS team, as well as how to make your own images
-   if you wish to do so. A description of how to create an OpenNebula
-   image suitable for ConPaaS is available in :ref:`conpaas-on-opennebula`.
+   if you wish to do so. A description of how to create an OpenStack
+   image suitable for ConPaaS is available in :ref:`conpaas-on-openstack` and
+   :ref:`conpaas-on-opennebula` contains instructions for OpenNebula.
 
 The installation process will create an `Apache VirtualHost` for the ConPaaS
 director in :file:`/etc/apache2/sites-available/conpaas-director.conf` for Apache 2.4
@@ -592,7 +595,7 @@ The configuration file for customizing your VM image is located at
 *conpaas-services/scripts/create_vm/create-img-script.cfg*. 
 
 In the **CUSTOMIZABLE** section of the configuration file, you can define
-whether you plan to run ConPaaS on Amazon EC2 or OpenNebula. Depending on the
+whether you plan to run ConPaaS on Amazon EC2, OpenStack or OpenNebula. Depending on the
 virtualization technology that your target cloud uses, you should choose either
 KVM or Xen for the hypervisor. Note that for Amazon EC2 this variable needs to
 be set to Xen. Please do not make the recommended size for the image file
@@ -609,10 +612,10 @@ only what you need.
 Note that te configuration file contains also a **NUTSHELL** section. The 
 settings in this section are explained in details in :ref:`conpaas-in-a-nutshell`.
 However, in order to generate a regular customized VM image, make sure that both
-*container* and *nutshell* flags in this section are set to false.
+*container* and *nutshell* flags in this section are set to *false*.
 
 Once you are done with the configuration, you should run this command in the
-create_vm directory:: 
+*create_vm* directory:: 
 
     $ python create-img-script.py
 
@@ -685,11 +688,11 @@ everything the script has done, follow these instructions:
 
 ConPaaS on Amazon EC2
 =====================
-The Web Hosting Service is capable of running over the Elastic Compute
+ConPaaS is capable of running over the Elastic Compute
 Cloud (EC2) of Amazon Web Services (AWS). This section describes the
-process of configuring an AWS account to run the Web Hosting Service.
+process of configuring an AWS account to run ConPaaS.
 You can skip this section if you plan to install ConPaaS over
-OpenNebula.
+OpenStack or OpenNebula.
 
 If you are new to EC2, you will need to create an account on the `Amazon
 Elastic Compute Cloud <http://aws.amazon.com/ec2/>`_. A very good introduction
@@ -750,6 +753,8 @@ able to do so. Registering an S3-backed AMI requires administrator privileges.
 More information on Amazon credentials can be found at
 `About AWS Security Credentials <http://docs.aws.amazon.com/AWSSecurityCredentials/1.0/AboutAWSCredentials.html>`_.
 
+.. _security-group-ec2:
+
 Security Group
 --------------
 An AWS security group is an abstraction of a set of firewall rules to
@@ -776,14 +781,110 @@ The following ports should be open for all running instances:
 AWS documentation is available at
 http://docs.amazonwebservices.com/AWSEC2/latest/UserGuide/index.html?using-network-security.html.
 
+.. _conpaas-on-openstack:
+
+ConPaaS on OpenStack
+=====================
+ConPaaS is capable of running over an OpenStack installation, including one
+deployed using DevStack. This section describes the process of configuring
+OpenStack to run ConPaaS. You can skip this section if you plan to deploy
+ConPaaS over Amazon Web Services or OpenNebula.
+
+In the rest of this section, the command-line examples assume that the user is
+authenticated and able to run OpenStack commands (such as ``nova list``) on the
+controller node. If this is not the case, please refer first to the OpenStack
+documentation available at
+http://docs.openstack.org/openstack-ops/content/lay_of_the_land.html.
+
+Getting the OpenStack API access credentials
+--------------------------------------------
+ConPaaS talks with an OpenStack deployment using the EC2 API, so first make
+sure that EC2 API access is enabled for the OpenStack deployment and note
+down the EC2 Access Key and EC2 Secret Key.
+
+Using Horizon (the OpenStack dashboard), the EC2 access credentials can be
+recovered by navigating to the *Project* > *Compute* > *Access & Security*
+menu in the left pane of the dashboard and then selecting the *API Access*
+tab. The EC2 Access Key and EC2 Secret key can be revealed by pressing the
+*View Credentials* button located on the right side of the page.
+
+Using the command line, the same credentials can be obtained by interrogating
+Keystone (the OpenStack identity manager service) using the following command::
+
+    $ keystone ec2-credentials-list
+
+For testing the EC2 API or obtaining necessary information, it is very often
+useful to install the Eucalyptus client API tools (euca2ools). On a Debian /
+Ubuntu system, this can be done using the following command::
+
+    $ sudo apt-get install euca2ools
+
+Before executing any commands from this package, you must first export the
+**EC2_URL**, **EC2_ACCESS_KEY** and **EC2_SECRET_KEY** environment variables,
+using the values obtained by following the instructions above.
+
+Alternatively, OpenStack provides a script that, when sourced, automatically
+exports all the required environment variables. Using the Horizon dashboard,
+this script can be found by navigating to the *Project* > *Compute* > *Access &
+Security* menu in the left pane and then selecting the *API Access* tab. An
+archive containing this script (named ``ec2rc.sh``) can be downloaded by
+pressing the *Download EC2 Credentials* button.
+
+An easy way to check that euca2ools commands work is by listing all the active
+instances using::
+
+    $ euca-describe-instances
+
+Registering your ConPaaS image to OpenStack
+--------------------------------------------
+This section assumes that you already have created a ConPaaS services image as
+explained in :ref:`image-creation` and uploaded it to your OpenStack controller
+node. To register this image with OpenStack, you may use either Horizon or the
+command line client of Glance (the OpenStack image management service).
+
+In Horizon, you can register the ConPaaS image by navigating to the *Project* >
+*Compute* > *Images* menu in the left pane and then pressing the *Create Image*
+button. In the next form, you should fill-in the image name, select *Image File*
+as the image source and then click the *Choose File* button and select your
+image (i.e. *conpaas.img*). The image format should be set to *Raw*.
+
+Alternatively, using the command line, the ConPaaS image can be registered in
+the following way::
+
+    $ glance image-create --name <image_name> \
+        --is-public true \
+        --disk-format raw \
+        --container-format bare \
+        --file <conpaas.img>
+
+In both cases, you need to obtain the AMI ID associated with the image in order
+to allow ConPaaS to refer to it when using the EC2 API. To do this, you need to
+execute the following command::
+
+    $ euca-describe-images
+
+The AMI ID appears in the second column of the output.
+
+Security Group
+--------------
+As in the case of Amazon Web Services deployments, OpenStack deployments use
+security groups to limit the the network connections allowed to an instance.
+The list of ports that should be opened for every instance is the same as in
+the case of Amazon Web Services and can be consulted here: :ref:`security-group-ec2`.
+
+For more details on creating and editing a security group, please refer to the
+OpenStack documentation available at
+http://docs.openstack.org/openstack-ops/content/security_groups.html.
+
+
 .. _conpaas-on-opennebula:
 
 ConPaaS on OpenNebula
 =====================
-The Web Hosting Service is capable of running over an OpenNebula
+ConPaaS is capable of running over an OpenNebula
 installation. This section describes the process of configuring
 OpenNebula to run ConPaaS. You can skip this section if you plan to
-deploy ConPaaS over Amazon Web Services.
+deploy ConPaaS over Amazon Web Services or OpenStack.
 
 Registering your ConPaaS image to OpenNebula
 --------------------------------------------
@@ -797,7 +898,7 @@ list works!). Although you have a valid account on OpenNebula, you may have a pr
 
 You can fix it setting the ONE_AUT variable like follows::
 
-    $  export ONE_AUTH="/var/lib/one/.one/one_auth"
+    $ export ONE_AUTH="/var/lib/one/.one/one_auth"
 
 To register your image, you should execute *register-image-opennebula.sh* on
 the headnode. *register-image-opennebula.sh* needs the path to *conpaas.img* as
