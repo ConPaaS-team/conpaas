@@ -785,15 +785,16 @@ http://docs.amazonwebservices.com/AWSEC2/latest/UserGuide/index.html?using-netwo
 
 ConPaaS on OpenStack
 =====================
-ConPaaS is capable of running over an OpenStack installation, including one
-deployed using DevStack. This section describes the process of configuring
-OpenStack to run ConPaaS. You can skip this section if you plan to deploy
+
+ConPaaS can be deployed over an OpenStack installation. This section
+describes the process of configuring the DevStack version of OpenStack
+to run ConPaaS. You can skip this section if you plan to deploy
 ConPaaS over Amazon Web Services or OpenNebula.
 
 In the rest of this section, the command-line examples assume that the user is
 authenticated and able to run OpenStack commands (such as ``nova list``) on the
 controller node. If this is not the case, please refer first to the OpenStack
-documentation available at
+documentation:
 http://docs.openstack.org/openstack-ops/content/lay_of_the_land.html.
 
 Getting the OpenStack API access credentials

@@ -970,8 +970,8 @@ contains the current list of nodes in JSON format: ``/var/cache/cpsagent/agents.
 Note that when multiple nodes are added or removed in a single operation, the
 script will be called only once for each of the remaining nodes.
 
-``run.sh`` – called whenever the user requests that the application starts
-running. The script should start executing the application and after the execution
+``run.sh`` – called whenever the user requests to start the application. 
+The script should start executing the application and after the execution
 completes, it may return an error code that will be shown to the user. It is
 guaranteed that the ``init.sh`` script already finished execution before ``run.sh``
 is called.
@@ -1001,7 +1001,7 @@ The application's binaries can be included in the archive only if they are small
 enough.
 
 .. warning::
-  the archive is stored on the manager and its contents are extracted in each
+  the archive is stored on the service manager instance and its contents are extracted in each
   agent's root file system which usually has a very limited amount of free
   space (usually a little more than 100 MB), so application's binaries can
   be included only if they are really small (a few MBs).
@@ -1138,7 +1138,7 @@ of the volume and the requested size is shown. To detach and delete a volume,
 you can press the red X icon after the volume's size.
 
 .. warning::
-  after a volume is detached, all data contained within is lost forever.
+  after a volume is detached, all data contained within it is lost forever.
 
 Using the command-line client, a volume can be created and attached to a
 specific agent with the following command::
@@ -1313,8 +1313,7 @@ Using the Nutshell via the graphical frontend
 ---------------------------------------------
 
 You can access the ConPaaS frontend by inserting the IP address of the
-Nutshell VM in your Web browser, making sure to add **https://** in front of
-it::
+Nutshell VM in your Web browser, **making sure to add https:// in front of it**::
 
   https://192.168.56.xxx 
 
@@ -1390,7 +1389,7 @@ The Nutshell VM uses an IP address assigned by the DHCP server of the
 host-only network of VirtualBox. In the default settings, the DHCP server
 uses a range from ``192.168.56.101`` to ``192.168.56.254``. If you want to change
 this IP range, you can go to: File>Preferences>Network>Host-only Networks,
-select *vboxnet0* and click the edit button and afterwards "DHCP server".
+select *vboxnet0* and click the edit button and then "DHCP server".
 
 Note that ConPaaS services running inside the Nutshell VM also need to have
 IP addresses assigned. This is done using OpenStack's floating IP mechanism.
