@@ -2,7 +2,7 @@
 CONF_DIR = /etc/cpsdirector
 CERT_DIR = /etc/cpsdirector/certs
 DEPLOYMENT_NAME = conpaas-online
-support_external_idp = false
+SUPPORT_EXTERNAL_IDP = false
 
 
 [iaas]
@@ -41,7 +41,7 @@ PASSWORD = EC2PASSWORD
 SECURITY_GROUP_NAME = my_securitygroup
 KEY_NAME = my_keyname
 REGION = ec2.us-east-1.amazonaws.com
-IMAGE_ID = ami-802e6ce8
+IMAGE_ID = ami-7a565912
 SIZE_ID = t1.micro
 # specify COST_PER_TIME as currency amount / ATU (in seconds)
 # so            $ 6.00 / 3600  is 6 dollar per hour             (or part thereof)

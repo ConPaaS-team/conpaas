@@ -50,9 +50,9 @@ SUPPORT_EXTERNAL_IDP = false
 # OTHER_CLOUDS = cloud1,cloud2
 
 # Uncomment the following directives and set them to the appropriate values if
-# you want to use ConPaaS on Amazon EC2. If you want to use OpenNebula, skip
-# this part and fill in the directives for OpenNebula, which you can find
-# further down in this file.
+# you want to use ConPaaS on Amazon EC2. If you want to use OpenNebula or
+# OpenStack, skip this part and fill in the directives for OpenNebula or
+# OpenStack, which you can find further down in this file.
 
 # Uncomment the following line to use ConPaaS on Amazon EC2:
 # DRIVER = ec2
@@ -61,7 +61,7 @@ SUPPORT_EXTERNAL_IDP = false
 # email address you normally use to login at the AWS management console. 
 # An EC2 user name is a long opaque string. It can be found at
 # https://console.aws.amazon.com/iam/home?#users
-# under the name "Access key ID" in the 3security Credentials" tab 
+# under the name "Access key ID" in the "Security Credentials" tab 
 # at the bottom of the page after you select one of the users in the
 # list. If the list is empty, then you must create a new one.
 
@@ -95,9 +95,14 @@ SUPPORT_EXTERNAL_IDP = false
 # 
 # Valid values are:
 #
-# - ec2.us-east-1.amazonaws.com # United States East (Northern Virginia) 
-# - ec2.us-west-2.amazonaws.com # United States West (Oregon)
-# - ec2.eu-west-1.amazonaws.com # Europe West (Ireland)
+# - ec2.us-east-1.amazonaws.com      # United States East (Northern Virginia) 
+# - ec2.us-west-1.amazonaws.com      # United States West (Northern California)
+# - ec2.us-west-2.amazonaws.com      # United States West (Oregon)
+# - ec2.eu-west-1.amazonaws.com      # Europe West (Ireland)
+# - ec2.ap-northeast-1.amazonaws.com # Asia Pacific (Tokyo)
+# - ec2.ap-southeast-1.amazonaws.com # Asia Pacific (Singapore)
+# - ec2.ap-southeast-2.amazonaws.com # Asia Pacific (Sydney)
+# - ec2.sa-east-1.amazonaws.com      # South America (Sao Paulo)
 
 # REGION = ec2.us-east-1.amazonaws.com
 
@@ -108,11 +113,16 @@ SUPPORT_EXTERNAL_IDP = false
 #
 # ConPaaS official AMI ids are: 
 #
-# - ami-802e6ce8 United States East (Northern Virginia)
-# - ami-dd8bd0ed United States West (Oregon)
-# - ami-f158d686 Europe West (Ireland)
+# - ami-7a565912 United States East (Northern Virginia)
+# - ami-b7dd31f3 United States West (Northern California)
+# - ami-e57f49d5 United States West (Oregon)
+# - ami-7f7e1108 Europe West (Ireland)
+# - ami-3a0bc83a Asia Pacific (Tokyo)
+# - ami-fcdde1ae Asia Pacific (Singapore)
+# - ami-0b473b31 Asia Pacific (Sydney)
+# - ami-a154d0bc South America (Sao Paulo)
 
-# IMAGE_ID = ami-802e6ce8
+# IMAGE_ID = ami-7a565912
 
 # This variable contains the type of EC2 instances to use. A good value to use
 # inexpensive, low-performance instances is "t1.micro".
@@ -143,6 +153,65 @@ SUPPORT_EXTERNAL_IDP = false
 # cloud
 # MAXNODES = 20
 # SPEEDFACTOR = 1
+
+#############
+# OpenStack #
+#############
+
+# Uncomment the following directives and set them to the appropriate values if
+# you want to use ConPaaS on OpenStack. If you want to use OpenNebula, skip
+# this part and fill in the directives for OpenNebula, which you can find
+# further down in this file.
+
+# DRIVER = openstack
+
+# USER and PASSWORD correspond to the values of EC2 Access Key and EC2 Secret Key
+# and are needed by the ConPaaS system to manage the OpenStack deployment using
+# the EC2 API. These values can be retrieved as explained in the ConPaaS installation
+# guide in the "Getting the OpenStack API access credentials" section.
+# Beware: these are long opaque strings and are different from the credentials used
+# to login into the OpenStack dashboard (Horizon).
+
+# USER = 
+# PASSWORD = 
+
+# HOST should contain the fully qualified domain name (FQDN) or IP address of
+# the controller node where OpenStack services are running.
+
+# HOST = 172.16.0.1
+
+# This variable contains the security group that will enforce network filtering
+# rules for all the instances. Your security groups can be found in Horizon by
+# navigating to the "Project" > "Compute" > "Access & Security" menu in the left
+# pane of the dashboard and then selecting the "Security Groups" tab. Using the
+# command line, the security groups can be listed using "nova secgroup-list".
+# For more information on creating or editing a security group, please refer to
+# the ConPaaS installation guide in the "Security Group" section.
+
+# SECURITY_GROUP_NAME = default
+
+# This variable contains the Key Pair name to be used. In Horizon, the keypairs
+# can be found by navigating to the "Project" > "Compute" > "Access & Security"
+# menu and then selecting the "Key Pairs" tab. Using the command line, the key
+# pairs can be listed using "nova keypair-list". In the default configuration
+# there is no key pair created, so you should create one.
+
+# KEY_NAME = 
+
+# This variable contains the identifier of the ConPaaS image, as should be used
+# in the EC2 API. The value starts with "ami-" and can be obtained using the
+# "euca-describe-images" command. For more information on how to register a new
+# image, please consult the "Registering your ConPaaS image to OpenStack" section
+# of the ConPaaS installation guide.
+
+# IMAGE_ID = ami-
+
+# This variable contains the type of OpenStack instances to use, called "flavor"
+# in OpenStack terminology. In Horizon, the accepted values can be obtained by
+# navigating to the "Admin" > "System" > "Flavors" menu. Using the command line,
+# the available flavors can be listed using "nova flavor-list".
+
+# SIZE_ID = m1.small
 
 ##############
 # OpenNebula #

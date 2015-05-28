@@ -56,13 +56,14 @@ conpaas.ui = (function (this_module) {
      * @override conpaas.ui.ServicePage.freezeInput
      */
     freezeInput: function (freeze) {
-        var linksSelectors = ['.activate', '.download', '.delete', '.dot'],
-            buttons = ['refreshVolumeList', 'createVolume', 'runApp',
-                        'interruptApp', 'cleanupApp'];
+        var links = ['.activate', '.download', '.delete', '.dot'],
+            buttons = ['.create-volume-button'],
+            commandButtons = [ '#runApp', '#interruptApp', '#cleanupApp'];
         conpaas.ui.ServicePage.prototype.freezeInput.call(this, freeze);
         this.freezeButtons(buttons, freeze);
-        this.hideLinks(linksSelectors, freeze);
+        this.hideLinks(links, freeze);
         if (freeze) {
+            this.freezeButtons(commandButtons, freeze);
             this.stopScriptStatePolling();
         } else {
             this.reloadInstances();
@@ -109,12 +110,16 @@ conpaas.ui = (function (this_module) {
         });
         $('.versions .activate').click(page, page.onActivateVersion);
         $('.versions .delete').click(page, page.onDeleteVersion);
-        $('#linkVolumes').click(page, page.onClickLinkVolumes);
         $('.volumes .delete').click(page, page.onDeleteVolume);
-        $('#refreshVolumeList').click(page, page.onRefreshVolumesList);
-        $('#createVolume').click(page, page.onCreateVolume);
+        $('.create-volume-link').click(page, page.onClickAddVolumes);
+        $('.create-volume-button').click(page, page.onCreateVolume);
         $('#runApp, #interruptApp, #cleanupApp').click(page,
                                                     page.onExecuteScript);
+
+        page.defaultRunTooltip = $('#runApp').attr('title');
+        page.defaultInterruptTooltip = $('#interruptApp').attr('title');
+        page.defaultCleanupTooltip = $('#cleanupApp').attr('title');
+        page.updateCommandButtons();
         if (page.areScriptsRunning()) {
             page.startScriptStatePolling();
         }
@@ -146,25 +151,23 @@ conpaas.ui = (function (this_module) {
 
     onCreateVolume: function (event) {
 		var page = event.data,
-			volumeName = $('#volumeName').val(),
-	        volumeSize = $('#volumeSize').val(),
-	        agentId = $('#selectAgent').val();
+            agentId = $(event.target).attr('name'),
+            volumeName = $('#' + agentId + '-volumeName').val(),
+            volumeSize = $('#' + agentId + '-volumeSize').val();
 
 		if (volumeName.length == 0) {
-			page.showStatus('#VolumeStat', 'error', 'There is no volume name');
-			$('#volumeName').focus();
+			page.showStatus('#' + agentId + '-VolumeStat', 'error',
+						'There is no volume name');
+			$('#' + agentId + '-volumeName').focus();
 			return;
 		}
         if (!/^[1-9]\d*$/.test(volumeSize)) {
-			page.showStatus('#VolumeStat', 'error', 'Volume size must be a positive integer');
-			$('#volumeSize').val('');
-			$('#volumeSize').focus();
+			page.showStatus('#' + agentId + '-VolumeStat', 'error',
+						'Volume size must be a positive integer');
+			$('#' + agentId + '-volumeSize').val('');
+			$('#' + agentId + '-volumeSize').focus();
 			return;
         }
-		if (selectAgent.length == 0) {
-			page.showStatus('#VolumeStat', 'error', 'There is no agent selected');
-			return;
-		}
         if (page.areScriptsRunning()) {
             alert("Scripts are still running inside at " +
                                 "least one agent. Please wait for them to " +
@@ -182,20 +185,21 @@ conpaas.ui = (function (this_module) {
         }, 'post', function (response) {
             // successful
             var message = "Command sent, waiting for the service to apply changes...";
-            page.showStatus('#VolumeStat', 'positive', message);
+            page.showStatus('#' + agentId + '-VolumeStat', 'positive', message);
             page.pollState(function () {
                 window.location.reload();
             });
         }, function (response) {
             // error
-            page.showStatus('#VolumeStat', 'error', response.details);
+            page.showStatus('#' + agentId + '-VolumeStat', 'error', response.details);
             page.freezeInput(false);
         });
     },
 
     onDeleteVolume: function (event) {
 		var page = event.data,
-            volumeName = $(event.target).attr('name');
+            volumeName = $(event.target).attr('name'),
+            agentId = $(event.target).parent().attr('name');
 
         if (page.areScriptsRunning()) {
             alert("Scripts are still running inside at " +
@@ -216,57 +220,40 @@ conpaas.ui = (function (this_module) {
         }, 'post', function (response) {
             // successful
             var message = "Command sent, waiting for the service to apply changes...";
-            page.showStatus('#listVolumeStat', 'positive', message);
+            page.showStatus('#' + agentId + '-VolumeStat', 'positive', message);
             page.pollState(function () {
                 window.location.reload();
             });
         }, function (response) {
             // error
-            page.showStatus('#listVolumeStat', 'error', response.details);
+            page.showStatus('#' + agentId + '-VolumeStat', 'error', response.details);
             page.freezeInput(false);
         });
     },
 
-    onClickLinkVolumes: function (event) {
-        $('#volumeName').focus();
-        return false;
-    },
+    onClickAddVolumes: function (event) {
+        var page = event.data,
+            agentId = $(event.target).attr('name');
 
-    onRefreshVolumesList: function (event) {
-        var page = event.data;
-        //send the request
-        page.freezeInput(true);
-        page.server.reqHTML('ajax/render.php', {
-            sid: page.service.sid,
-            target: 'volumes'},
-        'get', function (response) {
-            $('#volumesListWrapper').html(response);
-            $('#linkVolumes').click(page, page.onClickLinkVolumes);
-            $('.volumes .delete').click(page, page.onDeleteVolume);
-            page.showStatus('#listVolumeStat', 'positive', 'Volume list refreshed');
-            page.freezeInput(false);
-         }, function (response) {
-            // error
-            page.showStatus('#listVolumeStat', 'error', 'Volumes information not available');
-            page.freezeInput(false);
-        });
+            $('.generic.create[name=' + agentId + ']').toggle(400);
+
+            if ($(event.target).text().charAt(0) == '+') {
+                $(event.target).text('— add volume');
+                $(event.target).attr('title', 'hide volume creation form');
+                $('#' + agentId + '-volumeName').focus();
+            } else {
+                $(event.target).text('+ add volume');
+                $(event.target).attr('title', 'show volume creation form');
+                $('#' + agentId + '-volumeName').val('');
+                $('#' + agentId + '-volumeSize').val('');
+                $('#' + agentId + '-VolumeStat').fadeOut();
+            }
     },
 
     onExecuteScript: function (event) {
         var page = event.data,
             command = $(event.target).attr('name'),
             parameters = $('#scriptParameters').val();
-
-        if (command == 'interrupt' && !page.areScriptsRunning()) {
-            page.showStatus('#appLifecycleStat', 'error', 'No scripts are currently ' +
-                    'running inside agents. Nothing to interrupt.');
-            return;
-        }
-        if (command != 'interrupt' && page.isScriptRunning(command + '.sh')) {
-            page.showStatus('#appLifecycleStat', 'error', "Script '" + command +
-                            ".sh' is already running inside at least one agent.");
-            return;
-        }
 
         page.freezeInput(true);
         page.server.req('ajax/genericRequest.php', {
@@ -383,6 +370,7 @@ conpaas.ui = (function (this_module) {
                 for (var agentId in response) {
                     $('#' + agentId + '-scriptStatusWrapper').html(response[agentId]);
                 }
+                page.updateCommandButtons();
                 if (page.areScriptsRunning()) {
                     page.startScriptStatePolling();
                 } else {
@@ -409,6 +397,52 @@ conpaas.ui = (function (this_module) {
         var instancesText = $('#instancesWrapper').text(),
             regExp = new RegExp(script + '\\s*RUNNING');
         return instancesText.search(regExp) != -1;
+    },
+
+    /**
+     * update execute command buttons according to the state of the scripts
+     */
+    updateCommandButtons: function () {
+        var page = this,
+            killTooltip = "pressing this button will kill all the running processes",
+            runningTooltip = "scripts are running inside at least one agent, " +
+                    "wait for them to finish execution or call 'interrupt' first",
+            notRunningTooltip = "no scripts are currently running inside agents, " +
+                    "nothing to interrupt";
+
+        if (page.areScriptsRunning()) {
+            // disable the 'run' button
+            $('#runApp').attr('disabled', 'disabled');
+            $('#runApp').attr('title', runningTooltip);
+
+            // enable the 'interrupt' button and set its label to 'interrupt'
+            // or 'kill'
+            $('#interruptApp').removeAttr('disabled');
+            if (page.isScriptRunning('interrupt.sh')) {
+                $("#interruptApp").attr('value', 'kill');
+                $('#interruptApp').attr('title', killTooltip);
+            } else {
+                $("#interruptApp").attr('value', 'interrupt');
+                $('#interruptApp').attr('title', page.defaultInterruptTooltip);
+            }
+
+            // disable the 'cleanup' button
+            $('#cleanupApp').attr('disabled', 'disabled');
+            $('#cleanupApp').attr('title', runningTooltip);
+        } else {
+            // enable the 'run' button
+            $('#runApp').removeAttr('disabled');
+            $('#runApp').attr('title', page.defaultRunTooltip);
+
+            // disable the 'interrupt' button and set its label to 'interrupt'
+            $("#interruptApp").attr('value', 'interrupt');
+            $('#interruptApp').attr('disabled', 'disabled');
+            $('#interruptApp').attr('title', notRunningTooltip);
+
+            // enable the 'cleanup' button
+            $('#cleanupApp').removeAttr('disabled');
+            $('#cleanupApp').attr('title', page.defaultCleanupTooltip);
+        }
     },
 
     /**

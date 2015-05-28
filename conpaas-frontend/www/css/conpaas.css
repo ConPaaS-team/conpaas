@@ -797,40 +797,7 @@ input.button {
 	padding: 3px;
 }
 
-.generic-volume .name {
-	width: 120px;
-}
-
-.generic-available {
-	padding-bottom: 0px;
-}
-
-.generic-create {
-	padding-top: 15px;
-}
-
-.generic-list {
-	width: 520px;
-}
-
-.generic-list table.slist {
-	width: 100%;
-}
-
-.generic-box {
-	border-color: #ccc;
-	background-color: #eee;
-	margin-left: 2px;
-	width: 465px;
-}
-
-.generic-details {
-	color: #333;
-	font-weight: normal;
-	margin-top: 6px;
-}
-
-.generic-button {
+.generic-script-button {
 	width: 100px;
 }
 
@@ -839,17 +806,60 @@ input.button {
 }
 
 .generic-script-status {
-	padding-left: 30px;
+	padding-right: 35px;
 	font-weight: normal;
 	color: #666;
 	font-size: 10px;
 }
 
 .generic-agent-logs {
-	padding-left: 30px;
+	padding-right: 25px;
 	font-weight: normal;
 	color: #666;
 	font-size: 10px;
+}
+
+.generic-ip-address {
+	width: 110px;
+	text-align: right;
+}
+
+.generic.create-volume-link {
+	margin-left: 10px;
+	font-size: 11px;
+	color: #008CF7;
+}
+
+.generic.volumes {
+	border-spacing: 8px 3px;
+	font-size: 12px;
+}
+
+.generic.volumes tr td.size {
+	font-weight: normal;
+	color: #666;
+}
+
+.generic.create {
+	margin-left: 10px;
+	font-size: 11px;
+}
+
+.generic.create div {
+	width: 100px;
+}
+
+.generic.create input[type=text] {
+	margin-left: 5px;
+	font-size: 11px;
+	width: 100px;
+	height: 12px;
+}
+
+.generic.create input[type=button] {
+	font-size: 11px;
+	width: 100px;
+	margin-right: 5px;
 }
 
 .form-section .form-header {
@@ -1017,11 +1027,6 @@ ul.versions li a.download,
 ul.versions li a.delete,
 ul.versions li .status,
 ul.versions li .dot {
-	
-}
-
-table.volumes,
-table.volumes tr td img.delete {
 	
 }
 
@@ -1207,8 +1212,7 @@ ul.versions li .timestamp {
 	padding: 5px 3px 5px 5px;
 }
 
-#instances .cluster-web,#instances .cluster-masters,#instances .cluster-scalaris
-	{
+#instances .cluster-web, #instances .cluster-masters, #instances .cluster-scalaris, #instances .cluster-master {
 	border-color: blue;
 }
 
@@ -1216,7 +1220,7 @@ ul.versions li .timestamp {
 	border-color: purple;
 }
 
-#instances .cluster-proxy,#instances .cluster-workers, #instances .cluster-slaves {
+#instances .cluster-proxy, #instances .cluster-workers, #instances .cluster-slaves, #instances .cluster-node {
 	border-color: orange;
 }
 

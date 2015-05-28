@@ -44,6 +44,7 @@ require_module('ui/instance/generic');
 class GenericService extends Service {
 
 	private $scriptStatus = null;
+	private $volumes = null;
 
 	public function __construct($data, $manager) {
 		parent::__construct($data, $manager);
@@ -72,7 +73,12 @@ class GenericService extends Service {
 		} else {
 			$scriptStatus = null;
 		}
-		return new GenericInstance($info, $this->sid, $scriptStatus);
+		if ($this->volumes) {
+			$volumes = $this->volumes[$node];
+		} else {
+			$volumes = null;
+		}
+		return new GenericInstance($info, $this->sid, $volumes, $scriptStatus);
 	}
 
 	public function createScriptStatusUI() {
@@ -114,6 +120,32 @@ class GenericService extends Service {
 	public function executeScript($params) {
 		$resp = $this->managerRequest('post', 'execute_script', $params);
 		return $resp;
+	}
+
+	public function updateVolumes() {
+		$this->volumes = null;
+		if (!$this->isRunning()) {
+			return;
+		}
+		$volumes = $this->listVolumes();
+		if ($volumes === false) {
+			return;
+		}
+		usort($volumes, function ($a, $b) {
+			return strcmp($a['volumeName'], $b['volumeName']);
+		});
+		$this->volumes = array();
+		if ($this->nodesLists !== false) {
+			foreach ($this->nodesLists as $role => $nodesList) {
+				foreach ($nodesList as $node) {
+					$this->volumes[$node] = array_values(array_filter($volumes,
+						function($volume) use($node) {
+							return $volume['agentId'] === $node;
+						}
+					));
+				}
+			}
+		}
 	}
 
 	public function updateScriptStatus() {

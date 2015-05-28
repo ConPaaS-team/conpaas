@@ -2,7 +2,7 @@
 User Guide
 ==========
 
-ConPaaS currently contains nine services:
+ConPaaS currently contains the following services:
 
 -  **Two Web hosting services** respectively specialized for hosting PHP
    and JSP applications;
@@ -22,7 +22,9 @@ ConPaaS currently contains nine services:
    system;
 
 -  **HTC service** providing a throughput-oriented scheduler for bags of tasks
-   submitted on demand.
+   submitted on demand;
+
+-  **Generic service** allowing the execution of arbitrary applications.
 
 ConPaaS applications can be composed of any number of services. For
 example, a bio-informatics application may make use of a PHP and a MySQL
@@ -67,23 +69,23 @@ It exists two command line clients: ``cpsclient.py`` and ``cps-tools``.
 
     Command arguments::
 
-        cpsclient.py usage
+        $ cpsclient.py usage
 
     Available service types::
 
-        cpsclient.py available
+        $ cpsclient.py available
 
     Service command specific arguments::
 
-        cpsclient.py usage <service_type>
+        $ cpsclient.py usage <service_type>
 
     Create a service::
 
-        cpsclient.py create <service_type>
+        $ cpsclient.py create <service_type>
 
     List services::
 
-        cpsclient.py list
+        $ cpsclient.py list
 
 ``cps-tools``
     Installation and configuration:
@@ -91,38 +93,38 @@ It exists two command line clients: ``cpsclient.py`` and ``cps-tools``.
 
     Command arguments::
 
-        cps-tools --help
+        $ cps-tools --help
 
     Available service types::
 
-        cps-tools service get_types
-        cps-service get-types
+        $ cps-tools service get_types
+        $ cps-service get-types
 
     Service command specific arguments::
 
-        cps-tools <service_type> --help
-        cps-<service_type> --help
+        $ cps-tools <service_type> --help
+        $ cps-<service_type> --help
 
     Create a service::
 
-        cps-tools service create <service_type>
-        cps-tools <service_type> create
-        cps-<service_type> create
+        $ cps-tools service create <service_type>
+        $ cps-tools <service_type> create
+        $ cps-<service_type> create
 
     List services::
 
-        cps-tools service list
-        cps-service list
+        $ cps-tools service list
+        $ cps-service list
 
     List applications::
 
-        cps-tools application list
-        cps-application list
+        $ cps-tools application list
+        $ cps-application list
 
     List clouds::
 
-       cps-tools cloud list
-       cps-cloud list
+       $ cps-tools cloud list
+       $ cps-cloud list
 
 
 Controlling services using the front-end
@@ -147,7 +149,7 @@ Start a service.
     host applications, depending on the type of service.
 
 Rename the service.
-    By default all new services are named “New service.” To give a
+    By default all new services are named “New service”. To give a
     meaningful name to a service, click on this name in the
     service-specific page and enter a new name.
 
@@ -307,11 +309,15 @@ Uploading application code
 PHP applications can be uploaded as an archive or via the Git version
 control system.
 
-Archives can be either in the ``tar`` or ``zip`` format. Attention: the
-archive must expand *in the current directory* rather than in a
-subdirectory. The service does not immediately use new applications when
+Archives can be either in the ``tar``, ``zip``, ``gzip`` or ``bzip2`` format.
+
+.. warning::
+  the archive must expand **in the current directory** rather than in a
+  subdirectory.
+
+The service does not immediately use new applications when
 they are uploaded. The frontend shows the list of versions that have
-been uploaded; choose one version and click “make active” to activate
+been uploaded; choose one version and click “set active” to activate
 it.
 
 Note that the frontend only allows uploading archives smaller than a
@@ -362,8 +368,8 @@ states can be transparently stored. To overwrite PHP session functions
 such that they make use of the shared key-value store, the PHP service
 includes a standard “phpsession.php” file at the beginning of every .php
 file of your application that uses sessions, i.e. in which function
-session\_start() is encountered. This file overwrites the session
-handlers using the session\_set\_save\_handler() function.
+*session\_start()* is encountered. This file overwrites the session
+handlers using the *session\_set\_save\_handler()* function.
 
 This modification is transparent to your application so no particular
 action is necessary to use PHP sessions in ConPaaS.
@@ -384,7 +390,7 @@ let PHP display errors.
 Adding and removing nodes
 -------------------------
 
-Like all ConPaaS service, the PHP service is elastic:
+Like all ConPaaS services, the PHP service is elastic:
 service owner can add or remove nodes.
 The PHP service (like the Java service) belongs to a class of web services
 that deals with three types of nodes:
@@ -408,16 +414,16 @@ the number of backend nodes, the number of web nodes and the number of proxy nod
 It also take a 5th optional argument that specify in which cloud nodes will be created.
 For example, adding two backend nodes to PHP service id 1::
 
-  cpsclient.py add_nodes 1 2 0 0
+  $ cpsclient.py add_nodes 1 2 0 0
 
 Adding one backend node and one web node in a cloud provider called ``mycloud``::
 
-  cpsclient.py add_nodes 1 1 1 0 mycloud
+  $ cpsclient.py add_nodes 1 1 1 0 mycloud
 
 You can also remove nodes using ``cpsclient.py``.
 For example, the following command will remove one backend node::
 
-  cpsclient.py remove_nodes 1 1 0 0
+  $ cpsclient.py remove_nodes 1 1 0 0
 
 
 .. warning::
@@ -431,9 +437,9 @@ For example, the following command will remove one backend node::
 Autoscaling
 -----------
 
-One of the worries of a service owner, is the trade-off between the performance
-of the service, and the cost of running it. The service owner can add nodes to
-improve the performance of the service which will have more nodes to balance the
+One of the worries of a service owner is the trade-off between the performance
+of the service and the cost of running it. The service owner can add nodes to
+improve the performance of the service, which will have more nodes to balance the
 load, or remove nodes from the service to decrease the cost per hour, but
 increase the load per node.
 
@@ -458,7 +464,7 @@ select different kind of nodes depending on the service owner strategy choice.
 
 To enable autoscaling for the PHP service, run the command::
 
-    cpsclient.py on_autoscaling <sid> <adapt_interval> <response_time_threshold> <strategy>
+    $ cpsclient.py on_autoscaling <sid> <adapt_interval> <response_time_threshold> <strategy>
     
 where:
   * <sid> is the service identifier
@@ -474,7 +480,7 @@ where:
 
 For example::
 
-    cpsclient.py on_autoscaling 1 5 2000 low
+    $ cpsclient.py on_autoscaling 1 5 2000 low
 
 enables autoscaling for PHP service 1, with an adaptation every 5 minutes, a
 response time threshold of 2000 milliseconds (2 seconds), and using the strategy
@@ -486,7 +492,7 @@ smallest instance from the cloud provider.
 
 Any time, the service owner may re-run the "on_autoscaling" command to tune autoscaling with different parameters::
 
-    cpsclient.py on_autoscaling 1 10 1500 low
+    $ cpsclient.py on_autoscaling 1 10 1500 low
 
 this command updates the previous call to "on_autoscaling" and changes the
 adaptation interval to 10 minutes, and setting a lower threshold to 15000
@@ -494,7 +500,7 @@ milliseconds.
 
 Autoscaling may be disabled by running command::
 
-    cpsclient.py off_autoscaling <sid>
+    $ cpsclient.py off_autoscaling <sid>
 
 
 The Java Web hosting service
@@ -511,7 +517,7 @@ Applications in the Java Web hosting service can be uploaded in the form
 of a ``war`` file or via the Git version control system. The service
 does not immediately use new applications when they are uploaded. The
 frontend shows the list of versions that have been uploaded; choose one
-version and click “make active” to activate it.
+version and click “set active” to activate it.
 
 Note that the frontend only allows uploading archives smaller than a
 certain size. To upload large archives, you must use the command-line
@@ -556,7 +562,7 @@ The Database Nodes and Load Balancer Nodes
 
 The MySQL service offers the capability to instantiate multiple
 instances of database nodes, which can be used to increase the
-througput and to improve features of fault tolerance throws
+throughput and to improve features of fault tolerance through
 replication. The multi-master structure allows any database node to
 process incoming updates, because the replication system is
 responsible for propagating the data modifications made by each member
@@ -590,11 +596,11 @@ Accessing the database
 
 The frontend provides the command-line to access the database cluster.
 Copy-paste this command in a terminal. You will be asked for the user
-password, after which you can use the database as you wish.  Note
-that, in case the service has instantiate a load balancer the, command
-refers to the load balancer ip and its specifical port, so the load
+password, after which you can use the database as you wish. Note
+that, in case the service has instantiated a load balancer, the command
+refers to the load balancer IP and its specific port, so the load
 balancer can receive all the queries and distributes them across the
-ordinary nodes.  Note, again, that the mysqldb user has extended
+ordinary nodes. Note, again, that the *mysqldb* user has extended
 privileges. It can create new databases, new users etc.
 
 Uploading a Database Dump
@@ -611,16 +617,16 @@ Performance Monitoring
 ----------------------
 
 The MySQL service interface provides a sophisticated mechanism to monitor the
-service.  The user interface, in the frontend, shows a monitoring control,
-called "Performance Monitor," that can be used to monitor a large cluster's
-behaviour.  It interacts with "Ganglia", "Galera" and “MySQL” to obtain various
-kinds of information.  Thus, Performance Monitor provides a solution for
+service. The user interface, in the frontend, shows a monitoring control,
+called "Performance Monitor", that can be used to monitor a large cluster's
+behaviour. It interacts with "Ganglia", "Galera" and "MySQL" to obtain various
+kinds of information. Thus, "Performance Monitor" provides a solution for
 maintaining control and visibility of all nodes, with a monitoring dynamic data
 every few seconds. 
 
 It consists of three main components.
 
-- "Cluster usage" monitors the number of incoming SQL queries.  This
+- "Cluster usage" monitors the number of incoming SQL queries. This
   will let you know in advance about any overload of the resources.
   You will also be able to spot usage trends over time so as to get
   insights on when you need to add new nodes, serving the MySQL
@@ -635,18 +641,18 @@ It consists of three main components.
   if CPU utilization is high, or free memory is very low this is shown
   clearly. This may mean that processes on this node will start to
   slow down, and that it may be time to add additional nodes to the
-  cluster.  On the other hand this may indicate a malfunction on the
+  cluster. On the other hand this may indicate a malfunction of the
   specific node.
 
-  In this last case, in a multimaster system, it may be a good idea to
-  kill the node and replace it with another one.  The monitoring
-  system simplifys also this kind of operations through buttons which
-  allows to directly kill a specific node.  Keep in mind, however,
+  In this latter case, in a multimaster system, it may be a good idea to
+  kill the node and replace it with another one. The monitoring
+  system also simplifies this kind of operations through buttons which
+  allow to directly kill a specific node. Keep in mind, however,
   that high CPU utilization may not necessarily affect application
   performance.
 
-- "Galera Mean Misalignment" draws a realtime measure of the mean
-  misalignment accross the nodes.  This information is derived by
+- "Galera Mean Misalignment" draws a real-time measure of the mean
+  misalignment across the nodes. This information is derived by
   Galera metrics about the average length of the receive queue since
   the most recent status query. If this value is noticeably larger
   than zero, the nodes are likely to be overloaded, and cannot apply
@@ -689,8 +695,9 @@ front-end provides useful links to the Hadoop namenode, the job tracker,
 and to a graphical interface which allows to upload/download data
 to/from the service and issue MapReduce jobs. 
 
-**IMPORTANT:** This service requires virtual machines with *at least* 384 MB of
-RAM to function properly.
+.. warning::
+  This service requires virtual machines with **at least** 384 MB of RAM to
+  function properly.
 
 The TaskFarming service
 ====================
@@ -703,7 +710,7 @@ phase, where its agents sample the runtime of the given tasks on
 different cloud instances. The service then based on the sampled
 runtimes, provides the user with a list of schedules. Schedules are
 presented in a graph and the user can choose between cost/makespan of
-different schedules for the given set of tasks.fter the choice is made
+different schedules for the given set of tasks. After the choice is made,
 the service enters the execution phase and completes the execution of
 the rest of the tasks according to the user’s choice.
 
@@ -767,7 +774,7 @@ can be found at http://xtreemfs.org/userguide.php.
 SSL Certificates
 ----------------
 
-The XtreemFS service uses SSL certificates for authorisation and authentication.
+The XtreemFS service uses SSL certificates for authorization and authentication.
 There are two types of certificates, user-certificates and client-certificates.
 Both certificates can additionally be flagged as administrator certificates which
 allows performing administrative file-systems tasks when using them to access
@@ -781,14 +788,14 @@ volume is accessed. So multiple users might share a single client-certificate.
 On the other hand, user-certificates contain a user and group inside the certificate.
 So usually, each user has her personal user-certificate. Both kinds of certificate can
 be used in parallel. Client-certificates are less secure, since the user and group with
-whom files are accessed can be arbitrarly changed if the mounting user has local 
+whom files are accessed can be arbitrarily changed if the mounting user has local
 superuser rights. So client-certificates should only be used in trusted environments.
 
 Using the command line client, certificates can be created like this, where <adminflag>
 can be "true", "yes", or "1" to grant administrator rights::
 
-    cpsclient.py get_client_cert <service-id> <passphrase> <adminflag> <filename.p12>
-    cpsclient.py get_user_cert <service-id> <user> <group> <passphrase> <adminflag> <filename.p12>
+    $ cpsclient.py get_client_cert <service-id> <passphrase> <adminflag> <filename.p12>
+    $ cpsclient.py get_user_cert <service-id> <user> <group> <passphrase> <adminflag> <filename.p12>
 
 Accessing volumes directly
 --------------------------
@@ -799,11 +806,11 @@ POSIX-compatible filesystem. You need a certificate for mounting (see last secti
 The command looks like this, where <address> is the IP of an agent running
 an XtreemFS directory service (usually the first agent)::
 
-    mount.xtreemfs <address>/<volume> <mount-point> --pkcs12-file-path <filename.p12> --pkcs12-passphrase <passphrase> 
+    $ mount.xtreemfs <address>/<volume> <mount-point> --pkcs12-file-path <filename.p12> --pkcs12-passphrase <passphrase> 
 
 The volume can be unmounted with the following command::
 
-    fusermount -u <mount-point> 
+    $ fusermount -u <mount-point>
 
 Please refer to the XtreemFS user guide (http://xtreemfs.org/userguide.php) for further details.
 
@@ -816,8 +823,8 @@ ConPaaS command line client (recommended) or directly via xtfsutil (see the
 XtreemFS user guide). The commands are like follows, were <policy_type> is
 "osd_sel", "replica_sel", or "replication"::
 
-   cpsclient.py list_policies <service-id> <policy_type> 
-   cpsclient.py set_policy <service-id> <policy_type> <volume> <policy> [factor] 
+   $ cpsclient.py list_policies <service-id> <policy_type>
+   $ cpsclient.py set_policy <service-id> <policy_type> <volume> <policy> [factor]
 
 Persistency
 -----------
@@ -825,16 +832,19 @@ Persistency
 If the XtreemFS service is shut down, all its data is permanently lost. If 
 persistency beyond the service runtime is needed, the XtreemFS service can be
 moved into a snapshot by using the download_manifest operation of the command
-line client. WARNING: This operation will automatically shut down the service
-and its application.  
+line client.
+
+.. warning::
+  This operation will automatically shut down the service and its application.
+
 The whole application containing the service and all of its stored volumes 
 with their data can be moved back into a running ConPaaS application by using
 the manifest operation.
 
 The commands are::
 
-    cpsclient.py download_manifest <application-id> > <filename>
-    cpsclient.py manifest <filename>
+    $ cpsclient.py download_manifest <application-id> > <filename>
+    $ cpsclient.py manifest <filename>
 
 
 Important notes
@@ -864,7 +874,7 @@ to the target throughput.
 
 Available commands
 ------------------
-start service_id - prompts the user to specify a mode (’real’ or ’demo’) and
+``start service_id``: prompts the user to specify a mode (’real’ or ’demo’) and
 type (’batch’, ’online’ or ’workflow’) for the service. Starts the service
 under the selected context and initializes all the internal data structures for
 running the service.
@@ -907,54 +917,516 @@ with the current configuration of workers.
 demand.  The bag is executed with the existing configuration.
 
 
+The Generic service
+===================
+
+The Generic service facilitates the deployment of arbitrary server-side
+applications in the cloud. A Generic service may contain multiple Generic
+agents, each of them running an instance of the application.
+
+The users can control the application's life cycle by installing or removing
+code versions, running or interrupting the execution of the application or
+checking the status of each of the Generic agents. New Generic agents can be
+added or old ones removed at any time, based on the needs of the application.
+Moreover, additional storage volumes can be attached to agents if additional
+storage space is needed.
+
+To package an application for the Generic service, the user has to provide
+simple scripts that guide the process of installing, running, scaling up
+and down, interrupting or removing an application to/form a Generic agent.
+
+Agent roles
+-----------
+Generic agents assume two roles: the first agent started is always a “master”
+and all the other agents assume the role of regular “nodes”. This distinction
+is purely informational: there is no real difference between the two agent
+types, both run the same version of the application's code and are treated by
+the ConPaaS system in exactly the same way. This distinction may be useful,
+however, when implementing some distributed algorithms in which one node must
+assume a specific role, such as leader or coordinator.
+
+It is guaranteed that, as long as the Generic service is running, there will
+always be exactly one agent with the “master” role and the same agent will
+assume this role until the Generic service is stopped. Adding or removing nodes
+will only affect the number of regular nodes.
+
+Packaging an application
+------------------------
+To package an application for the Generic service, one needs to write various
+scripts which are automatically called inside agents whenever the corresponding
+events happen. The following scripts may be used:
+
+``init.sh`` – called whenever a new code version is activated. The script is
+automatically called for each agent as soon as the corresponding code version
+becomes active. The script should contain commands that initialize the
+environment and prepare it for the execution of the application. It is guaranteed
+that this script is is called before any other scripts in a specific code version.
+
+``notify.sh`` – called whenever a new agent is added or removed. The script
+is automatically called whenever a new agent is added and becomes active or
+is removed from the Generic service. The script may configure the application
+to take into account the addition or removal of a specific node or group of
+nodes. In order to retrieve the updated list of nodes along with their IP
+addresses, the script may check the content of the following file, which always
+contains the current list of nodes in JSON format: ``/var/cache/cpsagent/agents.json``.
+Note that when multiple nodes are added or removed in a single operation, the
+script will be called only once for each of the remaining nodes.
+
+``run.sh`` – called whenever the user requests to start the application. 
+The script should start executing the application and after the execution
+completes, it may return an error code that will be shown to the user. It is
+guaranteed that the ``init.sh`` script already finished execution before ``run.sh``
+is called.
+
+``interrupt.sh`` – called whenever the user requests that the application is
+interrupted. The script should notify the application that the interruption was
+requested and allow it to gracefully terminate execution. It is guaranteed that
+``interrupt.sh`` is only called when the application is actually running.
+
+``cleanup.sh`` – called whenever the user requests that the application's code
+is removed from the agent. The script should remove any files that the
+application generated during execution and are not longer needed. After the
+script completes execution, a new version of the code may be activated and the
+``init.sh`` script called again, so the agent needs to be reverted to a clean
+state.
+
+To create an application's package, all the previous scripts must be added to
+an archive in the ``tar``, ``zip``, ``gzip`` or ``bzip2`` format. If there is
+no need to execute any tasks when a specific type of event happens, some of
+the previous scripts may be left empty or may even be missing completely from
+the application's archive.
+
+.. warning::
+  the archive must expand **in the current directory** rather than in a subdirectory.
+
+The application's binaries can be included in the archive only if they are small
+enough.
+
+.. warning::
+  the archive is stored on the service manager instance and its contents are extracted in each
+  agent's root file system which usually has a very limited amount of free
+  space (usually a little more than 100 MB), so application's binaries can
+  be included only if they are really small (a few MBs).
+
+A better idea would be to attach an additional storage volume where the ``init.sh``
+script can download the application's binaries from an external location for each
+Generic agent. This will render the archive very small as it only contains a few
+scripts. This is the recommended approach.
+
+Uploading the archive
+---------------------
+An application's package can be uploaded to the Generic service either as an
+archive or via the Git version control system. Either way, the code does not
+immediately become active and must be activated first.
+
+Using the web frontend, the “Code management” section offers the possibility
+to upload a new archive to the Generic service. After the upload succeeds,
+the interface shows the list of versions that have been uploaded; choose one
+version and click “set active” to activate it. Note that the frontend only
+allows uploading archives smaller than a certain size. To upload large archives,
+you must use the command-line tools or Git. The web frontend also allows
+downloading or deleting a specific code version. Note that the active code
+version cannot be deleted.
+
+Using the command-line interface, uploading and enabling a new code version
+is just as simple. The following example illustrates how to upload and activate
+an archive to the service with id 1 using the ``cpsclient.py`` command line tool::
+
+  $ cpsclient.py upload_code 1 test-code.tar.gz
+  Code version code-pw1LKs uploaded
+  $ cpsclient.py enable_code 1 code-pw1LKs
+  code-pw1LKs enabled
+  $ cpsclient.py list_uploads 1
+  current codeVersionId filename         description
+  ------------------------------------------------------
+        * code-pw1LKs   test-code.tar.gz
+          code-default  code-default.tar Initial version
+
+To download a specific code version, the following command may be used::
+
+  $ cpsclient.py download_code <serviceid> <code-version>
+
+The archive will be downloaded using the original name in the current directory.
+
+.. warning::
+  if another file with the same name is present in the current directory,
+  it will be overwritten.
+
+The command-line client also allows deleting a code version, with the exception
+of the currently active version::
+
+  $ cpsclient.py delete_code <serviceid> <code-version>
+
+It is a good idea to delete the code versions which are not needed anymore, as
+all the available code versions are stored in the Generic manager's file system,
+which has a very limited amount of available space. In contrast to the manager,
+the agents only store the active code version, which is replaced every time a new
+version becomes active.
+
+Uploading the code using git
+----------------------------
+As an alternative to uploading the application's package as stated above, the
+Generic service also supports uploading the package's content using Git.
+
+To enable Git-based code uploads, you first need to upload your SSH public key.
+This can be done either using the web frontend, in the “Code management” section,
+after selecting “checking out repository” or using the command-line client::
+
+  $ cpsclient.py upload_key <serviceid> <filename>
+
+You can check that the key was successfully uploaded by listing the trusted
+SSH keys:
+
+  $ cpsclient.py list_keys <serviceid>
+
+Once the key is uploaded, the following command has to be executed in order to
+obtain a copy of the repository::
+
+  $ git clone git@<generic-manager-ip>:code
+
+The repository itself can then be used as usual. A new version of your
+application can be uploaded with ``git push``::
+
+  $ cd code
+  $ git add {init,notify,run,interrupt,cleanup}.sh
+  $ git commit -m "New code version"
+  $ git push origin master
+
+The ``git push`` command will trigger the updating of the available code versions.
+To activate the new code version, the same procedure as before must be followed.
+Note that, when using the web frontend, you may need to refresh the page in
+order to see the new code version.
+
+To download a code version uploaded using Git, you must clone the repository
+and checkout a specific commit. The version number represents the first part
+of the commit hash, so you can use that as a parameter for the ``git checkout``
+command::
+
+  $ cpsclient.py list_uploads 1
+  current codeVersionId filename            description
+  ---------------------------------------------------------
+          git-7235de9   7235de9             Git upload
+        * code-default  code-default.tar    Initial version
+  $ git clone git@192.168.56.10:code
+  $ cd code
+  $ git checkout 7235de9
+
+Deleting a specific code version uploaded using Git is not possible.
+
+Managing storage volumes
+------------------------
+Storage volumes of arbitrary size can be attached to any Generic agent.
+Note that, for some clouds such as Amazon EC2 and OpenStack, the volume
+size must be a multiple of  1 GB. In this case, if the requested size does
+not satisfy this constraint, it will be rounded up to the smallest size
+multiple of 1 GB that is greater than the requested size.
+
+The attach or detach operations are permitted only if there are no scripts
+running inside the agents. This guarantees that a volume is never in use when
+it is detached.
+
+To create and attach a storage volume using the web frontend, you must click
+the “+ add volume” link below the instance name of the agent that should have
+this volume attached to. A small form will expand where you can enter the
+volume name and the requested size. Note that the volume name must be unique,
+or else the volume will not be created. The volume is created and attached
+after pressing the “create volume” button. Depending on the cloud in use and
+the volume size, this operation may take a little while. Additional volumes
+can be attached later to the same agent if more storage space is needed.
+
+The list of volumes attached to a specific agent is shown in the instance
+view of the agent, right under the instance name. For each volume, the name
+of the volume and the requested size is shown. To detach and delete a volume,
+you can press the red X icon after the volume's size.
+
+.. warning::
+  after a volume is detached, all data contained within it is lost forever.
+
+Using the command-line client, a volume can be created and attached to a
+specific agent with the following command::
+
+  $ cpsclient.py create_volume <serviceid> <vol_name> <size> <agent_id>
+
+Size must always be specified in MB. To find out the *agent_id* of a specific
+instance, you may issue the following command::
+
+  $ cpsclient.py list_nodes <serviceid>
+
+The list of all storage volumes can be retrieved with::
+
+  $ cpsclient.py list_volumes <serviceid>
+
+This command detaches and deletes a storage volume::
+
+  $ cpsclient.py delete_volume <serviceid> <agent_id>
+
+Controlling the application's life cycle
+----------------------------------------
+A newly started Generic service contains only one agent with the role
+“master”.  As in the case of other ConPaaS services, nodes can be added
+to the service (or removed from the service) at any point in time.
+
+In the web frontend, new Generic nodes can be added by entering the number
+of new nodes (in a small cell below the list of instances) and pressing
+the “submit” button. Entering a negative number of nodes will lead to the
+removal of the specified number of nodes.
+
+On the command-line, nodes can be added with the following command::
+
+  $ cpsclient.py add_nodes <serviceid> <number_of_nodes>
+
+Immediately after the new nodes are ready, the active code version is copied
+to the new nodes and the ``init.sh`` script is executed in each of the new
+nodes. All the other nodes which were already up before the execution of the
+command will be notified about the addition of the new nodes to the service,
+so ``notify.sh`` is executed in their case. The ``init.sh`` script is never
+executed twice for the same agent and the same code version.
+
+Nodes can be removed with::
+
+  $ cpsclient.py remove_nodes <serviceid> <number_of_nodes>
+
+After the command completes and the specified number of nodes are terminated,
+the ``notify.sh`` script is executed for all the remaining nodes to notify
+them of the change.
+
+The Generic service also offers an easy way to run the application on every
+agent, interrupt a running application or cleanup the agents after the
+execution is completed.
+
+In the web frontend, the ``run``, ``interrupt`` and ``cleanup`` buttons
+are conveniently located on the top of the page, above the instances view.
+Pressing such a button will execute the corresponding script in all the agents.
+Above the buttons there is also a parameters field which allow the user to
+specify parameters which will be forwarded to the script during the execution.
+
+On the command line, the following commands may be used::
+
+  $ cpsclient.py run <serviceid> [parameters]
+  $ cpsclient.py interrupt <serviceid> [parameters]
+  $ cpsclient.py cleanup <serviceid> [parameters]
+
+The parameters are optional and, if not present, will be replaced by an empty
+list.
+
+The ``run`` and ``cleanup`` commands cannot be issued if any scripts are
+still running inside at least one agent. In this case, if it is not desired
+to wait for them to complete execution, ``interrupt`` may be called first.
+
+In turn, ``interrupt`` cannot be called if no scripts are running (there is
+nothing to interrupt). The ``interrupt`` command will execute the ``interrupt.sh``
+script that tries to cleanly shut down the application. If the ``interrupt.sh``
+completes execution and the application is still running, the application will
+be automatically killed. When ``interrupt.sh`` itself has to be
+killed, the ``interrupt`` command can be issued again. In this case, it will
+kill all the running scripts (including ``interrupt.sh``). In the web frontend,
+this is highlighted by renaiming the ``interrupt`` button to ``kill``.
+
+.. warning::
+  issuing the ``interrupt`` command twice kills all the running
+  scripts, including the child processes started by them!
+
+Enabling a new code version is allowed only when no script from the current
+code version is currently running. If it is not desired to wait for them
+to complete execution, ``interrupt`` may be called first. When enabling a
+new code version, immediately after copying the new code to the agents,
+the new ``init.sh`` script is called.
+
+Checking the status of the agents
+---------------------------------
+The running status of the various scripts for each agent can easily be
+checked in both the web frontend and using the command-line interface.
+
+In the web frontend, the instance view of each agent contains a table with
+the 5 scripts and each script's running status, along with a led that codes
+the status using colors: *light blue* when the current version of the script
+was never executed, *blinking green* when the script is currently running
+and *red* when the script finished execution. In the latter case, hovering
+the mouse pointer over the led will indicate the return code in  a tool-tip
+text.
+
+With the command-line interface, the status of the scripts for each agent
+can be listed using the following command::
+
+  $ cpsclient.py get_script_status <serviceid>
+
+The Generic service also facilitates retrieving the agent's log file and
+the contents of standard output and error streams. In the web frontend,
+three links are present in the instance's view of each agent. Using the
+command line, the logs can be retrieved with the following command::
+
+  $ cpsclient.py get_script_status <serviceid> <agent_id>
+
+To find out the agent_id of a specific instance, you may issue the following command::
+
+  $ cpsclient.py list_nodes <serviceid>
+
 
 .. _nutshell-guide:
 
 ConPaaS in a VirtualBox Nutshell
 ================================
 
-After the host-only network has been set up and the tarball has been extracted, you can import the appliance on VirtualBox by double clicking on it. In case you genereated a custom appliance, it is already imported so you can start it.
+ConPaaS in a Nutshell is a version of ConPaaS which runs inside a
+single VirtualBox VM. It is the recommended way to test the system
+and/or to run it in a single physical machine.
 
-The login credentials are::
+Starting the Nutshell
+---------------------
+
+The easiest way to start the Nutshell is using VirtualBox:
+
+#. If you haven't done this already, create a host-only network on
+   VirtualBox. To do so from the VirtualBox GUI, go to:
+   File>Preferences>Network>Host-only Networks and click add. If you
+   already see a host-only network (probably called *vboxnet0*), then
+   you do not need to add another one.
+
+#. Import the Nutshell appliance using the menu File->Import
+   Appliance, or by simply double-clicking on the file in your file
+   manager.
+
+#. Once the Nutshell has been imported, you may adjust the amount of
+   memory and the number of CPUs you want to dedicate to it by
+   clicking on the Nutshell, then Settings->System->Motherboard/Processor.
+   We recommend allocating at least 3 GB of RAM for the Nutshell to
+   function properly.
+
+#. Start the Nutshell by clicking "Start".
+
+#. Once the Nutshell is started, you can log into it. Wait a few
+   seconds until you see a login prompt. The login credentials are::
 
     Username: stack
     Password: contrail
 
-In order to have a more interactive inteface we suggest to connect to it through *ssh* from the host machine. 
-Depending on how your host-only network is configured the IP might be different. However, for a default configuration
-the IP is in the range 192.168.56.101/32. 
+#. One important piece of information which you may want to note down is
+   the IP address assigned to the Nutshell VM. This can be used to access
+   the web frontend directly from your machine or to SSH into the Nutshell
+   VM in order to execute command-line interface commands or to copy files.
+   To find it, type the following command::
 
-The credentials for the Opensack and ConPaaS users are::
+    $ ifconfig br200
 
-    Openstack
-    Username: admin
-    Password: password
+   The IP address will appear in the second line of text.
 
-    ConPaaS
-    Username: test
-    Password: password
 
-However, on login, both the users are authenticated and you are able to execute Openstack command such as::
+Using the Nutshell via the graphical frontend
+---------------------------------------------
 
-    nova list
+You can access the ConPaaS frontend by inserting the IP address of the
+Nutshell VM in your Web browser, **making sure to add https:// in front of it**::
 
-In case an empty table is shown, everything is ready and ConPaaS components can be used. A simple test would be to
-start a *helloworld* service by running::
+  https://192.168.56.xxx 
 
-    cpsclient.py create helloworld
+Note that the frontend is accessible only from your local
+machine. Other machines will not be able to access it. A default user
+is available for you, its credentials are::
+  
+  ConPaaS
+  Username: test
+  Password: password
 
-In addition to the ConPaaS CLI, the Nutshell contains also the ConPaaS front-end isntallation. You can reach the front-end from the host machine by going to::
+You can now use the frontend in the same way as any ConPaaS system,
+creating applications, services etc. Note that the services are also
+only accessible from your local machine.
 
-    https://192.168.56.xxx 
+Note that also *Horizon* (the Openstack dashboard) is running on it as
+well. In case you are curious and you want to look inside the system, 
+Horizon can be reached (using HTTP, not HTTPS) at the same IP address::
 
-Note that also *Horizon* (the Openstack dashboard) is running on it as well. Horizon can be reached at::
- 
-    http://192.168.56.xxx
+  http://192.168.56.xxx
 
-The Nutshell contains a *Devstack* installation of Openstack, therefore different services run and log on different tabs of a *screen* session. In order to stop, start or consult the logs of these services, connect to the screen session by executing::
+The credentials for Horizon are::
 
-     /opt/stack/devstack/rejoin-stack.sh
+  Openstack
+  Username: admin
+  Password: password
 
-Every tab in the screen session is labeled with the name of the service it belongs to. For more information on how to navigate between tabs and scroll up and down the logs, please consult the manual page for the screen command.
 
- 
+Using the Nutshell via the command-line interface
+-------------------------------------------------
+
+You can also use the command-line to control your Nutshell installation.
+You need to log in as the *stack* user directly in the VirtualBox window
+or using SSH to connect to the Nutshell VM's IP address.
+
+On login, both the ConPaaS and OpenStack users will already be authenticated.
+You should be able to execute ConPaaS commands, for example starting a
+*helloworld* service can be done with::
+
+  $ cpsclient.py create helloworld
+
+or::
+
+  $ cps-tools service create helloworld
+
+OpenStack commands are also available. For example::
+
+  $ nova list
+
+lists all the active instances and::
+
+  $ cinder list
+
+lists all the existing volumes.
+
+The Nutshell contains a *Devstack* installation of Openstack,
+therefore different services run and log on different tabs of a
+*screen* session. In order to stop, start or consult the logs of these
+services, connect to the screen session by executing::
+
+  $ /opt/stack/devstack/rejoin-stack.sh
+
+Every tab in the screen session is labeled with the name of the
+service it belongs to. For more information on how to navigate between
+tabs and scroll up and down the logs, please consult the manual page
+for the *screen* command.
+
+
+Changing the IP address space used by the Nutshell
+--------------------------------------------------
+
+The Nutshell VM uses an IP address assigned by the DHCP server of the
+host-only network of VirtualBox. In the default settings, the DHCP server
+uses a range from ``192.168.56.101`` to ``192.168.56.254``. If you want to change
+this IP range, you can go to: File>Preferences>Network>Host-only Networks,
+select *vboxnet0* and click the edit button and then "DHCP server".
+
+Note that ConPaaS services running inside the Nutshell VM also need to have
+IP addresses assigned. This is done using OpenStack's floating IP mechanism.
+The default configuration uses an IP range from ``192.168.56.10`` to ``192.168.56.99``,
+which does not overlap with the default one used by the DHCP server of the
+host-only network in VirtualBox. If you want to modify this IP range, execute
+the following commands on the Nutshell as the *stack* user::
+
+  $ nova floating-ip-bulk-delete 192.168.56.0/25
+  $ nova floating-ip-bulk-create --pool public --interface br200 <new_range>
+
+The first command removes the default IP range for floating IPs and the
+second adds the new range. After executing these two commands, do not
+forget to restart the Nutshell so the changes take effect::
+
+  $ sudo reboot
+
+
+Using the Nutshell to host a publicly accessible ConPaaS installation
+---------------------------------------------------------------------
+
+The Nutshell can also be configured to host services which are accessible from
+the public Internet. In this case, the floating IP pool in use by OpenStack
+needs to be configured with an IP range that contains public IP addresses.
+The procedure for using such an IP range is the same as the one described
+above. Care must be taken so that these public IP addresses are not in use by
+other machines in the network and routing for this range is correctly implemented.
+
+If the ConPaaS frontend itself needs to be publicly accessible, the host-only
+network of VirtualBox can be replaced with a bridged network connected to a
+physical network interface that provides Internet access. Note that this
+bridge network must use a DHCP server that assigns a public IP address to the
+Nutshell or, alternatively, the Nutshell can be configured to use a static IP
+address (for example by editing the file ``/etc/network/interfaces``). If the
+Nutshell is publicly accessible, you may want to make sure that tighter security
+is implemented: the default user for the ConPaaS frontend is removed and access
+to SSH and OpenStack dashboard is blocked.
+

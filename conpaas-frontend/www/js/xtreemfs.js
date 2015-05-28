@@ -20,13 +20,13 @@ conpaas.ui = (function (this_module) {
      * @override conpaas.ui.ServicePage.freezeInput
      */
     freezeInput: function (freeze) {
-        var linksSelectors = ['.delete'],
-            buttons = ['downloadClientCert', // 'downloadUserCert',
-                       'refreshVolumeList', 'createVolume', 'refreshSelect',
-                       'selectVolume'];
+        var links = ['.delete'],
+            buttons = ['#downloadClientCert', // '#downloadUserCert',
+                       '#refreshVolumeList', '#createVolume', '#refreshSelect',
+                       '#selectVolume'];
         conpaas.ui.ServicePage.prototype.freezeInput.call(this, freeze);
         this.freezeButtons(buttons, freeze);
-        this.hideLinks(linksSelectors, freeze);
+        this.hideLinks(links, freeze);
     },
 
     /**

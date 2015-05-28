@@ -21,13 +21,10 @@ components.
 
 ConPaaS's **cpsdirector** and its two clients, **cpsclient** and **cpsfrontend**,
 can be installed on your own hardware or on virtual machines running on public
-or private clouds. If you wish to install them on Amazon EC2, the `Official Debian
-Wheezy EC2 image (ami-1d620e74)`_ is known to work well. Please note that the
-*root* account is disabled and that you should instead login as *admin*.
+or private clouds. If you wish to install them on Amazon EC2, the Official Debian
+Wheezy, Ubuntu 12.04 or Ubuntu 14.04 images are known to work well.
 
-.. _Official Debian Wheezy EC2 image (ami-1d620e74): https://console.aws.amazon.com/ec2/v2/home?region=us-east-1#Images:filter=all-images;platform=all-platforms;visibility=public-images;search=ami-1d620e74
-
-ConPaaS services are designed to run either in an `OpenNebula` cloud
+ConPaaS services are designed to run either in an `OpenStack` or `OpenNebula` cloud
 installation or in the `Amazon Web Services` cloud.
 
 Installing ConPaaS requires to take the following steps:
@@ -36,8 +33,9 @@ Installing ConPaaS requires to take the following steps:
    new one. Details on how to do this vary depending on the choice of cloud
    where ConPaaS will run. Instructions on how to find or create a ConPaaS image
    suitable to run on Amazon EC2 can be found in :ref:`conpaas-on-ec2`.
-   The section :ref:`conpaas-on-opennebula` describes how to create a ConPaaS
-   image for OpenNebula.
+   The section :ref:`conpaas-on-openstack` describes how to create a ConPaaS
+   image for OpenStack and section :ref:`conpaas-on-opennebula` describes how to
+   create an image for OpenNebula.
 
 #. Install and configure **cpsdirector** as explained in
    :ref:`director-installation`. All system configuration takes place in the
@@ -60,10 +58,10 @@ Director installation
 The ConPaaS Director is a web service that allows users to manage their ConPaaS
 applications. Users can create, configure and terminate their cloud
 applications through it. This section describes the process of setting up a
-ConPaaS director on a Debian GNU/Linux system. Although the ConPaaS director
-might run on other distributions, only Debian versions 6.0 (Squeeze) and 7.0
-(Wheezy) are officially supported. Also, only official Debian APT repositories
-should be enabled in :file:`/etc/apt/sources.list` and
+ConPaaS director on a Debian/Ubuntu GNU/Linux system. Although the ConPaaS director
+might run on other distributions, only Debian versions 6.0 (Squeeze) and 7.0 (Wheezy),
+and Ubuntu versions 12.04 (Precise Pangolin) and 14.04 (Trusty Tahr) are officially supported.
+Also, only official APT repositories should be enabled in :file:`/etc/apt/sources.list` and
 :file:`/etc/apt/sources.list.d/`. 
 
 **cpsdirector** is available here:
@@ -99,12 +97,14 @@ order to setup your ConPaaS Director installation.
 
 #. Edit :file:`/etc/cpsdirector/director.cfg` providing your cloud
    configuration. Among other things, you will have to choose an Amazon
-   Machine Image (AMI) in case you want to use ConPaaS on Amazon EC2, or
+   Machine Image (AMI) in case you want to use ConPaaS on Amazon EC2,
+   an OpenStack image if you want to use ConPaaS on OpenStack, or
    an OpenNebula image if you want to use ConPaaS on OpenNebula.
    Section :ref:`conpaas-on-ec2` explains how to use the Amazon Machine Images
    provided by the ConPaaS team, as well as how to make your own images
-   if you wish to do so. A description of how to create an OpenNebula
-   image suitable for ConPaaS is available in :ref:`conpaas-on-opennebula`.
+   if you wish to do so. A description of how to create an OpenStack
+   image suitable for ConPaaS is available in :ref:`conpaas-on-openstack` and
+   :ref:`conpaas-on-opennebula` contains instructions for OpenNebula.
 
 The installation process will create an `Apache VirtualHost` for the ConPaaS
 director in :file:`/etc/apache2/sites-available/conpaas-director.conf` for Apache 2.4
@@ -521,7 +521,8 @@ Install python argparse and argcomplete modules::
 
 Frontend installation
 =====================
-As for the Director, only Debian versions 6.0 (Squeeze) and 7.0 (Wheezy) are
+As for the Director, only Debian versions 6.0 (Squeeze) and 7.0 (Wheezy), and
+Ubuntu versions 12.04 (Precise Pangolin) and 14.04 (Trusty Tahr) are officially
 supported, and no external APT repository should be enabled. In a typical setup
 Director and Frontend are installed on the same host, but such does not need to
 be the case.
@@ -529,7 +530,7 @@ be the case.
 The ConPaaS Frontend can be downloaded from
 http://www.conpaas.eu/dl/cpsfrontend-1.x.x.tar.gz. 
 
-After having uncompressed it you should install the required Debian packages::
+After having uncompressed it you should install the required packages::
 
    $ sudo apt-get install libapache2-mod-php5 php5-curl
 
@@ -594,7 +595,7 @@ The configuration file for customizing your VM image is located at
 *conpaas-services/scripts/create_vm/create-img-script.cfg*. 
 
 In the **CUSTOMIZABLE** section of the configuration file, you can define
-whether you plan to run ConPaaS on Amazon EC2 or OpenNebula. Depending on the
+whether you plan to run ConPaaS on Amazon EC2, OpenStack or OpenNebula. Depending on the
 virtualization technology that your target cloud uses, you should choose either
 KVM or Xen for the hypervisor. Note that for Amazon EC2 this variable needs to
 be set to Xen. Please do not make the recommended size for the image file
@@ -610,11 +611,11 @@ only what you need.
 
 Note that te configuration file contains also a **NUTSHELL** section. The 
 settings in this section are explained in details in :ref:`conpaas-in-a-nutshell`.
-However, in order to generete a regular customized VM image make sure that both 
-*container* and *nutshell* flags in this section are set to false.
+However, in order to generate a regular customized VM image, make sure that both
+*container* and *nutshell* flags in this section are set to *false*.
 
 Once you are done with the configuration, you should run this command in the
-create_vm directory:: 
+*create_vm* directory:: 
 
     $ python create-img-script.py
 
@@ -687,11 +688,11 @@ everything the script has done, follow these instructions:
 
 ConPaaS on Amazon EC2
 =====================
-The Web Hosting Service is capable of running over the Elastic Compute
+ConPaaS is capable of running over the Elastic Compute
 Cloud (EC2) of Amazon Web Services (AWS). This section describes the
-process of configuring an AWS account to run the Web Hosting Service.
+process of configuring an AWS account to run ConPaaS.
 You can skip this section if you plan to install ConPaaS over
-OpenNebula.
+OpenStack or OpenNebula.
 
 If you are new to EC2, you will need to create an account on the `Amazon
 Elastic Compute Cloud <http://aws.amazon.com/ec2/>`_. A very good introduction
@@ -705,11 +706,21 @@ dependencies of its processes. For your convenience we provide a pre-built
 public AMI, already configured and ready to be used on Amazon EC2, for each
 availability zone supported by ConPaaS. The AMI IDs of said images are:
 
--  ``ami-dd8bd0ed`` United States West (Oregon)
+-  ``ami-7a565912`` United States East (Northern Virginia)
 
--  ``ami-802e6ce8`` United States East (Northern Virginia)
+-  ``ami-b7dd31f3`` United States West (Northern California)
 
--  ``ami-f158d686`` Europe West (Ireland)
+-  ``ami-e57f49d5`` United States West (Oregon)
+
+-  ``ami-7f7e1108`` Europe West (Ireland)
+
+-  ``ami-3a0bc83a`` Asia Pacific (Tokyo)
+
+-  ``ami-fcdde1ae`` Asia Pacific (Singapore)
+
+-  ``ami-0b473b31`` Asia Pacific (Sydney)
+
+-  ``ami-a154d0bc`` South America (Sao Paulo)
 
 You can use one of these values when configuring your ConPaaS director
 installation as described in :ref:`director-installation`.
@@ -739,8 +750,10 @@ For a S3-backed AMI, you do not need to register your image from an EC2
 instance. Simply run *register-image-ec2-s3.sh* where you have created your
 *conpaas.img*. Note that you need an EC2 certificate with private key to be
 able to do so. Registering an S3-backed AMI requires administrator privileges.
-More information on Amazon credetials can be found at 
+More information on Amazon credentials can be found at
 `About AWS Security Credentials <http://docs.aws.amazon.com/AWSSecurityCredentials/1.0/AboutAWSCredentials.html>`_.
+
+.. _security-group-ec2:
 
 Security Group
 --------------
@@ -768,14 +781,111 @@ The following ports should be open for all running instances:
 AWS documentation is available at
 http://docs.amazonwebservices.com/AWSEC2/latest/UserGuide/index.html?using-network-security.html.
 
+.. _conpaas-on-openstack:
+
+ConPaaS on OpenStack
+=====================
+
+ConPaaS can be deployed over an OpenStack installation. This section
+describes the process of configuring the DevStack version of OpenStack
+to run ConPaaS. You can skip this section if you plan to deploy
+ConPaaS over Amazon Web Services or OpenNebula.
+
+In the rest of this section, the command-line examples assume that the user is
+authenticated and able to run OpenStack commands (such as ``nova list``) on the
+controller node. If this is not the case, please refer first to the OpenStack
+documentation:
+http://docs.openstack.org/openstack-ops/content/lay_of_the_land.html.
+
+Getting the OpenStack API access credentials
+--------------------------------------------
+ConPaaS talks with an OpenStack deployment using the EC2 API, so first make
+sure that EC2 API access is enabled for the OpenStack deployment and note
+down the EC2 Access Key and EC2 Secret Key.
+
+Using Horizon (the OpenStack dashboard), the EC2 access credentials can be
+recovered by navigating to the *Project* > *Compute* > *Access & Security*
+menu in the left pane of the dashboard and then selecting the *API Access*
+tab. The EC2 Access Key and EC2 Secret key can be revealed by pressing the
+*View Credentials* button located on the right side of the page.
+
+Using the command line, the same credentials can be obtained by interrogating
+Keystone (the OpenStack identity manager service) using the following command::
+
+    $ keystone ec2-credentials-list
+
+For testing the EC2 API or obtaining necessary information, it is very often
+useful to install the Eucalyptus client API tools (euca2ools). On a Debian /
+Ubuntu system, this can be done using the following command::
+
+    $ sudo apt-get install euca2ools
+
+Before executing any commands from this package, you must first export the
+**EC2_URL**, **EC2_ACCESS_KEY** and **EC2_SECRET_KEY** environment variables,
+using the values obtained by following the instructions above.
+
+Alternatively, OpenStack provides a script that, when sourced, automatically
+exports all the required environment variables. Using the Horizon dashboard,
+this script can be found by navigating to the *Project* > *Compute* > *Access &
+Security* menu in the left pane and then selecting the *API Access* tab. An
+archive containing this script (named ``ec2rc.sh``) can be downloaded by
+pressing the *Download EC2 Credentials* button.
+
+An easy way to check that euca2ools commands work is by listing all the active
+instances using::
+
+    $ euca-describe-instances
+
+Registering your ConPaaS image to OpenStack
+--------------------------------------------
+This section assumes that you already have created a ConPaaS services image as
+explained in :ref:`image-creation` and uploaded it to your OpenStack controller
+node. To register this image with OpenStack, you may use either Horizon or the
+command line client of Glance (the OpenStack image management service).
+
+In Horizon, you can register the ConPaaS image by navigating to the *Project* >
+*Compute* > *Images* menu in the left pane and then pressing the *Create Image*
+button. In the next form, you should fill-in the image name, select *Image File*
+as the image source and then click the *Choose File* button and select your
+image (i.e. *conpaas.img*). The image format should be set to *Raw*.
+
+Alternatively, using the command line, the ConPaaS image can be registered in
+the following way::
+
+    $ glance image-create --name <image_name> \
+        --is-public true \
+        --disk-format raw \
+        --container-format bare \
+        --file <conpaas.img>
+
+In both cases, you need to obtain the AMI ID associated with the image in order
+to allow ConPaaS to refer to it when using the EC2 API. To do this, you need to
+execute the following command::
+
+    $ euca-describe-images
+
+The AMI ID appears in the second column of the output.
+
+Security Group
+--------------
+As in the case of Amazon Web Services deployments, OpenStack deployments use
+security groups to limit the the network connections allowed to an instance.
+The list of ports that should be opened for every instance is the same as in
+the case of Amazon Web Services and can be consulted here: :ref:`security-group-ec2`.
+
+For more details on creating and editing a security group, please refer to the
+OpenStack documentation available at
+http://docs.openstack.org/openstack-ops/content/security_groups.html.
+
+
 .. _conpaas-on-opennebula:
 
 ConPaaS on OpenNebula
 =====================
-The Web Hosting Service is capable of running over an OpenNebula
+ConPaaS is capable of running over an OpenNebula
 installation. This section describes the process of configuring
 OpenNebula to run ConPaaS. You can skip this section if you plan to
-deploy ConPaaS over Amazon Web Services.
+deploy ConPaaS over Amazon Web Services or OpenStack.
 
 Registering your ConPaaS image to OpenNebula
 --------------------------------------------
@@ -789,7 +899,7 @@ list works!). Although you have a valid account on OpenNebula, you may have a pr
 
 You can fix it setting the ONE_AUT variable like follows::
 
-    $  export ONE_AUTH="/var/lib/one/.one/one_auth"
+    $ export ONE_AUTH="/var/lib/one/.one/one_auth"
 
 To register your image, you should execute *register-image-opennebula.sh* on
 the headnode. *register-image-opennebula.sh* needs the path to *conpaas.img* as
@@ -867,7 +977,7 @@ with::
 ConPaaS in a Nutshell
 =====================
 ConPaaS in a Nutshell is an extension to the ConPaaS project which aims at 
-providing a cloud environent and a ConPaaS installation running on it, all
+providing a cloud environment and a ConPaaS installation running on it, all
 in a single VM, called the Nutshell. More specifically, this VM has an 
 all-in-one OpenStack installation running on top of LXC containers, as well 
 as a ConPaaS installation, including all of its components, already configured 
@@ -876,7 +986,7 @@ to work in this environment.
 The Nutshell VM can be deployed on various virtual environments, not only
 standard clouds such as OpenNebula, OpenStack and EC2 but also on simpler 
 virtualization tools such as VirtualBox. Therefore, it provides a great developing 
-and testing environemnt for ConPaaS without the need of accessing a cloud. 
+and testing environment for ConPaaS without the need of accessing a cloud.
 
 
 Creating a Nutshell image
@@ -901,16 +1011,16 @@ true of false, we distinguish four cases:
    to a standard VM one, but it does not contain a kernel installation. 
 
 #. nutshell = true, container = false. In this case a Nutshell image is generated
-   and a standard ConPaaS VM image will be embedded in it. This configuraiton should be
+   and a standard ConPaaS VM image will be embedded in it. This configuration should be
    used for deploying ConPaaS in nested standard VMs within a single VM.
 
 #. nutshell = true, container = true. Similar to the previous case, a Nutshell image
    is generated but this time a container image is embedded in it instead of a VM one.
-   Therefore, in order to generate a Nutshell based on contaners make sure to set these 
-   flags to this configuration. This is the default configuraiton for our distribution of
-   nutshell.
+   Therefore, in order to generate a Nutshell based on containers, make sure to set these
+   flags to this configuration. This is the default configuration for our distribution of
+   the Nutshell.
 
-Another important setting for generating the Nutshell image is also the path to a direcotry
+Another important setting for generating the Nutshell image is also the path to a directory
 containing the ConPaaS tarballs (cps*.tar.gz files). 
 The rest of the settings specify the distro and kernel versions that the Nutshell VM would have.
 For the moment we have tested it only for Ubuntu 12.04 with kernel 3.5.0.
@@ -921,7 +1031,7 @@ From the create_vm diretory run::
     $ python create-img-script.py
     $ sudo ./create-img-nutshell.sh
 
-Note that if the nutshell flag is enabled the generated script file is called *create-img-nutshell.sh*.
+Note that if the *nutshell* flag is enabled the generated script file is called *create-img-nutshell.sh*.
 Otherwise, the generated script file is called *create-img-conpaas.sh* as indicated previously.
 
 
@@ -935,10 +1045,10 @@ The rest of the procedure is the same as for other clouds. The result of the ima
 *nutshell.vdi* image file which can be used as a virtual hard drive when creating a new appliance on VirtualBox.
 
 The procedure for creating a new appliance on VirtualBox is quite standard:
-  
+
 #. Name and OS: You choose a custom name for the appliance but use *Linux* and *Ubuntu (64 bit)* for the type and version.
 
-#. Memory size: Since the nutshell runs a significat number of services and requires also some memory for the containers we suggest to choose at least 3 GB of RAM.
+#. Memory size: Since the Nutshell runs a significant number of services and also requires some memory for the containers, we suggest to choose at least 3 GB of RAM.
 
 #. Hard drive: Select "User an existing virtual hard drive file", browse to the location of the *nutshell.vdi* file generated earlier and press create.
 

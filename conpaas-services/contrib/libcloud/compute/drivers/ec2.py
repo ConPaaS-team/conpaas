@@ -1611,6 +1611,14 @@ class EucNodeDriver(BaseEC2NodeDriver):
         """
         pass
 
+    def ex_create_tags(self, resource, tags):
+        """
+        Eucalyptus doesn't support creating tags, so this is a passthrough.
+
+        @inherits: L{EC2NodeDriver.ex_create_tags}
+        """
+        pass
+
 
 class NimbusConnection(EC2Connection):
     """

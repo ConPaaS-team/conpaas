@@ -118,11 +118,6 @@ class GenericManager(BaseManager):
                                 "least one agent. Please wait for them to "\
                                 "finish execution or call 'interrupt' first."
 
-    # String used as an error message when the script is already running
-    SCRIPT_IS_RUNNING_MSG = "ERROR: Script '%s.sh' is already running inside "\
-                            "at least one agent. Please wait for it to "\
-                            "finish execution or call 'interrupt' first."
-
     AGENT_PORT = 5555
 
     # memcache keys
@@ -1067,19 +1062,19 @@ echo "" >> /root/generic.out
                                   kwargs.keys())
             return HttpErrorResponse(ex.message)
 
-        self.logger.info("Received request for executing the '%s' command"
-                % command)
+        self.logger.info("Received request for executing the '%s' command "
+                "with parameters '%s'" % (command, parameters))
 
-        # if command is 'interrupt' and no script is running, return an error
+        # if command is 'interrupt' and no scripts are running, return an error
         if command == 'interrupt' and not self._are_scripts_running():
             self.logger.info("No scripts are currently running inside agents")
             return HttpErrorResponse(self.NO_SCRIPTS_ARE_RUNNING_MSG)
 
-        # for the other commands, if the script is already running, return an error
-        elif command != 'interrupt' and self._is_script_running(command):
-            self.logger.info(("Script '%s.sh' is already running inside at least "
-                    "one agent.") % command)
-            return HttpErrorResponse(self.SCRIPT_IS_RUNNING_MSG % command)
+        # for the other commands, if scripts are already running, return an error
+        elif command != 'interrupt' and self._are_scripts_running():
+            self.logger.info("Scripts are already running inside at least "
+                    "one agent")
+            return HttpErrorResponse(self.SCRIPTS_ARE_RUNNING_MSG)
 
         Thread(target=self._do_execute_script, args=[command,
                                                         self.nodes,

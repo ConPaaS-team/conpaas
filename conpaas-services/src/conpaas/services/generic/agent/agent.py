@@ -394,10 +394,9 @@ class GenericAgent(BaseAgent):
             else:
                 Thread(target=self._do_interrupt, args=[parameters]).start()
         else:
-            # if script is already running, do nothing
-            if self._get_script_status(command) == 'RUNNING':
-                self.logger.info("Script '%s.sh' is already running"
-                        % command)
+            # if scripts are already running, do nothing
+            if self._are_scripts_running():
+                self.logger.info("Scripts are already running")
 
             # execute the script
             else:

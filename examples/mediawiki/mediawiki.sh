@@ -4,6 +4,8 @@ echo $XTREEMFS_CERT | base64 --decode > /tmp/certificate.p12
 chown www-data: /tmp/certificate.p12
 
 [ -d "/var/tmp/data" ] || mkdir /var/tmp/data
+chown root:fuse /dev/fuse
+chmod g+rw /dev/fuse
 chown www-data: /var/tmp/data
 usermod -a -G fuse www-data
 su - www-data -c "mount.xtreemfs $XTREEMFS_IP/data /var/tmp/data --pkcs12-file-path /tmp/certificate.p12 --pkcs12-passphrase $XTREEMFS_PASSPHRASE"

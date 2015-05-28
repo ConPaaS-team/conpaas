@@ -1,3 +1,5 @@
+import math
+
 from libcloud.compute.types import Provider
 from libcloud.compute.providers import get_driver
 
@@ -70,3 +72,14 @@ class OpenStackCloud(Cloud):
             return nodes
 
         return [ nodes ]
+
+    def create_volume(self, size, name, vm_id=None):
+        # OpenStack expects volume size in GiB.
+        size /= 1024.0
+        size = int(math.ceil(size))
+
+        return self.driver.create_volume(size, name)
+
+    def attach_volume(self, node, volume, device):
+        device = '/dev/%s' % device
+        return self.driver.attach_volume(node, volume, device)
