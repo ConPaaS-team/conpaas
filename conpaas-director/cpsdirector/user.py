@@ -366,10 +366,15 @@ def credit():
     had enough credit, True otherwise.
     """
     service_id = int(request.values.get('sid', -1))
-    decrement = int(request.values.get('decrement', 0))
+    decrement = int(request.values.get('decrement', 1))
 
     log('Decrement user credit: sid=%s, old_credit=%s, decrement=%s' % (
         service_id, g.service.user.credit, decrement))
+
+    # Require decrement to be a positive integer
+    if decrement <= 0:
+        log('Decrement should be a positive integer')
+        return jsonify({'error': True})
 
     # Decrement user's credit
     g.service.user.credit -= decrement
