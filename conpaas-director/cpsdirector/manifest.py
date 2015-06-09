@@ -32,14 +32,8 @@ from multiprocessing import Process
 @cert_required(role='user')
 def upload_manifest():
     manifest = request.values.get('manifest')
-    # slo = request.values.get('slo')
-    app_tar = request.values.get('app_tar')
-    #app_tar = hex_to_string(app_tar.encode('utf-8'))
-    #app_tar = app_tar.decode("hex")
-    # f = open('/opt/stack/conpaas_deploy/generic.tar.gz', 'r')
-    # app_tar = f.read()
-    # f.close()
-
+    # app_tar = request.values.get('app_tar')
+    
 
     #TODO(genc):do some checking for these params
     if not manifest:
@@ -58,13 +52,15 @@ def upload_manifest():
     #uncomment this when done (genc)
     if request.values.get('thread'):
         log('Starting a new process for the manifest')
-        p = Process(target=new_manifest, args=(manifest,app_tar,appid))
+        # p = Process(target=new_manifest, args=(manifest,app_tar,appid))
+        p = Process(target=new_manifest, args=(manifest,appid))
         p.start()
         log('Process started, now return')
         return simplejson.dumps({'appid':appid})
 
 
-    msg = new_manifest(manifest, app_tar, appid)
+    # msg = new_manifest(manifest, app_tar, appid)
+    msg = new_manifest(manifest, appid)
     
 
     if msg != 'ok':
@@ -1017,17 +1013,16 @@ def get_app_id(manifest, cloud='default'):
     return 'ok', appid
 
 
-def new_manifest(manifest, app_tar, appid, cloud='default'):
-    # try:
-    #     simplejson.loads(slo)
-    # except:
-    #     return 'Error parsing manifest or slo'
-
+# def new_manifest(manifest, app_tar, appid, cloud='default'):
+def new_manifest(manifest, appid, cloud='default'):
+    
     #res = startapp(g.user.uid, appid, "default", manifest, slo) 
     res = startapp(g.user.uid, appid, cloud) 
     # log('Res %s' % res)    
     
-    files = [ ( 'manifest', 'manifest', manifest ), ( 'app_tar', 'app_tar', app_tar ) ]
+    # files = [ ( 'manifest', 'manifest', manifest ), ( 'app_tar', 'app_tar', app_tar ) ]
+    files = [ ( 'manifest', 'manifest', manifest ) ]
+    
     app = get_app_by_id(g.user.uid, appid)
     # TODO:(genc): make post files to read the method and manager id from the actual paramaters and not params
     # log('####Application: %s' % app.to_dict())    

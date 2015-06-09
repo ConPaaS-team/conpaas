@@ -13,14 +13,31 @@ try {
 		throw new Exception('User not logged in');
 	}
 	$uid = $_SESSION['uid'];
-
-	$applications_data = ApplicationData::getApplications($uid);
+	
 	$applicationsList = new ApplicationsListUI(array());
-	foreach ($applications_data as $application_data) {
+	if (!isset($_GET['aid'])) {
+		$applications_data = ApplicationData::getApplications($uid);
+		
+		foreach ($applications_data as $application_data) {
+			$application = new Application($application_data);
+			$applicationsList->addApplication($application);
+		}
+		$applications_data = $applicationsList->toArray();	
+	}else{
+		$aid = $_GET['aid'];
+		$application_data = ApplicationData::getApplicationById($uid, $aid);
 		$application = new Application($application_data);
-		$applicationsList->addApplication($application);
+		// $applicationsList->addApplication($application);
+		$info = $application->getProfilingInfo(false);
+		$applications_data = array();
+		$applications_data['profile'] = $info;
+		$applications_data['manifest'] = $application->getManifest();
+
+		$applications_data['application'] = $application->toArray();
 	}
-	$applications_data = $applicationsList->toArray();
+	
+
+	
 	echo json_encode(array(
 		'data' => $applications_data,
 		'html' => $applicationsList->render()

@@ -242,7 +242,7 @@ class Implementation(Base):
         # for machine in reservation["Resources"]:
         #     conn.run(machine["IP"], script = self.Deployment.get_start_script(machine["Role"]))
         # #start monitoring daemon
-        # cmd = ";".join(["wget http://public.rennes.grid5000.fr/~aiordache/harness/mond", "chmod +x mond", "nohup python mond < /dev/null &> /dev/null &"])
+        # cmd = ";".join(["wget http://public.rennes.grid5000.fr/~aiordache/HARNESS/mond", "chmod +x mond", "nohup python mond < /dev/null &> /dev/null &"])
         # conn.run(machine["IP"], cmd = cmd)
         pass
 

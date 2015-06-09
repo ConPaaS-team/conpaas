@@ -18,6 +18,9 @@ class SLOEnforcer:
 		"""
 			Select experiments with the optimal cost-et trade-off        
 		"""
+		if len(exps) == 0:
+			return []
+			
 		cost = map(lambda x: x["Results"]["TotalCost"], exps)
 		et = map(lambda x: x["Results"]["ExeTime"], exps)
 

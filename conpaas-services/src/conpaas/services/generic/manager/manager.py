@@ -125,15 +125,15 @@ class GenericManager(BaseManager):
         
         if 'app_tar' in kwargs:
             app_tar_fu = kwargs['app_tar']
-            import cStringIO
-            output = cStringIO.StringIO()
-            #output.write(hex_to_string(app_tar_fu.file.getvalue()))
-            output.write(hex_to_string(app_tar_fu.file.read()))
-            #self.logger.info("tar in hex: %s" % app_tar_fu.file.getvalue())
-            output.seek(0)
-            app_tar_fu.file = output
+            # import cStringIO
+            # output = cStringIO.StringIO()
+            # #output.write(hex_to_string(app_tar_fu.file.getvalue()))
+            # output.write(hex_to_string(app_tar_fu.file.read()))
+            # #self.logger.info("tar in hex: %s" % app_tar_fu.file.getvalue())
+            # output.seek(0)
+            # app_tar_fu.file = output
             self.upload_code_version({'code':app_tar_fu, 'enable':True})
-            output.close()
+            # output.close()
         elif kwargs['reset_config']:
             self._create_initial_configuration() 
 

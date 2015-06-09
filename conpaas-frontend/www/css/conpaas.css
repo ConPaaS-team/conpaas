@@ -1279,12 +1279,12 @@ body.loginbody {
 	-moz-border-radius: 25px;
 	border-radius: 25px;*/
 
-	-webkit-border-bottom-right-radius: 25px;
-	-webkit-border-bottom-left-radius: 25px;
-	-moz-border-radius-bottomright: 25px;
-	-moz-border-radius-bottomleft: 25px;
-	border-bottom-right-radius: 25px;
-	border-bottom-left-radius: 25px;
+	-webkit-border-bottom-right-radius: 120px;
+	-webkit-border-bottom-left-radius: 120px;
+	-moz-border-radius-bottomright: 120px;
+	-moz-border-radius-bottomleft: 120px;
+	border-bottom-right-radius: 120px;
+	border-bottom-left-radius: 120px;
 
 
 
@@ -1316,12 +1316,12 @@ body.loginbody {
 	margin: 100px 10px -12px 10px;
 	background: white;
 	border: 3px solid rgb(153, 153, 153);
-	-webkit-border-top-left-radius: 20px;
-	-webkit-border-top-right-radius: 20px;
-	-moz-border-radius-topleft: 20px;
-	-moz-border-radius-topright: 20px;
-	border-top-left-radius: 20px;
-	border-top-right-radius: 20px;
+	-webkit-border-top-left-radius: 120px;
+	-webkit-border-top-right-radius: 120px;
+	-moz-border-radius-topleft: 120px;
+	-moz-border-radius-topright: 120px;
+	border-top-left-radius: 120px;
+	border-top-right-radius: 120px;
 	text-align: center;
 	padding: 10px;
 	background-color: rgba(255, 255, 255, 0.3);
@@ -1345,11 +1345,11 @@ body.loginbody {
 	padding: 50px 30px 50px 30px;
 	border-right: 1px dotted #333;
 	background-color: #eee;
-	-webkit-border-top-left-radius: 20px;
-	-webkit-border-bottom-left-radius: 20px;
-	-moz-border-radius-topleft: 20px;
-	-moz-border-radius-bottomleft: 20px;
-	border-bottom-left-radius: 20px;
+	-webkit-border-top-left-radius: 115px;
+	-webkit-border-bottom-left-radius: 115px;
+	-moz-border-radius-topleft: 115px;
+	-moz-border-radius-bottomleft: 115px;
+	border-bottom-left-radius: 115px;
 }
 
 .login .formwrap {
@@ -1903,4 +1903,21 @@ img {
 
   /* Good browsers */
   opacity: 0.5;
+}
+
+.hide {
+	width:25px;
+	color: #696969
+}
+
+.hide:hover {
+	font-weight: bold;
+	cursor: pointer;
+}
+
+.predictionsTab span
+{
+	font-size: 14px;
+	font-weight: bold;
+	color: #ED772D
 }

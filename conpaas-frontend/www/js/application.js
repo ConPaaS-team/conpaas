@@ -51,22 +51,22 @@ conpaas.ui = (function (this_module) {
         });
     },
     createApplication: function (application) {
-	// var newapp = prompt("Application name : ", "New Application");
- //        if (newapp == null) { // user clicked Cancel button
- //                return;
- //        }   
-    var newapp = "New Application";
+    	// var newapp = prompt("Application name : ", "New Application");
+     //        if (newapp == null) { // user clicked Cancel button
+     //                return;
+     //        }   
+        var newapp = "New Application";
 
-    //window.location = 'application.php';
-	this.server.req('ajax/createApplication.php', {
-		name: newapp
-	}, 'post', function (response) {
-		window.location = 'application.php?aid=' + response.application.aid;
-        
-		return;
-	}, function (error) {
-		page.displayError(error.name, error.details);
-	});
+        window.location = 'application.php';
+    	// this.server.req('ajax/createApplication.php', {
+    	// 	name: newapp
+    	// }, 'post', function (response) {
+    	// 	window.location = 'application.php?aid=' + response.application.aid;
+            
+    	// 	return;
+    	// }, function (error) {
+    	// 	page.displayError(error.name, error.details);
+    	// });
     },
     deleteApplication: function (application) {
 	var r = confirm('Are you sure to delete the application?');

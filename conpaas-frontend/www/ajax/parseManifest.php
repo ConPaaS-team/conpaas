@@ -7,8 +7,12 @@ if (!isset($_SESSION['uid'])) {
 
 try {
 
-	$fileContent = file_get_contents($_FILES['manifest']['tmp_name']);
-	$manifest = json_decode($fileContent);
+	if (isset($_POST['format']) && $_POST['format']=="file") {
+		$fileContent = file_get_contents($_FILES['manifest']['tmp_name']);
+		$manifest = json_decode($fileContent);
+	}else{
+		$manifest = json_decode($_POST['manifest']);
+	}
 
 	// $services = '<div class="services"><table class="slist" cellspacing="1" cellpadding="0">';
 

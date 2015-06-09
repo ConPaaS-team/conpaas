@@ -132,10 +132,10 @@ class Controller(object):
         #try:
         cloud.create_reservation(reservation_id)        
         
-        max_iteration = 20
+        max_iteration = 60
         iteration = 0
         sleep_interval = 3
-
+        
         while True:
             status = cloud.check_reservation(reservation_id)
             # open('/tmp/out', 'a').write('status: %s\n'%status)
@@ -144,31 +144,46 @@ class Controller(object):
             else:
                 time.sleep(sleep_interval)
                 iteration += 1
-                
+
+        open('/tmp/out', 'a').write('status: %s\n'%status)
         if status['Ready']:
             iteration = 0
             nr_not_started = len(status['Instances'])
-
+            open('/tmp/out', 'a').write('not started: %s\n'%nr_not_started)
+            notdone = status['Instances']
+            tmpnotdone = []
             while True:
-                for node in status['Instances']:
+                for node in notdone:
                     isvm = False
                     for res in reservation['Resources']:
                         if res['GroupID'] == node['GroupID']:
                             isvm = res['Type'] == 'Machine'
-                    if isvm and self.__check_node(node, test_managent, port):
-                        nr_not_started -= 1
+                    if isvm:
+                        if self.__check_node(node, test_managent, port):
+                            nr_not_started -= 1
+                            open('/tmp/out', 'a').write('not started decremented to %s for node: %s\n'% (nr_not_started, node))
+                            if nr_not_started == 0:
+                                break
+                        else:
+                            tmpnotdone += [node]
+
+                
+                # open('/tmp/out', 'a').write('insances: %s\n'%status['Instances'])
+                # open('/tmp/out', 'a').write('insances: %s\n'%done)
+                notdone = list(tmpnotdone)
+                tmpnotdone = []
 
                 if nr_not_started == 0 or iteration >= max_iteration:
+                    open('/tmp/out', 'a').write('BREAK\n')
                     break
 
                 time.sleep(sleep_interval)
-                iteration += 1    
+                iteration += 1
             if nr_not_started == 0:
                 reservation['Instances'] = status['Instances']
                 return reservation
         
         raise Exception('Timeout while creating a reservation: %s nodes did not start' % nr_not_started)
-            
 
 
         #except Exception as e:

@@ -215,7 +215,7 @@ class Page {
 	public function renderFooter() {
 		return
 			'<div class="footer">'.
-				'Copyright &copy;2011-'.date('Y').' Contrail and Harness consortium <br/> <a target="blank" href="http://www.conpaas.eu/">ConPaaS</a> is the PaaS component of <a target="blank" href="http://contrail-project.eu/">Contrail</a> and <a target="blank" href="http://www.harness-project.eu/">Harness</a>. ConPaaS '.Director::getVersion().'.'.
+				'Copyright &copy;2011-'.date('Y').' Contrail and HARNESS consortia <br/> <a target="blank" href="http://www.conpaas.eu/">ConPaaS</a> is the PaaS component of <a target="blank" href="http://contrail-project.eu/">Contrail</a> and <a target="blank" href="http://www.harness-project.eu/">HARNESS</a>. ConPaaS '.Director::getVersion().'.'.
 			'</div>';
 	}
 

@@ -65,6 +65,16 @@ class Application {
 		return $info['result'];
 	}
 
+	public function getManifest() {
+		$json = $this->managerRequest('get', 'download_manifest', 0, array('manager_id' => 0), false);
+		$manifest = json_decode($json, true);
+		if ($manifest == null) {
+			return false;
+		}
+		return $manifest['result']['manifest'];
+	}
+
+
 	public function upload_profile($profile) {
 		$params = array(
 			'manager_id' => 0,
@@ -84,6 +94,26 @@ class Application {
 		);
 
 		$response = HTTPS::post($this->manager, $params);
+		return $response;
+
+	}
+
+
+	public function upload_application($app) {
+		$params = array(
+			'manager_id' => 0,
+			'method' => 'upload_application',
+			'appfile' => '@'.$app
+		);
+
+		$response = HTTPS::post($this->manager, $params);
+		return $response;
+
+	}
+
+
+	public function profile() {
+		$response = $this->managerRequest('get', 'profile', 0, array('manager_id' => 0), false);
 		return $response;
 
 	}

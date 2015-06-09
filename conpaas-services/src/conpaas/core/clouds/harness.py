@@ -19,7 +19,7 @@ import base64
 import os.path
 
 class HarnessCloud(Cloud):
-    '''Support for "harness" clouds'''
+    '''Support for "Harness" clouds'''
 
     def __init__(self, cloud_name, iaas_config):
         Cloud.__init__(self, cloud_name)

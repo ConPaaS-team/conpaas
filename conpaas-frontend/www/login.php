@@ -62,7 +62,7 @@ $support_external_idp = Director::getSupportExternalIdp();
         <table><tr>
         <td class="descr" width="65%">
             <p><b><a href="http://www.conpaas.eu/" target="blank">ConPaaS</a></b> is the Platform-as-a-Service component of the <a href="http://contrail-project.eu/" target="blank">Contrail</a> 
-            and <a href="http://www.harness-project.eu/" target="blank">Harness</a> E.U. projects.</p>
+            and <a href="http://www.harness-project.eu/" target="blank">HARNESS</a> E.U. projects.</p>
             <p><b>ConPaaS</b> aims at facilitating the deployment of applications in the cloud. It provides a number of services to address common developer needs.
             Each service is self-managed and elastic:
             <ul>
@@ -70,7 +70,7 @@ $support_external_idp = Director::getSupportExternalIdp();
                 <li> it monitors its own performance </li>
                 <li> it can increase or decrease its processing capacity by dynamically (de-)provisioning instances of itself in the cloud </li>
             </ul>
-            <em>Copyright &copy;2011-<?php echo date('Y')?> Contrail and Harness consortia.<br />All rights reserved.<br />ConPaaS <?php echo Director::getVersion(); ?>.</em>
+            <em>Copyright &copy;2011-<?php echo date('Y')?> Contrail and HARNESS consortia.<br />All rights reserved.<br />ConPaaS <?php echo Director::getVersion(); ?>.</em>
             </p>
         </td>
         <td class="formwrap">

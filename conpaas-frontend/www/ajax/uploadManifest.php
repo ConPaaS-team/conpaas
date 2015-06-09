@@ -10,13 +10,13 @@ try {
 	}
 
 	$man = "";
-	$app = "";
+	// $app = "";
 	#$slo = "";
 	// print_r($_FILES);
 	if (is_uploaded_file($_FILES['manfile']['tmp_name'])) {
 		$man = file_get_contents($_FILES['manfile']['tmp_name']);
-		if (is_uploaded_file($_FILES['appfile']['tmp_name'])) 
-			$app = file_get_contents($_FILES['appfile']['tmp_name']);
+		// if (is_uploaded_file($_FILES['appfile']['tmp_name'])) 
+		// 	$app = file_get_contents($_FILES['appfile']['tmp_name']);
 		// if (isset($_POST['slo']))
 		// 	$slo = $_POST['slo'];
 		
@@ -28,10 +28,11 @@ try {
 
 	$man = preg_replace("/\n/", "", $man);
 	$man = preg_replace("/\t/", "", $man);
-	$app = strtoupper(bin2hex($app));
+	// $app = strtoupper(bin2hex($app));
 
 	$res = json_decode(HTTPS::post(Conf::DIRECTOR . '/upload_manifest',
-	 	array( 'manifest' => $man, 'app_tar' => $app, 'thread' => 1 ), false, $_SESSION['uid']));
+	 	// array( 'manifest' => $man, 'app_tar' => $app, 'thread' => 1 ), false, $_SESSION['uid']));
+	 	array( 'manifest' => $man, 'thread' => 1 ), false, $_SESSION['uid']));
 
 	if (!$res) {
 		throw new Exception('The manifest has some errors in it');

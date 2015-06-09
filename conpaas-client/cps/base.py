@@ -480,7 +480,7 @@ class BaseClient(object):
     def profile(self, app_id):
         #check if application exists
 
-        res = self.callmanager(app_id, 0, "profile", False, { 'method': "get_profiling_info", 'manager_id':0 })
+        res = self.callmanager(app_id, 0, "profile", False, { 'method': "profile", 'manager_id':0 })
         print "Profiling started..."
 
 
@@ -527,15 +527,19 @@ class BaseClient(object):
         # f = open(slofile, 'r')
         # slo = f.read()
         # f.close()
-
-        f = open(appfile, 'r')
-        app_tar = f.read()
-        f.close()
         
-        app_tar = string_to_hex(app_tar) 
+        
+        # app_tar = string_to_hex(app_tar) 
       
-        res = self.callapi("upload_manifest", True, {'thread':True, 'manifest': manifest, 'app_tar':app_tar })
-        #res = self.callapi("upload_manifest", True, {'manifest': manifest, 'slo':slo, 'app_tar':app_tar })
+        # res = self.callapi("upload_manifest", True, {'thread':True, 'manifest': manifest, 'app_tar':app_tar })
+        # res = self.callapi("upload_manifest", True, {'thread':True, 'manifest': manifest})
+        res = self.callapi("upload_manifest", True, {'manifest': manifest})
+        if res:
+            app_id = res['appid']
+            contents = open(appfile).read()
+            files = [ ( 'appfile', appfile, contents ) ]
+            res = self.callmanager(app_id, 0, "upload_application", True, { 'method': "upload_application", 'manager_id':0 }, files)
+
         if res:
             print "done."
         else:
@@ -566,26 +570,29 @@ class BaseClient(object):
         print res
 
     def download_manifest(self, appid):
-        services = self.callapi("list/%s" % appid, True, {})
-        for service in services:
-            if service['type'] == 'xtreemfs':
-                warning = """WARNING: this application contains an XtreemFS service
-After downloading the manifest, the application will be deleted
-Do you want to continue? (y/N): """
+        res = self.callmanager(appid, 0, "download_manifest", False, { 'method': "download_manifest", 'manager_id':0 })
+        print "%s" % res
 
-                sys.stderr.write(warning)
-                sys.stderr.flush()
+#         services = self.callapi("list/%s" % appid, True, {})
+#         for service in services:
+#             if service['type'] == 'xtreemfs':
+#                 warning = """WARNING: this application contains an XtreemFS service
+# After downloading the manifest, the application will be deleted
+# Do you want to continue? (y/N): """
 
-                confirm = ''
-                confirm = rlinput('', confirm)
-                if confirm != 'y':
-                    sys.exit(1)
+#                 sys.stderr.write(warning)
+#                 sys.stderr.flush()
 
-        res = self.callapi("download_manifest/%s" % appid, True, {})
-        if res:
-            print simplejson.dumps(res)
-        else:
-            print "E: Failed downloading manifest file"
+#                 confirm = ''
+#                 confirm = rlinput('', confirm)
+#                 if confirm != 'y':
+#                     sys.exit(1)
+
+#         res = self.callapi("download_manifest/%s" % appid, True, {})
+#         if res:
+#             print simplejson.dumps(res)
+#         else:
+#             print "E: Failed downloading manifest file"
 
     def listapp(self, doPrint=True):
         """Call the 'listapp' method on the director and print the results

@@ -170,7 +170,8 @@ def deleteapp(user_id, app_id):
         stop(service.sid)
 
     controller = app_controllers[app_id]    
-    controller.release_reservation(app.vmid)
+    if(app.vmid and len(app.vmid) > 0):
+        controller.release_reservation(app.vmid)
     del app_controllers[app_id]
    
     db.session.delete(app)

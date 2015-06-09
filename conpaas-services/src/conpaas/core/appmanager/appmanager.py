@@ -61,6 +61,7 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
 
         self.module_managers = []
         self.execinfo = {}
+        self.app_tar = None
         #TODO:(genc) Put some order in this parsing, it is horrible
         #sloconent = file_get_contents(kwargs['slo'])
         #self.slo = SLOParser.parse(simplejson.loads(sloconent))
@@ -95,7 +96,8 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
     def get_profiling_info(self, kwargs):
         download = kwargs.pop('download')
         # return HttpJsonResponse({'state':self.state, 'profile':{'experiments': Traces.Experiments, 'pareto':Traces.ParetoExperiments}})    
-        return HttpJsonResponse({'state':self.state, 'pm': self.perparePerformanceModel(download)})    
+        app = True if self.app_tar else False
+        return HttpJsonResponse({'state':self.state, 'pm': self.perparePerformanceModel(download), 'application':app})    
 
     @expose('GET')
     def infoapp(self, kwargs):
@@ -207,7 +209,8 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
 
         manifestfile = kwargs.pop('manifest')
         manifestconent = manifestfile.file
-        self.manifest = ManifestParser.parse(simplejson.loads(manifestconent.read()))
+        self.manifest_json = manifestconent.read();
+        self.manifest = ManifestParser.parse(simplejson.loads(self.manifest_json))
         self.slomanager = SLOEnforcer(self.manifest)
         # slofile = kwargs.pop('slo')
         # sloconent = slofile.file
@@ -215,38 +218,21 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
         
 
         #Note that I am assuming that an application has only ONE generic service    
-        self.app_tar = kwargs.pop('app_tar')
-        # apptarfile = kwargs.pop('app_tar')
-        # self.app_tar = apptarfile.file
+        # self.app_tar = kwargs.pop('app_tar')
+        
         
         
         self.appid = kwargs.pop('appid')
         self.cloud = kwargs['cloud']
-        Thread(target=self.run_am, args=[]).start()
-        # genc uncomment this when done
         
-
+        # Thread(target=self.run_am, args=[]).start()
         #self.run_am()
 
-        # resc = {}
-        # service_ids=[]
-        # for module in self.manifest.Modules:
-        #     #self.set_resource_variables(module.Implementations[0]):
-        #     impl_detail = self.get_details_from_implementation(module.Implementations[0])
-        #     res = self.create_service({'service_type':module.ModuleType})
-        #     #check res for error and so on
-        #     service_ids.append(res.obj['sid']) 
-        #     service_manager = self.httpsserver.instances[int(res.obj['sid'])]
-        #     resc['Resources'] = impl_detail['Resources']
-        #     reservation = service_manager.controller.prepare_reservation(resc)
-        #     #check cost reservation['Cost'] and contiune
-        #     serv_resc = service_manager.controller.create_reservation_test(reservation['ConfigID'])    
-        #     service_manager._do_startup(kwargs['cloud'], serv_resc)
-        #     service_manager.controller.release_reservation(reservation['ConfigID'])
-        
-        
         return HttpJsonResponse({'success': True})
     
+    @expose('GET')
+    def download_manifest(self, kwargs):
+        return HttpJsonResponse({'manifest': self.manifest_json}) 
 
     @expose('UPLOAD')
     def upload_application(self, kwargs):
@@ -261,9 +247,10 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
         
 
         #Note that I am assuming that an application has only ONE generic service    
-        self.app_tar = kwargs.pop('app_tar')
+        self.app_tar = kwargs.pop('appfile')
         # self.appid = kwargs.pop('appid')
         # self.cloud = kwargs['cloud']
+        
         
         return HttpJsonResponse({'success': True})
 

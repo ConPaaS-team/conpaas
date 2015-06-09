@@ -45,7 +45,7 @@ from . import x509
 
 __client_ctx = None
 __uid = None
-#harness
+#HARNESS
 #__sid = None
 __aid = None
 
