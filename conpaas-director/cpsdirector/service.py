@@ -80,17 +80,6 @@ class Service(db.Model):
         
         return {'service':serv, 'application':app}
 
-    # def stop(self):
-    #     controller = manager_controller.ManagerController(self.type,
-    #             self.sid, self.user_id, self.cloud, self.application_id,
-    #             self.subnet)
-
-    #     controller.stop(self.vmid)
-    #     db.session.delete(self)
-    #     db.session.commit()
-    #     log('Service %s stopped properly' % self.sid)
-    #     return True
-
     def remove(self):
         db.session.delete(self)
         db.session.commit()
@@ -158,43 +147,6 @@ def callmanager(app_id, service_id, method, post, data, files=[]):
 
     raise Exception, "Call to method %s on %s failed: %s.\nParams = %s" % (method, application['manager'], res[1], data)
 
-# def callmanager(service_id, method, post, data, files=[]):
-#     """Call the manager API.
-
-#     'service_id': an integer holding the service id of the manager.
-#     'method': a string representing the API method name.
-#     'post': boolean value. True for POST method, false for GET.
-#     'data': a dictionary representing the data to be sent to the director.
-#     'files': sequence of (name, filename, value) tuples for data to be uploaded as files.
-
-#     callmanager loads the manager JSON response and returns it as a Python
-#     object.
-#     """
-#     service = get_service(g.user.uid, service_id)
-
-#     client.conpaas_init_ssl_ctx('/etc/cpsdirector/certs', 'director')
-
-#     # File upload
-#     if files:
-#         res = client.https_post(service.manager, 443, '/', data, files)
-#     # POST
-#     elif post:
-#         res = client.jsonrpc_post(service.manager, 443, '/', method, data)
-#     # GET
-#     else:
-#         res = client.jsonrpc_get(service.manager, 443, '/', method, data)
-
-#     if res[0] == 200:
-#         try:
-#             data = simplejson.loads(res[1])
-#         except simplejson.decoder.JSONDecodeError:
-#             # Not JSON, simply return what we got
-#             return res[1]
-
-#         return data.get('result', data)
-
-#     raise Exception, "Call to method %s on %s failed: %s.\nParams = %s" % (
-#         method, service.manager, res[1], data)
 
 @service_page.route("/available_services", methods=['GET'])
 def available_services():
@@ -205,59 +157,6 @@ from cpsdirector.application import get_default_app, get_app_by_id
 
 from cpsdirector.user import cert_required
 
-# def _start(servicetype, cloudname, appid):
-#     log('User %s creating a new %s service inside application %s' % (
-# 	    g.user.username, servicetype, appid))
-
-#     # Check if we got a valid service type
-#     if servicetype not in valid_services:
-#         error_msg = 'Unknown service type: %s' % servicetype
-#         log(error_msg)
-#         return build_response(jsonify({ 'error': True,
-#                                         'msg': error_msg }))
-
-#     app = get_app_by_id(g.user.uid, appid)
-#     if not app:
-#         return build_response(jsonify({ 'error': True,
-# 		                        'msg': "Application not found" }))
-
-#     # Do we have to assign a VPN subnet to this service?
-#     vpn = app.get_available_vpn_subnet()
-
-#     # Default name
-#     if servicetype == 'galera':
-#         defaultname = 'New MySQL service';
-#     else:
-#         defaultname = "New %s service" % servicetype
-
-#     # New service with default name, proper servicetype and user relationship
-#     s = Service(name=defaultname, type=servicetype,
-#         user=g.user, application=app, subnet=vpn)
-
-#     db.session.add(s)
-#     # flush() is needed to get auto-incremented sid
-#     db.session.flush()
-
-#     try:
-#         s.manager, s.vmid, s.cloud = manager_controller.start(
-#             servicetype, s.sid, g.user.uid, cloudname, appid, vpn)
-#     except Exception, err:
-#         try:
-#             db.session.delete(s)
-#             db.session.commit()
-#         except InvalidRequestError:
-#             db.session.rollback()
-#         exc_type, exc_value, exc_traceback = sys.exc_info()
-#         lines = traceback.format_exception(exc_type, exc_value, exc_traceback)
-#         log(''.join('!! ' + line for line in lines))
-#         error_msg = 'Error upon service creation: %s' % err
-#         log(error_msg)
-#         return build_response(jsonify({ 'error': True, 'msg': error_msg }))
-
-#     db.session.commit()
-
-#     log('%s (id=%s) created properly' % (s.name, s.sid))
-#     return build_response(jsonify(s.to_dict()))
 def _add(service_type, cloud_name, app_id):
     log('User %s creating a new %s service for application %s' % (g.user.username, service_type, app_id))
 
@@ -289,7 +188,8 @@ def _add(service_type, cloud_name, app_id):
         log('%s (id=%s) created properly' % (s.name, s.sid))
         return build_response(jsonify(s.to_dict()))
 
-    return build_response(jsonify({ 'error': True,'msg': res['msg'] }))
+    
+    return build_response(jsonify({ 'error': True,'msg': res['error'] }))
 
 
 @service_page.route("/add/<servicetype>", methods=['POST'])
@@ -379,39 +279,6 @@ def remove():
     return build_response(simplejson.dumps(True))
 
 
-# @service_page.route("/stop/<int:serviceid>", methods=['POST'])
-# @cert_required(role='user')
-# def stop(serviceid):
-#     """eg: POST /stop/3
-
-#     POSTed values must contain username and password.
-
-#     Returns a boolean value. True in case of successful authentication and
-#     proper service termination. False otherwise.
-#     """
-#     log('User %s attempting to stop service %s' % (g.user.uid, serviceid))
-
-#     # Test if a service with id 'serviceid' exists and user is the owner
-#     service = get_service(g.user.uid, serviceid)
-#     if not service:
-#         return build_response(simplejson.dumps(False))
-
-#     # Try to cleanly terminate the service
-#     try:
-#         # If the service is in INIT or STOPPED state, we can just kill
-#         # the manager VM
-#         res = callmanager(serviceid, "get_service_info", False, {})
-#         if res['state'] == 'INIT' or res['state'] == 'STOPPED':
-#             service.stop()
-#         else:
-#             # Else, we should ask the manager to cleanly shut down itself
-#             callmanager(serviceid, "delete", True, {})
-#     # If this fails, forcefully terminate the manager VM
-#     except:
-#         service.stop()
-
-#     return build_response(simplejson.dumps(True))
-
 @service_page.route("/list", methods=['POST', 'GET'])
 @cert_required(role='user')
 def list_all_services():
@@ -420,10 +287,6 @@ def list_all_services():
     List running ConPaaS services under a specific application if the user is
     authenticated. Return False otherwise.
     """
-    # return build_response(simplejson.dumps([
-    #     ser.to_dict() for ser in g.user.services.all()
-    # ]))
-
     return build_response(simplejson.dumps([
         ser.to_dict() for ser in Service.query.join(Application).filter_by(user_id=g.user.uid)
     ]))

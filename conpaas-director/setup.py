@@ -9,7 +9,7 @@ from grp import getgrnam
 from setuptools import setup, find_packages
 from pkg_resources import Requirement, resource_filename
 
-CPSVERSION = '555'
+CPSVERSION = '204'
 
 CONFDIR = '/etc/cpsdirector'
 LOGDIR = '/var/log/cpsdirector'

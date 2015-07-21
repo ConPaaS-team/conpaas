@@ -16,9 +16,9 @@ class GenericCmd(ServiceCmd):
         self._add_download_code()
         self._add_enable_code()
         self._add_delete_code()
-        self._add_list_volumes()
-        self._add_create_volume()
-        self._add_delete_volume()
+        # self._add_list_volumes()
+        # self._add_create_volume()
+        # self._add_delete_volume()
         self._add_run()
         self._add_interrupt()
         self._add_cleanup()
@@ -211,104 +211,104 @@ class GenericCmd(ServiceCmd):
         else:
             print code_version, 'deleted'
 
-    # ========== list_volumes
-    def _add_list_volumes(self):
-        subparser = self.add_parser('list_volumes',
-                                    help="list the volumes in use by the agents")
-        subparser.set_defaults(run_cmd=self.list_volumes, parser=subparser)
-        subparser.add_argument('app_name_or_id',
-                               help="Name or identifier of an application")
-        subparser.add_argument('serv_name_or_id',
-                               help="Name or identifier of a service")
+    # # ========== list_volumes
+    # def _add_list_volumes(self):
+    #     subparser = self.add_parser('list_volumes',
+    #                                 help="list the volumes in use by the agents")
+    #     subparser.set_defaults(run_cmd=self.list_volumes, parser=subparser)
+    #     subparser.add_argument('app_name_or_id',
+    #                            help="Name or identifier of an application")
+    #     subparser.add_argument('serv_name_or_id',
+    #                            help="Name or identifier of a service")
 
-    def list_volumes(self, args):
-        app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
+    # def list_volumes(self, args):
+    #     app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
 
-        res = self.client.call_manager_get(app_id, service_id, "list_volumes")
+    #     res = self.client.call_manager_get(app_id, service_id, "list_volumes")
 
-        if 'error' in res:
-            self.client.error("Cannot list volumes: %s" % res['error'])
-        elif res['volumes']:
-            for volume in res['volumes']:
-                print "%s (size %sMB, attached to %s)" % (volume['volumeName'],
-                                         volume['volumeSize'], volume['agentId'])
-        else:
-            print 'No volumes defined'
+    #     if 'error' in res:
+    #         self.client.error("Cannot list volumes: %s" % res['error'])
+    #     elif res['volumes']:
+    #         for volume in res['volumes']:
+    #             print "%s (size %sMB, attached to %s)" % (volume['volumeName'],
+    #                                      volume['volumeSize'], volume['agentId'])
+    #     else:
+    #         print 'No volumes defined'
 
-    # ========== create_volume
-    def _add_create_volume(self):
-        subparser = self.add_parser('create_volume',
-                                    help="create a volume and attatch it to an agent")
-        subparser.set_defaults(run_cmd=self.create_volume, parser=subparser)
-        subparser.add_argument('app_name_or_id',
-                               help="Name or identifier of an application")
-        subparser.add_argument('serv_name_or_id',
-                               help="Name or identifier of a service")
-        subparser.add_argument('vol_name',
-                               help="Name of the volume")
-        subparser.add_argument('vol_size',
-                               help="Size of the volume (MB)")
-        subparser.add_argument('agent_id',
-                               help="Id of the agent to attach the volume to")
+    # # ========== create_volume
+    # def _add_create_volume(self):
+    #     subparser = self.add_parser('create_volume',
+    #                                 help="create a volume and attatch it to an agent")
+    #     subparser.set_defaults(run_cmd=self.create_volume, parser=subparser)
+    #     subparser.add_argument('app_name_or_id',
+    #                            help="Name or identifier of an application")
+    #     subparser.add_argument('serv_name_or_id',
+    #                            help="Name or identifier of a service")
+    #     subparser.add_argument('vol_name',
+    #                            help="Name of the volume")
+    #     subparser.add_argument('vol_size',
+    #                            help="Size of the volume (MB)")
+    #     subparser.add_argument('agent_id',
+    #                            help="Id of the agent to attach the volume to")
 
-    def create_volume(self, args):
-        app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
+    # def create_volume(self, args):
+    #     app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
 
-        params = { 'volumeName': args.vol_name,
-                   'volumeSize': args.vol_size,
-                   'agentId': args.agent_id }
+    #     params = { 'volumeName': args.vol_name,
+    #                'volumeSize': args.vol_size,
+    #                'agentId': args.agent_id }
 
-        res = self.client.call_manager_post(app_id, service_id, "generic_create_volume",
-                params)
+    #     res = self.client.call_manager_post(app_id, service_id, "generic_create_volume",
+    #             params)
 
-        if 'error' in res:
-            self.client.error(res['error'])
-        else:
-            print ("Creating volume %s and attaching it to %s... " %
-                    (args.vol_name, args.agent_id))
-            sys.stdout.flush()
+    #     if 'error' in res:
+    #         self.client.error(res['error'])
+    #     else:
+    #         print ("Creating volume %s and attaching it to %s... " %
+    #                 (args.vol_name, args.agent_id))
+    #         sys.stdout.flush()
 
-            state = self.client.wait_for_state(app_id, service_id, ['RUNNING', 'ERROR'])
+    #         state = self.client.wait_for_state(app_id, service_id, ['RUNNING', 'ERROR'])
 
-            if state == 'RUNNING':
-                print ("done.")
-            else:
-                self.client.error("failed to state %s" % state)
-            sys.stdout.flush()
+    #         if state == 'RUNNING':
+    #             print ("done.")
+    #         else:
+    #             self.client.error("failed to state %s" % state)
+    #         sys.stdout.flush()
 
-    # ========== delete_volume
-    def _add_delete_volume(self):
-        subparser = self.add_parser('delete_volume',
-                                    help="detach and delete a volume")
-        subparser.set_defaults(run_cmd=self.delete_volume, parser=subparser)
-        subparser.add_argument('app_name_or_id',
-                               help="Name or identifier of an application")
-        subparser.add_argument('serv_name_or_id',
-                               help="Name or identifier of a service")
-        subparser.add_argument('vol_name',
-                               help="Name of a volume")
+    # # ========== delete_volume
+    # def _add_delete_volume(self):
+    #     subparser = self.add_parser('delete_volume',
+    #                                 help="detach and delete a volume")
+    #     subparser.set_defaults(run_cmd=self.delete_volume, parser=subparser)
+    #     subparser.add_argument('app_name_or_id',
+    #                            help="Name or identifier of an application")
+    #     subparser.add_argument('serv_name_or_id',
+    #                            help="Name or identifier of a service")
+    #     subparser.add_argument('vol_name',
+    #                            help="Name of a volume")
 
-    def delete_volume(self, args):
-        app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
+    # def delete_volume(self, args):
+    #     app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
 
-        params = { 'volumeName': args.vol_name }
+    #     params = { 'volumeName': args.vol_name }
 
-        res = self.client.call_manager_post(app_id, service_id, "generic_delete_volume",
-                params)
+    #     res = self.client.call_manager_post(app_id, service_id, "generic_delete_volume",
+    #             params)
 
-        if 'error' in res:
-            self.client.error(res['error'])
-        else:
-            print ("Detaching and deleting volume %s... " % args.vol_name)
-            sys.stdout.flush()
+    #     if 'error' in res:
+    #         self.client.error(res['error'])
+    #     else:
+    #         print ("Detaching and deleting volume %s... " % args.vol_name)
+    #         sys.stdout.flush()
 
-            state = self.client.wait_for_state(service_id, ['RUNNING', 'ERROR'])
+    #         state = self.client.wait_for_state(service_id, ['RUNNING', 'ERROR'])
 
-            if state == 'RUNNING':
-                print ("done.")
-            else:
-                self.client.error("failed to state %s" % state)
-            sys.stdout.flush()
+    #         if state == 'RUNNING':
+    #             print ("done.")
+    #         else:
+    #             self.client.error("failed to state %s" % state)
+    #         sys.stdout.flush()
 
     # ========== run
     def _add_run(self):

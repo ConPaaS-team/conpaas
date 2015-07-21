@@ -29,6 +29,7 @@ class Service {
 	private $stable = true;
 
 	private $errorMessage = null;
+	protected $volumes = null;
 
 	const STATE_RUNNING = 'RUNNING';
 	const STATE_STOPPED = 'STOPPED';
@@ -318,6 +319,54 @@ class Service {
             throw new Exception('Error removing service '. $this->sid);
         }
  	}
+
+ 	public function listVolumes() {
+		$json = $this->application->managerRequest('post', 'list_volumes', 0, array('service_id'=> $this->sid));
+		$volumes = json_decode($json, true);
+		if ($volumes == null) {
+			return false;
+		}
+		
+		return $volumes['result']['volumes'];
+	}
+
+	public function createVolume($params) {
+		$params['volumeSize'] = intval($params['volumeSize']);
+		$resp = $this->application->managerRequest('post', 'create_volume', 0, $params);
+		return $resp;
+	}
+
+	public function deleteVolume($params) {
+		$resp = $this->application->managerRequest('post', 'delete_volume', 0, $params);
+		return $resp;
+	}
+
+
+	public function updateVolumes() {
+		$this->volumes = null;
+		if (!$this->isRunning()) {
+			return;
+		}
+		$volumes = $this->listVolumes();
+		if ($volumes === false) {
+			return;
+		}
+		usort($volumes, function ($a, $b) {
+			return strcmp($a['vol_name'], $b['vol_name']);
+		});
+		$this->volumes = array();
+		if ($this->nodesLists !== false) {
+			foreach ($this->nodesLists as $role => $nodesList) {
+				foreach ($nodesList as $node) {
+					$this->volumes[$node] = array_values(array_filter($volumes,
+						function($volume) use($node) {
+							return $volume['vm_id'] === $node;
+						}
+					));
+				}
+			}
+		}
+	}
 
  	public function getAccessLocation() {
  		$loadbalancer = $this->getNodeInfo($this->nodesLists['proxy'][0]);

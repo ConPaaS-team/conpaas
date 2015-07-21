@@ -118,7 +118,6 @@ class GenericManager(BaseManager):
                                 "least one agent. Please wait for them to "\
                                 "finish execution or call 'interrupt' first."
 
-    AGENT_PORT = 5555
 
     # memcache keys
     # CONFIG = 'config'
@@ -139,7 +138,7 @@ class GenericManager(BaseManager):
         if kwargs['reset_config']:
             self._create_initial_configuration()
 
-        self.nodes = []
+        # self.nodes = []
         self.agents_info = []
         self.master_ip = None
         self._state_set(self.S_INIT)
@@ -194,7 +193,7 @@ echo "" >> /root/generic.out
 
    
 
-    def start(self, nodes):
+    def on_start(self, nodes):
         """Start up the service. The first node will be the master node."""
 
         nr_instances = 1
@@ -286,8 +285,8 @@ echo "" >> /root/generic.out
 
     #     return HttpJsonResponse({ 'state': self._state_get() })
 
-    # (genc) maybe this should be wrapped by the application manager methods as well
-    def stop(self):
+    
+    def on_stop(self):
         """Delete all nodes and switch to status STOPPED"""
         # Detach and delete all volumes
 
@@ -438,7 +437,7 @@ echo "" >> /root/generic.out
     #         self._do_execute_script('notify', self.nodes)
     #         self._state_set(self.S_RUNNING)
 
-    def add_nodes(self, node_instances):
+    def on_add_nodes(self, node_instances):
         # (genc): i have to figure out how to deal with the roles
         start_role = 'node'
         roles = {start_role: str(len(node_instances))}
@@ -457,7 +456,7 @@ echo "" >> /root/generic.out
         # self._state_set(self.S_RUNNING)
 
 
-    def remove_nodes(self, nodes):
+    def on_remove_nodes(self, nodes):
         # (genc): for the moment i am supposing only the number is passed and not the roles
         del_nodes = []
         # for _ in range(0, nodes):
@@ -827,206 +826,212 @@ echo "" >> /root/generic.out
 
         return HttpJsonResponse()
 
-    @expose('GET')
-    def list_volumes(self, kwargs):
-        if len(kwargs) != 0:
-            ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
-                                  kwargs.keys())
-            return HttpErrorResponse(ex.message)
+    # @expose('GET')
+    # def list_volumes(self, kwargs):
+    #     if len(kwargs) != 0:
+    #         ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
+    #                               kwargs.keys())
+    #         return HttpErrorResponse(ex.message)
 
-        config = self._configuration_get()
-        volumes = []
-        for volume in config.volumes.values():
-            item = {'volumeName': volume.volumeName,
-                    'volumeSize': volume.volumeSize,
-                    'agentId': volume.agentId}
-            volumes.append(item)
-        return HttpJsonResponse({'volumes': volumes})
+    #     config = self._configuration_get()
+    #     volumes = []
+    #     for volume in config.volumes.values():
+    #         item = {'volumeName': volume.volumeName,
+    #                 'volumeSize': volume.volumeSize,
+    #                 'agentId': volume.agentId}
+    #         volumes.append(item)
+    #     return HttpJsonResponse({'volumes': volumes})
 
-    @expose('POST')
-    def generic_create_volume(self, kwargs):
-        if self._state_get() != self.S_RUNNING:
-            vals = { 'curstate': self._state_get(),
-                     'action': 'generic_create_volume' }
-            return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
+    # @expose('POST')
+    # def generic_create_volume(self, kwargs):
+    #     if self._state_get() != self.S_RUNNING:
+    #         vals = { 'curstate': self._state_get(),
+    #                  'action': 'generic_create_volume' }
+    #         return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
 
-        if 'volumeName' not in kwargs:
-            ex = ManagerException(ManagerException.E_ARGS_MISSING,
-                                  'volumeName')
-            return HttpErrorResponse(ex.message)
-        if isinstance(kwargs['volumeName'], dict):
-            ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                  detail='volumeName should be a string')
-            return HttpErrorResponse(ex.message)
-        volumeName = kwargs.pop('volumeName')
+    #     if 'volumeName' not in kwargs:
+    #         ex = ManagerException(ManagerException.E_ARGS_MISSING,
+    #                               'volumeName')
+    #         return HttpErrorResponse(ex.message)
+    #     if isinstance(kwargs['volumeName'], dict):
+    #         ex = ManagerException(ManagerException.E_ARGS_INVALID,
+    #                               detail='volumeName should be a string')
+    #         return HttpErrorResponse(ex.message)
+    #     volumeName = kwargs.pop('volumeName')
 
-        if 'volumeSize' not in kwargs:
-            ex = ManagerException(ManagerException.E_ARGS_MISSING,
-                                  'volumeSize')
-            return HttpErrorResponse(ex.message)
-        try:
-            volumeSize = int(kwargs.pop('volumeSize'))
-            if volumeSize <= 0:
-                raise ValueError()
-        except ValueError:
-            ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                            detail='volumeSize should be a positive integer')
-            return HttpErrorResponse(ex.message)
+    #     if 'volumeSize' not in kwargs:
+    #         ex = ManagerException(ManagerException.E_ARGS_MISSING,
+    #                               'volumeSize')
+    #         return HttpErrorResponse(ex.message)
+    #     try:
+    #         volumeSize = int(kwargs.pop('volumeSize'))
+    #         if volumeSize <= 0:
+    #             raise ValueError()
+    #     except ValueError:
+    #         ex = ManagerException(ManagerException.E_ARGS_INVALID,
+    #                         detail='volumeSize should be a positive integer')
+    #         return HttpErrorResponse(ex.message)
 
-        if 'agentId' not in kwargs:
-            ex = ManagerException(ManagerException.E_ARGS_MISSING,
-                                  'agentId')
-            return HttpErrorResponse(ex.message)
-        if isinstance(kwargs['agentId'], dict):
-            ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                  detail='agentId should be a string')
-            return HttpErrorResponse(ex.message)
-        agentId = kwargs.pop('agentId')
+    #     if 'agentId' not in kwargs:
+    #         ex = ManagerException(ManagerException.E_ARGS_MISSING,
+    #                               'agentId')
+    #         return HttpErrorResponse(ex.message)
+    #     if isinstance(kwargs['agentId'], dict):
+    #         ex = ManagerException(ManagerException.E_ARGS_INVALID,
+    #                               detail='agentId should be a string')
+    #         return HttpErrorResponse(ex.message)
+    #     agentId = kwargs.pop('agentId')
 
-        if len(kwargs) != 0:
-            ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
-                                  kwargs.keys())
-            return HttpErrorResponse(ex.message)
+    #     if len(kwargs) != 0:
+    #         ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
+    #                               kwargs.keys())
+    #         return HttpErrorResponse(ex.message)
 
-        config = self._configuration_get()
-        if volumeName in config.volumes:
-            ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                  detail='volumeName already exists')
-            return HttpErrorResponse(ex.message)
+    #     config = self._configuration_get()
+    #     if volumeName in config.volumes:
+    #         ex = ManagerException(ManagerException.E_ARGS_INVALID,
+    #                               detail='volumeName already exists')
+    #         return HttpErrorResponse(ex.message)
 
-        if agentId not in [ node.id for node in self.nodes ]:
-            ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                  detail='Invalid agentId')
-            return HttpErrorResponse(ex.message)
+    #     if agentId not in [ node.id for node in self.nodes ]:
+    #         ex = ManagerException(ManagerException.E_ARGS_INVALID,
+    #                               detail='Invalid agentId')
+    #         return HttpErrorResponse(ex.message)
 
-        if self._are_scripts_running():
-            self.logger.info("Volume creation is disabled when scripts are "\
-                    "running")
-            return HttpErrorResponse(self.SCRIPTS_ARE_RUNNING_MSG);
+    #     if self._are_scripts_running():
+    #         self.logger.info("Volume creation is disabled when scripts are "\
+    #                 "running")
+    #         return HttpErrorResponse(self.SCRIPTS_ARE_RUNNING_MSG);
 
-        self._state_set(self.S_ADAPTING)
-        Thread(target=self._do_create_volume, args=[volumeName, volumeSize,
-               agentId]).start()
+    #     self._state_set(self.S_ADAPTING)
+    #     Thread(target=self._do_create_volume, args=[volumeName, volumeSize,
+    #            agentId]).start()
 
-        return HttpJsonResponse({ 'state': self._state_get() })
+    #     return HttpJsonResponse({ 'state': self._state_get() })
 
-    def _do_create_volume(self, volumeName, volumeSize, agentId):
-        """Create a new volume and attach it to the specified agent"""
+    # def _do_create_volume(self, volumeName, volumeSize, agentId):
+    #     """Create a new volume and attach it to the specified agent"""
 
-        self.logger.info("Going to create a new volume")
+    #     self.logger.info("Going to create a new volume")
 
-        config = self._configuration_get()
-        try:
-            node = [ node for node in self.nodes
-                            if node.id == agentId ][0]
-            try:
-                # We try to create a new volume.
-                volume_name = "generic-%s" % volumeName
-                self.logger.debug("Trying to create a volume for the node=%s"
-                                  % node.id)
-                cloud = self._init_cloud(node.cloud_name)
-                volume = self.create_volume(volumeSize, volume_name, node.vmid, cloud)
-            except Exception, ex:
-                self.logger.exception("Failed to create volume %s: %s"
-                                      % (volume_name, ex))
-                raise
-            try:
-                # try to find a dev name that is not already in use by the node
-                dev_names_in_use = [ vol.devName for vol in config.volumes.values()
-                            if vol.agentId == agentId ]
-                dev_name = self.config_parser.get('manager', 'DEV_TARGET')
-                while dev_name in dev_names_in_use:
-                    # increment the last char from dev_name
-                    dev_name = dev_name[:-1] + chr(ord(dev_name[-1]) + 1)
-                # attach the volume
-                _, dev_name = self.attach_volume(volume.id, node.vmid, dev_name)
-            except Exception, ex:
-                self.logger.exception("Failed to attach disk to Generic node %s: %s"
-                                      % (node.id, ex))
-                self.destroy_volume(volume.id)
-                raise
-            try:
-                client.mount_volume(node.ip, self.AGENT_PORT, dev_name, volumeName)
-            except client.AgentException, ex:
-                self.logger.exception('Failed to configure Generic node %s: %s'
-                                      % (node.id, ex))
-                self.detach_volume(volume.id)
-                self.destroy_volume(volume.id)
-                raise
-        except Exception, ex:
-            self.logger.exception('Failed to create volume: %s.' % ex)
-            self._state_set(self.S_ERROR)
-            return
+    #     config = self._configuration_get()
+    #     try:
+    #         node = [ node for node in self.nodes
+    #                         if node.id == agentId ][0]
+    #         try:
+    #             # We try to create a new volume.
+    #             volume_name = "generic-%s" % volumeName
+    #             self.logger.debug("Trying to create a volume for the node=%s"
+    #                               % node.id)
+    #             cloud = self._init_cloud(node.cloud_name)
+    #             volume = self.create_volume(volumeSize, volume_name, node.vmid, cloud)
+    #         except Exception, ex:
+    #             self.logger.exception("Failed to create volume %s: %s"
+    #                                   % (volume_name, ex))
+    #             raise
+    #         try:
+    #             # try to find a dev name that is not already in use by the node
+    #             dev_names_in_use = [ vol.devName for vol in config.volumes.values()
+    #                         if vol.agentId == agentId ]
+    #             dev_name = self.config_parser.get('manager', 'DEV_TARGET')
+    #             while dev_name in dev_names_in_use:
+    #                 # increment the last char from dev_name
+    #                 dev_name = dev_name[:-1] + chr(ord(dev_name[-1]) + 1)
+    #             # attach the volume
+    #             _, dev_name = self.attach_volume(volume.id, node.vmid, dev_name)
+    #         except Exception, ex:
+    #             self.logger.exception("Failed to attach disk to Generic node %s: %s"
+    #                                   % (node.id, ex))
+    #             self.destroy_volume(volume.id)
+    #             raise
+    #         try:
+    #             client.mount_volume(node.ip, self.AGENT_PORT, dev_name, volumeName)
+    #         except client.AgentException, ex:
+    #             self.logger.exception('Failed to configure Generic node %s: %s'
+    #                                   % (node.id, ex))
+    #             self.detach_volume(volume.id)
+    #             self.destroy_volume(volume.id)
+    #             raise
+    #     except Exception, ex:
+    #         self.logger.exception('Failed to create volume: %s.' % ex)
+    #         self._state_set(self.S_ERROR)
+    #         return
 
-        config.volumes[volumeName] = VolumeInfo(volumeName, volume.id,
-                                                 volumeSize, agentId, dev_name)
-        self._configuration_set(config)
-        self.logger.info('Volume %s created and attached' % volume_name)
-        self._state_set(self.S_RUNNING)
+    #     config.volumes[volumeName] = VolumeInfo(volumeName, volume.id,
+    #                                              volumeSize, agentId, dev_name)
+    #     self._configuration_set(config)
+    #     self.logger.info('Volume %s created and attached' % volume_name)
+    #     self._state_set(self.S_RUNNING)
 
-    @expose('POST')
-    def generic_delete_volume(self, kwargs):
-        if self._state_get() != self.S_RUNNING:
-            vals = { 'curstate': self._state_get(),
-                     'action': 'generic_delete_volume' }
-            return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
+    def on_create_volume(self, node, volume):
+        client.mount_volume(node.ip, self.AGENT_PORT, volume['dev_name'], volume['vol_name'])
 
-        if 'volumeName' not in kwargs:
-            ex = ManagerException(ManagerException.E_ARGS_MISSING,
-                                  'volumeName')
-            return HttpErrorResponse(ex.message)
-        if isinstance(kwargs['volumeName'], dict):
-            ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                  detail='volumeName should be a string')
-            return HttpErrorResponse(ex.message)
-        volumeName = kwargs.pop('volumeName')
+    def on_delete_volume(self, node, volume):
+        client.unmount_volume(node.ip, self.AGENT_PORT, volume['vol_name'])
 
-        if len(kwargs) != 0:
-            ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
-                                  kwargs.keys())
-            return HttpErrorResponse(ex.message)
+    # @expose('POST')
+    # def generic_delete_volume(self, kwargs):
+    #     if self._state_get() != self.S_RUNNING:
+    #         vals = { 'curstate': self._state_get(),
+    #                  'action': 'generic_delete_volume' }
+    #         return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
 
-        config = self._configuration_get()
+    #     if 'volumeName' not in kwargs:
+    #         ex = ManagerException(ManagerException.E_ARGS_MISSING,
+    #                               'volumeName')
+    #         return HttpErrorResponse(ex.message)
+    #     if isinstance(kwargs['volumeName'], dict):
+    #         ex = ManagerException(ManagerException.E_ARGS_INVALID,
+    #                               detail='volumeName should be a string')
+    #         return HttpErrorResponse(ex.message)
+    #     volumeName = kwargs.pop('volumeName')
 
-        if volumeName not in config.volumes:
-            ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                  detail='Invalid volumeName')
-            return HttpErrorResponse(ex.message)
+    #     if len(kwargs) != 0:
+    #         ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
+    #                               kwargs.keys())
+    #         return HttpErrorResponse(ex.message)
 
-        if self._are_scripts_running():
-            self.logger.info("Volume removal is disabled when scripts are "\
-                    "running")
-            return HttpErrorResponse(self.SCRIPTS_ARE_RUNNING_MSG);
+    #     config = self._configuration_get()
 
-        self._state_set(self.S_ADAPTING)
-        Thread(target=self._do_delete_volume, args=[volumeName]).start()
+    #     if volumeName not in config.volumes:
+    #         ex = ManagerException(ManagerException.E_ARGS_INVALID,
+    #                               detail='Invalid volumeName')
+    #         return HttpErrorResponse(ex.message)
 
-        return HttpJsonResponse({ 'state': self._state_get() })
+    #     if self._are_scripts_running():
+    #         self.logger.info("Volume removal is disabled when scripts are "\
+    #                 "running")
+    #         return HttpErrorResponse(self.SCRIPTS_ARE_RUNNING_MSG);
 
-    def _do_delete_volume(self, volumeName):
-        """Detach a volume and delete it"""
-        self.logger.info("Going to remove volume generic-%s" % volumeName)
+    #     self._state_set(self.S_ADAPTING)
+    #     Thread(target=self._do_delete_volume, args=[volumeName]).start()
 
-        config = self._configuration_get()
-        self.__delete_volume_internal(config.volumes[volumeName])
-        config.volumes.pop(volumeName)
-        self._configuration_set(config)
+    #     return HttpJsonResponse({ 'state': self._state_get() })
 
-        self.logger.info('Volume generic-%s removed' % volumeName)
-        self._state_set(self.S_RUNNING)
+    # def _do_delete_volume(self, volumeName):
+    #     """Detach a volume and delete it"""
+    #     self.logger.info("Going to remove volume generic-%s" % volumeName)
 
-    def __delete_volume_internal(self, volume):
-        self.logger.debug("Detaching and deleting volume %s"
-                % volume.volumeName)
-        try:
-            node = [ node for node in self.nodes
-                        if node.id == volume.agentId ][0]
-            client.unmount_volume(node.ip, self.AGENT_PORT, volume.volumeName)
-        except client.AgentException, ex:
-            self.logger.exception('Failed to configure Generic node %s: %s'
-                                  % (node.id, ex))
-        self.detach_volume(volume.volumeId)
-        self.destroy_volume(volume.volumeId)
+    #     config = self._configuration_get()
+    #     self.__delete_volume_internal(config.volumes[volumeName])
+    #     config.volumes.pop(volumeName)
+    #     self._configuration_set(config)
+
+    #     self.logger.info('Volume generic-%s removed' % volumeName)
+    #     self._state_set(self.S_RUNNING)
+
+    # def __delete_volume_internal(self, volume):
+    #     self.logger.debug("Detaching and deleting volume %s"
+    #             % volume.volumeName)
+    #     try:
+    #         node = [ node for node in self.nodes
+    #                     if node.id == volume.agentId ][0]
+    #         client.unmount_volume(node.ip, self.AGENT_PORT, volume.volumeName)
+    #     except client.AgentException, ex:
+    #         self.logger.exception('Failed to configure Generic node %s: %s'
+    #                               % (node.id, ex))
+    #     self.detach_volume(volume.volumeId)
+    #     self.destroy_volume(volume.volumeId)
 
     @expose('POST')
     def execute_script(self, kwargs):

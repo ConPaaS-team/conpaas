@@ -424,9 +424,9 @@ class ServiceCmd(object):
         else:
             print("%s nodes have been successfully removed from service %s of application %s."
                   % (total_nodes, service_id, app_id))
-            state = self.client.wait_for_state(app_id, service_id, ['RUNNING', 'ERROR'])
-            if state in ['ERROR']:
-                self.client.error("Failed to remove nodes from service %s of application %s." % (service_id, app_id))
+            # state = self.client.wait_for_state(app_id, service_id, ['RUNNING', 'ERROR'])
+            # if state in ['ERROR']:
+            #     self.client.error("Failed to remove nodes from service %s of application %s." % (service_id, app_id))
 
 
 def main():

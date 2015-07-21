@@ -39,12 +39,13 @@
 // require_module('cloud');
 require_module('http');
 require_module('service');
+require_module('logging');
 require_module('ui/instance/generic');
 
 class GenericService extends Service {
 
 	private $scriptStatus = null;
-	private $volumes = null;
+	
 
 	public function __construct($data, $manager) {
 		parent::__construct($data, $manager);
@@ -98,54 +99,9 @@ class GenericService extends Service {
 		return $master_node['ip'];
 	}
 
-	public function listVolumes() {
-		$json = $this->managerRequest('get', 'list_volumes', array());
-		$volumes = json_decode($json, true);
-		if ($volumes == null) {
-			return false;
-		}
-		return $volumes['result']['volumes'];
-	}
-
-	public function createVolume($params) {
-		$resp = $this->managerRequest('post', 'generic_create_volume', $params);
-		return $resp;
-	}
-
-	public function deleteVolume($params) {
-		$resp = $this->managerRequest('post', 'generic_delete_volume', $params);
-		return $resp;
-	}
-
 	public function executeScript($params) {
 		$resp = $this->managerRequest('post', 'execute_script', $params);
 		return $resp;
-	}
-
-	public function updateVolumes() {
-		$this->volumes = null;
-		if (!$this->isRunning()) {
-			return;
-		}
-		$volumes = $this->listVolumes();
-		if ($volumes === false) {
-			return;
-		}
-		usort($volumes, function ($a, $b) {
-			return strcmp($a['volumeName'], $b['volumeName']);
-		});
-		$this->volumes = array();
-		if ($this->nodesLists !== false) {
-			foreach ($this->nodesLists as $role => $nodesList) {
-				foreach ($nodesList as $node) {
-					$this->volumes[$node] = array_values(array_filter($volumes,
-						function($volume) use($node) {
-							return $volume['agentId'] === $node;
-						}
-					));
-				}
-			}
-		}
 	}
 
 	public function updateScriptStatus() {

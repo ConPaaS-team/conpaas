@@ -64,12 +64,12 @@ class GenericInstance extends Instance {
         return
             '<tr>'
                 .'<td><img src="images/volume.png" width="15" height="15" /></td>'
-                .'<td><b>Volume '.$volume['volumeName'].'</b></td>'
-                .'<td class="size">'.$volume['volumeSize'].'MB</td>'
+                .'<td><b>Volume '.$volume['vol_name'].'</b></td>'
+                .'<td class="size">'.$volume['vol_size'].'MB</td>'
                 .'<td name="'.$this->info['id'].'">'
-                    .'<img name="'.$volume['volumeName'].'"'
+                    .'<img name="'.$volume['vol_name'].'"'
                             .' width="11" height="11" class="delete"'
-                            .' title="delete '.$volume['volumeName'].'"'
+                            .' title="delete '.$volume['vol_name'].'"'
                             .' src="images/remove.png" />'
                 .'</td>'
             .'</tr>';

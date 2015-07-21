@@ -26,6 +26,8 @@ from conpaas.core.https.server import FileUploadField
 from conpaas.core.node import ServiceNode
 from conpaas.core.https.server import ConpaasRequestHandlerComponent
 
+
+from conpaas.core.misc import check_arguments, is_in_list, is_not_in_list, is_string, is_pos_int, is_dict
 from conpaas.core import ipop
 from conpaas.core.ganglia import ManagerGanglia
 
@@ -55,6 +57,8 @@ class BaseManager(ConpaasRequestHandlerComponent):
     # the wrong state
     WRONG_STATE_MSG = "ERROR: cannot perform %(action)s in state %(curstate)s"
 
+
+    WRONG_NR_NODES = "ERROR: requestion to delete %(count)s while only %(current)s nodes available"
     # String template for error messages returned when a required argument is
     # missing
     REQUIRED_ARG_MSG = "ERROR: %(arg)s is a required argument"
@@ -62,19 +66,21 @@ class BaseManager(ConpaasRequestHandlerComponent):
     # String template for debugging messages logged on nodes creation
     ACTION_REQUESTING_NODES = "requesting %(count)s nodes in %(action)s"
 
+    
+    
+
     AGENT_PORT = 5555
 
     def __init__(self, config_parser):
         ConpaasRequestHandlerComponent.__init__(self)
         self.logger = create_logger(__name__)
-        # self.logger.debug('Using libcloud version %s' % libcloud.__version__)
-
-        # self.controller = Controller(config_parser)
+       
         self.logfile = config_parser.get('manager', 'LOG_FILE')
         self.config_parser = config_parser
         self.state = self.S_INIT
 
-        self.volumes = []
+        self.volumes = {}
+        self.nodes = []
 
         
 
@@ -96,41 +102,24 @@ class BaseManager(ConpaasRequestHandlerComponent):
                             " while waiting for manager state to become one of %s."
                             % (timeout, polling_interval, expected_states))
 
-    # @expose('POST')
-    # def startup(self, kwargs):
-    #     """Start the given service"""
-    #     # Starting up the service makes sense only in the INIT or STOPPED
-    #     # states
-    #     if self.state != self.S_INIT and self.state != self.S_STOPPED:
-    #         vals = { 'curstate': self.state, 'action': 'startup' }
-    #         return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
-
-    #     # Check if the specified cloud, if any, is available
-    #     if 'cloud' in kwargs:
-    #         try:
-    #             self._init_cloud(kwargs['cloud'])
-    #         except Exception:
-    #             return HttpErrorResponse(
-    #                 "A cloud named '%s' could not be found" % kwargs['cloud'])
-
-    #     self.logger.info('Manager starting up')
-    #     self.state = self.S_PROLOGUE
-    #     Thread(target=self._do_startup, kwargs=kwargs).start()
-
-    #     return HttpJsonResponse({ 'state': self.state })
-
-    # @expose('POST')
-    def start(self, nodes):
+ 
+    def on_start(self, nodes):
         raise Exception("start method not implemented for this service")
 
-    def stop(self, kwargs):
+    def on_stop(self, kwargs):
         raise Exception("stop method not implemented for this service")
 
-    def add_nodes(self, nodes):
+    def on_add_nodes(self, nodes):
         raise Exception("add_nodes method not implemented for this service")
 
-    def remove_nodes(self, nodes):
+    def on_remove_nodes(self, nodes):
         raise Exception("remove_nodes method not implemented for this service")
+
+    def on_create_volume(self, node, volume):
+        pass
+
+    def on_delete_volume(self, node, volume):
+        pass
 
     def get_nr_starting_agents(self):
         return 1
@@ -142,11 +131,7 @@ class BaseManager(ConpaasRequestHandlerComponent):
 
     # this should be overwritten from all the service managers 
     def get_service_type(self):
-        raise Exception("get_service_type method not implemented for this service")
-
-    # def config_replacement(self, replacement):
-
-
+        raise Exception("get_service_type method not implemented for this service (%s)" % self.__class__.__name__)
 
     @expose('GET')
     def getLog(self, kwargs):
@@ -221,146 +206,6 @@ class BaseManager(ConpaasRequestHandlerComponent):
         except IOError:
             return HttpErrorResponse('No startup script')
 
-    def create_volume(self, size, name, vm_id, cloud=None):
-        self.logger.info('Creating a volume named %s (%s MBs)' % (
-            name, size))
-        # TODO (genc) call the director for this 
-
-        # # If cloud is None, the controller will create this volume on the
-        # # default cloud
-        # volume = self.controller.create_volume(size, name, vm_id, cloud)
-
-        # # Keep track of the cloud this volume has been created on
-        # volume.cloud = cloud
-
-        # # Keep track of this volume
-        # self.volumes.append(volume)
-
-        # return volume
-
-    def get_volume(self, volume_id):
-        for vol in self.volumes:
-            if volume_id == vol.id:
-                return vol
-
-        known_volumes = [ vol.id for vol in self.volumes ]
-
-        raise Exception("Volume '%s' not found. Known volumes: %s" %
-                (volume_id, known_volumes))
-
-    def destroy_volume(self, volume_id):
-        self.logger.info("Destroying volume with id %s" % volume_id)
-        # TODO (genc) also this call should go through the director
-
-        # try:
-        #     volume = self.get_volume(volume_id)
-        # except Exception:
-        #     self.logger.info("Volume %s not known" % volume_id)
-        #     return
-
-        # for attempt in range(1, 11):
-        #     try:
-        #         ret = self.controller.destroy_volume(volume, volume.cloud)
-        #         break
-        #     except Exception, err:
-        #         self.logger.info("Attempt %s: %s" % (attempt, err))
-        #         # It might take a bit for the volume to actually be
-        #         # detached. Let's wait a little and try again.
-        #         time.sleep(10)
-
-        # if ret:
-        #     self.volumes.remove(volume)
-        # else:
-        #     raise Exception("Error destroying volume %s" % volume_id)
-   
-    def attach_volume(self, volume_id, vm_id, device_name=None):
-
-        # TODO (genc) also this call should go through the director
-        pass
-        # if device_name is None:
-        #     device_name=self.config_parser.get('manager', 'DEV_TARGET')
-
-        # self.logger.info("Attaching volume %s to VM %s as %s" % (volume_id,
-        #     vm_id, device_name))
-
-        # try:
-        #     volume = self.get_volume(volume_id)
-        # except Exception:
-        #     self.logger.info("Volume %s not known" % volume_id)
-        #     return
-
-        # class node:
-        #     id = vm_id
-
-        # for attempt in range(1, 11):
-        #     try:
-        #         ret = self.controller.attach_volume(node, volume, device_name,
-        #                 volume.cloud), device_name
-        #         break;
-        #     except Exception, err:
-        #         self.logger.info("Attempt %s: %s" % (attempt, err))
-        #         # It might take a bit for the volume to actually be
-        #         # created. Let's wait a little and try again.
-        #         time.sleep(10)
-
-        # if ret:
-        #     return ret
-        # else:
-        #     raise Exception("Error attaching volume %s" % volume_id)
-
-    def detach_volume(self, volume_id):
-        # TODO (genc) also this call should go through the director
-
-        self.logger.info("Detaching volume %s..." % volume_id)
-
-
-        # volume = self.get_volume(volume_id)
-        # ret = self.controller.detach_volume(volume, volume.cloud)
-
-        # self.logger.info("Volume %s detached" % volume_id)
-        # return ret
-
-    def _init_cloud(self, cloud=None):
-        # TODO (genc): fix thsi with the dirctor calls
-        pass
-        # if cloud is None or cloud == 'default':
-        #     cloud = 'iaas'
-        # return self.controller.get_cloud_by_name(cloud)
-
-    # @expose('POST')
-    # def stop(self, kwargs):
-    #     """Switch to EPILOGUE and call a thread to delete all nodes"""
-    #     # Shutdown only if RUNNING
-    #     if self.state != self.S_RUNNING:
-    #         vals = { 'curstate': self.state, 'action': 'stop' }
-    #         return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
-        
-    #     self.state = self.S_EPILOGUE
-    #     # Thread(target=self._do_stop, args=[]).start()
-    #     return self._do_stop()
-    #     # return HttpJsonResponse({ 'state': self.state })
-    
-    
-    
-    # @expose('POST')
-    # def delete(self, kwargs):
-    #     """
-    #     Terminate the service after releasing all resources, including cleanly
-    #     shutting down agent VMs.
-
-    #     No parameters.
-    #     """
-    #     Thread(target=self._do_delete, args=[]).start()
-    #     return HttpJsonResponse()
-
-    # def _do_delete(self):
-    #     ''' Terminate the service, releasing all resources. '''
-
-    #     self.logger.info("Shutting down the service...")
-    #     self._do_shutdown()
-
-    #     self.logger.info("Terminating the service...")
-    #     self.controller.force_terminate_service()
 
 class ApplicationManager(BaseManager):
     def __init__(self, httpsserver, config_parser, **kwargs):
@@ -396,9 +241,8 @@ class ApplicationManager(BaseManager):
         else:
             self.logger.info('Ganglia started successfully')
 
-
-    # def create_agent(self, count, cloud_name, instance_type):
-    #     self.callbacker
+        # self.counter = 0
+        self.state = self.S_RUNNING
 
     @expose('GET')
     def check_process(self, kwargs):
@@ -407,13 +251,14 @@ class ApplicationManager(BaseManager):
             return HttpErrorResponse('ERROR: Arguments unexpected')
         return HttpJsonResponse()    
 
-
     @expose('GET')
     def infoapp(self, kwargs):
 
         return HttpJsonResponse({'info':'this application is doing fine, don\'t worry!',
-                                'methods': self._get_supporeted_functions(),
-                                'states': self._get_manager_states()
+                                # 'methods': self._get_supporeted_functions(),
+                                'states': self._get_manager_states(),
+                                'nodes': [node.id for node in self.nodes],
+                                'volumes':self.volumes
             })    
 
     @expose('POST')
@@ -422,11 +267,10 @@ class ApplicationManager(BaseManager):
         self.state = self.S_ADAPTING
         self.kwargs.update(kwargs)
 
-        if 'service_type' not in kwargs:
-            vals = { 'arg': 'service_type' }
-            return HttpErrorResponse('Argument %s is missing' % vals)
+        exp_params = [('service_type', is_in_list(manager_services.keys())),
+                        ('cloud_name', is_string)]
+        [service_type, cloud ] = check_arguments(exp_params, kwargs)
 
-        service_type = kwargs.pop('service_type')
         services = manager_services
 
         try:
@@ -469,15 +313,9 @@ class ApplicationManager(BaseManager):
     @expose('POST')
     def remove_service(self, kwargs):
         self.state = self.S_ADAPTING
-        if 'service_id' not in kwargs:
-            vals = { 'arg': 'service_id' }
-            self.state = self.S_RUNNING
-            return HttpErrorResponse('Argument %s is missing' % vals)
-        service_id = kwargs.pop('service_id')
+        exp_params = [('service_id', is_in_list(self.httpsserver.instances.keys()))]
+        service_id = check_arguments(exp_params, kwargs)
 
-        if service_id not in self.httpsserver.instances:
-            self.state = self.S_RUNNING
-            return HttpErrorResponse('Wrong service_id: %s ' % service_id)
         del self.httpsserver.instances[service_id]
         self.httpsserver._deregister_methods(service_id)
         self.state = self.S_RUNNING
@@ -485,12 +323,12 @@ class ApplicationManager(BaseManager):
 
     @expose('POST')
     def start_service(self, kwargs):
-        # (genc) check parameters         
+        exp_params = [('service_id', is_in_list(self.httpsserver.instances.keys())),
+                      ('cloud', is_string)]
+        [service_id, cloud ] = check_arguments(exp_params, kwargs)
 
-        service_id = kwargs.pop('service_id')
         service_manager = self.httpsserver.instances[service_id]
         
-
         if service_manager.state != self.S_INIT and service_manager.state != self.S_STOPPED:
             vals = { 'curstate': service_manager.state, 'action': 'startup' }
             return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
@@ -498,16 +336,16 @@ class ApplicationManager(BaseManager):
         service_manager.logger.info('Manager starting up')
         service_manager.state = self.S_PROLOGUE
 
-        Thread(target=self._do_start_service, args=[service_id]).start()
+        Thread(target=self._do_start_service, args=[service_id, cloud]).start()
         
         return HttpJsonResponse({ 'state': service_manager.state })
 
-    def _do_start_service(self, service_id):
+    def _do_start_service(self, service_id, cloud):
         service_manager = self.httpsserver.instances[service_id]
         count = service_manager.get_nr_starting_agents()
         nodes = self.callbacker.create_nodes(count, service_id, service_manager)
-        service_manager.start(nodes)
-
+        self.nodes += nodes
+        service_manager.on_start(nodes)
 
     @expose('POST')
     def stop_service(self, kwargs):
@@ -519,16 +357,20 @@ class ApplicationManager(BaseManager):
 
     def _do_stop_service(self, service_id):
         service_manager = self.httpsserver.instances[service_id]
-        nodes = service_manager.stop()
+        nodes = service_manager.on_stop()
+        for node in nodes:
+            self.nodes.remove(node)
         self.callbacker.remove_nodes(nodes)
         service_manager.state = self.S_STOPPED
 
     @expose('POST')
     def add_nodes(self, kwargs):
         # COMMENT(genc): how are roles going to be managed here?
-        service_id = kwargs.pop('service_id')
-        cloud = kwargs.pop('cloud')
-        count = int(kwargs.pop('node')) # change this when supporting roles
+        exp_params = [('service_id', is_in_list(self.httpsserver.instances.keys())),
+                      ('cloud', is_string),
+                      ('node', is_pos_int)]
+        
+        [service_id, cloud, count ] = check_arguments(exp_params, kwargs)
         service_manager = self.httpsserver.instances[service_id]
         service_manager.state = self.S_ADAPTING
         Thread(target=self._do_add_nodes, args=[service_id, count, cloud]).start()
@@ -537,28 +379,234 @@ class ApplicationManager(BaseManager):
     def _do_add_nodes(self, service_id, count, cloud):
         service_manager = self.httpsserver.instances[service_id]
         nodes = self.callbacker.create_nodes(count, service_id, service_manager)
-        service_manager.add_nodes(nodes)
+        self.nodes += nodes
+        service_manager.on_add_nodes(nodes)
         service_manager.state = self.S_RUNNING
-
 
     @expose('POST')
     def remove_nodes(self, kwargs):
         # COMMENT(genc): how are roles going to be managed here?
-        # (genc): parameter checks here obviously
-        service_id = kwargs.pop('service_id')
-        count = int(kwargs.pop('node'))
+        exp_params = [('service_id', is_in_list(self.httpsserver.instances.keys())),
+                      ('node', is_pos_int)]
+        [service_id, count ] = check_arguments(exp_params, kwargs)
         service_manager = self.httpsserver.instances[service_id]
+
+        if count > len(service_manager.nodes):
+            vals = { 'count': count, 'current': len(service_manager.nodes) }
+            return HttpErrorResponse(self.WRONG_NR_NODES % vals)
+
+        
         service_manager.state = self.S_ADAPTING
         Thread(target=self._do_remove_nodes, args=[service_id, count]).start()
         return HttpJsonResponse({ 'state': service_manager.state })
 
-
     def _do_remove_nodes(self, service_id, count):
         service_manager = self.httpsserver.instances[service_id]
-        nodes = service_manager.remove_nodes(count)
+        nodes = service_manager.on_remove_nodes(count)
+        for node in nodes:
+            self.nodes.remove(node)
         self.callbacker.remove_nodes(nodes)
         # (genc) check here if there are no more nodes left and stop if needed
 
+    @expose('POST')
+    def create_volume(self, kwargs):
+        # if self.state != self.S_RUNNING:
+        #     vals = { 'curstate': self.state,
+        #              'action': 'create_volume' }
+        #     return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
+
+        node_ids = [ node.id for node in self.nodes ]
+        exp_params = [('volumeName', is_not_in_list(self.volumes.keys())),
+                      ('volumeSize', is_pos_int),
+                      ('agentId', is_in_list(node_ids))
+                      ]
+        [volumeName, volumeSize, agentId ] = check_arguments(exp_params, kwargs)
+
+        # TODO: decide if this methods gets pulled to appmanager or we have a before_create_volume()
+        # in the serice managers  
+        # if self._are_scripts_running():
+        #     self.logger.info("Volume creation is disabled when scripts are running")
+        #     return HttpErrorResponse(self.SCRIPTS_ARE_RUNNING_MSG);
+
+        self.state = self.S_ADAPTING
+        Thread(target=self._do_create_volume, args=[volumeName, volumeSize, agentId]).start()
+
+        return HttpJsonResponse({ 'state': self.state })
+
+    def _do_create_volume(self, volumeName, volumeSize, agentId):
+        """Create a new volume and attach it to the specified agent"""
+
+        self.logger.info("Going to create a new volume")
+        try:
+            node = [ node for node in self.nodes if node.id == agentId ][0]
+            try:
+                # We try to create a new volume.
+                volume_name = "vol-%s" % volumeName
+                self.logger.debug("Trying to create a volume for the node=%s" % node.id)
+                
+                volume = self.callbacker.create_volume(volumeSize, volume_name, node.vmid, node.cloud_name)
+                volume_id = volume['volume_id']
+            except Exception, ex:
+                self.logger.exception("Failed to create volume %s: %s" % (volume_name, ex))
+                raise
+
+            try:
+                # try to find a dev name that is not already in use by the node
+                dev_names_in_use = [ vol['dev_name'] for vol in self.volumes if vol['vm_id'] == agentId]
+                dev_name = self.config_parser.get('manager', 'DEV_TARGET')
+                while dev_name in dev_names_in_use:
+                    # increment the last char from dev_name
+                    dev_name = dev_name[:-1] + chr(ord(dev_name[-1]) + 1)
+                # attach the volume
+                _, dev_name = self.attach_volume(volume_id, node.vmid, dev_name, node.cloud_name)
+
+            except Exception, ex:
+                self.logger.exception("Failed to attach disk to Generic node %s: %s" % (node.id, ex))
+                self.destroy_volume({'vol_id':volume_id, 'cloud': node.cloud_name})
+                raise
+
+            volume = {'vol_name':volumeName, 'vol_id' : volume_id, 
+                      'vol_size': volumeSize, 'vm_id': agentId, 
+                      'dev_name':dev_name, 'cloud':node.cloud_name}
+            try:
+                service_id, _ = self.get_service_id_by_vm_id(agentId)
+                service_manager = self.httpsserver.instances[service_id]
+                service_manager.on_create_volume(node, volume)
+            except Exception, ex:
+                self.logger.exception('Failed to configure Generic node %s: %s' % (node.id, ex))
+                self.detach_volume(volume)
+                self.destroy_volume(volume)
+                raise
+        except Exception, ex:
+            self.logger.exception('Failed to create volume: %s.' % ex)
+            self.state = self.S_ERROR
+            return
+
+        self.volumes[volumeName] = volume
+        
+        self.logger.info('Volume %s created and attached' % volumeName)
+        # self.logger.info('Current volumes %s ' % self.volumes)
+        self.state = self.S_RUNNING
+
+    def attach_volume(self, volume_id, vm_id, device_name=None, cloud=None):
+
+        if device_name is None:
+            device_name=self.config_parser.get('manager', 'DEV_TARGET')
+
+        self.logger.info("Attaching volume %s to VM %s as %s" % (volume_id,vm_id, device_name))
+
+        # try:
+        #     volume = self.get_volume(volume_id)
+        # except Exception:
+        #     self.logger.info("Volume %s not known" % volume_id)
+        #     return
+
+        for attempt in range(1, 11):
+            try:
+                ret = self.callbacker.attach_volume(vm_id, volume_id, device_name, cloud), device_name
+                break;
+            except Exception, err:
+                self.logger.info("Attempt %s: %s" % (attempt, err))
+                # It might take a bit for the volume to actually be
+                # created. Let's wait a little and try again.
+                time.sleep(10)
+
+        if ret:
+            return ret
+        else:
+            raise Exception("Error attaching volume %s" % volume_id)
+    
+    @expose('POST')
+    def delete_volume(self, kwargs):
+        if self.state != self.S_RUNNING:
+            vals = { 'curstate': self.state,
+                     'action': 'delete_volume' }
+            return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
+
+        exp_params = [('volumeName', is_in_list(self.volumes.keys()))]        
+        volumeName = check_arguments(exp_params, kwargs)    
+
+        # if self._are_scripts_running():
+        #     self.logger.info("Volume removal is disabled when scripts are running")
+        #     return HttpErrorResponse(self.SCRIPTS_ARE_RUNNING_MSG);
+
+        self.state = self.S_ADAPTING
+        Thread(target=self._do_delete_volume, args=[volumeName]).start()
+
+        return HttpJsonResponse({ 'state': self.state })
+
+    def _do_delete_volume(self, volumeName):
+        """Detach a volume and delete it"""
+        self.logger.info("Going to remove volume %s" % volumeName)
+
+        volume = self.volumes[volumeName]
+        # self.logger.debug("Detaching and deleting volume %s" % volume.volumeName)
+        try:
+            node = [ node for node in self.nodes if node.id == volume['vm_id'] ][0]
+            service_id, _ = self.get_service_id_by_vm_id(node.id)
+            service_manager = self.httpsserver.instances[service_id]
+            service_manager.on_delete_volume(node, volume)
+        except Exception, ex:
+            self.logger.exception('Failed to mount volume on node %s: %s' % (node.id, ex))
+        self.detach_volume(volume)
+        self.destroy_volume(volume)
+
+        self.volumes.pop(volumeName)
+        
+        self.logger.info('Volume generic-%s removed' % volumeName)
+        self.state = self.S_RUNNING
+
+    def destroy_volume(self, volume):
+        self.logger.info("Destroying volume with id %s" %  volume['vol_id'])
+        
+
+        for attempt in range(1, 11):
+            try:
+                ret = self.callbacker.destroy_volume(volume['vol_id'], volume['cloud'])
+                break
+            except Exception, err:
+                self.logger.info("Attempt %s: %s" % (attempt, err))
+                # It might take a bit for the volume to actually be
+                # detached. Let's wait a little and try again.
+                time.sleep(10)
+
+        # self.logger.debug("destroy volume ret %s" %  ret)        
+        if 'error' in ret:
+            raise Exception("Error destroying volume %s" % volume['vol_id'])
+
+    def detach_volume(self, volume):
+        self.logger.info("Detaching volume %s..." % volume['vol_id'])
+        ret = self.callbacker.detach_volume(volume['vol_id'], volume['cloud'])
+        self.logger.info("Volume %s detached" % volume['vol_id'])
+        return ret
+
+    @expose('POST')
+    def list_volumes(self, kwargs):
+        vols = copy.copy(self.volumes)
+        rep_vols = []
+
+        service_id = 0
+        if 'service_id' in kwargs:
+            service_id = kwargs.pop('service_id')
+        for vol_name in vols:
+            vol = vols[vol_name]
+            vol['service_id'], vol['service_name'] = self.get_service_id_by_vm_id(vol['vm_id'])
+            
+            if service_id != 0:
+                if vol['service_id'] == service_id:
+                    rep_vols.append(vol)
+            else: 
+                rep_vols.append(vol)
+                
+        return HttpJsonResponse({ 'volumes': rep_vols })
+
+    def get_service_id_by_vm_id(self, vm_id):
+        for man_id in self.httpsserver.instances:
+            if man_id != 0:
+                for node in self.httpsserver.instances[man_id].nodes:
+                    if node.id == vm_id:
+                        return man_id, self.httpsserver.instances[man_id].get_service_type()
+        return None
 
     @expose('POST')
     def stopall(self, kwargs):
@@ -616,6 +664,10 @@ class ApplicationManager(BaseManager):
         if os.path.isfile(mngr_startup_scriptname):
             proc = subprocess.Popen(['bash', mngr_startup_scriptname] , close_fds=True)
             proc.wait()
+
+    @expose('POST')
+    def test(self,kwargs):
+        return HttpJsonResponse({ 'msg': 'hello' })
 
         
 class ManagerException(Exception):

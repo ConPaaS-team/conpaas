@@ -143,9 +143,15 @@ def is_constraint(constraint, filter_res, errmsg):
             raise Exception(errmsg(arg))
     return filter_constraint
 
+def represents_int(s):
+    try: 
+        int(s)
+        return True
+    except ValueError:
+        return False
 
 def is_int(argument):
-    return is_constraint(lambda arg: isinstance(arg, int),
+    return is_constraint(lambda arg: represents_int(arg),
                          lambda arg: int(arg),
                          lambda arg: "'%s' is not an integer but a %s." % (arg, type(arg)))(argument)
 
@@ -160,6 +166,12 @@ def is_more_or_eq_than(minval):
     return is_constraint(lambda arg: arg >= minval,
                          lambda arg: arg,
                          lambda arg: "'%s' is not more or equal than '%s'." % (arg, minval))
+
+def is_between(minval, maxval):
+    return is_constraint(lambda arg: arg >= minval and arg <= maxval,
+                         lambda arg: arg,
+                         lambda arg: "'%s' is not between '%s' and '%s'." % (arg, minval, maxval))
+
 
 
 def is_pos_int(argument):
@@ -176,6 +188,13 @@ def is_in_list(exp_list):
     return is_constraint(lambda arg: arg in exp_list,
                          lambda arg: arg,
                          lambda arg: "'%s' must be one of '%s'." % (arg, exp_list))
+
+
+def is_not_in_list(exp_list):
+    return is_constraint(lambda arg: arg not in exp_list,
+                         lambda arg: arg,
+                         lambda arg: "'%s' must not be one of '%s'." % (arg, exp_list))
+
 
 
 def is_string(argument):

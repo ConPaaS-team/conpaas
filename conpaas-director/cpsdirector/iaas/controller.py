@@ -103,75 +103,6 @@ class Controller(object):
 
 
 
-    # def _init_(self, config_parser, **kwargs):
-    #     # TODO: retrieve this file name from the director.cfg configuration file & create the log file if it is not yet present
-    #     init('/var/log/cpsdirector/debugging.log')
-    #     self._logger = create_logger(_name_)
-    #     self._logger.setLevel(logging.DEBUG)
-    #     # Params for director callback
-    #     self._conpaas_name = config_parser.get('manager', 'DEPLOYMENT_NAME')
-    #     # self._conpaas_creditUrl = config_parser.get('manager', 'CREDIT_URL')
-    #     # self._conpaas_terminateUrl = config_parser.get('manager', 'TERMINATE_URL')
-    #     self._conpaas_user_id = config_parser.get('manager', 'USER_ID')
-    #     self._conpaas_app_id = config_parser.get('manager', 'APP_ID')
-    #     # self._conpaas_caUrl = config_parser.get('manager', 'CA_URL')
-        
-    #     # TODO (genc): The IPOP part is temporarily commented until we get it working with the new version
-    #     # Set the CA URL as IPOP's base namespace
-    #     # self._ipop_base_namespace = self._conpaas_caUrl
-
-    #     # if config_parser.has_option('manager', 'IPOP_BASE_IP'):
-    #     #     # Application-level network
-    #     #     self._ipop_base_ip = config_parser.get('manager', 'IPOP_BASE_IP')
-    #     # else:
-    #     #     self._ipop_base_ip = None
-
-    #     # if config_parser.has_option('manager', 'IPOP_NETMASK'):
-    #     #     # Application-level netmask
-    #     #     self._ipop_netmask = config_parser.get('manager', 'IPOP_NETMASK')
-    #     # else:
-    #     #     self._ipop_netmask = None
-
-    #     # if config_parser.has_option('manager', 'IPOP_BOOTSTRAP_NODES'):
-    #     #     # Application-level network's bootstrap nodes
-    #     #     self._ipop_bootstrap_nodes = config_parser.get('manager', 'IPOP_BOOTSTRAP_NODES')
-    #     # else:
-    #     #     self._ipop_bootstrap_nodes = None
-
-    #     # if config_parser.has_option('manager', 'IPOP_SUBNET'):
-    #     #     # Only import from netaddr if IPOP has to be started
-    #     #     from netaddr import IPNetwork
-
-    #     #     # Subnet assigned to this service by the director
-    #     #     self._ipop_subnet = IPNetwork(config_parser.get('manager', 'IPOP_SUBNET'))
-    #     # else:
-    #     #     self._ipop_subnet = None
-
-    #     self._force_terminate_lock = Lock()
-
-    #     # self.config_parser = config_parser
-    #     self._created_nodes = []
-    #     self._partially_created_nodes = []
-
-    #     self._available_clouds = []
-    #     self._default_cloud = None
-    #     self.config = None
-    #     if config_parser.has_option('iaas', 'DRIVER'):
-    #         self._default_cloud = iaas.get_cloud_instance('iaas', config_parser.get('iaas', 'DRIVER').lower(), config_parser)
-    #         self._available_clouds.append(self._default_cloud)
-
-    #     if config_parser.has_option('iaas', 'OTHER_CLOUDS'):
-    #         self._logger.debug("attempt iaas.get_clouds()")
-    #         try:
-    #             self._available_clouds.extend(iaas.get_clouds(config_parser))
-    #         except Exception as e:
-    #             self._logger.debug("failed iaas.get_clouds()")
-    #             raise e
-    #         self._logger.debug("succeeded iaas.get_clouds()")
-
-    #     # Setting VM role
-    #     # self.role = 'agent'
-
     #=========================================================================#
     #               generate_context(self, service_name, replace, cloud)      #
     #=========================================================================#
@@ -189,69 +120,14 @@ class Controller(object):
 
         cloud = self.get_cloud_by_name(cloud_name)
 
-        # self.config = self.generate_config_file(cloud.get_cloud_name())
+        
         contxt = self._generate_context_file(cloud, context_replacement)
         cloud.set_context(contxt)
-
-        # def _set_cloud_ctx(cloud):
-        #     self.config = self.generate_config_file(cloud.get_cloud_name())
-        #     contxt = self._generate_context_file(service_name, cloud.get_cloud_type())
-        #     cloud.set_context(contxt)
-    
-        # if cloud is None:
-        #     for cloud in self._available_clouds:
-        #         _set_cloud_ctx(cloud)
-        # else:
-        #     _set_cloud_ctx(cloud)
 
     def generate_config_file(self, cloud_name):
         #TODO (genc) copy the config generation part of the method below here
         pass
 
-    # def _get_certificate(self):
-    #     '''
-    #     Requests a certificate from the CA
-    #     '''
-
-    #     user_id = self.config_parser.get("manager", "USER_ID")
-    #     app_id = self.config_parser.get("manager", "APP_ID")
-    #     cert_dir = self.config_parser.get('conpaas', 'CERT_DIR')
-    #     email="info@conpaas.eu"
-    #     cn="ConPaaS"
-    #     org="Contrail"
-
-    #     return generate_certificate(cert_dir, user_id, app_id, "agent", email, cn, org)
-
-
-        # parsed_url = urlparse.urlparse(self._conpaas_caUrl)
-
-        # req_key = https.x509.gen_rsa_keypair()
-
-        # x509_req = https.x509.create_x509_req(
-        #     req_key,
-        #     userId=self._conpaas_user_id,
-        #     serviceLocator=self._conpaas_app_id,
-        #     O='ConPaaS',
-        #     emailAddress='info@conpaas.eu',
-        #     CN='ConPaaS',
-        #     role='agent'
-        # )
-
-        # x509_req_as_pem = https.x509.x509_req_as_pem(x509_req)
-        # _, cert = https.client.https_post(parsed_url.hostname,
-        #                                   parsed_url.port or 443,
-        #                                   parsed_url.path,
-        #                                   files=[('csr', 'csr.pem',
-        #                                           x509_req_as_pem)])
-        # cert_dir = self.config_parser.get('manager', 'CERT_DIR')
-        # ca_cert_file = open(os.path.join(cert_dir, 'ca_cert.pem'), 'r')
-        # ca_cert = ca_cert_file.read()
-
-        # certs = {'ca_cert': ca_cert,
-        #          'key': https.x509.key_as_pem(req_key),
-        #          'cert': cert}
-
-        # return certs
 
     def get_cloud_by_name(self, cloud_name):
         """
@@ -489,6 +365,51 @@ class Controller(object):
             except:
                 self._logger.exception('[delete_nodes]: Failed to kill node %s', node.vmid)
 
+    def create_volume(self, size, name, vm_id, cloud=None):
+        """Create a new volume with the given name and size (in MBs)."""
+        cloud = self.get_cloud_by_name(cloud)
+
+        if cloud.connected is False:
+            cloud._connect()
+
+        self._logger.debug("create_volume(cloud=%s, size=%s, name='%s')" % (cloud.cloud_name, size, name))
+
+        return cloud.create_volume(size, name, vm_id)
+
+
+    def attach_volume(self, vm_id, volume_id, device, cloud=None):
+        cloud = self.get_cloud_by_name(cloud)
+        if cloud.connected is False:
+            cloud._connect()
+       
+        class volume:
+            id = volume_id
+
+        class node:
+            id = vm_id
+
+        self._logger.debug("attach_volume(node=%s, volume=%s, device=%s, cloud=%s)" % (node.id, volume.id, device, cloud))
+        return cloud.attach_volume(node, volume, device)
+
+    def detach_volume(self, volume_id, cloud=None):
+        cloud = self.get_cloud_by_name(cloud)
+        if cloud.connected is False:
+            cloud._connect()
+        class volume:
+            id = volume_id
+        self._logger.debug("detach_volume(volume=%s)" % volume.id)
+        return cloud.driver.detach_volume(volume)
+
+    def destroy_volume(self, volume_id, cloud=None):
+        cloud = self.get_cloud_by_name(cloud)
+        if cloud.connected is False:
+            cloud._connect()
+        class volume:
+            id = volume_id
+        self._logger.debug("destroy_volume(volume=%s)" % volume.id)
+        return cloud.driver.destroy_volume(volume)    
+
+
     def _create_manager_config(self, user_id, app_id, vpn=None):
         """Add manager configuration"""
         if not config_parser.has_section("manager"):
@@ -502,23 +423,12 @@ class Controller(object):
         config_parser.set("manager", "DEPLOYMENT_NAME", conpaas_deployment_name)
         config_parser.set("manager", "USER_ID", user_id)
         config_parser.set("manager", "APP_ID", app_id)
-        # config_parser.set("manager", "CREDIT_URL", config_parser.get('director', 'DIRECTOR_URL') + "/credit")
-        # config_parser.set("manager", "TERMINATE_URL", config_parser.get('director', 'DIRECTOR_URL') + "/terminate")
-        # config_parser.set("manager", "CA_URL", config_parser.get('director', 'DIRECTOR_URL') + "/ca")
 
         # if vpn:
         #     config_parser.set("manager", "IPOP_SUBNET", vpn)
 
         return config_parser
-#     def get_config_parser(self, cloud_name):
-#         config_parser = ConfigParser()
-#         conf = self.get_config(cloud_name)
 
-#         s_config = """%(cloud_cfg)s
-# %(mngr_cfg)s""" % conf
-#         buf = StringIO.StringIO(s_config)
-#         config_parser.readfp(buf)
-#         return config_parser
     def _get_certificate(self, role, email, cn, org):
         user_id = self.config_parser.get("manager", "USER_ID")
         app_id = self.config_parser.get("manager", "APP_ID")
@@ -624,11 +534,10 @@ class AgentController(Controller):
         # Get key and a certificate from CA
         # agent_certs = self._get_certificate()
         agent_certs = self._get_certificate(role="agent",
-        # agent_certs = self._get_certificate(role="manager",
                                             email="info@conpaas.eu",
                                             cn="ConPaaS",
                                             org="Contrail")
-        # agent_certs = {'cert':'lesh', 'key':'presh', 'ca_cert':'desh'}
+        
 
         # Concatenate the files
         context_file = (cloud_script + '\n\n'
@@ -669,13 +578,6 @@ class ManagerController(Controller):
         self.role = "manager"
         self.port = 443
 
-    # def _get_certificate(self, email, cn, org):
-    #     user_id = self.config_parser.get("manager", "USER_ID")
-    #     app_id = self.config_parser.get("manager", "APP_ID")
-    #     cert_dir = self.config_parser.get('conpaas', 'CERT_DIR')
-    #     return generate_certificate(cert_dir, user_id, app_id, "manager", email, cn, org)
-
-    # def generate_config_file(self, cloud):
     def generate_config_file(self):
         tmpl_values = {}
         # cloud_name = cloud.get_cloud_name()

@@ -163,6 +163,78 @@ def remove_nodes():
 
 
 
+@cloud_page.route("/create_volume", methods=['POST'])
+@cert_required(role='manager')
+def create_volume():
+    """GET /create_nodes"""
+
+    size = int(request.values.get('size'))
+    name = str(request.values.get('name'))
+    vm_id =str(request.values.get('vm_id'))
+    cloud = str(request.values.get('cloud'))
+
+    controller = Controller()
+    controller.setup_default()
+    volume  = controller.create_volume(size, name, vm_id, cloud)
+
+    log('Created volume %s ' % volume.id)
+    
+    return simplejson.dumps({'volume_id':volume.id })
+
+
+@cloud_page.route("/attach_volume", methods=['POST'])
+@cert_required(role='manager')
+def attach_volume():
+    """POST /attach_volume"""
+    
+    vm_id =str(request.values.get('vm_id'))
+    volume_id = str(request.values.get('volume_id'))
+    device_name = str(request.values.get('device_name'))
+    cloud = str(request.values.get('cloud'))
+    
+    controller = Controller()
+    controller.setup_default()
+    controller.attach_volume(vm_id, volume_id, device_name, cloud)
+
+    log('Attached volume %s to vm %s (cloud: %s)' % (volume_id, vm_id, cloud))
+    
+    return simplejson.dumps({})
+
+
+@cloud_page.route("/detach_volume", methods=['POST'])
+@cert_required(role='manager')
+def detach_volume():
+    """POST /detach_volume"""
+
+    volume_id = str(request.values.get('volume_id'))
+    cloud = str(request.values.get('cloud'))
+    
+    controller = Controller()
+    controller.setup_default()
+    controller.detach_volume(volume_id, cloud)
+
+    log('Detached volume %s (cloud: %s)' % (volume_id, cloud))
+    
+    return simplejson.dumps({})
+
+@cloud_page.route("/destroy_volume", methods=['POST'])
+@cert_required(role='manager')
+def destroy_volume():
+    """POST /destroy_volume"""
+
+    volume_id = str(request.values.get('volume_id'))
+    cloud = str(request.values.get('cloud'))
+    
+    controller = Controller()
+    controller.setup_default()
+    controller.destroy_volume(volume_id, cloud)
+
+    log('Destroyed volume %s (cloud: %s)' % (volume_id, cloud))
+    
+    return simplejson.dumps({})
+
+
+
 @cloud_page.route("/list_resources", methods=['GET'])
 @cert_required(role='user')
 def list_resources():
