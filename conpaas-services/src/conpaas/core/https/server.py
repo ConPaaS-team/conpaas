@@ -242,8 +242,8 @@ class ConpaasSecureServer(HTTPSServer):
             if dict['serviceLocator'] != aid:
                 return False
         
-        #print 'Received request from %s' % x509.get_subject()
-        #sys.stdout.flush()
+        print 'Received request from %s' % x509.get_subject()
+        sys.stdout.flush()
 
         return ok
 

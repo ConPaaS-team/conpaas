@@ -40,7 +40,8 @@ $services = ServiceData::getServicesByUser($page->getUID(), $_SESSION['aid']);
 		
 		
 		<table border="0" style="width:100%"><tr><td style="width:40px">
-		<a id="showuploaddiv" class="button" href="#" style="border-radius: 30px; display:none; margin-left: 10px; position:absolute; z-index:20"><img style="margin:0px; width: 16px" src="images/upload.png"></img></a>
+		<!-- <a id="showuploaddiv" class="button" href="#" style="border-radius: 30px; display:none; margin-left: 10px; position:absolute; z-index:20"><img style="margin:0px; width: 16px" src="images/upload.png"></img></a> -->
+		<img id="showuploaddiv" style="margin:0px; width: 50px; display:none; position:absolute; z-index:20" src="images/upload1.png"></img>
 		<div style="height:20px"></div>
 		</td><td>
 		<div id="uploaddiv" style="text-align:center">
@@ -96,6 +97,7 @@ $services = ServiceData::getServicesByUser($page->getUID(), $_SESSION['aid']);
 	            <a id="upprofilefile" class="button small" href="#"><!--img src="images/service-plus.png"></img-->Upload profile...</a><div id="profilefilename" style="display:inline"></div>
 	           &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; or &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 				<a id="profile" class="button small" href="#"><img src="images/service-plus.png"/>Start profiling</a>
+				<img id="settings" data-popup-target="#example-popup" src="images/setting.png" style="cursor:pointer; width:20px; " />
 	        </div>
 	        <br/><br/>
 	        <table style="width:100%">
@@ -113,7 +115,15 @@ $services = ServiceData::getServicesByUser($page->getUID(), $_SESSION['aid']);
 
 			<hr/>
 			<div align="center" style="padding:10px; ">
-			<table border="0" style="width:100%"><tr><td rowspan="2" width="48%" valign="top">
+			<table border="0" style="width:100%; margin-bottom:5px;"><tr align="center" style="cursor:pointer;">
+			<td group="cheap" class="pre-configure" style="width:33.3%" title="Cheapest"><img group="cheap" src="images/save.png" style="width:30px" title="Cheapest" /> </td>
+			<td group="balanced" class="pre-configure" style="width:33.3%" title="Balanced"><img group="balanced" src="images/balance.png" style="width:30px" title="Balanced" /></td>
+			<td group="fast" class="pre-configure" style="width:33.3%" title="Fastest"><img group="fast" src="images/fast.png" style="width:30px" title="Fastest" /> </td>
+			</tr></table>
+			
+
+			<table border="0" style="width:100%">
+			<tr><td rowspan="2"  width="48%" valign="top">
 			<table id="constraintTable" border="0">
 			<tr><td >
 			<div style="margin-bottom:15px" >Optimize:</div>
@@ -153,7 +163,7 @@ $services = ServiceData::getServicesByUser($page->getUID(), $_SESSION['aid']);
 			</table></td>
 			<td height="65" align="center">
 				<table border="0" style="width:100%; /*border:1px solid*/ " class="predictionsTab">
-					<tr><td colspan="4" align="center" style="background:#F2F2F2"><strong>Select configuration</strong></td></tr>
+					<tr><td colspan="4" align="center" style="background:#F2F2F2"><strong>Selected configuration</strong></td></tr>
 					<tr><td colspan="4" align="center"><span id="selectedConfig">-</span></td></tr>
 					<tr><td></td><td align="center" width="100" style="background:#F2F2F2"><strong>Time(min)</strong></td><td align="center" width="100" style="background:#F2F2F2"><strong>Cost(&euro;)</strong></td><td align="center" width="100" style="background:#F2F2F2"><strong>&epsilon;(%)</strong></td></tr>
 					<tr><td width="70" style="background:#F2F2F2"><strong>Estimated</strong></td><td align="center"><span id="esExecTime">-</span></td><td align="center"><span id="esCost">-</span></td><td align="center" rowspan="2"><span id="absError">-</span></td></tr>
@@ -190,6 +200,21 @@ $services = ServiceData::getServicesByUser($page->getUID(), $_SESSION['aid']);
 
 		
 	</div>
+
+	<div id="example-popup" class="popup">
+    <div align="center" class="popup-body">	
+
+        <div align="center" class="popup-content">
+        <p>if you see this, something is definitely wrong</p>    	
+        </div>
+
+        
+        <a href="#" class="button popup-exit">OK</a> 
+    </div>
+	</div>
+	<div class="popup-overlay"></div>
+
+
 	<?php echo $page->renderFooter(); ?>
 	<?php echo $page->renderJSLoad(); ?>
   </body>

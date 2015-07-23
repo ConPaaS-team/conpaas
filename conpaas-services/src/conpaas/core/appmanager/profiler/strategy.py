@@ -109,6 +109,9 @@ class BaseStrategy:
                     break                
             if already_done != None:
                 return already_done 
+        configuration, roles = implementation.Resources.get_configuration(variables)
+        # data["Configuration"] = configuration
+
         self.appmanager.add_experiment(data)
         # Traces.Experiments[data["Index"]] = data 
         """
@@ -116,9 +119,9 @@ class BaseStrategy:
         """
         print "variables %s " % variables
         
-        configuration, roles = implementation.Resources.get_configuration(variables)
-        print "configuration: %s, roles: %s" % (configuration, roles)
         
+        print "configuration: %s, roles: %s" % (configuration, roles)
+        self.appmanager.logger.info("configuration: %s, roles: %s" % (configuration, roles))
 
         """"
             Reserving resources

@@ -94,19 +94,27 @@ class HadoopNaasManager(BaseManager):
         **kwargs holds anything that can't be sent in config_parser."""
         BaseManager.__init__(self, config_parser)
 
-        self.reservation_ids = []
-        self.nodes = []
-        self.MAPPERS = []
-        self.NAASBOX = None
-        self.MASTER = None
-        self.REDUCER = None
-
+        self._init_attributes()
+        
         # Setup the clouds' controller
         self.controller.generate_context('hadoopnaas')
 
         self.state = self.S_INIT
-       
+    
+    def _init_attributes(self):
+        self.reservation_ids = []
+        self.nodes = []
+        self.MAPPERS = []
+        self.REDUCERS = []
+        self.NAASBOX = None
+        self.MASTER = None
+        
 
+    def get_type(self):
+        return 'hadoopnaas'
+
+    def get_info(self):
+        return {'state': self.state, 'type': self.get_type()}
 
     @expose('POST')
     def startup(self, kwargs):
@@ -120,57 +128,74 @@ class HadoopNaasManager(BaseManager):
             return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
 
         self.state = self.S_PROLOGUE
-        Thread(target=self._do_startup, args=[]).start()
+        Thread(target=self._do_startup, args=[{}]).start()
 
         return HttpJsonResponse({ 'state': self.state })
 
 
-    def _do_startup(self):
+    def _do_startup(self, kwargs):
         """Start up the service. The first node will be an agent running a
         BluePrint Hub and a BluePrint Node."""
 
-        vals = { 'action': '_do_startup', 'count': 1 }
-        self.logger.debug(self.ACTION_REQUESTING_NODES % vals)
 
         try:
-
-            self.nodes = self.reserve(self.INITIAL_NODES)
+            configuration = kwargs['configuration']
+            code_conf = kwargs['code_conf']
+            self.nodes = configuration['Instances'] 
+            
+            # self.nodes = self.reserve(self.INITIAL_NODES)
             self.logger.debug('nodes: %s' % self.nodes)
             self.update_hosts()
 
-            self.MASTER = self.nodes[0]
-            self.NAASBOX = self.nodes[1]
-            self.REDUCER = self.nodes[2]
-            self.MAPPERS.append(self.nodes[3])
-            self.MAPPERS.append(self.nodes[4])
+            for node in self.nodes:
+                if node['Role'].lower() == 'master':
+                    self.MASTER = node
+                if node['Role'].lower() == 'naasbox':
+                    self.NAASBOX = node
+                if node['Role'].lower() == 'mapper':
+                    self.MAPPERS.append(node)
+                if node['Role'].lower() == 'reducer':
+                    self.REDUCERS.append(node)
+
+            # self.MASTER = self.nodes[0]
+            # self.NAASBOX = self.nodes[1]
+            # self.REDUCER = self.nodes[2]
+            # self.MAPPERS.append(self.nodes[3])
+            # self.MAPPERS.append(self.nodes[4])
 
             time.sleep(5)
+
+            client.update_code(self.MASTER['Address'], self.AGENT_PORT, code_conf.currentCodeVersion,                    
+                                            code_conf.codeVersions[code_conf.currentCodeVersion].type,                
+                                            code_conf.codeVersions[code_conf.currentCodeVersion].path) 
+
 
             self.logger.debug('Setting master at %s [%s]' % (self.MASTER['Address'],self.MASTER['ID'] ))
             # Setup Master node
             client.setup_node(self.MASTER['Address'],self.AGENT_PORT,self.MASTER,self.NAASBOX,True,False,self.MASTER)
 
+
             self.logger.debug('Setting naasbox at %s [%s]' % (self.NAASBOX['Address'],self.NAASBOX['ID'] ))
             # Setup Naasbox
             client.setup_naasbox(self.NAASBOX['Address'],self.AGENT_PORT,self.NAASBOX)
 
-            self.logger.debug('Setting reducer at %s [%s]' % (self.REDUCER['Address'],self.REDUCER['ID'] ))
-            # Setup Reducer
-            client.make_worker(self.REDUCER['Address'],self.AGENT_PORT)
-            client.setup_node(self.REDUCER['Address'],self.AGENT_PORT,self.MASTER,self.NAASBOX,False,True,self.REDUCER)
+            for reducer in self.REDUCERS:
+                self.logger.debug('Setting reducer at %s [%s]' % (reducer['Address'],reducer['ID'] ))
+                # Setup Reducer
+                client.make_worker(reducer['Address'],self.AGENT_PORT)
+                client.setup_node(reducer['Address'],self.AGENT_PORT,self.MASTER,self.NAASBOX,False,True,reducer)
 
-            self.logger.debug('Setting mapper at %s [%s]' % (self.MAPPERS[0]['Address'],self.MAPPERS[0]['ID'] ))
-            # Setup the first mapper
-            client.make_worker(self.MAPPERS[0]['Address'],self.AGENT_PORT)
-            client.setup_node(self.MAPPERS[0]['Address'],self.AGENT_PORT,self.MASTER,self.NAASBOX,False,False,self.MAPPERS[0])
+            for mapper in self.MAPPERS:
+                self.logger.debug('Setting mapper at %s [%s]' % (mapper['Address'],mapper['ID'] ))
+                # Setup the first mapper
+                client.make_worker(mapper['Address'],self.AGENT_PORT)
+                client.setup_node(mapper['Address'],self.AGENT_PORT,self.MASTER,self.NAASBOX,False,False,mapper)
 
-            self.logger.debug('Setting mapper at %s [%s]' % (self.MAPPERS[1]['Address'],self.MAPPERS[1]['ID'] ))
-            # Setup the first mapper
-            client.make_worker(self.MAPPERS[1]['Address'],self.AGENT_PORT)
-            client.setup_node(self.MAPPERS[1]['Address'],self.AGENT_PORT,self.MASTER,self.NAASBOX,False,False,self.MAPPERS[1])
-
+            slaves = []
+            slaves.extend(self.MAPPERS)
+            slaves.extend(self.REDUCERS)
             # Append slaves to slaves file on master
-            client.append_slaves(self.MASTER['Address'],self.AGENT_PORT, [self.REDUCER, self.MAPPERS[0], self.MAPPERS[1]])
+            client.append_slaves(self.MASTER['Address'],self.AGENT_PORT, slaves)
             # client.append_slave(self.MASTER['Address'],self.AGENT_PORT,)
             # client.append_slave(self.MASTER['Address'],self.AGENT_PORT,self.MAPPERS[1])
 
@@ -182,16 +207,29 @@ class HadoopNaasManager(BaseManager):
                 client.enable_ssh(self.MASTER['Address'],self.AGENT_PORT,node)
                 time.sleep(1)
 
-
+            # self.logger.info("before start all")
             client.start_all(self.MASTER['Address'],self.AGENT_PORT)
+            # self.logger.info("after start all")
             # for node in self.nodes:
             #     for inner_node in self.nodes:
             #         client.enable_ssh(inner_node['Address'],self.AGENT_PORT,node)
             #         time.sleep(1)
-
+            return 'ok'
         except Exception, err:
             self.logger.exception('_do_startup: Failed to start agent: %s' % err)
             self.state = self.S_ERROR
+
+    def _do_run(self, profiling, args=None):
+        try:               
+            client.run(self.MASTER['Address'], self.AGENT_PORT, args)            
+        except client.AgentException:                                                                
+            self.logger.exception('Failed to start run at node %s' % str(self.MASTER))             
+            self.state = self.S_ERROR
+            raise   
+        if profiling:
+            self.state = self.S_PROFILED
+        else:
+            self.state = self.S_TERMINATED 
 
     def createRandomID(self, size):
         import binascii
@@ -207,6 +245,13 @@ class HadoopNaasManager(BaseManager):
     def get_startup_nodes(self):
         return self.INITIAL_NODES
     
+    def cleanup_agents(self):
+        self._init_attributes()
+
+        #TODO: maybe this should be implemented at some point
+        pass
+
+
     def update_hosts(self):
         for node in self.nodes: 
             try:                                           
@@ -252,6 +297,8 @@ class HadoopNaasManager(BaseManager):
 
         return int(kwargs['count'])
 
+    def get_check_agent_funct(self):
+        return client.check_agent_process
     # @expose('POST')
     # def add_nodes(self, kwargs):
     #     """Add kwargs['count'] nodes to this deployment"""

@@ -132,7 +132,7 @@ class Controller(object):
         #try:
         cloud.create_reservation(reservation_id)        
         
-        max_iteration = 60
+        max_iteration = 120
         iteration = 0
         sleep_interval = 3
         

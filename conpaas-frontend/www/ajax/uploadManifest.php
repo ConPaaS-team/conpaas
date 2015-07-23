@@ -3,6 +3,7 @@
 require_once("__init__.php");
 require_module('db');
 require_module('user');
+require_module('logging');
 
 try {
 	if (!isset($_SESSION['uid'])) {
@@ -29,10 +30,11 @@ try {
 	$man = preg_replace("/\n/", "", $man);
 	$man = preg_replace("/\t/", "", $man);
 	// $app = strtoupper(bin2hex($app));
-
+	// dlog('received man: ' . $man);
 	$res = json_decode(HTTPS::post(Conf::DIRECTOR . '/upload_manifest',
 	 	// array( 'manifest' => $man, 'app_tar' => $app, 'thread' => 1 ), false, $_SESSION['uid']));
-	 	array( 'manifest' => $man, 'thread' => 1 ), false, $_SESSION['uid']));
+	 	// array( 'manifest' => $man, 'thread' => 1 ), false, $_SESSION['uid']));
+	 	array( 'manifest' => $man ), false, $_SESSION['uid']));
 
 	if (!$res) {
 		throw new Exception('The manifest has some errors in it');

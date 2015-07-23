@@ -43,6 +43,10 @@ import json
 import httplib
 
 from conpaas.core import https 
+from conpaas.core.misc import file_get_contents
+
+class AgentException(Exception):
+    pass    
 
 def _check(response):
     """Check the given HTTP response, returning the result if everything went
@@ -114,4 +118,30 @@ def start_all(host,port):
 def update_host(host, port, node, nodes):
     method = 'update_host'
     params = {'me': node, 'nodes':nodes}
+    return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
+
+def update_code(host, port, codeVersionId, filetype, filepath):                   
+    params = {                                                                      
+        'method': 'update_code',                                                  
+        'codeVersionId': codeVersionId,                                             
+        'filetype': filetype                                                        
+    }                                                                               
+                                                                                    
+    if filetype != 'git':                                                           
+        # File-based code uploads                                                   
+        files = [('file', filepath, file_get_contents(filepath))]                   
+        return _check(https.client.https_post(host, port, '/', params, files=files))
+                                                                                    
+    # git-based code uploads do not need a FileUploadField.                         
+    # Pass filepath as a dummy value for the 'file' parameter.                      
+    params['file'] = filepath                                                       
+    return _check(https.client.https_post(host, port, '/', params))    
+
+
+def run(host, port, args):
+    """POST run"""
+    method = 'run'
+    params = {}
+    if args:
+        params['args'] = args 
     return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))

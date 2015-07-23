@@ -4,6 +4,7 @@ import struct
 import zipfile
 import tarfile
 import readline
+import time
 
 from subprocess import Popen, PIPE
 
@@ -76,6 +77,16 @@ def archive_extract(arch, path):
         arch.extractall(path)
     elif isinstance(arch, tarfile.TarFile):
         arch.extractall(path=path)
+
+def archive_extract_file(arch, path, filename):
+    if isinstance(arch, zipfile.ZipFile):
+        arch.extractall(filename, path)
+    elif isinstance(arch, tarfile.TarFile):
+        files = [
+        tarinfo for tarinfo in arch.getmembers()
+        if tarinfo.name == filename
+        ]
+        arch.extractall(path=path, members=files)
 
 def archive_close(arch):
     if isinstance(arch, zipfile.ZipFile)\
@@ -300,3 +311,34 @@ def check_arguments(expected_params, args):
         return parsed_args[0]
     else:
         return parsed_args
+
+
+class CodeVersion(object):
+
+    def __init__(self, id, filename, atype, path, description=''):
+        self.id = id
+        self.filename = filename
+        self.type = atype
+        self.path = path
+        self.description = description
+        self.timestamp = time.time()
+
+    def __repr__(self):
+        return 'CodeVersion(id=%s, filename=%s)' % (self.id, self.filename)
+
+    def __cmp__(self, other):
+        if self.id == other.id:
+            return 0
+        elif self.id < other.id:
+            return -1
+        else:
+            return 1
+
+class ServiceConfiguration(object):
+
+    '''Representation of the deployment configuration'''
+
+    def __init__(self):
+        self.codeVersions = {}
+        self.currentCodeVersion = None
+#        self.serviceNodes = {}

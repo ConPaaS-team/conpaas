@@ -46,7 +46,8 @@ class BaseManager(ConpaasRequestHandlerComponent):
     S_EPILOGUE = 'EPILOGUE' # manager is shutting down
     S_STOPPED = 'STOPPED'   # manager stopped
     S_ERROR = 'ERROR'       # manager is in error state
-
+    S_PROFILED = 'PROFILED'       # manager is profiled
+    S_TERMINATED = 'TERMINATED'   # manager is terminated
     # String template for error messages returned when performing actions in
     # the wrong state
     WRONG_STATE_MSG = "ERROR: cannot perform %(action)s in state %(curstate)s"
@@ -81,12 +82,12 @@ class BaseManager(ConpaasRequestHandlerComponent):
         # Ganglia setup
         self.ganglia = ManagerGanglia(config_parser)
 
-        try:
-            self.ganglia.configure()
-        except Exception, err:
-            self.logger.exception('Error configuring Ganglia: %s' % err)
-            self.ganglia = None
-            return
+        # try:
+        #     self.ganglia.configure()
+        # except Exception, err:
+        #     self.logger.exception('Error configuring Ganglia: %s' % err)
+        #     self.ganglia = None
+        #     return
 
         # err = self.ganglia.start()
 

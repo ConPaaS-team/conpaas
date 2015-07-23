@@ -18,16 +18,16 @@ class Profiler:
 
     def run(self):        
         print "--->  Implementation Selection Process  <---"
-        self.implementationsXmodule = []
+        # self.implementationsXmodule = []
 
-        for i in range(len(self.appmanager.manifest.Modules)):
-            self.implementationsXmodule.append(len(self.appmanager.manifest.Modules[i].Implementations) - 1) 
-            res = self.appmanager.create_service({'service_type':self.appmanager.manifest.Modules[i].ModuleType, 'app_tar': self.appmanager.app_tar})
-            self.appmanager.dir_create_service(self.appmanager.manifest.Modules[i].ModuleType, res.obj['sid'])
-            self.appmanager.module_managers.append(self.appmanager.httpsserver.instances[int(res.obj['sid'])])
+        # for i in range(len(self.appmanager.manifest.Modules)):
+        #     self.implementationsXmodule.append(len(self.appmanager.manifest.Modules[i].Implementations) - 1) 
+        #     res = self.appmanager.create_service({'service_type':self.appmanager.manifest.Modules[i].ModuleType, 'app_tar': self.appmanager.app_tar})
+        #     self.appmanager.dir_create_service(self.appmanager.manifest.Modules[i].ModuleType, res.obj['sid'])
+        #     self.appmanager.module_managers.append(self.appmanager.httpsserver.instances[int(res.obj['sid'])])
         
-        print "Index of implementations per module :", self.implementationsXmodule
-        c = Combinations(self.implementationsXmodule)
+        print "Index of implementations per module :", self.appmanager.implementationsXmodule
+        c = Combinations(self.appmanager.implementationsXmodule)
  
         profile = []        
         for impl_comb in c.generate():

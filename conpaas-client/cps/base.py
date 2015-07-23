@@ -477,10 +477,10 @@ class BaseClient(object):
         res = self.callmanager(app_id, 0, "get_profiling_info", False, { 'method': "get_profiling_info", 'manager_id':0, 'download':True })
         print "Print profiling_info for appid %s" % res
 
-    def profile(self, app_id):
+    def profile(self, app_id, iterations, debug):
         #check if application exists
 
-        res = self.callmanager(app_id, 0, "profile", False, { 'method': "profile", 'manager_id':0 })
+        res = self.callmanager(app_id, 0, "profile", False, { 'method': "profile", 'manager_id':0, 'iterations':iterations, 'debug':debug })
         print "Profiling started..."
 
 
@@ -508,13 +508,32 @@ class BaseClient(object):
         res = self.callmanager(app_id, 0, "upload_slo", True, { 'method': "upload_slo", 'manager_id':0 }, files)
         print "Selected configuration %s" % res
 
-    def upload_application(self, app_id, appfile):
+    def upload_application(self, app_id, service_id, appfile):
+        try: 
+            if not (os.path.isfile(appfile) and os.access(appfile, os.R_OK)):
+                raise IndexError                                               
+        except IndexError:                                                     
+            self.usage(argv[0])                                                
+            sys.exit(0)   
+
         contents = open(appfile).read()
         files = [ ( 'appfile', appfile, contents ) ]
         #check if application exists
-        res = self.callmanager(app_id, 0, "upload_application", True, { 'method': "upload_application", 'manager_id':0 }, files)
-        print "Selected configuration %s" % res
+        res = self.callmanager(app_id, 0, "upload_application", True, { 'method': "upload_application", 'manager_id':0, 'service_id':service_id, 'enable': True }, files)
+        if 'error' in res:
+            print res['error']
+        else:
+            print "Code version %(codeVersionId)s uploaded" % res
 
+
+    def enable_code(self,  app_id, service_id, code_version):
+        params = { 'codeVersionId': code_version }
+        res = self.callmanager( app_id, service_id, "enable_code",True, params)
+        if 'error' in res:
+            print res['error']
+
+        else:
+            print code_version, 'enabled'
 
     def manifest(self, manifestfile, appfile):
         print "Uploading the manifest and slo... "
@@ -538,7 +557,8 @@ class BaseClient(object):
             app_id = res['appid']
             contents = open(appfile).read()
             files = [ ( 'appfile', appfile, contents ) ]
-            res = self.callmanager(app_id, 0, "upload_application", True, { 'method': "upload_application", 'manager_id':0 }, files)
+            #service id is set to 1 in a hardcoded way, get it from the application state eventually
+            res = self.callmanager(app_id, 0, "upload_application", True, { 'method': "upload_application", 'manager_id':0, 'service_id':1, 'enable':True }, files)
 
         if res:
             print "done."
@@ -624,38 +644,44 @@ class BaseClient(object):
         version = self.callapi("version", False, {})
         print "ConPaaS director version %s" % version
 
+
+    
+
     def usage(self, service_id):
         """Print client usage. Extend it with your client commands"""
         print "Usage: %s COMMAND [params]" % sys.argv[0]
         print "COMMAND is one of the following"
         print
-        print "    credentials                                     # set your ConPaaS credentials"
-        print "    version                                         # show director's version"
-        print "    listapp                                         # list all applications"
-        print "    available                                       # list supported services"
-        print "    clouds                                          # list available clouds"
-        print "    list              [appid]                       # list running services under an application"
-        print "    deleteapp         appid                         # delete an application"
-        print "    createapp         appname                       # create a new application"
-        print "    startapp          [appid]                       # start an application"
-        print "    renameapp         appid       newname           # rename an application"
-        print "    profile           appid                         # start profiling"
-        print "    profiling_info    appid                         # get profiling experiments information"
-        print "    upload_profile    appid       profile           # upload profile to the application manager"
-        print "    upload_slo        appid       slo               # upload slo to the application manager"
-        print "    execute_slo       appid                         # execute application according to the uploaded slo"
-        print "    infoapp           appid                         # get information about the application"
-        print "    manifest          manifest    app_tar           # upload a new manifest"
-        print "    download_manifest appid                         # download an existing manifest"
-        print "    create            servicetype [appid]           # create a new service [inside a specific application]"
-        print "    start             serviceid   appid   [cloud]   # startup the given service [on a specific cloud]"
-        print "    info              serviceid   appid             # get service details"
-        print "    logs              serviceid   appid             # get service logs"
-        print "    stop              serviceid   appid             # stop the specified service"
-        print "    terminate         serviceid   appid             # delete the specified service"
-        print "    rename            serviceid   appid   newname   # rename the specified service"
-        print "    startup_script    serviceid   appid   filename  # upload a startup script"
-        print "    usage             servicetype                   # show service-specific options"
+        print "    credentials                                       # set your ConPaaS credentials"
+        print "    version                                           # show director's version"
+        print "    listapp                                           # list all applications"
+        print "    available                                         # list supported services"
+        print "    clouds                                            # list available clouds"
+        print "    list                [appid]                       # list running services under an application"
+        print "    deleteapp           appid                         # delete an application"
+        print "    createapp           appname                       # create a new application"
+        print "    startapp            [appid]                       # start an application"
+        print "    renameapp           appid    newname              # rename an application"
+        print "    profile             appid    [iterations] [debug] # start profiling"
+        print "    profiling_info      appid                         # get profiling experiments information"
+        print "    upload_profile      appid    profile              # upload profile to the application manager"
+        print "    upload_slo          appid    slo                  # upload slo to the application manager"
+        print "    execute_slo         appid                         # execute application according to the uploaded slo"
+        print "    infoapp             appid                         # get information about the application"
+        print "    manifest            manifest    app_tar           # upload a new manifest"
+        print "    download_manifest   appid                         # download an existing manifest"
+        print "    create              servicetype [appid]           # create a new service [inside a specific application]"
+        print "    start               serviceid   appid   [cloud]   # startup the given service [on a specific cloud]"
+        print "    info                serviceid   appid             # get service details"
+        print "    logs                serviceid   appid             # get service logs"
+        print "    stop                serviceid   appid             # stop the specified service"
+        print "    terminate           serviceid   appid             # delete the specified service"
+        print "    rename              serviceid   appid   newname   # rename the specified service"
+        print "    startup_script      serviceid   appid   filename  # upload a startup script"
+        print "    upload_application  serviceid   appid   filename  # upload a new code version"
+        print "    list_applications   serviceid   appid             # list uploaded code versions"
+        print "    enable_application  serviceid   appid   version   # set a specific code version active"
+        print "    usage               servicetype                   # show service-specific options"
 
     def main(self, argv):
         """What to do when invoked from the command line. Clients should extend
@@ -676,7 +702,7 @@ class BaseClient(object):
                         "download_manifest", "list", "credentials", 
                         "available", "clouds", "create", "st_usage",
                         "deleteapp", "renameapp", "getcerts", 
-                        "profiling_info", "upload_profile", "upload_slo", "upload_application", "execute_slo", "infoapp", "profile" ):
+                        "profiling_info", "upload_profile", "upload_slo", "execute_slo", "infoapp", "profile" ):
 
             if command == "st_usage":
                 try:
@@ -734,9 +760,28 @@ class BaseClient(object):
                 appname = argv[2]
                 return getattr(self, command)(appname)
 
-            if command in ("startapp", "deleteapp", "execute_slo", "infoapp", "profile"):
+            if command in ("startapp", "deleteapp", "execute_slo", "infoapp"):
                 appid = argv[2]
                 return getattr(self, command)(appid)
+
+            if command == "profile":
+                appid = argv[2]
+                iterations = 0
+                debug = 0
+                try:
+                    iterations = argv[3]
+                except IndexError:
+                    iterations = 0
+                try:
+                    debug = argv[4]
+                except IndexError:
+                    debug = 0
+
+                
+                if debug == "debug":
+                    debug = 1
+                
+                return getattr(self, command)(appid, iterations, debug)
 
 
             if command == "renameapp":
@@ -791,7 +836,7 @@ class BaseClient(object):
             if command == "profiling_info":
                 appid = argv[2]
                 return getattr(self, command)(appid)
-            if command in ("upload_profile", "upload_slo", 'upload_application'):
+            if command in ("upload_profile", "upload_slo"):
                 appid = argv[2]
                 filename = argv[3]
                 return getattr(self, command)(appid, filename)
@@ -833,6 +878,29 @@ class BaseClient(object):
                 self.usage(argv[0])
                 sys.exit(0)
 
+        if command in ('upload_application', 'enable_application'):
+            try:                                         
+                param = argv[4]                   
+            except IndexError:                           
+                self.usage(argv[0])                      
+                sys.exit(0)              
+
+            return getattr(self, command)(aid, sid, param)     
+
+        if command == 'list_applications':                                                              
+            res = self.callmanager(aid, sid, 'list_applications', False, {})                           
+                                                                                           
+            def add_cur(row):                                                                      
+                if 'current' in row:                                                               
+                    row['current'] = '      *'                                                     
+                else:                                                                              
+                    row['current'] = ''                                                            
+                return row                                                                         
+                                                                                           
+            data = [ add_cur(el) for el in res['codeVersions'] ]                                   
+            print self.prettytable(( 'current', 'codeVersionId', 'filename', 'description' ), data)
+            return
+
         module = getattr(__import__('cps.' + service_type), service_type)
         client = module.Client()
 
@@ -863,6 +931,7 @@ class BaseClient(object):
                 return getattr(client, command)(sid, aid, cloud)
 
             return getattr(client, command)(sid, aid)
+
 
         if command == "st_usage":
             return getattr(client, command)()

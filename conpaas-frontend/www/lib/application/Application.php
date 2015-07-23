@@ -99,10 +99,12 @@ class Application {
 	}
 
 
-	public function upload_application($app) {
+	public function upload_application($app, $sid) {
 		$params = array(
 			'manager_id' => 0,
 			'method' => 'upload_application',
+			'enable'=> true, 
+			'service_id' => $sid,
 			'appfile' => '@'.$app
 		);
 
@@ -112,8 +114,8 @@ class Application {
 	}
 
 
-	public function profile() {
-		$response = $this->managerRequest('get', 'profile', 0, array('manager_id' => 0), false);
+	public function profile($iterations, $debug) {
+		$response = $this->managerRequest('get', 'profile', 0, array('manager_id' => 0, 'iterations' => $iterations, 'debug'=>$debug), false);
 		return $response;
 
 	}

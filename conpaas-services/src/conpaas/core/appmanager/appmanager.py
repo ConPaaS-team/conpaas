@@ -7,13 +7,14 @@ import os.path
 import simplejson
 import ConfigParser
 import StringIO
-import sys
+import sys, tempfile
 
 
 from conpaas.core.log import create_logger
 from conpaas.core.expose import expose
 
 from conpaas.core.controller import Controller
+from conpaas.core.manager import ManagerException
 
 from conpaas.core.https.server import HttpJsonResponse
 from conpaas.core.https.server import HttpErrorResponse
@@ -30,6 +31,9 @@ from conpaas.core.appmanager.profiler.profiler import Profiler
 from conpaas.core.appmanager.selection import SLOEnforcer
 from conpaas.core import https
 import urlparse
+
+from conpaas.core.misc import archive_open, archive_get_members, archive_close, archive_get_type, archive_extract_file
+from conpaas.core.misc import CodeVersion, ServiceConfiguration
 
 class ApplicationManager(ConpaasRequestHandlerComponent):
 
@@ -53,6 +57,8 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
         self.cache = config_parser.get('manager', 'VAR_CACHE')
         self.performance_model = {'experiments':{}, 'pareto':[]}
 
+        self.code_repo = config_parser.get('manager', 'CODE_REPO')
+
         #TODO:(genc): You might consider to remove the controller from the base manager and use only this one.
         #self.controller = Controller(config_parser)
         self.instance_id = 0
@@ -62,6 +68,10 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
         self.module_managers = []
         self.execinfo = {}
         self.app_tar = None
+
+        self.config = ServiceConfiguration()
+        self.debug = 0
+
         #TODO:(genc) Put some order in this parsing, it is horrible
         #sloconent = file_get_contents(kwargs['slo'])
         #self.slo = SLOParser.parse(simplejson.loads(sloconent))
@@ -97,7 +107,7 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
         download = kwargs.pop('download')
         # return HttpJsonResponse({'state':self.state, 'profile':{'experiments': Traces.Experiments, 'pareto':Traces.ParetoExperiments}})    
         app = True if self.app_tar else False
-        return HttpJsonResponse({'state':self.state, 'pm': self.perparePerformanceModel(download), 'application':app})    
+        return HttpJsonResponse({'state':self.state, 'pm': self.perparePerformanceModel(download), 'application':app, 'services':self.service_ids})    
 
     @expose('GET')
     def infoapp(self, kwargs):
@@ -146,8 +156,10 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
                 implementation = impl
                 break
 
-        configuration, _ = implementation.Resources.get_configuration(self.sloconf['Configuration'])
+        configuration, roles = implementation.Resources.get_configuration(self.sloconf['Configuration'])
         reservation = self.reserve_resources(configuration)
+        for i in range(len(reservation['Instances'])):
+           reservation['Instances'][i]["Role"] = roles[i]
         execution_time, total_cost = self.execute_application(reservation, self.sloconf['Arguments'], False)
         self.execinfo = {"execution_time":execution_time, "total_cost":total_cost}
 
@@ -156,8 +168,10 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
         #for now we use only one module, has to be updated when using multiple modules
         module_manager = self.module_managers[0]
         print "execute_application: reserv: %s, args: %s" % (reservation, args)
-        self.frontend = module_manager._do_startup(self.cloud, reservation, args)
+        self.frontend = module_manager._do_startup({'cloud':self.cloud, 'configuration':reservation, 'args': args, 'code_conf':self.config})
         
+        # self.logger.info("actually came out of do startup")
+
         "Execute implementation"
         start_time = time.time()
         module_manager._do_run(profiling, args)
@@ -166,11 +180,9 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
         execution_time = execution_time / 60
         total_cost = execution_time * reservation["Cost"]
 
-        #debug if (delete when done)
-        # if execution_time > 2:
-        # Thread(target=module_manager.controller.release_reservation, args=[reservation['ConfigID']]).start()
-        module_manager.cleanup_agents()
-        module_manager.controller.release_reservation(reservation['ConfigID'])
+        if not self.debug:
+            module_manager.cleanup_agents()
+            module_manager.controller.release_reservation(reservation['ConfigID'])
 
         # return round(execution_time, 4), round(total_cost, 4)
         return execution_time, total_cost
@@ -219,8 +231,15 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
 
         #Note that I am assuming that an application has only ONE generic service    
         # self.app_tar = kwargs.pop('app_tar')
-        
-        
+        self.service_ids = {}
+        self.implementationsXmodule = []
+
+        for i in range(len(self.manifest.Modules)):
+            self.implementationsXmodule.append(len(self.manifest.Modules[i].Implementations) - 1) 
+            res = self.create_service({'service_type':self.manifest.Modules[i].ModuleType})
+            self.dir_create_service(self.manifest.Modules[i].ModuleType, res.obj['sid'])
+            self.service_ids[res.obj['sid']] = self.httpsserver.instances[int(res.obj['sid'])].get_type()
+            # self.module_managers.append(self.appmanager.httpsserver.instances[int(res.obj['sid'])]) 
         
         self.appid = kwargs.pop('appid')
         self.cloud = kwargs['cloud']
@@ -228,34 +247,19 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
         # Thread(target=self.run_am, args=[]).start()
         #self.run_am()
 
-        return HttpJsonResponse({'success': True})
+        return HttpJsonResponse({'sids': self.service_ids})
     
     @expose('GET')
     def download_manifest(self, kwargs):
         return HttpJsonResponse({'manifest': self.manifest_json}) 
 
-    @expose('UPLOAD')
-    def upload_application(self, kwargs):
-
-        # manifestfile = kwargs.pop('manifest')
-        # manifestconent = manifestfile.file
-        # self.manifest = ManifestParser.parse(simplejson.loads(manifestconent.read()))
-        # self.slomanager = SLOEnforcer(self.manifest)
-        # slofile = kwargs.pop('slo')
-        # sloconent = slofile.file
-        # self.slo = SLOParser.parse(simplejson.loads(sloconent.getvalue()))
-        
-
-        #Note that I am assuming that an application has only ONE generic service    
-        self.app_tar = kwargs.pop('appfile')
-        # self.appid = kwargs.pop('appid')
-        # self.cloud = kwargs['cloud']
-        
-        
-        return HttpJsonResponse({'success': True})
 
     @expose('GET')
     def profile(self, kwargs):
+        iterations = kwargs.pop('iterations')
+        debug = kwargs.pop('debug')
+        self.iterations = iterations
+        self.debug = int(debug)
         Thread(target=self.run_am, args=[]).start()
         return HttpJsonResponse({'success': True})
         
@@ -276,8 +280,6 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
             return {}
 
         return flat_pm
-
-
 
     def add_experiment(self, experiment):
         if experiment['ImplementationID'] not in self.performance_model['experiments']:
@@ -312,15 +314,17 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
         self.add_manager_configuration(service_type)
         self.run_manager_start_script(service_type)
 		
-
+        #probably lock it 
+        self.instance_id = self.instance_id + 1 
+        self.kwargs.update({'service_id':self.instance_id})
         #Create an instance of the service class
         #Watch the config parser is from the applciation manager and it is not specific, can be source for problems
         service_insance = instance_class(self.config_parser, **self.kwargs)
         
-        #probably lock it 
-        self.instance_id = self.instance_id + 1 
+        
         
         self.httpsserver.instances[self.instance_id] = service_insance
+        self.module_managers.append(service_insance)
 
         service_manager_exposed_functions = service_insance.get_exposed_methods()
         
@@ -332,6 +336,132 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
         
        
         return HttpJsonResponse({'sid':self.instance_id})
+
+
+    @expose('UPLOAD')
+    def upload_application(self, kwargs):
+        if 'appfile' not in kwargs:
+            ex = ManagerException(ManagerException.E_ARGS_MISSING, 'appfile')
+            return HttpErrorResponse(ex.message)
+        code = kwargs.pop('appfile')
+        
+        self.app_tar = code
+        
+        if 'description' in kwargs:
+            description = kwargs.pop('description')
+        else:
+            description = ''
+        
+        if 'enable' in kwargs:
+            enable = kwargs.pop('enable')
+        else:
+            enable = False
+
+        if 'service_id' in kwargs:
+            service_id = kwargs.pop('service_id')
+
+        if len(kwargs) != 0:
+            ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
+                                  kwargs.keys())
+            return HttpErrorResponse(ex.message)
+        if not isinstance(code, FileUploadField):
+            ex = ManagerException(ManagerException.E_ARGS_INVALID,
+                                  detail='codeVersionId should be a file')
+            return HttpErrorResponse(ex.message)
+
+        
+        path = self.code_repo + '/' + service_id
+        if not os.path.exists(path):
+            os.makedirs(path)
+        fd, name = tempfile.mkstemp(prefix='app-', dir=path)
+        fd = os.fdopen(fd, 'w')
+        upload = code.file
+        codeVersionId = os.path.basename(name)
+        self.logger.info("upload is an instance of %s" % upload)
+
+        bytes = upload.read(2048)
+        # self.logger.info("byte has len: %s" % len(bytes))
+        while len(bytes) != 0:
+            fd.write(bytes)
+            bytes = upload.read(2048)
+            # self.logger.info("byte has len: %s" % len(bytes))
+        fd.close()
+
+        arch = archive_open(name)
+        if arch is None:
+            #os.remove(name)
+            ex = ManagerException(ManagerException.E_ARGS_INVALID,
+                                  detail='Invalid archive format')
+            return HttpErrorResponse(ex.message)
+
+        for fname in archive_get_members(arch):
+            if fname.startswith('/') or fname.startswith('..'):
+                archive_close(arch)
+                os.remove(name)
+                ex = ManagerException(ManagerException.E_ARGS_INVALID,
+                                      detail='Absolute file names are not allowed in archive members')
+                return HttpErrorResponse(ex.message)
+        archive_close(arch)
+        self.config.codeVersions[codeVersionId] = CodeVersion(
+            codeVersionId, os.path.basename(code.filename), archive_get_type(name),name, description=description)
+
+        if enable:
+            self.do_enable_code(os.path.basename(codeVersionId))
+
+        return HttpJsonResponse({'codeVersionId': os.path.basename(codeVersionId)})
+    
+
+    @expose('POST')                                                                                      
+    def enable_code(self, kwargs):                                                          
+        codeVersionId = None
+        if 'codeVersionId' in kwargs:
+            codeVersionId = kwargs.pop('codeVersionId')                                                  
+        
+        phpconf = {}                                                                                     
+                                                                                                         
+        if len(kwargs) != 0:                                                                             
+            return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_UNEXPECTED, kwargs.keys()).message)                                                                                                 
+                                                                                                         
+        if codeVersionId is None:                                                        
+            return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_MISSING, '"codeVersionId" is not specified').message)                                                                   
+                                                                                                         
+        if codeVersionId and codeVersionId not in self.config.codeVersions:                                   
+            return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_INVALID, detail='Unknown code version identifier "%s"' % codeVersionId).message)                                                    
+                                                                                                         
+                                                                             
+        if self.state == self.S_INIT or self.state == self.S_STOPPED:                                            
+            if codeVersionId:                                                                            
+                self.config.currentCodeVersion = codeVersionId                                                
+            
+        elif self.state == self.S_RUNNING:                                                                   
+            self.state = self.S_ADAPTING
+            Thread(target=self.do_enable_code, args=[codeVersionId]).start()   
+        else:                                                                                            
+            return HttpErrorResponse(ManagerException(ManagerException.E_STATE_ERROR).message)           
+        return HttpJsonResponse()                                                                        
+
+    def do_enable_code(self, codeVersionId):    
+        if codeVersionId is not None:                                     
+            self.config.currentCodeVersion = codeVersionId                     
+            #self._update_code(config, self.nodes)       
+        self.state = self.S_RUNNING
+        
+    @expose('GET')
+    def list_code_versions(self, kwargs):
+        if len(kwargs) != 0:
+            ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED, kwargs.keys())
+            return HttpErrorResponse(ex.message)
+        
+        versions = []
+        for version in self.config.codeVersions.values():
+            item = {'codeVersionId': version.id, 'filename': version.filename,
+                    'description': version.description, 'time': version.timestamp}
+            if version.id == self.config.currentCodeVersion:
+                item['current'] = True
+            versions.append(item)
+        versions.sort(cmp=(lambda x, y: cmp(x['time'], y['time'])), reverse=True)
+        return HttpJsonResponse({'codeVersions': versions})
+
 
     def add_manager_configuration(self, service_type):
         # Add service-specific config file (if any)

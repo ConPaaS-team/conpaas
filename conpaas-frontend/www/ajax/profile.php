@@ -19,11 +19,13 @@ try {
 	}
 
 	$aid = $_GET['aid'];
+	$iterations = $_GET['iterations'];
+	$debug = $_GET['debug'];
 
 	$application_data = ApplicationData::getApplicationById($_SESSION['uid'], $aid);
 	$application = new Application($application_data);
 
-	$res = 	$application->profile();
+	$res = 	$application->profile($iterations, $debug);
 	
 	echo json_encode($res);
 

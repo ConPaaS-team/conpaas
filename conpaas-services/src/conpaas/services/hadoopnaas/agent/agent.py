@@ -34,17 +34,25 @@ WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 """
+
 import subprocess
-
 from subprocess import Popen
-from os.path import join
-
+from os.path import exists, devnull, join
+from os import remove, makedirs, fdopen
+from shutil import rmtree
+import pickle, time
+import zipfile
+import tarfile
+import tempfile
+import simplejson
 from Cheetah.Template import Template
 
-
 from conpaas.core.expose import expose
-from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse
-from conpaas.core.agent import BaseAgent
+from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse, FileUploadField
+from conpaas.core.agent import BaseAgent, AgentException
+from conpaas.core import git
+
+
 
 class HadoopNaasAgent(BaseAgent):
     """Agent class with the following exposed methods:
@@ -62,6 +70,9 @@ class HadoopNaasAgent(BaseAgent):
         **kwargs holds anything that can't be sent in config_parser.
         """
         BaseAgent.__init__(self, config_parser)
+        self.hadoopnaas_dir = config_parser.get('agent', 'CONPAAS_HOME')
+        self.VAR_CACHE = config_parser.get('agent', 'VAR_CACHE')
+        self.env = {}
 
 
     @expose('POST')
@@ -91,7 +102,8 @@ class HadoopNaasAgent(BaseAgent):
 
     @expose('GET')
     def start_all(self, kwargs):
-        subprocess.call('export HADOOP_SSH_OPTS="-o StrictHostKeyChecking=no" ; /opt/hadoopnaas/hadoop-1.0.4-custom/bin/start-all.sh', shell=True)
+        subprocess.call('export HADOOP_SSH_OPTS="-o StrictHostKeyChecking=no" ; /opt/hadoopnaas/hadoop-1.0.4-custom/bin/start-all.sh', shell=True, close_fds=True)
+        time.sleep(6)
         return HttpJsonResponse({'msg': 'done'})
 
 
@@ -253,3 +265,73 @@ class HadoopNaasAgent(BaseAgent):
         self.state = 'RUNNING'
         self.logger.info('Hosts updated')
         return HttpJsonResponse()
+
+    @expose('POST')
+    def run(self, kwargs):
+        
+        startpath = join(self.VAR_CACHE, 'bin', 'start.sh')
+        start_args = [ "bash",  startpath ]
+        
+        if 'args' in kwargs and kwargs['args']:
+            args = kwargs.pop('args')
+            start_args.extend(args.values())
+
+        proc = Popen(start_args, cwd=self.hadoopnaas_dir, env=self.env, close_fds=True)
+        proc.wait()
+        self.state = 'RUNNING'
+        self.logger.info('Starter is running')
+        return HttpJsonResponse()
+
+    @expose('UPLOAD')                                                                                    
+    def update_code(self, kwargs):                                                                     
+                                                                                                         
+        if 'filetype' not in kwargs:                                                                     
+            return HttpErrorResponse(AgentException(                                                     
+                AgentException.E_ARGS_MISSING, 'filetype').message)                                      
+        filetype = kwargs.pop('filetype')                                                                
+                                                                                                         
+        if 'codeVersionId' not in kwargs:                                                                
+            return HttpErrorResponse(AgentException(                                                     
+                AgentException.E_ARGS_MISSING, 'codeVersionId').message)                                 
+        codeVersionId = kwargs.pop('codeVersionId')                                                      
+                                                                                                         
+        if 'file' not in kwargs:                                                                         
+            return HttpErrorResponse(AgentException(                                                     
+                AgentException.E_ARGS_MISSING, 'file').message)                                          
+        file = kwargs.pop('file')                                                                        
+                                                                                                         
+        if filetype != 'git' and not isinstance(file, FileUploadField):                                  
+            return HttpErrorResponse(AgentException(                                                     
+                AgentException.E_ARGS_INVALID, detail='"file" should be a file').message)                
+                                                                                                         
+        if len(kwargs) != 0:                                                                             
+            return HttpErrorResponse(AgentException(                                                     
+                AgentException.E_ARGS_UNEXPECTED, kwargs.keys()).message)                                
+                                                                                                         
+        if filetype == 'zip':                                                                            
+            source = zipfile.ZipFile(file.file, 'r')                                                     
+        elif filetype == 'tar':                                                                          
+            source = tarfile.open(fileobj=file.file)                                                     
+        elif filetype == 'git':                                                                          
+            source = git.DEFAULT_CODE_REPO                                                               
+        else:                                                                                            
+            return HttpErrorResponse('Unknown archive type ' + str(filetype))                            
+                                                                                                         
+        if not exists(join(self.VAR_CACHE, 'bin')):                                                      
+            makedirs(join(self.VAR_CACHE, 'bin'))                                                        
+                                                                                                         
+        target_dir = join(self.VAR_CACHE, 'bin')                                          
+        if exists(target_dir):                                                                           
+            rmtree(target_dir)                                                                           
+                                                                                                         
+        if filetype == 'git':                                                                            
+            target_dir = join(self.VAR_CACHE, 'bin')                                                     
+            self.logger.debug("git_enable_revision('%s', '%s', '%s')" % (target_dir, source, codeVersionId))                                                                                                      
+            git.git_enable_revision(target_dir, source, codeVersionId)                                   
+        else:                                                                                            
+            source.extractall(target_dir)                                                                
+                                                                                                         
+        # Fix session handlers                                                                           
+        #self.fix_session_handlers(target_dir)                                                            
+                                                                                                         
+        return HttpJsonResponse()  

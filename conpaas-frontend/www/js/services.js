@@ -13,12 +13,19 @@ conpaas.ui = (function (this_module) {
     /* constructor */function (server, application) {
         this.server = server;
         this.application = application;
+        this.services = [];
         this.jplot = null;
         // this.poller = new conpaas.http.Poller(server, 'ajax/checkServices.php', 'get');
         this.poller = new conpaas.http.Poller(server, 'ajax/getProfilingInfo.php', 'get');
         this.appication_uploaded = false;
         this.constraint_nr = 0;
         this.status = '';
+
+        if (!sessionStorage.iterations) 
+            sessionStorage.iterations = 1;
+        
+        if (!sessionStorage.debug) 
+            sessionStorage.debug = 1;
     },
     /* methods */{
     /**
@@ -41,6 +48,7 @@ conpaas.ui = (function (this_module) {
         this.poller.poll(function (response) {
             if(response.ready){
                 if (!response.profile.application && !that.appication_uploaded){
+                  that.services = response.profile.services;
                   that.displayInfo_2('Uploading application...');
                   that.uploadApplication();
                   that.appication_uploaded = true;
@@ -49,7 +57,7 @@ conpaas.ui = (function (this_module) {
                 }                
 
                 that.displayInfo_2('Profiling...');
-                var type = 'generic';
+                var type = that.services[Object.keys(that.services)[0]];
                 $("#"+type+"_status").html('Profiling'); 
                 $("#"+type+"_led").attr('src', 'images/ledorange.png');
 
@@ -192,15 +200,14 @@ conpaas.ui = (function (this_module) {
       return parseFloat(nr.toFixed(dec));
     },
 
-   
-
+    
     uploadApplication: function(){
       var that = this;
       var appfile = $('#appfile')[0].files[0];
       var formData = new FormData();
       formData.append('appfile', appfile, appfile.name);
       formData.append('aid', this.application.aid);
-      
+      formData.append('sid', Object.keys(this.services)[0]);
       $.ajax({
           url: 'ajax/uploadApplication.php',
           data: formData,
@@ -211,7 +218,7 @@ conpaas.ui = (function (this_module) {
           type: 'POST',
           success: function(data){
             // alert(data)
-            var type = 'generic';
+            var type = that.services[Object.keys(that.services)[0]];
             $("#"+type+"_led").attr('src', 'images/ledgreen.png');
             $("#"+type+"_status").html('Ready'); 
             conpaas.ui.visible('pgstatInfo', false);
@@ -315,7 +322,7 @@ conpaas.ui = (function (this_module) {
         var that = event.data; 
         $.ajax({
           url: 'ajax/profile.php',
-          data: {'aid': that.application.aid},
+          data: {'aid': that.application.aid, 'debug':sessionStorage.debug, 'iterations':sessionStorage.iterations},
           processData: true,
           contentType: false,
           dataType: 'json',
@@ -417,6 +424,9 @@ conpaas.ui = (function (this_module) {
         var formData = new FormData();
         formData.append('manfile', manfile, manfile.name);
         formData.append('appfile', appfile, appfile.name);
+        
+        that.displayInfo_2('Starting application manager...');
+        
         $.ajax({
           url: 'ajax/uploadManifest.php',
           data: formData,
@@ -428,12 +438,17 @@ conpaas.ui = (function (this_module) {
           success: function(data){
             // alert(data.appid); 
             that.application =  new conpaas.model.Application(data.appid);
-
-            // alert(that.application.aid);
             that.pollState(function () {
-                
                 window.location.reload();
-            }, null, 5);
+                }, null, 5);
+
+            // setTimeout(function(){
+            //   that.pollState(function () {
+            //     window.location.reload();
+            //     }, null, 5);
+            // }, 1000);
+            // alert(that.application.aid);
+            
           }
         });
   },
@@ -459,6 +474,33 @@ conpaas.ui = (function (this_module) {
        });
   },
 
+  onPreConfiguration: function(event){
+    var that = event.data;
+    var group = event.target.getAttribute('group');
+    var tol = 0.0001;
+
+    last = that.jplot.series[1].data.length - 1; 
+    middle = Math.round(last/2); 
+
+    minCost = that.jplot.series[1].data[0][0] + tol;
+    maxCost = that.jplot.series[1].data[last][0] - tol;
+    midCost = that.jplot.series[1].data[middle][0] + tol;
+
+    var valid = true;
+    if(group=="cheap")
+      slo = {'optimize':'execution_time', conds:[{'key':'cost', 'op':'<=', 'val':minCost}]};
+    else if (group=="balanced")
+      slo = {'optimize':'execution_time', conds:[{'key':'cost', 'op':'<=', 'val':midCost}]};
+    else if (group=="fast")
+      slo = {'optimize':'execution_time', conds:[{'key':'cost', 'op':'>=', 'val':maxCost}]};
+    else
+      valid = false;
+    
+    if (valid)
+      that.showConfiguration(slo);
+    // alert(minCost);
+  },
+
    onClickShowConfiguration: function(event){
         var that = event.data; 
         slo = {'optimize':'', conds:[]};
@@ -473,7 +515,13 @@ conpaas.ui = (function (this_module) {
             }
         }
 
+        that.showConfiguration(slo);
+        
+    },
 
+    showConfiguration: function(slo)
+    { 
+        var that = this; 
         $.ajax({
           url: 'ajax/uploadSLO.php',
           data: {'aid': that.application.aid, 'service':'echo', 'slo':slo},
@@ -507,51 +555,10 @@ conpaas.ui = (function (this_module) {
                 $("#esCost").html("-");
                 that.plot(null, null, []);
               }
-                // html += '<span>No configuration can satisfy this SLO</span>';
-              // $('#predictionDiv').html(html);
           }
         });
-
-        
-        
-
-         //  var that = event.data; 
-         //  var formData = new FormData();
-         //  formData.append('slo', $('#txtSlo').val());
-         //  formData.append('service', 'upload');
-         //  // formData.append('aid', 1);
-         //  formData.append('aid', that.application.aid);
-         //  $.ajax({
-         //    url: 'ajax/uploadSLO.php',
-         //    data: formData,
-         //    processData: false,
-         //    contentType: false,
-         //    dataType: 'json',
-         //    type: 'POST',
-         //    success: function(data){
-         //      // alert(JSON.stringify(data));
-         //      conf = $.parseJSON( data );
-         //      conf = conf.result.conf;
-         //      var html = '';
-         //      if (conf != null){
-         //        tc = that.myround(conf.Results.TotalCost,4);
-         //        et = that.myround(conf.Results.ExeTime, 4);
-         //        html += 'Selected configuration: <span>'+ that.objToString(conf.Configuration) +'</span> <br/>';
-         //        html += 'Estimated execution time: <span>'+et+'</span> min &nbsp;&nbsp;&nbsp; Estimated cost: <span>'+tc+'</span> &euro;';
-                
-         //        // selected = [[conf.Results.TotalCost.toFixed(3) , conf.Results.ExeTime.toFixed(3)]];
-         //        selected = [[tc , et]];
-         //        that.tc = tc;
-         //        that.et = et;
-         //        that.plot(null, null, selected);
-         //      }else
-         //        html += '<span>No configuration can satisfy this SLO</span>';
-         //      $('#predictionDiv').html(html);
-         //    }
-         // });
-
-
     },
+
     onExecuteSlo: function(event)
     {  
 
@@ -626,9 +633,61 @@ conpaas.ui = (function (this_module) {
         $('#hideuploaddiv').click(this, this.onHideUpload);
         
         $('#addConstraints').click(this, this.addConstraints);
+        $('#settings').click(this, this.showSettings);
+        $('.popup-exit').click(this, this.clearPopup);
+
+        
+        $('.pre-configure').click(this, this.onPreConfiguration);
         // $("img[name='crem']").click(this, this.remConstraints);
 
   },
+
+  clearPopup: function (event) {
+      var that = event.data;  
+      $('.popup.visible').addClass('transitioning').removeClass('visible');
+      $('html').removeClass('overlay');
+
+      setTimeout(function () {
+          $('.popup').removeClass('transitioning');
+      }, 200);
+      if (that.onclosepopup){
+        that.onclosepopup();
+        that.onclosepopup = null;
+      }
+  },   
+
+
+  showSettings: function(event){
+      var that = event.data;
+      var checked = '';
+      if (sessionStorage.debug == 1)
+        checked = 'checked';
+      html = '<table border="0" style="width:60%">';
+      html += '<tr><td>Debugging:</td> <td align="center"><input id="debug" type="checkbox" name="debug" '+checked+'></td></tr>';
+      html += '<tr><td>Iterations:</td> <td align="center"><input id="iterations" type="number" value="'+sessionStorage.iterations+'" style="width:40px"/></td></tr>';
+      html += '</table> <br>';
+
+      $('.popup-content').html(html);
+      that.showPopup(this);
+      that.onclosepopup = that.closeSettings;
+  },
+
+  closeSettings: function(){
+     // $('#setting-div').html($('.popup-content').html());
+     sessionStorage.debug = 0 ;
+     if ($('#debug').is(":checked"))
+         sessionStorage.debug = 1 ;
+     sessionStorage.iterations = $('#iterations').val();
+     // $('.popup-content').html('');
+     // $('#iterations').val(iterations);
+  },
+
+  showPopup: function(source){
+      var that = source;
+      $('html').addClass('overlay');
+      var activePopup = $(that).attr('data-popup-target');
+      $(activePopup).addClass('visible');
+  }, 
 
   onDialog: function(event){
     var idfileinpit = this.id.substring(2);
@@ -699,10 +758,11 @@ $(document).ready(function () {
           formData.append('format', 'text');
           page.updateManifestInfo(formData);
         
-        
+          page.services = app_data.profile.services;
           $("#profilediv").show(500);
           if (app_data.profile.pm.experiments.length > 0)
             $("#slodiv").show(500);
+
           page.onHideUpload();
           page.updateProfileInfo(app_data.profile.pm);
          

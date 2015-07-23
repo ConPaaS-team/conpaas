@@ -22,10 +22,11 @@ try {
 	}
 
 	$aid = $_POST['aid'];
+	$sid = $_POST['sid'];
 	$application_data = ApplicationData::getApplicationById($_SESSION['uid'], $aid);
 	$application = new Application($application_data);
 
-	$res = $application->upload_application($app);
+	$res = $application->upload_application($app, $sid);
 		
 		
 	echo json_encode($res);

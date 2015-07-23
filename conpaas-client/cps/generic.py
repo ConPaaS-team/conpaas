@@ -34,15 +34,16 @@ class Client(BaseClient):
         BaseClient.usage(self, cmdname)
         print "    add_nodes         serviceid count"
         print "    remove_nodes      serviceid count"
-        print "    upload_code       serviceid filename  # upload a new code version"
-        print "    list_uploads      serviceid           # list uploaded code versions"
-        print "    enable_code       serviceid version   # set a specific code version active"
+        # print "    upload_code       serviceid filename  # upload a new code version"
+        # print "    list_uploads      serviceid           # list uploaded code versions"
+        # print "    enable_code       serviceid version   # set a specific code version active"
         print "    run               serviceid           # deploy the application"
 
     def main(self, argv):
         command = argv[1]
    
-        if command in ( 'add_nodes', 'remove_nodes', 'upload_code', 'list_uploads', 'enable_code', 'run' ): 
+        # if command in ( 'add_nodes', 'remove_nodes', 'upload_code', 'list_uploads', 'enable_code', 'run' ): 
+        if command in ( 'add_nodes', 'remove_nodes', 'run' ): 
             try:                                                      
                 sid = int(argv[2])
                 aid = int(argv[3])                                    
@@ -67,68 +68,43 @@ class Client(BaseClient):
             else:
                 print "Service", sid, "is performing the requested operation (%s)" % command
 
-        if command == 'upload_code':
-            try: 
-                filename = argv[4]
-                if not (os.path.isfile(filename) and os.access(filename, os.R_OK)):
-                    raise IndexError                                               
-            except IndexError:                                                     
-                self.usage(argv[0])                                                
-                sys.exit(0)                                                        
+        # if command == 'upload_code':
+        #     try: 
+        #         filename = argv[4]
+        #         if not (os.path.isfile(filename) and os.access(filename, os.R_OK)):
+        #             raise IndexError                                               
+        #     except IndexError:                                                     
+        #         self.usage(argv[0])                                                
+        #         sys.exit(0)                                                        
                                                                        
-            getattr(self, command)(aid, sid, filename)                    
+        #     getattr(self, command)(aid, sid, filename)                    
         
         if command == 'run':            
             getattr(self, command)(aid, sid)                    
     
-        if command == 'list_uploads':                                                              
-            res = self.callmanager(aid, sid, 'list_code_versions', False, {})                           
+        # if command == 'list_uploads':                                                              
+        #     res = self.callmanager(aid, sid, 'list_code_versions', False, {})                           
                                                                                            
-            def add_cur(row):                                                                      
-                if 'current' in row:                                                               
-            	    row['current'] = '      *'                                                     
-        	else:                                                                              
-                    row['current'] = ''                                                            
-                return row                                                                         
+        #     def add_cur(row):                                                                      
+        #         if 'current' in row:                                                               
+        #     	    row['current'] = '      *'                                                     
+        # 	else:                                                                              
+        #             row['current'] = ''                                                            
+        #         return row                                                                         
                                                                                            
-            data = [ add_cur(el) for el in res['codeVersions'] ]                                   
-            print self.prettytable(( 'current', 'codeVersionId', 'filename', 'description' ), data)
+        #     data = [ add_cur(el) for el in res['codeVersions'] ]                                   
+        #     print self.prettytable(( 'current', 'codeVersionId', 'filename', 'description' ), data)
         
-        if command == 'enable_code':
-            try:                                         
-                code_version = argv[3]                   
-            except IndexError:                           
-                self.usage(argv[0])                      
-                sys.exit(0)                              
+        # if command == 'enable_code':
+        #     try:                                         
+        #         code_version = argv[4]                   
+        #     except IndexError:                           
+        #         self.usage(argv[0])                      
+        #         sys.exit(0)                              
                                                  
-            getattr(self, command)(aid, sid, code_version)    
+        #     getattr(self, command)(aid, sid, code_version)    
 
 
-    def upload_code(self, app_id, service_id, filename):
-        contents = open(filename).read()
-        
-
-
-        files = [ ( 'code', filename, contents ) ]
-
-        res = self.callmanager(app_id, service_id, "upload_code_version", True, { 'method': "upload_code_version", 'manager_id':service_id }, files)
-        if 'error' in res:
-            print res['error']
-        else:
-            print "Code version %(codeVersionId)s uploaded" % res
-
-
-    def enable_code(self,  app_id, service_id, code_version):
-        params = { 'codeVersionId': code_version }
-
-        res = self.callmanager( app_id, service_id, "enable_code",
-            True, params)
-
-        if 'error' in res:
-            print res['error']
-
-        else:
-            print code_version, 'enabled'
     
     def run(self,  app_id, service_id):
         params = {}

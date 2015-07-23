@@ -62,7 +62,7 @@ from conpaas.services.generic.misc import archive_open, archive_get_members, arc
                           
 from conpaas.core.log import create_logger
 from conpaas.services.generic.agent import client
-from conpaas.services.generic.manager.config import CodeVersion, ServiceConfiguration
+# from conpaas.services.generic.manager.config import CodeVersion, ServiceConfiguration
 from conpaas.core.misc import hex_to_string
 
 class GenericManager(BaseManager):
@@ -86,7 +86,7 @@ class GenericManager(BaseManager):
     S_STOPPED = 'STOPPED'   # manager stopped
     S_ERROR = 'ERROR'       # manager is in error state
     S_TERMINATED = 'TERMINATED'       # manager is in error state
-    S_PROFILED = 'PROFILED'       # manager is in error state
+    S_PROFILED = 'PROFILED'       # manager is profiled
 
     DEPLOYMENT_STATE = 'deployment_state'
 
@@ -116,12 +116,12 @@ class GenericManager(BaseManager):
 
         # memcache_addr = config_parser.get('manager', 'MEMCACHE_ADDR')        
         # self.memcache = memcache.Client([memcache_addr])
-        self.code_repo = config_parser.get('manager', 'CODE_REPO')
+        
 
         self.logger.info("kwargs: %s" % kwargs)
         self.state_log = []        
 
-        self._configuration_set(ServiceConfiguration())
+        # self._configuration_set(ServiceConfiguration())
         
         if 'app_tar' in kwargs:
             app_tar_fu = kwargs['app_tar']
@@ -134,14 +134,18 @@ class GenericManager(BaseManager):
             # app_tar_fu.file = output
             self.upload_code_version({'code':app_tar_fu, 'enable':True})
             # output.close()
-        elif kwargs['reset_config']:
-            self._create_initial_configuration() 
+        # (genc): disabled inital configuration after pushing code upload to the application manager
+        # elif kwargs['reset_config']:
+        #     self._create_initial_configuration() 
 
         self.nodes = []
         self.agents_info = []
         self.starters = []
         self._state_set(self.S_INIT)
         #self.hub_ip = None
+
+    def get_type(self):
+        return 'generic'
 
     @expose('POST')
     def startup(self, cloud, configuration=None):
@@ -161,9 +165,13 @@ class GenericManager(BaseManager):
 
         return HttpJsonResponse({ 'state': self._state_get() })
 
-    def _do_startup(self, cloud, configuration, args):
+    def _do_startup(self, kwargs):
         """Start up the service. The first node will be an agent running a
         Generic Hub and a Stem Node."""
+        cloud = kwargs['cloud']
+        configuration = kwargs['configuration']
+        args = kwargs['args']
+        code_conf = kwargs['code_conf']
         
 #        nr_instances = 1
 #        nr_instances = 0
@@ -181,6 +189,7 @@ class GenericManager(BaseManager):
         self.logger.info("Generic manager started")
         self.logger.info("configuration: %s" % configuration)
         frontend_url = ''
+        self._configuration_set(code_conf)
         try:
             ##nodes = []
             ##for i in range(1, nr_instances):
@@ -493,119 +502,56 @@ class GenericManager(BaseManager):
             'nodes': self.nodes
         })
 
-    def _create_initial_configuration(self):
-        print 'CREATING INIT CONFIG'
+#     def _create_initial_configuration(self):
+#         print 'CREATING INIT CONFIG'
  
-        config = self._configuration_get()
+#         config = self._configuration_get()
         
-        if len(config.codeVersions) > 0:
-            return
+#         if len(config.codeVersions) > 0:
+#             return
             
-        if not os.path.exists(self.code_repo):
-            os.makedirs(self.code_repo)
+#         if not os.path.exists(self.code_repo):
+#             os.makedirs(self.code_repo)
             
-        tfile = tarfile.TarFile(name=os.path.join(self.code_repo, 'code-default'), mode='w')
+#         tfile = tarfile.TarFile(name=os.path.join(self.code_repo, 'code-default'), mode='w')
 
-        fileno, path = tempfile.mkstemp()
-        fd = os.fdopen(fileno, 'w')
-        fd.write('''#/bin/bash
-echo "Initializing Generic Service!" >> /root/generic.out
-echo "My IP is $MY_IP" >> /root/generic.out
-echo "My role is $MY_ROLE" >> /root/generic.out
-echo "My master IP is $MASTER_IP" >> /root/generic.out
-echo "Inofrmation about other agents is stored at /var/cache/cpsagent/agents.json" >> /root/generic.out
-cat /var/cache/cpsagent/agents.json >> /root/generic.out
-echo "" >> /root/generic.out
-''')
-        fd.close()
-        os.chmod(path, stat.S_IRWXU | stat.S_IROTH | stat.S_IXOTH)
-        tfile.add(path, 'init.sh')
+#         fileno, path = tempfile.mkstemp()
+#         fd = os.fdopen(fileno, 'w')
+#         fd.write('''#/bin/bash
+# echo "Initializing Generic Service!" >> /root/generic.out
+# echo "My IP is $MY_IP" >> /root/generic.out
+# echo "My role is $MY_ROLE" >> /root/generic.out
+# echo "My master IP is $MASTER_IP" >> /root/generic.out
+# echo "Inofrmation about other agents is stored at /var/cache/cpsagent/agents.json" >> /root/generic.out
+# cat /var/cache/cpsagent/agents.json >> /root/generic.out
+# echo "" >> /root/generic.out
+# ''')
+#         fd.close()
+#         os.chmod(path, stat.S_IRWXU | stat.S_IROTH | stat.S_IXOTH)
+#         tfile.add(path, 'init.sh')
         
-        fileno, path = tempfile.mkstemp()
-        fd = os.fdopen(fileno, 'w')
-        fd.write('''#/bin/bash
-echo "Starting Generic Service!" >> /root/generic.out
-echo "My IP is $MY_IP" >> /root/generic.out
-echo "My role is $MY_ROLE" >> /root/generic.out
-echo "My master IP is $MASTER_IP" >> /root/generic.out
-echo "Inofrmation about other agents is stored at /var/cache/cpsagent/agents.json" >> /root/generic.out
-cat /var/cache/cpsagent/agents.json >> /root/generic.out
-echo "" >> /root/generic.out
-''')
-        fd.close()
-        os.chmod(path, stat.S_IRWXU | stat.S_IROTH | stat.S_IXOTH)
-        tfile.add(path, 'start.sh')
+#         fileno, path = tempfile.mkstemp()
+#         fd = os.fdopen(fileno, 'w')
+#         fd.write('''#/bin/bash
+# echo "Starting Generic Service!" >> /root/generic.out
+# echo "My IP is $MY_IP" >> /root/generic.out
+# echo "My role is $MY_ROLE" >> /root/generic.out
+# echo "My master IP is $MASTER_IP" >> /root/generic.out
+# echo "Inofrmation about other agents is stored at /var/cache/cpsagent/agents.json" >> /root/generic.out
+# cat /var/cache/cpsagent/agents.json >> /root/generic.out
+# echo "" >> /root/generic.out
+# ''')
+#         fd.close()
+#         os.chmod(path, stat.S_IRWXU | stat.S_IROTH | stat.S_IXOTH)
+#         tfile.add(path, 'start.sh')
         
-        tfile.close()
-        os.remove(path)
-        config.codeVersions['code-default'] = CodeVersion('code-default', 'code-default.tar', 'tar', description='Initial version')
-        config.currentCodeVersion = 'code-default'
-        self._configuration_set(config)
-        self._state_set(self.S_INIT)
+#         tfile.close()
+#         os.remove(path)
+#         config.codeVersions['code-default'] = CodeVersion('code-default', 'code-default.tar', 'tar', description='Initial version')
+#         config.currentCodeVersion = 'code-default'
+#         self._configuration_set(config)
+#         self._state_set(self.S_INIT)
    
-    @expose('UPLOAD')
-    def upload_code_version(self, kwargs):
-        if 'code' not in kwargs:
-            ex = ManagerException(ManagerException.E_ARGS_MISSING, 'code')
-            return HttpErrorResponse(ex.message)
-        code = kwargs.pop('code')
-        if 'description' in kwargs:
-            description = kwargs.pop('description')
-        else:
-            description = ''
-        if 'enable' in kwargs:
-            enable = kwargs.pop('enable')
-
-        if len(kwargs) != 0:
-            ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
-                                  kwargs.keys())
-            return HttpErrorResponse(ex.message)
-        if not isinstance(code, FileUploadField):
-            ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                  detail='codeVersionId should be a file')
-            return HttpErrorResponse(ex.message)
-
-        config = self._configuration_get()
-        
-        if not os.path.exists(self.code_repo):
-            os.makedirs(self.code_repo)
-        fd, name = tempfile.mkstemp(prefix='code-', dir=self.code_repo)
-        fd = os.fdopen(fd, 'w')
-        upload = code.file
-        codeVersionId = os.path.basename(name)
-        self.logger.info("upload is an instance of %s" % upload)
-
-        bytes = upload.read(2048)
-        # self.logger.info("byte has len: %s" % len(bytes))
-        while len(bytes) != 0:
-            fd.write(bytes)
-            bytes = upload.read(2048)
-            # self.logger.info("byte has len: %s" % len(bytes))
-        fd.close()
-
-        arch = archive_open(name)
-        if arch is None:
-            #os.remove(name)
-            ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                  detail='Invalid archive format')
-            return HttpErrorResponse(ex.message)
-
-        for fname in archive_get_members(arch):
-            if fname.startswith('/') or fname.startswith('..'):
-                archive_close(arch)
-                os.remove(name)
-                ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                      detail='Absolute file names are not allowed in archive members')
-                return HttpErrorResponse(ex.message)
-        archive_close(arch)
-        config.codeVersions[codeVersionId] = CodeVersion(
-            codeVersionId, os.path.basename(code.filename), archive_get_type(name), description=description)
-        self._configuration_set(config)
-
-        if enable:
-            self.do_enable_code(os.path.basename(codeVersionId))
-
-        return HttpJsonResponse({'codeVersionId': os.path.basename(codeVersionId)})
 
 
     @expose('GET')
@@ -648,61 +594,8 @@ echo "" >> /root/generic.out
             }
         })
 
-    @expose('GET')
-    def list_code_versions(self, kwargs):
-        if len(kwargs) != 0:
-            ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
-                                  kwargs.keys())
-            return HttpErrorResponse(ex.message)
-        config = self._configuration_get()
-        versions = []
-        for version in config.codeVersions.values():
-            item = {'codeVersionId': version.id, 'filename': version.filename,
-                    'description': version.description, 'time': version.timestamp}
-            if version.id == config.currentCodeVersion:
-                item['current'] = True
-            versions.append(item)
-        versions.sort(
-            cmp=(lambda x, y: cmp(x['time'], y['time'])), reverse=True)
-        return HttpJsonResponse({'codeVersions': versions})
 
-    @expose('POST')                                                                                      
-    def enable_code(self, kwargs):                                                          
-        codeVersionId = None
-        if 'codeVersionId' in kwargs:
-            codeVersionId = kwargs.pop('codeVersionId')                                                  
-        config = self._configuration_get()
-        phpconf = {}                                                                                     
-                                                                                                         
-        if len(kwargs) != 0:                                                                             
-            return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_UNEXPECTED, kwargs.keys()).message)                                                                                                 
-                                                                                                         
-        if codeVersionId is None:                                                        
-            return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_MISSING, '"codeVersionId" is not specified').message)                                                                   
-                                                                                                         
-        if codeVersionId and codeVersionId not in config.codeVersions:                                   
-            return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_INVALID, detail='Unknown code version identifier "%s"' % codeVersionId).message)                                                    
-                                                                                                         
-        dstate = self._state_get()                                                                      
-        if dstate == self.S_INIT or dstate == self.S_STOPPED:                                            
-            if codeVersionId:                                                                            
-                config.currentCodeVersion = codeVersionId                                                
-            self._configuration_set(config)                                                              
-        elif dstate == self.S_RUNNING:                                                                   
-            self._state_set(self.S_ADAPTING, msg='Updating configuration')
-            Thread(target=self.do_enable_code, args=[codeVersionId]).start()   
-        else:                                                                                            
-            return HttpErrorResponse(ManagerException(ManagerException.E_STATE_ERROR).message)           
-        return HttpJsonResponse()                                                                        
-
-    def do_enable_code(self, codeVersionId):    
-        config = self._configuration_get()
-        if codeVersionId is not None:                                     
-            self.prevCodeVersion = config.currentCodeVersion              
-            config.currentCodeVersion = codeVersionId                     
-            #self._update_code(config, self.nodes)       
-        self._state_set(self.S_RUNNING)
-        self._configuration_set(config)                                   
+                               
 
     # def _update_code(self, start_role,):                                                               
     #     config = self._configuration_get()
@@ -729,9 +622,10 @@ echo "" >> /root/generic.out
         for instance in  self.instances['Instances']:                                                                        
             if instance['Type'] == 'Machine':
                 try:               
+                    self.logger.debug('config: currentCodeVersion %s, codeVersions %s' % (config.currentCodeVersion, config.codeVersions))
                     client.update_code(instance['Address'], 5555, config.currentCodeVersion,                    
                                             config.codeVersions[config.currentCodeVersion].type,                
-                                            os.path.join(self.code_repo, config.currentCodeVersion))            
+                                            config.codeVersions[config.currentCodeVersion].path)            
                 except client.AgentException:                                                                
                     self.logger.exception('Failed to update code at node %s' % str(instance))             
                     self._state_set(self.S_ERROR, msg='Failed to update code at node %s' % str(instance))
