@@ -41,7 +41,7 @@ $services = ServiceData::getServicesByUser($page->getUID(), $_SESSION['aid']);
 		
 		<table border="0" style="width:100%"><tr><td style="width:40px">
 		<!-- <a id="showuploaddiv" class="button" href="#" style="border-radius: 30px; display:none; margin-left: 10px; position:absolute; z-index:20"><img style="margin:0px; width: 16px" src="images/upload.png"></img></a> -->
-		<img id="showuploaddiv" style="margin:0px; width: 50px; display:none; position:absolute; z-index:20" src="images/upload1.png"></img>
+		<img id="showuploaddiv" style="margin:5px; width: 35px; display:none; position:absolute; z-index:20" src="images/upload1.png"></img>
 		<div style="height:20px"></div>
 		</td><td>
 		<div id="uploaddiv" style="text-align:center">
@@ -81,7 +81,7 @@ $services = ServiceData::getServicesByUser($page->getUID(), $_SESSION['aid']);
 		<div id="profilediv" style="display:none ">
 
 			<hr/>
-			<div style="padding-top:20px; text-align:center">
+			<div style="padding-top:10px; padding-bottom:10px; text-align:center">
 			    <!--table border="0" style="width:100%"><tr>
 			    <td style="width:50%">Upload profile: <input id="profilefile" name="profilefile" type="file"> </td>
 			    <td align="center" style="width:10%"></td> 
@@ -99,11 +99,11 @@ $services = ServiceData::getServicesByUser($page->getUID(), $_SESSION['aid']);
 				<a id="profile" class="button small" href="#"><img src="images/service-plus.png"/>Start profiling</a>
 				<img id="settings" data-popup-target="#example-popup" src="images/setting.png" style="cursor:pointer; width:20px; " />
 	        </div>
-	        <br/><br/>
+
 	        <table style="width:100%">
 	        	<tr>
-	        	<td valign="top"><div id="divProfileTable" style="padding: 10px;height: 200px; overflow:auto; overflow-x:hidden"></div></td>	
-	        	<td valign="top" align="right"><div id="divProfileChart" style="height:200px;width:300px; "></div></td>	
+	        	<td valign="top"><div id="divProfileTable" style="padding: 10px;height: 200px; width:330px; /*overflow:auto; overflow-x:hidden*/"></div></td>	
+	        	<td valign="top" width="500" align="right"><div id="divProfileChart" style="height:280px;width:500px; "></div></td>	
 	        	</tr>
 	        	<tr>
 	        	<td align="center" colspan="2"><div id="downloadProfile" style="margin-top: 10px;"></div></td>
@@ -114,7 +114,7 @@ $services = ServiceData::getServicesByUser($page->getUID(), $_SESSION['aid']);
 		<div id="slodiv" style="display:none">	
 
 			<hr/>
-			<div align="center" style="padding:10px; ">
+			<div align="center" style="padding-left:10px; padding-right:10px; ">
 			<table border="0" style="width:100%; margin-bottom:5px;"><tr align="center" style="cursor:pointer;">
 			<td group="cheap" class="pre-configure" style="width:33.3%" title="Cheapest"><img group="cheap" src="images/save.png" style="width:30px" title="Cheapest" /> </td>
 			<td group="balanced" class="pre-configure" style="width:33.3%" title="Balanced"><img group="balanced" src="images/balance.png" style="width:30px" title="Balanced" /></td>

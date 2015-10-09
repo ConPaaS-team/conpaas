@@ -226,7 +226,7 @@ class Cloud:
                 #res['ID'] = str(uuid.uuid1())
                 #ret_res['ID'] = res['ID']
                 #ret_res['ID'] = res['ID']
-                ret_res['GroupID'] = res['GroupID']
+                ret_res['Group'] = res['Group']
                 ret_res['Type'] = res['Type']
                 ret_res['Attributes'] = res['Attributes']
                 for attr in res['Attributes']:
@@ -278,5 +278,5 @@ class Cloud:
         result['Nodes'] = []
         for res in reservation['Resources']:
             for node in res['Nodes']:
-                result['Nodes'].append({'ID': node.vmid, 'IP':node.ip, 'GroupID':res['GroupID']})
+                result['Nodes'].append({'ID': node.vmid, 'IP':node.ip, 'Group':res['Group']})
         return result

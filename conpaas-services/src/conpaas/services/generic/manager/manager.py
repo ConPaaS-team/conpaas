@@ -206,7 +206,8 @@ class GenericManager(BaseManager):
             
             #this was when init was executed before ssending the rest of the code  
             #self._init_agents()
-            self.instances = self._conv_res_to_instance(configuration)
+            # self.instances = self._conv_res_to_instance(configuration)
+            self.instances = configuration
             self._update_code()
             self._init_agents(args)
             frontend_url = self._get_frontend_url()
@@ -254,10 +255,10 @@ class GenericManager(BaseManager):
         out = {'Instances':[]}
         for node in json['Instances']:
             for resource in json['Resources']:
-                if node['GroupID'] == resource['GroupID']:
+                if node['Group'] == resource['Group']:
                     instance = {}
                     instance['Type'] = resource['Type']
-                    instance['GroupID'] = resource['GroupID']
+                    instance['Group'] = resource['Group']
                     instance['Attributes'] = resource['Attributes']
                     instance['Address'] = node['Address']
                     out['Instances'].append(instance)
@@ -319,10 +320,13 @@ class GenericManager(BaseManager):
     #             raise   
 
     def _do_run(self, profiling, args=None):
+        success=[]
         for instance in self.instances['Instances']: 
             if instance['Type'] == 'Machine':
                 try:               
-                    client.run(instance['Address'], 5555, args)            
+                    res = client.run(instance['Address'], 5555, args)           
+                    self.logger.info("res: %s" % res)
+                    success.append(res['exitcode'])
                 except client.AgentException:                                                                
                     self.logger.exception('Failed to start run at node %s' % str(instance))             
                     self._state_set(self.S_ERROR, msg='Failed to run code at node %s' % str(instance))
@@ -331,6 +335,7 @@ class GenericManager(BaseManager):
             self._state_set(self.S_PROFILED)   
         else:
             self._state_set(self.S_TERMINATED)
+        return success
 
 
     @expose('POST')
@@ -424,7 +429,7 @@ class GenericManager(BaseManager):
 
     def cleanup_agents(self):
         #TODO: make this multithreaded
-        for instance in  self.instances['Instances']:                                                                        
+        for instance in self.instances['Instances']:
             if instance['Type'] == 'Machine':
                 try:               
                     client.cleanup_agent(instance['Address'], 5555)    

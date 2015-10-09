@@ -1,80 +1,135 @@
 #!/usr/bin/env python
 
-#from conpaas.core.appmanager.core.context.parameters import VariableModel
-from conpaas.core.appmanager.utils.generator import Combinations
-from conpaas.core.appmanager.profiler.strategy import * 
-from conpaas.core.appmanager.core.patterns.store import Traces
-from conpaas.core.appmanager.utils.math import MathUtils
+from conpaas.core.appmanager.application.search_space import VariableMapper,ConfigurationMapper
+from conpaas.core.appmanager.profiler.algorithms import SimulatedAnnealing, DirectedSimulatedAnnealing
+from conpaas.core.appmanager.state import State
+from conpaas.core.appmanager.executor import Executor
 
-import sys, os
-    
-        
+import sys, os, json, traceback
+# from config import config_parser
+
 class Profiler:
-    
-    def __init__(self, appmanager):
-        self.appmanager = appmanager
-        self.strategy = None
-        
+	StateID = 0
+	def __init__(self, application, version, parameters = {}):
+		self.application = application
+		self.strategy    = None
+		self.version     = version
+		# self.iterations = 2
+		self.iterations = application.manager.iterations
+		application.manager.logger.debug("iterations in profiler: %s" % self.iterations)
+		self.version_indexes = map(lambda x: int(x), version.split("."))
+		
+		#print self.version_indexes
+		self.variables 	 = sorted(self.application.get_Resource_Vars(self.version_indexes))
+		self.parameters = parameters
+		self.data        = None
+		
+		self.mapper = VariableMapper(self.application.getResourceVariableMap(self.version_indexes))
+		self.confMapper = ConfigurationMapper(self.variables, self.mapper)
+		
+		
 
-    def run(self):        
-        print "--->  Implementation Selection Process  <---"
-        # self.implementationsXmodule = []
+		self.strategy = DirectedSimulatedAnnealing(self.execute_application, len(self.variables), VariableMapper.Interval[0], VariableMapper.Interval[1],  self.confMapper, max_eval = self.iterations)
+		data = self.restore()
+		if data == [] and self.parameters != {}:
+			#to init state
+			self.save_state()
 
-        # for i in range(len(self.appmanager.manifest.Modules)):
-        #     self.implementationsXmodule.append(len(self.appmanager.manifest.Modules[i].Implementations) - 1) 
-        #     res = self.appmanager.create_service({'service_type':self.appmanager.manifest.Modules[i].ModuleType, 'app_tar': self.appmanager.app_tar})
-        #     self.appmanager.dir_create_service(self.appmanager.manifest.Modules[i].ModuleType, res.obj['sid'])
-        #     self.appmanager.module_managers.append(self.appmanager.httpsserver.instances[int(res.obj['sid'])])
-        
-        print "Index of implementations per module :", self.appmanager.implementationsXmodule
-        c = Combinations(self.appmanager.implementationsXmodule)
- 
-        profile = []        
-        for impl_comb in c.generate():
-            implementations = []
-            for i in range(len(impl_comb)):
-                print "Selecting implemention %d from module %d" % (impl_comb[i], i)
-                impl = self.appmanager.manifest.Modules[i].Implementations[impl_comb[i]]
-                implementations.append(impl)  
-            profile.append(self.__profile(implementations))
-        print "\nProfiling process ended!\n\n"
-        return profile
-        # save profile 
-        # self.appmanager.save_profile()
+		
+	def restore(self):
+		data = State.get_data(self.version, self.StateID)	
+		q = False		
+		for inputsize in data:
+			try:
+				algdata = inputsize["Algorithm"]
+			except:		
+					
+				inputsize = {
+					"ResourceVariables" : self.variables,
+					"InputParameters" : self.parameters,
+					"Algorithm" : {}
+				}
+				State.checkpoint(self.version, self.StateID, data)
+				break
+			if algdata != None and algdata != []:
+				
+				if inputsize["InputParameters"] == self.parameters:
+					q = True
+					self.strategy.update_state(algdata)
+					#if profiling with the input size was finished go to the next one
+					if not self.strategy.stop_condition():
+						break
+		if not q:
+			return []
+		return data			
+		
+	def run(self):
+		print "Profiling version [", self.version, "]",
+		self.restore()
+		if self.strategy.stop_condition():
+			print "... already done."
+			return
+		print "..."
+		while not self.strategy.stop_condition():
+			try:				
+				ret = self.strategy.run_step()
+			except:
+				traceback.print_exc()
+				print 'An exception/exit signal occurred. Exiting'
+				raise Exception("Exit")
+				break
+			self.save_state()
+			
+			print "Return code : ", 0 if ret is 0 else 1, "(0 - stop condition was met)"
+			if ret is 0:
+				print "Profiling Done. "
+				break
+		
+			
+		
+	def save_state(self):
+		print "Save state to file."
+		data = State.get_data(self.version, self.StateID)	
+		algdata = self.strategy.get_state()
+		info = {
+				"ResourceVariables" : self.variables,
+				"InputParameters" : self.parameters,
+				"Algorithm"   : algdata
+				}
+	
+		q = False
+		for inputsize in data:
+			if inputsize["InputParameters"] == self.parameters:
+				inputsize.update(info)
+				q = True
+		if not q:
+			data.append(info)
+			
+		State.checkpoint(self.version, self.StateID, data)
+		
+	def execute_application(self, x):
+		variables = self.confMapper.convert(x)
+		print self.variables
+		print variables
+		
+		result = Executor.execute_on_configuration(self.application, self.version_indexes, self.variables, variables, self.parameters)
+		#execute application should return the variables, cost and time of execution and feedback based on monitoring
+		return result #(success, variables, cost, execution_time, gradient, utilisation)
+		
+	
 
-    
-    
-    def __profile(self, implementations):
-        """
-            Profiling Routine
-            * Search space for the smallest input size #the first value of each argument
-            * Select Pareto experiments
-            * Modify input size and test on the Pareto configurations 
-        """
-        experiments = []
-        for implementation in implementations:
-            arguments = implementation.Arguments
-            strategy = SimulatedAnnealingStrategy(self.appmanager, implementation)
-            argument_combinations = Combinations(map(lambda arg: arg.get_range_size() - 1, arguments))
-            
-            for values in argument_combinations.generate():
-                new_args = []
-                for i in range(len(arguments)):
-                    new_args.append(copy.deepcopy(arguments[i]))
-                    #get the argument value
-                    val = arguments[i].get_value_at_index(values[i])
-                    #set range or values as only having this value
-                    new_args[-1].set_values([val, val])
-                
-                #change input size here
-                strategy.implementation.Arguments = new_args
-                #update arguments model
-                strategy.generate_arguments_model()
-                print "arg model %s" % strategy.ArgModel
+	def get_explored_solutions(self):
+		data = State.get_data(self.version, self.StateID)
+		
+		if data in [None, []]:
+			return self.variables, None
+			
+		solutions = []
+		
+		for info in data:			
+			solutions.append({"Input" : info["InputParameters"], "Configurations" : info["Algorithm"]["solutions"]})
+			
+		return self.variables, solutions, self.strategy.constraints
+		
+		
 
-                experiments = strategy.explore()
-                # self.appmanager.performance_model['experiments']
-
-                break #TODO(genc): this is to stop trying different inputs, take care when this is decided
-            
-        # return experiments

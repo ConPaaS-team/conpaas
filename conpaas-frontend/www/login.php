@@ -13,7 +13,7 @@ if (isset($_SESSION['uid'])) {
 
 $page = new LoginPage();
 echo $page->renderDoctype();
-$support_external_idp = Director::getSupportExternalIdp();
+// $support_external_idp = Director::getSupportExternalIdp();
 ?>
 <html>
     <head>
@@ -78,7 +78,7 @@ $support_external_idp = Director::getSupportExternalIdp();
             <h2 class="title" id="login-title">Login</h2>
             <h2 class="title invisible" id="register-title">Register</h2>
             <table>
-                <?php if ($support_external_idp) { ?>
+                <?php if (false/*$support_external_idp*/) { ?>
                 <tr>
                     <td> </td>
                     <td class="actions" align="left">
@@ -93,7 +93,7 @@ $support_external_idp = Director::getSupportExternalIdp();
                 <tr>
                     <td class="name">username</td>
                     <td class="input">
-                        <input type="text" id="username" />
+                        <input type="text" id="username" value="test" />
                     </td>
                 </tr>
                 <tr class="register_form" style="display: none">
@@ -105,7 +105,7 @@ $support_external_idp = Director::getSupportExternalIdp();
                 <tr>
                     <td class="name">password</td>
                     <td class="input">
-                        <input type="password" id="password" />
+                        <input type="password" id="password" value="password" />
                     </td>
                 </tr>
                 <tr class="register_form" style="display: none">

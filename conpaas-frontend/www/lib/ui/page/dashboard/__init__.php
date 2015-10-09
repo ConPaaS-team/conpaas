@@ -13,6 +13,8 @@ class Dashboard extends Page {
 		$this->addJS('js/servicepage.js');
 		$this->addJS('js/services.js');
 
+		$this->addJS('js/tipped.js');
+
 		$this->addJS('js/jqplot/jquery.jqplot.min.js');
 		$this->addJS('js/jqplot/jqplot.canvasAxisLabelRenderer.min.js');
 		$this->addJS('js/jqplot/jqplot.canvasTextRenderer.js');
@@ -38,6 +40,7 @@ class Dashboard extends Page {
 	{
 		$cssheader = parent::renderHeaderCSS();
 		$cssheader .= parent::renderCSSLink('css/jquery.jqplot.min.css');
+		$cssheader .= parent::renderCSSLink('css/tipped.css');
 		return $cssheader;
 	}
 

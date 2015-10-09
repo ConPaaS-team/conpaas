@@ -236,7 +236,7 @@ class HadoopNaasManager(BaseManager):
         return binascii.b2a_hex(os.urandom(size))
     
     def reserve(self, count):
-        configuration = {'Resources' : [{'GroupID' : 'hdp-%s'%self.createRandomID(4), 'NumInstances' : count, 'Type' : 'Machine', 'Attributes' : {'Cores' : 1, 'Memory' : 1024}}]}
+        configuration = {'Resources' : [{'Group' : 'hdp-%s'%self.createRandomID(4), 'NumInstances' : count, 'Type' : 'Machine', 'Attributes' : {'Cores' : 1, 'Memory' : 1024}}]}
         reservation = self.controller.prepare_reservation(configuration)
         self.reservation_ids += reservation['ConfigID']
         reservation = self.controller.create_reservation_test(reservation, client.check_agent_process, self.AGENT_PORT)

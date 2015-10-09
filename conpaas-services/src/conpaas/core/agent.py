@@ -39,28 +39,28 @@ class BaseAgent(ConpaasRequestHandlerComponent):
         self.logger.info("'%s' agent started (uid=%s, aid=%s)" % (
             service_type, user_id, app_id))
 
-        # IPOP setup
-        ipop.configure_conpaas_node(config_parser)
+        # # IPOP setup
+        # ipop.configure_conpaas_node(config_parser)
     
-        # Ganglia setup
-        self.ganglia = AgentGanglia(config_parser)
+        # # Ganglia setup
+        # self.ganglia = AgentGanglia(config_parser)
 
-        try:
-            self.ganglia.configure()
-        except Exception, err:
-            self.logger.exception('Error configuring Ganglia: %s' % err)
-            # Something went wrong while configuring Ganglia. We do not want
-            # our agent to think it can be used
-            self.ganglia = None
-            return
+        # try:
+        #     self.ganglia.configure()
+        # except Exception, err:
+        #     self.logger.exception('Error configuring Ganglia: %s' % err)
+        #     # Something went wrong while configuring Ganglia. We do not want
+        #     # our agent to think it can be used
+        #     self.ganglia = None
+        #     return
 
-        err = self.ganglia.start()
-        if err:
-            self.logger.exception(err)
-            # Same as above, our agent can not use Ganglia
-            self.ganglia = None
-        else:
-            self.logger.info('Ganglia started successfully')
+        # err = self.ganglia.start()
+        # if err:
+        #     self.logger.exception(err)
+        #     # Same as above, our agent can not use Ganglia
+        #     self.ganglia = None
+        # else:
+        #     self.logger.info('Ganglia started successfully')
 
     @expose('GET')
     def check_agent_process(self, kwargs):

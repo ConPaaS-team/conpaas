@@ -6,6 +6,7 @@
 require_once('__init__.php');
 require_module('https');
 require_module('application');
+require_module('logging');
 // require_module('service');
 // require_module('service/factory');
 
@@ -32,6 +33,7 @@ try {
 			header("Content-type: application/json");
 			header('Content-Disposition:attachment;filename="' . 'profile.json' . '"');
 			$info = $application->getProfilingInfo(true);
+			dlog(print_r($info, true));
 			$res = $info['pm'];
 		}else{
 			$res['ready'] = true;

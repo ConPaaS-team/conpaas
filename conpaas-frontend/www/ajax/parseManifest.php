@@ -17,7 +17,7 @@ try {
 	// $services = '<div class="services"><table class="slist" cellspacing="1" cellpadding="0">';
 
 	$arrman = array();		
-	$arrman['applicatio_name'] = $manifest->ApplicationName;
+	$arrman['applicatio_name'] = $manifest->Name;
 	$arrman['services'] = array();
 	$i=0;
 	foreach ($manifest->Modules as $value)

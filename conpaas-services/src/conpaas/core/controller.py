@@ -125,40 +125,49 @@ class Controller(object):
                 self.__logger.debug("get_available_ipop_address: returning %s" % host)
                 return host
 
-    def create_reservation_test(self, reservation, test_managent, port, cloud=None):
-        reservation_id = reservation['ConfigID']
+    def create_reservation_test(self, configuration, test_managent, port, constraints=[], monitor={}, cloud=None):
+        # reservation_id = reservation['ConfigID']
         if cloud is None:
             cloud = self.__default_cloud     
         #try:
-        cloud.create_reservation(reservation_id)        
+        
+        open('/tmp/out', 'a').write('configuration: %s\n'%configuration)
+        reservations = cloud.create_reservation(configuration,constraints, monitor)        
         
         max_iteration = 120
         iteration = 0
         sleep_interval = 3
-        
+        open('/tmp/out', 'a').write('reservation: %s\n'%reservations)
         while True:
-            status = cloud.check_reservation(reservation_id)
-            # open('/tmp/out', 'a').write('status: %s\n'%status)
-            if status['Ready'] or iteration >= max_iteration:
+            status = cloud.check_reservation(reservations)
+            open('/tmp/out', 'a').write('status: %s\n'%status)
+            all_ready = True
+            for inst in status['Instances']:
+                if not bool(status['Instances'][inst]['Ready']):
+                    all_ready = False
+
+            if all_ready or iteration >= max_iteration:
                 break
             else:
                 time.sleep(sleep_interval)
                 iteration += 1
 
-        open('/tmp/out', 'a').write('status: %s\n'%status)
-        if status['Ready']:
+        # open('/tmp/out', 'a').write('status: %s\n'%status)
+        if all_ready:
             iteration = 0
             nr_not_started = len(status['Instances'])
             open('/tmp/out', 'a').write('not started: %s\n'%nr_not_started)
-            notdone = status['Instances']
+            notdone = [status['Instances'][inst] for inst in status['Instances']]  
+            for i in range(len(notdone)):
+                notdone[i]['Index']  = i
+
+            open('/tmp/out', 'a').write('not done: %s\n'%notdone)
             tmpnotdone = []
             while True:
                 for node in notdone:
-                    isvm = False
-                    for res in reservation['Resources']:
-                        if res['GroupID'] == node['GroupID']:
-                            isvm = res['Type'] == 'Machine'
-                    if isvm:
+                    ##### node = notdone[reservations['ReservationID'][i]]
+                    # if configuration['Allocation'][node['Index']]['Type'] == 'Machine':
+                    if configuration[node['Index']]['Type'] == 'Machine':
                         if self.__check_node(node, test_managent, port):
                             nr_not_started -= 1
                             open('/tmp/out', 'a').write('not started decremented to %s for node: %s\n'% (nr_not_started, node))
@@ -180,8 +189,18 @@ class Controller(object):
                 time.sleep(sleep_interval)
                 iteration += 1
             if nr_not_started == 0:
-                reservation['Instances'] = status['Instances']
-                return reservation
+                # for i in range(len(configuration['Allocation'])):
+                #     configuration['Allocation'][i]['ID'] = reservations['ReservationID'][i]
+                #     configuration['Allocation'][i]['Address'] = status['Instances'][reservations['ReservationID'][i]]['Address'][0]
+
+                for i in range(len(configuration)):
+                    configuration[i]['ID'] = reservations['ReservationID'][i]
+                    configuration[i]['Address'] = status['Instances'][reservations['ReservationID'][i]]['Address'][0]
+
+                # reservation['Instances'] = status['Instances']
+                # return reservation
+                open('/tmp/out', 'a').write('returning configuration %s\n' % configuration)
+                return configuration
         
         raise Exception('Timeout while creating a reservation: %s nodes did not start' % nr_not_started)
 
@@ -189,85 +208,85 @@ class Controller(object):
         #except Exception as e:
         #    cloud.release_reservation(reservation_id)
 
-    def create_reservation(self, reservation_id, count, test_agent, port, cloud=None):
+    # def create_reservation(self, reservation_id, count, test_agent, port, cloud=None):
 
-        ready = []
-        poll = []
-        iteration = 0
+    #     ready = []
+    #     poll = []
+    #     iteration = 0
 
-        if count == 0:
-            return []
+    #     if count == 0:
+    #         return []
 
-        if cloud is None:
-            cloud = self.__default_cloud
+    #     if cloud is None:
+    #         cloud = self.__default_cloud
 
-        if not self.deduct_credit(count):
-            raise Exception('Could not add nodes. Not enough credits.')
+    #     if not self.deduct_credit(count):
+    #         raise Exception('Could not add nodes. Not enough credits.')
 
-        while len(ready) < count:
-            iteration += 1
-            msg = '[create_nodes] iter %d: creating %d nodes on cloud %s' % (
-                iteration, count - len(ready), cloud.cloud_name)
-            self.__logger.debug(msg)
-            try:
-                self.__force_terminate_lock.acquire()
-                if iteration == 1:
-                    request_start = time.time()
+    #     while len(ready) < count:
+    #         iteration += 1
+    #         msg = '[create_nodes] iter %d: creating %d nodes on cloud %s' % (
+    #             iteration, count - len(ready), cloud.cloud_name)
+    #         self.__logger.debug(msg)
+    #         try:
+    #             self.__force_terminate_lock.acquire()
+    #             if iteration == 1:
+    #                 request_start = time.time()
 
-                # eg: conpaas-agent-php-u34-s316
-                #name = "conpaas-%s-a%s-u%s" % (self.role, self.__conpaas_app_id, self.__conpaas_user_id )
+    #             # eg: conpaas-agent-php-u34-s316
+    #             #name = "conpaas-%s-a%s-u%s" % (self.role, self.__conpaas_app_id, self.__conpaas_user_id )
 
-                self.__partially_created_nodes = cloud.create_reservation(reservation_id)
+    #             self.__partially_created_nodes = cloud.create_reservation(reservation_id)
                 
-                self.__logger.debug("cloud.new_instances returned %s" % self.__partially_created_nodes)
+    #             self.__logger.debug("cloud.new_instances returned %s" % self.__partially_created_nodes)
 
-            except Exception as e:
-                self.__logger.exception('[_create_nodes]: Failed to request new nodes')
-                #self.delete_nodes(ready)
-                cloud.release_reservation(reservation_id)
-                self.__partially_created_nodes = []
-                raise e
-            finally:
-                self.__force_terminate_lock.release()
+    #         except Exception as e:
+    #             self.__logger.exception('[_create_nodes]: Failed to request new nodes')
+    #             #self.delete_nodes(ready)
+    #             cloud.release_reservation(reservation_id)
+    #             self.__partially_created_nodes = []
+    #             raise e
+    #         finally:
+    #             self.__force_terminate_lock.release()
 
-            poll, failed = self.__wait_for_nodes(self.__partially_created_nodes, test_agent, port)
-            ready += poll
+    #         poll, failed = self.__wait_for_nodes(self.__partially_created_nodes, test_agent, port)
+    #         ready += poll
 
-            poll = []
-            if failed:
-                self.__logger.debug('[_create_nodes]: %d nodes '
-                                    'failed to startup properly: %s'
-                                    % (len(failed), str(failed)))
-                self.__partially_created_nodes = []
-                ready = []
-                #self.delete_nodes(failed)
-                cloud.release_reservation(reservation_id)
-                raise Exception("Nodes: %s, in reservation %s failed to start" % (failed, reservation_id))
+    #         poll = []
+    #         if failed:
+    #             self.__logger.debug('[_create_nodes]: %d nodes '
+    #                                 'failed to startup properly: %s'
+    #                                 % (len(failed), str(failed)))
+    #             self.__partially_created_nodes = []
+    #             ready = []
+    #             #self.delete_nodes(failed)
+    #             cloud.release_reservation(reservation_id)
+    #             raise Exception("Nodes: %s, in reservation %s failed to start" % (failed, reservation_id))
 
-        self.__force_terminate_lock.acquire()
-        self.__created_nodes += ready
-        self.__partially_created_nodes = []
-        self.__force_terminate_lock.release()
+    #     self.__force_terminate_lock.acquire()
+    #     self.__created_nodes += ready
+    #     self.__partially_created_nodes = []
+    #     self.__force_terminate_lock.release()
 
-        # start reservation timer with slack of 3 mins + time already wasted
-        # this should be enough time to terminate instances before
-        # hitting the following hour
-        timer = ReservationTimer([i.id for i in ready],
-                                 (55 * 60) - (time.time() - request_start),
-                                 self.__deduct_and_check_credit,
-                                 self.__reservation_logger)
-        timer.start()
-        # set mappings
-        for i in ready:
-            self.__reservation_map[i.id] = timer
-        return ready
+    #     # start reservation timer with slack of 3 mins + time already wasted
+    #     # this should be enough time to terminate instances before
+    #     # hitting the following hour
+    #     timer = ReservationTimer([i.id for i in ready],
+    #                              (55 * 60) - (time.time() - request_start),
+    #                              self.__deduct_and_check_credit,
+    #                              self.__reservation_logger)
+    #     timer.start()
+    #     # set mappings
+    #     for i in ready:
+    #         self.__reservation_map[i.id] = timer
+    #     return ready
 
-    def prepare_reservation(self, manager_configuration, cloud=None):
+    # def prepare_reservation(self, manager_configuration, cloud=None):
         
-        if cloud is None:
-            cloud = self.__default_cloud
+    #     if cloud is None:
+    #         cloud = self.__default_cloud
 
-        return cloud.prepare_reservation(manager_configuration) 
+    #     return cloud.prepare_reservation(manager_configuration) 
 
     def release_reservation(self, reservation_id, cloud=None):
         
@@ -276,6 +295,12 @@ class Controller(object):
 
         return cloud.release_reservation(reservation_id)    
 
+    def monitor(self, reservation_id, address, cloud=None):
+        
+        if cloud is None:
+            cloud = self.__default_cloud
+
+        return cloud.monitor(reservation_id, address)    
 
 
     #=========================================================================#
@@ -566,12 +591,12 @@ class Controller(object):
     def __check_node(self, node, test_managent, port):
         """Return True if the given node has properly started an agent on the
         given port"""
-        if node['Address'] == '':
+        if node['Address'][0] == '':
             return False
 
         try:
             self.__logger.debug('[__check_node]: test_managent(%s, %s)' % (node['Address'], port))
-            test_managent(node['Address'], port)
+            test_managent(node['Address'][0], port)
             return True
         except socket.error, err:
             self.__logger.debug('[__check_node]: %s' % err)

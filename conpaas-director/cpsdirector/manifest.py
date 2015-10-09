@@ -988,7 +988,7 @@ def get_app_id(manifest, cloud='default'):
         return 'Error parsing manifest',-1
 
     # 'Application' has to be defined
-    app_name = parse.get('ApplicationName')
+    app_name = parse.get('Name')
 
     if not app_name:
         return 'Application is not defined',-1

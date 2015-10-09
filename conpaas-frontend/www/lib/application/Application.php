@@ -58,6 +58,7 @@ class Application {
 
 	public function getProfilingInfo($download) {
 		$json = $this->managerRequest('get', 'get_profiling_info', 0, array('manager_id' => 0, 'download' => $download), false);
+		dlog("json: " . print_r($json, true));
 		$info = json_decode($json, true);
 		if ($info == null) {
 			return false;
@@ -114,8 +115,8 @@ class Application {
 	}
 
 
-	public function profile($iterations, $debug) {
-		$response = $this->managerRequest('get', 'profile', 0, array('manager_id' => 0, 'iterations' => $iterations, 'debug'=>$debug), false);
+	public function profile($iterations, $debug, $monitor) {
+		$response = $this->managerRequest('get', 'profile', 0, array('manager_id' => 0, 'iterations' => $iterations, 'debug'=>$debug, 'monitor'=>$monitor), false);
 		return $response;
 
 	}

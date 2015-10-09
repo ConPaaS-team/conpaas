@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import threading, subprocess, time
 
-class UtilizationDataThread(threading.Thread):
+class MonitorDataThread(threading.Thread):
 
     def __init__(self, target = None, machines = []):
         threading.Thread.__init__(self)
@@ -31,7 +31,7 @@ class UtilizationDataThread(threading.Thread):
         
         return self.store
 
-# thr = UtilizationDataThread()
+# thr = MonitorDataThread()
 # thr.start()
 # time.sleep(30)
 # thr.stop()

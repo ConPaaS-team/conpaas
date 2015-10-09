@@ -17,6 +17,7 @@ import httplib2
 import simplejson
 import base64
 import os.path
+import sys, traceback, copy
 
 class HarnessCloud(Cloud):
     '''Support for "Harness" clouds'''
@@ -28,7 +29,8 @@ class HarnessCloud(Cloud):
         self.img = iaas_config.get(cloud_name, 'IMAGE_ID') 
         #self.url = "http://127.0.0.1:5558/method" 
         
-        self.url = os.path.join(iaas_config.get(cloud_name, 'HOST'), 'method') 
+        # self.url = os.path.join(iaas_config.get(cloud_name, 'HOST'), 'method') 
+        self.url = iaas_config.get(cloud_name, 'HOST')
 
     def get_cloud_type(self):
         return 'harness'
@@ -62,43 +64,84 @@ class HarnessCloud(Cloud):
             #raise Exception('Not connected to cloud')
 
 
-    def __make_request(self, url, content = {}):
-        #print "Conn ID =", id(self)
-        #print "\nRequest :", url, content
-        data, response = self.conn.request(self.url + url , 'POST',
+    
+    def __make_request(self, url, method = 'POST', content = {}):
+        data, response = self.conn.request(self.url + url , method,
                           simplejson.dumps(content),
                           headers={'Content-Type': 'application/json'})
         try:
             response = simplejson.loads(response)
+            if  'result' not in response:
+                raise Exception(response['error']['message'])
+            else:
+                response = response['result']
         except:
-            #print traceback.print_exc()
-            return response
+            print traceback.print_exc()
+            sys.exit()
+        return response
+
+    # def __make_request(self, url, content = {}):
+    #     #print "Conn ID =", id(self)
+    #     #print "\nRequest :", url, content
+    #     data, response = self.conn.request(self.url + url , 'POST',
+    #                       simplejson.dumps(content),
+    #                       headers={'Content-Type': 'application/json'})
+    #     try:
+    #         response = simplejson.loads(response)
+    #     except:
+    #         #print traceback.print_exc()
+    #         return response
         
-        #print "Response :", response["result"]
-        return response["result"]
+    #     #print "Response :", response["result"]
+    #     return response["result"]
     
     
-    def prepare_reservation(self, configuration = {}):
-        for i in range(len(configuration['Resources'])):
-            if configuration['Resources'][i]['Type'] == 'Machine':
-                configuration['Resources'][i]['Image'] =  self.img
-                configuration['Resources'][i]['UserData'] = base64.b64encode(self.get_context())
-        response = self.__make_request("/prepareReservation", configuration)
+    def create_reservation(self, configuration = {}, constraints=[], monitor={}):
+        data = {}
+        # conf_copy  = configuration 
+        conf_copy  = copy.deepcopy(configuration)
+        for dev in conf_copy:
+            if dev['Type'] == 'Machine':
+                dev['Attributes']['Image'] = self.img
+                dev['Attributes']['UserData'] = base64.b64encode(self.get_context())
+        
+        data['Allocation'] = conf_copy
+        data['Constraints'] = constraints
+        if len(monitor) > 0:
+            data['Monitor'] = monitor
+
+        response = self.__make_request("/createReservation", content=data)
         return response
     
-    def create_reservation(self, configurationID):
-        response = self.__make_request("/createReservation", {"ConfigID" : configurationID})
-        return response
+    # def prepare_reservation(self, configuration = {}):
+    #     for i in range(len(configuration['Resources'])):
+    #         if configuration['Resources'][i]['Type'] == 'Machine':
+    #             configuration['Resources'][i]['Image'] =  self.img
+    #             configuration['Resources'][i]['UserData'] = base64.b64encode(self.get_context())
+    #     response = self.__make_request("/prepareReservation", configuration)
+    #     return response
+    
+
+    # def create_reservation(self, configurationID):
+    #     response = self.__make_request("/createReservation", {"ConfigID" : configurationID})
+    #     return response
     
     def release_reservation(self, reservationID):
-        response = self.__make_request("/releaseReservation", {"ResID" : reservationID})
+        response = self.__make_request("/releaseReservation", method = 'DELETE', content={"ReservationID" : [reservationID]})
         if response is {}:
             return True
     
-    def check_reservation(self, reservationID):
-        response = self.__make_request("/checkReservation", {"ResID" : reservationID})
+    def check_reservation(self, reservation):
+        # response = self.__make_request("/checkReservation", content={"ReservationID" : reservationIDs})
+        response = self.__make_request("/checkReservation", content=reservation)
         
         return response
+
+    def monitor(self, reservationID, address, entry=1):
+        response = self.__make_request("/getMetrics", content={"ReservationID" : reservationID, "Address":address, "Entry":entry})
+        return response['Metrics']
+
+    
     #for development only
     def reset(self):
         response = self.__make_request("/reset")

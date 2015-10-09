@@ -7,7 +7,7 @@ import os.path
 import simplejson
 import ConfigParser
 import StringIO
-import sys, tempfile
+import sys, tempfile, traceback
 
 
 from conpaas.core.log import create_logger
@@ -24,16 +24,24 @@ from conpaas.core.https.server import ConpaasRequestHandlerComponent
 from conpaas.core.services import manager_services 
 from conpaas.core.misc import file_get_contents
 
-from conpaas.core.appmanager.core.patterns.store import Traces
-from conpaas.core.appmanager.core.context.parser import ManifestParser
-from conpaas.core.appmanager.slo import User, Objectives, SLOParser
-from conpaas.core.appmanager.profiler.profiler import Profiler
-from conpaas.core.appmanager.selection import SLOEnforcer
+from conpaas.core.appmanager.specification.manifest import ManifestParser
+from conpaas.core.appmanager.specification.slo import SLOParser
+
+
+# from conpaas.core.appmanager.profiler.profiler import Profiler
+# from conpaas.core.appmanager.selection import SLOEnforcer
 from conpaas.core import https
 import urlparse
 
 from conpaas.core.misc import archive_open, archive_get_members, archive_close, archive_get_type, archive_extract_file
 from conpaas.core.misc import CodeVersion, ServiceConfiguration
+
+from conpaas.core.appmanager.state import State
+from conpaas.core.appmanager.application.search_space import VariableMapper
+from conpaas.core.appmanager.profiler.profiler import Profiler
+from conpaas.core.appmanager.modeller.extrapolator import Extrapolator
+from conpaas.core.appmanager.selection import SLOEnforcer
+from conpaas.core.appmanager.executor import Executor
 
 class ApplicationManager(ConpaasRequestHandlerComponent):
 
@@ -55,7 +63,8 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
         self.httpsserver = httpsserver
         self.config_parser = config_parser
         self.cache = config_parser.get('manager', 'VAR_CACHE')
-        self.performance_model = {'experiments':{}, 'pareto':[]}
+        # self.performance_model = {'experiments':{}, 'extrapolations':{}, 'pareto':[]}
+        self.performance_model = {'experiments':[], 'extrapolations':[], 'pareto':[]}
 
         self.code_repo = config_parser.get('manager', 'CODE_REPO')
 
@@ -71,6 +80,7 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
 
         self.config = ServiceConfiguration()
         self.debug = 0
+        self.frontend=''
 
         #TODO:(genc) Put some order in this parsing, it is horrible
         #sloconent = file_get_contents(kwargs['slo'])
@@ -96,6 +106,9 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
 
     @expose('GET')
     def execute_slo(self, kwargs):
+        if not self.sloconf or len(self.sloconf) == 0:
+            return HttpJsonResponse({"success":True, "error": "No configuration selected"})            
+        
         Thread(target=self.execute_application_slo, args=[]).start()
         # execution_time, total_cost = self.execute_application_slo()
 
@@ -112,8 +125,8 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
     @expose('GET')
     def infoapp(self, kwargs):
         info = {}
-        for i in range(len(self.manifest.Modules)):
-            info[self.manifest.Modules[i].ModuleType] = self.module_managers[i].get_info()
+        for i in range(len(self.application.Modules)):
+            info[self.application.Modules[i].ModuleType] = self.module_managers[i].get_info()
         
         return HttpJsonResponse({'servinfo':info, 'execinfo': self.execinfo, 'frontend':self.frontend})    
 
@@ -121,6 +134,7 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
     def upload_profile(self, kwargs):
         profile = kwargs.pop('profile')
         profile = profile.file.read()
+        self.logger.debug(profile)
         self.performance_model = simplejson.loads(profile)
         # return HttpJsonResponse({'state':self.state, 'profile':{'experiments': Traces.Experiments, 'pareto':Traces.ParetoExperiments}})    
         return HttpJsonResponse({'len':len(profile)})    
@@ -130,72 +144,135 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
     def upload_slo(self, kwargs):
         slofile = kwargs.pop('slofile')
         slofile = slofile.file.read()
+        self.logger.info("slo from web: %s" % slofile)        
         self.slo = SLOParser.parse(simplejson.loads(slofile))
-        self.perparePerformanceModel(True)
-        User.Objectives = self.slo.Objective
-        self.sloconf = self.slomanager.select_configuration(User.Objectives, self.performance_model['pareto'])
+        self.enforcer.set_slo(self.slo)
+
+        # self.logger.info("slo file: %s" % self.slo)
+        # self.perparePerformanceModel(True)
+        # User.Objectives = self.slo.Objective
+        self.sloconf = self.enforcer.select_valid_configurations(self.performance_model['pareto'])
         # return HttpJsonResponse({'state':self.state, 'profile':{'experiments': Traces.Experiments, 'pareto':Traces.ParetoExperiments}})    
+        
+
+
         return HttpJsonResponse({'conf':self.sloconf})    
+        # return HttpJsonResponse({'conf':'lesh'})    
 
-    def run_am(self):
-        if self.manifest.PerformanceModel == None:
-            self.state = self.S_PROFILING
-            profiler = Profiler(self)
-            profiler.run()
-            # self.performance_model['experiments'] = profiler.run()
+    # def run_am(self):
+    #     if self.manifest.PerformanceModel == None:
+    #         self.state = self.S_PROFILING
+    #         profiler = Profiler(self)
+    #         profiler.run()
+    #         # self.performance_model['experiments'] = profiler.run()
 
-            self.state = self.S_RUNNING
-            self.perparePerformanceModel(True)
-        sys.stdout.flush()
+    #         self.state = self.S_RUNNING
+    #         self.perparePerformanceModel(True)
+    #     sys.stdout.flush()
 
     def execute_application_slo(self):
-        implementation = None
-        #genc: again taking the only module here
-        for impl in self.manifest.Modules[0].Implementations:
-            if impl.ImplementationID == self.sloconf['ImplementationID']:
-                implementation = impl
-                break
-
-        configuration, roles = implementation.Resources.get_configuration(self.sloconf['Configuration'])
-        reservation = self.reserve_resources(configuration)
-        for i in range(len(reservation['Instances'])):
-           reservation['Instances'][i]["Role"] = roles[i]
-        execution_time, total_cost = self.execute_application(reservation, self.sloconf['Arguments'], False)
-        self.execinfo = {"execution_time":execution_time, "total_cost":total_cost}
-
-
-    def execute_application(self, reservation, args, profiling):
-        #for now we use only one module, has to be updated when using multiple modules
-        module_manager = self.module_managers[0]
-        print "execute_application: reserv: %s, args: %s" % (reservation, args)
-        self.frontend = module_manager._do_startup({'cloud':self.cloud, 'configuration':reservation, 'args': args, 'code_conf':self.config})
         
-        # self.logger.info("actually came out of do startup")
+        exp = self.sloconf[0]
+        result = Executor.execute_on_configuration(self.application, exp['Implementations'], exp['ConfVars'].keys(), exp['ConfVars'], exp['Parameters'])
+        # implementation = None
+        # #genc: again taking the only module here
+        # for impl in self.manifest.Modules[0].Implementations:
+        #     if impl.ImplementationID == self.sloconf['ImplementationID']:
+        #         implementation = impl
+        #         break
 
-        "Execute implementation"
-        start_time = time.time()
-        module_manager._do_run(profiling, args)
-        end_time = time.time()
-        execution_time = end_time - start_time
-        execution_time = execution_time / 60
-        total_cost = execution_time * reservation["Cost"]
+        # configuration, roles = implementation.Resources.get_configuration(self.sloconf['Configuration'])
+        # reservation = self.reserve_resources(configuration)
+        # for i in range(len(reservation['Instances'])):
+        #    reservation['Instances'][i]["Role"] = roles[i]
+        # execution_time, total_cost = self.execute_application(reservation, self.sloconf['Arguments'], False)
+        self.execinfo = {"execution_time":result[3], "total_cost":result[2]}
 
-        if not self.debug:
-            module_manager.cleanup_agents()
-            module_manager.controller.release_reservation(reservation['ConfigID'])
 
-        # return round(execution_time, 4), round(total_cost, 4)
-        return execution_time, total_cost
+    # def execute_application_old(self, reservation, args, profiling):
+    #     #for now we use only one module, has to be updated when using multiple modules
+    #     module_manager = self.module_managers[0]
+    #     print "execute_application: reserv: %s, args: %s" % (reservation, args)
+    #     self.frontend = module_manager._do_startup({'cloud':self.cloud, 'configuration':reservation, 'args': args, 'code_conf':self.config})
+        
+    #     # self.logger.info("actually came out of do startup")
 
-    def reserve_resources(self, configuration):
+    #     "Execute implementation"
+    #     start_time = time.time()
+    #     module_manager._do_run(profiling, args)
+    #     end_time = time.time()
+    #     execution_time = end_time - start_time
+    #     execution_time = execution_time / 60
+    #     total_cost = execution_time * reservation["Cost"]
+
+    #     if not self.debug:
+    #         module_manager.cleanup_agents()
+    #         module_manager.controller.release_reservation(reservation['ConfigID'])
+
+    #     # return round(execution_time, 4), round(total_cost, 4)
+    #     return execution_time, total_cost
+
+
+    # def execute_application(self, reservation, args, profiling):
+    #     #for now we use only one module, has to be updated when using multiple modules
+    #     module_manager = self.module_managers[0]
+    #     print "execute_application: reserv: %s, args: %s" % (reservation, args)
+    #     self.frontend = module_manager._do_startup({'cloud':self.cloud, 'configuration':reservation, 'args': args, 'code_conf':self.config})
+        
+    #     # self.logger.info("actually came out of do startup")
+
+    #     "Execute implementation"
+    #     start_time = time.time()
+    #     module_manager._do_run(profiling, args)
+    #     end_time = time.time()
+    #     execution_time = end_time - start_time
+    #     execution_time = execution_time / 60
+    #     total_cost = execution_time * reservation["Cost"]
+
+    #     if not self.debug:
+    #         module_manager.cleanup_agents()
+    #         module_manager.controller.release_reservation(reservation['ConfigID'])
+
+    #     # return round(execution_time, 4), round(total_cost, 4)
+    #     return execution_time, total_cost
+
+    def reserve_resources(self, configuration, constraints,  monitor):
         #for now we use only one module, has to be updated when using multiple modules
         module_manager = self.module_managers[0]
-        reservation = module_manager.controller.prepare_reservation(configuration)
+        # reservation = module_manager.controller.prepare_reservation(configuration)
         #check cost reservation['Cost'] and contiune
         #cost = reservation['Cost']
-        reservation = module_manager.controller.create_reservation_test(reservation, module_manager.get_check_agent_funct(), 5555)
+        if self.monitor:
+            reservation = module_manager.controller.create_reservation_test(configuration, module_manager.get_check_agent_funct(), 5555, constraints, monitor)
+        else:
+            self.monitor_target = monitor
+            reservation = module_manager.controller.create_reservation_test(configuration, module_manager.get_check_agent_funct(), 5555, constraints, monitor) 
         return reservation
-    
+   
+    def release_resources(self, reservationID):
+        module_manager = self.module_managers[0]
+        # module_manager.cleanup_agents()
+        self.logger.debug("calling release_reservation")
+        if not self.debug
+            module_manager.controller.release_reservation(reservationID)
+
+    def get_monitoring(self, reservationID, address):
+        module_manager = self.module_managers[0]
+        
+        if self.monitor:
+            # mon_info = module_manager.controller.monitor(reservationID, address)
+            mon_info = {'CPU_U_S_TIME': '1,1443617808.0,3.0\n2,1443617809.0,19.0\n3,1443617812.0,47.0\n4,1443617813.0,81.0\n5,1443617814.0,112.0\n6,1443617815.0,144.0\n7,1443617817.0,155.0\n8,1443617818.0,155.0\n9,1443617819.0,155.0\n10,1443617820.0,155.0\n11,1443617822.0,166.0\n12,1443617823.0,167.0\n13,1443617824.0,167.0\n14,1443617825.0,167.0\n15,1443617826.0,167.0\n16,1443617827.0,167.0\n17,1443617828.0,167.0\n18,1443617829.0,167.0\n19,1443617830.0,167.0\n20,1443617831.0,167.0\n', 'MEM_U_S_BYTE': '1,1443617808.0,8470528.0\n2,1443617810.0,25010176.0\n3,1443617812.0,23830528.0\n4,1443617813.0,28930048.0\n5,1443617814.0,35192832.0\n6,1443617815.0,33308672.0\n7,1443617817.0,25001984.0\n8,1443617818.0,23670784.0\n9,1443617819.0,23670784.0\n10,1443617820.0,19755008.0\n11,1443617822.0,25112576.0\n12,1443617823.0,23588864.0\n13,1443617824.0,21438464.0\n14,1443617825.0,21049344.0\n15,1443617826.0,20688896.0\n16,1443617827.0,20471808.0\n17,1443617828.0,20471808.0\n18,1443617829.0,19812352.0\n19,1443617830.0,19812352.0\n20,1443617831.0,19812352.0\n', 'MEM_TOT_BYTE': '1,1443617808.0,1073741824.0\n2,1443617810.0,1073741824.0\n3,1443617812.0,1073741824.0\n4,1443617813.0,1073741824.0\n5,1443617814.0,1073741824.0\n6,1443617815.0,1073741824.0\n7,1443617817.0,1073741824.0\n8,1443617818.0,1073741824.0\n9,1443617819.0,1073741824.0\n10,1443617820.0,1073741824.0\n11,1443617822.0,1073741824.0\n12,1443617823.0,1073741824.0\n13,1443617824.0,1073741824.0\n14,1443617825.0,1073741824.0\n15,1443617826.0,1073741824.0\n16,1443617827.0,1073741824.0\n17,1443617828.0,1073741824.0\n18,1443617829.0,1073741824.0\n19,1443617830.0,1073741824.0\n20,1443617831.0,1073741824.0\n', 'CPU_TOT_TIME': '1,1443617808.0,6817940.0\n2,1443617810.0,6818108.0\n3,1443617812.0,6818273.0\n4,1443617813.0,6818383.0\n5,1443617814.0,6818493.0\n6,1443617815.0,6818630.0\n7,1443617817.0,6818747.0\n8,1443617818.0,6818890.0\n9,1443617819.0,6818988.0\n10,1443617820.0,6819100.0\n11,1443617822.0,6819197.0\n12,1443617823.0,6819294.0\n13,1443617824.0,6819390.0\n14,1443617825.0,6819485.0\n15,1443617826.0,6819581.0\n16,1443617827.0,6819684.0\n17,1443617828.0,6819778.0\n18,1443617829.0,6819878.0\n19,1443617830.0,6819981.0\n20,1443617831.0,6820080.0\n'}
+        else:
+            mon_info={}
+            for tp in self.monitor_target:
+                if tp != "PollTime":
+                    for metr in self.monitor_target[tp]:
+                        mon_info[metr] = ''
+
+        # self.logger.info('###MONITOR###: %s' % mon_info)
+        return mon_info
+        
+
     # Details consist of resources(or devices), roles and distance
     def get_details_from_implementation(self, implementation):
         impl_resources = implementation.Resources
@@ -205,7 +282,7 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
         details['Resources'] = []
         for impl_device in impl_resources.Devices:
             device = {}
-            device['GroupID'] = impl_device.GroupID
+            device['Group'] = impl_device.Group
             device['Type'] = impl_device.Type
             device['NumInstances'] = impl_device.NumInstances.currentValue
             device['Role'] = impl_device.Role
@@ -222,8 +299,12 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
         manifestfile = kwargs.pop('manifest')
         manifestconent = manifestfile.file
         self.manifest_json = manifestconent.read();
-        self.manifest = ManifestParser.parse(simplejson.loads(self.manifest_json))
-        self.slomanager = SLOEnforcer(self.manifest)
+        self.application = ManifestParser.parse(self.manifest_json)
+        self.application.manager = self 
+        self.versions = self.application.generate_app_versions()
+        # self.slomanager = SLOEnforcer(self.manifest)
+        self.enforcer = SLOEnforcer(self.application, self.versions)
+
         # slofile = kwargs.pop('slo')
         # sloconent = slofile.file
         # self.slo = SLOParser.parse(simplejson.loads(sloconent.getvalue()))
@@ -234,21 +315,114 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
         self.service_ids = {}
         self.implementationsXmodule = []
 
-        for i in range(len(self.manifest.Modules)):
-            self.implementationsXmodule.append(len(self.manifest.Modules[i].Implementations) - 1) 
-            res = self.create_service({'service_type':self.manifest.Modules[i].ModuleType})
-            self.dir_create_service(self.manifest.Modules[i].ModuleType, res.obj['sid'])
+        for i in range(len(self.application.Modules)):
+            self.implementationsXmodule.append(len(self.application.Modules[i].Implementations) - 1) 
+            res = self.create_service({'service_type':self.application.Modules[i].ModuleType})
+            self.dir_create_service(self.application.Modules[i].ModuleType, res.obj['sid'])
             self.service_ids[res.obj['sid']] = self.httpsserver.instances[int(res.obj['sid'])].get_type()
             # self.module_managers.append(self.appmanager.httpsserver.instances[int(res.obj['sid'])]) 
         
         self.appid = kwargs.pop('appid')
         self.cloud = kwargs['cloud']
         
+        self.logger.info("module managers: %s" % self.module_managers)
+
         # Thread(target=self.run_am, args=[]).start()
         #self.run_am()
 
         return HttpJsonResponse({'sids': self.service_ids})
     
+    def run_profiling(self):
+        self.state = self.S_PROFILING
+        done, models = self.model_application()
+        self.logger.info("Modelling done?: %s" % done)
+        if done:            
+            self.state = self.S_RUNNING
+            # self.perparePerformanceModel(True)
+            # self.enforcer.set_models(models)
+        #     #application model has been built; enforce slo
+        #     enforcer = SLOEnforcer(Controller.application, Controller.slo, Controller.versions, models)
+        #     print "Enforce objective ..."
+        #     result = enforcer.execute_application()
+        #     print "Achievement (+ for slower/more expensive than predicted, - for faster/cheaper  than predicted) : ET = ", result[0], " COST = ", result[1]
+            
+        # print "Bye!"
+
+    def model_application(self):
+        #we can run the modelling in parallel for each version
+        q = True 
+        models = {}
+        for v in self.versions:
+            # self.logger.info("Version: %s" % v)
+            done, model = self.model_version(v)
+            models[".".join(map(lambda s: str(s), v))] = model
+            q = q and done 
+        
+        return q, models
+
+
+    # @staticmethod
+    def model_version(self, v):
+        version = ".".join(map(lambda s: str(s), v))
+        #LOOK FOR PROFILE DATA
+        profile_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), "../profiles"))
+        data_file = "%s/%s-%s.pf" % (profile_dir, self.application.Name, version)
+        
+        State.load(version, data_file)
+        
+        current_state = State.get_current_state(version)
+        # self.logger.info("current_state: %s" % current_state)
+    
+        if current_state == 0:
+            print "Profiling state."
+            #profiling with static input phase
+            #get the first small input size to profile with
+            parameters = VariableMapper(self.application.getParameterVariableMap()).lower_bound_values()
+            #start profiler to create a model
+            Profiler.StateID = current_state
+            self.logger.info("parameters: %s" % parameters)
+            profiler = Profiler(self.application, version, parameters = parameters)
+            try:
+                profiler.run()
+            except:
+                traceback.print_exc()
+                print 'Profiler interrupted. Exiting'
+                return False, None
+            State.change_state(version)
+            current_state = State.get_current_state(version)
+            State.checkpoint(version, current_state)
+            
+        #get the input size from the SLO for which to make prediction
+        # input_size = self.application.getExecutionParameters(self.slo.ExecutionArguments)
+        input_size = self.application.getExecutionParameters(self.application.ExtrapolationArgs)
+        self.logger.info("input_size: %s" % input_size)
+        modeller = None
+        if current_state >= 1:
+            print "Modelling state."
+            #profiling variable input
+            #modelling state - use function to predict
+            Extrapolator.StateID = current_state
+            # variables, solutions_identified_in_profiling = Profiler(self.application, version).get_explored_solutions()
+            variables, solutions_identified_in_profiling, constraints = Profiler(self.application, version).get_explored_solutions()
+            print len(solutions_identified_in_profiling)
+            
+            modeller = Extrapolator(self.application, version, variables, solutions_identified_in_profiling, input_size)
+            try:
+                modeller.run()
+            except:
+                traceback.print_exc()
+                print 'Modeller interrupted. Exiting'
+                return False, None
+            State.change_state(version)
+            current_state = State.get_current_state(version)
+            
+        print "Current state", current_state
+        State.save(version)
+        #retrieve the model - tuple (function,constraints)
+        model = modeller.get_model() 
+        return True, model
+        # return True, None
+
     @expose('GET')
     def download_manifest(self, kwargs):
         return HttpJsonResponse({'manifest': self.manifest_json}) 
@@ -258,33 +432,64 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
     def profile(self, kwargs):
         iterations = kwargs.pop('iterations')
         debug = kwargs.pop('debug')
-        self.iterations = iterations
+        monitor = kwargs.pop('monitor')
+        self.iterations = int(iterations)
         self.debug = int(debug)
-        Thread(target=self.run_am, args=[]).start()
+        self.monitor = int(monitor)
+        # self.logger.debug("iterations: %s, debug: %s" % (self.iterations, self.debug))
+        # Thread(target=self.run_am, args=[]).start()
+        Thread(target=self.run_profiling, args=[]).start()
+
+        # done, models = self.model_application()
         return HttpJsonResponse({'success': True})
         
+    # def perparePerformanceModel(self, download):
+    #     flat_pm = {'experiments':[],'extrapolations':[], 'pareto':[]}
+    #     self.logger.debug("dowonload: %s, performance_model: %s" % (download, self.performance_model))
+
+    #     for impl in self.performance_model['experiments']:
+    #         # for i in range(len(self.performance_model['experiments'][impl])):
+    #         #     self.performance_model['experiments'][impl][i]['ImplementationID'] = impl
+    #         flat_pm['experiments'].extend(self.performance_model['experiments'][impl])        
+
+    #     for impl in self.performance_model['extrapolations']:
+    #         # for i in range(len(self.performance_model['extrapolations'][impl])):
+    #         #     self.performance_model['extrapolations'][impl][i]['ImplementationID'] = impl
+    #         flat_pm['extrapolations'].extend(self.performance_model['extrapolations'][impl])        
+
+    #     if self.state == self.S_RUNNING:
+    #         if len(flat_pm['experiments']) > 0:
+    #             # self.logger.debug("experiments: %s" % flat_pm['experiments'])
+    #             flat_pm['pareto'] = self.enforcer.get_pareto_experiments(flat_pm['experiments'])
+    #         if download:
+    #             if len(self.performance_model['pareto']) == 0:
+    #                 self.performance_model['pareto'] = flat_pm['pareto']
+    #             self.logger.debug("performance_model before download: %s" % self.performance_model)
+    #             return self.performance_model
+    #     if download and self.state != self.S_RUNNING:
+    #         return {}
+
+    #     return flat_pm
+
+
     def perparePerformanceModel(self, download):
-        flat_pm = {'experiments':[], 'pareto':[]}
-        for impl in self.performance_model['experiments']:
-            for i in range(len(self.performance_model['experiments'][impl])):
-                self.performance_model['experiments'][impl][i]['ImplementationID'] = impl
-            flat_pm['experiments'].extend(self.performance_model['experiments'][impl])        
-
         if self.state == self.S_RUNNING:
-            flat_pm['pareto'] = self.slomanager.get_pareto_experiments(flat_pm['experiments'])
-            if download:
-                if len(self.performance_model['pareto']) == 0:
-                    self.performance_model['pareto'] = flat_pm['pareto']
-                return self.performance_model
-        if download and self.state != self.S_RUNNING:
-            return {}
+            if len(self.performance_model['extrapolations']) > 0:
+                self.performance_model['pareto'] = self.enforcer.get_aggregated_pareto(self.performance_model)
+        return self.performance_model
 
-        return flat_pm
 
-    def add_experiment(self, experiment):
-        if experiment['ImplementationID'] not in self.performance_model['experiments']:
-            self.performance_model['experiments'][experiment['ImplementationID']] = []
-        self.performance_model['experiments'][experiment['ImplementationID']].append(experiment)
+
+    def add_experiment(self, experiment, isProfile):
+        exp_set = 'experiments'
+        if not isProfile:
+            exp_set = 'extrapolations'
+        
+        self.performance_model[exp_set].append(experiment)
+        # if experiment['ImplementationID'] not in self.performance_model[exp_set]:
+        #     self.performance_model[exp_set][str(experiment['ImplementationID'])] = []
+        # self.performance_model[exp_set][str(experiment['ImplementationID'])].append(experiment)
+
   
     @expose('POST')
     def create_service(self, kwargs):
@@ -336,7 +541,6 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
         
        
         return HttpJsonResponse({'sid':self.instance_id})
-
 
     @expose('UPLOAD')
     def upload_application(self, kwargs):
@@ -410,7 +614,6 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
 
         return HttpJsonResponse({'codeVersionId': os.path.basename(codeVersionId)})
     
-
     @expose('POST')                                                                                      
     def enable_code(self, kwargs):                                                          
         codeVersionId = None
@@ -461,7 +664,6 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
             versions.append(item)
         versions.sort(cmp=(lambda x, y: cmp(x['time'], y['time'])), reverse=True)
         return HttpJsonResponse({'codeVersions': versions})
-
 
     def add_manager_configuration(self, service_type):
         # Add service-specific config file (if any)

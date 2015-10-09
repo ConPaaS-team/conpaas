@@ -18,6 +18,7 @@ class Base:
         
         self.__dict__["Super"] = "Base"
         for p in self.accepted_params:
+            self.__dict__[p['name']] = None
             if p['is_required'] and not params.has_key(p['name']):
                 raise Exception('Required request parameter',p['name'] ,'is missing')
             if params.has_key(p['name']):
@@ -31,14 +32,15 @@ class Base:
                         self.__dict__[p['name']] = p['type'](params[p['name']]) 
                     else:
                         self.__dict__[p['name']] = params[p['name']]
-     
-    def getVariables(self):
+
+    def get_Vars(self):
         expr = self._filterVariables()
         #print expr
         varrs = []
         for ex in expr:
             varrs.extend(self._searchVar(ex))
             #varrs.extend(re.split('(\ )+', ex, flags=re.IGNORECASE))
+           
         return list(set(varrs))
     
     def _searchVar(self, word):
@@ -153,7 +155,3 @@ class Base:
         
         return m
 
-
-
-        
-        

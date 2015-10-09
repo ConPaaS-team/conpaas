@@ -265,14 +265,15 @@ class GenericAgent(BaseAgent):
         
         if 'args' in kwargs and kwargs['args']:
             args = kwargs.pop('args')
-            start_args.extend(args.values())
+            # start_args.extend(args.values())
+            start_args.extend(args.split())
 
 
         proc = Popen(start_args, cwd=self.generic_dir, env=self.env, close_fds=True)
-        proc.wait()
+        exitcode = proc.wait()
         self.state = 'RUNNING'
         self.logger.info('Agent initialized')
-        return HttpJsonResponse()
+        return HttpJsonResponse({'exitcode':exitcode})
 
     @expose('POST')
     def run(self, kwargs):
@@ -282,13 +283,14 @@ class GenericAgent(BaseAgent):
         
         if 'args' in kwargs and kwargs['args']:
             args = kwargs.pop('args')
-            start_args.extend(args.values())
+            # start_args.extend(args.values())
+            start_args.extend(args.split())
 
         proc = Popen(start_args, cwd=self.generic_dir, env=self.env, close_fds=True)
-        proc.wait()
+        exitcode = proc.wait()
         self.state = 'RUNNING'
         self.logger.info('Starter is running')
-        return HttpJsonResponse()
+        return HttpJsonResponse({'exitcode':exitcode})
 
     @expose('GET') 
     def cleanup_agent(self, kwargs):

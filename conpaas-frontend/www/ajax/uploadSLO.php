@@ -21,9 +21,7 @@ try {
 		$optimize = $slo['optimize'];
 		$conditions = '';
 		foreach ($slo['conds'] as $cond) {
-    		if ($cond['key'] == "cost")
-    			$cond['key'] = "budget";
-
+    		
     		$conditions .='"%'.$cond['key'];
     		$conditions .= $cond['op'];
     		$conditions .= $cond['val'].'", ';
@@ -33,7 +31,7 @@ try {
 		$slocontent = <<<END
 {
     "SLO": {
-        "ExecutionArgs": [
+        "ExecutionArguments": [
             {
                 "Value": "parameters.txt"
             }
@@ -42,7 +40,7 @@ try {
             "Constraints": [
                 $conditions
             ],
-            "Optimization": "%$optimize"
+            "Optimize": "%$optimize"
         }
     }
 }

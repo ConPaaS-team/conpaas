@@ -9,13 +9,16 @@ if (!isset($_SESSION['uid'])) {
 
 try {
 
-	$aid = $_GET['aid'];
-	$application_data = ApplicationData::getApplicationById($_SESSION['uid'], $aid);
-	$application = new Application($application_data);
+	if(isset($_GET['aid'])){
+		$aid = $_GET['aid'];
+		$application_data = ApplicationData::getApplicationById($_SESSION['uid'], $aid);
+		$application = new Application($application_data);
 
-	
-	$res = $application->infoapp();
-	print json_encode($res);	
+		
+		$res = $application->infoapp();
+		print json_encode($res);
+	}else
+		print json_encode(array('aid' => -1));
 
 } catch (Exception $e) {
 	echo json_encode(array(
