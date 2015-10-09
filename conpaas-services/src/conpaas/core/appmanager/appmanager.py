@@ -253,7 +253,7 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
         module_manager = self.module_managers[0]
         # module_manager.cleanup_agents()
         self.logger.debug("calling release_reservation")
-        if not self.debug
+        if not self.debug:
             module_manager.controller.release_reservation(reservationID)
 
     def get_monitoring(self, reservationID, address):
