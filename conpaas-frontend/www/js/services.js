@@ -201,6 +201,7 @@ conpaas.ui = (function(this_module) {
                 str += '<div id="target_monitor_' + ij + '" style="display:none;">' + this.set_monitor_ph(expers[i].Monitor, ij) + '</div></td>';
               }else{
                 str += '<img style="width:24px; margin-right:20px;" src="images/off.png" />';
+                str += '<div id="target_monitor_' + ij + '" style="display:none;">No monitoring information</div></td>';
               }
               if (j == 0)
                 exps.push([tc, et]);
