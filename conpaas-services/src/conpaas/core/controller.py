@@ -302,6 +302,12 @@ class Controller(object):
 
         return cloud.monitor(reservation_id, address)    
 
+    def get_cost(self, configuration, constraints, cloud=None):
+        
+        if cloud is None:
+            cloud = self.__default_cloud
+
+        return cloud.get_cost(configuration, constraints)
 
     #=========================================================================#
     #               create_nodes(self, count, contextFile, test_agent)        #

@@ -103,7 +103,7 @@ $services = ServiceData::getServicesByUser($page->getUID(), $_SESSION['aid']);
 	        <table style="width:100%">
 	        	<tr>
 	        	<td valign="top"><div id="divProfileTable" style="padding: 10px;height: 200px; width:330px; /*overflow:auto; overflow-x:hidden*/"></div></td>	
-	        	<td valign="top" width="500" align="right"><div id="divProfileChart" style="height:280px;width:500px; "></div></td>	
+	        	<td valign="top" width="500" align="right"><div id="divProfileChart" style="height:280px;width:500px; "></div><div id="failed" align="center" style="width:100%;"></div></td>	
 	        	</tr>
 	        	<tr>
 	        	<td align="center" colspan="2"><div id="downloadProfile" style="margin-top: 10px;"></div></td>

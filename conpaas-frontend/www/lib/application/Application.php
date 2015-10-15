@@ -115,8 +115,8 @@ class Application {
 	}
 
 
-	public function profile($iterations, $debug, $monitor) {
-		$response = $this->managerRequest('get', 'profile', 0, array('manager_id' => 0, 'iterations' => $iterations, 'debug'=>$debug, 'monitor'=>$monitor), false);
+	public function profile($iterations, $debug, $monitor, $extrapolate) {
+		$response = $this->managerRequest('get', 'profile', 0, array('manager_id' => 0, 'iterations' => $iterations, 'debug'=>$debug, 'monitor'=>$monitor, 'extrapolate'=>$extrapolate), false);
 		return $response;
 
 	}

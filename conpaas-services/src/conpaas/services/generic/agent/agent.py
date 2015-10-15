@@ -268,6 +268,10 @@ class GenericAgent(BaseAgent):
             # start_args.extend(args.values())
             start_args.extend(args.split())
 
+        if 'env' in kwargs and kwargs['env']:
+            env = kwargs['env']
+            self.env.update(env)
+            # self.logger.info('init ENV: %s' % env)
 
         proc = Popen(start_args, cwd=self.generic_dir, env=self.env, close_fds=True)
         exitcode = proc.wait()
@@ -285,6 +289,11 @@ class GenericAgent(BaseAgent):
             args = kwargs.pop('args')
             # start_args.extend(args.values())
             start_args.extend(args.split())
+
+        if 'env' in kwargs and kwargs['env']:
+            env = kwargs['env']
+            self.env.update(env)
+            # self.logger.info('RUN ENV: %s' % env)
 
         proc = Popen(start_args, cwd=self.generic_dir, env=self.env, close_fds=True)
         exitcode = proc.wait()

@@ -109,17 +109,17 @@ class Monitor:
         for addr in result:
             recommendation[addr] = {}
             for attr in result[addr]:
-                 vals = result[addr][attr][:]
-                 vals = sorted(vals)
-                 if len(vals) == 0:
+                vals = result[addr][attr][:]
+                vals = sorted(vals)
+                if len(vals) == 0:
                     recommendation[addr][attr] = 0
                     continue
-                 if __smaller(vals, self.UNDERUSED) * 100.0 / len(vals) > 50:
-                     recommendation[addr][attr] = -1
-                 elif (len(vals) - __smaller(vals, self.OVERUSED)) * 100.0 / len(vals) > 50:
-                     recommendation[addr][attr] = +1
-                 else:
-                     recommendation[addr][attr] = 0
+                if __smaller(vals, self.UNDERUSED) * 100.0 / len(vals) > 50:
+                    recommendation[addr][attr] = -1
+                elif (len(vals) - __smaller(vals, self.OVERUSED)) * 100.0 / len(vals) > 50:
+                    recommendation[addr][attr] = +1
+                else:
+                    recommendation[addr][attr] = 0
 
         print "\ncrs_direction :", recommendation
         return recommendation

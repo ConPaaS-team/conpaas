@@ -1,6 +1,7 @@
 #!/usr/bin/env local
 from pprint import pprint
 
+from conpaas.core.appmanager.modeller.model import FunctModel
 from conpaas.core.appmanager.utils.math_utils import MathUtils
 from conpaas.core.appmanager.executor import Executor
 from conpaas.core.appmanager.profiler.profiler import Profiler
@@ -27,7 +28,10 @@ class SLOEnforcer:
 	def get_aggregated_pareto(self, exps):
 		info = self._predict_performance(exps)
 		best_confs = self._select_best(info)
-		return self._convert_to_cps_format(best_confs)
+		if best_confs:
+			self.application.manager.logger.debug("best confs: %s" % best_confs) 
+			return self._convert_to_cps_format(best_confs)
+		return []
 		
 
 	def aggregate(self, data):
@@ -88,7 +92,7 @@ class SLOEnforcer:
 					x_fit.append(filter(lambda c : c["conf"] == conf, info[version]["InputProfiled"])[0]["et"])
 					y_fit.append(filter(lambda c : c["conf"] == conf, info[version]["InputCurrent"])[0]["et"])
 				model = FunctModel()
-				model.fit(x,y)
+				model.fit(x_fit,y_fit)
 
 
 				x = []
@@ -112,6 +116,7 @@ class SLOEnforcer:
 		all_confs = {}
 		pareto = {}
 		for version in self.versions:
+			version = map(lambda x: int(x), version.split("-"))
 			v  = ".".join(map(lambda s: str(s), version))
 			data = info[v]["InputCurrent"][:]
 			
@@ -119,8 +124,11 @@ class SLOEnforcer:
 			
 			#update the cost
 			for c in data:
-				conf = c["Configuration"]
-				cost = CostModel.calculate(conf)
+				# self.application.manager.logger.debug("##### version: %s, conf: %s" % (version, c["conf"]))
+				# self.application.manager.logger.debug("##### version: %s, conf: %s" % (type(version), type(c["conf"])))
+				_, conf, _constr  = self.application.getResourceConfiguration(version, c["conf"])
+				# conf = c["Configuration"]
+				cost = self.application.manager.get_cost(conf, _constr)
 				#update the dict
 				c["cost"] = cost * c["et"]
 				c["Version"] = version
@@ -163,7 +171,7 @@ class SLOEnforcer:
 						"Parameters":exp["params"], 
 						"ConfVars":exp["conf"], 
 						"Monitor":exp["monitor"], 
-						"Implementations": map(int,exp["Version"].split('-')),
+						"Implementations": exp["Version"],
 						"Results":{"TotalCost": exp["cost"], "ExeTime":exp["et"]}
 						}	
 			cps_exps.append(cps_exp)

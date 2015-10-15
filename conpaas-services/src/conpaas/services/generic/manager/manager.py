@@ -172,7 +172,7 @@ class GenericManager(BaseManager):
         configuration = kwargs['configuration']
         args = kwargs['args']
         code_conf = kwargs['code_conf']
-        
+        env_vars = kwargs['env_vars']
 #        nr_instances = 1
 #        nr_instances = 0
 #        if kwargs and kwargs.get('manifest'):
@@ -209,7 +209,7 @@ class GenericManager(BaseManager):
             # self.instances = self._conv_res_to_instance(configuration)
             self.instances = configuration
             self._update_code()
-            self._init_agents(args)
+            self._init_agents(args, env_vars)
             frontend_url = self._get_frontend_url()
         
             ## Extend the nodes list with the newly created one
@@ -266,13 +266,13 @@ class GenericManager(BaseManager):
         return out
 
 
-    def _init_agents(self, args=None):
+    def _init_agents(self, args=None, env_vars=None):
         for instance in self.instances['Instances']: 
             if instance['Type'] == 'Machine':
                 try:                                           
                     #initpath = os.path.join(self.code_repo, 'init.sh')                                              
                     #client.init_agent(node['IP'], 5555, initpath, self.nodes)            
-                    client.init_agent(instance['Address'], 5555, self.instances, args)            
+                    client.init_agent(instance['Address'], 5555, self.instances, args, env_vars)            
                 except client.AgentException:                                                                
                     self.logger.exception('Failed initialize agent at node %s' % str(instance))             
                     self._state_set(self.S_ERROR, msg='Failed to initialize agent at node %s' % str(instance))
@@ -319,12 +319,12 @@ class GenericManager(BaseManager):
     #             self._state_set(self.S_ERROR, msg='Failed to run code at node %s' % str(starter))
     #             raise   
 
-    def _do_run(self, profiling, args=None):
+    def _do_run(self, profiling, args=None, env_vars=None):
         success=[]
         for instance in self.instances['Instances']: 
             if instance['Type'] == 'Machine':
                 try:               
-                    res = client.run(instance['Address'], 5555, args)           
+                    res = client.run(instance['Address'], 5555, args, env_vars)           
                     self.logger.info("res: %s" % res)
                     success.append(res['exitcode'])
                 except client.AgentException:                                                                

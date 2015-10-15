@@ -71,6 +71,7 @@ class HarnessCloud(Cloud):
                           headers={'Content-Type': 'application/json'})
         try:
             response = simplejson.loads(response)
+            open('/tmp/ciu', 'a').write('url: %s, resp: %s\n' % (url,response))
             if  'result' not in response:
                 raise Exception(response['error']['message'])
             else:
@@ -141,6 +142,9 @@ class HarnessCloud(Cloud):
         response = self.__make_request("/getMetrics", content={"ReservationID" : reservationID, "Address":address, "Entry":entry})
         return response['Metrics']
 
+    def get_cost(self, configuration, constraints):
+        response = self.__make_request("/getCost", content={"Configurations" : [configuration]})
+        return response[0]
     
     #for development only
     def reset(self):

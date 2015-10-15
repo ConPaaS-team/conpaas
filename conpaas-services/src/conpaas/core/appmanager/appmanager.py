@@ -64,6 +64,7 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
         self.config_parser = config_parser
         self.cache = config_parser.get('manager', 'VAR_CACHE')
         # self.performance_model = {'experiments':{}, 'extrapolations':{}, 'pareto':[]}
+        # self.performance_model = {'experiments':[], 'extrapolations':[], 'pareto':[], 'failed':[]}
         self.performance_model = {'experiments':[], 'extrapolations':[], 'pareto':[]}
 
         self.code_repo = config_parser.get('manager', 'CODE_REPO')
@@ -120,7 +121,7 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
         download = kwargs.pop('download')
         # return HttpJsonResponse({'state':self.state, 'profile':{'experiments': Traces.Experiments, 'pareto':Traces.ParetoExperiments}})    
         app = True if self.app_tar else False
-        return HttpJsonResponse({'state':self.state, 'pm': self.perparePerformanceModel(download), 'application':app, 'services':self.service_ids})    
+        return HttpJsonResponse({'state':self.state, 'pm': self.preparePerformanceModel(download), 'application':app, 'services':self.service_ids})    
 
     @expose('GET')
     def infoapp(self, kwargs):
@@ -149,7 +150,7 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
         self.enforcer.set_slo(self.slo)
 
         # self.logger.info("slo file: %s" % self.slo)
-        # self.perparePerformanceModel(True)
+        # self.preparePerformanceModel(True)
         # User.Objectives = self.slo.Objective
         self.sloconf = self.enforcer.select_valid_configurations(self.performance_model['pareto'])
         # return HttpJsonResponse({'state':self.state, 'profile':{'experiments': Traces.Experiments, 'pareto':Traces.ParetoExperiments}})    
@@ -167,7 +168,7 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
     #         # self.performance_model['experiments'] = profiler.run()
 
     #         self.state = self.S_RUNNING
-    #         self.perparePerformanceModel(True)
+    #         self.preparePerformanceModel(True)
     #     sys.stdout.flush()
 
     def execute_application_slo(self):
@@ -256,6 +257,10 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
         if not self.debug:
             module_manager.controller.release_reservation(reservationID)
 
+    def get_cost(self, configuration, constraints):
+        module_manager = self.module_managers[0]
+        return module_manager.controller.get_cost(configuration, constraints)
+
     def get_monitoring(self, reservationID, address):
         module_manager = self.module_managers[0]
         
@@ -338,7 +343,7 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
         self.logger.info("Modelling done?: %s" % done)
         if done:            
             self.state = self.S_RUNNING
-            # self.perparePerformanceModel(True)
+            # self.preparePerformanceModel(True)
             # self.enforcer.set_models(models)
         #     #application model has been built; enforce slo
         #     enforcer = SLOEnforcer(Controller.application, Controller.slo, Controller.versions, models)
@@ -433,17 +438,19 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
         iterations = kwargs.pop('iterations')
         debug = kwargs.pop('debug')
         monitor = kwargs.pop('monitor')
+        extrapolate = kwargs.pop('extrapolate')
         self.iterations = int(iterations)
         self.debug = int(debug)
         self.monitor = int(monitor)
-        # self.logger.debug("iterations: %s, debug: %s" % (self.iterations, self.debug))
+        self.extrapolate = int(extrapolate)
+        self.logger.debug("extrapolate: %s, iterations: %s, debug: %s" % (self.extrapolate, self.iterations, self.debug))
         # Thread(target=self.run_am, args=[]).start()
         Thread(target=self.run_profiling, args=[]).start()
 
         # done, models = self.model_application()
         return HttpJsonResponse({'success': True})
         
-    # def perparePerformanceModel(self, download):
+    # def preparePerformanceModel(self, download):
     #     flat_pm = {'experiments':[],'extrapolations':[], 'pareto':[]}
     #     self.logger.debug("dowonload: %s, performance_model: %s" % (download, self.performance_model))
 
@@ -472,8 +479,16 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
     #     return flat_pm
 
 
-    def perparePerformanceModel(self, download):
+    def preparePerformanceModel(self, download):
+        #remove failed from experiments and extrapolations
+        # for exp in ('experiments', 'extrapolations'):
+        #     for i in range(len(self.performance_model[exp])):
+        #         if 'Success' in self.performance_model[exp][i] and not self.performance_model[exp][i]['Success']:
+        #             self.performance_model['failed'].append(self.performance_model[exp][i])
+        #             del self.performance_model[exp][i]
         if self.state == self.S_RUNNING:
+            filter_extrapol = filter(lambda x: x['Success'], self.performance_model['extrapolations'])
+            filter_exp = filter(lambda x: x['Success'], self.performance_model['experiments'])
             if len(self.performance_model['extrapolations']) > 0:
                 self.performance_model['pareto'] = self.enforcer.get_aggregated_pareto(self.performance_model)
         return self.performance_model

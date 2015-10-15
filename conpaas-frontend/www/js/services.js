@@ -26,6 +26,9 @@ conpaas.ui = (function(this_module) {
       if (!sessionStorage.iterations)
         sessionStorage.iterations = 1;
 
+      if (!sessionStorage.extrapolate)
+        sessionStorage.extrapolate = 1;
+
       if (!sessionStorage.debug)
         sessionStorage.debug = 1;
       if (!sessionStorage.monitor)
@@ -127,7 +130,10 @@ conpaas.ui = (function(this_module) {
             }
           }
 
-
+          if (response.frontend.length > 0) {
+            $("#applink").attr("href", response.frontend)
+            $("#applink").show()
+          }
 
           if (!Array.isArray(response.execinfo)) { //bad way of checking if the application was executed or not
             var et = that.myround(response.execinfo.execution_time, 4),
@@ -139,10 +145,7 @@ conpaas.ui = (function(this_module) {
             // var html = 'Actual execution time: <span>'+et+'</span> min &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Actual cost: <span>'+tc+'</span> &euro; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &epsilon;: <span>'+err+'</span> %';
             // $("#exeResult").html(html);
             // $("#exeResult").show();
-            if (response.frontend.length > 0) {
-              $("#applink").attr("href", response.frontend)
-              $("#applink").show()
-            }
+
             conpaas.ui.visible('pgstatInfo', false);
             return true;
           }
@@ -167,8 +170,9 @@ conpaas.ui = (function(this_module) {
         var exps = [];
         var pareto = [];
         var extras = [];
+        var failed = [];
         var ij = '';
-        
+
         exps_ext = [profile.experiments, profile.extrapolations];
         for (var j = 0; j < exps_ext.length; j++) {
           expers = exps_ext[j];
@@ -193,26 +197,32 @@ conpaas.ui = (function(this_module) {
               tc = this.myround(expers[i].Results.TotalCost, 4);
               et = this.myround(expers[i].Results.ExeTime, 4);
 
-              str += '<td align="center" class="' + tdclass + '" style="border:none; padding-left:15px;">' + et + '</td>';
-              str += '<td align="center" class="' + tdclass + '" style="border:none;">' + tc + '</td>';
+              str += '<td align="center" class="' + tdclass + ' et" style="border:none; padding-left:15px;">' + et + '</td>';
+              str += '<td align="center" class="' + tdclass + ' cst" style="border:none;">' + tc + '</td>';
               str += '<td id="monitor_' + ij + '" align="center" class="' + tdclass + ' monitor" data-tipped-options="position: \'right\', inline: \'target_monitor_' + ij + '\'" style="border:none;">';
-              if (this.hasMonitor(expers[i].Monitor)){
+              if (this.hasMonitor(expers[i].Monitor)) {
                 str += '<img style="width:24px; margin-right:20px;" src="images/monitor.png" />';
                 str += '<div id="target_monitor_' + ij + '" style="display:none;">' + this.set_monitor_ph(expers[i].Monitor, ij) + '</div></td>';
-              }else{
+              } else {
                 str += '<img style="width:24px; margin-right:20px;" src="images/off.png" />';
                 str += '<div id="target_monitor_' + ij + '" style="display:none;">No monitoring information</div></td>';
               }
-              if (j == 0)
-                exps.push([tc, et]);
-              else
-                extras.push([tc, et]);
+
+              if (!expers[i].Success) {
+                failed.push([tc, et]);
+
+              } else {
+                if (j == 0)
+                  exps.push([tc, et]);
+                else
+                  extras.push([tc, et]);
+              }
 
             } else
               str += '<td colspan="2" class="' + tdclass + '" style="border:none;">' + '' + '</td>';
             str += '</tr>';
           }
-        };
+        }
 
 
         str += '</tbody></table>';
@@ -223,10 +233,14 @@ conpaas.ui = (function(this_module) {
         for (var i = 0; i < profile.extrapolations.length; i++) {
           if (!profile.extrapolations[i].Done)
             break;
+          if (!profile.extrapolations[i].Success)
+            continue;
           extra_conf = this.conf_to_string(profile.extrapolations[i].Configuration);
           extratc = this.myround(profile.extrapolations[i].Results.TotalCost, 4);
           extraet = this.myround(profile.extrapolations[i].Results.ExeTime, 4);
           for (var j = 0; j < profile.experiments.length; j++) {
+            if (!profile.experiments[j].Success)
+              continue;
             exp_conf = this.conf_to_string(profile.experiments[j].Configuration);
             exptc = this.myround(profile.experiments[j].Results.TotalCost, 4);
             expet = this.myround(profile.experiments[j].Results.ExeTime, 4);
@@ -243,13 +257,15 @@ conpaas.ui = (function(this_module) {
           // pareto.push([profile.pareto[i].Results.TotalCost.toFixed(3), profile.pareto[i].Results.ExeTime.toFixed(3)]);
             pareto.push([this.myround(profile.pareto[i].Results.TotalCost, 4), this.myround(profile.pareto[i].Results.ExeTime, 4)]);
 
+        that.render_failed(failed);
+
         if (exps.length > 0 || pareto.length > 0) {
           $("#divProfileTable").html(str);
           $("#prof_table").animate({
             scrollTop: $('#prof_table')[0].scrollHeight
           }, 1000);
           Tipped.create('.config');
-          
+
           Tipped.create('.monitor', {
             skin: 'white',
             onShow: function(content, element) {
@@ -265,11 +281,12 @@ conpaas.ui = (function(this_module) {
               }
             },
           });
-          
+
           this.plot(exps, extras, pareto, [], tuples);
         }
+
       },
-      hasMonitor:function(monitor){
+      hasMonitor: function(monitor) {
         for (var address in monitor) {
           if (monitor.hasOwnProperty(address)) {
             for (var metr in monitor[address]) {
@@ -385,6 +402,37 @@ conpaas.ui = (function(this_module) {
         }
         return toret;
       },
+      render_failed: function(failed) {
+        var toret = '<table><tr><td><strong>Failed configurations:</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td><td>'
+        toret += '<table border="0" cellspacing="3" cellpadding="0" style="margin-right: 10px;">';
+        var cols = 10;
+        var row_closed = false;
+        for (var i = 0; i < failed.length; i++) {
+          if (i % cols == 0) {
+            toret += '<tr>';
+            row_closed = false;
+          }
+          tc = failed[i][0];
+          et = failed[i][1];
+          toret += '<td class="fail">';
+          toret += '<img src="images/error.png"/>';
+          toret += '<div style="display:none">' + tc + '|' + et + '</div>';
+          toret += '</td>';
+          if (i % cols == cols - 1) {
+            toret += '</tr>';
+            row_closed = true;
+          }
+        }
+        if (!row_closed)
+          toret += '</tr>';
+        toret += '</table></td></tr></table>';
+        if (failed.length > 0) {
+          $('#failed').html(toret);
+          $('.fail').click(this, this.highlight_error);
+        }
+        // return toret;
+      },
+
       render_config2: function(config) {
         var toret = '<table border="1" cellspacing="0" cellpadding="2">';
         var cols = 4;
@@ -434,7 +482,32 @@ conpaas.ui = (function(this_module) {
       myround: function(nr, dec) {
         return parseFloat(nr.toFixed(dec));
       },
+      highlight_error: function(){
+        var page = arguments[0].data;
+        var data = $($(this).find('div')[0]).html().split('|');
+        page.highlight_entry(data);
+      },
+      highlight_entry: function(data) {
+        $('#prof_table').scrollTop(0);
+        row = $("#prof_table tr.exps").filter(function() {
+          var time = $(this).find("td.et").eq(0).html();
+          var cost = $(this).find("td.cst").eq(0).html();
+          return data[0] + "" == cost && data[1] + "" == time;
+          //return $(this).text() == data[0];
+        });
 
+        index = row.index();
+        var tpos = $('#prof_table').offset().top;
+        var ypos = $('#prof_table tr.exps:eq(' + index + ')').offset().top;
+        //alert("ypos:" + ypos + " tpos:"+ tpos);
+        $('#prof_table').animate({
+          scrollTop: ypos - tpos
+        }, 100);
+        $(row).addClass("highlight", 500);
+        setTimeout(function() {
+          $(row).removeClass("highlight", 2000);
+        }, 1000);
+      },
 
       uploadApplication: function() {
         var that = this;
@@ -649,7 +722,8 @@ conpaas.ui = (function(this_module) {
             'aid': that.application.aid,
             'debug': sessionStorage.debug,
             'monitor': sessionStorage.monitor,
-            'iterations': sessionStorage.iterations
+            'iterations': sessionStorage.iterations,
+            'extrapolate': sessionStorage.extrapolate,
           },
           processData: true,
           contentType: false,
@@ -798,11 +872,10 @@ conpaas.ui = (function(this_module) {
         last = that.jplot.series[2].data.length - 1;
         middle = 1;
         min_prod = 0;
-        if (that.jplot.series[2].data.length == 1){
+        if (that.jplot.series[2].data.length == 1) {
           min_prod = that.jplot.series[2].data[0][0] * that.jplot.series[2].data[0][1];
           middle = 0;
-        }
-        else
+        } else
           min_prod = that.jplot.series[2].data[1][0] * that.jplot.series[2].data[1][1];
 
         for (var i = 1; i < that.jplot.series[2].data.length - 1; i++) {
@@ -1020,11 +1093,15 @@ conpaas.ui = (function(this_module) {
         var that = event.data;
         var debug = '';
         var monitor = '';
+        var extrapolate = '';
         if (sessionStorage.debug == 1)
           debug = 'checked';
         if (sessionStorage.monitor == 1)
           monitor = 'checked';
+        if (sessionStorage.extrapolate == 1)
+          extrapolate = 'checked';
         html = '<table border="0" style="width:60%">';
+        html += '<tr><td>Extrapolate:</td> <td align="center"><input id="extrapolate" type="checkbox" name="extrapolate" ' + extrapolate + '></td></tr>';
         html += '<tr><td>Debugging:</td> <td align="center"><input id="debug" type="checkbox" name="debug" ' + debug + '></td></tr>';
         html += '<tr><td>Monitoring:</td> <td align="center"><input id="monitor" type="checkbox" name="monitor" ' + monitor + '></td></tr>';
         html += '<tr><td>Iterations:</td> <td align="center"><input id="iterations" type="number" value="' + sessionStorage.iterations + '" style="width:40px"/></td></tr>';
@@ -1042,6 +1119,8 @@ conpaas.ui = (function(this_module) {
           sessionStorage.debug = 1;
         if ($('#monitor').is(":checked"))
           sessionStorage.monitor = 1;
+        if ($('#extrapolate').is(":checked"))
+          sessionStorage.extrapolate = 1;
         sessionStorage.iterations = $('#iterations').val();
       },
 
@@ -1110,26 +1189,7 @@ $(document).ready(function() {
 
   $('#divProfileChart').bind('jqplotDataClick',
     function(ev, seriesIndex, pointIndex, data) {
-      $('#prof_table').scrollTop(0);
-      row = $("#prof_table tr.exps").filter(function() {
-        var time = $(this).find("td").eq(3).html();
-        var cost = $(this).find("td").eq(4).html();
-        return data[0] + "" == cost && data[1] + "" == time;
-        //return $(this).text() == data[0];
-      });
-
-      index = row.index();
-      var tpos = $('#prof_table').offset().top;
-      var ypos = $('#prof_table tr.exps:eq(' + index + ')').offset().top;
-      //alert("ypos:" + ypos + " tpos:"+ tpos);
-      $('#prof_table').animate({
-        scrollTop: ypos - tpos
-      }, 100);
-      $(row).addClass("highlight", 500);
-      setTimeout(function() {
-        $(row).removeClass("highlight", 2000);
-      }, 1000);
-
+      page.highlight_entry(data);
     });
 
   //Tipped.create('#profile', 'Some tooltip text');

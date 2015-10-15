@@ -22,11 +22,12 @@ try {
 	$iterations = $_GET['iterations'];
 	$debug = $_GET['debug'];
 	$monitor = $_GET['monitor'];
+	$extrapolate = $_GET['extrapolate'];
 
 	$application_data = ApplicationData::getApplicationById($_SESSION['uid'], $aid);
 	$application = new Application($application_data);
 
-	$res = 	$application->profile($iterations, $debug, $monitor);
+	$res = 	$application->profile($iterations, $debug, $monitor, $extrapolate);
 	
 	echo json_encode($res);
 
