@@ -165,7 +165,7 @@ conpaas.ui = (function(this_module) {
         var str = '<table class="slist" cellpadding="0" cellspacing="0" style="/*border: 1px solid;*/">',
           tdclass = 'wrapper ';
 
-        str += '<thead style="display:block;"><tr style="background:#F2F2F2"><th width="30" style="padding:5px">Status</th><th width="50">Config</th><th width="50" style="padding:5px">Time(min)</th><th width="50" style="padding:5px">Cost(&euro;)</th><th width="58">Monitor</th></tr></thead><tbody id="prof_table" style="height:200px; overflow:auto; overflow-x:hidden; /*overflow-y:scroll;*/ display:block;">';
+        str += '<thead style="display:block;"><tr style="background:#F2F2F2"><th width="30" style="padding:5px">Status</th><th width="50">Config</th><th width="50" style="padding:5px">Time(sec)</th><th width="50" style="padding:5px">Cost(&euro;)</th><th width="58">Monitor</th></tr></thead><tbody id="prof_table" style="height:200px; overflow:auto; overflow-x:hidden; /*overflow-y:scroll;*/ display:block;">';
 
         var exps = [];
         var pareto = [];
@@ -672,7 +672,7 @@ conpaas.ui = (function(this_module) {
                 labelRenderer: $.jqplot.CanvasAxisLabelRenderer
               },
               yaxis: {
-                label: 'Time (min)',
+                label: 'Time (sec)',
                 labelRenderer: $.jqplot.CanvasAxisLabelRenderer
               }
             },

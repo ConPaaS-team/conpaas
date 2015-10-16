@@ -165,7 +165,7 @@ $services = ServiceData::getServicesByUser($page->getUID(), $_SESSION['aid']);
 				<table border="0" style="width:100%; /*border:1px solid*/ " class="predictionsTab">
 					<tr><td colspan="4" align="center" style="background:#F2F2F2"><strong>Selected configuration</strong></td></tr>
 					<tr><td colspan="4" align="center"><span id="selectedConfig">-</span></td></tr>
-					<tr><td></td><td align="center" width="100" style="background:#F2F2F2"><strong>Time(min)</strong></td><td align="center" width="100" style="background:#F2F2F2"><strong>Cost(&euro;)</strong></td><td align="center" width="100" style="background:#F2F2F2"><strong>&epsilon;(%)</strong></td></tr>
+					<tr><td></td><td align="center" width="100" style="background:#F2F2F2"><strong>Time(sec)</strong></td><td align="center" width="100" style="background:#F2F2F2"><strong>Cost(&euro;)</strong></td><td align="center" width="100" style="background:#F2F2F2"><strong>&epsilon;(%)</strong></td></tr>
 					<tr><td width="70" style="background:#F2F2F2"><strong>Estimated</strong></td><td align="center"><span id="esExecTime">-</span></td><td align="center"><span id="esCost">-</span></td><td align="center" rowspan="2"><span id="absError">-</span></td></tr>
 					<tr><td style="background:#F2F2F2"><strong>Actual</strong></td><td align="center"><span id="acExecTime">-</span></td><td align="center"><span id="acCost">-</span></td></tr>
 				</table>
