@@ -137,9 +137,25 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
         profile = profile.file.read()
         self.logger.debug(profile)
         self.performance_model = simplejson.loads(profile)
+        self.update_prices()
         # return HttpJsonResponse({'state':self.state, 'profile':{'experiments': Traces.Experiments, 'pareto':Traces.ParetoExperiments}})    
         return HttpJsonResponse({'len':len(profile)})    
 
+    def update_prices(self):
+        versions = map(lambda c: c["Implementations"], self.performance_model['extrapolations'])
+        vv = []
+        for v in versions:
+            if v in vv:
+                continue
+            vv.append(v)
+        versions = vv
+        for version in versions:
+            for exp in self.performance_model.keys():
+                for i in range(len(self.performance_model[exp])):
+                    _, conf, _constr  = self.application.getResourceConfiguration(version, self.performance_model[exp][i]["ConfVars"])
+                    # conf = c["Configuration"]
+                    cost = self.get_cost(conf, _constr)
+                    self.performance_model[exp][i]["Results"]["TotalCost"] = cost * self.performance_model[exp][i]["Results"]["ExeTime"]
 
     @expose('UPLOAD')
     def upload_slo(self, kwargs):

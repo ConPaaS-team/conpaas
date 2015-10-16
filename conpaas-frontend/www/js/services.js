@@ -191,7 +191,7 @@ conpaas.ui = (function(this_module) {
             ij = i + '-' + j;
             str += '<td align="center" class="' + tdclass + '" style="/*border-left: 1px solid #ddd;*/ padding-left:20px; border:none;"><img src="images/' + img + '.gif" style="width:16px"/></td>';
             str += '<td align="center" class="' + tdclass + ' config" data-tipped-options="position: \'left\', inline: \'config_' + ij + '\'" style="border:none; padding-left:20px;">'
-            str += '<img style="height:18px" src="images/config.png" />'
+            str += '<img style="height:18px" src="images/conf.png" />'
               //str += '<div id="config_'+i+'-'+j+'" style="display:none">' + /*this.objToString(expers[i].Configuration)*/ this.render_config(expers[i].Configuration) + '</div></td>';
             str += '<div id="config_' + ij + '" style="display:none">' + /*this.objToString(expers[i].Configuration)*/ this.render_config2(expers[i].Configuration) + '</div></td>';
             if (expers[i].Done == undefined || expers[i].Done) {
@@ -434,7 +434,8 @@ conpaas.ui = (function(this_module) {
         if (failed.length > 0) {
           $('#failed').html(toret);
           $('.fail').click(this, this.highlight_error);
-        }
+        }else
+          $('#failed').html('');
         // return toret;
       },
 
