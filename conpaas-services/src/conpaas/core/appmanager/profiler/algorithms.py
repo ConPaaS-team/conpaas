@@ -246,6 +246,7 @@ class DirectedSimulatedAnnealing(SimulatedAnnealing):
 		self.check_state()
 		if self.T:
 			if self.stop_condition():
+				open('/tmp/debug', 'a').write("ended in line 249\n")
 				return 0
 			#else generate a number of solutions for the current temperature
 			if self.trial == self.trials_per_cycle:
@@ -256,11 +257,12 @@ class DirectedSimulatedAnnealing(SimulatedAnnealing):
 		x = self.neighbor(self.current_solution.x, self.current_solution.gradient)
 		if x == None:
 			self.T = self.Tf
+			open('/tmp/debug', 'a').write("ended in line 260 with temp :%s\n" % self.Tf)
 			return 0
 		#execute function which returns the cost as the product between the monetary cost and execution time
 		#returns tuple (conf, cost)
 		success, conf, cost, et, direction, monitor = self.function(x)
-		print " =====>>  Generated configuration : ", conf,  success, "direction :",direction
+		open('/tmp/debug', 'a').write(" =====>>  Generated configuration : %s success: %s, direction: %s\n" % (conf,  success, direction))
 		if not success["Success"]:
 			cost = finfo(float).max
 			new_solution = solution({"conf" : conf, "x" : x, "cost" : cost, "et" : et, "gradient" : direction, "monitor" : monitor, "success" : success["Success"]})
@@ -276,6 +278,7 @@ class DirectedSimulatedAnnealing(SimulatedAnnealing):
 			return
 		new_solution = solution({"conf" : conf, "x" : x, "cost" : cost, "et" : et, "gradient" : direction, "monitor" : monitor, "success" : success["Success"]})
 		self.solutions.append(new_solution)
+		open('/tmp/debug', 'a').write('success: %s, interations: %s\n' % (success["Success"], self.iterations))
 		self.iterations += 1
 		if not self.T:
 			#if the temperature has not been initialized then we are are in the random tries to init it

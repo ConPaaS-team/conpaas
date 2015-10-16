@@ -61,23 +61,24 @@ class SLOEnforcer:
 		info = {}
 
 		bmarked, extr = self.select_versions(exps)
-		self.versions = bmarked.keys()
+		self.versions = extr.keys()
 
 		for version in self.versions:
-			info[version] = {
-								"InputProfiled" : map(lambda x: { "conf" : x["ConfVars"], "params": x["Parameters"], "monitor":x["Monitor"], "et" : x["Results"]["ExeTime"], "tested"  :True , "Configuration" : x["Configuration"]}, bmarked[version]),
-								"InputCurrent"  : map(lambda x: { "conf" : x["ConfVars"], "params": x["Parameters"], "monitor":x["Monitor"], "et" : x["Results"]["ExeTime"], "tested"  :True , "Configuration" : x["Configuration"]}, extr[version])
-							}
+			info[version] = {}
+			info[version]["InputProfiled"] = []
+			if len(bmarked) > 0:
+				info[version]["InputProfiled"] = map(lambda x: { "conf" : x["ConfVars"], "params": x["Parameters"], "monitor":x["Monitor"], "et" : x["Results"]["ExeTime"], "tested"  :True , "Configuration" : x["Configuration"]}, bmarked[version]) 
+			info[version]["InputCurrent"] = map(lambda x: { "conf" : x["ConfVars"], "params": x["Parameters"], "monitor":x["Monitor"], "et" : x["Results"]["ExeTime"], "tested"  :True , "Configuration" : x["Configuration"]}, extr[version])
+			open('/tmp/debug', 'a').write('profiled: %s \n' % info[version]["InputProfiled"])
+			# print "\n\n------------------  CONFIGURATIONS  ----------------------\n"
+			# print "~~~  Benchmarked  ~~~"
+			# for c in bmarked[version]:
+			# 	print c["ConfVars"]
 			
-			print "\n\n------------------  CONFIGURATIONS  ----------------------\n"
-			print "~~~  Benchmarked  ~~~"
-			for c in bmarked[version]:
-				print c["ConfVars"]
-			
-			print "~~~  Extrapolated ~~~"
-			for c in extr[version]:
-				print c["ConfVars"]
-			print "\n--------------------------------------------------------------\n"
+			# print "~~~  Extrapolated ~~~"
+			# for c in extr[version]:
+			# 	print c["ConfVars"]
+			# print "\n--------------------------------------------------------------\n"
 			if len(info[version]["InputProfiled"]) > len(info[version]["InputCurrent"]):
 				#predict the performance of the untested profiled configurations with the current input
 				confs_tested = map(lambda x:x["conf"], info[version]["InputCurrent"])
@@ -89,8 +90,16 @@ class SLOEnforcer:
 				y_fit = []
 
 				for conf in confs_tested:
-					x_fit.append(filter(lambda c : c["conf"] == conf, info[version]["InputProfiled"])[0]["et"])
-					y_fit.append(filter(lambda c : c["conf"] == conf, info[version]["InputCurrent"])[0]["et"])
+					tested_prof = filter(lambda c : c["conf"] == conf, info[version]["InputProfiled"])
+					tested_curr = filter(lambda c : c["conf"] == conf, info[version]["InputCurrent"])
+					if len(tested_prof) > 0:
+						x_fit.append(tested_prof[0]["et"])
+					if len(tested_curr) > 0:
+						y_fit.append(tested_curr[0]["et"])
+				
+				if len(x_fit) != len(y_fit):
+					return info
+				
 				model = FunctModel()
 				model.fit(x_fit,y_fit)
 
@@ -105,7 +114,7 @@ class SLOEnforcer:
 				print "x = ",x
 				fx = model.predict(x)
 				
-				predicted_confs = map(lambda i : {"conf" : not_tested_confs[i], "et" : fx[i], "tested" : False}, range(len(fx)) )
+				predicted_confs = map(lambda i : {"conf" : not_tested_confs[i], "Configuration":filter(lambda c : c["conf"] == not_tested_confs[i], info[version]["InputProfiled"])[0]["Configuration"], "et" : fx[i], "tested" : False}, range(len(fx)) )
 				
 				info[version]["InputCurrent"].extend(predicted_confs)
 					
@@ -132,12 +141,14 @@ class SLOEnforcer:
 				#update the dict
 				c["cost"] = cost * c["et"]
 				c["Version"] = version
-		
+			open('/tmp/debug', 'a').write('extrapolated: %s \n' % data)
 			all_confs[v] = data[:]
 			
 			pareto[v] = self._get_pareto_experiments(data)[:]
 		
-
+		# if len(pareto) > 0:
+		# 	pareto = reduce(lambda x,y: x+y, pareto.values())
+		# open('/tmp/debug', 'a').write('pareto: %s \n' % pareto)
 		return self._get_pareto_experiments(reduce(lambda x,y: x+y, pareto.values()))
 		
 	def _get_pareto_experiments(self, exps):
@@ -166,14 +177,20 @@ class SLOEnforcer:
 	def _convert_to_cps_format(self, exps):
 		cps_exps = []
 		for exp in exps:
-			cps_exp = {"Configuration":exp["Configuration"], 
+			cps_exp = {
 						"Done":True, 
-						"Parameters":exp["params"], 
+						"Success":True, 
 						"ConfVars":exp["conf"], 
-						"Monitor":exp["monitor"], 
 						"Implementations": exp["Version"],
 						"Results":{"TotalCost": exp["cost"], "ExeTime":exp["et"]}
 						}	
+			if 'monitor' in exp:
+				cps_exp["Monitor"] = exp["monitor"]
+			if 'Configuration' in exp:
+				cps_exp["Configuration"] = exp["Configuration"]
+			if 'params' in exp:
+				cps_exp["Parameters"] = exp["params"]
+			
 			cps_exps.append(cps_exp)
 		return cps_exps
 

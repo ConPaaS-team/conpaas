@@ -72,7 +72,7 @@ conpaas.ui = (function(this_module) {
             $("#" + type + "_led").attr('src', 'images/ledorange.png');
 
             var profile = response.profile.pm;
-            if (profile.extrapolations.length > 0)
+            if (profile.extrapolations.length > 0 && profile.experiments.length > 0)
               that.displayInfo_2('Extrapolating...');
             else
               that.displayInfo_2('Profiling...');
@@ -165,23 +165,24 @@ conpaas.ui = (function(this_module) {
         var str = '<table class="slist" cellpadding="0" cellspacing="0" style="/*border: 1px solid;*/">',
           tdclass = 'wrapper ';
 
-        str += '<thead style="display:block;"><tr style="background:#F2F2F2"><th width="30" style="padding:5px">Status</th><th width="50">Config</th><th width="50" style="padding:5px">Time(min)</th><th width="50" style="padding:5px">Cost(&euro;)</th><th width="50">Monitor</th></tr></thead><tbody id="prof_table" style="height:200px; overflow:auto; overflow-x:hidden; /*overflow-y:scroll;*/ display:block;">';
+        str += '<thead style="display:block;"><tr style="background:#F2F2F2"><th width="30" style="padding:5px">Status</th><th width="50">Config</th><th width="50" style="padding:5px">Time(min)</th><th width="50" style="padding:5px">Cost(&euro;)</th><th width="58">Monitor</th></tr></thead><tbody id="prof_table" style="height:200px; overflow:auto; overflow-x:hidden; /*overflow-y:scroll;*/ display:block;">';
 
         var exps = [];
         var pareto = [];
         var extras = [];
         var failed = [];
         var ij = '';
-
+        var tr_class = ''
         exps_ext = [profile.experiments, profile.extrapolations];
         for (var j = 0; j < exps_ext.length; j++) {
           expers = exps_ext[j];
-
+          if (j == 1)
+            tr_class = 'extrapolation_row'
           for (var i = 0; i < expers.length; i++) {
             var img = 'running';
             if (j == 1 && i == expers.length - 1)
               tdclass += 'last';
-            str += '<tr class="service exps">';
+            str += '<tr class="service exps ' + tr_class + '">';
             if (expers[i].Done == undefined || expers[i].Done) {
               img = 'tick';
               if (!expers[i].Success)
@@ -219,7 +220,7 @@ conpaas.ui = (function(this_module) {
               }
 
             } else
-              str += '<td colspan="2" class="' + tdclass + '" style="border:none;">' + '' + '</td>';
+              str += '<td colspan="3" class="' + tdclass + '" style="border:none;">' + '' + '</td>';
             str += '</tr>';
           }
         }
@@ -229,26 +230,29 @@ conpaas.ui = (function(this_module) {
 
         tuples = [];
 
-
-        for (var i = 0; i < profile.extrapolations.length; i++) {
-          if (!profile.extrapolations[i].Done)
-            break;
-          if (!profile.extrapolations[i].Success)
-            continue;
-          extra_conf = this.conf_to_string(profile.extrapolations[i].Configuration);
-          extratc = this.myround(profile.extrapolations[i].Results.TotalCost, 4);
-          extraet = this.myround(profile.extrapolations[i].Results.ExeTime, 4);
-          for (var j = 0; j < profile.experiments.length; j++) {
-            if (!profile.experiments[j].Success)
+        extra_pareto = [profile.extrapolations, profile.pareto];
+        for (var k = 0; k < extra_pareto.length; k++) {
+          ex_pa = extra_pareto[k];
+          for (var i = 0; i < ex_pa.length; i++) {
+            if (!ex_pa[i].Done)
+              break;
+            if (!ex_pa[i].Success)
               continue;
-            exp_conf = this.conf_to_string(profile.experiments[j].Configuration);
-            exptc = this.myround(profile.experiments[j].Results.TotalCost, 4);
-            expet = this.myround(profile.experiments[j].Results.ExeTime, 4);
-            if (extra_conf == exp_conf)
-              tuples.push([
-                [exptc, expet],
-                [extratc, extraet]
-              ])
+            extra_conf = this.conf_to_string(ex_pa[i].Configuration);
+            extratc = this.myround(ex_pa[i].Results.TotalCost, 4);
+            extraet = this.myround(ex_pa[i].Results.ExeTime, 4);
+            for (var j = 0; j < profile.experiments.length; j++) {
+              if (!profile.experiments[j].Success)
+                continue;
+              exp_conf = this.conf_to_string(profile.experiments[j].Configuration);
+              exptc = this.myround(profile.experiments[j].Results.TotalCost, 4);
+              expet = this.myround(profile.experiments[j].Results.ExeTime, 4);
+              if (extra_conf == exp_conf)
+                tuples.push([
+                  [exptc, expet],
+                  [extratc, extraet]
+                ])
+            }
           }
         }
 
@@ -259,7 +263,7 @@ conpaas.ui = (function(this_module) {
 
         that.render_failed(failed);
 
-        if (exps.length > 0 || pareto.length > 0) {
+        if (profile.experiments.length > 0 || profile.pareto.length > 0 || profile.extrapolations.length > 0) {
           $("#divProfileTable").html(str);
           $("#prof_table").animate({
             scrollTop: $('#prof_table')[0].scrollHeight
@@ -282,7 +286,7 @@ conpaas.ui = (function(this_module) {
             },
           });
 
-          this.plot(exps, extras, pareto, [], tuples);
+          that.plot(exps, extras, pareto, [], tuples);
         }
 
       },
@@ -403,7 +407,8 @@ conpaas.ui = (function(this_module) {
         return toret;
       },
       render_failed: function(failed) {
-        var toret = '<table><tr><td><strong>Failed configurations:</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td><td>'
+        var toret = '<table style="margin-top:10px"><tr><td><strong>Failed configurations:</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'
+        toret += '<span style="font-weight: bold; color:#E10818">(' + failed.length + ')</span></td><td>'
         toret += '<table border="0" cellspacing="3" cellpadding="0" style="margin-right: 10px;">';
         var cols = 10;
         var row_closed = false;
@@ -482,7 +487,7 @@ conpaas.ui = (function(this_module) {
       myround: function(nr, dec) {
         return parseFloat(nr.toFixed(dec));
       },
-      highlight_error: function(){
+      highlight_error: function() {
         var page = arguments[0].data;
         var data = $($(this).find('div')[0]).html().split('|');
         page.highlight_entry(data);
@@ -622,7 +627,14 @@ conpaas.ui = (function(this_module) {
           });
 
         } else {
+
           var toplot = [experiments, extrapolations, pareto, selected];
+          for (var i = 0; i < toplot.length; i++)
+            if (toplot[i].length == 0)
+              toplot[i] = [
+                []
+              ]
+
           var options = {
 
             series: [{
@@ -762,7 +774,7 @@ conpaas.ui = (function(this_module) {
           dataType: 'json',
           type: 'POST',
           success: function(data) {
-            $('#name').html(data.applicatio_name);
+            $('#name').html(data.application_name);
             var status = 'Service not initialized';
             var ledcolor = 'gray';
             if (that.status == 'running') {
@@ -1115,6 +1127,7 @@ conpaas.ui = (function(this_module) {
       closeSettings: function() {
         sessionStorage.debug = 0;
         sessionStorage.monitor = 0;
+        sessionStorage.extrapolate = 0;
         if ($('#debug').is(":checked"))
           sessionStorage.debug = 1;
         if ($('#monitor').is(":checked"))

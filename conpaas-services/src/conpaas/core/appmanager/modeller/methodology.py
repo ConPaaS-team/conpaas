@@ -260,6 +260,8 @@ class ModellingMethod:
 		#print "iter : ",self.iterations, "max eval : ", self.max_evals
 		#print self.iterations >= self.max_evals
 		#print self.iterations > 0 and self.testing_set == []
+		if self.testing_set == []:
+			return True
 		return self.iterations >= self.max_evals or (self.iterations > 0 and self.testing_set == [])
 		
 	def generate_model(self):

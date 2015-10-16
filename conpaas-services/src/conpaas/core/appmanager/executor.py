@@ -79,14 +79,14 @@ class Executor:
             print "\nExecuting application on the following resources :\n", configuration, "\n"
 
             data = {"Done":False, "Implementations":version_indexes, "Configuration":configuration, "ConfVars":conf_variables, "Parameters":parameters }
-            application.manager.add_experiment(data, Executor._is_profiling())
+            application.manager.add_experiment(data, Executor._is_profiling(application, parameters))
 
             #execute application
             successful_execution, execution_time = application.execute(version_indexes, configuration[:], all_variables)
             
             #This is HACK to prevent (reporting) failures during profiling 
-            # if Executor._is_profiling():
-                # successful_execution = True
+            if Executor._is_profiling(application, parameters):
+                successful_execution = True
 
             #this will stop also the monitor
             utilisation, gradient, bottlenecks = Executor._process_feedback(monitor, application, version_indexes, configuration, variables_order, conf_variables, None)
@@ -115,10 +115,14 @@ class Executor:
 
 
     @staticmethod
-    def _is_profiling():
-        curframe = inspect.currentframe()
-        calframe = inspect.getouterframes(curframe, 3)
-        calfile = calframe[3][1]
-        if('profiler' in calfile):
-            return True 
-        return False
+    def _is_profiling(application, parameters):
+        exe_input = application.getExecutionParameters(application.ExtrapolationArgs)
+        if exe_input == parameters:
+            return False
+        return True
+        # curframe = inspect.currentframe()
+        # calframe = inspect.getouterframes(curframe, 3)
+        # calfile = calframe[3][1]
+        # if('profiler' in calfile):
+        #     return True 
+        # return False

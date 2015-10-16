@@ -549,7 +549,7 @@ tr.service {
 }
 
 .service:hover .wrapper {
-	background-color: #eee;
+	background-color: #ccc;
 }
 
 .service .content .title {
@@ -2020,9 +2020,15 @@ margin: 200px 0px 0px 200px;
     text-align: justify;
 }
 
-.highlight{
-background: #dbe4ea;
+
+.extrapolation_row{
+	background:#EEE;
 }
+
+.highlight{
+	background: #72C9F8; !important;
+}
+
 
 input[type=number]::-webkit-inner-spin-button, 
 input[type=number]::-webkit-outer-spin-button {  

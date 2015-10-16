@@ -382,7 +382,13 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
             print "Profiling state."
             #profiling with static input phase
             #get the first small input size to profile with
-            parameters = VariableMapper(self.application.getParameterVariableMap()).lower_bound_values()
+            
+            #if pure blackbox use the big size
+            if self.extrapolate:
+                parameters = VariableMapper(self.application.getParameterVariableMap()).lower_bound_values()
+            else:
+                parameters = self.application.getExecutionParameters(self.application.ExtrapolationArgs)
+
             #start profiler to create a model
             Profiler.StateID = current_state
             self.logger.info("parameters: %s" % parameters)
@@ -397,6 +403,8 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
             current_state = State.get_current_state(version)
             State.checkpoint(version, current_state)
             
+        if not self.extrapolate:    
+            return True, None
         #get the input size from the SLO for which to make prediction
         # input_size = self.application.getExecutionParameters(self.slo.ExecutionArguments)
         input_size = self.application.getExecutionParameters(self.application.ExtrapolationArgs)
@@ -420,7 +428,7 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
                 return False, None
             State.change_state(version)
             current_state = State.get_current_state(version)
-            
+
         print "Current state", current_state
         State.save(version)
         #retrieve the model - tuple (function,constraints)
@@ -489,8 +497,8 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
         if self.state == self.S_RUNNING:
             filter_extrapol = filter(lambda x: x['Success'], self.performance_model['extrapolations'])
             filter_exp = filter(lambda x: x['Success'], self.performance_model['experiments'])
-            if len(self.performance_model['extrapolations']) > 0:
-                self.performance_model['pareto'] = self.enforcer.get_aggregated_pareto(self.performance_model)
+            if len(filter_extrapol) > 0:
+                self.performance_model['pareto'] = self.enforcer.get_aggregated_pareto({'experiments': filter_exp, 'extrapolations':filter_extrapol  })
         return self.performance_model
 
 
