@@ -81,7 +81,9 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
 
         self.config = ServiceConfiguration()
         self.debug = 0
+        self.monitor = 0
         self.frontend=''
+        self.sloconf = None
 
         #TODO:(genc) Put some order in this parsing, it is horrible
         #sloconent = file_get_contents(kwargs['slo'])
