@@ -80,7 +80,7 @@ class HarnessCloud(Cloud):
             else:
                 response = response['result']
         except:
-            if self.nr_calls < 1:
+            if self.nr_calls < 2:
                 time.sleep(1)
                 open('/tmp/crs', 'a').write('failed once\n')
                 return self.__make_request(url, method, content)
