@@ -131,16 +131,16 @@ class Controller(object):
             cloud = self.__default_cloud     
         #try:
         
-        open('/tmp/out', 'a').write('configuration: %s\n'%configuration)
+        # open('/tmp/out', 'a').write('configuration: %s\n'%configuration)
         reservations = cloud.create_reservation(configuration,constraints, monitor)        
         
         max_iteration = 120
         iteration = 0
         sleep_interval = 3
-        open('/tmp/out', 'a').write('reservation: %s\n'%reservations)
+        # open('/tmp/out', 'a').write('reservation: %s\n'%reservations)
         while True:
             status = cloud.check_reservation(reservations)
-            open('/tmp/out', 'a').write('status: %s\n'%status)
+            # open('/tmp/out', 'a').write('status: %s\n'%status)
             all_ready = True
             for inst in status['Instances']:
                 if not bool(status['Instances'][inst]['Ready']):
@@ -156,12 +156,12 @@ class Controller(object):
         if all_ready:
             iteration = 0
             nr_not_started = len(status['Instances'])
-            open('/tmp/out', 'a').write('not started: %s\n'%nr_not_started)
+            # open('/tmp/out', 'a').write('not started: %s\n'%nr_not_started)
             notdone = [status['Instances'][inst] for inst in status['Instances']]  
             for i in range(len(notdone)):
                 notdone[i]['Index']  = i
 
-            open('/tmp/out', 'a').write('not done: %s\n'%notdone)
+            # open('/tmp/out', 'a').write('not done: %s\n'%notdone)
             tmpnotdone = []
             while True:
                 for node in notdone:
@@ -170,7 +170,7 @@ class Controller(object):
                     if configuration[node['Index']]['Type'] == 'Machine':
                         if self.__check_node(node, test_managent, port):
                             nr_not_started -= 1
-                            open('/tmp/out', 'a').write('not started decremented to %s for node: %s\n'% (nr_not_started, node))
+                            # open('/tmp/out', 'a').write('not started decremented to %s for node: %s\n'% (nr_not_started, node))
                             if nr_not_started == 0:
                                 break
                         else:
@@ -183,7 +183,7 @@ class Controller(object):
                 tmpnotdone = []
 
                 if nr_not_started == 0 or iteration >= max_iteration:
-                    open('/tmp/out', 'a').write('BREAK\n')
+                    # open('/tmp/out', 'a').write('BREAK\n')
                     break
 
                 time.sleep(sleep_interval)
@@ -194,12 +194,12 @@ class Controller(object):
                 #     configuration['Allocation'][i]['Address'] = status['Instances'][reservations['ReservationID'][i]]['Address'][0]
 
                 for i in range(len(configuration)):
-                    configuration[i]['ID'] = reservations['ReservationID'][i]
-                    configuration[i]['Address'] = status['Instances'][reservations['ReservationID'][i]]['Address'][0]
+                    configuration[i]['ID'] = reservations['ReservationID'][0]
+                    configuration[i]['Address'] = status['Instances'][reservations['ReservationID'][0]]['Address'][i]
 
                 # reservation['Instances'] = status['Instances']
                 # return reservation
-                open('/tmp/out', 'a').write('returning configuration %s\n' % configuration)
+                # open('/tmp/out', 'a').write('returning configuration %s\n' % configuration)
                 return configuration
         
         raise Exception('Timeout while creating a reservation: %s nodes did not start' % nr_not_started)
@@ -295,12 +295,12 @@ class Controller(object):
 
         return cloud.release_reservation(reservation_id)    
 
-    def monitor(self, reservation_id, address, cloud=None):
+    def monitor(self, reservation_id, cloud=None):
         
         if cloud is None:
             cloud = self.__default_cloud
 
-        return cloud.monitor(reservation_id, address)    
+        return cloud.monitor(reservation_id)    
 
     def get_cost(self, configuration, constraints, cloud=None):
         

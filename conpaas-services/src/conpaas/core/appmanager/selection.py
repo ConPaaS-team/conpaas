@@ -69,19 +69,14 @@ class SLOEnforcer:
 			if len(bmarked) > 0:
 				info[version]["InputProfiled"] = map(lambda x: { "conf" : x["ConfVars"], "params": x["Parameters"], "monitor":x["Monitor"], "et" : x["Results"]["ExeTime"], "tested"  :True , "Configuration" : x["Configuration"]}, bmarked[version]) 
 			info[version]["InputCurrent"] = map(lambda x: { "conf" : x["ConfVars"], "params": x["Parameters"], "monitor":x["Monitor"], "et" : x["Results"]["ExeTime"], "tested"  :True , "Configuration" : x["Configuration"]}, extr[version])
-			open('/tmp/debug', 'a').write('profiled: %s \n' % info[version]["InputProfiled"])
-			# print "\n\n------------------  CONFIGURATIONS  ----------------------\n"
-			# print "~~~  Benchmarked  ~~~"
-			# for c in bmarked[version]:
-			# 	print c["ConfVars"]
+			# open('/tmp/debug', 'a').write('profiled: %s \n' % info[version]["InputProfiled"])
 			
-			# print "~~~  Extrapolated ~~~"
-			# for c in extr[version]:
-			# 	print c["ConfVars"]
-			# print "\n--------------------------------------------------------------\n"
 			if len(info[version]["InputProfiled"]) > len(info[version]["InputCurrent"]):
 				#predict the performance of the untested profiled configurations with the current input
 				confs_tested = map(lambda x:x["conf"], info[version]["InputCurrent"])
+				if confs_tested is []:
+					info[version] = {"InputProfiled" : [], "InputCurrent" : []}
+					continue
 				benchmarked =  map(lambda x:x["conf"], info[version]["InputProfiled"])
 				not_tested_confs = filter(lambda x:not(x in confs_tested), benchmarked)
 				
@@ -139,9 +134,9 @@ class SLOEnforcer:
 				# conf = c["Configuration"]
 				cost = self.application.manager.get_cost(conf, _constr)
 				#update the dict
-				c["cost"] = cost * c["et"]
+				c["cost"] = round(cost * c["et"], 2)
 				c["Version"] = version
-			open('/tmp/debug', 'a').write('extrapolated: %s \n' % data)
+			# open('/tmp/debug', 'a').write('extrapolated: %s \n' % data)
 			all_confs[v] = data[:]
 			
 			pareto[v] = self._get_pareto_experiments(data)[:]

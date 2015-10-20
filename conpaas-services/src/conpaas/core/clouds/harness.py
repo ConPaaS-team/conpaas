@@ -17,7 +17,7 @@ import httplib2
 import simplejson
 import base64
 import os.path
-import sys, traceback, copy
+import sys, traceback, copy, time
 
 class HarnessCloud(Cloud):
     '''Support for "Harness" clouds'''
@@ -31,6 +31,7 @@ class HarnessCloud(Cloud):
         
         # self.url = os.path.join(iaas_config.get(cloud_name, 'HOST'), 'method') 
         self.url = iaas_config.get(cloud_name, 'HOST')
+        self.nr_calls = 0
 
     def get_cloud_type(self):
         return 'harness'
@@ -66,19 +67,28 @@ class HarnessCloud(Cloud):
 
     
     def __make_request(self, url, method = 'POST', content = {}):
+        open('/tmp/crs', 'a').write('url: %s, request: %s\n' % (url,content))
+        self.nr_calls += 1
         data, response = self.conn.request(self.url + url , method,
                           simplejson.dumps(content),
                           headers={'Content-Type': 'application/json'})
         try:
             response = simplejson.loads(response)
-            open('/tmp/ciu', 'a').write('url: %s, resp: %s\n' % (url,response))
+            open('/tmp/crs', 'a').write('url: %s, resp: %s\n' % (url,response))
             if  'result' not in response:
                 raise Exception(response['error']['message'])
             else:
                 response = response['result']
         except:
-            print traceback.print_exc()
-            sys.exit()
+            if self.nr_calls < 1:
+                time.sleep(1)
+                open('/tmp/crs', 'a').write('failed once\n')
+                return self.__make_request(url, method, content)
+            else:
+                open('/tmp/crs', 'a').write('failed twice\n')
+                print traceback.print_exc()
+                sys.exit()
+        self.nr_calls = 0
         return response
 
     # def __make_request(self, url, content = {}):
@@ -138,8 +148,8 @@ class HarnessCloud(Cloud):
         
         return response
 
-    def monitor(self, reservationID, address, entry=1):
-        response = self.__make_request("/getMetrics", content={"ReservationID" : reservationID, "Address":address, "Entry":entry})
+    def monitor(self, reservationID):
+        response = self.__make_request("/getMetrics", content={"ReservationID" : reservationID})
         return response['Metrics']
 
     def get_cost(self, configuration, constraints):

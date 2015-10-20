@@ -65,21 +65,26 @@ conpaas.ui = (function(this_module) {
               window.location = "application.php?aid=" + that.application.aid;
               return true;
             }
-
+            if (response.profile.state == 'RUNNING')
+              return true;
 
             var type = that.services[Object.keys(that.services)[0]];
-            $("#" + type + "_status").html('Profiling');
-            $("#" + type + "_led").attr('src', 'images/ledorange.png');
-
             var profile = response.profile.pm;
-            if (profile.extrapolations.length > 0 && profile.experiments.length > 0)
-              that.displayInfo_2('Extrapolating...');
-            else
-              that.displayInfo_2('Profiling...');
+            if (response.profile.state == 'PROFILING'){
+            
+              $("#" + type + "_status").html('Profiling');
+              $("#" + type + "_led").attr('src', 'images/ledorange.png');
+
+            
+              if (profile.extrapolations.length > 0 && profile.experiments.length > 0)
+                that.displayInfo_2('Extrapolating...');
+              else
+                that.displayInfo_2('Profiling...');
+            }
 
             that.updateProfileInfo(profile);
 
-            if (response.profile.state == 'RUNNING') {
+            if (response.profile.state == 'PROFILED') {
               conpaas.ui.visible('pgstatInfo', false);
               var downlink = '<a class="button small" href="ajax/getProfilingInfo.php?aid=' + that.application.aid + '&format=file">Download profile</a><br/><br/>';
               $("#downloadProfile").html(downlink);
@@ -123,7 +128,10 @@ conpaas.ui = (function(this_module) {
               if (status == 'TERMINATED') {
                 $("#" + type + "_status").html('Application terminated');
                 $("#" + type + "_led").attr('src', 'images/ledgray.png');
-              } else {
+              } else if (status == 'PROFILED'){
+                $("#" + type + "_status").html('Profiled');
+                $("#" + type + "_led").attr('src', 'images/ledgreen.png');
+              } else if (status == 'PROFILED'){
                 $("#" + type + "_status").html('Running');
                 $("#" + type + "_led").attr('src', 'images/ledgreen.png');
               }
@@ -165,7 +173,8 @@ conpaas.ui = (function(this_module) {
         var str = '<table class="slist" cellpadding="0" cellspacing="0" style="/*border: 1px solid;*/">',
           tdclass = 'wrapper ';
 
-        str += '<thead style="display:block;"><tr style="background:#F2F2F2"><th width="30" style="padding:5px">Status</th><th width="50">Config</th><th width="50" style="padding:5px">Time(sec)</th><th width="50" style="padding:5px">Cost(&euro;)</th><th width="58">Monitor</th></tr></thead><tbody id="prof_table" style="height:200px; overflow:auto; overflow-x:hidden; /*overflow-y:scroll;*/ display:block;">';
+        // str += '<thead style="display:block;"><tr style="background:#F2F2F2"><th width="30" style="padding:5px">Status</th><th width="50">Config</th><th width="80" style="padding:5px">Time(sec)</th><th width="70" style="padding:5px">Cost(&euro;)</th><th width="80">Monitor</th></tr></thead><tbody id="prof_table" style="height:200px; overflow:auto; overflow-x:hidden; /*overflow-y:scroll;*/ display:block;">';
+        str += '<thead style="display:block;"><tr style="background:#F2F2F2"><th width="30" style="padding:5px">Status</th><th width="60">Config</th><th width="50" style="padding:5px">Time(sec)</th><th width="60" style="padding:5px">Cost(&euro;)</th><th width="60">Monitor</th></tr></thead><tbody id="prof_table" style="height:200px; overflow:auto; overflow-x:hidden; /*overflow-y:scroll;*/ display:block;">';
 
         var exps = [];
         var pareto = [];
@@ -189,8 +198,8 @@ conpaas.ui = (function(this_module) {
                 img = 'fail';
             }
             ij = i + '-' + j;
-            str += '<td align="center" class="' + tdclass + '" style="/*border-left: 1px solid #ddd;*/ padding-left:20px; border:none;"><img src="images/' + img + '.gif" style="width:16px"/></td>';
-            str += '<td align="center" class="' + tdclass + ' config" data-tipped-options="position: \'left\', inline: \'config_' + ij + '\'" style="border:none; padding-left:20px;">'
+            str += '<td align="center" class="' + tdclass + '" style="/*border-left: 1px solid #ddd;*/ width:35px; border:none;"><img src="images/' + img + '.gif" style="width:16px"/></td>';
+            str += '<td align="center" class="' + tdclass + ' config" data-tipped-options="position: \'left\', inline: \'config_' + ij + '\'" style="border:none; width:35px;">'
             str += '<img style="height:18px" src="images/conf.png" />'
               //str += '<div id="config_'+i+'-'+j+'" style="display:none">' + /*this.objToString(expers[i].Configuration)*/ this.render_config(expers[i].Configuration) + '</div></td>';
             str += '<div id="config_' + ij + '" style="display:none">' + /*this.objToString(expers[i].Configuration)*/ this.render_config2(expers[i].Configuration) + '</div></td>';
@@ -198,11 +207,11 @@ conpaas.ui = (function(this_module) {
               tc = this.myround(expers[i].Results.TotalCost, 4);
               et = this.myround(expers[i].Results.ExeTime, 4);
 
-              str += '<td align="center" class="' + tdclass + ' et" style="border:none; padding-left:15px;">' + et + '</td>';
-              str += '<td align="center" class="' + tdclass + ' cst" style="border:none;">' + tc + '</td>';
+              str += '<td align="center" class="' + tdclass + ' et" style="border:none; width:60px;">' + et + '</td>';
+              str += '<td align="center" class="' + tdclass + ' cst" style="border:none; width:54px;">' + tc + '</td>';
               str += '<td id="monitor_' + ij + '" align="center" class="' + tdclass + ' monitor" data-tipped-options="position: \'right\', inline: \'target_monitor_' + ij + '\'" style="border:none;">';
               if (this.hasMonitor(expers[i].Monitor)) {
-                str += '<img style="width:24px; margin-right:20px;" src="images/monitor.png" />';
+                str += '<img style="width:24px; margin-right:0px;" src="images/monitor.png" />';
                 str += '<div id="target_monitor_' + ij + '" style="display:none;">' + this.set_monitor_ph(expers[i].Monitor, ij) + '</div></td>';
               } else {
                 str += '<img style="width:24px; margin-right:20px;" src="images/off.png" />';
@@ -350,7 +359,7 @@ conpaas.ui = (function(this_module) {
           }
         }
         metrix = metrix.slice(0, metrix.length - 1);
-        return metrix.split(',');
+        return metrix.split(',').sort();
       },
       set_monitor_ph: function(monitor, ij) {
 
@@ -365,7 +374,7 @@ conpaas.ui = (function(this_module) {
           }
           toret += '<td>';
           toret += '<div align="center" style="width:100%">' + metr_arr[i] + '</div>';
-          toret += '<div id="monplot_' + metr_arr[i] + '_' + ij + '" style="width:250px; height:150px"></div>';
+          toret += '<div id="monplot_' + metr_arr[i] + '_' + ij + '" style="width:300px; height:200px"></div>';
 
           toret += '</td>';
           if (i % cols == cols - 1) {
@@ -553,12 +562,13 @@ conpaas.ui = (function(this_module) {
             xaxis: {
               label: 'Time',
               labelRenderer: $.jqplot.CanvasAxisLabelRenderer,
-              pad: 0
+              min: 0
             },
             yaxis: {
               label: 'Usage',
               labelRenderer: $.jqplot.CanvasAxisLabelRenderer,
-              pad: 0
+              min: 0,
+              max: 100
             }
           },
           highlighter: {
@@ -567,8 +577,8 @@ conpaas.ui = (function(this_module) {
           },
           legend: {
             show: true,
-            placement: 'inside',
-            location: 'ne',
+            placement: 'outside',
+            location: 's',
             marginTop: '0px'
           },
           cursor: {
@@ -579,13 +589,16 @@ conpaas.ui = (function(this_module) {
         };
         for (var i = 0; i < res.length; i++) {
           toplot.push(res[i]);
+          name = names[i];
+          if (name.length > 15)
+            name = name.substring(name.length-16)
           options.series.push({
             showMarker: false,
-            lineWidth: 2,
+            lineWidth: 1,
             rendererOptions: {
               smooth: true
             },
-            label: names[i]
+            label: name
           });
           // options.seriesColors.push('#999999');
         }
@@ -746,7 +759,7 @@ conpaas.ui = (function(this_module) {
           success: function(data) {
             that.pollState(function() {
               window.location.reload();
-            }, null, 5);
+            }, null, 10);
 
           }
         });
@@ -853,7 +866,7 @@ conpaas.ui = (function(this_module) {
             that.application = new conpaas.model.Application(data.appid);
             that.pollState(function() {
               window.location.reload();
-            }, null, 5);
+            }, null, 10);
           }
         });
 
@@ -1225,11 +1238,14 @@ $(document).ready(function() {
 
       page.services = app_data.profile.services;
       $("#profilediv").show(500);
-      if (app_data.profile.pm.experiments.length > 0)
-        $("#slodiv").show(500);
+      // if (app_data.profile.pm.experiments.length > 0)
+      //   $("#slodiv").show(500);
 
       page.onHideUpload();
-      page.updateProfileInfo(app_data.profile.pm);
+      // page.updateProfileInfo(app_data.profile.pm);
+      page.pollState(function () {
+        window.location.reload();
+      }, null, 10);
 
     }, function(error) {
       page.displayError(error.name, error.details);

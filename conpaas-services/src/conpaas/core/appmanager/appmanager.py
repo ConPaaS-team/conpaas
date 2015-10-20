@@ -51,6 +51,7 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
     S_ADAPTING = 'ADAPTING' # manager is in a transient state - frontend will 
                             # keep polling until manager out of transient state
     S_PROFILING = 'PROFILING'  
+    S_PROFILED = 'PROFILED'  
     S_EPILOGUE = 'EPILOGUE' # manager is shutting down
     S_STOPPED = 'STOPPED'   # manager stopped
     S_ERROR = 'ERROR'       # manager is in error state
@@ -140,6 +141,7 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
         self.logger.debug(profile)
         self.performance_model = simplejson.loads(profile)
         self.update_prices()
+        self.state = self.S_PROFILED
         # return HttpJsonResponse({'state':self.state, 'profile':{'experiments': Traces.Experiments, 'pareto':Traces.ParetoExperiments}})    
         return HttpJsonResponse({'len':len(profile)})    
 
@@ -157,7 +159,7 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
                     _, conf, _constr  = self.application.getResourceConfiguration(version, self.performance_model[exp][i]["ConfVars"])
                     # conf = c["Configuration"]
                     cost = self.get_cost(conf, _constr)
-                    self.performance_model[exp][i]["Results"]["TotalCost"] = cost * self.performance_model[exp][i]["Results"]["ExeTime"]
+                    self.performance_model[exp][i]["Results"]["TotalCost"] = round(cost * self.performance_model[exp][i]["Results"]["ExeTime"],2)
 
     @expose('UPLOAD')
     def upload_slo(self, kwargs):
@@ -279,19 +281,21 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
         module_manager = self.module_managers[0]
         return module_manager.controller.get_cost(configuration, constraints)
 
-    def get_monitoring(self, reservationID, address):
+    def get_monitoring(self, monitor, reservationID):
         module_manager = self.module_managers[0]
         
         if self.monitor:
-            # mon_info = module_manager.controller.monitor(reservationID, address)
-            mon_info = {'CPU_U_S_TIME': '1,1443617808.0,3.0\n2,1443617809.0,19.0\n3,1443617812.0,47.0\n4,1443617813.0,81.0\n5,1443617814.0,112.0\n6,1443617815.0,144.0\n7,1443617817.0,155.0\n8,1443617818.0,155.0\n9,1443617819.0,155.0\n10,1443617820.0,155.0\n11,1443617822.0,166.0\n12,1443617823.0,167.0\n13,1443617824.0,167.0\n14,1443617825.0,167.0\n15,1443617826.0,167.0\n16,1443617827.0,167.0\n17,1443617828.0,167.0\n18,1443617829.0,167.0\n19,1443617830.0,167.0\n20,1443617831.0,167.0\n', 'MEM_U_S_BYTE': '1,1443617808.0,8470528.0\n2,1443617810.0,25010176.0\n3,1443617812.0,23830528.0\n4,1443617813.0,28930048.0\n5,1443617814.0,35192832.0\n6,1443617815.0,33308672.0\n7,1443617817.0,25001984.0\n8,1443617818.0,23670784.0\n9,1443617819.0,23670784.0\n10,1443617820.0,19755008.0\n11,1443617822.0,25112576.0\n12,1443617823.0,23588864.0\n13,1443617824.0,21438464.0\n14,1443617825.0,21049344.0\n15,1443617826.0,20688896.0\n16,1443617827.0,20471808.0\n17,1443617828.0,20471808.0\n18,1443617829.0,19812352.0\n19,1443617830.0,19812352.0\n20,1443617831.0,19812352.0\n', 'MEM_TOT_BYTE': '1,1443617808.0,1073741824.0\n2,1443617810.0,1073741824.0\n3,1443617812.0,1073741824.0\n4,1443617813.0,1073741824.0\n5,1443617814.0,1073741824.0\n6,1443617815.0,1073741824.0\n7,1443617817.0,1073741824.0\n8,1443617818.0,1073741824.0\n9,1443617819.0,1073741824.0\n10,1443617820.0,1073741824.0\n11,1443617822.0,1073741824.0\n12,1443617823.0,1073741824.0\n13,1443617824.0,1073741824.0\n14,1443617825.0,1073741824.0\n15,1443617826.0,1073741824.0\n16,1443617827.0,1073741824.0\n17,1443617828.0,1073741824.0\n18,1443617829.0,1073741824.0\n19,1443617830.0,1073741824.0\n20,1443617831.0,1073741824.0\n', 'CPU_TOT_TIME': '1,1443617808.0,6817940.0\n2,1443617810.0,6818108.0\n3,1443617812.0,6818273.0\n4,1443617813.0,6818383.0\n5,1443617814.0,6818493.0\n6,1443617815.0,6818630.0\n7,1443617817.0,6818747.0\n8,1443617818.0,6818890.0\n9,1443617819.0,6818988.0\n10,1443617820.0,6819100.0\n11,1443617822.0,6819197.0\n12,1443617823.0,6819294.0\n13,1443617824.0,6819390.0\n14,1443617825.0,6819485.0\n15,1443617826.0,6819581.0\n16,1443617827.0,6819684.0\n17,1443617828.0,6819778.0\n18,1443617829.0,6819878.0\n19,1443617830.0,6819981.0\n20,1443617831.0,6820080.0\n'}
+            mon_info = module_manager.controller.monitor(reservationID)
+            # mon_info = {'CPU_U_S_TIME': '1,1443617808.0,3.0\n2,1443617809.0,19.0\n3,1443617812.0,47.0\n4,1443617813.0,81.0\n5,1443617814.0,112.0\n6,1443617815.0,144.0\n7,1443617817.0,155.0\n8,1443617818.0,155.0\n9,1443617819.0,155.0\n10,1443617820.0,155.0\n11,1443617822.0,166.0\n12,1443617823.0,167.0\n13,1443617824.0,167.0\n14,1443617825.0,167.0\n15,1443617826.0,167.0\n16,1443617827.0,167.0\n17,1443617828.0,167.0\n18,1443617829.0,167.0\n19,1443617830.0,167.0\n20,1443617831.0,167.0\n', 'MEM_U_S_BYTE': '1,1443617808.0,8470528.0\n2,1443617810.0,25010176.0\n3,1443617812.0,23830528.0\n4,1443617813.0,28930048.0\n5,1443617814.0,35192832.0\n6,1443617815.0,33308672.0\n7,1443617817.0,25001984.0\n8,1443617818.0,23670784.0\n9,1443617819.0,23670784.0\n10,1443617820.0,19755008.0\n11,1443617822.0,25112576.0\n12,1443617823.0,23588864.0\n13,1443617824.0,21438464.0\n14,1443617825.0,21049344.0\n15,1443617826.0,20688896.0\n16,1443617827.0,20471808.0\n17,1443617828.0,20471808.0\n18,1443617829.0,19812352.0\n19,1443617830.0,19812352.0\n20,1443617831.0,19812352.0\n', 'MEM_TOT_BYTE': '1,1443617808.0,1073741824.0\n2,1443617810.0,1073741824.0\n3,1443617812.0,1073741824.0\n4,1443617813.0,1073741824.0\n5,1443617814.0,1073741824.0\n6,1443617815.0,1073741824.0\n7,1443617817.0,1073741824.0\n8,1443617818.0,1073741824.0\n9,1443617819.0,1073741824.0\n10,1443617820.0,1073741824.0\n11,1443617822.0,1073741824.0\n12,1443617823.0,1073741824.0\n13,1443617824.0,1073741824.0\n14,1443617825.0,1073741824.0\n15,1443617826.0,1073741824.0\n16,1443617827.0,1073741824.0\n17,1443617828.0,1073741824.0\n18,1443617829.0,1073741824.0\n19,1443617830.0,1073741824.0\n20,1443617831.0,1073741824.0\n', 'CPU_TOT_TIME': '1,1443617808.0,6817940.0\n2,1443617810.0,6818108.0\n3,1443617812.0,6818273.0\n4,1443617813.0,6818383.0\n5,1443617814.0,6818493.0\n6,1443617815.0,6818630.0\n7,1443617817.0,6818747.0\n8,1443617818.0,6818890.0\n9,1443617819.0,6818988.0\n10,1443617820.0,6819100.0\n11,1443617822.0,6819197.0\n12,1443617823.0,6819294.0\n13,1443617824.0,6819390.0\n14,1443617825.0,6819485.0\n15,1443617826.0,6819581.0\n16,1443617827.0,6819684.0\n17,1443617828.0,6819778.0\n18,1443617829.0,6819878.0\n19,1443617830.0,6819981.0\n20,1443617831.0,6820080.0\n'}
         else:
             mon_info={}
-            for tp in self.monitor_target:
-                if tp != "PollTime":
-                    for metr in self.monitor_target[tp]:
-                        mon_info[metr] = ''
-
+            configuration = monitor.resources
+            for i in range(len(configuration)):
+                mon_info[configuration[i]["Address"]] = {}
+                for attr in configuration[i]["Attributes"]:
+                    if attr in monitor.fields_to_monitor:
+                        mon_info[configuration[i]["Address"]][attr.upper() + monitor.KEYWORD] = ""
+            
         # self.logger.info('###MONITOR###: %s' % mon_info)
         return mon_info
         
@@ -360,7 +364,7 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
         done, models = self.model_application()
         self.logger.info("Modelling done?: %s" % done)
         if done:            
-            self.state = self.S_RUNNING
+            self.state = self.S_PROFILED
             # self.preparePerformanceModel(True)
             # self.enforcer.set_models(models)
         #     #application model has been built; enforce slo
@@ -512,7 +516,7 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
         #         if 'Success' in self.performance_model[exp][i] and not self.performance_model[exp][i]['Success']:
         #             self.performance_model['failed'].append(self.performance_model[exp][i])
         #             del self.performance_model[exp][i]
-        if self.state == self.S_RUNNING:
+        if self.state == self.S_PROFILED:
             filter_extrapol = filter(lambda x: x['Success'], self.performance_model['extrapolations'])
             filter_exp = filter(lambda x: x['Success'], self.performance_model['experiments'])
             if len(filter_extrapol) > 0:

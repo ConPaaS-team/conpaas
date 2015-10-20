@@ -59,59 +59,62 @@ class Executor:
         roles, configuration, constraints = application.getResourceConfiguration(version_indexes, conf_variables)
         #print roles
         #print configuration
-        
-        monitor = Monitor(application.manager)
+        required_fields = application.getResourceVar2KeyMap(version_indexes).values()
+        monitor = Monitor(application.manager, configuration, required_fields)
         reservation = application.manager.reserve_resources(configuration, constraints, monitor.target)
         application.manager.logger.debug("Reservation: %s" % reservation)
         released = False
         #print "Reservation ready :", reservation
-        try:
-            for i in range(len(configuration)):
-                configuration[i]["Address"] = reservation[i]["Address"]
-                configuration[i]["Role"]    = roles[i]
-            
-            all_variables = {}
-            all_variables.update(parameters)
-            all_variables.update(conf_variables)
-                
-            monitor.setup(configuration, reservation[0]['ID'])
-            
-            print "\nExecuting application on the following resources :\n", configuration, "\n"
-
-            data = {"Done":False, "Implementations":version_indexes, "Configuration":configuration, "ConfVars":conf_variables, "Parameters":parameters }
-            application.manager.add_experiment(data, Executor._is_profiling(application, parameters))
-
-            #execute application
-            successful_execution, execution_time = application.execute(version_indexes, configuration[:], all_variables)
-            
-            #This is HACK to prevent (reporting) failures during profiling 
-            if Executor._is_profiling(application, parameters):
-                successful_execution = True
-
-            #this will stop also the monitor
-            utilisation, gradient, bottlenecks = Executor._process_feedback(monitor, application, version_indexes, configuration, variables_order, conf_variables, None)
-            
-            success = {"Success"  : successful_execution, "Bottleneck" : bottlenecks}
-            
-            #release configuration
-            application.manager.release_resources(reservation[0]['ID'])
-            released = True
-            # ReservationManager.release(reservation["ReservationID"])
-            cost_unit = application.manager.get_cost(configuration, constraints)
-            cost =  execution_time * cost_unit
-            data["Monitor"] = utilisation['utilisation']
-            data["Success"] = successful_execution
-            data["Results"] = {"ExeTime" : execution_time, "TotalCost" : cost} 
-            data["Done"] = True
-
-            print "Cost: ",cost, " ET :", execution_time
-            
-            return  (success, conf_variables, cost, execution_time, gradient, utilisation)  
+        # try:
+        for i in range(len(configuration)):
+            configuration[i]["Address"] = reservation[i]["Address"]
+            configuration[i]["Role"]    = roles[i]
         
-        except Exception, e:
-            if not released:
-                application.manager.release_resources(reservation[0]['ID'])
-            raise e
+        all_variables = {}
+        all_variables.update(parameters)
+        all_variables.update(conf_variables)
+            
+        monitor.setup(configuration, reservation[0]['ID'])
+        
+        print "\nExecuting application on the following resources :\n", configuration, "\n"
+
+        data = {"Done":False, "Implementations":version_indexes, "Configuration":configuration, "ConfVars":conf_variables, "Parameters":parameters }
+        application.manager.add_experiment(data, Executor._is_profiling(application, parameters))
+
+        #execute application
+        successful_execution, execution_time = application.execute(version_indexes, configuration[:], all_variables)
+        
+        #This is HACK to prevent (reporting) failures during profiling 
+        if Executor._is_profiling(application, parameters):
+            successful_execution = True
+
+        application.manager.logger.debug('before process feedback')
+        #this will stop also the monitor
+        utilisation, gradient, bottlenecks = Executor._process_feedback(monitor, application, version_indexes, configuration, variables_order, conf_variables, None)
+        application.manager.logger.debug('after process feedback')
+
+        success = {"Success"  : successful_execution, "Bottleneck" : bottlenecks}
+        
+        #release configuration
+        application.manager.release_resources(reservation[0]['ID'])
+        released = True
+        # ReservationManager.release(reservation["ReservationID"])
+        cost_unit = application.manager.get_cost(configuration, constraints)
+        execution_time = int(round(execution_time))
+        cost =  round(execution_time * cost_unit, 2)
+        data["Monitor"] = utilisation['utilisation']
+        data["Success"] = successful_execution
+        data["Results"] = {"ExeTime" : execution_time, "TotalCost" : cost} 
+        data["Done"] = True
+
+        print "Cost: ",cost, " ET :", execution_time
+        
+        return  (success, conf_variables, cost, execution_time, gradient, utilisation)  
+        
+        # except Exception, e:
+        #     if not released:
+        #         application.manager.release_resources(reservation[0]['ID'])
+        #     raise e
 
 
     @staticmethod
