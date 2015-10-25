@@ -59,10 +59,12 @@ class MathUtils:
 		p_front = [myList[0]]    
 		for pair in myList[1:]:
 			if maxY: 
-				if pair[1] >= p_front[-1][1]:
+				# if pair[1] >= p_front[-1][1]:
+				if pair[1] > p_front[-1][1]:
 					p_front.append(pair)
 			else:
-				if pair[1] <= p_front[-1][1]:
+				# if pair[1] <= p_front[-1][1]:
+				if pair[1] < p_front[-1][1]:
 					p_front.append(pair)
 		p_frontX = [pair[0] for pair in p_front]
 		p_frontY = [pair[1] for pair in p_front]

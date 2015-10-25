@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import sys, inspect
+import sys, inspect, time
 # from conpaas.core.appmanager.resources.reservation import ReservationManager
 from conpaas.core.appmanager.resources.utilisation import Monitor
 from conpaas.core.appmanager.state import CostModel
@@ -92,23 +92,24 @@ class Executor:
         #this will stop also the monitor
         utilisation, gradient, bottlenecks = Executor._process_feedback(monitor, application, version_indexes, configuration, variables_order, conf_variables, None)
         application.manager.logger.debug('after process feedback')
-
+        application.cleanup(version_indexes, configuration[:], all_variables)
         success = {"Success"  : successful_execution, "Bottleneck" : bottlenecks}
         
         #release configuration
         application.manager.release_resources(reservation[0]['ID'])
+
         released = True
         # ReservationManager.release(reservation["ReservationID"])
         cost_unit = application.manager.get_cost(configuration, constraints)
         execution_time = int(round(execution_time))
-        cost =  round(execution_time * cost_unit, 2)
+        cost =  round(execution_time * cost_unit, application.manager.cost_round)
         data["Monitor"] = utilisation['utilisation']
         data["Success"] = successful_execution
         data["Results"] = {"ExeTime" : execution_time, "TotalCost" : cost} 
         data["Done"] = True
 
         print "Cost: ",cost, " ET :", execution_time
-        
+        time.sleep(5)
         return  (success, conf_variables, cost, execution_time, gradient, utilisation)  
         
         # except Exception, e:

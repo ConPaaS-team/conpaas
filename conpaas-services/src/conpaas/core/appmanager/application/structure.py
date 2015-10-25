@@ -100,12 +100,7 @@ class Application(Base):
 			runtimes.append(runtime)
 			exit_code.append(ec)
 			
-		for i in range(len(version)):
-			selected_implementation = version[i]
-			num_instances_per_group = self.Modules[i].Implementations[selected_implementation].Resources.get_num_instances(variables)
-			machines = configuration[:sum(num_instances_per_group)]
-			#cleanup will also check if the execution was successful 
-			self.Modules[i].Implementations[selected_implementation].cleanup(machines, variables)
+		
 			
 		if runtimes == []:
 			raise Exception("No module executed.")
@@ -114,6 +109,13 @@ class Application(Base):
 		# return (False if sum(exit_code) > 0 else True, max(runtimes), max(costs))
 		return (False if sum(exit_code) > 0 else True, max(runtimes))
 			
+	def cleanup(self, version, configuration, variables = {}):
+		for i in range(len(version)):
+			selected_implementation = version[i]
+			num_instances_per_group = self.Modules[i].Implementations[selected_implementation].Resources.get_num_instances(variables)
+			machines = configuration[:sum(num_instances_per_group)]
+			#cleanup will also check if the execution was successful 
+			self.Modules[i].Implementations[selected_implementation].cleanup(self.manager,machines, variables)
 
 	def getGroupIDVars(self, version, groupID):
 		variables = []

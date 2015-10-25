@@ -66,7 +66,7 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
         self.cache = config_parser.get('manager', 'VAR_CACHE')
         # self.performance_model = {'experiments':{}, 'extrapolations':{}, 'pareto':[]}
         # self.performance_model = {'experiments':[], 'extrapolations':[], 'pareto':[], 'failed':[]}
-        self.performance_model = {'experiments':[], 'extrapolations':[], 'pareto':[]}
+        self.performance_model = {'experiments':[], 'extrapolations':[], 'pareto':[], 'extra_constraints':{}}
 
         self.code_repo = config_parser.get('manager', 'CODE_REPO')
 
@@ -85,6 +85,8 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
         self.monitor = 0
         self.frontend=''
         self.sloconf = None
+
+        self.cost_round = 4
 
         #TODO:(genc) Put some order in this parsing, it is horrible
         #sloconent = file_get_contents(kwargs['slo'])
@@ -140,6 +142,14 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
         profile = profile.file.read()
         self.logger.debug(profile)
         self.performance_model = simplejson.loads(profile)
+        if 'extra_constraints' not in self.performance_model:
+            self.performance_model['extra_constraints'] ={}        
+        if isinstance(self.performance_model['extra_constraints'], list):
+            const_list = self.performance_model['extra_constraints'][:]
+            self.performance_model['extra_constraints'] = {}
+            for i in range(len(const_list)):
+                self.performance_model['extra_constraints'][str(i)] = const_list[i]
+
         self.update_prices()
         self.state = self.S_PROFILED
         # return HttpJsonResponse({'state':self.state, 'profile':{'experiments': Traces.Experiments, 'pareto':Traces.ParetoExperiments}})    
@@ -155,11 +165,12 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
         versions = vv
         for version in versions:
             for exp in self.performance_model.keys():
-                for i in range(len(self.performance_model[exp])):
-                    _, conf, _constr  = self.application.getResourceConfiguration(version, self.performance_model[exp][i]["ConfVars"])
-                    # conf = c["Configuration"]
-                    cost = self.get_cost(conf, _constr)
-                    self.performance_model[exp][i]["Results"]["TotalCost"] = round(cost * self.performance_model[exp][i]["Results"]["ExeTime"],2)
+                if exp != 'extra_constraints':
+                    for i in range(len(self.performance_model[exp])):
+                        _, conf, _constr  = self.application.getResourceConfiguration(version, self.performance_model[exp][i]["ConfVars"])
+                        # conf = c["Configuration"]
+                        cost = self.get_cost(conf, _constr)
+                        self.performance_model[exp][i]["Results"]["TotalCost"] = round(cost * self.performance_model[exp][i]["Results"]["ExeTime"],self.cost_round)
 
     @expose('UPLOAD')
     def upload_slo(self, kwargs):
@@ -379,12 +390,16 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
         #we can run the modelling in parallel for each version
         q = True 
         models = {}
+        self.performance_model["extra_constraints"] = {}
         for v in self.versions:
             # self.logger.info("Version: %s" % v)
             done, model = self.model_version(v)
-            models[".".join(map(lambda s: str(s), v))] = model
+            vkey = "-".join(map(lambda s: str(s), v))
+            models[vkey] = model
             q = q and done 
-        
+            if model:
+                # self.performance_model["extra_constraints"]['_'+vkey] = model[1]
+                self.performance_model["extra_constraints"][vkey] = model[1]
         return q, models
 
 
@@ -519,8 +534,14 @@ class ApplicationManager(ConpaasRequestHandlerComponent):
         if self.state == self.S_PROFILED:
             filter_extrapol = filter(lambda x: x['Success'], self.performance_model['extrapolations'])
             filter_exp = filter(lambda x: x['Success'], self.performance_model['experiments'])
+            # new_constr = {}
+            # for k in self.performance_model['extra_constraints'].keys():
+            #     new_constr[k[1:]] = self.performance_model['extra_constraints'][k]
+            # self.performance_model['extra_constraints']=new_constr
+
             if len(filter_extrapol) > 0:
-                self.performance_model['pareto'] = self.enforcer.get_aggregated_pareto({'experiments': filter_exp, 'extrapolations':filter_extrapol  })
+                self.performance_model['pareto'] = self.enforcer.get_aggregated_pareto({'experiments': filter_exp, 'extrapolations':filter_extrapol, "extra_constraints": self.performance_model['extra_constraints'] })
+            # self.logger.info("extra_constraints: %s " % self.performance_model['extra_constraints'] )
         return self.performance_model
 
 

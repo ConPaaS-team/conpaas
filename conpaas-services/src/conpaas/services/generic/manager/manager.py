@@ -427,7 +427,7 @@ class GenericManager(BaseManager):
 
         self._state_set(self.S_RUNNING)
 
-    def cleanup_agents(self):
+    def _do_cleanup(self):
         #TODO: make this multithreaded
         for instance in self.instances['Instances']:
             if instance['Type'] == 'Machine':
@@ -437,7 +437,6 @@ class GenericManager(BaseManager):
                     self.logger.exception('Failed to clean up agent: %s' % str(instance))             
                     self._state_set(self.S_ERROR, msg='Failed to clean up agent: %s' % str(instance))
                     raise 
-        
 
     @expose('POST')
     def remove_nodes(self, kwargs):

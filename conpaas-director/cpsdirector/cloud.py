@@ -354,14 +354,16 @@ def startapp(user_id, cloud_name, app_id, vpn, controller=None):
     # FIXME: test_manager(ip, port) not implemented yet. Just return True.
     #node = controller.create_nodes(1, lambda ip, port: True, None, cloud)[0]
     # manager_configuration = {'Allocation' : [{'Group' : '0', 'Type' : 'Machine', 'Attributes' : {'Cores' : 1, 'Memory' : 1024}}]}
-    manager_configuration = [{'Group' : '0', 'Type' : 'Machine', 'Attributes' : {'Cores' : 1, 'Memory' : 1024}}]
-    
+    manager_configuration = [{'Group' : 'man', 'Type' : 'Machine', 'Attributes' : {'Cores' : 1, 'Memory' : 1024}}]
+    constr = []
+    if config_parser.has_option('iaas', 'manager_host'):
+        constr = [{"ID": config_parser.get('iaas', 'manager_host'),"Source": "man","ConstraintType": "==","Target": "man"}] 
     # reservation = controller.prepare_reservation(manager_configuration)
     # if 'ConfigID' not in reservation:
     #     raise Exception('The requested resources are not available!')
 
     from conpaas.core.appmanager import appclient 
-    reservation = controller.create_reservation_test(manager_configuration, appclient.check_manager_process, 443)
+    reservation = controller.create_reservation_test(manager_configuration, appclient.check_manager_process, 443, constraints=constr)
     # node = reservation['Allocation'][0]
     node = reservation[0]
     

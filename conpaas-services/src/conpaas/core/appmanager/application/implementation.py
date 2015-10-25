@@ -131,8 +131,9 @@ class Implementation(Base):
             
         print "Deployment finished."
 
-    def cleanup(self, machines, variables):
-        pass
+    def cleanup(self, manager, machines, variables):
+        module_manager = manager.module_managers[0]
+        manager.frontend = module_manager._do_cleanup()
         
     def execute(self, manager, machines, variables):
         env_vars = self.__process_environ_vars(machines, variables)

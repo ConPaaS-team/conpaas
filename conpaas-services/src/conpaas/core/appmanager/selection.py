@@ -29,10 +29,21 @@ class SLOEnforcer:
 		info = self._predict_performance(exps)
 		best_confs = self._select_best(info)
 		if best_confs:
-			self.application.manager.logger.debug("best confs: %s" % best_confs) 
-			return self._convert_to_cps_format(best_confs)
+			self.application.manager.logger.debug("best confs: %s" % len(best_confs)) 
+			agg_pareto = self._convert_to_cps_format(best_confs)
+			self.count_extrapolated_and_generated(agg_pareto)
+			return agg_pareto
 		return []
 		
+	def count_extrapolated_and_generated(self, agg_pareto):
+		extrapolated = 0
+		generated = 0
+		for i in range(len(agg_pareto)):
+			if agg_pareto[i]['Tested']:
+				extrapolated +=1
+			else:
+				generated += 1
+		self.application.manager.logger.info("Pareto has %s extrapolated and %s generated" % (extrapolated, generated))
 
 	def aggregate(self, data):
 		exps_bm = data
@@ -50,17 +61,18 @@ class SLOEnforcer:
 	def select_versions(self, exps):
 		benchmarked = exps["experiments"]
 		extrapolated = exps["extrapolations"]
+		constr = exps["extra_constraints"]
 
 		bm = self.aggregate(benchmarked)
 		extr = self.aggregate(extrapolated)
 
-		return bm, extr
+		return bm, extr, constr
 
 
 	def _predict_performance(self, exps):
 		info = {}
 
-		bmarked, extr = self.select_versions(exps)
+		bmarked, extr, constraints = self.select_versions(exps)
 		self.versions = extr.keys()
 
 		for version in self.versions:
@@ -79,7 +91,18 @@ class SLOEnforcer:
 					continue
 				benchmarked =  map(lambda x:x["conf"], info[version]["InputProfiled"])
 				not_tested_confs = filter(lambda x:not(x in confs_tested), benchmarked)
-				
+
+				if constraints != {} and constraints[version] != {}:
+					constr = constraints[version]
+					cc = not_tested_confs[:]
+					not_tested_confs = []
+					for c in cc:
+						if all([True if (not(k in constr.keys())) or (k in constr.keys() and c[k] > constr[k]) else False for k in c.keys()]):
+							not_tested_confs.append(c)
+						else:
+							self.application.manager.logger.info("this config is evil %s" % c)
+
+				self.application.manager.logger.info("conf_tested: %s, benchmarked:%s, not_tested_confs: %s" % (len(confs_tested), len(benchmarked), len(not_tested_confs)))
 				#use model to predict the cost and et of the confs not tested with the current input			
 				x_fit = []
 				y_fit = []
@@ -109,21 +132,21 @@ class SLOEnforcer:
 				print "x = ",x
 				fx = model.predict(x)
 				
-				predicted_confs = map(lambda i : {"conf" : not_tested_confs[i], "Configuration":filter(lambda c : c["conf"] == not_tested_confs[i], info[version]["InputProfiled"])[0]["Configuration"], "et" : fx[i], "tested" : False}, range(len(fx)) )
-				
+				predicted_confs = map(lambda i : {"conf" : not_tested_confs[i], "Configuration":filter(lambda c : c["conf"] == not_tested_confs[i], info[version]["InputProfiled"])[0]["Configuration"], "et" : fx[i], "tested" : False, "params":info[version]["InputCurrent"][0]["params"]}, range(len(fx)))
+				self.application.manager.logger.info("predicted_confs: %s" % len(predicted_confs))
 				info[version]["InputCurrent"].extend(predicted_confs)
 					
 		return info
 				
 			
 	def _select_best(self, info):
-		all_confs = {}
+		# all_confs = {}
 		pareto = {}
 		for version in self.versions:
 			version = map(lambda x: int(x), version.split("-"))
 			v  = ".".join(map(lambda s: str(s), version))
 			data = info[v]["InputCurrent"][:]
-			
+			self.application.manager.logger.debug("data: %s" % len(data))
 			print data
 			
 			#update the cost
@@ -134,17 +157,21 @@ class SLOEnforcer:
 				# conf = c["Configuration"]
 				cost = self.application.manager.get_cost(conf, _constr)
 				#update the dict
-				c["cost"] = round(cost * c["et"], 2)
+				c["cost"] = round(cost * c["et"], self.application.manager.cost_round)
 				c["Version"] = version
 			# open('/tmp/debug', 'a').write('extrapolated: %s \n' % data)
-			all_confs[v] = data[:]
-			
+			# all_confs[v] = data[:]
+			# self.application.manager.logger.debug("data : %s" % data)
 			pareto[v] = self._get_pareto_experiments(data)[:]
-		
+			# self.application.manager.logger.debug("pareto %s : %s" % (v, pareto[v]))
 		# if len(pareto) > 0:
 		# 	pareto = reduce(lambda x,y: x+y, pareto.values())
 		# open('/tmp/debug', 'a').write('pareto: %s \n' % pareto)
-		return self._get_pareto_experiments(reduce(lambda x,y: x+y, pareto.values()))
+		all_pareto = reduce(lambda x,y: x+y, pareto.values())
+		# self.application.manager.logger.debug("all pareto: %s" % all_pareto)
+		to_return = self._get_pareto_experiments(all_pareto)
+		# self.application.manager.logger.debug("pareto of pareto: %s" % to_return)
+		return to_return
 		
 	def _get_pareto_experiments(self, exps):
 	# def get_pareto_experiments(self, exps):
@@ -166,6 +193,7 @@ class SLOEnforcer:
 			for i in range(len(pcost)):
 				if exp["cost"] == pcost[i] and exp["et"] == pet[i]:
 					pex.append(exp)
+					break
 					
 		return pex
 	
@@ -177,7 +205,8 @@ class SLOEnforcer:
 						"Success":True, 
 						"ConfVars":exp["conf"], 
 						"Implementations": exp["Version"],
-						"Results":{"TotalCost": exp["cost"], "ExeTime":exp["et"]}
+						"Results":{"TotalCost": exp["cost"], "ExeTime":exp["et"]},
+						"Tested": exp["tested"]
 						}	
 			if 'monitor' in exp:
 				cps_exp["Monitor"] = exp["monitor"]
@@ -186,6 +215,8 @@ class SLOEnforcer:
 			if 'params' in exp:
 				cps_exp["Parameters"] = exp["params"]
 			
+
+
 			cps_exps.append(cps_exp)
 		return cps_exps
 

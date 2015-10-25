@@ -22,6 +22,7 @@ conpaas.ui = (function(this_module) {
       this.appication_uploaded = false;
       this.constraint_nr = 0;
       this.status = '';
+      this.plot_data = [];
 
       if (!sessionStorage.iterations)
         sessionStorage.iterations = 1;
@@ -138,7 +139,7 @@ conpaas.ui = (function(this_module) {
             }
           }
 
-          if (response.frontend.length > 0) {
+          if (response.frontend != null && response.frontend.length > 0) {
             $("#applink").attr("href", response.frontend)
             $("#applink").show()
           }
@@ -244,7 +245,7 @@ conpaas.ui = (function(this_module) {
           ex_pa = extra_pareto[k];
           for (var i = 0; i < ex_pa.length; i++) {
             if (!ex_pa[i].Done)
-              break;
+              continue;
             if (!ex_pa[i].Success)
               continue;
             extra_conf = this.conf_to_string(ex_pa[i].Configuration);
@@ -274,6 +275,7 @@ conpaas.ui = (function(this_module) {
 
         if (profile.experiments.length > 0 || profile.pareto.length > 0 || profile.extrapolations.length > 0) {
           $("#divProfileTable").html(str);
+          $("#toggleCorrelation").show();
           $("#prof_table").animate({
             scrollTop: $('#prof_table')[0].scrollHeight
           }, 1000);
@@ -294,7 +296,7 @@ conpaas.ui = (function(this_module) {
               }
             },
           });
-
+          this.plot_data=[exps, extras, pareto, [], tuples]
           that.plot(exps, extras, pareto, [], tuples);
         }
 
@@ -606,13 +608,15 @@ conpaas.ui = (function(this_module) {
       },
       plot: function(experiments, extrapolations, pareto, selected, tuples) {
         if (this.jplot != null) {
-          if (selected.length > 0 || (experiments == null && pareto == null)) {
+          if (selected.length > 0 || (experiments == null && pareto == null )) {
             experiments = this.jplot.series[0].data;
             extrapolations = this.jplot.series[1].data;
             pareto = this.jplot.series[2].data;
-            tuples = [];
-            for (var i = 3; i < this.jplot.series.length; i++) {
-              tuples.push(this.jplot.series[i].data);
+            if (tuples == null){
+              tuples = [];
+              for (var i = 3; i < this.jplot.series.length; i++) {
+                tuples.push(this.jplot.series[i].data);
+              }
             }
 
           }
@@ -1001,12 +1005,12 @@ conpaas.ui = (function(this_module) {
               ];
               that.tc = tc;
               that.et = et;
-              that.plot(null, null, null, selected, []);
+              that.plot(null, null, null, selected, null);
             } else {
               $("#selectedConfig").html("No configuration can satisfy this SLO");
               $("#esExecTime").html("-");
               $("#esCost").html("-");
-              that.plot(null, null, null, [], []);
+              that.plot(null, null, null, [], null);
             }
           }
         });
@@ -1094,10 +1098,24 @@ conpaas.ui = (function(this_module) {
         $('#settings').click(this, this.showSettings);
         $('.popup-exit').click(this, this.clearPopup);
 
-
+        $('#correlation').change(this, this.showHideCorrelation);
         $('.pre-configure').click(this, this.onPreConfiguration);
+
         // $("img[name='crem']").click(this, this.remConstraints);
 
+      },
+      showHideCorrelation:function(event) {
+        var that = event.data;
+        if($('#correlation')[0].checked){
+          that.plot(null, null, null, that.jplot.data[3], that.plot_data[4]);
+        }else
+        {
+          // alert('hide')
+          that.plot(null, null, null, that.jplot.data[3], []);
+        }
+
+        
+        
       },
 
       clearPopup: function(event) {

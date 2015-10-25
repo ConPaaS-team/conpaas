@@ -101,12 +101,13 @@ $services = ServiceData::getServicesByUser($page->getUID(), $_SESSION['aid']);
 	        </div>
 
 	        <table style="width:100%">
+	        	<tr><td></td><td align="right"><div id="toggleCorrelation" style="display:none; padding-right:10px"><input type="checkbox" id="correlation" name="correlation" checked value="Bike">show correlation</div></td></tr>
 	        	<tr>
 	        	<td valign="top"><div id="divProfileTable" style="padding: 10px;height: 200px; width:345px; /*overflow:auto; overflow-x:hidden*/"></div></td>	
 	        	<td valign="top" width="500" align="right"><div id="divProfileChart" style="height:280px;width:500px; "></div><div id="failed" align="center" style="width:100%;"></div></td>	
 	        	</tr>
 	        	<tr>
-	        	<td align="center" colspan="2"><div id="downloadProfile" style="margin-top: 10px;"></div></td>
+	        	<td align="center" colspan="2"><div id="downloadProfile" style="margin-top: 10px; width:500px"></div></td>
 	        	</tr>
 	        </table>
 		

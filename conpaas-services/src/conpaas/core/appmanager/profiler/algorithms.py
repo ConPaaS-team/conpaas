@@ -129,7 +129,7 @@ class SimulatedAnnealing(Algorithm):
 			fmin  = min(good_sols)
 			self.T0 = (fmax-fmin)*1.5
 			self.T = self.T0
-			self.alpha = (0.001 / self.T0) ** (1.0 / (self.trials_per_cycle - 1.0))
+			# self.alpha = (0.001 / self.T0) ** (1.0 / (self.trials_per_cycle - 1.0))
 			self.Tf = 1e-12
 		return True
 	
