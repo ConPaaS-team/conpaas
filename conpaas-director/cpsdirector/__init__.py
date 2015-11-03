@@ -18,7 +18,8 @@ app = Flask(__name__, template_folder="/etc/cpsdirector/templates", static_folde
 app.config.update(
 #    DATABASE_URI = 'sqlite:////tmp/flask-openid.db',
     SECRET_KEY = 'development key',
-    DEBUG = True
+    DEBUG = True,
+    SQLALCHEMY_TRACK_MODIFICATIONS = True
 )
 
 oid = OpenID(app, safe_roots=[], extension_responses=[pape.Response])
