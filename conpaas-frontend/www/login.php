@@ -106,13 +106,13 @@ $support_openid = Director::getSupportOpenID();
                 <tr>
                     <td class="name">username</td>
                     <td class="input">
-                        <input type="text" id="username" />
+                        <input type="text" id="username" <?php if (Conf::DEBUG) {?> value="test"  <?php } ?> />
                     </td>
                 </tr>
                 <tr>
                     <td class="name">password</td>
                     <td class="input">
-                        <input type="password" id="password" />
+                        <input type="password" id="password" <?php if (Conf::DEBUG) {?> value="password"  <?php } ?> />
                     </td>
                 </tr>
                 <tr class="register_form" style="display: none">

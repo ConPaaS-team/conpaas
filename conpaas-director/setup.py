@@ -9,7 +9,7 @@ from grp import getgrnam
 from setuptools import setup, find_packages
 from pkg_resources import Requirement, resource_filename
 
-CPSVERSION = '204'
+CPSVERSION = '100'
 
 CONFDIR = '/etc/cpsdirector'
 LOGDIR = '/var/log/cpsdirector'
@@ -81,4 +81,4 @@ if __name__ == "__main__" and sys.argv[1] == "install":
             getgrnam('www-data').gr_gid)
     except OSError:
         print "W: 'chown www-data:www-data %s' failed" % CONFDIR + '/data'
-print 'hellasdfldflsdf fadfasdf  %s' %sys.argv[1]
+

@@ -13,7 +13,7 @@ class Conf {
 	const CONF_DIR = CONPAAS_CONF_DIR;
 	const HOST = CONPAAS_HOST;
 	const DIRECTOR = DIRECTOR_URL;
-
+	const DEBUG = DEBUG;
 	/*
 	 * time, in seconds, elapsed since the creation of a service, after which
 	 * that service is turned to ERROR state due to a prolongue unreachable INIT

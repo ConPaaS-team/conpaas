@@ -11,6 +11,7 @@ const CONPAAS_CONF_DIR = '/etc/cpsdirector';
 // be accessible
 const CONPAAS_HOST = 'conpaas.yourdomain.com';
 
+const DEBUG = false;
 // These parameters, if specified, are used for performing CAPTCHA[1]
 // operations and they are issued for a specific domain. To generate a pair of
 // keys for your domain, please go to the reCAPTCHA admin page[2] (it's hosted

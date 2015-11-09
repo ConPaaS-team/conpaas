@@ -198,6 +198,7 @@ SUPPORT_EXTERNAL_IDP = false
 
 # KEY_NAME = 
 
+# TODO: this is not true when not using eucaliptus driver!
 # This variable contains the identifier of the ConPaaS image, as should be used
 # in the EC2 API. The value starts with "ami-" and can be obtained using the
 # "euca-describe-images" command. For more information on how to register a new
@@ -212,6 +213,23 @@ SUPPORT_EXTERNAL_IDP = false
 # the available flavors can be listed using "nova flavor-list".
 
 # SIZE_ID = m1.small
+
+# This variable contains the name or the id of the network where the VM (container)
+# will be booted. If there is only one network, it is not neccessary to set this 
+# parameter, Openstack will pick the default one 
+
+# NETWORK_ID = conpaas-net
+
+# The following variable should match the ability of the network component of Openscack to auto-assigning
+# public (floating) IPs to the newly created VMs. For example if you use nova-network, auto
+# assignment is possible, therefore this flag should be set to "true". However, neutron
+# does not support auto-assignment of floating ips, hence that has to be done by ConPaaS. In order
+# to instruct ConPaaS to do that, this flag has to be set to "false". If not set the system
+# will take "true" as the default value. Note that if this flag is left "true" while the network 
+# component does not support auto-assignment will result in the director waiting forever for the manager to start
+
+# AUTO_ASSIGN_FLOATING_IP = true
+
 
 ##############
 # OpenNebula #
