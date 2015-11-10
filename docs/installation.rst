@@ -870,6 +870,32 @@ execute the following command::
 
 The AMI ID appears in the second column of the output.
 
+Networking setup
+----------------
+ConPaaS requires instances to have public (floating) IP addresses assigned and
+will only communicate with an instance using its public IP address.
+
+First, you need to make sure that floating addresses are configured. You can
+get a list containing all the configured floating IP addresses as follows::
+
+    $ nova floating-ip-bulk-list
+
+If there are no addresses configured, you can add a new IP address range using
+the following command::
+
+    $ nova floating-ip-bulk-create --pool public --interface <interface> <new_range>
+
+for example, using the **br100** interface and the **172.16.0.224/27** address
+range::
+
+    $ nova floating-ip-bulk-create --pool public --interface br100 172.16.0.224/27
+
+Second, OpenStack should be configured to assign a floating IP address at every
+new instance creation. This can be done by adding the following line to the *[DEFAULT]*
+section of the nova configuration file (``/etc/nova/nova.conf``)::
+
+    auto_assign_floating_ip = True
+
 Security Group
 --------------
 As in the case of Amazon Web Services deployments, OpenStack deployments use
