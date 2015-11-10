@@ -893,6 +893,22 @@ For more details on creating and editing a security group, please refer to the
 OpenStack documentation available at
 http://docs.openstack.org/openstack-ops/content/security_groups.html.
 
+SSH Key Pair
+------------
+In order to use your OpenStack deployment with ConPaaS, you need to configure
+an SSH key pair that will allow you to login to an instance without using a
+password.
+
+In Horizon, the key pairs can be found by navigating to the *Project* > *Compute* >
+*Access & Security* menu and then selecting the *Key Pairs* tab.
+
+Using the command line, the key pairs can be listed using::
+
+    $ nova keypair-list
+
+By default there is no key pair configured, so you should create a new one or
+import an already existing one.
+
 
 .. _conpaas-on-opennebula:
 
