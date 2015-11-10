@@ -797,6 +797,12 @@ controller node. If this is not the case, please refer first to the OpenStack
 documentation:
 http://docs.openstack.org/openstack-ops/content/lay_of_the_land.html.
 
+If OpenStack was installed using the DevStack script, the easiest way to
+set the environment variables that authenticate the user is to source the
+``openrc`` script from the ``devstack`` directory::
+
+    $ source devstack/openrc admin admin
+
 Getting the OpenStack API access credentials
 --------------------------------------------
 ConPaaS talks with an OpenStack deployment using the EC2 API, so first make
