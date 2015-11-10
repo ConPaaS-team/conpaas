@@ -909,6 +909,18 @@ Using the command line, the key pairs can be listed using::
 By default there is no key pair configured, so you should create a new one or
 import an already existing one.
 
+Flavor
+------
+ConPaaS needs to know which instance type it can use, called *flavor* in OpenStack
+terminology. There are quite a few flavors configured by default, which can also
+be customized if needed.
+
+The list of available flavors can obtained in Horizon by navigating to the
+*Admin* > *System* > *Flavors* menu. Using the command line, the same result can
+be obtained using::
+
+    $ nova flavor-list
+
 
 .. _conpaas-on-opennebula:
 
