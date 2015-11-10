@@ -854,11 +854,7 @@ image (i.e. *conpaas.img*). The image format should be set to *Raw*.
 Alternatively, using the command line, the ConPaaS image can be registered in
 the following way::
 
-    $ glance image-create --name <image_name> \
-        --is-public true \
-        --disk-format raw \
-        --container-format bare \
-        --file <conpaas.img>
+    $ glance image-create --name <image_name> --disk-format raw --container-format bare --file <conpaas.img>
 
 In both cases, you need to obtain the AMI ID associated with the image in order
 to allow ConPaaS to refer to it when using the EC2 API. To do this, you need to
