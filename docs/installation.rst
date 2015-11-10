@@ -822,7 +822,9 @@ Ubuntu system, this can be done using the following command::
 
 Before executing any commands from this package, you must first export the
 **EC2_URL**, **EC2_ACCESS_KEY** and **EC2_SECRET_KEY** environment variables,
-using the values obtained by following the instructions above.
+using the values obtained by following the instructions above. In newer versions
+of this package, these environment variables are renamed to **EC2_URL**,
+**AWS_ACCESS_KEY** and **AWS_SECRET_KEY**.
 
 Alternatively, OpenStack provides a script that, when sourced, automatically
 exports all the required environment variables. Using the Horizon dashboard,
