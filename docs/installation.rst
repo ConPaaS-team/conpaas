@@ -877,6 +877,18 @@ security groups to limit the the network connections allowed to an instance.
 The list of ports that should be opened for every instance is the same as in
 the case of Amazon Web Services and can be consulted here: :ref:`security-group-ec2`.
 
+Your configured security groups can be found in Horizon by navigating to the
+*Project* > *Compute* > *Access & Security* menu in the left pane of the dashboard
+and then selecting the *Security Groups* tab.
+
+Using the command line, the security groups can be listed using::
+
+    $ nova secgroup-list
+
+You can use the ``default`` security group that is automatically created in every
+project. However note that, unless the its default settings are changed, this
+security group denies all incoming traffic.
+
 For more details on creating and editing a security group, please refer to the
 OpenStack documentation available at
 http://docs.openstack.org/openstack-ops/content/security_groups.html.
