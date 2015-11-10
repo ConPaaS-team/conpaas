@@ -161,6 +161,13 @@ conpaas.ui = (function (this_module) {
 			$('#' + agentId + '-volumeName').focus();
 			return;
 		}
+        if (!/^[A-za-z0-9-_]+$/.test(volumeName)) {
+			page.showStatus('#' + agentId + '-VolumeStat', 'error',
+						'Volume name contains invalid characters');
+			$('#' + agentId + '-volumeName').val('');
+			$('#' + agentId + '-volumeName').focus();
+			return;
+        }
         if (!/^[1-9]\d*$/.test(volumeSize)) {
 			page.showStatus('#' + agentId + '-VolumeStat', 'error',
 						'Volume size must be a positive integer');

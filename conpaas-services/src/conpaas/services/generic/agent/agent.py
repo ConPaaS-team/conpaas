@@ -35,6 +35,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 """
 
+import re
 import os
 import time
 import signal
@@ -201,6 +202,9 @@ class GenericAgent(BaseAgent):
                 AgentException.E_ARGS_MISSING, 'vol_name').message)
         vol_name = kwargs.pop('vol_name')
 
+        if not re.compile('^[A-za-z0-9-_]+$').match(vol_name):
+            return HttpErrorResponse('Volume name contains invalid characters')
+
         if len(kwargs) != 0:
             return HttpErrorResponse(AgentException(
                 AgentException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
@@ -305,6 +309,9 @@ class GenericAgent(BaseAgent):
             return HttpErrorResponse(AgentException(
                 AgentException.E_ARGS_MISSING, 'vol_name').message)
         vol_name = kwargs.pop('vol_name')
+
+        if not re.compile('^[A-za-z0-9-_]+$').match(vol_name):
+            return HttpErrorResponse('Volume name contains invalid characters')
 
         if len(kwargs) != 0:
             return HttpErrorResponse(AgentException(

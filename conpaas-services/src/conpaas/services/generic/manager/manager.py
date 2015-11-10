@@ -45,6 +45,7 @@ import tempfile
 import stat
 import os.path
 import time
+import re
 
 from conpaas.core.expose import expose
 from conpaas.core.controller import Controller
@@ -826,6 +827,8 @@ echo "" >> /root/generic.out
             ex = ManagerException(ManagerException.E_ARGS_INVALID,
                                   detail='volumeName should be a string')
             return HttpErrorResponse(ex.message)
+        if not re.compile('^[A-za-z0-9-_]+$').match(kwargs['volumeName']):
+            return HttpErrorResponse('Volume name contains invalid characters')
         volumeName = kwargs.pop('volumeName')
 
         if 'volumeSize' not in kwargs:
@@ -947,6 +950,8 @@ echo "" >> /root/generic.out
             ex = ManagerException(ManagerException.E_ARGS_INVALID,
                                   detail='volumeName should be a string')
             return HttpErrorResponse(ex.message)
+        if not re.compile('^[A-za-z0-9-_]+$').match(kwargs['volumeName']):
+            return HttpErrorResponse('Volume name contains invalid characters')
         volumeName = kwargs.pop('volumeName')
 
         if len(kwargs) != 0:
