@@ -17,6 +17,10 @@ VAR_TMP=/var/tmp/cpsmanager
 VAR_CACHE=/var/cache/cpsmanager
 VAR_RUN=/var/run/cpsmanager
 
+mkdir -p $VAR_TMP
+mkdir -p $VAR_CACHE
+mkdir -p $VAR_RUN
+
 mkdir $CERT_DIR
 mv /tmp/*.pem $CERT_DIR
 
