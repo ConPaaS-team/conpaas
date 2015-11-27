@@ -1140,27 +1140,28 @@ For more information regarding the usage of the Nutshell please consult the :ref
 ConPaaS on Raspberry PI
 =======================
 ConPaaS on Raspberry PI is an extension to the ConPaaS project which uses one (or more)
-Raspberry PI(s) to create a cloud for deploying applications. Each Raspberry PI is
-configured as an OpenStack compute node, running only the minimal number of OpenStack
-services required on such a node (``nova-compute`` and ``cinder-volume``). All the other
-OpenStack services, such as Glance, Keystone, Horizon etc., are moved outside of the PI,
-on a more powerful machine configured as an OpenStack controller node.
+Raspberry PI(s) 2 Model B to create a cloud for deploying applications. Each Raspberry PI is
+configured as an OpenStack compute node (using LXC containers), running only the minimal
+number of OpenStack services required on such a node (``nova-compute`` and ``cinder-volume``).
+All the other OpenStack services, such as Glance, Keystone, Horizon etc., are moved outside
+of the PI, on a more powerful machine configured as an OpenStack controller node. The ConPaaS
+Director and both clients (command line and web frontend) also run on the controller node.
 
 To ease the deployment of the system, we provide an image containing the raw contents of
 the Raspberry PI's SD card, along with a VirtualBox VM image (in the Open Virtualization
 Archive format) that contains the controller node and can be deployed on any machine
 connected to the same local network as the Raspberry PI(s). So, for a minimal working setup,
-you will need at least one Raspberry PI (equipped with a 32 GB SD card) and one laptop/desktop
-computer (with VirtualBox installed) that will host the backend VM. The two have to be
-connected to the same local network which, in the default configuration uses IPs in the
-``172.16.0.0/24`` range.
+you will need at least one Raspberry PI 2 Model B (equipped with a 32 GB SD card) and one
+laptop/desktop computer (with VirtualBox installed) that will host the backend VM. The two
+have to be connected to the same local network which, in the default configuration, uses IPs
+in the ``172.16.0.0/24`` range.
 
 The two images can be downloaded from the following links:
 
-RPI's SD card image (4.7 GB):
+**RPI's SD card image (4.7 GB):**
   http://www.conpaas.eu/dl/ConPaaS-RPI/ConPaaS-RPI-SDCard-32G.img.tar.gz
 
-VirtualBox VM containing the backend server (7.4 GB):
+**VirtualBox VM containing the backend server (7.4 GB):**
   http://www.conpaas.eu/dl/ConPaaS-RPI/ConPaaS-RPI-Backend-VM.ova
 
 
@@ -1168,15 +1169,15 @@ VirtualBox VM containing the backend server (7.4 GB):
 Installing the image on the Raspberry PI
 ----------------------------------------
 You need to write the image to the Raspberry PI's SD card on a different machine (equipped
-with an SD card reader) and then move the SD card back to the Raspberry PI.
+with an SD card reader) and then move the SD card back into the Raspberry PI.
 
 Download and decompress the image, then write it to the SD card using the *dd* utility.
 You can follow the official instructions from the RaspberryPi.org website:
 
-Linux:
+**Linux**:
   https://www.raspberrypi.org/documentation/installation/installing-images/linux.md
 
-MacOS:
+**MacOS**:
   https://www.raspberrypi.org/documentation/installation/installing-images/mac.md
 
 .. warning::
@@ -1196,7 +1197,7 @@ the partitions by moving the swap partition near the end of the card and expandi
 
 .. warning::
   if you adjust the partitions, please make sure that the beginning of every partition
-  remains aligned on a 4 MB boundary, (the usual size of the SD card's erase block) or else
+  remains aligned on a 4 MB boundary (the usual size of the SD card's erase block) or else
   performance may be negatively affected.
 
 
@@ -1214,7 +1215,7 @@ should be present: the first one (called *eth0* inside the VM) should be configu
 *NAT* type to allow Internet access to the VM. The second interface (*eth1* inside the VM)
 should be bridged to an adapter connected to the same local network as the Raspberry PI,
 so in the VM's properties select *Bridged adapter* and choose the interface to which the
-RPI is connected.
+Raspberry PIs are connected.
 
 For more information regarding the usage of ConPaaS on Raspberry PI, please consult the
 :ref:`raspberrypi-guide` section in the user guide.
