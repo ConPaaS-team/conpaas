@@ -1452,42 +1452,42 @@ Access credentials
 
 ::
 
-  IP address: ``172.16.0.1``
-  user: ``stack``
-  password: ``raspberry``
+  IP address: 172.16.0.1
+  user: stack
+  password: raspberry
 
 ::
 
   For OpenStack's dashboard (Horizon):
-  URL: ``http://172.16.0.1/``
-  user: ``admin``
-  password: ``password``
+  URL: http://172.16.0.1/
+  user: admin
+  password: password
 
 ::
 
   For the ConPaaS web frontend:
-  URL: ``https://172.16.0.1/``
-  user: ``test``
-  password: ``password``
+  URL: https://172.16.0.1/
+  user: test
+  password: password
 
 
 **Raspberry PI**
 
 ::
 
-  IP address: ``172.16.0.11``
-  user: ``pi``
-  password: ``raspberry``
+  IP address: 172.16.0.11
+  user: pi
+  password: raspberry
 
 
 **Containers deployed on the Raspberry PI**
 
 ::
 
-  IP addresses (public): between ``172.16.0.225`` and ``172.16.0.254``
-  IP addresses (private): between ``172.16.0.32`` and ``172.16.0.61``
-  user: ``root``
-  password: ``contrail``
+  IP addresses (public): between 172.16.0.225 and 172.16.0.254
+  IP addresses (private): between 172.16.0.32 and 172.16.0.61
+  user: root
+  password: contrail
 
 
 Networking setup
@@ -1529,19 +1529,19 @@ command line tools. The same outcome can also be achieved using the graphical fr
 can be accessed using the backend VM's IP address (note that the protocol should be
 **HTTPS**, not HTTP): https://172.16.0.1/
 
-#. Start the Backend VM. Start the Raspberry PI. Allow them some time to finish booting.
+1. Start the Backend VM. Start the Raspberry PI. Allow them some time to finish booting.
 
-#. Make sure the time is synchronized between the Raspberry PI and the Backend VM. This step
+2. Make sure the time is synchronized between the Raspberry PI and the Backend VM. This step
 is crucial in order to allow the SSL certificates-based authentication in ConPaaS to succeed. 
 As the Raspberry PI does not have an internal battery to keep the time when powered off, it
 relies on the NTP protocol to set its time. If there is no Internet connectivity or updating
 the time through NTP fails, the correct time will have to be set manually using the ``date``
 command after every reboot.
 
-#. Check that the OpenStack services are up and running. On the backend server, run the
+3. Check that the OpenStack services are up and running. On the backend server, run the
 following command::
 
-  stack@nutshell:~$ **nova-manage service list**
+  stack@nutshell:~$ nova-manage service list
   [... debugging output omitted ...]
   Binary           Host                                 Zone             Status     State Updated_At
   nova-conductor   nutshell                             internal         enabled    :-)   2015-11-08 15:48:07
@@ -1557,10 +1557,10 @@ the Raspberry PI, and may become ready a little later than the others.
 
 Do not proceed further if any service is down.
 
-#. Create a new Generic Service using ConPaaS. This will start a new container for the
+4. Create a new Generic Service using ConPaaS. This will start a new container for the
 ConPaaS Manager::
 
-  stack@nutshell:~$ **time cps-tools service create generic**
+  stack@nutshell:~$ time cps-tools service create generic
   Creating new manager on 172.16.0.225...  done.
   
   real	2m04.515s
@@ -1572,17 +1572,17 @@ and the ConPaaS Manager is started and initialized.
 
 Check that the container is up and running with ``nova list``::
 
-  stack@nutshell:~$ **nova list**
+  stack@nutshell:~$ nova list
   +--------------------------------------+---------------------------------------------+--------+------------+-------------+-----------------------------------+
   | ID                                   | Name                                        | Status | Task State | Power State | Networks                          |
   +--------------------------------------+---------------------------------------------+--------+------------+-------------+-----------------------------------+
   | 3c5c3375-1e73-4e0a-b6cc-223460c726e0 | Server 3c5c3375-1e73-4e0a-b6cc-223460c726e0 | ACTIVE | -          | Running     | private=172.16.0.42, 172.16.0.225 |
   +--------------------------------------+---------------------------------------------+--------+------------+-------------+-----------------------------------+
 
-#. Start the newly created service. This will start the second container on the Raspberry PI
+5. Start the newly created service. This will start the second container on the Raspberry PI
 in which the first ConPaaS agent can host an application::
 
-  stack@nutshell:~$ **time cps-tools service start 1**
+  stack@nutshell:~$ time cps-tools service start 1
   Service 1 is starting...
   
   real	1m02.043s
@@ -1592,14 +1592,14 @@ in which the first ConPaaS agent can host an application::
 This step should take around 1-2 minutes. During this time, the second container is created
 and the ConPaaS Agent is started and initialized.
 
-#. Find out the IP address of the newly started container::
+6. Find out the IP address of the newly started container::
 
-  stack@nutshell:~$ **cps-tools generic list_nodes 1**
+  stack@nutshell:~$ cps-tools generic list_nodes 1
   master: node iaasi-00000012 with IP address 172.16.0.226
 
 You can also determine the IP addresses of the containers with ``nova list``::
 
-  stack@nutshell:~$ **nova list**
+  stack@nutshell:~$ nova list
   +--------------------------------------+---------------------------------------------+--------+------------+-------------+-----------------------------------+
   | ID                                   | Name                                        | Status | Task State | Power State | Networks                          |
   +--------------------------------------+---------------------------------------------+--------+------------+-------------+-----------------------------------+
@@ -1607,14 +1607,14 @@ You can also determine the IP addresses of the containers with ``nova list``::
   | 3c5c3375-1e73-4e0a-b6cc-223460c726e0 | Server 3c5c3375-1e73-4e0a-b6cc-223460c726e0 | ACTIVE | -          | Running     | private=172.16.0.42, 172.16.0.225 |
   +--------------------------------------+---------------------------------------------+--------+------------+-------------+-----------------------------------+
 
-#. Log on to the container and check that the ConPaaS Agent is running correctly (the default
+7. Log on to the container and check that the ConPaaS Agent is running correctly (the default
 script just prints some information)::
 
-  stack@nutshell:~$ **ssh root@172.16.0.226**
+  stack@nutshell:~$ ssh root@172.16.0.226
   root@172.16.0.226's password: [contrail]
   Linux conpaas 4.1.12-v7+ #824 SMP PREEMPT Wed Oct 28 16:46:35 GMT 2015 armv7l
   [... welcome message omitted ...]
-  root@server-2a1d758d-5300-4d7f-8ba2-4f1499838a7d:~# **cat generic.out**
+  root@server-2a1d758d-5300-4d7f-8ba2-4f1499838a7d:~# cat generic.out
   Sun Nov  8 16:21:21 UTC 2015
   Executing script init.sh
   Parameters (0): 
@@ -1628,9 +1628,9 @@ If the output looks like in the example above, everything is running smoothly!
 
 For more information on ConPaaS, please refer to section :ref:`the-generic-service`.
 
-#. Do not forget to delete the service after you're done with it::
+8. Do not forget to delete the service after you're done with it::
 
-  stack@nutshell:~$ **cps-tools service delete 1**
+  stack@nutshell:~$ cps-tools service delete 1
   Deleting service... 
   Service 1 has been deleted.
 
