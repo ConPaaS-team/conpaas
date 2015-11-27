@@ -1133,3 +1133,88 @@ create a host-only network on VirtualBox in case there is not already one create
 
 
 For more information regarding the usage of the Nutshell please consult the :ref:`nutshell-guide` section in the guide.
+
+
+.. _conpaas-on-raspberrypi:
+
+ConPaaS on Raspberry PI
+=======================
+ConPaaS on Raspberry PI is an extension to the ConPaaS project which uses one (or more)
+Raspberry PI(s) to create a cloud for deploying applications. Each Raspberry PI is
+configured as an OpenStack compute node, running only the minimal number of OpenStack
+services required on such a node (``nova-compute`` and ``cinder-volume``). All the other
+OpenStack services, such as Glance, Keystone, Horizon etc., are moved outside of the PI,
+on a more powerful machine configured as an OpenStack controller node.
+
+To ease the deployment of the system, we provide an image containing the raw contents of
+the Raspberry PI's SD card, along with a VirtualBox VM image (in the Open Virtualization
+Archive format) that contains the controller node and can be deployed on any machine
+connected to the same local network as the Raspberry PI(s). So, for a minimal working setup,
+you will need at least one Raspberry PI (equipped with a 32 GB SD card) and one laptop/desktop
+computer (with VirtualBox installed) that will host the backend VM. The two have to be
+connected to the same local network which, in the default configuration uses IPs in the
+``172.16.0.0/24`` range.
+
+The two images can be downloaded from the following links:
+
+RPI's SD card image (4.7 GB):
+  http://www.conpaas.eu/dl/ConPaaS-RPI/ConPaaS-RPI-SDCard-32G.img.tar.gz
+
+VirtualBox VM containing the backend server (7.4 GB):
+  http://www.conpaas.eu/dl/ConPaaS-RPI/ConPaaS-RPI-Backend-VM.ova
+
+
+
+Installing the image on the Raspberry PI
+----------------------------------------
+You need to write the image to the Raspberry PI's SD card on a different machine (equipped
+with an SD card reader) and then move the SD card back to the Raspberry PI.
+
+Download and decompress the image, then write it to the SD card using the *dd* utility.
+You can follow the official instructions from the RaspberryPi.org website:
+
+Linux:
+  https://www.raspberrypi.org/documentation/installation/installing-images/linux.md
+
+MacOS:
+  https://www.raspberrypi.org/documentation/installation/installing-images/mac.md
+
+.. warning::
+  decompressing the image will result in a 32 GB file (the raw SD card image), so please
+  make sure that you have enough free space before attempting this step.
+
+.. warning::
+  before writing the image, please make sure that the SD card has a capacity of at least
+  31998345216 bytes.
+
+The image was designed to fit the majority of the 32 GB SD cards, as the actual size varies
+between manufacturers. As a result, its size may be a little lower than the actual size of
+your card, leaving some unused space near the end of the card. A lot more unused space
+remains if a bigger SD card (64 GB) is used. To recover this wasted space, you may adjust
+the partitions by moving the swap partition near the end of the card and expanding the main
+*ext4* partition.
+
+.. warning::
+  if you adjust the partitions, please make sure that the beginning of every partition
+  remains aligned on a 4 MB boundary, (the usual size of the SD card's erase block) or else
+  performance may be negatively affected.
+
+
+Deploying the Backend VM
+------------------------
+Download the *.ova* file and import it into VirtualBox. In a graphical environment, you
+can usually do this by double-clicking the *.ova* file.
+
+Adjust the resources allocated to the VM. Although the default settings use a pretty
+generous amount of resources (4 CPUs and 4 GB of RAM), reducing this to a less powerful
+configuration should work fine (for example 1 CPU and 2 GB of RAM). 
+
+Another very important configuration is setting the VM's network interfaces. Two interfaces
+should be present: the first one (called *eth0* inside the VM) should be configured as the
+*NAT* type to allow Internet access to the VM. The second interface (*eth1* inside the VM)
+should be bridged to an adapter connected to the same local network as the Raspberry PI,
+so in the VM's properties select *Bridged adapter* and choose the interface to which the
+RPI is connected.
+
+For more information regarding the usage of ConPaaS on Raspberry PI, please consult the
+:ref:`raspberrypi-guide` section in the user guide.
