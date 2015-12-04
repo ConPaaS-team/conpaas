@@ -1073,7 +1073,7 @@ after selecting “checking out repository” or using the command-line client::
   $ cpsclient.py upload_key <serviceid> <filename>
 
 You can check that the key was successfully uploaded by listing the trusted
-SSH keys:
+SSH keys::
 
   $ cpsclient.py list_keys <serviceid>
 
