@@ -6,7 +6,7 @@
 
 from os.path import exists, devnull, join
 from subprocess import Popen
-from os import remove, makedirs
+from os import remove, makedirs, rename
 from shutil import rmtree
 from threading import Lock
 import pickle
@@ -388,9 +388,10 @@ class WebServersAgent(BaseAgent):
             rmtree(target_dir)
 
         if filetype == 'git':
-            target_dir = join(self.VAR_CACHE, 'www')
-            self.logger.debug("git_enable_revision('%s', '%s', '%s')" % (target_dir, source, revision))
-            git.git_enable_revision(target_dir, source, revision)
+            git_dir = join(self.VAR_CACHE, 'www')
+            self.logger.debug("git_enable_revision('%s', '%s', '%s')" % (git_dir, source, revision))
+            git_dir = git.git_enable_revision(git_dir, source, revision)
+            rename(git_dir, target_dir)
         else:
             source.extractall(target_dir)
 
@@ -474,9 +475,10 @@ class WebServersAgent(BaseAgent):
             rmtree(target_dir)
 
         if filetype == 'git':
-            target_dir = join(self.VAR_CACHE, 'tomcat_instance', 'webapps')
-            self.logger.debug("git_enable_revision('%s', '%s', '%s')" % (target_dir, source, revision))
-            git.git_enable_revision(target_dir, source, revision)
+            git_dir = join(self.VAR_CACHE, 'tomcat_instance', 'webapps')
+            self.logger.debug("git_enable_revision('%s', '%s', '%s')" % (git_dir, source, revision))
+            git_dir = git.git_enable_revision(git_dir, source, revision)
+            rename(git_dir, target_dir)
         else:
             source.extractall(target_dir)
 
