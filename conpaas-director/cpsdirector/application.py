@@ -17,6 +17,7 @@ import simplejson, sys, traceback
 import ConfigParser
 from netaddr import IPNetwork
 
+from threading import Thread
 from cpsdirector import db
 #from cpsdirector import cloud as manager_controller
 from cpsdirector.iaas.controller import Controller
@@ -34,11 +35,22 @@ application_page = Blueprint('application_page', __name__)
 
 
 class Application(db.Model):
+    A_INIT = 'INIT'         # application initialized but not yet started
+    A_PROLOGUE = 'PROLOGUE' # application is starting up
+    A_RUNNING = 'RUNNING'   # application is running
+    A_ADAPTING = 'ADAPTING' # application is in a transient state 
+                            
+    A_EPILOGUE = 'EPILOGUE' # application is shutting down
+    A_STOPPED = 'STOPPED'   # application stopped
+    A_ERROR = 'ERROR'       # application is in error state
+
+
     aid = db.Column(db.Integer, primary_key=True,
                     autoincrement=True)
     name = db.Column(db.String(256))
     # manager = db.Column(db.String(512))
     # vmid = db.Column(db.String(256))
+    status = db.Column(db.String(256))
     user_id = db.Column(db.Integer, db.ForeignKey('user.uid'))
     user = db.relationship('User', backref=db.backref('applications',
                            lazy="dynamic"))
@@ -55,9 +67,12 @@ class Application(db.Model):
 
         for key, val in kwargs.items():
             setattr(self, key, val)
+        
+        if not self.status:
+            self.status = Application.A_INIT
 
     def to_dict(self):
-        app_to_dict = {'aid': self.aid, 'name': self.name, 'uid':self.user_id, 'manager':None, 'vmid':None}
+        app_to_dict = {'aid': self.aid, 'name': self.name, 'uid':self.user_id, 'status':self.status, 'manager':None, 'vmid':None}
         if self.manager:
             app_to_dict['manager'] = self.manager.ip
             app_to_dict['vmid'] = self.manager.vmid
@@ -85,17 +100,16 @@ class Application(db.Model):
 
             if candidate_network not in assigned_networks:
                 return candidate_network
-    def stop(self):
-        #TODO (genc): Probably the subnet and cloud name should be stored on the application table
-        controller = Controller()
+    # def stop(self):
+    #     #TODO (genc): Probably the subnet and cloud name should be stored on the application table
+    #     controller = Controller()
 
-        controller.setup_default()
-        controller.delete_nodes([ServiceNode(self.manager.vmid, self.manager.ip,'',self.manager.cloud,'') ])
-        self.manager.remove()
-        #TODO (genc): delete resource 
-        db.session.commit()
-        log('Application %s stopped properly' % self.aid)
-        return True
+    #     controller.setup_default()
+    #     controller.delete_nodes([ServiceNode(self.manager.vmid, self.manager.ip,'',self.manager.cloud,'') ])
+    #     self.manager.remove()
+    #     db.session.commit()
+    #     log('Application %s stopped properly' % self.aid)
+    #     return True
 
 def get_app_by_id(user_id, app_id):
     app = Application.query.filter_by(aid=app_id).first()
@@ -156,51 +170,71 @@ def _createapp(app_name, cloud_name):
     log('Application %s created properly' % (a.aid))
     return jsonify(a.to_dict())
 
-def _startapp(user_id, app_id, cloud_name):
+def _startapp(user_id, app_id, cloud_name, new_thread=True):
     app = get_app_by_id(user_id, app_id)
     if not app:
         return { 'error': True, 'msg': 'Application not found' }    
-    if app.manager and app.manager.ip is not None:
+    if app.status not in (Application.A_INIT, Application.A_STOPPED) :
         return { 'error': True, 'msg': 'Application already started' }
     try:
-        
+        app.status = Application.A_EPILOGUE
        
         vpn = app.get_available_vpn_subnet()
+
         # node = create_nodes({'role':'manager','user_id':user_id, 'app_id':app_id, 'vpn':vpn, 'cloud_name':cloud_name})[0]
-        create_nodes({'role':'manager','user_id':user_id, 'app_id':app_id, 'vpn':vpn, 'cloud_name':cloud_name})
-        # log('hello, i like you: %s' % app.manager.ip)
-        # app.manager = node.ip
-        # app.vmid = node.vmid
-        # db.session.commit()
-        log('Application %s started properly' % (app_id))
+        man_args = {'role':'manager','user_id':user_id, 'app_id':app_id, 'vpn':vpn, 'cloud_name':cloud_name}
+        if new_thread:
+            Thread(target=create_nodes, args=[man_args]).start()
+        else:
+            create_nodes(man_args)
+        # create_nodes({'role':'manager','user_id':user_id, 'app_id':app_id, 'vpn':vpn, 'cloud_name':cloud_name})
+        
+        
+        log('Application %s is starting' % (app_id))
         return True
     except Exception, err:
+        app.status = Application.A_STOPPED
         exc_type, exc_value, exc_traceback = sys.exc_info()
         lines = traceback.format_exception(exc_type, exc_value, exc_traceback)
         log(''.join('!! ' + line for line in lines))
         error_msg = 'Error upon application starting: %s %s' % (type(err), err)
         log(error_msg)
         return { 'error': True, 'msg': error_msg }
+    finally:
+        db.session.commit()
 
-def _deleteapp(user_id, app_id):
+
+def _deleteapp(user_id, app_id, del_app_entry):
     app = get_app_by_id(user_id, app_id)
     if not app:
         return False
 
     # stop all services
-    if app.manager:
-        res = callmanager(app_id, 0, "stopall", True, {})
+    # we could ask the manager to kill the agents or kill them right here
+    # if app.manager:
+    #     res = callmanager(app_id, 0, "stopall", True, {})
+
+    res_to_delete = []
+    for resource in Resource.query.filter_by(app_id=app_id):
+        res_to_delete.append(ServiceNode(resource.vmid, resource.ip,'',resource.cloud,''))
+        resource.remove()
+
+    controller = Controller()
+    controller.setup_default()
+    controller.delete_nodes(res_to_delete)
 
     # delete them from database (no need to remove them from application manager)
     for service in Service.query.filter_by(application_id=app_id):
         service.remove()
 
+
     # stop the application manager
-    if app.manager:
-        app.stop()
+    # if app.manager:
+    #     app.stop()
 
     # delete the applciation from the database
-    db.session.delete(app)
+    if del_app_entry:
+        db.session.delete(app)
     db.session.commit()
 
     return True
@@ -231,19 +265,24 @@ from cpsdirector.service import callmanager
 @application_page.route("/stopapp/<int:appid>", methods=['POST'])
 @cert_required(role='user')
 def stopapp(appid, cloudname="default"):
-    app = get_app_by_id(g.user.uid, appid)
-    if not app:
-        return build_response(simplejson.dumps(False))
+    return build_response(simplejson.dumps(_deleteapp(g.user.uid, appid, False)))
 
-    res = callmanager(appid, 0, "infoapp", False, {})
-    if 'states' in res:
-        if len(res['states']) == 1:
-            app.stop()
-        else:
-            return build_response(simplejson.dumps({ 'error': True,'msg': 'Cannot stop application while its services are running' }))
-    else:
-        return build_response(simplejson.dumps({ 'error': True,'msg': res['msg'] }))
-    return build_response(simplejson.dumps(True))
+    
+    # app = get_app_by_id(g.user.uid, appid)
+    # if not app:
+    #     return build_response(simplejson.dumps(False))
+
+    # # this will delete all the services and the application manager 
+
+    # res = callmanager(appid, 0, "infoapp", False, {})
+    # if 'states' in res:
+    #     if len(res['states']) == 1:
+    #         app.stop()
+    #     else:
+    #         return build_response(simplejson.dumps({ 'error': True,'msg': 'Cannot stop application while its services are running' }))
+    # else:
+    #     return build_response(simplejson.dumps({ 'error': True,'msg': res['msg'] }))
+    # return build_response(simplejson.dumps(True))
 
 
 
@@ -258,7 +297,7 @@ def delete(appid):
     proper service termination. False otherwise.
     """
     log('User %s attempting to delete application %s' % (g.user.uid, appid))
-    return build_response(simplejson.dumps(_deleteapp(g.user.uid, appid)))
+    return build_response(simplejson.dumps(_deleteapp(g.user.uid, appid, True)))
 
 def _renameapp(appid, newname):
     log('User %s attempting to rename application %s' % (g.user.uid, appid))

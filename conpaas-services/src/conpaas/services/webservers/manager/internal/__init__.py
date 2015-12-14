@@ -93,7 +93,7 @@ class BasicWebserversManager(BaseManager):
     def __init__(self, config_parser):
         BaseManager.__init__(self, config_parser)
 
-        self.controller.generate_context('web')
+        # self.controller.generate_context('web')
         memcache_addr = config_parser.get('manager', 'MEMCACHE_ADDR')
         self.memcache = memcache.Client([memcache_addr])
 
@@ -102,6 +102,9 @@ class BasicWebserversManager(BaseManager):
 
         self.code_repo = config_parser.get('manager', 'CODE_REPO')
         self.state_log = []
+
+    def get_service_type(self):
+        return 'web'
 
     def _state_get(self):
         return self.memcache.get(self.DEPLOYMENT_STATE)
@@ -193,9 +196,19 @@ class BasicWebserversManager(BaseManager):
     def _stop_backend(self, config, nodes):
         raise Exception("BasicWebservicesManager._stop_backend(...) must be overridden by extending classes.")
 
-    @expose('POST')
-    def startup(self, kwargs):
+    def get_starting_nodes(self):
+        config = self._configuration_get()
+        nr_agents = config.proxy_count + config.web_count + config.backend_count
+        if nr_agents == 0:
+            nr_agents = 1
 
+        # (genc): maybe not neccessary at this moment 
+        self._adapting_set_count(nr_agents)
+        return [{'cloud':None} for _ in range(nr_agents)]
+
+
+
+    def on_start(self, nodes):
         config = self._configuration_get()
 
         dstate = self._state_get()
@@ -229,53 +242,9 @@ class BasicWebserversManager(BaseManager):
             serviceNodeKwargs.extend([{'runWeb': True}
                                      for _ in range(config.web_count)])
             serviceNodeKwargs.extend([{'runBackend': True}
-                                     for _ in range(config.backend_count)])
+                                     for _ in range(config.backend_count)])   
 
-        # if not self._deduct_credit(len(serviceNodeKwargs)):
-        # return
-        # HttpErrorResponse(ManagerException(ManagerException.E_NOT_ENOUGH_CREDIT).message)
-
-        self._state_set(self.S_PROLOGUE, msg='Starting up')
-        Thread(target=self.do_startup, args=[
-               config, serviceNodeKwargs, kwargs['cloud']]).start()
-        return HttpJsonResponse({'state': self.S_PROLOGUE})
-
-    @expose('POST')
-    def stop(self, kwargs):
-        if len(kwargs) != 0:
-            ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
-                                  kwargs.keys())
-            return HttpErrorResponse(ex.message)
-
-        dstate = self._state_get()
-        if dstate != self.S_RUNNING:
-            ex = ManagerException(ManagerException.E_STATE_ERROR)
-            return HttpErrorResponse(ex.message)
-
-        self._state_set(self.S_EPILOGUE, msg='Shutting down')
-        Thread(target=self._do_stop, args=[]).start()
-        return HttpJsonResponse({'state': self.S_EPILOGUE})
-
-    def _update_code(self, config, nodes):
-        raise Exception("BasicWebservicesManager._update_code(...) must be overridden by extending classes.")
-
-    def do_startup(self, config, serviceNodeKwargs, cloud):
-        self.logger.debug(
-            'do_startup: Going to request %d new nodes' % len(serviceNodeKwargs))
-        cloud = self._init_cloud(cloud)
-        try:
-            self._adapting_set_count(len(serviceNodeKwargs))
-            node_instances = self.controller.create_nodes(
-                len(serviceNodeKwargs),
-                client.check_agent_process, self.AGENT_PORT, cloud)
-        except:
-            self.logger.exception(
-                'do_startup: Failed to request new nodes. Needed %d' % (len(serviceNodeKwargs)))
-            self._state_set(self.S_STOPPED, msg='Failed to request new nodes')
-            return
-        finally:
-            self._adapting_set_count(0)
-
+        node_instances = nodes
         config.serviceNodes.clear()
         i = 0
         for kwargs in serviceNodeKwargs:
@@ -303,148 +272,151 @@ class BasicWebserversManager(BaseManager):
 
         self._configuration_set(config)  # update configuration
         self._state_set(self.S_RUNNING)
-        self.memcache.set('nodes_additional', [])
+        self.memcache.set('nodes_additional', [])  
 
-    def _do_stop(self):
+    def on_stop(self):
         config = self._configuration_get()
         self._stop_proxy(config, config.getProxyServiceNodes())
         self._stop_web(config, config.getWebServiceNodes())
         self._stop_backend(config, config.getBackendServiceNodes())
-        self.controller.delete_nodes(config.serviceNodes.values())
+        del_nodes = config.serviceNodes.values()
+        # self.controller.delete_nodes(config.serviceNodes.values())
         config.serviceNodes = {}
         self._state_set(self.S_STOPPED)
         self._configuration_set(config)
+        return del_nodes
 
-    @expose('POST')
-    def add_nodes(self, kwargs):
-        """
-        Add nodes to this web service.
-        At least one of the three types of nodes must be positive:
-        backend > 0 or web > 0 or proxy > 0.
 
-        POST parameters:
-        ----------------
-        backend : int
-            Optional
-            number of new backend nodes to create
-        web : int
-            Optional
-            number of new web nodes to create
-        proxy : int
-            Optional
-            number of new proxy nodes to create
-        vm_backend_instance : string
-            Optional
-            type of cloud instance to create as backend node.
-            Values depend on the cloud provider (for example "t1.micro" for Amazon
-            EC2, or "small" for OpenNebula, etc.). Default is the instance type
-            specified in the director configuration file (INST_TYPE in OpenNebula
-            configuration, SIZE_ID in Amazon EC2 configuration).
-        vm_web_instance : string
-            Optional
-            type of cloud instance to create as web node.
-            Values are similar to the vm_backend_instance argument.
-        cloud : string
-            Optional
-            name of the cloud where the nodes will be created
-        """
+    # @expose('POST')
+    # def startup(self, kwargs):
+
+    #     config = self._configuration_get()
+
+    #     dstate = self._state_get()
+    #     if dstate != self.S_INIT and dstate != self.S_STOPPED:
+    #         ex = ManagerException(ManagerException.E_STATE_ERROR)
+    #         return HttpErrorResponse(ex.message)
+
+    #     if config.proxy_count == 1 \
+    #             and (config.web_count == 0 or config.backend_count == 0):  # at least one is packed
+    #         if config.web_count == 0 and config.backend_count == 0:  # packed
+    #             serviceNodeKwargs = [
+    #                 {'runProxy': True, 'runWeb': True, 'runBackend': True}]
+    #         # web packed, backend separated
+    #         elif config.web_count == 0 and config.backend_count > 0:
+    #             serviceNodeKwargs = [{'runBackend': True}
+    #                                  for _ in range(config.backend_count)]
+    #             serviceNodeKwargs.append({'runProxy': True, 'runWeb': True})
+    #         # proxy separated, backend packed
+    #         elif config.web_count > 0 and config.backend_count == 0:
+    #             serviceNodeKwargs = [{'runWeb': True}
+    #                                  for _ in range(config.web_count)]
+    #             serviceNodeKwargs.append(
+    #                 {'runProxy': True, 'runBackend': True})
+    #     else:
+    #         if config.web_count < 1:
+    #             config.web_count = 1  # have to have at least one web
+    #         if config.backend_count < 1:
+    #             config.backend_count = 1  # have to have at least one backend
+    #         serviceNodeKwargs = [{'runProxy': True}
+    #                              for _ in range(config.proxy_count)]
+    #         serviceNodeKwargs.extend([{'runWeb': True}
+    #                                  for _ in range(config.web_count)])
+    #         serviceNodeKwargs.extend([{'runBackend': True}
+    #                                  for _ in range(config.backend_count)])
+
+    #     # if not self._deduct_credit(len(serviceNodeKwargs)):
+    #     # return
+    #     # HttpErrorResponse(ManagerException(ManagerException.E_NOT_ENOUGH_CREDIT).message)
+
+    #     self._state_set(self.S_PROLOGUE, msg='Starting up')
+    #     Thread(target=self.do_startup, args=[
+    #            config, serviceNodeKwargs, kwargs['cloud']]).start()
+    #     return HttpJsonResponse({'state': self.S_PROLOGUE})
+
+    # @expose('POST')
+    # def stop(self, kwargs):
+    #     if len(kwargs) != 0:
+    #         ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
+    #                               kwargs.keys())
+    #         return HttpErrorResponse(ex.message)
+
+    #     dstate = self._state_get()
+    #     if dstate != self.S_RUNNING:
+    #         ex = ManagerException(ManagerException.E_STATE_ERROR)
+    #         return HttpErrorResponse(ex.message)
+
+    #     self._state_set(self.S_EPILOGUE, msg='Shutting down')
+    #     Thread(target=self._do_stop, args=[]).start()
+    #     return HttpJsonResponse({'state': self.S_EPILOGUE})
+
+    def _update_code(self, config, nodes):
+        raise Exception("BasicWebservicesManager._update_code(...) must be overridden by extending classes.")
+
+    
+    # def do_startup(self, config, serviceNodeKwargs, cloud):
+    #     self.logger.debug(
+    #         'do_startup: Going to request %d new nodes' % len(serviceNodeKwargs))
+    #     cloud = self._init_cloud(cloud)
+    #     try:
+    #         self._adapting_set_count(len(serviceNodeKwargs))
+    #         node_instances = self.controller.create_nodes(
+    #             len(serviceNodeKwargs),
+    #             client.check_agent_process, self.AGENT_PORT, cloud)
+    #     except:
+    #         self.logger.exception(
+    #             'do_startup: Failed to request new nodes. Needed %d' % (len(serviceNodeKwargs)))
+    #         self._state_set(self.S_STOPPED, msg='Failed to request new nodes')
+    #         return
+    #     finally:
+    #         self._adapting_set_count(0)
+
+    #     config.serviceNodes.clear()
+    #     i = 0
+    #     for kwargs in serviceNodeKwargs:
+    #         config.serviceNodes[node_instances[i].id] = WebServiceNode(
+    #             node_instances[i], **kwargs)
+    #         i += 1
+    #     config.update_mappings()
+
+    #     # issue orders to agents to start PHP inside
+    #     self._start_backend(config, config.getBackendServiceNodes())
+
+    #     # stage the code files
+    #     # NOTE: Code update is done after starting the backend
+    #     #       because tomcat-create-instance complains if its
+    #     #       directory exists when it is run and placing the
+    #     #       code can only be done after creating the instance
+    #     if config.currentCodeVersion is not None:
+    #         self._update_code(config, config.serviceNodes.values())
+
+    #     # issue orders to agents to start web servers inside
+    #     self._start_web(config, config.getWebServiceNodes())
+
+    #     # issue orders to agents to start proxy inside
+    #     self._start_proxy(config, config.getProxyServiceNodes())
+
+    #     self._configuration_set(config)  # update configuration
+    #     self._state_set(self.S_RUNNING)
+    #     self.memcache.set('nodes_additional', [])
+
+    # def _do_stop(self):
+    #     config = self._configuration_get()
+    #     self._stop_proxy(config, config.getProxyServiceNodes())
+    #     self._stop_web(config, config.getWebServiceNodes())
+    #     self._stop_backend(config, config.getBackendServiceNodes())
+    #     self.controller.delete_nodes(config.serviceNodes.values())
+    #     config.serviceNodes = {}
+    #     self._state_set(self.S_STOPPED)
+    #     self._configuration_set(config)
+
+    def on_add_nodes(self, nodes):
         config = self._configuration_get()
-        dstate = self._state_get()
-        if dstate != self.S_RUNNING:
-            ex = ManagerException(ManagerException.E_STATE_ERROR)
-            return HttpErrorResponse(ex.message)
-
-        backend = 0
-        web = 0
-        proxy = 0
-
-        vm_backend_type = None
-        vm_web_type = None
-
-        if 'backend' in kwargs:
-            if not isinstance(kwargs['backend'], int):
-                ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                      detail='Expected an integer value for "backend"')
-                return HttpErrorResponse(ex.message)
-            backend = int(kwargs.pop('backend'))
-            if backend < 0:
-                ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                      detail='Expected a positive integer value for "backend"')
-                return HttpErrorResponse(ex.message)
-
-        if 'web' in kwargs:
-            if not isinstance(kwargs['web'], int):
-                ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                      detail='Expected an integer value for "web"')
-                return HttpErrorResponse(ex.message)
-            web = int(kwargs.pop('web'))
-            if web < 0:
-                ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                      detail='Expected a positive integer value for "web"')
-                return HttpErrorResponse(ex.message)
-
-        if 'proxy' in kwargs:
-            if not isinstance(kwargs['proxy'], int):
-                ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                      detail='Expected an integer value for "proxy"')
-                return HttpErrorResponse(ex.message)
-            proxy = int(kwargs.pop('proxy'))
-            if proxy < 0:
-                ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                      detail='Expected a positive integer value for "proxy"')
-                return HttpErrorResponse(ex.message)
-
-        if (backend + web + proxy) < 1:
-            ex = ManagerException(ManagerException.E_ARGS_MISSING, ['backend', 'web', 'proxy'],
-                                  detail='Need a positive value for at least one')
-            return HttpErrorResponse(ex.message)
-
-        cloud = kwargs.pop('cloud', 'iaas')
-        try:
-            cloud = self._init_cloud(cloud)
-        except Exception as ex:
-            # unknown cloud
-            return HttpErrorResponse("%s" % ex)
-
-        if 'vm_backend_instance' in kwargs:
-            self.logger.info('VM BACKEND INSTANCE: %s' %
-                             str(kwargs['vm_backend_instance']))
-            if not isinstance(str(kwargs['vm_backend_instance']), basestring):
-                ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                      detail='Expected a string value for "vm_backend_instance"')
-                return HttpErrorResponse(ex.message)
-            vm_backend_type = kwargs.pop('vm_backend_instance')
-            if len(vm_backend_type) <= 0:
-                ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                      detail='Expected a string value for "vm_backend_instance"')
-                return HttpErrorResponse(ex.message)
-
-        if 'vm_web_instance' in kwargs:
-            self.logger.info('VM WEB INSTANCE: %s' %
-                             str(kwargs['vm_web_instance']))
-            if not isinstance(str(kwargs['vm_web_instance']), basestring):
-                ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                      detail='Expected a string value for "vm_web_instance"')
-                return HttpErrorResponse(ex.message)
-            vm_web_type = kwargs.pop('vm_web_instance')
-            if len(vm_web_type) <= 0:
-                ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                      detail='Expected a string value for "vm_web_instance"')
-                return HttpErrorResponse(ex.message)
-
-        if (proxy + config.proxy_count) > 1 and ((web + config.web_count) == 0 or (backend + config.backend_count) == 0):
-            ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                  detail='Cannot add more proxy servers without at least one "web" and one "backend"')
-            return HttpErrorResponse(ex.message)
-
-        self._state_set(
-            self.S_ADAPTING, msg='Going to add proxy=%d, web=%d, backend=%d, vm_backend_type=%s, vm_web_type=%s, cloud=%s' %
-            (proxy, web, backend, str(vm_backend_type), str(vm_web_type), cloud.get_cloud_name()))
-        Thread(target=self.do_add_nodes, args=[
-               config, proxy, web, backend, cloud, vm_backend_type, vm_web_type]).start()
-        return HttpJsonResponse()
-
-    def do_add_nodes(self, config, proxy, web, backend, cloud, vm_backend_type, vm_web_type):
+        backend = len(filter(lambda n: n.role=='backend', nodes))
+        web = len(filter(lambda n: n.role=='web', nodes))
+        proxy = len(filter(lambda n: n.role=='proxy', nodes))
+        
+        
         webNodesNew = []
         proxyNodesNew = []
         backendNodesNew = []
@@ -469,35 +441,36 @@ class BasicWebserversManager(BaseManager):
         for i in backendNodesKill:
             i.isRunningBackend = False
 
-        node_instances = []
-        try:
-            self._adapting_set_count(
-                len(proxyNodesNew) + len(webNodesNew) + len(backendNodesNew))
-            if proxy > 0:
-                node_instances += self.controller.create_nodes(
-                    len(proxyNodesNew), client.check_agent_process, self.AGENT_PORT, cloud)
-            if web > 0 and vm_web_type is None:
-                node_instances += self.controller.create_nodes(
-                    len(webNodesNew), client.check_agent_process, self.AGENT_PORT, cloud)
-            elif web > 0:
-                node_instances += self.controller.create_nodes(
-                    len(webNodesNew), client.check_agent_process, self.AGENT_PORT, cloud, inst_type=vm_web_type)
+        node_instances = nodes
+        # node_instances = []
+        # try:
+        #     self._adapting_set_count(
+        #         len(proxyNodesNew) + len(webNodesNew) + len(backendNodesNew))
+        #     if proxy > 0:
+        #         node_instances += self.controller.create_nodes(
+        #             len(proxyNodesNew), client.check_agent_process, self.AGENT_PORT, cloud)
+        #     if web > 0 and vm_web_type is None:
+        #         node_instances += self.controller.create_nodes(
+        #             len(webNodesNew), client.check_agent_process, self.AGENT_PORT, cloud)
+        #     elif web > 0:
+        #         node_instances += self.controller.create_nodes(
+        #             len(webNodesNew), client.check_agent_process, self.AGENT_PORT, cloud, inst_type=vm_web_type)
 
-            if backend > 0 and vm_backend_type is None:
-                node_instances += self.controller.create_nodes(
-                    len(backendNodesNew), client.check_agent_process, self.AGENT_PORT, cloud)
-            elif backend > 0:
-                node_instances += self.controller.create_nodes(
-                    len(backendNodesNew), client.check_agent_process, self.AGENT_PORT, cloud, inst_type=vm_backend_type)
-        except:
-            self.logger.exception(
-                'do_add_nodes: Failed to request new nodes. Needed %d' %
-                (len(proxyNodesNew + webNodesNew + backendNodesNew)))
-            self._state_set(
-                self.S_RUNNING, msg='Failed to request new nodes. Reverting to old configuration')
-            return
-        finally:
-            self._adapting_set_count(0)
+        #     if backend > 0 and vm_backend_type is None:
+        #         node_instances += self.controller.create_nodes(
+        #             len(backendNodesNew), client.check_agent_process, self.AGENT_PORT, cloud)
+        #     elif backend > 0:
+        #         node_instances += self.controller.create_nodes(
+        #             len(backendNodesNew), client.check_agent_process, self.AGENT_PORT, cloud, inst_type=vm_backend_type)
+        # except:
+        #     self.logger.exception(
+        #         'do_add_nodes: Failed to request new nodes. Needed %d' %
+        #         (len(proxyNodesNew + webNodesNew + backendNodesNew)))
+        #     self._state_set(
+        #         self.S_RUNNING, msg='Failed to request new nodes. Reverting to old configuration')
+        #     return
+        # finally:
+        #     self._adapting_set_count(0)
 
         i = 0
         newNodes = []
@@ -547,6 +520,349 @@ class BasicWebserversManager(BaseManager):
         self._state_set(self.S_RUNNING)
         self._configuration_set(config)
         self.memcache.set('nodes_additional', [])
+
+    # @expose('POST')
+    # def add_nodes(self, kwargs):
+    #     """
+    #     Add nodes to this web service.
+    #     At least one of the three types of nodes must be positive:
+    #     backend > 0 or web > 0 or proxy > 0.
+
+    #     POST parameters:
+    #     ----------------
+    #     backend : int
+    #         Optional
+    #         number of new backend nodes to create
+    #     web : int
+    #         Optional
+    #         number of new web nodes to create
+    #     proxy : int
+    #         Optional
+    #         number of new proxy nodes to create
+    #     vm_backend_instance : string
+    #         Optional
+    #         type of cloud instance to create as backend node.
+    #         Values depend on the cloud provider (for example "t1.micro" for Amazon
+    #         EC2, or "small" for OpenNebula, etc.). Default is the instance type
+    #         specified in the director configuration file (INST_TYPE in OpenNebula
+    #         configuration, SIZE_ID in Amazon EC2 configuration).
+    #     vm_web_instance : string
+    #         Optional
+    #         type of cloud instance to create as web node.
+    #         Values are similar to the vm_backend_instance argument.
+    #     cloud : string
+    #         Optional
+    #         name of the cloud where the nodes will be created
+    #     """
+    #     config = self._configuration_get()
+    #     dstate = self._state_get()
+    #     if dstate != self.S_RUNNING:
+    #         ex = ManagerException(ManagerException.E_STATE_ERROR)
+    #         return HttpErrorResponse(ex.message)
+
+    #     backend = 0
+    #     web = 0
+    #     proxy = 0
+
+    #     vm_backend_type = None
+    #     vm_web_type = None
+
+    #     if 'backend' in kwargs:
+    #         if not isinstance(kwargs['backend'], int):
+    #             ex = ManagerException(ManagerException.E_ARGS_INVALID,
+    #                                   detail='Expected an integer value for "backend"')
+    #             return HttpErrorResponse(ex.message)
+    #         backend = int(kwargs.pop('backend'))
+    #         if backend < 0:
+    #             ex = ManagerException(ManagerException.E_ARGS_INVALID,
+    #                                   detail='Expected a positive integer value for "backend"')
+    #             return HttpErrorResponse(ex.message)
+
+    #     if 'web' in kwargs:
+    #         if not isinstance(kwargs['web'], int):
+    #             ex = ManagerException(ManagerException.E_ARGS_INVALID,
+    #                                   detail='Expected an integer value for "web"')
+    #             return HttpErrorResponse(ex.message)
+    #         web = int(kwargs.pop('web'))
+    #         if web < 0:
+    #             ex = ManagerException(ManagerException.E_ARGS_INVALID,
+    #                                   detail='Expected a positive integer value for "web"')
+    #             return HttpErrorResponse(ex.message)
+
+    #     if 'proxy' in kwargs:
+    #         if not isinstance(kwargs['proxy'], int):
+    #             ex = ManagerException(ManagerException.E_ARGS_INVALID,
+    #                                   detail='Expected an integer value for "proxy"')
+    #             return HttpErrorResponse(ex.message)
+    #         proxy = int(kwargs.pop('proxy'))
+    #         if proxy < 0:
+    #             ex = ManagerException(ManagerException.E_ARGS_INVALID,
+    #                                   detail='Expected a positive integer value for "proxy"')
+    #             return HttpErrorResponse(ex.message)
+
+    #     if (backend + web + proxy) < 1:
+    #         ex = ManagerException(ManagerException.E_ARGS_MISSING, ['backend', 'web', 'proxy'],
+    #                               detail='Need a positive value for at least one')
+    #         return HttpErrorResponse(ex.message)
+
+    #     cloud = kwargs.pop('cloud', 'iaas')
+    #     try:
+    #         cloud = self._init_cloud(cloud)
+    #     except Exception as ex:
+    #         # unknown cloud
+    #         return HttpErrorResponse("%s" % ex)
+
+    #     if 'vm_backend_instance' in kwargs:
+    #         self.logger.info('VM BACKEND INSTANCE: %s' %
+    #                          str(kwargs['vm_backend_instance']))
+    #         if not isinstance(str(kwargs['vm_backend_instance']), basestring):
+    #             ex = ManagerException(ManagerException.E_ARGS_INVALID,
+    #                                   detail='Expected a string value for "vm_backend_instance"')
+    #             return HttpErrorResponse(ex.message)
+    #         vm_backend_type = kwargs.pop('vm_backend_instance')
+    #         if len(vm_backend_type) <= 0:
+    #             ex = ManagerException(ManagerException.E_ARGS_INVALID,
+    #                                   detail='Expected a string value for "vm_backend_instance"')
+    #             return HttpErrorResponse(ex.message)
+
+    #     if 'vm_web_instance' in kwargs:
+    #         self.logger.info('VM WEB INSTANCE: %s' %
+    #                          str(kwargs['vm_web_instance']))
+    #         if not isinstance(str(kwargs['vm_web_instance']), basestring):
+    #             ex = ManagerException(ManagerException.E_ARGS_INVALID,
+    #                                   detail='Expected a string value for "vm_web_instance"')
+    #             return HttpErrorResponse(ex.message)
+    #         vm_web_type = kwargs.pop('vm_web_instance')
+    #         if len(vm_web_type) <= 0:
+    #             ex = ManagerException(ManagerException.E_ARGS_INVALID,
+    #                                   detail='Expected a string value for "vm_web_instance"')
+    #             return HttpErrorResponse(ex.message)
+
+    #     if (proxy + config.proxy_count) > 1 and ((web + config.web_count) == 0 or (backend + config.backend_count) == 0):
+    #         ex = ManagerException(ManagerException.E_ARGS_INVALID,
+    #                               detail='Cannot add more proxy servers without at least one "web" and one "backend"')
+    #         return HttpErrorResponse(ex.message)
+
+    #     self._state_set(
+    #         self.S_ADAPTING, msg='Going to add proxy=%d, web=%d, backend=%d, vm_backend_type=%s, vm_web_type=%s, cloud=%s' %
+    #         (proxy, web, backend, str(vm_backend_type), str(vm_web_type), cloud.get_cloud_name()))
+    #     Thread(target=self.do_add_nodes, args=[
+    #            config, proxy, web, backend, cloud, vm_backend_type, vm_web_type]).start()
+    #     return HttpJsonResponse()
+
+    # def do_add_nodes(self, config, proxy, web, backend, cloud, vm_backend_type, vm_web_type):
+    #     webNodesNew = []
+    #     proxyNodesNew = []
+    #     backendNodesNew = []
+
+    #     webNodesKill = []
+    #     backendNodesKill = []
+
+    #     if backend > 0 and config.backend_count == 0:
+    #         backendNodesKill.append(config.getBackendServiceNodes()[0])
+    #     if web > 0 and config.web_count == 0:
+    #         webNodesKill.append(config.getWebServiceNodes()[0])
+
+    #     for _ in range(backend):
+    #         backendNodesNew.append({'runBackend': True})
+    #     for _ in range(web):
+    #         webNodesNew.append({'runWeb': True})
+    #     for _ in range(proxy):
+    #         proxyNodesNew.append({'runProxy': True})
+
+    #     for i in webNodesKill:
+    #         i.isRunningWeb = False
+    #     for i in backendNodesKill:
+    #         i.isRunningBackend = False
+
+    #     node_instances = []
+    #     try:
+    #         self._adapting_set_count(
+    #             len(proxyNodesNew) + len(webNodesNew) + len(backendNodesNew))
+    #         if proxy > 0:
+    #             node_instances += self.controller.create_nodes(
+    #                 len(proxyNodesNew), client.check_agent_process, self.AGENT_PORT, cloud)
+    #         if web > 0 and vm_web_type is None:
+    #             node_instances += self.controller.create_nodes(
+    #                 len(webNodesNew), client.check_agent_process, self.AGENT_PORT, cloud)
+    #         elif web > 0:
+    #             node_instances += self.controller.create_nodes(
+    #                 len(webNodesNew), client.check_agent_process, self.AGENT_PORT, cloud, inst_type=vm_web_type)
+
+    #         if backend > 0 and vm_backend_type is None:
+    #             node_instances += self.controller.create_nodes(
+    #                 len(backendNodesNew), client.check_agent_process, self.AGENT_PORT, cloud)
+    #         elif backend > 0:
+    #             node_instances += self.controller.create_nodes(
+    #                 len(backendNodesNew), client.check_agent_process, self.AGENT_PORT, cloud, inst_type=vm_backend_type)
+    #     except:
+    #         self.logger.exception(
+    #             'do_add_nodes: Failed to request new nodes. Needed %d' %
+    #             (len(proxyNodesNew + webNodesNew + backendNodesNew)))
+    #         self._state_set(
+    #             self.S_RUNNING, msg='Failed to request new nodes. Reverting to old configuration')
+    #         return
+    #     finally:
+    #         self._adapting_set_count(0)
+
+    #     i = 0
+    #     newNodes = []
+    #     for kwargs in proxyNodesNew + webNodesNew + backendNodesNew:
+    #         config.serviceNodes[node_instances[i].id] = WebServiceNode(
+    #             node_instances[i], self.DEFAULT_NODE_WEIGHT, self.DEFAULT_NODE_WEIGHT, **kwargs)
+    #         newNodes += [config.serviceNodes[node_instances[i].id]]
+    #         i += 1
+    #     config.update_mappings()
+
+    #     # add new service nodes
+    #     self._start_backend(
+    #         config, [node for node in newNodes if node.isRunningBackend])
+    #     # stage code files in all new VMs
+    #     # NOTE: Code update is done after starting the backend
+    #     #       because tomcat-create-instance complains if its
+    #     #       directory exists when it is run and placing the
+    #     #       code can only be done after creating the instance
+    #     if config.currentCodeVersion is not None:
+    #         self._update_code(
+    #             config, [node for node in newNodes
+    #                      if node not in config.serviceNodes])  # FIXME: ? rather be config.serviceNodes.values ?
+
+    #     self._start_web(config,
+    #                     [node for node in newNodes if node.isRunningWeb])
+    #     self._start_proxy(config,
+    #                       [node for node in newNodes if node.isRunningProxy])
+
+    #     # update services
+    #     if webNodesNew or backendNodesNew:
+    #         self._update_proxy(
+    #             config, [i for i in config.serviceNodes.values()
+    #                      if i.isRunningProxy and i not in newNodes])
+    #     # remove_nodes old ones
+
+    #     self._stop_backend(config, backendNodesKill)
+    #     self._stop_web(config, webNodesKill)
+
+    #     config.proxy_count = len(config.getProxyServiceNodes())
+    #     config.backend_count = len(config.getBackendServiceNodes())
+    #     if config.backend_count == 1 and config.getBackendServiceNodes()[0] in config.getProxyServiceNodes():
+    #         config.backend_count = 0
+    #     config.web_count = len(config.getWebServiceNodes())
+    #     if config.web_count == 1 and config.getWebServiceNodes()[0] in config.getProxyServiceNodes():
+    #         config.web_count = 0
+
+    #     self._state_set(self.S_RUNNING)
+    #     self._configuration_set(config)
+    #     self.memcache.set('nodes_additional', [])
+
+    def on_remove_nodes(self, node_roles):
+        # no checks on parameters here (should be done in base class)
+        # no remove from ip supported
+        backend = web = proxy = 0
+        if 'backend' in node_roles:
+            backend = node_roles['backend']
+        
+        if 'web' in node_roles:
+            web = node_roles['web']
+
+        if 'proxy' in node_roles:
+            proxy = node_roles['proxy']
+
+        node_ip = None
+
+        config = self._configuration_get()
+
+        packBackend = False
+        packWeb = False
+        packingNode = None
+
+        backendNodesKill = []
+        webNodesKill = []
+        proxyNodesKill = []
+
+        if web > 0:
+            if node_ip is not None:
+                for serviceNode in config.getWebServiceNodes():
+                    if(serviceNode.ip == node_ip):
+                        webNodesKill.append(serviceNode)
+            else:
+                webNodesKill += config.getWebServiceNodes()[-web:]
+            if config.web_count - web == 0:
+                packWeb = True
+
+        if backend > 0:
+            if node_ip is not None:
+                for serviceNode in config.getBackendServiceNodes():
+                    if(serviceNode.ip == node_ip):
+                        backendNodesKill.append(serviceNode)
+            else:
+                backendNodesKill += config.getBackendServiceNodes()[-backend:]
+            if config.backend_count - backend == 0:
+                packBackend = True
+
+        if proxy > 0:
+            proxyNodesKill += config.getProxyServiceNodes()[-proxy:]
+
+        packingNode = config.getProxyServiceNodes()[0]
+        for i in webNodesKill:
+            i.isRunningWeb = False
+        for i in backendNodesKill:
+            i.isRunningBackend = False
+        for i in proxyNodesKill:
+            i.isRunningProxy = False
+        if packBackend:
+            packingNode.isRunningBackend = True
+        if packWeb:
+            packingNode.isRunningWeb = True
+
+        config.update_mappings()
+        self.logger.info("Remove_nodes " + str(config.serviceNodes))
+        # new nodes
+        if packBackend:
+            # NOTE: Code update is done after starting the backend
+            #       because tomcat-create-instance complains if its
+            #       directory exists when it is run and placing the
+            #       code can only be done after creating the instance
+            self._start_backend(config, [packingNode])
+            self._update_code(config, [packingNode])
+        if packWeb:
+            self._start_web(config, [packingNode])
+
+        if webNodesKill or backendNodesKill:
+            self._update_proxy(config, [i for i in config.serviceNodes.values()
+                                        if i.isRunningProxy and i not in proxyNodesKill])
+
+        try:
+                # remove_nodes nodes
+            self._stop_backend(config, backendNodesKill)
+            self._stop_web(config, webNodesKill)
+            self._stop_proxy(config, proxyNodesKill)
+            del_nodes = []
+            #   self.logger.info("Internal php: service nodes "+str(config.serviceNodes.values()))
+            for i in config.serviceNodes.values():
+                if not i.isRunningBackend and not i.isRunningWeb and not i.isRunningProxy:
+                    del_nodes += [i]
+                    del config.serviceNodes[i.id]
+                    # self.controller.delete_nodes([i])
+                    #  self.logger.info("Internal php: Removing_node "+str(i.id))
+
+            config.proxy_count = len(config.getProxyServiceNodes())
+            config.backend_count = len(config.getBackendServiceNodes())
+            if config.backend_count == 1 and config.getBackendServiceNodes()[0] in config.getProxyServiceNodes():
+                config.backend_count = 0
+            config.web_count = len(config.getWebServiceNodes())
+            if config.web_count == 1 and config.getWebServiceNodes()[0] in config.getProxyServiceNodes():
+                config.web_count = 0
+
+            #  config.update_mappings()
+            self.logger.info("Remove_nodes " + str(config.serviceNodes))
+
+        except Exception:
+            self.logger.critical('Error when trying to remove ')
+
+        self._configuration_set(config)
+        self._state_set(self.S_RUNNING)
+        return del_nodes
+
 
     @expose('POST')
     def remove_nodes(self, kwargs):

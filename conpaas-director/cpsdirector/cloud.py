@@ -30,11 +30,11 @@ class Resource(db.Model):
     rid = db.Column(db.Integer, primary_key=True, autoincrement=True)
     vmid = db.Column(db.String(80), unique=True, nullable=False)
     app_id = db.Column(db.Integer, db.ForeignKey('application.aid'))
+    service_id = db.Column(db.Integer, db.ForeignKey('service.sid'))
     ip = db.Column(db.String(80))
     role = db.Column(db.String(10))
     cloud = db.Column(db.String(20))
-    application = db.relationship('Application', backref=db.backref('resource',
-                                  lazy="dynamic"))
+    application = db.relationship('Application', backref=db.backref('resource', lazy="dynamic"))
 
     def __init__(self, **kwargs):
         # Default values
@@ -76,37 +76,44 @@ def available_clouds():
 
 
 def _create_nodes(kwargs):
+    log('some nodes are being created')
     role = kwargs.pop('role')
     cloud_name = kwargs.pop('cloud_name')
     
     app_id = kwargs.pop('app_id')
-    user_id = '%s'%g.user.uid
+    # user_id = '%s'%g.user.uid
+    user_id = kwargs.pop('user_id')
     nodes = None
-
+    service_id = 0
+    
+    from cpsdirector.application import Application, get_app_by_id
+    application = get_app_by_id(user_id, app_id)
     if role == 'manager':
         vpn = kwargs.pop('vpn')
         controller = ManagerController(user_id, app_id, vpn)
         controller.generate_context(cloud_name)      
-        nodes = controller.create_nodes(1,  cloud_name)
+        # nodes = controller.create_nodes(1,  cloud_name)
+        nodes = controller.create_nodes([{'cloud':cloud_name}])
+        
+        application.status = Application.A_RUNNING
 
     else:
-        count = kwargs.pop('count')
+        nodes_info = kwargs.pop('nodes_info')
         service_id = kwargs.pop('service_id')
         service_type = kwargs.pop('service_type')
         manager_ip = kwargs.pop('manager_ip')
         context = kwargs.pop('context')
 
-        from cpsdirector.application import get_app_by_id
-        application = get_app_by_id(user_id, app_id)
+        log('type: %s' % service_type)
   
         controller = AgentController(user_id, app_id, service_id, service_type, manager_ip)
         controller.generate_context(cloud_name, context)
         
-        nodes = controller.create_nodes(count, cloud_name)
+        nodes = controller.create_nodes(nodes_info)
     
     if nodes:
         for node in nodes:
-            resource = Resource(vmid=node.vmid, ip=node.ip, app_id=app_id, role=role, cloud=cloud_name)
+            resource = Resource(vmid=node.vmid, ip=node.ip, app_id=app_id, service_id=service_id, role=role, cloud=cloud_name)
             db.session.add(resource)
     
         # flush() is needed to get auto-incremented rid
@@ -129,16 +136,16 @@ def create_nodes():
     # role = request.values.get('role')
 
     
-
-    count = int(request.values.get('count'))
+    # FIXME: make this get driectly a json
+    nodes_info = simplejson.loads(request.values.get('nodes_info').replace("u'", '"').replace("'", '"'))
     cloud_name = request.values.get('cloud_name')
     context = simplejson.loads(request.values.get('context').replace("'", "\""))
     # inst_type = request.values.get('inst_type')
-    nodes = _create_nodes({'role':'agent', 'app_id':app_id, 'cloud_name':cloud_name, 
-                    'service_id':service_id, 'service_type':service_type, 'count':count, 
+    nodes = _create_nodes({'role':'agent', 'app_id':app_id, 'user_id':'%s'%g.user.uid, 'cloud_name':cloud_name, 
+                    'service_id':service_id, 'service_type':service_type, 'nodes_info':nodes_info, 
                     'manager_ip':manager_ip, 'context':context})
     
-    # log('nodes string: %s' % simplejson.dumps([node.to_dict() for node in nodes]))
+    log('nodes string: %s' % simplejson.dumps([node.to_dict() for node in nodes]))
     return simplejson.dumps([node.to_dict() for node in nodes])
 
 

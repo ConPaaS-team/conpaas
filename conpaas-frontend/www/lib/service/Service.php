@@ -279,12 +279,14 @@ class Service {
  				$nodes[$role] = intval($params[$role]);
  			}
         }
+        $data = array();
+        $data['nodes'] = $nodes;
         if ($command == 'add_nodes') {
-            $nodes['cloud'] = $params['cloud'];
+            $data['cloud'] = $params['cloud'];
         }
  		// return $this->managerRequest('post', $command, $nodes);
- 		$nodes['service_id'] = $this->sid;
- 		return $this->application->managerRequest('post', $command, 0, $nodes);
+ 		$data['service_id'] = $this->sid;
+ 		return $this->application->managerRequest('post', $command, 0, $data);
  	}
 
  	public function addServiceNodes($params) {

@@ -19,6 +19,7 @@ import socket
 import urllib2
 import simplejson
 
+from cpsdirector import db
 from cpsdirector.common import log
 from cpsdirector.common import build_response
 
@@ -879,9 +880,13 @@ def get_manifest_class(service_type):
     else:
         raise Exception('Service type %s does not exists' % service_type)
 
-from cpsdirector.application import check_app_exists
+from cpsdirector.application import check_app_exists, get_app_by_id
 from cpsdirector.application import _createapp as createapp
-def new_manifest(json):
+from cpsdirector.application import _startapp as startapp, Application
+from cpsdirector.service import _add as add_service
+
+def new_manifest(json, cloud = 'default'):
+    
     try:
         parse = simplejson.loads(json)
     except:
@@ -894,14 +899,14 @@ def new_manifest(json):
 
     if not check_app_exists(app_name):
         # Create application if it does not exist yet
-        res = createapp(app_name)
+        res = createapp(app_name, cloud)
         appid = simplejson.loads(res.data).get('aid')
     else:
         # Try different application names
         for i in range(2, 99):
             new_name = "%s (%d)" % (app_name, i)
             if not check_app_exists(new_name):
-                res = createapp(new_name)
+                res = createapp(new_name, cloud)
                 appid = simplejson.loads(res.data).get('aid')
                 break
 
@@ -912,20 +917,46 @@ def new_manifest(json):
     if not parse.get('Services'):
         return 'ok'
 
+    # startapp(g.user.uid, appid, cloud, new_thread=False)
+    startapp(g.user.uid, appid, cloud)
+    app = get_app_by_id(g.user.uid, appid)
+    
+    #FIXME: add a timeout here
+    while app.status != Application.A_RUNNING:
+        log('application is in status:%s, manager:%s' % (app.status, app.manager))   
+        time.sleep(8)
+        app = get_app_by_id(g.user.uid, appid)
+        db.session.refresh(app)
+        # app = get_app_by_id(g.user.uid, appid)
+    
+    log('now start adding services')   
     for service in parse.get('Services'):
         if service.get('Type') == "mysql":
             service['Type'] = "galera"
 
         try:
-            cls = get_manifest_class(service.get('Type'))
+            res = add_service(service.get('Type'), cloud, appid)
+            sid = res['service']['sid']
+            data = {'cloud': cloud, 'service_id':sid}
+            callmanager(appid, 0, "start_service", True, data)
+
+            log('adding %s resulted in %s' % (service.get('Type'), res) )
         except Exception:
             return 'Service %s does not exists' % service.get('Type')
 
-        msg = cls().start(service, appid)
 
-        if msg is not 'ok':
-            log('new_manifest: error starting %s service -> %s' % (service,
-                msg))
-            return msg
+        
+
+        # try:
+        #     cls = get_manifest_class(service.get('Type'))
+        # except Exception:
+        #     return 'Service %s does not exists' % service.get('Type')
+
+        # msg = cls().start(service, appid)
+
+        # if msg is not 'ok':
+        #     log('new_manifest: error starting %s service -> %s' % (service,
+        #         msg))
+        #     return msg
 
     return 'ok'

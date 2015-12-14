@@ -8,11 +8,11 @@
 
     :copyright: (C) 2010-2013 by Contrail Consortium.
 """
-
+import time
 from itertools import chain
 from string import Template
 
-from conpaas.core.node import ServiceNode
+from conpaas.core.node import ServiceNode, ServiceVolume
 from conpaas.core.log import create_logger
 
 class Cloud:
@@ -120,14 +120,21 @@ class Cloud:
 
         if self.connected is False:
             self._connect()
-        return [serviceNode for serviceNode in
-                self._create_service_nodes(self.driver.list_nodes())]
 
-    def new_instances(self, count, name='conpaas', inst_type=None):
+        # FIXME put the volumes here 
+        volumes = []
+        return [serviceNode for serviceNode in
+                self._create_service_nodes(self.driver.list_nodes(), volumes)]
+
+    # def new_instances(self, count, name='conpaas', inst_type=None, volumes={}):
+    #     raise NotImplementedError(
+    #         'new_instances not implemented for this cloud driver')
+
+    def new_instances(self, nodes_info):
         raise NotImplementedError(
             'new_instances not implemented for this cloud driver')
 
-    def _create_service_nodes(self, instances, has_private_ip=True):
+    def _create_service_nodes(self, instances, instances_info=None, has_private_ip=True):
         '''
         creates a list of ServiceNode
 
@@ -138,13 +145,24 @@ class Cloud:
         @type   has_private_ip: C{bool}
 
         '''
+        volumes = []
         if type(instances) is list:
-            return [ self.__create_one_service_node(node, has_private_ip)
-                    for node in instances ]
+            ret = []
+            for node in instances:
+                if instances_info and len(instances_info) > 0:
+                    node_info = filter(lambda n: n['id']==node.id, instances_info)[0]
+                    if 'volumes' in node_info:
+                        volumes = node_info['volumes']
+                ret += [self.__create_one_service_node(node, volumes, has_private_ip)]
+            return ret
 
-        return self.__create_one_service_node(instances, has_private_ip)
+        
+        node_info = filter(lambda n: n['id']==instances.id, instances_info)[0] 
+        if 'volumes' in node_info:
+            volumes = node_info['volumes']
+        return self.__create_one_service_node(instances, volumes, has_private_ip)
 
-    def __create_one_service_node(self, instance, has_private_ip=True):
+    def __create_one_service_node(self, instance, volumes, has_private_ip=True):
         '''
         creates a single ServiceNode
 
@@ -156,7 +174,11 @@ class Cloud:
 
         '''
         ip, private_ip = self.__get_ips(instance, has_private_ip)
-        return ServiceNode(instance.id, ip, private_ip, self.cloud_name)
+        sn = ServiceNode(instance.id, ip, private_ip, self.cloud_name)
+        svols = [ServiceVolume.from_dict(volume) for volume in volumes]
+        if len(svols) > 0:
+            sn.volumes = svols
+        return sn
 
     def __get_ips(self, instance, has_private_ip):
         if instance.public_ips:
@@ -189,7 +211,26 @@ class Cloud:
 
         if self.connected is False:
             self._connect()
-        return self.driver.destroy_node(node.as_libcloud_node())
+
+        libcloud_node = node.as_libcloud_node()
+        # Delete also the volumes atached to the node (not sure if this is cross-cloud)
+        volumes = filter(lambda x: False if len(x.extra['attachments'])==0 else x.extra['attachments'][0]['serverId']==libcloud_node.id, self.driver.list_volumes())
+        self.logger.debug('delete these volumes: %s' % volumes)
+        for volume in volumes:
+            self.detach_volume(volume)
+            status=volume.extra['state']
+            while status != 'available':
+                status=filter(lambda x: x.id==volume.id, self.driver.list_volumes())[0].extra['state']
+                time.sleep(1)
+                
+            self.driver.destroy_volume(volume)
+
+
+        destroy_res = self.driver.destroy_node(libcloud_node)
+        
+        
+        
+        return destroy_res
 
     def create_volume(self, size, name, vm_id=None):
         # We can ignore vm_id. It is only needed by EC2.
@@ -197,5 +238,8 @@ class Cloud:
 
     def attach_volume(self, node, volume, device):
         return self.driver.attach_volume(node, volume, device)
+
+    def detach_volume(self, volume):
+        return self.driver.detach_volume(volume)
 
    

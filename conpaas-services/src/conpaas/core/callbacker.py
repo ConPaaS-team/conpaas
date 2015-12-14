@@ -11,8 +11,22 @@ class DirectorCallbacker(object):
     	self.config_parser = config_parser
 
 
-    def create_nodes(self, count, service_id, service_manager, cloud_name='default', inst_type=None):
-        params = {'count':count, 'cloud_name':cloud_name, 'inst_type':inst_type, 
+    # def create_nodes(self, count, service_id, service_manager, cloud_name='default', inst_type=None):
+    #     params = {'count':count, 'cloud_name':cloud_name, 'inst_type':inst_type, 
+    #              'app_id':self.config_parser.get("manager", "APP_ID"), 
+    #              'service_id':service_id,
+    #              'manager_ip':self.config_parser.get("manager", "MY_IP"), 
+    #              'service_type':service_manager.get_service_type(),
+    #              'context': service_manager.get_context_replacement()}
+    #     ret = self._dic_callback('/create_nodes', params)
+    #     nodes = None
+    #     if ret:
+    #         nodes = [ServiceNode(node['vmid'], node['ip'],node['private_ip'],node['cloud_name'],node['weight_backend']) for node in ret]        
+        
+    #     return nodes
+
+    def create_nodes(self, nodes_info, service_id, service_manager):
+        params = {'nodes_info':nodes_info, 
                  'app_id':self.config_parser.get("manager", "APP_ID"), 
                  'service_id':service_id,
                  'manager_ip':self.config_parser.get("manager", "MY_IP"), 
@@ -21,7 +35,7 @@ class DirectorCallbacker(object):
         ret = self._dic_callback('/create_nodes', params)
         nodes = None
         if ret:
-            nodes = [ServiceNode(node['vmid'], node['ip'],node['private_ip'],node['cloud_name'],node['weight_backend']) for node in ret]        
+            nodes = [ServiceNode.from_dict(node) for node in ret]        
         
         return nodes
 

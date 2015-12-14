@@ -372,18 +372,21 @@ class ServiceCmd(object):
         subparser.add_argument('serv_name_or_id', help="Name or identifier of a service")
         for role in self.roles:
             subparser.add_argument('--%s' % role, type=int, default=0,
-                                   help="Number of %s nodes to add" % role)
+                                   help="Number of %s to add" % role)
         subparser.add_argument('--cloud', '-c', metavar='CLOUD_NAME',
                                default='iaas',
                                help="Name of the cloud where to add nodes")
 
     def add_nodes(self, args):
-        total_nodes, data = self._get_roles_nb(args)
+        total_nodes, nodes = self._get_roles_nb(args)
         if total_nodes <= 0:
             self.client.error("Cannot add %s nodes." % total_nodes)
         
         app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
         # res = self.client.call_manager_post(app_id, service_id, "add_nodes", data)
+        
+        data={}
+        data['nodes'] = nodes
         data['service_id'] = service_id
         data['cloud'] = args.cloud
         res = self.client.call_manager_post(app_id, 0, "add_nodes", data)
@@ -413,9 +416,11 @@ class ServiceCmd(object):
 
     def remove_nodes(self, args):
         app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
-        total_nodes, data = self._get_roles_nb(args)
+        total_nodes, nodes = self._get_roles_nb(args)
         if total_nodes <= 0:
             self.client.error("Cannot remove %s nodes." % total_nodes)
+        data={}
+        data['nodes'] = nodes
         data['service_id'] = service_id
         res = self.client.call_manager_post(app_id, 0, "remove_nodes", data)
         if 'error' in res:

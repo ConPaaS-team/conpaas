@@ -146,99 +146,35 @@ class Controller(object):
     #=========================================================================#
     #               create_nodes(self, count, contextFile, test_agent)        #
     #=========================================================================#
-    def create_nodes(self, count, cloud_name=None, inst_type=None):
-        """
-        Creates the VMs associated with the list of nodes. It also tests
-        if the agents started correctly.
-
-        @param count The number of nodes to be created
-
-        @param port The port on which the agent will listen
-
-        @param cloud (Optional) If specified, this function will start new
-                        nodes inside cloud, otherwise it will start new nodes
-                        inside the default cloud or wherever the controller
-                        wants (for now only the default cloud is used)
-
-        @return A list of nodes of type node.ServiceNode
-
-        """
-        self._logger.debug('[create_nodes]')
+    def create_nodes(self, nodes_info):
+        self._logger.debug('[create_nodes]: %s' % nodes_info)
         ready = []
         poll = []
         iteration = 0
-
+        count=len(nodes_info)
         if count == 0:
             return []
-
-        cloud = self._default_cloud
-        if cloud_name is not None:
-            cloud = self.get_cloud_by_name(cloud_name)
-
-        if not deduct_credit(count):
-            raise Exception('Could not add nodes. Not enough credits.')
-
+        clouds=list(set([n['cloud'] for n in nodes_info]))
+        failed = nodes_info[:]
         while len(ready) < count:
             iteration += 1
-            msg = '[create_nodes] iter %d: creating %d nodes on cloud %s' % (iteration, count - len(ready), cloud.cloud_name)
-
-            if inst_type:
-                msg += ' of type %s' % inst_type
-
-            self._logger.debug(msg)
-
             try:
                 self._force_terminate_lock.acquire()
                 if iteration == 1:
                     request_start = time.time()
-                
-                if self.role == 'manager':
-                    role_abbr = 'mgr'
-                    service_type = ''
-                    name = "%s-u%s-a%s-r%s" % (self._conpaas_name, self._conpaas_user_id, self._conpaas_app_id, role_abbr)
-                else:
-                    role_abbr = 'agt'
-                    service_type = self.config_parser.get('manager', 'TYPE')
-                    name = "%s-u%s-a%s-s%s-t%s-r%s" % (self._conpaas_name, self._conpaas_user_id, self._conpaas_app_id, self._conpaas_service_id, service_type, role_abbr)
 
-                if service_type == 'galera':
-                    service_type = 'mysql'
-                
-                if (service_type == 'htc'):
-                    # If HTC is used we need to update here as well (as I see no way to do this elsewhere)
-                    self.add_context_replacement({
-                        # 'CLOUD_VMID': cloud.cloud_vmid,
-                        'CLOUD_NAME': cloud.cloud_name,
-                        'CLOUD_MACHINE_TYPE': self.config_parser.get(cloud.cloud_name, 'INST_TYPE') ,
-                        'CLOUD_COST_PER_TIME': self.config_parser.get(cloud.cloud_name, 'COST_PER_TIME'),
-                        'CLOUD_MAX_VMS_ALL_CLOUDS': self.config_parser.get('iaas', 'MAX_VMS_ALL_CLOUDS'),
-                        'CLOUD_MAX_VMS': self.config_parser.get(cloud.cloud_name, 'MAX_VMS')
-                        }, cloud)
+                for c in clouds:
+                    cloud = self._default_cloud
+                    ninfo = failed
+                    if c is not None or c!='':
+                        cloud = self.get_cloud_by_name(c)
+                        ninfo = filter(lambda n: n['cloud']==c, failed)
 
-                # TODO (genc): put this back when figured out what to do with IPOP
-                if False:
-                # if self._ipop_base_ip and self._ipop_netmask:
-                    # If IPOP has to be used we need to update VMs
-                    # contextualization data for each new instance
-                    for _ in range(count - len(ready)):
-                        vpn_ip = self.get_available_ipop_address()
-                        self.add_context_replacement({ 'IPOP_IP_ADDRESS': vpn_ip }, cloud)
-                        
-                        for newinst in cloud.new_instances(1, name, inst_type):
-                            # Set VPN IP
-                            newinst.ip = vpn_ip
+                    msg = '[create_nodes] iter %d: creating %d nodes on cloud %s' % (iteration, count - len(ready), cloud)
+                    self._logger.debug(msg)
 
-                            if newinst.private_ip == '':
-                                # If private_ip is not set yet, use vpn_ip
-                                newinst.private_ip = vpn_ip
-
-                            self._partially_created_nodes.append(newinst)
-                else:
-                    self._logger.debug("[create_nodes]: cloud.new_instances(%d, %s, %s)" % ( count - len(ready), name, inst_type ) )
-                    self._partially_created_nodes = cloud.new_instances(count - len(ready), name, inst_type)
-
-                self._logger.debug("[create_nodes]: cloud.new_instances returned %s" %
-                        self._partially_created_nodes)
+                    self._partially_created_nodes = self._create_nodes(ninfo,cloud)
+                    self._logger.debug('[create_nodes] _partially_created_nodes: %s' % self._partially_created_nodes)
 
             except Exception as e:
                 self._logger.exception('[create_nodes]: Failed to request new nodes')
@@ -250,7 +186,6 @@ class Controller(object):
 
             poll, failed = self._wait_for_nodes(self._partially_created_nodes)
             ready += poll
-
             poll = []
             if failed:
                 self._logger.debug('[create_nodes]: %d nodes '
@@ -258,16 +193,151 @@ class Controller(object):
                                     % (len(failed), str(failed)))
                 self._partially_created_nodes = []
                 self.delete_nodes(failed)
+
         self._force_terminate_lock.acquire()
         self._created_nodes += ready
         self._partially_created_nodes = []
         self._force_terminate_lock.release()
 
-        # for i in ready:
-        #     self._reservation_map[i.id] = timer
         return ready
 
-    def _wait_for_nodes(self, nodes, poll_interval=10):
+    def _create_nodes(self, nodes_info, cloud):
+        if self.role == 'manager':
+            role_abbr = 'mgr'
+            service_type = ''
+            name = "%s-u%s-a%s-r%s" % (self._conpaas_name, self._conpaas_user_id, self._conpaas_app_id, role_abbr)
+        else:
+            role_abbr = 'agt'
+            service_type = self.config_parser.get('manager', 'TYPE')
+            name = "%s-u%s-a%s-s%s-t%s-r%s" % (self._conpaas_name, self._conpaas_user_id, self._conpaas_app_id, self._conpaas_service_id, service_type, role_abbr)
+        for ni in nodes_info:
+            ni['name']=name
+        self._logger.debug("[create_nodes]: cloud.new_instances(%s)" % str(nodes_info) )
+        return cloud.new_instances(nodes_info)
+
+
+    # def create_nodes(self, count, cloud_name=None, inst_type=None):
+    #     """
+    #     Creates the VMs associated with the list of nodes. It also tests
+    #     if the agents started correctly.
+
+    #     @param count The number of nodes to be created
+
+    #     @param port The port on which the agent will listen
+
+    #     @param cloud (Optional) If specified, this function will start new
+    #                     nodes inside cloud, otherwise it will start new nodes
+    #                     inside the default cloud or wherever the controller
+    #                     wants (for now only the default cloud is used)
+
+    #     @return A list of nodes of type node.ServiceNode
+
+    #     """
+    #     self._logger.debug('[create_nodes]')
+    #     ready = []
+    #     poll = []
+    #     iteration = 0
+
+    #     if count == 0:
+    #         return []
+
+    #     cloud = self._default_cloud
+    #     if cloud_name is not None:
+    #         cloud = self.get_cloud_by_name(cloud_name)
+
+    #     if not deduct_credit(count):
+    #         raise Exception('Could not add nodes. Not enough credits.')
+
+    #     while len(ready) < count:
+    #         iteration += 1
+    #         msg = '[create_nodes] iter %d: creating %d nodes on cloud %s' % (iteration, count - len(ready), cloud.cloud_name)
+
+    #         if inst_type:
+    #             msg += ' of type %s' % inst_type
+
+    #         self._logger.debug(msg)
+
+    #         try:
+    #             self._force_terminate_lock.acquire()
+    #             if iteration == 1:
+    #                 request_start = time.time()
+                
+    #             if self.role == 'manager':
+    #                 role_abbr = 'mgr'
+    #                 service_type = ''
+    #                 name = "%s-u%s-a%s-r%s" % (self._conpaas_name, self._conpaas_user_id, self._conpaas_app_id, role_abbr)
+    #             else:
+    #                 role_abbr = 'agt'
+    #                 service_type = self.config_parser.get('manager', 'TYPE')
+    #                 name = "%s-u%s-a%s-s%s-t%s-r%s" % (self._conpaas_name, self._conpaas_user_id, self._conpaas_app_id, self._conpaas_service_id, service_type, role_abbr)
+
+    #             if service_type == 'galera':
+    #                 service_type = 'mysql'
+                
+    #             if (service_type == 'htc'):
+    #                 # If HTC is used we need to update here as well (as I see no way to do this elsewhere)
+    #                 self.add_context_replacement({
+    #                     # 'CLOUD_VMID': cloud.cloud_vmid,
+    #                     'CLOUD_NAME': cloud.cloud_name,
+    #                     'CLOUD_MACHINE_TYPE': self.config_parser.get(cloud.cloud_name, 'INST_TYPE') ,
+    #                     'CLOUD_COST_PER_TIME': self.config_parser.get(cloud.cloud_name, 'COST_PER_TIME'),
+    #                     'CLOUD_MAX_VMS_ALL_CLOUDS': self.config_parser.get('iaas', 'MAX_VMS_ALL_CLOUDS'),
+    #                     'CLOUD_MAX_VMS': self.config_parser.get(cloud.cloud_name, 'MAX_VMS')
+    #                     }, cloud)
+
+    #             # TODO (genc): put this back when figured out what to do with IPOP
+    #             if False:
+    #             # if self._ipop_base_ip and self._ipop_netmask:
+    #                 # If IPOP has to be used we need to update VMs
+    #                 # contextualization data for each new instance
+    #                 for _ in range(count - len(ready)):
+    #                     vpn_ip = self.get_available_ipop_address()
+    #                     self.add_context_replacement({ 'IPOP_IP_ADDRESS': vpn_ip }, cloud)
+                        
+    #                     for newinst in cloud.new_instances(1, name, inst_type):
+    #                         # Set VPN IP
+    #                         newinst.ip = vpn_ip
+
+    #                         if newinst.private_ip == '':
+    #                             # If private_ip is not set yet, use vpn_ip
+    #                             newinst.private_ip = vpn_ip
+
+    #                         self._partially_created_nodes.append(newinst)
+    #             else:
+    #                 self._logger.debug("[create_nodes]: cloud.new_instances(%d, %s, %s)" % ( count - len(ready), name, inst_type ) )
+    #                 self._partially_created_nodes = cloud.new_instances(count - len(ready), name, inst_type)
+
+    #             self._logger.debug("[create_nodes]: cloud.new_instances returned %s" %
+    #                     self._partially_created_nodes)
+
+    #         except Exception as e:
+    #             self._logger.exception('[create_nodes]: Failed to request new nodes')
+    #             self.delete_nodes(ready)
+    #             self._partially_created_nodes = []
+    #             raise e
+    #         finally:
+    #             self._force_terminate_lock.release()
+
+    #         poll, failed = self._wait_for_nodes(self._partially_created_nodes)
+    #         ready += poll
+
+    #         poll = []
+    #         if failed:
+    #             self._logger.debug('[create_nodes]: %d nodes '
+    #                                 'failed to startup properly: %s'
+    #                                 % (len(failed), str(failed)))
+    #             self._partially_created_nodes = []
+    #             self.delete_nodes(failed)
+    #     self._force_terminate_lock.acquire()
+    #     self._created_nodes += ready
+    #     self._partially_created_nodes = []
+    #     self._force_terminate_lock.release()
+
+    #     # for i in ready:
+    #     #     self._reservation_map[i.id] = timer
+    #     return ready
+
+    def _wait_for_nodes(self, nodes, poll_interval=5):
         self._logger.debug('[_wait_for_nodes]: going to start polling for %d nodes' % len(nodes))
 
         done = []
@@ -398,7 +468,7 @@ class Controller(object):
         class volume:
             id = volume_id
         self._logger.debug("detach_volume(volume=%s)" % volume.id)
-        return cloud.driver.detach_volume(volume)
+        return cloud.detach_volume(volume)
 
     def destroy_volume(self, volume_id, cloud=None):
         cloud = self.get_cloud_by_name(cloud)
@@ -412,22 +482,28 @@ class Controller(object):
 
     def _create_manager_config(self, user_id, app_id, vpn=None):
         """Add manager configuration"""
-        if not config_parser.has_section("manager"):
-            config_parser.add_section("manager")
+        config_string = StringIO.StringIO()
+        config_parser.write(config_string)
+        config_string.seek(0)
+        new_config_parser = ConfigParser()
+        new_config_parser.readfp(config_string)
 
-        if config_parser.has_option('conpaas', 'DEPLOYMENT_NAME'):
-            conpaas_deployment_name = config_parser.get('conpaas', 'DEPLOYMENT_NAME')
+        if not new_config_parser.has_section("manager"):
+            new_config_parser.add_section("manager")
+
+        if new_config_parser.has_option('conpaas', 'DEPLOYMENT_NAME'):
+            conpaas_deployment_name = new_config_parser.get('conpaas', 'DEPLOYMENT_NAME')
         else:
             conpaas_deployment_name = 'conpaas'
 
-        config_parser.set("manager", "DEPLOYMENT_NAME", conpaas_deployment_name)
-        config_parser.set("manager", "USER_ID", user_id)
-        config_parser.set("manager", "APP_ID", app_id)
+        new_config_parser.set("manager", "DEPLOYMENT_NAME", conpaas_deployment_name)
+        new_config_parser.set("manager", "USER_ID", user_id)
+        new_config_parser.set("manager", "APP_ID", app_id)
 
         # if vpn:
         #     config_parser.set("manager", "IPOP_SUBNET", vpn)
 
-        return config_parser
+        return new_config_parser
 
     def _get_certificate(self, role, email, cn, org):
         user_id = self.config_parser.get("manager", "USER_ID")
@@ -451,8 +527,8 @@ class AgentController(Controller):
     def __init__(self, user_id, app_id, service_id, service_type, manager_ip):
         Controller.__init__(self)
         self.config_parser = self._create_agent_config(str(user_id), str(app_id), service_id, service_type, manager_ip)
-        self._conpaas_service_id = config_parser.get('manager', 'SERVICE_ID')
-        self._conpaas_service_type = config_parser.get('manager', 'TYPE')
+        self._conpaas_service_id = self.config_parser.get('manager', 'SERVICE_ID')
+        self._conpaas_service_type = self.config_parser.get('manager', 'TYPE')
         self._setup()
 
         self.role = "agent"
@@ -698,7 +774,7 @@ class ManagerController(Controller):
         
         # Add default manager startup script
         tmpl_values['mngr_start_script'] = file_get_contents(os.path.join(mngr_scripts_dir, 'default-manager-start'))
-        # tmpl_values['mngr_vars_script'] = file_get_contents(os.path.join(mngr_scripts_dir, 'default-manager-vars'))
+        tmpl_values['mngr_vars_script'] = file_get_contents(os.path.join(mngr_scripts_dir, 'default-manager-vars'))
 
         # Get key and a certificate from CA
         mngr_certs = self._get_certificate(role="manager",
@@ -731,8 +807,9 @@ cat <<EOF > $ROOT_DIR/config.cfg
 %(config)s
 EOF
 
+
 %(mngr_start_script)s
 
-""" % tmpl_values
+%(mngr_vars_script)s
 
-# %(mngr_vars_script)s 
+""" % tmpl_values

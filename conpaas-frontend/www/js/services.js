@@ -94,12 +94,13 @@ conpaas.ui = (function (this_module) {
                 function (response) {
                     app = response.data[0];
                     that.application = app;
-                    if(app.manager == null){
+                    if(app.status == 'INIT' || app.status == 'EPILOGUE'){
                         $("#btnAddService").hide();
                         $("#btnStopApp").hide();
-                        if(that.startingApp)
+                        if(app.status == 'EPILOGUE'){
+                            that.displayInfo_('Starting application manager...');
                             return false
-                        else
+                        }else
                             $("#btnStartApp").show();
 
 

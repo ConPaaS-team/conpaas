@@ -8,7 +8,7 @@ require_module('https');
 
 class Application {
 
-	protected $aid, $name, $user_id, $manager, $vmid;
+	protected $aid, $name, $user_id, $manager, $status, $vmid;
 
 
 	private $errorMessage = null;
@@ -58,6 +58,10 @@ class Application {
 		return $this->vmid;
 	}
 
+	public function getStatus() {
+		return $this->status;
+	}
+
 	private function decodeResponse($json, $method) {
 		$response = json_decode($json, true);
 		if ($response == null) {
@@ -88,6 +92,7 @@ class Application {
 			'name' => $this->name,
 			'manager' => $this->manager,
 			'vmid' => $this->vmid,
+			'status' => $this->status,
 		);
 	}
 }

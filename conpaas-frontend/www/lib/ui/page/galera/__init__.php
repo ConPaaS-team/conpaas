@@ -11,7 +11,7 @@ class GaleraPage extends ServicePage {
 	public function __construct(Service $service) {
 		parent::__construct($service);
 		$this->addJS('https://www.google.com/jsapi');
-                $this->addJS('http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js');
+        $this->addJS('http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js');
 		$this->addJS('js/jquery.form.js');
 		$this->addJS('js/galera.js');
 		

@@ -56,11 +56,20 @@ class XtreemFSManager(BaseManager):
         self.osd_uuid_volume_map = {}
 
         # Setup the clouds' controller
-        self.controller.generate_context('xtreemfs')
+        # self.controller.generate_context('xtreemfs')
         
         # filename of the client certificate
         self.client_cert_filename = self.config_parser.get('manager', 'CERT_DIR') + "/client.p12"
         self.client_cert_passphrase = "asdf1234"
+
+    def get_service_type(self):
+        return 'xtreemfs'
+
+    def get_starting_nodes(self):
+        device_name=self.config_parser.get('manager', 'DEV_TARGET')
+        volume = {'vol_name':'osd-%(vm_id)s', 'vol_size': self.osd_volume_size, 'dev_name':device_name}
+        nodes = [{'cloud':None, 'volumes':[volume]}]
+        return nodes
 
     def __get__uuid(self, node_id, node_type):
         if node_type == 'dir':
@@ -188,34 +197,38 @@ class XtreemFSManager(BaseManager):
             if remove:
                 del self.mrc_node_uuid_map[node.id]
 
-    def _start_osd(self, nodes, cloud=None):
+    def _start_osd(self, nodes):
         dev_name = None
         for idx, node in enumerate(nodes):
-            osd_uuid = self.__get__uuid(node.id, 'osd')
 
-            volume_associated = osd_uuid in self.osd_uuid_volume_map
+            # osd_uuid = self.__get__uuid(node.id, 'osd')
 
-            # We need a storage volume for each OSD node. Check if this OSD
-            # node needs a new volume to be created.
-            if volume_associated:
-                # No need to create a new volume.
-                volume = self.get_volume(self.osd_uuid_volume_map[osd_uuid])
+            # volume_associated = osd_uuid in self.osd_uuid_volume_map
 
-                self.logger.debug(
-                    '%s already has an associated storage volume (%s)' %
-                        (osd_uuid, volume.id))
-            else:
-                # We need to create a new volume.
-                volume_name = "osd-%s" % osd_uuid
-                volume = self.create_volume(self.osd_volume_size, volume_name,
-                        node.vmid, cloud)
-                self.osd_uuid_volume_map[osd_uuid] = volume.id
+            # # We need a storage volume for each OSD node. Check if this OSD
+            # # node needs a new volume to be created.
+            # if volume_associated:
+            #     # No need to create a new volume.
+            #     volume = self.get_volume(self.osd_uuid_volume_map[osd_uuid])
 
-            try:
-                _, dev_name = self.attach_volume(volume.id, node.vmid)
-            except Exception, err:
-                self.logger.error("attach_volume: %s" % err)
+            #     self.logger.debug(
+            #         '%s already has an associated storage volume (%s)' %
+            #             (osd_uuid, volume.id))
+            # else:
+            #     # We need to create a new volume.
+            #     volume_name = "osd-%s" % osd_uuid
+            #     volume = self.create_volume(self.osd_volume_size, volume_name,
+            #             node.vmid, cloud)
+            #     self.osd_uuid_volume_map[osd_uuid] = volume.id
 
+            # try:
+            #     _, dev_name = self.attach_volume(volume.id, node.vmid)
+            # except Exception, err:
+            #     self.logger.error("attach_volume: %s" % err)
+            volume_associated = False
+            osd_uuid = node.volumes[0].vol_name
+            self.osd_uuid_volume_map[osd_uuid] = node.volumes[0].vol_id
+            dev_name = node.volumes[0].dev_name
             try:
                 client.createOSD(node.ip, 5555, self.dirNodes[0].ip, osd_uuid,
                         mkfs=not volume_associated, device_name=dev_name)
@@ -223,6 +236,42 @@ class XtreemFSManager(BaseManager):
                 self.logger.exception('Failed to start OSD at node %s' % node)
                 self.state = self.S_ERROR
                 raise
+
+    # def _start_osd(self, nodes, cloud=None):
+    #     dev_name = None
+    #     for idx, node in enumerate(nodes):
+    #         osd_uuid = self.__get__uuid(node.id, 'osd')
+
+    #         volume_associated = osd_uuid in self.osd_uuid_volume_map
+
+    #         # We need a storage volume for each OSD node. Check if this OSD
+    #         # node needs a new volume to be created.
+    #         if volume_associated:
+    #             # No need to create a new volume.
+    #             volume = self.get_volume(self.osd_uuid_volume_map[osd_uuid])
+
+    #             self.logger.debug(
+    #                 '%s already has an associated storage volume (%s)' %
+    #                     (osd_uuid, volume.id))
+    #         else:
+    #             # We need to create a new volume.
+    #             volume_name = "osd-%s" % osd_uuid
+    #             volume = self.create_volume(self.osd_volume_size, volume_name,
+    #                     node.vmid, cloud)
+    #             self.osd_uuid_volume_map[osd_uuid] = volume.id
+
+    #         try:
+    #             _, dev_name = self.attach_volume(volume.id, node.vmid)
+    #         except Exception, err:
+    #             self.logger.error("attach_volume: %s" % err)
+
+    #         try:
+    #             client.createOSD(node.ip, 5555, self.dirNodes[0].ip, osd_uuid,
+    #                     mkfs=not volume_associated, device_name=dev_name)
+    #         except client.AgentException:
+    #             self.logger.exception('Failed to start OSD at node %s' % node)
+    #             self.state = self.S_ERROR
+    #             raise
 
     def _stop_osd(self, nodes, remove, drain):
         """Stop OSD service on the given nodes.
@@ -253,57 +302,85 @@ class XtreemFSManager(BaseManager):
             else:
                 self.logger.debug('Not destroying volume %s' % volume_id)
 
-    def _do_startup(self, cloud, resuming=False):
-        """Starts up the service. The first nodes will contain all services. 
+
+    def on_start(self, nodes, resuming=False):
+        # use this node for DIR, MRC and OSD
+        # self.nodes += node_instances
+        self.dirNodes += nodes
+        self.mrcNodes += nodes
+        self.osdNodes += nodes
+
+        if not resuming:
+            # create certificates for DIR, MRC, OSD and copy them to the agent 
+            self._create_certs(nodes)
+            # create a client certificate used by the manager to invoke xtreemfs operations
+            open(self.client_cert_filename, 'wb').write(self._create_client_cert(self.client_cert_passphrase, True))
         
-        If 'resuming' is set to True, we do not start XtreemFS services now.
-        set_service_snapshot will do that.
-        """
-        startCloud = self._init_cloud(cloud)
-        try:
-            # NOTE: The following service structure is enforce:
-            #       - the first node contains a DIR, MRC and OSD,
-            #         those services can not be removed
-            #       - added DIR, MRC and OSD services will all run
-            #         on exclusive nodes
-            #       - all explicitly added services can be removed
+        # start DIR, MRC, OSD
+        if not resuming:
+            self._start_dir(self.dirNodes)
+            self._start_mrc(self.mrcNodes)
+            self._start_osd(self.osdNodes)
 
-            # create 1 node
-            node_instances = self.controller.create_nodes(1,
-                client.check_agent_process, 5555, startCloud)
+        # at the startup the DIR node will have all the services
+        self.dirCount = 1
+        self.mrcCount = 1
+        self.osdCount = 1
+
+        self.logger.info('Created 1 node with DIR, MRC and OSD services')
+        self.logger.info('XtreemFS service was started up')
+
+    # def _do_startup(self, cloud, resuming=False):
+    #     """Starts up the service. The first nodes will contain all services. 
+        
+    #     If 'resuming' is set to True, we do not start XtreemFS services now.
+    #     set_service_snapshot will do that.
+    #     """
+    #     startCloud = self._init_cloud(cloud)
+    #     try:
+    #         # NOTE: The following service structure is enforce:
+    #         #       - the first node contains a DIR, MRC and OSD,
+    #         #         those services can not be removed
+    #         #       - added DIR, MRC and OSD services will all run
+    #         #         on exclusive nodes
+    #         #       - all explicitly added services can be removed
+
+    #         # create 1 node
+    #         node_instances = self.controller.create_nodes(1,
+    #             client.check_agent_process, 5555, startCloud)
           
-            # use this node for DIR, MRC and OSD
-            self.nodes += node_instances
-            self.dirNodes += node_instances
-            self.mrcNodes += node_instances
-            self.osdNodes += node_instances
+    #         # use this node for DIR, MRC and OSD
+    #         self.nodes += node_instances
+    #         self.dirNodes += node_instances
+    #         self.mrcNodes += node_instances
+    #         self.osdNodes += node_instances
 
-            if not resuming:
-                # create certificates for DIR, MRC, OSD and copy them to the agent 
-                self._create_certs(node_instances)
-                # create a client certificate used by the manager to invoke xtreemfs operations
-                open(self.client_cert_filename, 'wb').write(self._create_client_cert(self.client_cert_passphrase, True))
+    #         if not resuming:
+    #             # create certificates for DIR, MRC, OSD and copy them to the agent 
+    #             self._create_certs(node_instances)
+    #             # create a client certificate used by the manager to invoke xtreemfs operations
+    #             open(self.client_cert_filename, 'wb').write(self._create_client_cert(self.client_cert_passphrase, True))
             
-            # start DIR, MRC, OSD
-            if not resuming:
-                self._start_dir(self.dirNodes)
-                self._start_mrc(self.mrcNodes)
-                self._start_osd(self.osdNodes, startCloud)
+    #         # start DIR, MRC, OSD
+    #         if not resuming:
+    #             self._start_dir(self.dirNodes)
+    #             self._start_mrc(self.mrcNodes)
+    #             self._start_osd(self.osdNodes, startCloud)
 
-            # at the startup the DIR node will have all the services
-            self.dirCount = 1
-            self.mrcCount = 1
-            self.osdCount = 1
+    #         # at the startup the DIR node will have all the services
+    #         self.dirCount = 1
+    #         self.mrcCount = 1
+    #         self.osdCount = 1
 
-            self.logger.info('Created 1 node with DIR, MRC and OSD services')
-        except:
-            self.controller.delete_nodes(node_instances)
-            self.logger.exception('do_startup: Failed to request a new node')
-            self.state = self.S_STOPPED
-            return
+    #         self.logger.info('Created 1 node with DIR, MRC and OSD services')
+    #     except:
+    #         self.controller.delete_nodes(node_instances)
+    #         self.logger.exception('do_startup: Failed to request a new node')
+    #         self.state = self.S_STOPPED
+    #         return
 
-        self.logger.info('XtreemFS service was started up')    
-        self.state = self.S_RUNNING
+    #     self.logger.info('XtreemFS service was started up')    
+    #     self.state = self.S_RUNNING
 
     def _start_all(self):
         self._start_dir(self.dirNodes)

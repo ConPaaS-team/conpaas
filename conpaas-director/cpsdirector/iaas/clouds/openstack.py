@@ -80,38 +80,87 @@ class OpenStackCloud(Cloud):
         if context is not None:
             self._context = context
 
-    def new_instances(self, count, name='conpaas', inst_type=None):
+    # def new_instances(self, count, name='conpaas', inst_type=None, volumes={}):
+    #     if self.connected is False:
+    #         self._connect()
+
+    #     flavor = self.size
+    #     if inst_type is not None:
+    #         flavor = self.get_by_id_or_name('SIZE_ID', inst_type, self.driver.list_sizes())
+        
+    #     kwargs = {
+    #         'size': flavor,
+    #         'image': self.img,
+    #         'name': name,
+    #         'ex_mincount': str(count),
+    #         'ex_maxcount': str(count),
+    #         'ex_securitygroup': self.sg,
+    #         'ex_keyname': self.key_name,
+    #         'ex_userdata': self.get_context()
+    #     }
+        
+    #     if self.network:
+    #         kwargs['networks'] = [self.network]
+
+    #     lc_nodes = self.driver.create_node(**kwargs)
+    #     if not self.auto_assing_floating:
+    #         self.associate_floating_ips(lc_nodes)
+
+    #     nodes = self._create_service_nodes(lc_nodes)
+
+    #     if count > 1:
+    #         return nodes
+
+    #     return [ nodes ]
+
+    def new_instances(self, nodes_info):
         if self.connected is False:
             self._connect()
-
-        flavor = self.size
-        if inst_type is not None:
-            flavor = self.get_by_id_or_name('SIZE_ID', inst_type, self.driver.list_sizes())
         
-        kwargs = {
-            'size': flavor,
-            'image': self.img,
-            'name': name,
-            'ex_mincount': str(count),
-            'ex_maxcount': str(count),
-            'ex_securitygroup': self.sg,
-            'ex_keyname': self.key_name,
-            'ex_userdata': self.get_context()
-        }
+    
+        lc_nodes = []
         
-        if self.network:
-            kwargs['networks'] = [self.network]
+        for node_info in nodes_info:
+            flavor = self.size
+            if 'inst_type' in node_info and node_info['inst_type'] is not None:
+                flavor = self.get_by_id_or_name('SIZE_ID', node_info['inst_type'], self.driver.list_sizes())
+            kwargs = {
+                'size': flavor,
+                'image': self.img,
+                'name': node_info['name'],
+                'ex_mincount': 1,
+                'ex_maxcount': 1,
+                'ex_securitygroup': self.sg,
+                'ex_keyname': self.key_name,
+                'ex_userdata': self.get_context()
+            }
+            
+            if self.network:
+                kwargs['networks'] = [self.network]
 
-        lc_nodes = self.driver.create_node(**kwargs)
+            lc_node = self.driver.create_node(**kwargs)
+            
+            node_info['id']=lc_node.id
+
+            if 'volumes' in node_info:
+                for vol in node_info['volumes']:
+                    vol['vm_id'] = lc_node.id
+                    lc_volume=self.create_volume(vol['vol_size'], vol['vol_name'] % vol)
+                    vol['vol_id'] = lc_volume.id
+                    class volume:
+                        id = vol['vol_id']
+                    class node:
+                        id = vol['vm_id']
+                    self.attach_volume(node, volume, vol['dev_name'])
+
+            lc_nodes += [lc_node]
+        
         if not self.auto_assing_floating:
             self.associate_floating_ips(lc_nodes)
 
-        nodes = self._create_service_nodes(lc_nodes)
+        nodes = self._create_service_nodes(lc_nodes, nodes_info)
 
-        if count > 1:
-            return nodes
-
-        return [ nodes ]
+        return nodes 
 
     def associate_floating_ips(self, instances):
         
@@ -126,7 +175,7 @@ class OpenStackCloud(Cloud):
                     self.driver.ex_attach_floating_ip_to_node(instance, self.get_floating_ip().ip_address)
                     break
                 except BaseHTTPError:
-                    self.logger.debug('Attaching failed probly because the VM was not on a network yet, let\'s wait a bit and retry')
+                    self.logger.debug('Attaching IP failed probly because the VM was not on a network yet, let\'s wait a bit and retry')
                     time.sleep(1)
                     nr_attempts -= 1
 
@@ -146,4 +195,19 @@ class OpenStackCloud(Cloud):
 
     def attach_volume(self, node, volume, device):
         device = '/dev/%s' % device
-        return self.driver.attach_volume(node, volume, device)
+        attach_res = None
+        trials = 5
+        while trials > 0:
+            trials -= 1
+            try:
+                attach_res = self.driver.attach_volume(node, volume, device)
+            except Exception, err: # FIXME: be more specific
+                self.logger.debug('Attaching volume failed. Error: %s' % err)
+                attach_res = None
+                time.sleep(5)
+
+        return attach_res
+
+    def detach_volume(self, volume):
+        volume = filter(lambda x: x.id==volume.id, self.driver.list_volumes())[0]
+        return self.driver.detach_volume(volume)

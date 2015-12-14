@@ -186,10 +186,10 @@ def _add(service_type, cloud_name, app_id):
         db.session.add(s)
         db.session.commit()
         log('%s (id=%s) created properly' % (s.name, s.sid))
-        return build_response(jsonify(s.to_dict()))
+        return s.to_dict()
 
     
-    return build_response(jsonify({ 'error': True,'msg': res['error'] }))
+    return { 'error': True,'msg': res['error'] }
 
 
 @service_page.route("/add/<servicetype>", methods=['POST'])
@@ -208,7 +208,7 @@ def add(servicetype, cloudname="default"):
     """
     appid = request.values.get('appid')
 
-    return _add(servicetype, cloudname, appid)
+    return build_response(jsonify(_add(servicetype, cloudname, appid)))
 
 def _rename(app_id, serviceid, newname):
     log('User %s attempting to rename service %s' % (g.user.uid, serviceid))

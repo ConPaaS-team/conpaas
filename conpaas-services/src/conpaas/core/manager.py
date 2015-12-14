@@ -106,13 +106,13 @@ class BaseManager(ConpaasRequestHandlerComponent):
     def on_start(self, nodes):
         raise Exception("start method not implemented for this service")
 
-    def on_stop(self, kwargs):
+    def on_stop(self):
         raise Exception("stop method not implemented for this service")
 
     def on_add_nodes(self, nodes):
         raise Exception("add_nodes method not implemented for this service")
 
-    def on_remove_nodes(self, nodes):
+    def on_remove_nodes(self, noderoles):
         raise Exception("remove_nodes method not implemented for this service")
 
     def on_create_volume(self, node, volume):
@@ -121,8 +121,8 @@ class BaseManager(ConpaasRequestHandlerComponent):
     def on_delete_volume(self, node, volume):
         pass
 
-    def get_nr_starting_agents(self):
-        return 1
+    def get_starting_nodes(self):
+        return [{'cloud':None}]
 
     # this should be overwritten from the service managers if applicable 
     def get_context_replacement(self):
@@ -307,6 +307,7 @@ class ApplicationManager(BaseManager):
            for func_name in service_manager_exposed_functions[http_method]:
                self.httpsserver._register_method(http_method, self.service_id, func_name, service_manager_exposed_functions[http_method][func_name])
 
+
         self.state = self.S_RUNNING
         return HttpJsonResponse({'service_id':self.service_id})
 
@@ -316,9 +317,7 @@ class ApplicationManager(BaseManager):
         exp_params = [('service_id', is_in_list(self.httpsserver.instances.keys()))]
         service_id = check_arguments(exp_params, kwargs)
 
-        del self.httpsserver.instances[service_id]
-        self.httpsserver._deregister_methods(service_id)
-        self.state = self.S_RUNNING
+        Thread(target=self._do_stop_service, args=[service_id, True]).start()
         return HttpJsonResponse()
 
     @expose('POST')
@@ -342,53 +341,89 @@ class ApplicationManager(BaseManager):
 
     def _do_start_service(self, service_id, cloud):
         service_manager = self.httpsserver.instances[service_id]
-        count = service_manager.get_nr_starting_agents()
-        nodes = self.callbacker.create_nodes(count, service_id, service_manager)
+        nodes_info = service_manager.get_starting_nodes()
+        for ni in nodes_info:
+            ni['cloud'] = cloud
+        nodes = self.callbacker.create_nodes(nodes_info, service_id, service_manager)
         self.nodes += nodes
+        service_manager.nodes = nodes
         service_manager.on_start(nodes)
+        service_manager.state = self.S_RUNNING
 
     @expose('POST')
     def stop_service(self, kwargs):
         service_id = kwargs.pop('service_id')
         service_manager = self.httpsserver.instances[service_id]
         service_manager.state = self.S_EPILOGUE
-        Thread(target=self._do_stop_service, args=[service_id]).start()
+        Thread(target=self._do_stop_service, args=[service_id, False]).start()
         return HttpJsonResponse({ 'state': service_manager.state })
 
-    def _do_stop_service(self, service_id):
+    def _do_stop_service(self, service_id, remove):
         service_manager = self.httpsserver.instances[service_id]
-        nodes = service_manager.on_stop()
-        for node in nodes:
-            self.nodes.remove(node)
-        self.callbacker.remove_nodes(nodes)
-        service_manager.state = self.S_STOPPED
+        if service_manager.state != self.S_INIT:
+            nodes = service_manager.on_stop()
+            service_manager.nodes = []
+            for node in nodes:
+                
+                # remove also the volumes associated to those nodes
+                for k, v in self.volumes.items():
+                    if v['vm_id']==node.id:
+                        del self.volumes[k]    
+                   
+                self.nodes.remove(filter(lambda n: n.id == node.id, self.nodes)[0])
+            self.callbacker.remove_nodes(nodes)
+            service_manager.state = self.S_STOPPED
+
+        if remove:
+            del self.httpsserver.instances[service_id]
+            self.httpsserver._deregister_methods(service_id)
+            self.state = self.S_RUNNING
 
     @expose('POST')
     def add_nodes(self, kwargs):
-        # COMMENT(genc): how are roles going to be managed here?
-        exp_params = [('service_id', is_in_list(self.httpsserver.instances.keys())),
-                      ('cloud', is_string),
-                      ('node', is_pos_int)]
         
-        [service_id, cloud, count ] = check_arguments(exp_params, kwargs)
+        exp_params = [('service_id', is_in_list(self.httpsserver.instances.keys())),
+                      ('nodes', is_dict),
+                      # ('cloud', is_string), ('node', is_pos_int)]
+                      ('cloud', is_string)]
+        
+        # [service_id, cloud, count ] = check_arguments(exp_params, kwargs)
+        [service_id, noderoles, cloud ] = check_arguments(exp_params, kwargs)
+        
         service_manager = self.httpsserver.instances[service_id]
         service_manager.state = self.S_ADAPTING
-        Thread(target=self._do_add_nodes, args=[service_id, count, cloud]).start()
+        Thread(target=self._do_add_nodes, args=[service_id, noderoles, cloud]).start()
         return HttpJsonResponse({ 'state': service_manager.state })
 
-    def _do_add_nodes(self, service_id, count, cloud):
+    def _do_add_nodes(self, service_id, noderoles, cloud):
         service_manager = self.httpsserver.instances[service_id]
-        nodes = self.callbacker.create_nodes(count, service_id, service_manager)
+        count = sum(noderoles.values())
+        nodes_info = [{'cloud':cloud} for _ in range(count)]
+        nodes = self.callbacker.create_nodes(nodes_info, service_id, service_manager)
+        #assing roles
+        roles = []
+        for role in noderoles:
+            for count in range(noderoles[role]):
+                roles.append(role)
+
+        for i in range(len(nodes)):
+            nodes[i].role = roles[i]
+
         self.nodes += nodes
+        service_manager.nodes += nodes
         service_manager.on_add_nodes(nodes)
         service_manager.state = self.S_RUNNING
 
     @expose('POST')
     def remove_nodes(self, kwargs):
         # COMMENT(genc): how are roles going to be managed here?
-        exp_params = [('service_id', is_in_list(self.httpsserver.instances.keys())),
-                      ('node', is_pos_int)]
-        [service_id, count ] = check_arguments(exp_params, kwargs)
+        # exp_params = [('service_id', is_in_list(self.httpsserver.instances.keys())),('node', is_pos_int)]
+        exp_params = [('service_id', is_in_list(self.httpsserver.instances.keys())),('nodes', is_dict)]
+        # [service_id, count ] = check_arguments(exp_params, kwargs)
+        [service_id, noderoles] = check_arguments(exp_params, kwargs)
+
+        count = sum(noderoles.values())
+
         service_manager = self.httpsserver.instances[service_id]
 
         if count > len(service_manager.nodes):
@@ -397,16 +432,21 @@ class ApplicationManager(BaseManager):
 
         
         service_manager.state = self.S_ADAPTING
-        Thread(target=self._do_remove_nodes, args=[service_id, count]).start()
+        Thread(target=self._do_remove_nodes, args=[service_id, noderoles]).start()
         return HttpJsonResponse({ 'state': service_manager.state })
 
-    def _do_remove_nodes(self, service_id, count):
+    def _do_remove_nodes(self, service_id, noderoles):
         service_manager = self.httpsserver.instances[service_id]
-        nodes = service_manager.on_remove_nodes(count)
+        nodes = service_manager.on_remove_nodes(noderoles)
         for node in nodes:
-            self.nodes.remove(node)
+            for k, v in self.volumes.items():
+                    if v['vm_id']==node.id:
+                        del self.volumes[k]    
+            self.nodes.remove(filter(lambda n: n.id == node.id, self.nodes)[0])
+            service_manager.nodes.remove(filter(lambda n: n.id == node.id, service_manager.nodes)[0])
+        self.logger.debug("Current nodes: %s, current volumes: %s" % (self.nodes, self.volumes))
         self.callbacker.remove_nodes(nodes)
-        # (genc) check here if there are no more nodes left and stop if needed
+        
 
     @expose('POST')
     def create_volume(self, kwargs):
@@ -611,7 +651,9 @@ class ApplicationManager(BaseManager):
     @expose('POST')
     def stopall(self, kwargs):
         for service_id in self.httpsserver.instances: 
-            self.httpsserver.instances[service_id]._do_stop()
+            if service_id != 0:
+                self._do_stop_service(service_id)
+            # self.httpsserver.instances[service_id]._do_stop()
         return HttpJsonResponse()
 
     def _do_stop(self):
