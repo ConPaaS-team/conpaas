@@ -38,7 +38,6 @@ class GaleraManager(BaseManager):
 
         #(genc): this is ignored at the moment
         # self.controller.config_clouds({"mem": "512", "cpu": "1"})
-        self.state = self.S_INIT
         self.config = Configuration(conf)
         self.logger.debug("Leaving GaleraServer initialization")
 
@@ -59,6 +58,7 @@ class GaleraManager(BaseManager):
     def on_start(self, nodes):
         self._start_mysqld(nodes)
         self.config.addMySQLServiceNodes(nodes)
+        self.state_set(self.S_RUNNING)
 
     # @expose('POST')
     # def startup(self, kwargs):
@@ -83,7 +83,7 @@ class GaleraManager(BaseManager):
     #     except Exception as ex:
     #         return HttpErrorResponse("%s" % ex)
 
-    #     self.state = self.S_PROLOGUE
+    #     self.state_set(self.S_PROLOGUE)
     #     Thread(target=self._do_startup, args=(start_cloud, )).start()
     #     return HttpJsonResponse({'state': self.state})
 
@@ -110,9 +110,9 @@ class GaleraManager(BaseManager):
     #         # rollback
     #         self.controller.delete_nodes(node_instances)
     #         self.logger.exception('do_startup: Failed to request a new node on cloud %s: %s.' % (start_cloud.get_cloud_name(), ex))
-    #         self.state = self.S_STOPPED
+    #         self.state_set(self.S_STOPPED)
     #         return
-    #     self.state = self.S_RUNNING
+    #     self.state_set(self.S_RUNNING)
 
     # def _start_mysqld(self, nodes, start_cloud):
     #     dev_name = None
@@ -286,7 +286,7 @@ class GaleraManager(BaseManager):
         if nodes + glb_nodes <= 0:
             return HttpErrorResponse('Both arguments "nodes" and "glb_nodes" are null.')
 
-        self.state = self.S_ADAPTING
+        self.state_set(self.S_ADAPTING)
 
         # TODO: check if argument "cloud" is an known cloud
         if nodes > 0:
@@ -319,7 +319,7 @@ class GaleraManager(BaseManager):
                 agent.stop(node.ip, self.config.AGENT_PORT)
             self.controller.delete_nodes(node_instances)
             self.logger.exception('Could not add nodes: %s' % ex)
-        self.state = self.S_RUNNING
+        self.state_set(self.S_RUNNING)
 
     @expose('GET')
     def getMeanLoad(self, kwargs):
@@ -479,7 +479,7 @@ class GaleraManager(BaseManager):
         if glb_nodes > 0 and glb_nodes > total_glb_nodes:
             return HttpErrorResponse('Cannot remove %s nodes: %s nodes at most.'
                                      % (glb_nodes, total_glb_nodes))
-        self.state = self.S_ADAPTING
+        self.state_set(self.S_ADAPTING)
         rm_reg_nodes = self.config.get_nodes()[:nodes]
         rm_glb_nodes = self.config.get_glb_nodes()[:glb_nodes]
         Thread(target=self._do_remove_nodes, args=[rm_reg_nodes,rm_glb_nodes]).start()
@@ -501,9 +501,9 @@ class GaleraManager(BaseManager):
         self.controller.delete_nodes(nodes)
         self.config.remove_nodes(nodes)
         if (len(self.config.get_nodes()) +len(self.config.get_glb_nodes())==0 ):
-            self.state=self.S_STOPPED
+            self.state_set(self.S_STOPPED)
         else:
-            self.state = self.S_RUNNING
+            self.state_set(self.S_RUNNING)
 
     @expose('POST')
     def migrate_nodes(self, kwargs):
@@ -567,7 +567,7 @@ class GaleraManager(BaseManager):
         if migration_plan == []:
             return HttpErrorResponse('ERROR: argument is missing the nodes to migrate.')
 
-        self.state = self.S_ADAPTING
+        self.state_set(self.S_ADAPTING)
         Thread(target=self._do_migrate_nodes, args=[migration_plan, delay]).start()
         return HttpJsonResponse()
 
@@ -601,7 +601,7 @@ class GaleraManager(BaseManager):
             self.config.remove_nodes(new_nodes)
             self.logger.exception('_do_migrate_nodes: Could not'
                                   ' start nodes: %s' % ex)
-            self.state = self.S_RUNNING
+            self.state_set(self.S_RUNNING)
             raise ex
 
         self.logger.debug("Migration: new nodes %s created and"
@@ -619,15 +619,15 @@ class GaleraManager(BaseManager):
                               " the old nodes %s after %d seconds."
                               % (old_nodes, delay))
             self._start_timer(delay, self._do_migrate_finalize, old_nodes)
-            self.state = self.S_RUNNING
+            self.state_set(self.S_RUNNING)
 
     def _do_migrate_finalize(self, old_nodes):
-        self.state = self.S_ADAPTING
+        self.state_set(self.S_ADAPTING)
         for node in old_nodes:
             agent.stop(node.ip, self.config.AGENT_PORT)
         self.controller.delete_nodes(old_nodes)
         self.config.remove_nodes(old_nodes)
-        self.state = self.S_RUNNING
+        self.state_set(self.S_RUNNING)
         self.logger.info("Migration: old nodes %s have been removed."
                          " END of migration." % old_nodes)
 
@@ -668,7 +668,7 @@ class GaleraManager(BaseManager):
         except Exception as ex:
             return HttpErrorResponse("%s" % ex)
 
-        self.state = self.S_EPILOGUE
+        self.state_set(self.S_EPILOGUE)
         Thread(target=self._do_stop, args=[]).start()
         return HttpJsonResponse({'state': self.state})
 
@@ -678,7 +678,7 @@ class GaleraManager(BaseManager):
         self.config.serviceNodes = {}
         #self._do_remove_nodes(self.config.glb_service_nodes.values())
         self.config.glb_service_nodes = {}
-        self.state = self.S_STOPPED
+        self.state_set(self.S_STOPPED)
 
     @expose('POST')
     def set_password(self, kwargs):
@@ -794,7 +794,7 @@ class GaleraManager(BaseManager):
             ip = check_arguments(exp_params, kwargs)
         except Exception as ex:
             return HttpErrorResponse("%s" % ex)
-        self.state = self.S_ADAPTING
+        self.state_set(self.S_ADAPTING)
         rm_reg_nodes = self.config.get_nodes()
         rm_glb_nodes = self.config.get_glb_nodes()
         is_in_glb=False
@@ -849,5 +849,3 @@ class GaleraManager(BaseManager):
         except Exception as ex:
             return HttpErrorResponse("%s" % ex)
         return HttpJsonResponse("OK!")
-
-

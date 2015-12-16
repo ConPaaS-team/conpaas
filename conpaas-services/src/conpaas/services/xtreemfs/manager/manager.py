@@ -162,7 +162,7 @@ class XtreemFSManager(BaseManager):
                 client.createDIR(node.ip, 5555, dir_uuid)
             except client.AgentException:
                 self.logger.exception('Failed to start DIR at node %s' % node)
-                self.state = self.S_ERROR
+                self.state_set(self.S_ERROR)
                 raise
 
     def _stop_dir(self, nodes, remove):
@@ -171,7 +171,7 @@ class XtreemFSManager(BaseManager):
                 client.stopDIR(node.ip, 5555)
             except client.AgentException:
                 self.logger.exception('Failed to stop DIR at node %s' % node)
-                self.state = self.S_ERROR
+                self.state_set(self.S_ERROR)
                 raise
             if remove:
                 del self.dir_node_uuid_map[node.id]
@@ -183,7 +183,7 @@ class XtreemFSManager(BaseManager):
                 client.createMRC(node.ip, 5555, self.dirNodes[0].ip, mrc_uuid)
             except client.AgentException:
                 self.logger.exception('Failed to start MRC at node %s' % node)
-                self.state = self.S_ERROR
+                self.state_set(self.S_ERROR)
                 raise
 
     def _stop_mrc(self, nodes, remove):
@@ -192,7 +192,7 @@ class XtreemFSManager(BaseManager):
                 client.stopMRC(node.ip, 5555)
             except client.AgentException:
                 self.logger.exception('Failed to stop MRC at node %s' % node)
-                self.state = self.S_ERROR
+                self.state_set(self.S_ERROR)
                 raise
             if remove:
                 del self.mrc_node_uuid_map[node.id]
@@ -234,7 +234,7 @@ class XtreemFSManager(BaseManager):
                         mkfs=not volume_associated, device_name=dev_name)
             except client.AgentException:
                 self.logger.exception('Failed to start OSD at node %s' % node)
-                self.state = self.S_ERROR
+                self.state_set(self.S_ERROR)
                 raise
 
     # def _start_osd(self, nodes, cloud=None):
@@ -270,7 +270,7 @@ class XtreemFSManager(BaseManager):
     #                     mkfs=not volume_associated, device_name=dev_name)
     #         except client.AgentException:
     #             self.logger.exception('Failed to start OSD at node %s' % node)
-    #             self.state = self.S_ERROR
+    #             self.state_set(self.S_ERROR)
     #             raise
 
     def _stop_osd(self, nodes, remove, drain):
@@ -288,7 +288,7 @@ class XtreemFSManager(BaseManager):
                 client.stopOSD(node.ip, 5555, drain)
             except client.AgentException:
                 self.logger.exception('Failed to stop OSD at node %s' % node)
-                self.state = self.S_ERROR
+                self.state_set(self.S_ERROR)
                 raise
 
             volume_id = self.osd_uuid_volume_map[self.osd_node_uuid_map[node.id]]
@@ -329,6 +329,7 @@ class XtreemFSManager(BaseManager):
 
         self.logger.info('Created 1 node with DIR, MRC and OSD services')
         self.logger.info('XtreemFS service was started up')
+        self.state_set(self.S_RUNNING)
 
     # def _do_startup(self, cloud, resuming=False):
     #     """Starts up the service. The first nodes will contain all services. 
@@ -376,11 +377,11 @@ class XtreemFSManager(BaseManager):
     #     except:
     #         self.controller.delete_nodes(node_instances)
     #         self.logger.exception('do_startup: Failed to request a new node')
-    #         self.state = self.S_STOPPED
+    #         self.state_set(self.S_STOPPED)
     #         return
 
     #     self.logger.info('XtreemFS service was started up')    
-    #     self.state = self.S_RUNNING
+    #     self.state_set(self.S_RUNNING)
 
     def _start_all(self):
         self._start_dir(self.dirNodes)
@@ -417,13 +418,13 @@ class XtreemFSManager(BaseManager):
 
         self.osd_uuid_volume_map = {}
 
-        self.state = self.S_STOPPED
+        self.state_set(self.S_STOPPED)
         return HttpJsonResponse()
 
     @expose('POST')
     def add_nodes(self, kwargs):
         #self.controller.add_context_replacement(dict(STRING='xtreemfs'))
-        if self.state != self.S_RUNNING:
+        if self.state_get() != self.S_RUNNING:
             return HttpErrorResponse('ERROR: Wrong state to add_nodes')
 
         nr_dir = 0
@@ -462,7 +463,7 @@ class XtreemFSManager(BaseManager):
         if nr_osd < 0: 
             return invalid_arg('Expected a positive integer value for "nr osd"')
 
-        self.state = self.S_ADAPTING
+        self.state_set(self.S_ADAPTING)
         Thread(target=self._do_add_nodes, args=[nr_dir, nr_mrc, nr_osd, kwargs['cloud'], resuming]).start()
         return HttpJsonResponse()
     
@@ -482,7 +483,7 @@ class XtreemFSManager(BaseManager):
                 client.check_agent_process, 5555, startCloud)      
         except:
             self.logger.exception('_do_add_nodes: Failed to request a new node')
-            self.state = self.S_STOPPED
+            self.state_set(self.S_STOPPED)
             return
 
         self.nodes += node_instances 
@@ -535,14 +536,14 @@ class XtreemFSManager(BaseManager):
         #    self.logger.info('Received %s from %s', data, node.id)         
         #    self.osdCount += 1
 
-        self.state = self.S_RUNNING
+        self.state_set(self.S_RUNNING)
         return HttpJsonResponse()
 
     @expose('GET')
     def list_nodes(self, kwargs):
         if len(kwargs) != 0:
             return HttpErrorResponse('ERROR: Arguments unexpected')
-        if self.state != self.S_RUNNING:
+        if self.state_get() != self.S_RUNNING:
             return HttpErrorResponse('ERROR: Wrong state to list_nodes')
         return HttpJsonResponse({
               'dir': [node.id for node in self.dirNodes ],
@@ -587,7 +588,7 @@ class XtreemFSManager(BaseManager):
 
     @expose('POST')
     def remove_nodes(self, kwargs):
-        if self.state != self.S_RUNNING:
+        if self.state_get() != self.S_RUNNING:
             return HttpErrorResponse('ERROR: Wrong state to remove_nodes')
 
         nr_dir = 0
@@ -627,7 +628,7 @@ class XtreemFSManager(BaseManager):
         if nr_osd > self.osdCount - 1: # we need at least 1 OSD
             return invalid_arg('Cannot remove_nodes that many OSD nodes')
 
-        self.state = self.S_ADAPTING
+        self.state_set(self.S_ADAPTING)
         Thread(target=self._do_remove_nodes, args=[nr_dir, nr_mrc, nr_osd]).start()
         return HttpJsonResponse()
 
@@ -661,7 +662,7 @@ class XtreemFSManager(BaseManager):
                 self.nodes.remove(node)
             self.osdCount -= nr_osd
 
-        self.state = self.S_RUNNING
+        self.state_set(self.S_RUNNING)
 
         # TODO: maybe re-enable when OSD-removal moves data to another node before shutting down the service.
         # if there are no more OSD nodes we need to start OSD service on the
@@ -675,7 +676,7 @@ class XtreemFSManager(BaseManager):
 
     @expose('POST')
     def createMRC(self, kwargs):
-        if self.state != self.S_RUNNING:
+        if self.state_get() != self.S_RUNNING:
             return HttpErrorResponse('ERROR: Wrong state to create MRC service')
         # Just createMRC from all the agents
         for node in self.nodes:
@@ -687,7 +688,7 @@ class XtreemFSManager(BaseManager):
 
     @expose('POST')
     def createDIR(self, kwargs):
-        if self.state != self.S_RUNNING:
+        if self.state_get() != self.S_RUNNING:
             return HttpErrorResponse('ERROR: Wrong state to create DIR service')
         # Just createDIR from all the agents
         for node in self.nodes:
@@ -699,7 +700,7 @@ class XtreemFSManager(BaseManager):
 
     @expose('POST')
     def createOSD(self, kwargs):
-        if self.state != self.S_RUNNING:
+        if self.state_get() != self.S_RUNNING:
             return HttpErrorResponse('ERROR: Wrong state to create OSD service')
         # Just createOSD from all the agents
         for node in self.nodes:
@@ -711,7 +712,7 @@ class XtreemFSManager(BaseManager):
     
     @expose('POST') 
     def createVolume(self, kwargs):
-        if self.state != self.S_RUNNING:
+        if self.state_get() != self.S_RUNNING:
             return HttpErrorResponse('ERROR: Wrong state to create Volume')
 
         if not 'volumeName' in kwargs:
@@ -744,7 +745,7 @@ class XtreemFSManager(BaseManager):
 
     @expose('POST') 
     def deleteVolume(self, kwargs):
-        if self.state != self.S_RUNNING:
+        if self.state_get() != self.S_RUNNING:
             return HttpErrorResponse('ERROR: Wrong state to delete Volume')
 
         if not 'volumeName' in kwargs:
@@ -776,7 +777,7 @@ class XtreemFSManager(BaseManager):
         if len(kwargs) != 0:
             return HttpErrorResponse('ERROR: Arguments unexpetced')
 
-        if self.state != self.S_RUNNING:
+        if self.state_get() != self.S_RUNNING:
             return HttpErrorResponse('ERROR: Wrong state to view volumes')
 
         args = [ 'lsfs.xtreemfs', 
@@ -897,7 +898,7 @@ class XtreemFSManager(BaseManager):
 
     @expose('POST')
     def set_osd_sel_policy(self, kwargs):
-        if self.state != self.S_RUNNING:
+        if self.state_get() != self.S_RUNNING:
             return HttpErrorResponse('ERROR: Wrong state to set OSD selection policy.')
 
         if not 'volumeName' in kwargs:
@@ -915,7 +916,7 @@ class XtreemFSManager(BaseManager):
 
     @expose('POST')
     def set_replica_sel_policy(self, kwargs):
-        if self.state != self.S_RUNNING:
+        if self.state_get() != self.S_RUNNING:
             return HttpErrorResponse('ERROR: Wrong state to set Replica selection policy.')
 
         if not 'volumeName' in kwargs:
@@ -933,7 +934,7 @@ class XtreemFSManager(BaseManager):
 
     @expose('POST')
     def set_replication_policy(self, kwargs):
-        if self.state != self.S_RUNNING:
+        if self.state_get() != self.S_RUNNING:
             return HttpErrorResponse('ERROR: Wrong state to set Replication policy.')
 
         if not 'volumeName' in kwargs:
@@ -956,7 +957,7 @@ class XtreemFSManager(BaseManager):
 
     @expose('POST')
     def set_striping_policy(self, kwargs):
-        if self.state != self.S_RUNNING:
+        if self.state_get() != self.S_RUNNING:
             return HttpErrorResponse('ERROR: Wrong state to set Striping policy.')
 
         if not 'volumeName' in kwargs:
@@ -1001,11 +1002,11 @@ class XtreemFSManager(BaseManager):
 
     @expose('POST')
     def get_service_snapshot(self, kwargs):
-        if self.state != self.S_RUNNING:
+        if self.state_get() != self.S_RUNNING:
             return HttpErrorResponse(
                 'ERROR: Wrong state to get service snapshot.')
 
-        self.state = self.S_EPILOGUE
+        self.state_set(self.S_EPILOGUE)
 
         # stop all agent services        
         self.logger.debug("Stopping all agent services")
@@ -1035,7 +1036,7 @@ class XtreemFSManager(BaseManager):
             except client.AgentException:
                 self.logger.exception('Failed to get snapshot from node %s' %
                         node)
-                self.state = self.S_ERROR
+                self.state_set(self.S_ERROR)
                 raise
 
             # Get ID of attached volume
@@ -1067,7 +1068,7 @@ class XtreemFSManager(BaseManager):
 
     @expose('POST')
     def set_service_snapshot(self, kwargs):
-        if self.state != self.S_RUNNING:
+        if self.state_get() != self.S_RUNNING:
             return HttpErrorResponse(
                 'ERROR: Wrong state to set service snapshot.')
 
@@ -1180,4 +1181,3 @@ class XtreemFSManager(BaseManager):
             return HttpErrorResponse("ERROR: Required argument (adminflag) doesn't exist")
         cert = self._create_client_cert(kwargs['passphrase'], kwargs['adminflag'])
         return HttpJsonResponse({'cert' : base64.b64encode(cert)}) 
-
