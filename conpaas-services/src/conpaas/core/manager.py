@@ -13,7 +13,7 @@ from threading import Thread
 import StringIO, ConfigParser
 import time, copy
 import os.path
-
+import os
 import subprocess
 
 from conpaas.core import https 
@@ -141,70 +141,7 @@ class BaseManager(ConpaasRequestHandlerComponent):
         except:
             return HttpErrorResponse('Failed to read log')
 
-    def upload_script(self, kwargs, filename):
-        """Write the file uploaded in kwargs['script'] to filesystem.
-
-        Return the script absoulte path on success, HttpErrorResponse on
-        failure.
-        """
-        self.logger.debug("upload_script: called with filename=%s" % filename)
-
-        # Check if the required argument 'script' is present
-        if 'script' not in kwargs:
-            return HttpErrorResponse(ManagerException(
-                ManagerException.E_ARGS_MISSING, 'script').message)
-
-        script = kwargs.pop('script')
-
-        # Check if any trailing parameter has been submitted
-        if len(kwargs) != 0:
-            return HttpErrorResponse(ManagerException(
-                ManagerException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
-
-        # Script has to be a FileUploadField
-        if not isinstance(script, FileUploadField):
-            return HttpErrorResponse(ManagerException(
-                ManagerException.E_ARGS_INVALID,
-                detail='script should be a file'
-            ).message)
-
-        basedir = self.config_parser.get('manager', 'CONPAAS_HOME')
-        fullpath = os.path.join(basedir, filename)
-
-        # Write the uploaded script to filesystem
-        open(fullpath, 'w').write(script.file.read())
-
-        self.logger.debug("upload_script: script uploaded successfully to '%s'"
-                          % fullpath)
-
-        # Return the script absolute path
-        return fullpath
-
-    @expose('UPLOAD')
-    def upload_startup_script(self, kwargs):
-        ret = self.upload_script(kwargs, 'startup.sh')
-
-        if type(ret) is HttpErrorResponse:
-            # Something went wrong. Return the error
-            return ret
-
-        # Rebuild context script 
-        # TODO (genc): fix this
-        # self.controller.generate_context("web")
-
-        # All is good. Return the filename of the uploaded script
-        return HttpJsonResponse({'filename': ret})
-
-    @expose('GET')
-    def get_startup_script(self, kwargs):
-        """Return contents of the currently defined startup script, if any"""
-        basedir = self.config_parser.get('manager', 'CONPAAS_HOME')
-        fullpath = os.path.join(basedir, 'startup.sh')
-
-        try:
-            return HttpJsonResponse(open(fullpath).read())
-        except IOError:
-            return HttpErrorResponse('No startup script')
+    
 
 
 class ApplicationManager(BaseManager):
@@ -706,6 +643,89 @@ class ApplicationManager(BaseManager):
         if os.path.isfile(mngr_startup_scriptname):
             proc = subprocess.Popen(['bash', mngr_startup_scriptname] , close_fds=True)
             proc.wait()
+
+
+    def upload_script(self, kwargs, filename):
+        """Write the file uploaded in kwargs['script'] to filesystem.
+
+        Return the script absoulte path on success, HttpErrorResponse on
+        failure.
+        """
+        self.logger.debug("upload_script: called with filename=%s" % filename)
+
+        # Check if the required argument 'script' is present
+        if 'script' not in kwargs:
+            return HttpErrorResponse(ManagerException(
+                ManagerException.E_ARGS_MISSING, 'script').message)
+
+        if 'sid' not in kwargs:
+            return HttpErrorResponse(ManagerException(
+                ManagerException.E_ARGS_MISSING, 'sid').message)
+
+        script = kwargs.pop('script')
+        service_id = kwargs.pop('sid')
+        
+        # Check if any trailing parameter has been submitted
+        if len(kwargs) != 0:
+            return HttpErrorResponse(ManagerException(
+                ManagerException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
+
+        # Script has to be a FileUploadField
+        if not isinstance(script, FileUploadField):
+            return HttpErrorResponse(ManagerException(
+                ManagerException.E_ARGS_INVALID,
+                detail='script should be a file'
+            ).message)
+
+        basedir = self.config_parser.get('manager', 'CONPAAS_HOME')
+        filedir = os.path.join(basedir, str(service_id)) 
+        if not os.path.exists(filedir):
+            os.makedirs(filedir)
+
+        fullpath = os.path.join(filedir, filename)
+        
+        # Write the uploaded script to filesystem
+        open(fullpath, 'w').write(script.file.read())
+
+        self.logger.debug("upload_script: script uploaded successfully to '%s'"
+                          % fullpath)
+
+        # Return the script absolute path
+        return fullpath
+        
+
+    @expose('UPLOAD')
+    def upload_startup_script(self, kwargs):
+        ret = self.upload_script(kwargs, 'startup.sh')
+
+        if type(ret) is HttpErrorResponse:
+            # Something went wrong. Return the error
+            return ret
+
+        # Rebuild context script 
+        # TODO (genc): fix this
+        # self.controller.generate_context("web")
+
+        # All is good. Return the filename of the uploaded script
+        return HttpJsonResponse({'filename': ret})
+
+    @expose('GET')
+    def get_startup_script(self, kwargs):
+        """Return contents of the currently defined startup script, if any"""
+        if 'sid' not in kwargs:
+            return HttpErrorResponse(ManagerException(
+                ManagerException.E_ARGS_MISSING, 'sid').message)
+
+        service_id = kwargs.pop('sid')
+
+        basedir = self.config_parser.get('manager', 'CONPAAS_HOME')
+        fullpath = os.path.join(basedir, str(service_id), 'startup.sh')
+
+        try:
+            return HttpJsonResponse(open(fullpath).read())
+        except IOError:
+            return HttpErrorResponse('No startup script')
+
 
     @expose('POST')
     def test(self,kwargs):

@@ -103,11 +103,12 @@ def _create_nodes(kwargs):
         service_type = kwargs.pop('service_type')
         manager_ip = kwargs.pop('manager_ip')
         context = kwargs.pop('context')
+        startup_script = kwargs.pop('startup_script')
 
         log('type: %s' % service_type)
   
         controller = AgentController(user_id, app_id, service_id, service_type, manager_ip)
-        controller.generate_context(cloud_name, context)
+        controller.generate_context(cloud_name, context, startup_script)
         
         nodes = controller.create_nodes(nodes_info)
     
@@ -133,9 +134,10 @@ def create_nodes():
     service_id = request.values.get('service_id')
     service_type = request.values.get('service_type')
     manager_ip = request.values.get('manager_ip')
+    startup_script = request.values.get('startup_script', None)
     # role = request.values.get('role')
 
-    
+    # log('startup_script :%s' % startup_script)
     # FIXME: make this get driectly a json
     nodes_info = simplejson.loads(request.values.get('nodes_info').replace("u'", '"').replace("'", '"'))
     cloud_name = request.values.get('cloud_name')
@@ -143,7 +145,7 @@ def create_nodes():
     # inst_type = request.values.get('inst_type')
     nodes = _create_nodes({'role':'agent', 'app_id':app_id, 'user_id':'%s'%g.user.uid, 'cloud_name':cloud_name, 
                     'service_id':service_id, 'service_type':service_type, 'nodes_info':nodes_info, 
-                    'manager_ip':manager_ip, 'context':context})
+                    'manager_ip':manager_ip, 'context':context, 'startup_script':startup_script})
     
     log('nodes string: %s' % simplejson.dumps([node.to_dict() for node in nodes]))
     return simplejson.dumps([node.to_dict() for node in nodes])

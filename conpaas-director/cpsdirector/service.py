@@ -38,8 +38,12 @@ service_page = Blueprint('service_page', __name__)
 valid_services = manager_services.keys()
 
 class Service(db.Model):
-    sid = db.Column(db.Integer, primary_key=True,
-        autoincrement=True)
+    #(genc): sid can not be unique as it can be the same for different applications
+    # so i am using another key 
+    rec_id = db.Column(db.Integer, primary_key=True,autoincrement=True)
+    
+    sid = db.Column(db.Integer)
+    # sid = db.Column(db.Integer)
     name = db.Column(db.String(256))
     type = db.Column(db.String(32))
     state = db.Column(db.String(32))

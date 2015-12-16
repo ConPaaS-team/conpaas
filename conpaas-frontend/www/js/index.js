@@ -41,7 +41,7 @@ conpaas.ui = (function (this_module) {
                 services,
                 i,
                 continuePolling = true;
-            services = response.data;
+            services = response.data.services;
             $('#servicesWrapper').html(response.html);
             for (i = 0; i < services.length; i++) {
                 service = new conpaas.model.Service(services[i].sid,

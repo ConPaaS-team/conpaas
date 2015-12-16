@@ -195,15 +195,15 @@ class OpenStackCloud(Cloud):
 
     def attach_volume(self, node, volume, device):
         device = '/dev/%s' % device
-        attach_res = None
-        trials = 5
+        trials = 10
         while trials > 0:
             trials -= 1
             try:
                 attach_res = self.driver.attach_volume(node, volume, device)
+                break
             except Exception, err: # FIXME: be more specific
                 self.logger.debug('Attaching volume failed. Error: %s' % err)
-                attach_res = None
+                attach_res = False
                 time.sleep(5)
 
         return attach_res

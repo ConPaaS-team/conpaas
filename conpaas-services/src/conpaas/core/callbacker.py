@@ -1,5 +1,5 @@
 
-import urlparse, json
+import urlparse, json, os
 from conpaas.core import https
 from conpaas.core.log import create_logger, init
 from conpaas.core.node import ServiceNode
@@ -32,6 +32,17 @@ class DirectorCallbacker(object):
                  'manager_ip':self.config_parser.get("manager", "MY_IP"), 
                  'service_type':service_manager.get_service_type(),
                  'context': service_manager.get_context_replacement()}
+
+        basedir = self.config_parser.get('manager', 'CONPAAS_HOME')
+        filename = 'startup.sh'
+        fullpath = os.path.join(basedir, str(service_id), filename) 
+
+        # files=[]
+        if os.path.exists(fullpath):
+            contents = open(fullpath).read()
+            params['startup_script'] = contents
+        #     files = [ ( 'script', filename, contents ) ]
+
         ret = self._dic_callback('/create_nodes', params)
         nodes = None
         if ret:
@@ -61,14 +72,15 @@ class DirectorCallbacker(object):
         params = {'volume_id':volume_id, 'cloud':cloud}
         return self._dic_callback('/destroy_volume', params)
 
-    def _dic_callback(self, path, params):
+    def _dic_callback(self, path, params, files=[]):
         try:
             director_url = self.config_parser.get('manager', 'DIRECTOR_URL')
             parsed_url = urlparse.urlparse(director_url)
             _, body = https.client.https_post(parsed_url.hostname,
                                               parsed_url.port or 443,
                                               path,
-                                              params)
+                                              params,
+                                              files)
             obj = json.loads(body)
             return obj
         except:

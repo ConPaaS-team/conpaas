@@ -106,7 +106,7 @@ class Controller(object):
     #=========================================================================#
     #               generate_context(self, service_name, replace, cloud)      #
     #=========================================================================#
-    def generate_context(self, cloud_name=None, context_replacement={}, ip_whitelist=None):
+    def generate_context(self, cloud_name=None, context_replacement={}, startup_script=None, ip_whitelist=None):
         """Generates the contextualization file for the default/given cloud.
 
             @param cloud (Optional) If specified, the context will be generated
@@ -121,7 +121,7 @@ class Controller(object):
         cloud = self.get_cloud_by_name(cloud_name)
 
         
-        contxt = self._generate_context_file(cloud, context_replacement)
+        contxt = self._generate_context_file(cloud, context_replacement, startup_script)
         cloud.set_context(contxt)
 
     def generate_config_file(self, cloud_name):
@@ -541,7 +541,7 @@ class AgentController(Controller):
         config_parser.set('manager', 'MANAGER_IP', manager_ip)
         return config_parser
 
-    def _generate_context_file(self, cloud, context_replacement={}):
+    def _generate_context_file(self, cloud, context_replacement={}, startup_script=None):
         '''
         the context file runs the scripts necessary on each node created
         it's installing all the necessary dependencies for the service
@@ -638,6 +638,8 @@ class AgentController(Controller):
         # # Append user-provided startup script (if any)
         # if os.path.isfile(startup_script):
         #     context_file += open(startup_script).read() + '\n'
+        if startup_script:
+            context_file += startup_script + '\n'
 
         # Finally, the agent startup script
         context_file += agent_start + '\n'
@@ -743,7 +745,7 @@ class ManagerController(Controller):
 %(mngr_cfg)s
 """ % tmpl_values
 
-    def _generate_context_file(self, cloud, context_replacement={}):
+    def _generate_context_file(self, cloud, context_replacement={}, startup_script=None):
         """Override default _get_context_file. Here we generate the context
         file for managers rather than for agents."""
 

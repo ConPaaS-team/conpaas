@@ -53,18 +53,18 @@ $page = new CreatePage();
                   <td class="radio"><input type="radio" name="type" value="galera" /> mysql</td>
                   <td class="info"> MySQL-5.5 database with Galera extensions </td>
               </tr>
-              <tr class="service">
+              <!--tr class="service">
                   <td class="description"> <img src="images/scalaris.png" height="32" /></td>
                   <td class="radio"><input type="radio" name="type" value="scalaris" /> scalarix</td>
                   <td class="info"> Scalaris-0.7 in-memory key-value store </td>
-              </tr>
+              </tr-->
               <tr class="service">
                   <td class="description"> <img src="images/xtreemfs.png" height="32" /></td>
                   <td class="radio"><input type="radio" name="type" value="xtreemfs" /> xtreemfs</td>
                   <td class="info"> XtreemFS-1.5 distributed file system </td>
               </tr>
           </table>
-          <table class="form" cellspacing="0" cellpading="0">
+          <!--table class="form" cellspacing="0" cellpading="0">
               <div class="serviceheader">
                   High-performance computing
               </div>
@@ -83,16 +83,16 @@ $page = new CreatePage();
                   <td class="radio"><input type="radio" name="type" value="htc" /> HTC </td>
                   <td class="info"> High Throughput Computing Service </td>
               </tr> 
-          </table>
+          </table-->
           <table class="form" cellspacing="0" cellpading="0">
               <div class="serviceheader">
                   Miscellaneous
               </div>
-              <tr class="service">
+              <!--tr class="service">
                   <td class="description"> <img src="images/selenium.png" height="32" /></td>
                   <td class="radio"><input type="radio" name="type" value="selenium" /> selenium</td>
                   <td class="info"> Selenium functional testing service </td>
-              </tr>
+              </tr-->
               <tr class="service">
                   <td class="description"> <img src="images/generic.png" height="32" /></td>
                   <td class="radio"><input type="radio" name="type" value="generic" /> generic</td>

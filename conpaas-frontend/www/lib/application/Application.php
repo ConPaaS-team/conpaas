@@ -81,7 +81,11 @@ class Application {
 	}
 
 	public function managerRequest($http_method, $method, $service_id, array $params, $ping=false) {
-		$json = HTTPS::jsonrpc($this->manager, $http_method, $method, $service_id, $params, $ping);
+		if ($http_method == "upload"){
+			$params['method'] = $method;
+			$json = HTTPS::post($this->manager, $params);
+		}else
+			$json = HTTPS::jsonrpc($this->manager, $http_method, $method, $service_id, $params, $ping);
 		$this->decodeResponse($json, $method);
 		return $json;
 	}

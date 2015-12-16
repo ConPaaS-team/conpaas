@@ -289,6 +289,25 @@ class Service {
  		return $this->application->managerRequest('post', $command, 0, $data);
  	}
 
+ 	public function upload_startup_script($script) {
+ 		$command = 'upload_startup_script';
+ 		$data = array();
+ 		$data['service_id'] = 0;
+ 		$data['sid'] = $this->sid;
+ 		$data['script'] = $script;
+ 		return $this->application->managerRequest('upload', $command, 0, $data);
+ 	}
+
+ 	public function get_startup_script() {
+ 		$command = 'get_startup_script';
+ 		$data = array();
+ 		$data['sid'] = $this->sid;
+ 		return HTTPS::jsonrpc($this->getManager(), 'get', $command, 0, $data, false);
+ 		// return $this->application->managerRequest('get', $command, 0, $data);
+ 	}
+
+ 	
+
  	public function addServiceNodes($params) {
  		return $this->changeNodes('add_nodes', $params);
  	}

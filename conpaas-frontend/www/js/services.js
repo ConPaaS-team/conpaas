@@ -68,8 +68,8 @@ conpaas.ui = (function (this_module) {
             var service,
                 services,
                 i,
-                continuePolling = true;
-            services = response.data;
+                stopPolling = true;
+            services = response.data.services;
             $('#servicesWrapper').html(response.html);
             for (i = 0; i < services.length; i++) {
                 service = new conpaas.model.Service(services[i].sid,
@@ -77,15 +77,18 @@ conpaas.ui = (function (this_module) {
                         services[i].reachable);
                 if (service.needsPolling()) {
                     that.displayServiceInfo_(service);
-                    continuePolling = false;
+                    stopPolling = false;
                 }
                 // HACK: attach handlers for delete buttons;
                 // without using the id trick we cannot avoid using global vars
                 $('#service-' + service.sid + ' .deleteService').click(
                         that.makeRemoveHandler_(service));
             }
+            if (response.data.application.status == "ADAPTING")
+                stopPolling = false;
+                
             conpaas.ui.visible('pgstatInfo', false);
-            return continuePolling;
+            return stopPolling;
         });
     },
     checkApplication: function(){
@@ -94,7 +97,7 @@ conpaas.ui = (function (this_module) {
                 function (response) {
                     app = response.data[0];
                     that.application = app;
-                    if(app.status == 'INIT' || app.status == 'EPILOGUE'){
+                    if(app.status == 'INIT' || app.status == 'STOPPED' || app.status == 'EPILOGUE'){
                         $("#btnAddService").hide();
                         $("#btnStopApp").hide();
                         if(app.status == 'EPILOGUE'){
@@ -120,21 +123,34 @@ conpaas.ui = (function (this_module) {
         }, {'aid':1});
     },
 
+    // getAppStatus: function(){
+    //     this.server.req('ajax/checkApplications.php', {'aid':1}, 'post', 
+    //         function(response){
+    //             status = response.data[0].status
+    //         }, 
+    //         function (){
+    //             // page.showStatus('', 'error', 'Something wrong happened');
+    //         }, 'json', true
+    //     );
+
+    // },
+
     onClickStartApp: function(event){
         var page = event.data;
         page.startingApp = true;
         $("#btnStartApp").hide();
         page.server.req('ajax/startApplication.php', {}, 'post', 
             function(){
-                
+                page.displayInfo_('Starting application manager...');
+                page.checkApplication();      
             }, 
             function (){
                 page.showStatus('', 'error', 'Something wrong happened');
                 page.freezeInput(false);
             }, 'json', true
         );
-        page.displayInfo_('Starting application manager...');
-        page.checkApplication();
+        // page.displayInfo_('Starting application manager...');
+        // page.checkApplication();
         
     },
 

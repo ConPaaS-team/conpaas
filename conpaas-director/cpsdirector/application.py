@@ -232,6 +232,7 @@ def _deleteapp(user_id, app_id, del_app_entry):
     # if app.manager:
     #     app.stop()
 
+    self.status = Application.A_STOPPED
     # delete the applciation from the database
     if del_app_entry:
         db.session.delete(app)

@@ -191,30 +191,30 @@ class MGeneral(object):
         except:
             return False
 
-    def startup(self, service_id, cloud = 'default'):
+    def startup(self, app_id, service_id, cloud = 'default'):
         data = {'cloud': cloud}
 
-        res = callmanager(service_id, "startup", True, data)
+        res = callmanager(app_id, service_id, "startup", True, data)
 
         return res
 
-    def shutdown(self, service_id):
+    def shutdown(self, app_id, service_id):
         res = callmanager(service_id, "get_service_info", False, {})
 
         if res['state'] == "RUNNING":
-            res = callmanager(service_id, "shutdown", True, {})
+            res = callmanager(app_id, service_id, "shutdown", True, {})
         else:
             log("Service is in '%(state)s' state. We can not stop it." % res)
 
         return res
 
-    def wait_for_state(self, sid, state):
+    def wait_for_state(self, appid, sid, state):
         """Poll the state of service 'sid' till it matches 'state'."""
         res = { 'state': None }
 
         while res['state'] != state:
             try:
-                res = callmanager(sid, "get_service_info", False, {})
+                res = callmanager(appid, sid, "get_service_info", False, {})
             except (socket.error, urllib2.URLError):
                 time.sleep(2)
 
@@ -224,13 +224,13 @@ class MGeneral(object):
         # Find galera ip address
         try:
             sid = Service.query.filter_by(application_id=appid, type='galera').first().sid
-            nodes = callmanager(sid, "list_nodes", False, {})
+            nodes = callmanager(appid, sid, "list_nodes", False, {})
 
             if nodes['glb_nodes']:
                 params = { 'serviceNodeId': nodes['glb_nodes'][0] }
             else:
                 params = { 'serviceNodeId': nodes['nodes'][0] }
-            details = callmanager(sid, "get_node_info", False, params)
+            details = callmanager(appid, sid, "get_node_info", False, params)
             env = env + 'echo "env[MYSQL_IP]=\'%s\'" >> /root/ConPaaS/src/conpaas/services/webservers/etc/fpm.tmpl\n' % details['serviceNode']['ip']
             env = env + 'export MYSQL_IP=\'%s\'\n' % details['serviceNode']['ip']
         except:
@@ -239,10 +239,10 @@ class MGeneral(object):
         # Find xtreemfs ip address and generate certificate
         try:
             sid = Service.query.filter_by(application_id=appid, type='xtreemfs').first().sid
-            nodes = callmanager(sid, "list_nodes", False, {})
+            nodes = callmanager(appid, sid, "list_nodes", False, {})
 
             params = { 'serviceNodeId': nodes['dir'][0] }
-            details = callmanager(sid, "get_node_info", False, params)
+            details = callmanager(appid, sid, "get_node_info", False, params)
             env = env + 'echo "env[XTREEMFS_IP]=\'%s\'" >> /root/ConPaaS/src/conpaas/services/webservers/etc/fpm.tmpl\n' % details['serviceNode']['ip']
             env = env + 'export XTREEMFS_IP=\'%s\'\n' % details['serviceNode']['ip']
 
@@ -250,14 +250,14 @@ class MGeneral(object):
             env = env + 'export XTREEMFS_PASSPHRASE=\'%s\'\n' % passphrase
 
             params = { 'passphrase': passphrase, 'adminflag': False }
-            res = callmanager(sid, "get_client_cert", True, params)
+            res = callmanager(appid, sid, "get_client_cert", True, params)
             env = env + 'export XTREEMFS_CERT=\'%s\'\n' % res['cert']
         except:
             env = env + ''
 
         return env
 
-    def upload_startup_script(self, service_id, url, environment=''):
+    def upload_startup_script(self, app_id, service_id, url, environment=''):
         contents = environment
         filename = 'env.sh'
 
@@ -267,17 +267,69 @@ class MGeneral(object):
 
         files = [ ( 'script', filename, contents ) ]
 
-        res = callmanager(service_id, "/", True,
-            { 'method': 'upload_startup_script', }, files)
+        res = callmanager(app_id, 0, "/", True,
+            { 'method': 'upload_startup_script', 'sid':service_id }, files)
 
         return res
 
-    def add_nodes(self, service_id, params):
+    def add_nodes(self, appid, service_id, params):
         params['cloud'] = 'default'
+        params['service_id'] = service_id
 
-        res = callmanager(service_id, 'add_nodes', True, params)
+
+        res = callmanager(appid, 0, 'add_nodes', True, params)
 
         return res
+
+    # def start(self, json, appid, need_env=False):
+    #     """Start the given service. Return service id upon successful
+    #     termination."""
+    #     servicetype = json.get('Type')
+    #     cloud = 'default'
+
+    #     if json.get('Cloud'):
+    #         cloud = json.get('Cloud')
+
+    #     res = add_service(servicetype, cloud, appid)
+    #     error = self.check_error(res)
+    #     if error:
+    #         return error
+
+    #     sid = simplejson.loads(res.data).get('sid')
+
+    #     self.wait_for_state(sid, 'INIT')
+
+    #     if json.get('ServiceName'):
+    #         res = rename_service(sid, json.get('ServiceName'))
+    #         error = self.check_error(res)
+    #         if error:
+    #             return error
+
+    #     env = ''
+    #     if need_env:
+    #         env = self.update_environment(appid)
+
+    #     url = ''
+
+    #     if json.get('StartupScript'):
+    #         url = json.get('StartupScript')
+
+    #     if url or env:
+    #         # Only upload startup script if necessary
+    #         res = self.upload_startup_script(sid, url, env)
+    #         if 'error' in res:
+    #             return res['error']
+
+    #     if not json.get('Start') or json.get('Start') == 0:
+    #         return sid
+
+    #     # Start == 1
+    #     res = self.startup(sid)
+    #     if 'error' in res:
+    #         return res['error']
+
+    #     self.wait_for_state(sid, 'RUNNING')
+    #     return sid
 
     def start(self, json, appid, need_env=False):
         """Start the given service. Return service id upon successful
@@ -289,19 +341,24 @@ class MGeneral(object):
             cloud = json.get('Cloud')
 
         res = add_service(servicetype, cloud, appid)
-        error = self.check_error(res)
-        if error:
-            return error
+        
+        #FIXME: fix this error checking here
+        # error = self.check_error(res)
+        # if error:
+        #     return error
 
-        sid = simplejson.loads(res.data).get('sid')
+        sid = res['service']['sid']
+        
+        # sid = simplejson.loads(res.data).get('sid')
 
-        self.wait_for_state(sid, 'INIT')
+        # self.wait_for_state(sid, 'INIT')
 
         if json.get('ServiceName'):
-            res = rename_service(sid, json.get('ServiceName'))
-            error = self.check_error(res)
-            if error:
-                return error
+            res = rename_service(appid, sid, json.get('ServiceName'))
+            #FIXME: check if there are erros here as well
+            # error = self.check_error(res)
+            # if error:
+            #     return error
 
         env = ''
         if need_env:
@@ -314,20 +371,23 @@ class MGeneral(object):
 
         if url or env:
             # Only upload startup script if necessary
-            res = self.upload_startup_script(sid, url, env)
+            res = self.upload_startup_script(appid, sid, url, env)
             if 'error' in res:
                 return res['error']
 
-        if not json.get('Start') or json.get('Start') == 0:
-            return sid
+        # if not json.get('Start') or json.get('Start') == 0:
+        #     return sid
 
-        # Start == 1
-        res = self.startup(sid)
+        data = {'cloud': cloud, 'service_id':sid}
+        res = callmanager(appid, 0, "start_service", True, data)
+        # # Start == 1
+        # res = self.startup(sid)
         if 'error' in res:
             return res['error']
 
-        self.wait_for_state(sid, 'RUNNING')
+        # self.wait_for_state(sid, 'RUNNING')
         return sid
+
 
 from cpsdirector.service import _add as add_service
 from cpsdirector.service import _rename as rename_service 
@@ -369,94 +429,96 @@ class MPhp(MGeneral):
 
         return '%s/download_data/%s' % (get_director_url(), basename(temp_path))
 
-    def upload_code(self, service_id, url):
+    def upload_code(self, app_id, service_id, url):
         contents = urllib2.urlopen(url).read()
         filename = url.split('/')[-1]
 
         files = [ ( 'code', filename, contents ) ]
 
-        res = callmanager(service_id, "/", True, { 'method': "upload_code_version",  }, files)
+        res = callmanager(app_id, service_id, "/", True, { 'method': "upload_code_version",  }, files)
 
         return res
 
-    def enable_code(self, service_id, code_version):
+    def enable_code(self, app_id, service_id, code_version):
         params = { 'codeVersionId': code_version }
 
-        res = callmanager(service_id, "update_php_configuration", True, params)
+        res = callmanager(app_id, service_id, "update_php_configuration", True, params)
 
         return res
 
     def start(self, json, appid):
+        # disabled for the moment
         sid = MGeneral.start(self, json, appid, need_env=True)
+        # sid = MGeneral.start(self, json, appid, need_env=False)
 
         if type(sid) != int:
             # Error!
             return sid
 
         if json.get('Archive'):
-            res = self.upload_code(sid, json.get('Archive'))
+            res = self.upload_code(appid, sid, json.get('Archive'))
             if 'error' in res:
                 return res['error']
 
-            res = self.enable_code(sid, res['codeVersionId']);
+            res = self.enable_code(appid, sid, res['codeVersionId']);
             if 'error' in res:
                 return res['error']
 
-            self.wait_for_state(sid, 'RUNNING')
+        #     self.wait_for_state(sid, 'RUNNING')
 
-        if json.get('StartupInstances'):
-            params = {
-                    'proxy': 1,
-                    'web': 1,
-                    'backend': 1
-            }
+        # if json.get('StartupInstances'):
+        #     params = {
+        #             'proxy': 1,
+        #             'web': 1,
+        #             'backend': 1
+        #     }
 
-            if json.get('StartupInstances').get('proxy'):
-                params['proxy'] = int(json.get('StartupInstances').get('proxy'))
-                params['proxy'] -= 1
-            if json.get('StartupInstances').get('web'):
-                params['web'] = int(json.get('StartupInstances').get('web'))
-                params['web'] -= 1
-            if json.get('StartupInstances').get('backend'):
-                params['backend'] = int(json.get('StartupInstances').get('backend'))
-                params['backend'] -= 1
+        #     if json.get('StartupInstances').get('proxy'):
+        #         params['proxy'] = int(json.get('StartupInstances').get('proxy'))
+        #         params['proxy'] -= 1
+        #     if json.get('StartupInstances').get('web'):
+        #         params['web'] = int(json.get('StartupInstances').get('web'))
+        #         params['web'] -= 1
+        #     if json.get('StartupInstances').get('backend'):
+        #         params['backend'] = int(json.get('StartupInstances').get('backend'))
+        #         params['backend'] -= 1
 
-            if params['proxy'] or params['web'] or params['backend']:
-                # Add nodes only if at least one additional node has been
-                # requested
-                res = self.add_nodes(sid, params)
-                if 'error' in res:
-                    log('PHP.start: error calling add_nodes -> %s' % res)
-                    return res['error']
+        #     if params['proxy'] or params['web'] or params['backend']:
+        #         # Add nodes only if at least one additional node has been
+        #         # requested
+        #         res = self.add_nodes(sid, params)
+        #         if 'error' in res:
+        #             log('PHP.start: error calling add_nodes -> %s' % res)
+        #             return res['error']
 
         return 'ok'
 
 class MJava(MPhp):
 
-    def enable_code(self, service_id, code_version):
+    def enable_code(self, app_id, service_id, code_version):
         params = { 'codeVersionId': code_version }
 
-        res = callmanager(service_id, "update_java_configuration", True, params)
+        res = callmanager(app_id, service_id, "update_java_configuration", True, params)
 
         return res
 
 class MMySql(MGeneral):
 
-    def get_service_manifest(self, service):
-        tmp = MGeneral.get_service_manifest(self, service)
+    def get_service_manifest(self, aid, service):
+        tmp = MGeneral.get_service_manifest(self,aid, service)
 
         ret = self.save_dump(service.sid)
         if ret != '':
             tmp['Dump'] = ret
 
-        password = callmanager(service.sid, "get_password", False, {})
+        password = callmanager(aid, service.sid, "get_password", False, {})
         if password:
             tmp['Password'] = password
 
         return tmp
 
-    def save_dump(self, service_id):
-        res = callmanager(service_id, 'sqldump', False, {})
+    def save_dump(self, aid, service_id):
+        res = callmanager(aid, service_id, 'sqldump', False, {})
         if type(res) is dict and 'error' in res:
             log('Error getting SQL dump: %s' % res['error'])
             return ''
@@ -466,19 +528,19 @@ class MMySql(MGeneral):
 
         return '%s/download_data/%s' % (get_director_url(), basename(temp_path))
 
-    def load_dump(self, sid, url):
+    def load_dump(self, aid, sid, url):
         contents = urllib2.urlopen(url).read()
         filename = url.split('/')[-1]
 
         files = [ ( 'mysqldump_file', filename, contents ) ]
 
-        res = callmanager(sid, "/", True, { 'method' : 'load_dump' }, files)
+        res = callmanager(aid, sid, "/", True, { 'method' : 'load_dump' }, files)
 
         return res
 
-    def set_password(self, sid, password):
+    def set_password(self, aid, sid, password):
         data = { 'user': 'mysqldb', 'password': password }
-        res = callmanager(sid, "set_password", True, data)
+        res = callmanager(aid, sid, "set_password", True, data)
 
         return res
 
@@ -489,13 +551,15 @@ class MMySql(MGeneral):
             # Error!
             return sid
 
+        self.wait_for_state(appid, sid, 'RUNNING')
+
         if json.get('Password'):
-            res = self.set_password(sid, json.get('Password'))
+            res = self.set_password(appid, sid, json.get('Password'))
             if 'error' in res:
                 return res['error']
 
         if json.get('Dump'):
-            res = self.load_dump(sid, json.get('Dump'))
+            res = self.load_dump(appid, sid, json.get('Dump'))
             if 'error' in res:
                 return res['error']
 
@@ -511,7 +575,7 @@ class MMySql(MGeneral):
                 params['glb_nodes'] = int(json.get('StartupInstances').get('glb_nodes'))
 
             if params['nodes'] or params['glb_nodes']:
-                res = self.add_nodes(sid, params)
+                res = self.add_nodes(appid, sid, params)
                 if 'error' in res:
                     return res['error']
 
@@ -630,13 +694,13 @@ class MXTreemFS(MGeneral):
 
         return tmp
 
-    def createvolume(self, service_id, name, owner):
+    def createvolume(self, app_id, service_id, name, owner):
         params = {
                 'volumeName': name,
                 'owner' : owner
         }
 
-        res = callmanager(service_id, 'createVolume', True, params)
+        res = callmanager(app_id, service_id, 'createVolume', True, params)
 
         return res
 
@@ -666,12 +730,13 @@ class MXTreemFS(MGeneral):
         if json.get('VolumeStartup'):
             name = json.get('VolumeStartup').get('volumeName')
             owner = json.get('VolumeStartup').get('owner')
-
+            log('create volume: %s owned by %s' % (name, owner))
             # Wait few seconds so that the new node is up.
+            self.wait_for_state(appid, sid, 'RUNNING')
             time.sleep(20)
 
             if name != "" and owner != "":
-                res = self.createvolume(sid, name, owner)
+                res = self.createvolume(appid, sid, name, owner)
                 if 'error' in res:
                     return res['error']
 
@@ -695,8 +760,8 @@ class MXTreemFS(MGeneral):
 
             if to_resume:
                 log('Resuming the following xtreemfs nodes: %s' % to_resume)
-                self.wait_for_state(sid, 'RUNNING')
-                res = callmanager(sid, "set_service_snapshot", True,
+                self.wait_for_state(appid, sid, 'RUNNING')
+                res = callmanager(appid, sid, "set_service_snapshot", True,
                         to_resume)
 
                 if 'error' in res:
@@ -765,20 +830,20 @@ class MGeneric(MGeneral):
 
         #return '%s/download_data/%s' % (get_director_url(), basename(temp_path))
 
-    def upload_code(self, service_id, url):
+    def upload_code(self, app_id, service_id, url):
         contents = urllib2.urlopen(url).read()
         filename = url.split('/')[-1]
 
         files = [ ( 'code', filename, contents ) ]
 
-        res = callmanager(service_id, "/", True, { 'method': "upload_code_version",  }, files)
+        res = callmanager(app_id, service_id, "/", True, { 'method': "upload_code_version",  }, files)
 
         return res
 
-    def enable_code(self, service_id, code_version):
+    def enable_code(self, app_id, service_id, code_version):
         params = { 'codeVersionId': code_version }
 
-        res = callmanager(service_id, "enable_code", True, params)
+        res = callmanager(app_id, service_id, "enable_code", True, params)
 
         return res
 
@@ -803,11 +868,11 @@ class MGeneric(MGeneral):
         #return sid
         
         if json.get('Archive'):
-            res = self.upload_code(sid, json.get('Archive'))
+            res = self.upload_code(appid, sid, json.get('Archive'))
             if 'error' in res:
                 return res['error']
 
-            res = self.enable_code(sid, res['codeVersionId']);
+            res = self.enable_code(appid, sid, res['codeVersionId']);
             if 'error' in res:
                 return res['error']
 
@@ -863,18 +928,18 @@ def get_manifest_class(service_type):
         return MJava
     elif service_type == 'galera':
         return MMySql
-    elif service_type == 'scalaris':
-        return MScalaris
-    elif service_type == 'hadoop':
-        return MHadoop
-    elif service_type == 'selenium':
-        return MSelenium
+    # elif service_type == 'scalaris':
+    #     return MScalaris
+    # elif service_type == 'hadoop':
+    #     return MHadoop
+    # elif service_type == 'selenium':
+    #     return MSelenium
     elif service_type == 'xtreemfs':
         return MXTreemFS
-    elif service_type == 'taskfarm':
-        return MTaskFarm
-    elif service_type == 'htc':
-        return MHtc
+    # elif service_type == 'taskfarm':
+    #     return MTaskFarm
+    # elif service_type == 'htc':
+    #     return MHtc
     elif service_type == 'generic':
         return MGeneric
     else:
@@ -883,7 +948,7 @@ def get_manifest_class(service_type):
 from cpsdirector.application import check_app_exists, get_app_by_id
 from cpsdirector.application import _createapp as createapp
 from cpsdirector.application import _startapp as startapp, Application
-from cpsdirector.service import _add as add_service
+
 
 def new_manifest(json, cloud = 'default'):
     
@@ -930,33 +995,28 @@ def new_manifest(json, cloud = 'default'):
         # app = get_app_by_id(g.user.uid, appid)
     
     log('now start adding services')   
+    app.status = Application.A_ADAPTING
+    db.session.commit()
+
     for service in parse.get('Services'):
         if service.get('Type') == "mysql":
             service['Type'] = "galera"
 
         try:
-            res = add_service(service.get('Type'), cloud, appid)
-            sid = res['service']['sid']
-            data = {'cloud': cloud, 'service_id':sid}
-            callmanager(appid, 0, "start_service", True, data)
-
-            log('adding %s resulted in %s' % (service.get('Type'), res) )
+            cls = get_manifest_class(service.get('Type'))
         except Exception:
             return 'Service %s does not exists' % service.get('Type')
 
+        # msg = 'ok'
+        # if service.get('Type') == 'galera':
+        msg = cls().start(service, appid)
 
-        
-
-        # try:
-        #     cls = get_manifest_class(service.get('Type'))
-        # except Exception:
-        #     return 'Service %s does not exists' % service.get('Type')
-
-        # msg = cls().start(service, appid)
-
-        # if msg is not 'ok':
-        #     log('new_manifest: error starting %s service -> %s' % (service,
-        #         msg))
-        #     return msg
-
+        if msg is not 'ok':
+            log('new_manifest: error starting %s service -> %s' % (service,
+                msg))
+            return msg
+    
+    app.status = Application.A_RUNNING
+    db.session.commit()
+    
     return 'ok'

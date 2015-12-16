@@ -6,6 +6,7 @@
 require_once('../__init__.php');
 require_module('logging');
 require_module('service');
+require_module('application');
 require_module('service/factory');
 require_module('ui/service');
 
@@ -27,9 +28,15 @@ try {
 		}
 	}
 	$services_data = $servicesList->toArray();
-	
+	$applications_data = ApplicationData::getApplications($uid, $aid)[0];
+
+	$data = array(
+		'services' => $services_data,
+		'application' => $applications_data
+	);
+
 	echo json_encode(array(
-		'data' => $services_data,
+		'data' => $data,
 		'html' => $servicesList->render()
 	));
 } catch (Exception $e) {

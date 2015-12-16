@@ -362,6 +362,8 @@ $(document).ready(function () {
             }
         },
         // error
-        function () {}
+        function () {
+            $('#startupscript').val("# Write your startup script here!");
+        }
     );
 });
