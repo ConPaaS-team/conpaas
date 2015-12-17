@@ -460,11 +460,11 @@ class MPhp(MGeneral):
             if 'error' in res:
                 return res['error']
 
+            self.wait_for_state(appid, sid, 'RUNNING')
+
             res = self.enable_code(appid, sid, res['codeVersionId']);
             if 'error' in res:
                 return res['error']
-
-        #     self.wait_for_state(sid, 'RUNNING')
 
         # if json.get('StartupInstances'):
         #     params = {

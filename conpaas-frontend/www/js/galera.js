@@ -24,7 +24,7 @@ conpaas.ui = (function (this_module) {
     /**
      * @override conpaas.ui.ServicePage.attachHandlers
      */
-     attachHandlers: function () {
+    attachHandlers: function () {
         var that = this;
         conpaas.ui.ServicePage.prototype.attachHandlers.call(this);
         $('#resetPassword').click(this, this.onResetPassword);
@@ -122,6 +122,13 @@ $(document).ready(function () {
             page.pollState(function () {
                 window.location.reload();
             });
+        }else
+        {
+            if(page.reachable && page.state == 'RUNNING'){
+                // this.poller = new conpaas.http.Poller(server, 'ajax/checkResources.php', 'get');
+                alert('hello')    
+            }
+            
         }
     }, function () {
         // error

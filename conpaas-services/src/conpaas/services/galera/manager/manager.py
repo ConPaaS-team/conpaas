@@ -38,7 +38,6 @@ class GaleraManager(BaseManager):
 
         #(genc): this is ignored at the moment
         # self.controller.config_clouds({"mem": "512", "cpu": "1"})
-        self.state = self.S_INIT
         self.config = Configuration(conf)
         self.logger.debug("Leaving GaleraServer initialization")
 
@@ -81,113 +80,11 @@ class GaleraManager(BaseManager):
         self._start_mysqld(nodes)
         self.config.addMySQLServiceNodes(nodes)
 
-    # @expose('POST')
-    # def startup(self, kwargs):
-    #     """
-    #     Starts this MySQL Galera service.
-
-    #     Parameters
-    #     ----------
-    #     cloud : string
-    #         (optional)
-    #         name of cloud to start the service's manager
-    #         (select the default cloud by default).
-
-    #     Returns a dict with the single key 'state' with the new service state.
-    #     """
-    #     self.logger.debug('try to startup service' )
-    #     try:
-    #         self._check_state([self.S_INIT, self.S_STOPPED])
-    #         exp_params = [('cloud', is_string, None)]
-    #         cloud = check_arguments(exp_params, kwargs)
-    #         start_cloud = self._init_cloud(cloud)
-    #     except Exception as ex:
-    #         return HttpErrorResponse("%s" % ex)
-
-    #     self.state = self.S_PROLOGUE
-    #     Thread(target=self._do_startup, args=(start_cloud, )).start()
-    #     return HttpJsonResponse({'state': self.state})
-
-    # def _do_startup(self, start_cloud):
-    #     """ Starts up the galera service. """
-
-    #     #TODO: Get any existing configuration (if the service was stopped and restarted)
-    #     self.logger.debug('do_startup: Going to request one new node')
-
-    #     # Generate a password for root
-    #     # TODO: send a username?
-    #     self.root_pass = ''.join([choice(string.letters + string.digits) for i in range(10)])
-    #     self.controller.add_context_replacement(dict(mysql_username='mysqldb',
-    #                                                  mysql_password=self.root_pass),
-    #                                             cloud=start_cloud)
-    #     try:
-    #         node_instances = self.controller.create_nodes(1,
-    #                                                       agent.check_agent_process,
-    #                                                       self.config.AGENT_PORT,
-    #                                                       start_cloud)
-    #         self._start_mysqld(node_instances, start_cloud)
-    #         self.config.addMySQLServiceNodes(node_instances)
-    #     except Exception, ex:
-    #         # rollback
-    #         self.controller.delete_nodes(node_instances)
-    #         self.logger.exception('do_startup: Failed to request a new node on cloud %s: %s.' % (start_cloud.get_cloud_name(), ex))
-    #         self.state = self.S_STOPPED
-    #         return
-    #     self.state = self.S_RUNNING
-
-    # def _start_mysqld(self, nodes, start_cloud):
-    #     dev_name = None
-    #     existing_nodes = self.config.get_nodes_addr()
-    #     for serviceNode in nodes:
-    #         try: 
-    #             # We try to create a new volume.
-    #             volume_name = "mysql-%s" % serviceNode.ip
-    #             self.logger.debug("trying to create a volume for the node=%s" % serviceNode.id)
-    #             volume = self.create_volume(1024, volume_name, serviceNode.vmid, start_cloud)
-    #         except AgentException, ex:
-    #             self.logger.exception('Failed creating volume   %s: %s' % (volume_name, ex))
-    #             raise
-    #         try:
-    #             _, dev_name = self.attach_volume(volume.id, serviceNode.vmid)
-    #             self.volumes_dict[serviceNode.ip]=volume.id
-    #         except AgentException, ex:
-    #             self.logger.exception('Failed to attaching disk to Galera node %s: %s' % (str(serviceNode), ex))
-    #             raise
-    #         try:
-    #             agent.start_mysqld(serviceNode.ip, self.config.AGENT_PORT, existing_nodes, dev_name)
-    #         except AgentException, ex:
-    #             self.logger.exception('Failed to start Galera node %s: %s' % (str(serviceNode), ex))
-    #             raise
-    #     try:
-    #         glb_nodes = self.config.get_glb_nodes()
-    #         self.logger.debug('Galera node already active: %s' % glb_nodes) 
-    #         nodesIp=[]
-    #         nodesIp = ["%s:%s" % (node.ip, self.config.MYSQL_PORT)  # FIXME: find real mysql port instead of default 3306
-    #                      for node in nodes]
-    #         for glb in glb_nodes:
-    #             agent.add_glbd_nodes(glb.ip, self.config.AGENT_PORT, nodesIp)
-    #     except Exception as ex:
-    #         self.logger.exception('Failed to configure GLB nodes with new Galera nodes: %s' % ex)
-    #         raise
 
     def _start_mysqld(self, nodes):
         dev_name = None
         existing_nodes = self.config.get_nodes_addr()
         for serviceNode in nodes:
-            # try: 
-            #     # We try to create a new volume.
-            #     volume_name = "mysql-%s" % serviceNode.ip
-            #     self.logger.debug("trying to create a volume for the node=%s" % serviceNode.id)
-            #     volume = self.create_volume(1024, volume_name, serviceNode.vmid, start_cloud)
-            # except AgentException, ex:
-            #     self.logger.exception('Failed creating volume   %s: %s' % (volume_name, ex))
-            #     raise
-            # try:
-            #     _, dev_name = self.attach_volume(volume.id, serviceNode.vmid)
-            #     self.volumes_dict[serviceNode.ip]=volume.id
-            # except AgentException, ex:
-            #     self.logger.exception('Failed to attaching disk to Galera node %s: %s' % (str(serviceNode), ex))
-            #     raise
             try:
                 agent.start_mysqld(serviceNode.ip, self.config.AGENT_PORT, existing_nodes, serviceNode.volumes[0].dev_name)
             except AgentException, ex:
@@ -294,70 +191,6 @@ class GaleraManager(BaseManager):
             self.config.addGLBServiceNodes(gal_nodes)
 
 
-    # @expose('POST')
-    # def add_nodes(self, kwargs):
-    #     """
-    #     Add new nodes for this MySQL Galera service.
-
-    #     Parameters
-    #     ----------
-    #     nodes : int
-    #         number of new regular nodes to add (default 0)
-    #     glb_nodes : int
-    #         number of new Galera Load Balancers nodes to add (default 0)
-    #     cloud : string
-    #         cloud name where to create nodes (default to default cloud)
-
-    #     Returns an error if nodes + glb_nodes == 0.
-    #     """
-    #     try:
-    #         self._check_state([self.S_RUNNING])
-    #         exp_params = [('nodes', is_pos_nul_int, 0),
-    #                       ('glb_nodes', is_pos_nul_int, 0),
-    #                       ('cloud', is_string, None)]
-    #         nodes, glb_nodes, cloud = check_arguments(exp_params, kwargs)
-    #     except Exception as ex:
-    #         return HttpErrorResponse("%s" % ex)
-
-    #     if nodes + glb_nodes <= 0:
-    #         return HttpErrorResponse('Both arguments "nodes" and "glb_nodes" are null.')
-
-    #     self.state = self.S_ADAPTING
-
-    #     # TODO: check if argument "cloud" is an known cloud
-    #     if nodes > 0:
-    #         Thread(target=self._do_add_nodes, args=[self.REGULAR_NODE, nodes, cloud]).start()
-    #     #self._do_add_nodes(self.REGULAR_NODE, nodes, cloud)
-    #     if glb_nodes > 0:
-    #         Thread(target=self._do_add_nodes, args=[self.GLB_NODE, glb_nodes, cloud]).start()
-    #     #self._do_add_nodes(self.GLB_NODE, glb_nodes, cloud)
-    #     return HttpJsonResponse()
-
-    # def _do_add_nodes(self, node_type, count, cloud=None):
-    #     try:
-    #         start_cloud = self._init_cloud(cloud)
-    #         self.controller.add_context_replacement(dict(mysql_username='mysqldb',
-    #                                                      mysql_password=self.root_pass),
-    #                                                 cloud=start_cloud)
-    #         node_instances = self.controller.create_nodes(count,
-    #                                                       agent.check_agent_process,
-    #                                                       self.config.AGENT_PORT,
-    #                                                       start_cloud)
-            
-    #         if node_type == self.REGULAR_NODE:
-    #             self._start_mysqld(node_instances, start_cloud)
-    #             self.config.addMySQLServiceNodes(node_instances)
-    #         elif node_type == self.GLB_NODE:
-    #             self._start_glbd(node_instances)
-    #             self.config.addGLBServiceNodes(node_instances)
-    #     except Exception, ex:
-    #         # rollback
-    #         for node in node_instances:
-    #             agent.stop(node.ip, self.config.AGENT_PORT)
-    #         self.controller.delete_nodes(node_instances)
-    #         self.logger.exception('Could not add nodes: %s' % ex)
-    #     self.state = self.S_RUNNING
-            
 
     @expose('GET')
     def getMeanLoad(self, kwargs):
@@ -493,43 +326,6 @@ class GaleraManager(BaseManager):
         rm_glb_nodes = self.config.get_glb_nodes()[:glb_nodes]
         return self._do_remove_nodes(rm_reg_nodes,rm_glb_nodes)
 
-    # @expose('POST')
-    # def remove_nodes(self, kwargs):
-    #     """
-    #     Remove MySQL Galera nodes.
-
-    #     Parameters
-    #     ----------
-    #     nodes : int
-    #         number of regular nodes to remove (default 0)
-    #     glb_nodes : int
-    #         number of Galera Load Balancer nodes to remove (default 0)
-
-    #     Returns an error if "nodes + glb_nodes == 0".
-    #     """
-    #     try:
-    #         self._check_state([self.S_RUNNING])
-    #         exp_params = [('nodes', is_pos_nul_int, 0),
-    #                       ('glb_nodes', is_pos_nul_int, 0)]
-    #         nodes, glb_nodes = check_arguments(exp_params, kwargs)
-    #     except Exception as ex:
-    #         return HttpErrorResponse("%s" % ex)
-
-    #     if nodes + glb_nodes <= 0:
-    #         return HttpErrorResponse('Both arguments "nodes" and "glb_nodes" are null.')
-    #     total_nodes = len(self.config.get_nodes())
-    #     if nodes > 0 and nodes > total_nodes:
-    #         return HttpErrorResponse('Cannot remove %s nodes: %s nodes at most.'
-    #                                  % (nodes, total_nodes))
-    #     total_glb_nodes = len(self.config.get_glb_nodes())
-    #     if glb_nodes > 0 and glb_nodes > total_glb_nodes:
-    #         return HttpErrorResponse('Cannot remove %s nodes: %s nodes at most.'
-    #                                  % (glb_nodes, total_glb_nodes))
-    #     self.state = self.S_ADAPTING
-    #     rm_reg_nodes = self.config.get_nodes()[:nodes]
-    #     rm_glb_nodes = self.config.get_glb_nodes()[:glb_nodes]
-    #     Thread(target=self._do_remove_nodes, args=[rm_reg_nodes,rm_glb_nodes]).start()
-    #     return HttpJsonResponse()
 
     def _do_remove_nodes(self,rm_reg_nodes,rm_glb_nodes):
         glb_nodes = self.config.get_glb_nodes()
@@ -540,16 +336,11 @@ class GaleraManager(BaseManager):
         nodes = rm_reg_nodes + rm_glb_nodes
         for node in nodes:
             agent.stop(node.ip, self.config.AGENT_PORT)
-        # for node in rm_reg_nodes:
-        #     volume_id=self.volumes_dict[node.ip]
-        #     self.detach_volume(volume_id)
-        #     self.destroy_volume(volume_id)
-        # self.controller.delete_nodes(nodes)
         self.config.remove_nodes(nodes)
         if (len(self.config.get_nodes()) +len(self.config.get_glb_nodes())==0 ):
-            self.state=self.S_STOPPED
+            self.state_set(self.S_STOPPED)
         else:
-            self.state = self.S_RUNNING
+            self.statte_set(self.S_RUNNING)
         return nodes
 
     @expose('POST')
@@ -614,7 +405,7 @@ class GaleraManager(BaseManager):
         if migration_plan == []:
             return HttpErrorResponse('ERROR: argument is missing the nodes to migrate.')
 
-        self.state = self.S_ADAPTING
+        self.state_set(self.S_ADAPTING)
         Thread(target=self._do_migrate_nodes, args=[migration_plan, delay]).start()
         return HttpJsonResponse()
 
@@ -648,7 +439,7 @@ class GaleraManager(BaseManager):
             self.config.remove_nodes(new_nodes)
             self.logger.exception('_do_migrate_nodes: Could not'
                                   ' start nodes: %s' % ex)
-            self.state = self.S_RUNNING
+            self.state_set(self.S_RUNNING)
             raise ex
 
         self.logger.debug("Migration: new nodes %s created and"
@@ -666,15 +457,15 @@ class GaleraManager(BaseManager):
                               " the old nodes %s after %d seconds."
                               % (old_nodes, delay))
             self._start_timer(delay, self._do_migrate_finalize, old_nodes)
-            self.state = self.S_RUNNING
+            self.state_set(self.S_RUNNING)
 
     def _do_migrate_finalize(self, old_nodes):
-        self.state = self.S_ADAPTING
+        self.state_set(self.S_ADAPTING)
         for node in old_nodes:
             agent.stop(node.ip, self.config.AGENT_PORT)
         self.controller.delete_nodes(old_nodes)
         self.config.remove_nodes(old_nodes)
-        self.state = self.S_RUNNING
+        self.state_set(self.S_RUNNING)
         self.logger.info("Migration: old nodes %s have been removed."
                          " END of migration." % old_nodes)
 
@@ -700,33 +491,6 @@ class GaleraManager(BaseManager):
         return HttpJsonResponse({'state': self.state, 'type': 'galera'})
 
 
-    # @expose('POST')
-    # def stop(self, kwargs):
-    #     """
-    #     Stop the service.
-
-    #     No parameters.
-
-    #     Returns a dict with a key 'state' containing the new service state.
-    #     """
-    #     try:
-    #         self._check_state([self.S_RUNNING])
-    #         exp_params = []
-    #         check_arguments(exp_params, kwargs)
-    #     except Exception as ex:
-    #         return HttpErrorResponse("%s" % ex)
-
-    #     self.state = self.S_EPILOGUE
-    #     Thread(target=self._do_stop, args=[]).start()
-    #     return HttpJsonResponse({'state': self.state})
-
-    # def _do_stop(self):
-    #     ''' Shuts down the service. '''
-    #     self._do_remove_nodes(self.config.serviceNodes.values(),self.config.glb_service_nodes.values())
-    #     self.config.serviceNodes = {}
-    #     #self._do_remove_nodes(self.config.glb_service_nodes.values())
-    #     self.config.glb_service_nodes = {}
-    #     self.state = self.S_STOPPED
 
     def on_stop(self):
         res = self._do_remove_nodes(self.config.serviceNodes.values(),self.config.glb_service_nodes.values())
@@ -848,7 +612,7 @@ class GaleraManager(BaseManager):
             ip = check_arguments(exp_params, kwargs)
         except Exception as ex:
             return HttpErrorResponse("%s" % ex)
-        self.state = self.S_ADAPTING
+        self.state_set(self.S_ADAPTING)
         rm_reg_nodes = self.config.get_nodes()
         rm_glb_nodes = self.config.get_glb_nodes()
         is_in_glb=False
@@ -903,5 +667,3 @@ class GaleraManager(BaseManager):
         except Exception as ex:
             return HttpErrorResponse("%s" % ex)
         return HttpJsonResponse("OK!")
-
-

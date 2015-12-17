@@ -14,7 +14,7 @@ try {
 	}
 	$uid = $_SESSION['uid'];
 	$aid = NULL;
-	if ($_GET['aid'] == 1) {
+	if (isset($_GET['aid']) && $_GET['aid'] == 1) {
 		$aid = $_SESSION['aid'];
 	}
 

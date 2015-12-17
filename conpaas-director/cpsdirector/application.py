@@ -203,6 +203,10 @@ def _startapp(user_id, app_id, cloud_name, new_thread=True):
     finally:
         db.session.commit()
 
+def delete_nodes(nodes):
+    controller = Controller()
+    controller.setup_default()
+    controller.delete_nodes(nodes)
 
 def _deleteapp(user_id, app_id, del_app_entry):
     app = get_app_by_id(user_id, app_id)
@@ -219,9 +223,7 @@ def _deleteapp(user_id, app_id, del_app_entry):
         res_to_delete.append(ServiceNode(resource.vmid, resource.ip,'',resource.cloud,''))
         resource.remove()
 
-    controller = Controller()
-    controller.setup_default()
-    controller.delete_nodes(res_to_delete)
+    Thread(target=delete_nodes, args=[res_to_delete]).start()
 
     # delete them from database (no need to remove them from application manager)
     for service in Service.query.filter_by(application_id=app_id):
@@ -232,7 +234,7 @@ def _deleteapp(user_id, app_id, del_app_entry):
     # if app.manager:
     #     app.stop()
 
-    self.status = Application.A_STOPPED
+    app.status = Application.A_STOPPED
     # delete the applciation from the database
     if del_app_entry:
         db.session.delete(app)

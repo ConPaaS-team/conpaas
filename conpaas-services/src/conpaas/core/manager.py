@@ -66,35 +66,44 @@ class BaseManager(ConpaasRequestHandlerComponent):
     # String template for debugging messages logged on nodes creation
     ACTION_REQUESTING_NODES = "requesting %(count)s nodes in %(action)s"
 
-    
-    
 
     AGENT_PORT = 5555
+
 
     def __init__(self, config_parser):
         ConpaasRequestHandlerComponent.__init__(self)
         self.logger = create_logger(__name__)
-       
+
         self.logfile = config_parser.get('manager', 'LOG_FILE')
         self.config_parser = config_parser
-        self.state = self.S_INIT
+        self.state_log = []
+        self.state_set(self.S_INIT)
 
         self.volumes = {}
         self.nodes = []
 
-        
+    def state_get(self):
+        return self.state
+
+    def state_set(self, target_state, msg=''):
+        self.state = target_state
+        self.state_log.append({'time': time.time(),
+                               'state': target_state,
+                               'reason': msg})
+        self.logger.debug('STATE %s: %s' % (target_state, msg))
 
     def _check_state(self, expected_states):
-        if self.state not in expected_states:
+        state = self.state_get()
+        if state not in expected_states:
             raise Exception("Wrong service state: was expecting one of %s"\
                             " but current state is '%s'" \
-                            % (expected_states, self.state))
+                            % (expected_states, state))
 
     def _wait_state(self, expected_states, timeout=10 * 60):
         polling_interval = 10   # seconds
-        while self.state not in expected_states and timeout >= 0:
+        while self.state_get() not in expected_states and timeout >= 0:
             self.logger.debug('Current state is %s, waiting for state to change to one of %s'
-                              % (self.state, expected_states))
+                              % (self.state_get(), expected_states))
             time.sleep(polling_interval)
             timeout -= polling_interval
         if timeout < 0:
@@ -102,7 +111,14 @@ class BaseManager(ConpaasRequestHandlerComponent):
                             " while waiting for manager state to become one of %s."
                             % (timeout, polling_interval, expected_states))
 
- 
+    @expose('GET')
+    def get_service_history(self, kwargs):
+        if len(kwargs) != 0:
+            ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
+                                  kwargs.keys())
+            return HttpErrorResponse(ex.message)
+        return HttpJsonResponse({'state_log': self.state_log})
+
     def on_start(self, nodes):
         raise Exception("start method not implemented for this service")
 
@@ -159,7 +175,6 @@ class ApplicationManager(BaseManager):
         self.httpsserver = httpsserver
         # self.config_parser = config_parser
         self.kwargs = kwargs
-        self.state = self.S_INIT
         self.config_parsers = {}
 
         # IPOP setup
@@ -184,7 +199,7 @@ class ApplicationManager(BaseManager):
             self.logger.info('Ganglia started successfully')
 
         # self.counter = 0
-        self.state = self.S_RUNNING
+        self.state_set(self.S_RUNNING)
 
     @expose('GET')
     def check_process(self, kwargs):
@@ -206,7 +221,7 @@ class ApplicationManager(BaseManager):
     @expose('POST')
     def add_service(self, kwargs):
         """Expose methods relative to a specific service manager"""
-        self.state = self.S_ADAPTING
+        self.state_set(self.S_ADAPTING)
         self.kwargs.update(kwargs)
 
         exp_params = [('service_type', is_in_list(manager_services.keys())),
@@ -218,7 +233,7 @@ class ApplicationManager(BaseManager):
         try:
             module = __import__(services[service_type]['module'], globals(), locals(), ['*'])
         except ImportError:
-            self.state = self.S_ERROR
+            self.state_set(self.S_ERROR)
             raise Exception('Could not import module containing service class "%(module)s"' % 
                 services[service_type])
 
@@ -227,7 +242,7 @@ class ApplicationManager(BaseManager):
         try:
             instance_class = getattr(module, service_class)
         except AttributeError:
-            self.state = self.S_ERROR
+            self.state_set(self.S_ERROR)
             raise Exception('Could not get service class %s from module %s' % (service_class, module))
 
         #probably lock it 
@@ -250,12 +265,12 @@ class ApplicationManager(BaseManager):
                self.httpsserver._register_method(http_method, self.service_id, func_name, service_manager_exposed_functions[http_method][func_name])
 
 
-        self.state = self.S_RUNNING
+        self.state_set(self.S_RUNNING)
         return HttpJsonResponse({'service_id':self.service_id})
 
     @expose('POST')
     def remove_service(self, kwargs):
-        self.state = self.S_ADAPTING
+        self.state_set(self.S_ADAPTING)
         exp_params = [('service_id', is_in_list(self.httpsserver.instances.keys()))]
         service_id = check_arguments(exp_params, kwargs)
 
@@ -269,17 +284,18 @@ class ApplicationManager(BaseManager):
         [service_id, cloud ] = check_arguments(exp_params, kwargs)
 
         service_manager = self.httpsserver.instances[service_id]
-        
-        if service_manager.state != self.S_INIT and service_manager.state != self.S_STOPPED:
-            vals = { 'curstate': service_manager.state, 'action': 'startup' }
+
+        sm_state = service_manager.state_get()
+        if sm_state != self.S_INIT and sm_state != self.S_STOPPED:
+            vals = { 'curstate': sm_state, 'action': 'startup' }
             return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
 
         service_manager.logger.info('Manager starting up')
-        service_manager.state = self.S_PROLOGUE
+        service_manager.state_set(self.S_PROLOGUE)
 
         Thread(target=self._do_start_service, args=[service_id, cloud]).start()
         
-        return HttpJsonResponse({ 'state': service_manager.state })
+        return HttpJsonResponse({ 'state': service_manager.state_get() })
 
     def _do_start_service(self, service_id, cloud):
         service_manager = self.httpsserver.instances[service_id]
@@ -290,19 +306,18 @@ class ApplicationManager(BaseManager):
         self.nodes += nodes
         service_manager.nodes = nodes
         service_manager.on_start(nodes)
-        service_manager.state = self.S_RUNNING
 
     @expose('POST')
     def stop_service(self, kwargs):
         service_id = kwargs.pop('service_id')
         service_manager = self.httpsserver.instances[service_id]
-        service_manager.state = self.S_EPILOGUE
+        service_manager.state_set(self.S_EPILOGUE)
         Thread(target=self._do_stop_service, args=[service_id, False]).start()
-        return HttpJsonResponse({ 'state': service_manager.state })
+        return HttpJsonResponse({ 'state': service_manager.state_get() })
 
     def _do_stop_service(self, service_id, remove):
         service_manager = self.httpsserver.instances[service_id]
-        if service_manager.state != self.S_INIT:
+        if service_manager.state_get() != self.S_INIT:
             nodes = service_manager.on_stop()
             service_manager.nodes = []
             for node in nodes:
@@ -314,12 +329,11 @@ class ApplicationManager(BaseManager):
                    
                 self.nodes.remove(filter(lambda n: n.id == node.id, self.nodes)[0])
             self.callbacker.remove_nodes(nodes)
-            service_manager.state = self.S_STOPPED
 
         if remove:
             del self.httpsserver.instances[service_id]
             self.httpsserver._deregister_methods(service_id)
-            self.state = self.S_RUNNING
+            self.state_set(self.S_RUNNING)
 
     @expose('POST')
     def add_nodes(self, kwargs):
@@ -333,9 +347,9 @@ class ApplicationManager(BaseManager):
         [service_id, noderoles, cloud ] = check_arguments(exp_params, kwargs)
         
         service_manager = self.httpsserver.instances[service_id]
-        service_manager.state = self.S_ADAPTING
+        service_manager.state_set(self.S_ADAPTING)
         Thread(target=self._do_add_nodes, args=[service_id, noderoles, cloud]).start()
-        return HttpJsonResponse({ 'state': service_manager.state })
+        return HttpJsonResponse({ 'state': service_manager.state_get() })
 
     def _do_add_nodes(self, service_id, noderoles, cloud):
         service_manager = self.httpsserver.instances[service_id]
@@ -355,7 +369,6 @@ class ApplicationManager(BaseManager):
         self.nodes += nodes
         service_manager.nodes += nodes
         service_manager.on_add_nodes(nodes)
-        service_manager.state = self.S_RUNNING
 
     @expose('POST')
     def remove_nodes(self, kwargs):
@@ -374,9 +387,9 @@ class ApplicationManager(BaseManager):
             return HttpErrorResponse(self.WRONG_NR_NODES % vals)
 
         
-        service_manager.state = self.S_ADAPTING
+        service_manager.state_set(self.S_ADAPTING)
         Thread(target=self._do_remove_nodes, args=[service_id, noderoles]).start()
-        return HttpJsonResponse({ 'state': service_manager.state })
+        return HttpJsonResponse({ 'state': service_manager.state_get() })
 
     def _do_remove_nodes(self, service_id, noderoles):
         service_manager = self.httpsserver.instances[service_id]
@@ -393,17 +406,13 @@ class ApplicationManager(BaseManager):
 
     @expose('POST')
     def create_volume(self, kwargs):
-        # if self.state != self.S_RUNNING:
-        #     vals = { 'curstate': self.state,
-        #              'action': 'create_volume' }
-        #     return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
 
         node_ids = [ node.id for node in self.nodes ]
         exp_params = [('volumeName', is_not_in_list(self.volumes.keys())),
                       ('volumeSize', is_pos_int),
                       ('agentId', is_in_list(node_ids))
                       ]
-        [volumeName, volumeSize, agentId ] = check_arguments(exp_params, kwargs)
+        [ volumeName, volumeSize, agentId ] = check_arguments(exp_params, kwargs)
 
         # TODO: decide if this methods gets pulled to appmanager or we have a before_create_volume()
         # in the serice managers  
@@ -411,15 +420,25 @@ class ApplicationManager(BaseManager):
         #     self.logger.info("Volume creation is disabled when scripts are running")
         #     return HttpErrorResponse(self.SCRIPTS_ARE_RUNNING_MSG);
 
-        self.state = self.S_ADAPTING
-        Thread(target=self._do_create_volume, args=[volumeName, volumeSize, agentId]).start()
+        service_id, _ = self.get_service_id_by_vm_id(agentId)
+        service_manager = self.httpsserver.instances[service_id]
 
-        return HttpJsonResponse({ 'state': self.state })
+        sm_state = service_manager.state_get()
+        if sm_state != self.S_RUNNING:
+            vals = { 'curstate': sm_state,
+                     'action': 'create_volume' }
+            return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
 
-    def _do_create_volume(self, volumeName, volumeSize, agentId):
+        service_manager.state_set(self.S_ADAPTING)
+        Thread(target=self._do_create_volume, args=[volumeName, volumeSize, agentId, service_manager]).start()
+
+        return HttpJsonResponse({ 'state': service_manager.state_get() })
+
+    def _do_create_volume(self, volumeName, volumeSize, agentId, service_manager):
         """Create a new volume and attach it to the specified agent"""
 
         self.logger.info("Going to create a new volume")
+
         try:
             node = [ node for node in self.nodes if node.id == agentId ][0]
             try:
@@ -452,8 +471,6 @@ class ApplicationManager(BaseManager):
                       'vol_size': volumeSize, 'vm_id': agentId, 
                       'dev_name':dev_name, 'cloud':node.cloud_name}
             try:
-                service_id, _ = self.get_service_id_by_vm_id(agentId)
-                service_manager = self.httpsserver.instances[service_id]
                 service_manager.on_create_volume(node, volume)
             except Exception, ex:
                 self.logger.exception('Failed to configure Generic node %s: %s' % (node.id, ex))
@@ -462,14 +479,14 @@ class ApplicationManager(BaseManager):
                 raise
         except Exception, ex:
             self.logger.exception('Failed to create volume: %s.' % ex)
-            self.state = self.S_ERROR
+            service_manager.state_set(self.S_ERROR)
             return
 
         self.volumes[volumeName] = volume
         
         self.logger.info('Volume %s created and attached' % volumeName)
         # self.logger.info('Current volumes %s ' % self.volumes)
-        self.state = self.S_RUNNING
+        service_manager.state_set(self.S_RUNNING)
 
     def attach_volume(self, volume_id, vm_id, device_name=None, cloud=None):
 
@@ -501,48 +518,50 @@ class ApplicationManager(BaseManager):
     
     @expose('POST')
     def delete_volume(self, kwargs):
-        if self.state != self.S_RUNNING:
-            vals = { 'curstate': self.state,
-                     'action': 'delete_volume' }
-            return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
 
         exp_params = [('volumeName', is_in_list(self.volumes.keys()))]        
         volumeName = check_arguments(exp_params, kwargs)    
+
+        volume = self.volumes[volumeName]
+        node = [ node for node in self.nodes if node.id == volume['vm_id'] ][0]
+        service_id, _ = self.get_service_id_by_vm_id(node.id)
+        service_manager = self.httpsserver.instances[service_id]
+
+        sm_state = service_manager.state_get()
+        if sm_state != self.S_RUNNING:
+            vals = { 'curstate': sm_state,
+                     'action': 'delete_volume' }
+            return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
 
         # if self._are_scripts_running():
         #     self.logger.info("Volume removal is disabled when scripts are running")
         #     return HttpErrorResponse(self.SCRIPTS_ARE_RUNNING_MSG);
 
-        self.state = self.S_ADAPTING
-        Thread(target=self._do_delete_volume, args=[volumeName]).start()
+        service_manager.state_set(self.S_ADAPTING)
+        Thread(target=self._do_delete_volume, args=[volume, node, service_manager]).start()
 
-        return HttpJsonResponse({ 'state': self.state })
+        return HttpJsonResponse({ 'state': service_manager.state_get() })
 
-    def _do_delete_volume(self, volumeName):
+    def _do_delete_volume(self, volume, node, service_manager):
         """Detach a volume and delete it"""
-        self.logger.info("Going to remove volume %s" % volumeName)
+        self.logger.info("Going to remove volume %s" % volume['vol_name'])
 
-        volume = self.volumes[volumeName]
-        # self.logger.debug("Detaching and deleting volume %s" % volume.volumeName)
+        # self.logger.debug("Detaching and deleting volume %s" % volume['vol_name'])
         try:
-            node = [ node for node in self.nodes if node.id == volume['vm_id'] ][0]
-            service_id, _ = self.get_service_id_by_vm_id(node.id)
-            service_manager = self.httpsserver.instances[service_id]
             service_manager.on_delete_volume(node, volume)
         except Exception, ex:
             self.logger.exception('Failed to mount volume on node %s: %s' % (node.id, ex))
         self.detach_volume(volume)
         self.destroy_volume(volume)
 
-        self.volumes.pop(volumeName)
+        self.volumes.pop(volume['vol_name'])
         
-        self.logger.info('Volume generic-%s removed' % volumeName)
-        self.state = self.S_RUNNING
+        self.logger.info('Volume %s removed' % volume['vol_name'])
+        service_manager.state_set(self.S_RUNNING)
 
     def destroy_volume(self, volume):
         self.logger.info("Destroying volume with id %s" %  volume['vol_id'])
         
-
         for attempt in range(1, 11):
             try:
                 ret = self.callbacker.destroy_volume(volume['vol_id'], volume['cloud'])
@@ -605,7 +624,7 @@ class ApplicationManager(BaseManager):
     def _get_manager_states(self):
         states={}
         for instance in self.httpsserver.instances:
-            states[instance] = self.httpsserver.instances[instance].state
+            states[instance] = self.httpsserver.instances[instance].state_get()
         return states
 
     def _get_nr_services(self):

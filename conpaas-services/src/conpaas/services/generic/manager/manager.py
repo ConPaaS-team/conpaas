@@ -85,17 +85,6 @@ class GenericManager(BaseManager):
     get_script_status() -- GET
     get_agent_log(filename) -- GET
     """
-    # Manager states
-    S_INIT = 'INIT'         # manager initialized but not yet started
-    S_PROLOGUE = 'PROLOGUE' # manager is starting up
-    S_RUNNING = 'RUNNING'   # manager is running
-    S_ADAPTING = 'ADAPTING' # manager is in a transient state - frontend will
-                            # keep polling until manager out of transient state
-    S_EPILOGUE = 'EPILOGUE' # manager is shutting down
-    S_STOPPED = 'STOPPED'   # manager stopped
-    S_ERROR = 'ERROR'       # manager is in error state
-
-    DEPLOYMENT_STATE = 'deployment_state'
 
     # String template for error messages returned when performing actions in
     # the wrong state
@@ -129,14 +118,12 @@ class GenericManager(BaseManager):
 
         self.code_repo = config_parser.get('manager', 'CODE_REPO')
 
-        self.state_log = []
         if kwargs['reset_config']:
             self._create_initial_configuration()
 
         # self.nodes = []
         self.agents_info = []
         self.master_ip = None
-        self._state_set(self.S_INIT)
 
     def _prepare_default_config_script(self, script_name):
         fileno, path = tempfile.mkstemp()
@@ -210,10 +197,10 @@ echo "" >> /root/generic.out
             
             self.agents_info += agents_info
             self.master_ip = nodes[0].ip
-            self._state_set(self.S_RUNNING)
+            self.state_set(self.S_RUNNING)
         except Exception, err:
             self.logger.exception('_do_startup: Failed to create agents: %s' % err)
-            self._state_set(self.S_ERROR)
+            self.state_set(self.S_ERROR)
 
     def _update_agents_info(self, nodes, roles):
         id_ip = []
@@ -240,7 +227,7 @@ echo "" >> /root/generic.out
             except client.AgentException:
                 self.logger.exception('Failed initialize agent at node %s'
                         % str(serviceNode))
-                self._state_set(self.S_ERROR, msg='Failed to initialize agent at node %s'
+                self.state_set(self.S_ERROR, msg='Failed to initialize agent at node %s'
                         % str(serviceNode))
                 raise
     
@@ -254,7 +241,7 @@ echo "" >> /root/generic.out
         del_nodes = self.nodes[:]
         self.agents_info = []
         self.master_ip = None
-        # self._state_set(self.S_STOPPED)
+        self.state_set(self.S_STOPPED)
         return del_nodes
 
     def __check_count_in_args(self, kwargs):
@@ -290,7 +277,7 @@ echo "" >> /root/generic.out
         self._update_code(config, node_instances)
 
         self._do_execute_script('notify', nodes_before)
-        # self._state_set(self.S_RUNNING)
+        self.state_set(self.S_RUNNING)
 
 
     def on_remove_nodes(self, node_roles):
@@ -304,10 +291,10 @@ echo "" >> /root/generic.out
             self.logger.info("Removing node with IP %s" % node.ip)
         if not cp_nodes:
             self.master_ip = None
-            self._state_set(self.S_STOPPED)
+            self.state_set(self.S_STOPPED)
         else:
             self._do_execute_script('notify', self.cp_nodes)
-            self._state_set(self.S_RUNNING)
+            self.state_set(self.S_RUNNING)
 
         return del_nodes
 
@@ -318,8 +305,9 @@ echo "" >> /root/generic.out
     @expose('GET')
     def list_nodes(self, kwargs):
         """Return a list of running nodes"""
-        if self._state_get() != self.S_RUNNING:
-            vals = { 'curstate': self._state_get(), 'action': 'list_nodes' }
+        state = self.state_get()
+        if state != self.S_RUNNING:
+            vals = { 'curstate': state, 'action': 'list_nodes' }
             return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
 
         if len(kwargs) != 0:
@@ -347,7 +335,7 @@ echo "" >> /root/generic.out
                                   kwargs.keys())
             return HttpErrorResponse(ex.message)
 
-        return HttpJsonResponse({'state': self._state_get(), 'type': 'generic'})
+        return HttpJsonResponse({'state': self.state_get(), 'type': 'generic'})
 
     @expose('GET')
     def get_node_info(self, kwargs):
@@ -563,16 +551,16 @@ echo "" >> /root/generic.out
                     detail='Unknown code version identifier "%s"' % codeVersionId)
             return HttpErrorResponse(ex.message)
 
-        dstate = self._state_get()
-        if dstate == self.S_INIT or dstate == self.S_STOPPED:
+        state = self.state_get()
+        if state == self.S_INIT or state == self.S_STOPPED:
             config.currentCodeVersion = codeVersionId
             self._configuration_set(config)
-        elif dstate == self.S_RUNNING:
+        elif state == self.S_RUNNING:
             if self._are_scripts_running():
                 self.logger.info("Code activation is disabled when scripts are "\
                         "running")
                 return HttpErrorResponse(self.SCRIPTS_ARE_RUNNING_MSG);
-            self._state_set(self.S_ADAPTING, msg='Updating configuration')
+            self.state_set(self.S_ADAPTING, msg='Updating configuration')
             Thread(target=self._do_enable_code, args=[config, codeVersionId]).start()
         else:
             return HttpErrorResponse(ManagerException(ManagerException.E_STATE_ERROR).message)
@@ -581,7 +569,7 @@ echo "" >> /root/generic.out
     def _do_enable_code(self, config, codeVersionId):
         config.currentCodeVersion = codeVersionId
         self._update_code(config, self.nodes)
-        self._state_set(self.S_RUNNING)
+        self.state_set(self.S_RUNNING)
         self._configuration_set(config)
 
     def _update_code(self, config, nodes):
@@ -603,7 +591,7 @@ echo "" >> /root/generic.out
                                      filepath)
             except client.AgentException:
                 self.logger.exception('Failed to update code at node %s' % str(node))
-                self._state_set(self.S_ERROR, msg='Failed to update code at node %s' % str(node))
+                self.state_set(self.S_ERROR, msg='Failed to update code at node %s' % str(node))
                 raise
 
     @expose('POST')
@@ -658,8 +646,9 @@ echo "" >> /root/generic.out
 
     @expose('POST')
     def execute_script(self, kwargs):
-        if self._state_get() != self.S_RUNNING:
-            vals = { 'curstate': self._state_get(), 'action': 'execute_script' }
+        state = self.state_get()
+        if state != self.S_RUNNING:
+            vals = { 'curstate': state, 'action': 'execute_script' }
             return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
 
         if 'command' not in kwargs:
@@ -708,7 +697,7 @@ echo "" >> /root/generic.out
                                                         self.nodes,
                                                         parameters]).start()
 
-        return HttpJsonResponse({ 'state': self._state_get() })
+        return HttpJsonResponse({ 'state': self.state_get() })
 
     def _is_script_running(self, command):
         script_name = "%s.sh" % command
@@ -745,13 +734,14 @@ echo "" >> /root/generic.out
                 message = ("Failed to execute the '%s' command at node %s" %
                         (command, str(node)));
                 self.logger.exception(message)
-                self._state_set(self.S_ERROR, msg=message)
+                self.state_set(self.S_ERROR, msg=message)
                 raise
 
     @expose('GET')
     def get_script_status(self, kwargs):
-        if self._state_get() != self.S_RUNNING:
-            vals = { 'curstate': self._state_get(), 'action': 'get_script_status' }
+        state = self.state_get()
+        if state != self.S_RUNNING:
+            vals = { 'curstate': state, 'action': 'get_script_status' }
             return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
 
         if len(kwargs) != 0:
@@ -767,7 +757,7 @@ echo "" >> /root/generic.out
             except client.AgentException:
                 message = ("Failed to obtain script status at node %s" % str(node));
                 self.logger.exception(message)
-                self._state_set(self.S_ERROR, msg=message)
+                self.state_set(self.S_ERROR, msg=message)
                 return HttpErrorResponse(ex.message)
         return HttpJsonResponse({ 'agents' : agents })
 
@@ -818,14 +808,3 @@ echo "" >> /root/generic.out
     def _configuration_set(self, config):
         self.service_config = config
         # self.memcache.set(self.CONFIG, config)
-
-    def _state_get(self):
-        return self.state
-
-    def _state_set(self, target_state, msg=''):
-        self.state = target_state
-        self.state_log.append({'time': time.time(),
-                               'state': target_state,
-                               'reason': msg})
-        self.logger.debug('STATE %s: %s' % (target_state, msg))
-

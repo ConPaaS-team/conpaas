@@ -64,7 +64,7 @@ class PHPManager(BasicWebserversManager):
                                      filepath)
             except client.AgentException:
                 self.logger.exception('Failed to update code at node %s' % str(serviceNode))
-                self._state_set(self.S_ERROR, msg='Failed to update code at node %s' % str(serviceNode))
+                self.state_set(self.S_ERROR, msg='Failed to update code at node %s' % str(serviceNode))
                 raise
 
     def _start_proxy(self, config, nodes):
@@ -83,7 +83,7 @@ class PHPManager(BasicWebserversManager):
                                            **kwargs)
             except client.AgentException:
                 self.logger.exception('Failed to start proxy at node %s' % str(proxyNode))
-                self._state_set(self.S_ERROR, msg='Failed to start proxy at node %s' % str(proxyNode))
+                self.state_set(self.S_ERROR, msg='Failed to start proxy at node %s' % str(proxyNode))
                 raise
 
     def _update_proxy(self, config, nodes):
@@ -102,7 +102,7 @@ class PHPManager(BasicWebserversManager):
                                            **kwargs)
             except client.AgentException:
                 self.logger.exception('Failed to update proxy at node %s' % str(proxyNode))
-                self._state_set(self.S_ERROR, msg='Failed to update proxy at node %s' % str(proxyNode))
+                self.state_set(self.S_ERROR, msg='Failed to update proxy at node %s' % str(proxyNode))
                 raise
 
     def _start_backend(self, config, nodes):
@@ -112,7 +112,7 @@ class PHPManager(BasicWebserversManager):
                                  config.backend_config.scalaris, config.backend_config.php_conf.conf)
             except client.AgentException:
                 self.logger.exception('Failed to start php at node %s' % str(serviceNode))
-                self._state_set(self.S_ERROR, msg='Failed to start php at node %s' % str(serviceNode))
+                self.state_set(self.S_ERROR, msg='Failed to start php at node %s' % str(serviceNode))
                 raise
 
     def _update_backend(self, config, nodes):
@@ -122,7 +122,7 @@ class PHPManager(BasicWebserversManager):
                                  config.backend_config.scalaris, config.backend_config.php_conf.conf)
             except client.AgentException:
                 self.logger.exception('Failed to update php at node %s' % str(serviceNode))
-                self._state_set(self.S_ERROR, msg='Failed to update php at node %s' % str(serviceNode))
+                self.state_set(self.S_ERROR, msg='Failed to update php at node %s' % str(serviceNode))
                 raise
 
     def _stop_backend(self, config, nodes):
@@ -131,14 +131,14 @@ class PHPManager(BasicWebserversManager):
                 client.stopPHP(serviceNode.ip, 5555)
             except client.AgentException:
                 self.logger.exception('Failed to stop php at node %s' % str(serviceNode))
-                self._state_set(self.S_ERROR, msg='Failed to stop php at node %s' % str(serviceNode))
+                self.state_set(self.S_ERROR, msg='Failed to stop php at node %s' % str(serviceNode))
                 raise
 
     @expose('GET')
     def get_service_info(self, kwargs):
         if len(kwargs) != 0:
             return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
-        return HttpJsonResponse({'state': self._state_get(), 'type': 'PHP'})
+        return HttpJsonResponse({'state': self.state_get(), 'type': 'PHP'})
 
     @expose('GET')
     def get_configuration(self, kwargs):
@@ -236,15 +236,15 @@ class PHPManager(BasicWebserversManager):
         if codeVersionId and codeVersionId not in config.codeVersions:
             return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_INVALID, detail='Unknown code version identifier "%s"' % codeVersionId).message)
 
-        dstate = self._state_get()
-        if dstate == self.S_INIT or dstate == self.S_STOPPED:
+        state = self.state_get()
+        if state == self.S_INIT or state == self.S_STOPPED:
             if codeVersionId:
                 config.currentCodeVersion = codeVersionId
             for key in phpconf:
                 config.backend_config.php_conf.conf[key] = phpconf[key]
             self._configuration_set(config)
-        elif dstate == self.S_RUNNING:
-            self._state_set(self.S_ADAPTING, msg='Updating configuration')
+        elif state == self.S_RUNNING:
+            self.state_set(self.S_ADAPTING, msg='Updating configuration')
             Thread(target=self.do_update_configuration, args=[config, codeVersionId, phpconf]).start()
         else:
             return HttpErrorResponse(ManagerException(ManagerException.E_STATE_ERROR).message)
@@ -261,7 +261,7 @@ class PHPManager(BasicWebserversManager):
             self._update_code(config, config.serviceNodes.values())
             self._update_web(config, config.getWebServiceNodes())
             self._update_proxy(config, config.getProxyServiceNodes())
-        self._state_set(self.S_RUNNING)
+        self.state_set(self.S_RUNNING)
         self._configuration_set(config)
 
     def _create_initial_configuration(self):
@@ -298,7 +298,6 @@ class PHPManager(BasicWebserversManager):
         config.codeVersions['code-default'] = CodeVersion('code-default', 'code-default.tar', 'tar', description='Initial version')
         config.currentCodeVersion = 'code-default'
         self._configuration_set(config)
-        self._state_set(self.S_INIT)
 
     def _register_scalaris(self, scalaris):
         config = self._configuration_get()

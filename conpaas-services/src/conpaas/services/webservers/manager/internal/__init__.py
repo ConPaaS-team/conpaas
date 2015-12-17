@@ -101,20 +101,9 @@ class BasicWebserversManager(BaseManager):
         config.memcache = self.memcache
 
         self.code_repo = config_parser.get('manager', 'CODE_REPO')
-        self.state_log = []
 
     def get_service_type(self):
         return 'web'
-
-    def _state_get(self):
-        return self.memcache.get(self.DEPLOYMENT_STATE)
-
-    def _state_set(self, target_state, msg=''):
-        self.memcache.set(self.DEPLOYMENT_STATE, target_state)
-        self.state_log.append({'time': time.time(),
-                               'state': target_state,
-                               'reason': msg})
-        self.logger.debug('STATE %s: %s' % (target_state, msg))
 
     def _configuration_get(self):
         return self.memcache.get(self.CONFIG)
@@ -141,7 +130,7 @@ class BasicWebserversManager(BaseManager):
             except client.AgentException:
                 self.logger.exception(
                     'Failed to stop proxy at node %s' % str(serviceNode))
-                self._state_set(
+                self.state_set(
                     self.S_ERROR, msg='Failed to stop proxy at node %s' % str(serviceNode))
                 raise
 
@@ -158,7 +147,7 @@ class BasicWebserversManager(BaseManager):
             except client.AgentException:
                 self.logger.exception(
                     'Failed to start web at node %s' % str(serviceNode))
-                self._state_set(
+                self.state_set(
                     self.S_ERROR, msg='Failed to start web at node %s' % str(serviceNode))
                 raise
 
@@ -175,7 +164,7 @@ class BasicWebserversManager(BaseManager):
             except client.AgentException:
                 self.logger.exception(
                     'Failed to update web at node %s' % str(webNode))
-                self._state_set(
+                self.state_set(
                     self.S_ERROR, msg='Failed to update web at node %s' % str(webNode))
                 raise
 
@@ -186,7 +175,7 @@ class BasicWebserversManager(BaseManager):
             except client.AgentException:
                 self.logger.exception('Failed to stop web at node %s'
                                       % str(serviceNode))
-                self._state_set(self.S_ERROR, msg='Failed to stop web at node %s'
+                self.state_set(self.S_ERROR, msg='Failed to stop web at node %s'
                                 % str(serviceNode))
                 raise
 
@@ -210,11 +199,6 @@ class BasicWebserversManager(BaseManager):
 
     def on_start(self, nodes):
         config = self._configuration_get()
-
-        dstate = self._state_get()
-        if dstate != self.S_INIT and dstate != self.S_STOPPED:
-            ex = ManagerException(ManagerException.E_STATE_ERROR)
-            return HttpErrorResponse(ex.message)
 
         if config.proxy_count == 1 \
                 and (config.web_count == 0 or config.backend_count == 0):  # at least one is packed
@@ -271,7 +255,7 @@ class BasicWebserversManager(BaseManager):
         self._start_proxy(config, config.getProxyServiceNodes())
 
         self._configuration_set(config)  # update configuration
-        self._state_set(self.S_RUNNING)
+        self.state_set(self.S_RUNNING)
         self.memcache.set('nodes_additional', [])  
 
     def on_stop(self):
@@ -282,7 +266,7 @@ class BasicWebserversManager(BaseManager):
         del_nodes = config.serviceNodes.values()
         # self.controller.delete_nodes(config.serviceNodes.values())
         config.serviceNodes = {}
-        self._state_set(self.S_STOPPED)
+        self.state_set(self.S_STOPPED)
         self._configuration_set(config)
         return del_nodes
 
@@ -292,8 +276,8 @@ class BasicWebserversManager(BaseManager):
 
     #     config = self._configuration_get()
 
-    #     dstate = self._state_get()
-    #     if dstate != self.S_INIT and dstate != self.S_STOPPED:
+    #     state = self.state_get()
+    #     if state != self.S_INIT and state != self.S_STOPPED:
     #         ex = ManagerException(ManagerException.E_STATE_ERROR)
     #         return HttpErrorResponse(ex.message)
 
@@ -329,7 +313,7 @@ class BasicWebserversManager(BaseManager):
     #     # return
     #     # HttpErrorResponse(ManagerException(ManagerException.E_NOT_ENOUGH_CREDIT).message)
 
-    #     self._state_set(self.S_PROLOGUE, msg='Starting up')
+    #     self.state_set(self.S_PROLOGUE, msg='Starting up')
     #     Thread(target=self.do_startup, args=[
     #            config, serviceNodeKwargs, kwargs['cloud']]).start()
     #     return HttpJsonResponse({'state': self.S_PROLOGUE})
@@ -341,12 +325,12 @@ class BasicWebserversManager(BaseManager):
     #                               kwargs.keys())
     #         return HttpErrorResponse(ex.message)
 
-    #     dstate = self._state_get()
-    #     if dstate != self.S_RUNNING:
+    #     state = self.state_get()
+    #     if state != self.S_RUNNING:
     #         ex = ManagerException(ManagerException.E_STATE_ERROR)
     #         return HttpErrorResponse(ex.message)
 
-    #     self._state_set(self.S_EPILOGUE, msg='Shutting down')
+    #     self.state_set(self.S_EPILOGUE, msg='Shutting down')
     #     Thread(target=self._do_stop, args=[]).start()
     #     return HttpJsonResponse({'state': self.S_EPILOGUE})
 
@@ -366,7 +350,7 @@ class BasicWebserversManager(BaseManager):
     #     except:
     #         self.logger.exception(
     #             'do_startup: Failed to request new nodes. Needed %d' % (len(serviceNodeKwargs)))
-    #         self._state_set(self.S_STOPPED, msg='Failed to request new nodes')
+    #         self.state_set(self.S_STOPPED, msg='Failed to request new nodes')
     #         return
     #     finally:
     #         self._adapting_set_count(0)
@@ -397,7 +381,7 @@ class BasicWebserversManager(BaseManager):
     #     self._start_proxy(config, config.getProxyServiceNodes())
 
     #     self._configuration_set(config)  # update configuration
-    #     self._state_set(self.S_RUNNING)
+    #     self.state_set(self.S_RUNNING)
     #     self.memcache.set('nodes_additional', [])
 
     # def _do_stop(self):
@@ -407,7 +391,7 @@ class BasicWebserversManager(BaseManager):
     #     self._stop_backend(config, config.getBackendServiceNodes())
     #     self.controller.delete_nodes(config.serviceNodes.values())
     #     config.serviceNodes = {}
-    #     self._state_set(self.S_STOPPED)
+    #     self.state_set(self.S_STOPPED)
     #     self._configuration_set(config)
 
     def on_add_nodes(self, nodes):
@@ -466,7 +450,7 @@ class BasicWebserversManager(BaseManager):
         #     self.logger.exception(
         #         'do_add_nodes: Failed to request new nodes. Needed %d' %
         #         (len(proxyNodesNew + webNodesNew + backendNodesNew)))
-        #     self._state_set(
+        #     self.state_set(
         #         self.S_RUNNING, msg='Failed to request new nodes. Reverting to old configuration')
         #     return
         # finally:
@@ -517,7 +501,7 @@ class BasicWebserversManager(BaseManager):
         if config.web_count == 1 and config.getWebServiceNodes()[0] in config.getProxyServiceNodes():
             config.web_count = 0
 
-        self._state_set(self.S_RUNNING)
+        self.state_set(self.S_RUNNING)
         self._configuration_set(config)
         self.memcache.set('nodes_additional', [])
 
@@ -555,8 +539,8 @@ class BasicWebserversManager(BaseManager):
     #         name of the cloud where the nodes will be created
     #     """
     #     config = self._configuration_get()
-    #     dstate = self._state_get()
-    #     if dstate != self.S_RUNNING:
+    #     state = self.state_get()
+    #     if state != self.S_RUNNING:
     #         ex = ManagerException(ManagerException.E_STATE_ERROR)
     #         return HttpErrorResponse(ex.message)
 
@@ -643,7 +627,7 @@ class BasicWebserversManager(BaseManager):
     #                               detail='Cannot add more proxy servers without at least one "web" and one "backend"')
     #         return HttpErrorResponse(ex.message)
 
-    #     self._state_set(
+    #     self.state_set(
     #         self.S_ADAPTING, msg='Going to add proxy=%d, web=%d, backend=%d, vm_backend_type=%s, vm_web_type=%s, cloud=%s' %
     #         (proxy, web, backend, str(vm_backend_type), str(vm_web_type), cloud.get_cloud_name()))
     #     Thread(target=self.do_add_nodes, args=[
@@ -699,7 +683,7 @@ class BasicWebserversManager(BaseManager):
     #         self.logger.exception(
     #             'do_add_nodes: Failed to request new nodes. Needed %d' %
     #             (len(proxyNodesNew + webNodesNew + backendNodesNew)))
-    #         self._state_set(
+    #         self.state_set(
     #             self.S_RUNNING, msg='Failed to request new nodes. Reverting to old configuration')
     #         return
     #     finally:
@@ -750,7 +734,7 @@ class BasicWebserversManager(BaseManager):
     #     if config.web_count == 1 and config.getWebServiceNodes()[0] in config.getProxyServiceNodes():
     #         config.web_count = 0
 
-    #     self._state_set(self.S_RUNNING)
+    #     self.state_set(self.S_RUNNING)
     #     self._configuration_set(config)
     #     self.memcache.set('nodes_additional', [])
 
@@ -832,7 +816,7 @@ class BasicWebserversManager(BaseManager):
                                         if i.isRunningProxy and i not in proxyNodesKill])
 
         try:
-                # remove_nodes nodes
+            # remove_nodes nodes
             self._stop_backend(config, backendNodesKill)
             self._stop_web(config, webNodesKill)
             self._stop_proxy(config, proxyNodesKill)
@@ -860,208 +844,208 @@ class BasicWebserversManager(BaseManager):
             self.logger.critical('Error when trying to remove ')
 
         self._configuration_set(config)
-        self._state_set(self.S_RUNNING)
+        self.state_set(self.S_RUNNING)
         return del_nodes
 
 
-    @expose('POST')
-    def remove_nodes(self, kwargs):
-        config = self._configuration_get()
-        backend = 0
-        web = 0
-        proxy = 0
+    # @expose('POST')
+    # def remove_nodes(self, kwargs):
+    #     config = self._configuration_get()
+    #     backend = 0
+    #     web = 0
+    #     proxy = 0
 
-        node_ip = None
+    #     node_ip = None
 
-        if 'backend' in kwargs:
-            if not isinstance(kwargs['backend'], int):
-                ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                      detail='Expected an integer value for "backend"')
-                return HttpErrorResponse(ex.message)
-            backend = int(kwargs.pop('backend'))
-            if backend < 0:
-                ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                      detail='Expected a positive integer value for "backend"')
-                return HttpErrorResponse(ex.message)
+    #     if 'backend' in kwargs:
+    #         if not isinstance(kwargs['backend'], int):
+    #             ex = ManagerException(ManagerException.E_ARGS_INVALID,
+    #                                   detail='Expected an integer value for "backend"')
+    #             return HttpErrorResponse(ex.message)
+    #         backend = int(kwargs.pop('backend'))
+    #         if backend < 0:
+    #             ex = ManagerException(ManagerException.E_ARGS_INVALID,
+    #                                   detail='Expected a positive integer value for "backend"')
+    #             return HttpErrorResponse(ex.message)
 
-        if 'web' in kwargs:
-            if not isinstance(kwargs['web'], int):
-                ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                      detail='Expected an integer value for "web"')
-                return HttpErrorResponse(ex.message)
-            web = int(kwargs.pop('web'))
-            if web < 0:
-                ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                      detail='Expected a positive integer value for "web"')
-                return HttpErrorResponse(ex.message)
+    #     if 'web' in kwargs:
+    #         if not isinstance(kwargs['web'], int):
+    #             ex = ManagerException(ManagerException.E_ARGS_INVALID,
+    #                                   detail='Expected an integer value for "web"')
+    #             return HttpErrorResponse(ex.message)
+    #         web = int(kwargs.pop('web'))
+    #         if web < 0:
+    #             ex = ManagerException(ManagerException.E_ARGS_INVALID,
+    #                                   detail='Expected a positive integer value for "web"')
+    #             return HttpErrorResponse(ex.message)
 
-        if 'proxy' in kwargs:
-            if not isinstance(kwargs['proxy'], int):
-                ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                      detail='Expected an integer value for "proxy"')
-                return HttpErrorResponse(ex.message)
-            proxy = int(kwargs.pop('proxy'))
-            if proxy < 0:
-                ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                      detail='Expected a positive integer value for "proxy"')
-                return HttpErrorResponse(ex.message)
+    #     if 'proxy' in kwargs:
+    #         if not isinstance(kwargs['proxy'], int):
+    #             ex = ManagerException(ManagerException.E_ARGS_INVALID,
+    #                                   detail='Expected an integer value for "proxy"')
+    #             return HttpErrorResponse(ex.message)
+    #         proxy = int(kwargs.pop('proxy'))
+    #         if proxy < 0:
+    #             ex = ManagerException(ManagerException.E_ARGS_INVALID,
+    #                                   detail='Expected a positive integer value for "proxy"')
+    #             return HttpErrorResponse(ex.message)
 
-        if (backend + web + proxy) < 1:
-            ex = ManagerException(ManagerException.E_ARGS_MISSING, ['backend', 'web', 'proxy'],
-                                  detail='Need a positive value for at least one')
-            return HttpErrorResponse(ex.message)
+    #     if (backend + web + proxy) < 1:
+    #         ex = ManagerException(ManagerException.E_ARGS_MISSING, ['backend', 'web', 'proxy'],
+    #                               detail='Need a positive value for at least one')
+    #         return HttpErrorResponse(ex.message)
 
-        if 'node_ip' in kwargs:
-            self.logger.info('IP Node to remove: %s' % str(kwargs['node_ip']))
-            if not isinstance(str(kwargs['node_ip']), basestring):
-                ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                      detail='Expected a string value for "node_ip"')
-                return HttpErrorResponse(ex.message)
-            node_ip = kwargs.pop('node_ip')
-            if len(node_ip) <= 0:
-                ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                      detail='Expected a string value for "node_ip"')
-                return HttpErrorResponse(ex.message)
+    #     if 'node_ip' in kwargs:
+    #         self.logger.info('IP Node to remove: %s' % str(kwargs['node_ip']))
+    #         if not isinstance(str(kwargs['node_ip']), basestring):
+    #             ex = ManagerException(ManagerException.E_ARGS_INVALID,
+    #                                   detail='Expected a string value for "node_ip"')
+    #             return HttpErrorResponse(ex.message)
+    #         node_ip = kwargs.pop('node_ip')
+    #         if len(node_ip) <= 0:
+    #             ex = ManagerException(ManagerException.E_ARGS_INVALID,
+    #                                   detail='Expected a string value for "node_ip"')
+    #             return HttpErrorResponse(ex.message)
 
-        if len(kwargs) != 0:
-            ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
-                                  kwargs.keys())
-            return HttpErrorResponse(ex.message)
+    #     if len(kwargs) != 0:
+    #         ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
+    #                               kwargs.keys())
+    #         return HttpErrorResponse(ex.message)
 
-        if config.proxy_count - proxy < 1:
-            ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                  detail='Not enough proxy nodes  will be left')
-            return HttpErrorResponse(ex.message)
+    #     if config.proxy_count - proxy < 1:
+    #         ex = ManagerException(ManagerException.E_ARGS_INVALID,
+    #                               detail='Not enough proxy nodes  will be left')
+    #         return HttpErrorResponse(ex.message)
 
-        if config.web_count - web < 1 and config.proxy_count - proxy > 1:
-            ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                  detail='Not enough web nodes will be left')
-            return HttpErrorResponse(ex.message)
+    #     if config.web_count - web < 1 and config.proxy_count - proxy > 1:
+    #         ex = ManagerException(ManagerException.E_ARGS_INVALID,
+    #                               detail='Not enough web nodes will be left')
+    #         return HttpErrorResponse(ex.message)
 
-        if config.web_count - web < 0:
-            ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                  detail='Cannot remove_nodes that many web nodes')
-            return HttpErrorResponse(ex.message)
+    #     if config.web_count - web < 0:
+    #         ex = ManagerException(ManagerException.E_ARGS_INVALID,
+    #                               detail='Cannot remove_nodes that many web nodes')
+    #         return HttpErrorResponse(ex.message)
 
-        if config.backend_count - backend < 1 and config.proxy_count - proxy > 1:
-            ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                  detail='Not enough backend nodes will be left')
-            return HttpErrorResponse(ex.message)
+    #     if config.backend_count - backend < 1 and config.proxy_count - proxy > 1:
+    #         ex = ManagerException(ManagerException.E_ARGS_INVALID,
+    #                               detail='Not enough backend nodes will be left')
+    #         return HttpErrorResponse(ex.message)
 
-        if config.backend_count - backend < 0:
-            ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                  detail='Cannot remove_nodes that many backend nodes')
-            return HttpErrorResponse(ex.message)
+    #     if config.backend_count - backend < 0:
+    #         ex = ManagerException(ManagerException.E_ARGS_INVALID,
+    #                               detail='Cannot remove_nodes that many backend nodes')
+    #         return HttpErrorResponse(ex.message)
 
-        #dstate = self._state_get()
-        # FIXME: Problem with the states
-        #  if dstate != self.S_RUNNING:
-        # return
-        # HttpErrorResponse(ManagerException(ManagerException.E_STATE_ERROR).message)
+    #     #state = self.state_get()
+    #     # FIXME: Problem with the states
+    #     #  if state != self.S_RUNNING:
+    #     # return
+    #     # HttpErrorResponse(ManagerException(ManagerException.E_STATE_ERROR).message)
 
-        self._state_set(
-            self.S_ADAPTING, msg='Going to remove_nodes proxy=%d, web=%d, backend=%d' %
-            (proxy, web, backend))
-        Thread(target=self.do_remove_nodes, args=[
-               config, proxy, web, backend, node_ip]).start()
-        return HttpJsonResponse()
+    #     self.state_set(
+    #         self.S_ADAPTING, msg='Going to remove_nodes proxy=%d, web=%d, backend=%d' %
+    #         (proxy, web, backend))
+    #     Thread(target=self.do_remove_nodes, args=[
+    #            config, proxy, web, backend, node_ip]).start()
+    #     return HttpJsonResponse()
 
-    def do_remove_nodes(self, config, proxy, web, backend, node_ip=None):
-        packBackend = False
-        packWeb = False
-        packingNode = None
+    # def do_remove_nodes(self, config, proxy, web, backend, node_ip=None):
+    #     packBackend = False
+    #     packWeb = False
+    #     packingNode = None
 
-        backendNodesKill = []
-        webNodesKill = []
-        proxyNodesKill = []
+    #     backendNodesKill = []
+    #     webNodesKill = []
+    #     proxyNodesKill = []
 
-        if web > 0:
-            if node_ip is not None:
-                for serviceNode in config.getWebServiceNodes():
-                    if(serviceNode.ip == node_ip):
-                        webNodesKill.append(serviceNode)
-            else:
-                webNodesKill += config.getWebServiceNodes()[-web:]
-            if config.web_count - web == 0:
-                packWeb = True
+    #     if web > 0:
+    #         if node_ip is not None:
+    #             for serviceNode in config.getWebServiceNodes():
+    #                 if(serviceNode.ip == node_ip):
+    #                     webNodesKill.append(serviceNode)
+    #         else:
+    #             webNodesKill += config.getWebServiceNodes()[-web:]
+    #         if config.web_count - web == 0:
+    #             packWeb = True
 
-        if backend > 0:
-            if node_ip is not None:
-                for serviceNode in config.getBackendServiceNodes():
-                    if(serviceNode.ip == node_ip):
-                        backendNodesKill.append(serviceNode)
-            else:
-                backendNodesKill += config.getBackendServiceNodes()[-backend:]
-            if config.backend_count - backend == 0:
-                packBackend = True
+    #     if backend > 0:
+    #         if node_ip is not None:
+    #             for serviceNode in config.getBackendServiceNodes():
+    #                 if(serviceNode.ip == node_ip):
+    #                     backendNodesKill.append(serviceNode)
+    #         else:
+    #             backendNodesKill += config.getBackendServiceNodes()[-backend:]
+    #         if config.backend_count - backend == 0:
+    #             packBackend = True
 
-        if proxy > 0:
-            proxyNodesKill += config.getProxyServiceNodes()[-proxy:]
+    #     if proxy > 0:
+    #         proxyNodesKill += config.getProxyServiceNodes()[-proxy:]
 
-        packingNode = config.getProxyServiceNodes()[0]
-        for i in webNodesKill:
-            i.isRunningWeb = False
-        for i in backendNodesKill:
-            i.isRunningBackend = False
-        for i in proxyNodesKill:
-            i.isRunningProxy = False
-        if packBackend:
-            packingNode.isRunningBackend = True
-        if packWeb:
-            packingNode.isRunningWeb = True
+    #     packingNode = config.getProxyServiceNodes()[0]
+    #     for i in webNodesKill:
+    #         i.isRunningWeb = False
+    #     for i in backendNodesKill:
+    #         i.isRunningBackend = False
+    #     for i in proxyNodesKill:
+    #         i.isRunningProxy = False
+    #     if packBackend:
+    #         packingNode.isRunningBackend = True
+    #     if packWeb:
+    #         packingNode.isRunningWeb = True
 
-        config.update_mappings()
-        self.logger.info("Remove_nodes " + str(config.serviceNodes))
-        # new nodes
-        if packBackend:
-            # NOTE: Code update is done after starting the backend
-            #       because tomcat-create-instance complains if its
-            #       directory exists when it is run and placing the
-            #       code can only be done after creating the instance
-            self._start_backend(config, [packingNode])
-            self._update_code(config, [packingNode])
-        if packWeb:
-            self._start_web(config, [packingNode])
+    #     config.update_mappings()
+    #     self.logger.info("Remove_nodes " + str(config.serviceNodes))
+    #     # new nodes
+    #     if packBackend:
+    #         # NOTE: Code update is done after starting the backend
+    #         #       because tomcat-create-instance complains if its
+    #         #       directory exists when it is run and placing the
+    #         #       code can only be done after creating the instance
+    #         self._start_backend(config, [packingNode])
+    #         self._update_code(config, [packingNode])
+    #     if packWeb:
+    #         self._start_web(config, [packingNode])
 
-        if webNodesKill or backendNodesKill:
-            self._update_proxy(config, [i for i in config.serviceNodes.values()
-                                        if i.isRunningProxy and i not in proxyNodesKill])
+    #     if webNodesKill or backendNodesKill:
+    #         self._update_proxy(config, [i for i in config.serviceNodes.values()
+    #                                     if i.isRunningProxy and i not in proxyNodesKill])
 
-        try:
-                # remove_nodes nodes
-            self._stop_backend(config, backendNodesKill)
-            self._stop_web(config, webNodesKill)
-            self._stop_proxy(config, proxyNodesKill)
+    #     try:
+    #         # remove_nodes nodes
+    #         self._stop_backend(config, backendNodesKill)
+    #         self._stop_web(config, webNodesKill)
+    #         self._stop_proxy(config, proxyNodesKill)
 
-            #   self.logger.info("Internal php: service nodes "+str(config.serviceNodes.values()))
-            for i in config.serviceNodes.values():
-                if not i.isRunningBackend and not i.isRunningWeb and not i.isRunningProxy:
-                    del config.serviceNodes[i.id]
-                    self.controller.delete_nodes([i])
-                    #  self.logger.info("Internal php: Removing_node "+str(i.id))
+    #         #   self.logger.info("Internal php: service nodes "+str(config.serviceNodes.values()))
+    #         for i in config.serviceNodes.values():
+    #             if not i.isRunningBackend and not i.isRunningWeb and not i.isRunningProxy:
+    #                 del config.serviceNodes[i.id]
+    #                 self.controller.delete_nodes([i])
+    #                 #  self.logger.info("Internal php: Removing_node "+str(i.id))
 
-            config.proxy_count = len(config.getProxyServiceNodes())
-            config.backend_count = len(config.getBackendServiceNodes())
-            if config.backend_count == 1 and config.getBackendServiceNodes()[0] in config.getProxyServiceNodes():
-                config.backend_count = 0
-            config.web_count = len(config.getWebServiceNodes())
-            if config.web_count == 1 and config.getWebServiceNodes()[0] in config.getProxyServiceNodes():
-                config.web_count = 0
+    #         config.proxy_count = len(config.getProxyServiceNodes())
+    #         config.backend_count = len(config.getBackendServiceNodes())
+    #         if config.backend_count == 1 and config.getBackendServiceNodes()[0] in config.getProxyServiceNodes():
+    #             config.backend_count = 0
+    #         config.web_count = len(config.getWebServiceNodes())
+    #         if config.web_count == 1 and config.getWebServiceNodes()[0] in config.getProxyServiceNodes():
+    #             config.web_count = 0
 
-            #  config.update_mappings()
-            self.logger.info("Remove_nodes " + str(config.serviceNodes))
+    #         #  config.update_mappings()
+    #         self.logger.info("Remove_nodes " + str(config.serviceNodes))
 
-        except Exception:
-            self.logger.critical('Error when trying to remove ')
+    #     except Exception:
+    #         self.logger.critical('Error when trying to remove ')
 
-        self._configuration_set(config)
-        self._state_set(self.S_RUNNING)
+    #     self._configuration_set(config)
+    #     self.state_set(self.S_RUNNING)
 
     @expose('POST')
     def update_nodes_weight(self, kwargs):
         config = self._configuration_get()
-        dstate = self._state_get()
-        if dstate != self.S_RUNNING:
+        state = self.state_get()
+        if state != self.S_RUNNING:
             self.logger.critical('update_nodes_weight function: STATE_ERROR')
             ex = ManagerException(ManagerException.E_STATE_ERROR)
             return HttpErrorResponse(ex.message)
@@ -1128,8 +1112,8 @@ class BasicWebserversManager(BaseManager):
                                   kwargs.keys())
             return HttpErrorResponse(ex.message)
 
-        dstate = self._state_get()
-        if dstate != self.S_RUNNING and dstate != self.S_ADAPTING:
+        state = self.state_get()
+        if state != self.S_RUNNING and state != self.S_ADAPTING:
             ex = ManagerException(ManagerException.E_STATE_ERROR)
             return HttpErrorResponse(ex.message)
 
@@ -1209,10 +1193,11 @@ class BasicWebserversManager(BaseManager):
             with default instance type which can be "small" for example.
         """
         try:
-            if self._state_get() != self.S_RUNNING:
+            state = self.state_get()
+            if state != self.S_RUNNING:
                 raise Exception("Wrong service state: was expecting one of %s"
                                 " but current state is '%s'"
-                                % (self.S_RUNNING, self._state_get()))
+                                % (self.S_RUNNING, state))
             exp_keys = ['from_cloud', 'vmid', 'to_cloud']
             exp_params = [('migration_plan', is_list_dict2(exp_keys)),
                           ('delay', is_pos_nul_int, 0)]
@@ -1220,7 +1205,7 @@ class BasicWebserversManager(BaseManager):
             migration_plan = self._check_migrate_args(migration_plan)
         except Exception as ex:
             return HttpErrorResponse("%s" % ex)
-        self._state_set(self.S_ADAPTING, msg='Going to migrate nodes %s' % migration_plan)
+        self.state_set(self.S_ADAPTING, msg='Going to migrate nodes %s' % migration_plan)
         Thread(target=self._do_migrate_nodes, args=[migration_plan, delay]).start()
         return HttpJsonResponse()
 
@@ -1304,7 +1289,7 @@ class BasicWebserversManager(BaseManager):
             config.web_count = len(config.getWebServiceNodes())
             if config.web_count == 1 and config.getWebServiceNodes()[0] in config.getProxyServiceNodes():
                 config.web_count = 0
-            self._state_set(self.S_RUNNING)
+            self.state_set(self.S_RUNNING)
 
         self._configuration_set(config)
         self.logger.debug("Migration: new nodes %s created and"
@@ -1322,10 +1307,10 @@ class BasicWebserversManager(BaseManager):
                               " the old nodes %s after % seconds."
                               % (old_nodes, delay))
             self._start_timer(delay, self._do_migrate_finalize, old_nodes)
-            self._state_set(self.S_RUNNING)
+            self.state_set(self.S_RUNNING)
 
     def _do_migrate_finalize(self, old_nodes):
-        self._state_set(self.S_ADAPTING)
+        self.state_set(self.S_ADAPTING)
 
         config = self._configuration_get()
         for node in old_nodes:
@@ -1348,7 +1333,7 @@ class BasicWebserversManager(BaseManager):
             config.web_count = 0
 
         self._configuration_set(config)
-        self._state_set(self.S_RUNNING)
+        self.state_set(self.S_RUNNING)
         self.logger.info("Migration: old nodes %s have been removed."
                          " END of migration." % old_nodes)
 
@@ -1566,14 +1551,6 @@ class BasicWebserversManager(BaseManager):
 
         self._configuration_set(config)
         return HttpJsonResponse({'codeVersionId': codeVersionId})
-
-    @expose('GET')
-    def get_service_history(self, kwargs):
-        if len(kwargs) != 0:
-            ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
-                                  kwargs.keys())
-            return HttpErrorResponse(ex.message)
-        return HttpJsonResponse({'state_log': self.state_log})
 
     @expose('GET')
     def getSummerSchool(self, kwargs):

@@ -55,7 +55,7 @@ class JavaManager(BasicWebserversManager):
                         filepath)
             except client.AgentException:
                 self.logger.exception('Failed to update code at node %s' % str(serviceNode))
-                self._state_set(self.S_ERROR, msg='Failed to update code at node %s' % str(serviceNode))
+                self.state_set(self.S_ERROR, msg='Failed to update code at node %s' % str(serviceNode))
                 return
 
     def _start_proxy(self, config, nodes):
@@ -74,7 +74,7 @@ class JavaManager(BasicWebserversManager):
                                            **kwargs)
             except client.AgentException:
                 self.logger.exception('Failed to start proxy at node %s' % str(proxyNode))
-                self._state_set(self.S_ERROR, msg='Failed to start proxy at node %s' % str(proxyNode))
+                self.state_set(self.S_ERROR, msg='Failed to start proxy at node %s' % str(proxyNode))
                 raise
 
     def _update_proxy(self, config, nodes):
@@ -93,7 +93,7 @@ class JavaManager(BasicWebserversManager):
                                            **kwargs)
             except client.AgentException:
                 self.logger.exception('Failed to update proxy at node %s' % str(proxyNode))
-                self._state_set(self.S_ERROR, msg='Failed to update proxy at node %s' % str(proxyNode))
+                self.state_set(self.S_ERROR, msg='Failed to update proxy at node %s' % str(proxyNode))
                 raise
 
     def _start_backend(self, config, nodes):
@@ -102,7 +102,7 @@ class JavaManager(BasicWebserversManager):
                 client.createTomcat(serviceNode.ip, 5555, config.backend_config.port)
             except client.AgentException:
                 self.logger.exception('Failed to start Tomcat at node %s' % str(serviceNode))
-                self._state_set(self.S_ERROR, msg='Failed to start Tomcat at node %s' % str(serviceNode))
+                self.state_set(self.S_ERROR, msg='Failed to start Tomcat at node %s' % str(serviceNode))
                 raise
 
     def _stop_backend(self, config, nodes):
@@ -111,7 +111,7 @@ class JavaManager(BasicWebserversManager):
                 client.stopTomcat(serviceNode.ip, 5555)
             except client.AgentException:
                 self.logger.exception('Failed to stop Tomcat at node %s' % str(serviceNode))
-                self._state_set(self.S_ERROR, msg='Failed to stop Tomcat at node %s' % str(serviceNode))
+                self.state_set(self.S_ERROR, msg='Failed to stop Tomcat at node %s' % str(serviceNode))
                 raise
 
     @expose('GET')
@@ -120,7 +120,7 @@ class JavaManager(BasicWebserversManager):
             ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
                                   kwargs.keys())
             return HttpErrorResponse(ex.message)
-        return HttpJsonResponse({'state': self._state_get(), 'type': 'JAVA'})
+        return HttpJsonResponse({'state': self.state_get(), 'type': 'JAVA'})
 
     @expose('GET')
     def get_configuration(self, kwargs):
@@ -145,13 +145,13 @@ class JavaManager(BasicWebserversManager):
                                   kwargs.keys())
             return HttpErrorResponse(ex.message)
 
-        dstate = self._state_get()
-        if dstate == self.S_INIT or dstate == self.S_STOPPED:
+        state = self.state_get()
+        if state == self.S_INIT or state == self.S_STOPPED:
             if codeVersionId:
                 config.currentCodeVersion = codeVersionId
             self._configuration_set(config)
-        elif dstate == self.S_RUNNING:
-            self._state_set(self.S_ADAPTING, msg='Updating configuration')
+        elif state == self.S_RUNNING:
+            self.state_set(self.S_ADAPTING, msg='Updating configuration')
             Thread(target=self.do_update_configuration, args=[config, codeVersionId]).start()
         else:
             return HttpErrorResponse(ManagerException(ManagerException.E_STATE_ERROR).message)
@@ -197,7 +197,7 @@ class JavaManager(BasicWebserversManager):
             self._update_web(config, config.getWebServiceNodes())
             self._update_proxy(config, config.getProxyServiceNodes())
 
-        self._state_set(self.S_RUNNING)
+        self.state_set(self.S_RUNNING)
         self._configuration_set(config)
 
     def _create_initial_configuration(self):
@@ -231,4 +231,3 @@ class JavaManager(BasicWebserversManager):
         config.codeVersions['code-default'] = CodeVersion('code-default', 'code-default.war', 'zip', description='Initial version')
         config.currentCodeVersion = 'code-default'
         self._configuration_set(config)
-        self._state_set(self.S_INIT)
