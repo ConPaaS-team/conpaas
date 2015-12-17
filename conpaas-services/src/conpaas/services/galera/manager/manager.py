@@ -340,7 +340,7 @@ class GaleraManager(BaseManager):
         if (len(self.config.get_nodes()) +len(self.config.get_glb_nodes())==0 ):
             self.state_set(self.S_STOPPED)
         else:
-            self.statte_set(self.S_RUNNING)
+            self.state_set(self.S_RUNNING)
         return nodes
 
     @expose('POST')
