@@ -1042,10 +1042,12 @@ with::
 
     :DoNotReverseLookup => true,
 
+
 .. _conpaas-in-a-nutshell:
 
 ConPaaS in a Nutshell
 =====================
+
 ConPaaS in a Nutshell is an extension to the ConPaaS project which aims at 
 providing a cloud environment and a ConPaaS installation running on it, all
 in a single VM, called the Nutshell. More specifically, this VM has an 
@@ -1058,75 +1060,18 @@ standard clouds such as OpenNebula, OpenStack and EC2 but also on simpler
 virtualization tools such as VirtualBox. Therefore, it provides a great developing 
 and testing environment for ConPaaS without the need of accessing a cloud.
 
+The easiest way to try the Nutshell is to download the preassembled image
+for VirtualBox. This can be done from the following link:
 
-Creating a Nutshell image
--------------------------
-The procedure for creating a Nutshell image is very similar to the one for 
-creating a standard customized image described in section :ref:`image-creation`.
-However, there are a few settings in the configuration file which need 
-to be considered.
+**VirtualBox VM containing ConPaaS in a Nutshell (7.6 GB):**
+  http://www.conpaas.eu/dl/Nutshell-1.5.1.ova
 
-Most importantly, there are two flags in the **Nutshell** section of the 
-configuration file, *nutshell* and *container* which control the kind of image
-that is going to be generated. Since these two flags can take either value
-true of false, we distinguish four cases:
-
-#. nutshell = false, container = false: In this case a standard ConPaaS VM
-   image is generated and the nutshell configurations are not taken into consideration.
-   This is the default configuration which should be used when ConPaaS is deployed on a
-   standard cloud.
-
-#. nutshell = false, container = true: In this case the user indicates that the
-   image that will be generated will be a LXC container image. This image is similar
-   to a standard VM one, but it does not contain a kernel installation. 
-
-#. nutshell = true, container = false. In this case a Nutshell image is generated
-   and a standard ConPaaS VM image will be embedded in it. This configuration should be
-   used for deploying ConPaaS in nested standard VMs within a single VM.
-
-#. nutshell = true, container = true. Similar to the previous case, a Nutshell image
-   is generated but this time a container image is embedded in it instead of a VM one.
-   Therefore, in order to generate a Nutshell based on containers, make sure to set these
-   flags to this configuration. This is the default configuration for our distribution of
-   the Nutshell.
-
-Another important setting for generating the Nutshell image is also the path to a directory
-containing the ConPaaS tarballs (cps*.tar.gz files). 
-The rest of the settings specify the distro and kernel versions that the Nutshell VM would have.
-For the moment we have tested it only for Ubuntu 12.04 with kernel 3.5.0.
-
-In order to run the image generating script, the procedure is almost the same as for a standard image.
-From the create_vm diretory run:: 
-
-    $ python create-img-script.py
-    $ sudo ./create-img-nutshell.sh
-
-Note that if the *nutshell* flag is enabled the generated script file is called *create-img-nutshell.sh*.
-Otherwise, the generated script file is called *create-img-conpaas.sh* as indicated previously.
-
-
-   
-Creating a Nutshell image for VirtualBox
-----------------------------------------
-
-As mentioned earlier the Nutshell VM can run on VirtualBox. In order to generate a Nutshell image
-compatible with VirtualBox, you have to set the *cloud* value to *vbox* on the **Customizable** section of the configuration file.
-The rest of the procedure is the same as for other clouds. The result of the image generation script would be a
-*nutshell.vdi* image file which can be used as a virtual hard drive when creating a new appliance on VirtualBox.
-
-The procedure for creating a new appliance on VirtualBox is quite standard:
-
-#. Name and OS: You choose a custom name for the appliance but use *Linux* and *Ubuntu (64 bit)* for the type and version.
-
-#. Memory size: Since the Nutshell runs a significant number of services and also requires some memory for the containers, we suggest to choose at least 3 GB of RAM.
-
-#. Hard drive: Select "User an existing virtual hard drive file", browse to the location of the *nutshell.vdi* file generated earlier and press create.
+Alternatively, you can also create such an image or a similar one that runs
+on standard clouds (OpenNebula, OpenStack and Amazon EC2 are supported) by
+following the instructions in the Internals guide, section :ref:`creating-a-nutshell`.
 
 Running the Nutshell in VirtualBox
 ----------------------------------
-  
-From the 1.4.1 release though, ConPaaS is shipped together with a VirtualBox appliance containing the Nutshell
-VM image as well. 
 
 Before running the appliance it is strongly suggested to 
 create a host-only network on VirtualBox in case there is not already one created. To do so from the VirtualBox GUI, go to: File>Preferences>Network>Host-only Networks and click add.  Then use the File>Import appliance menu to import the image in VirtualBox.
