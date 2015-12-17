@@ -1065,6 +1065,7 @@ for VirtualBox. This can be done from the following link:
 
 **VirtualBox VM containing ConPaaS in a Nutshell (7.6 GB):**
   http://www.conpaas.eu/dl/Nutshell-1.5.1.ova
+  MD5: 018ea0eaa6b6108ef020e00391ef3a96
 
 Alternatively, you can also create such an image or a similar one that runs
 on standard clouds (OpenNebula, OpenStack and Amazon EC2 are supported) by
@@ -1105,11 +1106,11 @@ The two images can be downloaded from the following links:
 
 **RPI's SD card image (4.7 GB):**
   http://www.conpaas.eu/dl/ConPaaS-RPI/ConPaaS-RPI-SDCard-32G.img.tar.gz
+  MD5: b49a33dac4c6bdba9417b4feef1cd2aa
 
 **VirtualBox VM containing the backend server (7.4 GB):**
   http://www.conpaas.eu/dl/ConPaaS-RPI/ConPaaS-RPI-Backend-VM.ova
-
-
+  MD5: 0e6022423b3f940c73204320a5f4f669
 
 Installing the image on the Raspberry PI
 ----------------------------------------
@@ -1144,7 +1145,6 @@ the partitions by moving the swap partition near the end of the card and expandi
   if you adjust the partitions, please make sure that the beginning of every partition
   remains aligned on a 4 MB boundary (the usual size of the SD card's erase block) or else
   performance may be negatively affected.
-
 
 Deploying the Backend VM
 ------------------------
