@@ -124,6 +124,11 @@ class BaseManager(ConpaasRequestHandlerComponent):
     def get_starting_nodes(self):
         return [{'cloud':None}]
 
+    #overwrite this method in case the newly added nodes require also volumes
+    def get_add_nodes_info(self, noderoles, cloud):
+        count = sum(noderoles.values())
+        return [{'cloud':cloud} for _ in range(count)]
+
     # this should be overwritten from the service managers if applicable 
     def get_context_replacement(self):
         return {}
@@ -335,7 +340,8 @@ class ApplicationManager(BaseManager):
     def _do_add_nodes(self, service_id, noderoles, cloud):
         service_manager = self.httpsserver.instances[service_id]
         count = sum(noderoles.values())
-        nodes_info = [{'cloud':cloud} for _ in range(count)]
+        nodes_info = service_manager.get_add_nodes_info(noderoles, cloud)
+        # nodes_info = [{'cloud':cloud} for _ in range(count)]
         nodes = self.callbacker.create_nodes(nodes_info, service_id, service_manager)
         #assing roles
         roles = []

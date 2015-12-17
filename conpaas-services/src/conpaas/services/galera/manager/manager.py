@@ -51,8 +51,29 @@ class GaleraManager(BaseManager):
         nodes = [{'cloud':None, 'volumes':[volume]}]
         return nodes
 
+    def get_add_nodes_info(self, noderoles, cloud):
+        device_name=self.config_parser.get('manager', 'DEV_TARGET')
+        count = sum(noderoles.values())
+        nodes_info = [{'cloud':cloud} for _ in range(count)]
+        reg_nodes = noderoles.get('nodes', 0)
+        for node_info in nodes_info:
+            if reg_nodes:
+                volume = {'vol_name':'mysql-%(vm_id)s', 'vol_size': 1024, 'dev_name':device_name}
+                node_info['volumes'] = [volume]
+                reg_nodes -= 1
+
+        return nodes_info
+
+
+    def get_node_volumes(self, nodes):
+        device_name=self.config_parser.get('manager', 'DEV_TARGET')
+        volume = {'vol_name':'mysql-%(vm_id)s', 'vol_size': 1024, 'dev_name':device_name}
+        nodes = [{'cloud':None, 'volumes':[volume]}]
+        return nodes    
+
     def get_context_replacement(self):
         self.root_pass = ''.join([choice(string.letters + string.digits) for i in range(10)])
+        # self.root_pass='password'
         return dict(mysql_username='mysqldb', mysql_password=self.root_pass)
     
 
@@ -258,68 +279,85 @@ class GaleraManager(BaseManager):
                                                  }
                                  })
 
-    @expose('POST')
-    def add_nodes(self, kwargs):
-        """
-        Add new nodes for this MySQL Galera service.
+    def on_add_nodes(self, nodes):
+        for node in nodes:
+            self.logger.info('add node role: %s' % node.role)
 
-        Parameters
-        ----------
-        nodes : int
-            number of new regular nodes to add (default 0)
-        glb_nodes : int
-            number of new Galera Load Balancers nodes to add (default 0)
-        cloud : string
-            cloud name where to create nodes (default to default cloud)
+        reg_nodes = filter(lambda n: n.role=='nodes', nodes)
+        if len(reg_nodes):
+            self._start_mysqld(reg_nodes)
+            self.config.addMySQLServiceNodes(reg_nodes)
+        
+        gal_nodes = filter(lambda n: n.role=='glb_nodes', nodes)
+        if len(gal_nodes):
+            self._start_glbd(gal_nodes)
+            self.config.addGLBServiceNodes(gal_nodes)
 
-        Returns an error if nodes + glb_nodes == 0.
-        """
-        try:
-            self._check_state([self.S_RUNNING])
-            exp_params = [('nodes', is_pos_nul_int, 0),
-                          ('glb_nodes', is_pos_nul_int, 0),
-                          ('cloud', is_string, None)]
-            nodes, glb_nodes, cloud = check_arguments(exp_params, kwargs)
-        except Exception as ex:
-            return HttpErrorResponse("%s" % ex)
 
-        if nodes + glb_nodes <= 0:
-            return HttpErrorResponse('Both arguments "nodes" and "glb_nodes" are null.')
+    # @expose('POST')
+    # def add_nodes(self, kwargs):
+    #     """
+    #     Add new nodes for this MySQL Galera service.
 
-        self.state = self.S_ADAPTING
+    #     Parameters
+    #     ----------
+    #     nodes : int
+    #         number of new regular nodes to add (default 0)
+    #     glb_nodes : int
+    #         number of new Galera Load Balancers nodes to add (default 0)
+    #     cloud : string
+    #         cloud name where to create nodes (default to default cloud)
 
-        # TODO: check if argument "cloud" is an known cloud
-        if nodes > 0:
-            Thread(target=self._do_add_nodes, args=[self.REGULAR_NODE, nodes, cloud]).start()
-        #self._do_add_nodes(self.REGULAR_NODE, nodes, cloud)
-        if glb_nodes > 0:
-            Thread(target=self._do_add_nodes, args=[self.GLB_NODE, glb_nodes, cloud]).start()
-        #self._do_add_nodes(self.GLB_NODE, glb_nodes, cloud)
-        return HttpJsonResponse()
+    #     Returns an error if nodes + glb_nodes == 0.
+    #     """
+    #     try:
+    #         self._check_state([self.S_RUNNING])
+    #         exp_params = [('nodes', is_pos_nul_int, 0),
+    #                       ('glb_nodes', is_pos_nul_int, 0),
+    #                       ('cloud', is_string, None)]
+    #         nodes, glb_nodes, cloud = check_arguments(exp_params, kwargs)
+    #     except Exception as ex:
+    #         return HttpErrorResponse("%s" % ex)
 
-    def _do_add_nodes(self, node_type, count, cloud=None):
-        try:
-            start_cloud = self._init_cloud(cloud)
-            self.controller.add_context_replacement(dict(mysql_username='mysqldb',
-                                                         mysql_password=self.root_pass),
-                                                    cloud=start_cloud)
-            node_instances = self.controller.create_nodes(count,
-                                                          agent.check_agent_process,
-                                                          self.config.AGENT_PORT,
-                                                          start_cloud)
-            if node_type == self.REGULAR_NODE:
-                self._start_mysqld(node_instances, start_cloud)
-                self.config.addMySQLServiceNodes(node_instances)
-            elif node_type == self.GLB_NODE:
-                self._start_glbd(node_instances)
-                self.config.addGLBServiceNodes(node_instances)
-        except Exception, ex:
-            # rollback
-            for node in node_instances:
-                agent.stop(node.ip, self.config.AGENT_PORT)
-            self.controller.delete_nodes(node_instances)
-            self.logger.exception('Could not add nodes: %s' % ex)
-        self.state = self.S_RUNNING
+    #     if nodes + glb_nodes <= 0:
+    #         return HttpErrorResponse('Both arguments "nodes" and "glb_nodes" are null.')
+
+    #     self.state = self.S_ADAPTING
+
+    #     # TODO: check if argument "cloud" is an known cloud
+    #     if nodes > 0:
+    #         Thread(target=self._do_add_nodes, args=[self.REGULAR_NODE, nodes, cloud]).start()
+    #     #self._do_add_nodes(self.REGULAR_NODE, nodes, cloud)
+    #     if glb_nodes > 0:
+    #         Thread(target=self._do_add_nodes, args=[self.GLB_NODE, glb_nodes, cloud]).start()
+    #     #self._do_add_nodes(self.GLB_NODE, glb_nodes, cloud)
+    #     return HttpJsonResponse()
+
+    # def _do_add_nodes(self, node_type, count, cloud=None):
+    #     try:
+    #         start_cloud = self._init_cloud(cloud)
+    #         self.controller.add_context_replacement(dict(mysql_username='mysqldb',
+    #                                                      mysql_password=self.root_pass),
+    #                                                 cloud=start_cloud)
+    #         node_instances = self.controller.create_nodes(count,
+    #                                                       agent.check_agent_process,
+    #                                                       self.config.AGENT_PORT,
+    #                                                       start_cloud)
+            
+    #         if node_type == self.REGULAR_NODE:
+    #             self._start_mysqld(node_instances, start_cloud)
+    #             self.config.addMySQLServiceNodes(node_instances)
+    #         elif node_type == self.GLB_NODE:
+    #             self._start_glbd(node_instances)
+    #             self.config.addGLBServiceNodes(node_instances)
+    #     except Exception, ex:
+    #         # rollback
+    #         for node in node_instances:
+    #             agent.stop(node.ip, self.config.AGENT_PORT)
+    #         self.controller.delete_nodes(node_instances)
+    #         self.logger.exception('Could not add nodes: %s' % ex)
+    #     self.state = self.S_RUNNING
+            
 
     @expose('GET')
     def getMeanLoad(self, kwargs):
@@ -447,43 +485,51 @@ class GaleraManager(BaseManager):
                                  'response_time': 0,
                                  })
 
-    @expose('POST')
-    def remove_nodes(self, kwargs):
-        """
-        Remove MySQL Galera nodes.
-
-        Parameters
-        ----------
-        nodes : int
-            number of regular nodes to remove (default 0)
-        glb_nodes : int
-            number of Galera Load Balancer nodes to remove (default 0)
-
-        Returns an error if "nodes + glb_nodes == 0".
-        """
-        try:
-            self._check_state([self.S_RUNNING])
-            exp_params = [('nodes', is_pos_nul_int, 0),
-                          ('glb_nodes', is_pos_nul_int, 0)]
-            nodes, glb_nodes = check_arguments(exp_params, kwargs)
-        except Exception as ex:
-            return HttpErrorResponse("%s" % ex)
-
-        if nodes + glb_nodes <= 0:
-            return HttpErrorResponse('Both arguments "nodes" and "glb_nodes" are null.')
-        total_nodes = len(self.config.get_nodes())
-        if nodes > 0 and nodes > total_nodes:
-            return HttpErrorResponse('Cannot remove %s nodes: %s nodes at most.'
-                                     % (nodes, total_nodes))
-        total_glb_nodes = len(self.config.get_glb_nodes())
-        if glb_nodes > 0 and glb_nodes > total_glb_nodes:
-            return HttpErrorResponse('Cannot remove %s nodes: %s nodes at most.'
-                                     % (glb_nodes, total_glb_nodes))
-        self.state = self.S_ADAPTING
+    def on_remove_nodes(self, noderoles):
+        #We assume arguments are checked here!
+        nodes = noderoles.get('nodes', 0)
+        glb_nodes = noderoles.get('glb_nodes', 0)
         rm_reg_nodes = self.config.get_nodes()[:nodes]
         rm_glb_nodes = self.config.get_glb_nodes()[:glb_nodes]
-        Thread(target=self._do_remove_nodes, args=[rm_reg_nodes,rm_glb_nodes]).start()
-        return HttpJsonResponse()
+        return self._do_remove_nodes(rm_reg_nodes,rm_glb_nodes)
+
+    # @expose('POST')
+    # def remove_nodes(self, kwargs):
+    #     """
+    #     Remove MySQL Galera nodes.
+
+    #     Parameters
+    #     ----------
+    #     nodes : int
+    #         number of regular nodes to remove (default 0)
+    #     glb_nodes : int
+    #         number of Galera Load Balancer nodes to remove (default 0)
+
+    #     Returns an error if "nodes + glb_nodes == 0".
+    #     """
+    #     try:
+    #         self._check_state([self.S_RUNNING])
+    #         exp_params = [('nodes', is_pos_nul_int, 0),
+    #                       ('glb_nodes', is_pos_nul_int, 0)]
+    #         nodes, glb_nodes = check_arguments(exp_params, kwargs)
+    #     except Exception as ex:
+    #         return HttpErrorResponse("%s" % ex)
+
+    #     if nodes + glb_nodes <= 0:
+    #         return HttpErrorResponse('Both arguments "nodes" and "glb_nodes" are null.')
+    #     total_nodes = len(self.config.get_nodes())
+    #     if nodes > 0 and nodes > total_nodes:
+    #         return HttpErrorResponse('Cannot remove %s nodes: %s nodes at most.'
+    #                                  % (nodes, total_nodes))
+    #     total_glb_nodes = len(self.config.get_glb_nodes())
+    #     if glb_nodes > 0 and glb_nodes > total_glb_nodes:
+    #         return HttpErrorResponse('Cannot remove %s nodes: %s nodes at most.'
+    #                                  % (glb_nodes, total_glb_nodes))
+    #     self.state = self.S_ADAPTING
+    #     rm_reg_nodes = self.config.get_nodes()[:nodes]
+    #     rm_glb_nodes = self.config.get_glb_nodes()[:glb_nodes]
+    #     Thread(target=self._do_remove_nodes, args=[rm_reg_nodes,rm_glb_nodes]).start()
+    #     return HttpJsonResponse()
 
     def _do_remove_nodes(self,rm_reg_nodes,rm_glb_nodes):
         glb_nodes = self.config.get_glb_nodes()
@@ -494,16 +540,17 @@ class GaleraManager(BaseManager):
         nodes = rm_reg_nodes + rm_glb_nodes
         for node in nodes:
             agent.stop(node.ip, self.config.AGENT_PORT)
-        for node in rm_reg_nodes:
-            volume_id=self.volumes_dict[node.ip]
-            self.detach_volume(volume_id)
-            self.destroy_volume(volume_id)
-        self.controller.delete_nodes(nodes)
+        # for node in rm_reg_nodes:
+        #     volume_id=self.volumes_dict[node.ip]
+        #     self.detach_volume(volume_id)
+        #     self.destroy_volume(volume_id)
+        # self.controller.delete_nodes(nodes)
         self.config.remove_nodes(nodes)
         if (len(self.config.get_nodes()) +len(self.config.get_glb_nodes())==0 ):
             self.state=self.S_STOPPED
         else:
             self.state = self.S_RUNNING
+        return nodes
 
     @expose('POST')
     def migrate_nodes(self, kwargs):
@@ -652,33 +699,40 @@ class GaleraManager(BaseManager):
             return HttpErrorResponse("%s" % ex)
         return HttpJsonResponse({'state': self.state, 'type': 'galera'})
 
-    @expose('POST')
-    def stop(self, kwargs):
-        """
-        Stop the service.
 
-        No parameters.
+    # @expose('POST')
+    # def stop(self, kwargs):
+    #     """
+    #     Stop the service.
 
-        Returns a dict with a key 'state' containing the new service state.
-        """
-        try:
-            self._check_state([self.S_RUNNING])
-            exp_params = []
-            check_arguments(exp_params, kwargs)
-        except Exception as ex:
-            return HttpErrorResponse("%s" % ex)
+    #     No parameters.
 
-        self.state = self.S_EPILOGUE
-        Thread(target=self._do_stop, args=[]).start()
-        return HttpJsonResponse({'state': self.state})
+    #     Returns a dict with a key 'state' containing the new service state.
+    #     """
+    #     try:
+    #         self._check_state([self.S_RUNNING])
+    #         exp_params = []
+    #         check_arguments(exp_params, kwargs)
+    #     except Exception as ex:
+    #         return HttpErrorResponse("%s" % ex)
 
-    def _do_stop(self):
-        ''' Shuts down the service. '''
-        self._do_remove_nodes(self.config.serviceNodes.values(),self.config.glb_service_nodes.values())
+    #     self.state = self.S_EPILOGUE
+    #     Thread(target=self._do_stop, args=[]).start()
+    #     return HttpJsonResponse({'state': self.state})
+
+    # def _do_stop(self):
+    #     ''' Shuts down the service. '''
+    #     self._do_remove_nodes(self.config.serviceNodes.values(),self.config.glb_service_nodes.values())
+    #     self.config.serviceNodes = {}
+    #     #self._do_remove_nodes(self.config.glb_service_nodes.values())
+    #     self.config.glb_service_nodes = {}
+    #     self.state = self.S_STOPPED
+
+    def on_stop(self):
+        res = self._do_remove_nodes(self.config.serviceNodes.values(),self.config.glb_service_nodes.values())
         self.config.serviceNodes = {}
-        #self._do_remove_nodes(self.config.glb_service_nodes.values())
         self.config.glb_service_nodes = {}
-        self.state = self.S_STOPPED
+        return res
 
     @expose('POST')
     def set_password(self, kwargs):

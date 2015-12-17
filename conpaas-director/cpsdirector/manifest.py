@@ -949,7 +949,6 @@ from cpsdirector.application import check_app_exists, get_app_by_id
 from cpsdirector.application import _createapp as createapp
 from cpsdirector.application import _startapp as startapp, Application
 
-
 def new_manifest(json, cloud = 'default'):
     
     try:
