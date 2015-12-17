@@ -329,7 +329,7 @@ class XtreemFSManager(BaseManager):
 
         self.logger.info('Created 1 node with DIR, MRC and OSD services')
         self.logger.info('XtreemFS service was started up')
-        self.state_set(self.S_RUNNING)
+        return True
 
     # def _do_startup(self, cloud, resuming=False):
     #     """Starts up the service. The first nodes will contain all services. 

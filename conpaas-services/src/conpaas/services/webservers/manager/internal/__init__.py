@@ -255,8 +255,9 @@ class BasicWebserversManager(BaseManager):
         self._start_proxy(config, config.getProxyServiceNodes())
 
         self._configuration_set(config)  # update configuration
-        self.state_set(self.S_RUNNING)
+        
         self.memcache.set('nodes_additional', [])  
+        return True
 
     def on_stop(self):
         config = self._configuration_get()
@@ -266,7 +267,6 @@ class BasicWebserversManager(BaseManager):
         del_nodes = config.serviceNodes.values()
         # self.controller.delete_nodes(config.serviceNodes.values())
         config.serviceNodes = {}
-        self.state_set(self.S_STOPPED)
         self._configuration_set(config)
         return del_nodes
 

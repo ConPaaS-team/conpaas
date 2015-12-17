@@ -119,6 +119,7 @@ class BaseManager(ConpaasRequestHandlerComponent):
             return HttpErrorResponse(ex.message)
         return HttpJsonResponse({'state_log': self.state_log})
 
+    # return true if successful 
     def on_start(self, nodes):
         raise Exception("start method not implemented for this service")
 
@@ -305,7 +306,10 @@ class ApplicationManager(BaseManager):
         nodes = self.callbacker.create_nodes(nodes_info, service_id, service_manager)
         self.nodes += nodes
         service_manager.nodes = nodes
-        service_manager.on_start(nodes)
+        if service_manager.on_start(nodes):
+            service_manager.state_set(self.S_RUNNING)
+        else:
+            service_manager.state_set(self.S_ERROR)
 
     @expose('POST')
     def stop_service(self, kwargs):
@@ -320,6 +324,7 @@ class ApplicationManager(BaseManager):
         if service_manager.state_get() != self.S_INIT:
             nodes = service_manager.on_stop()
             service_manager.nodes = []
+            service_manager.state_set(self.S_STOPPED)
             for node in nodes:
                 
                 # remove also the volumes associated to those nodes

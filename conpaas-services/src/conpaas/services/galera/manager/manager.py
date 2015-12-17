@@ -77,8 +77,9 @@ class GaleraManager(BaseManager):
     
 
     def on_start(self, nodes):
-        self._start_mysqld(nodes)
+        succ = self._start_mysqld(nodes)
         self.config.addMySQLServiceNodes(nodes)
+        return succ
 
 
     def _start_mysqld(self, nodes):
@@ -98,9 +99,11 @@ class GaleraManager(BaseManager):
                          for node in nodes]
             for glb in glb_nodes:
                 agent.add_glbd_nodes(glb.ip, self.config.AGENT_PORT, nodesIp)
+            return True
         except Exception as ex:
             self.logger.exception('Failed to configure GLB nodes with new Galera nodes: %s' % ex)
             raise
+            
 
 
     def _start_glbd(self, new_glb_nodes):
@@ -340,7 +343,7 @@ class GaleraManager(BaseManager):
         if (len(self.config.get_nodes()) +len(self.config.get_glb_nodes())==0 ):
             self.state_set(self.S_STOPPED)
         else:
-            self.statte_set(self.S_RUNNING)
+            self.state_set(self.S_RUNNING)
         return nodes
 
     @expose('POST')

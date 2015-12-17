@@ -124,9 +124,10 @@ $(document).ready(function () {
             });
         }else
         {
-            if(page.reachable && page.state == 'RUNNING'){
+            if(page.service.reachable && page.service.state == 'RUNNING'){
                 // this.poller = new conpaas.http.Poller(server, 'ajax/checkResources.php', 'get');
-                alert('hello')    
+                // alert('hello')    
+                var a = 'hello'
             }
             
         }

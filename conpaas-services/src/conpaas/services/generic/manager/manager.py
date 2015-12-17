@@ -197,10 +197,11 @@ echo "" >> /root/generic.out
             
             self.agents_info += agents_info
             self.master_ip = nodes[0].ip
-            self.state_set(self.S_RUNNING)
+            return True
         except Exception, err:
             self.logger.exception('_do_startup: Failed to create agents: %s' % err)
-            self.state_set(self.S_ERROR)
+            return False
+            
 
     def _update_agents_info(self, nodes, roles):
         id_ip = []
@@ -241,7 +242,6 @@ echo "" >> /root/generic.out
         del_nodes = self.nodes[:]
         self.agents_info = []
         self.master_ip = None
-        self.state_set(self.S_STOPPED)
         return del_nodes
 
     def __check_count_in_args(self, kwargs):
