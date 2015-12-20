@@ -1006,7 +1006,7 @@ def new_manifest(json, cloud = 'default'):
         except Exception:
             return 'Service %s does not exists' % service.get('Type')
 
-        # msg = 'ok'
+        msg = 'ok'
         # if service.get('Type') == 'galera':
         msg = cls().start(service, appid)
 

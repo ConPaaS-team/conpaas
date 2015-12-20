@@ -171,33 +171,6 @@ class Service {
 				 $this->state == self::STATE_ERROR));
 	}
 
-	// private function decodeResponse($json, $method) {
-	// 	$response = json_decode($json, true);
-	// 	if ($response == null) {
-	// 		if (strlen($json) > 256) {
-	// 			$json = substr($json, 0, 256).'...[TRIMMED]';
-	// 		}
-	// 		throw new Exception('Error parsing response for '.$method
-	// 			.': "'.$json.'"');
-	// 	}
-	// 	if (isset($response['error']) && $response['error'] !== null) {
-	// 		$message = $response['error'];
-	// 		if (is_array($response['error'])) {
-	// 			$message = $response['error']['message'];
-	// 		}
-	// 		throw new ManagerException('Remote error: '.$message);
-	// 	}
-	// 	return $response;
-	// }
-
-	// protected function managerRequest($http_method, $method, array $params,
-	// 		$ping=false) {
-	// 	$json = HTTPS::jsonrpc($this->manager, $http_method, $method, $params,
-	// 		$ping);
-	// 	$this->decodeResponse($json, $method);
-	// 	return $json;
-	// }
-
 	protected function managerRequest($http_method, $method, array $params, $ping=false) {
 		return $this->application->managerRequest($http_method, $method, $this->sid, $params, $ping);
 	}

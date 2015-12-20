@@ -26,14 +26,16 @@ conpaas.ui = (function (this_module) {
                     apps[res.app_id]['res'].push(res)
                 }
                 if (resources.length){
-                    html = '<div style="width:100%; text-align:center; border:0px solid"> <table id="resources" class="slist" width="100%" cellpadding="5">' 
-                    html += '<tr><th>Application</th><th>ID</th><th>IP</th><th>Role</th><th>Cloud</th></tr>' 
+                    // html = '<div style="width:100%; text-align:center; border:0px solid"> <table id="resources" class="slist" width="100%" cellpadding="5">' 
+                    html = '<div style="width:100%; text-align:center; border:0px solid"> <table id="resources" class="st_table" width="100%" cellpadding="5">' 
+                    html += '<thead><tr><td>Application</td><td>ID</td><td>IP</td><td>Role</td><td>Cloud</td></tr></thead>' 
                     gray = 'style="background-color: #EEE;"'
                     j = 0
                     for (var property in apps) {
                         if (apps.hasOwnProperty(property)) {
                             if (j%2==0) 
-                                style = gray
+                                // style = gray
+                                style = ''
                             else 
                                 style = ''
                             html += '<tr ><td '+style+'rowspan="'+apps[property]['res'].length+'">'

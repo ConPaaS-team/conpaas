@@ -195,31 +195,18 @@ class GaleraPage extends ServicePage {
 	}
 
 	public function renderPerformanceForm() {
-                return
-                '<div class="form-section mysql-access">'
+        return  '<div class="form-section mysql-access">'
                         .'<div class="form-header">'
-                                .'<div class="title">'
-                                        .'<img src="images/Performance.png"/>Performance Monitor'
+                                .'<div class="title" style="width:100%">'
+                                        // .'<table style="width:100%"><tr><td><img src="images/Performance.png"/>Performance Monitor</td><td align="right"><span id="showStats" style="cursor:pointer">Show</span></td></tr></table> '
+                  				.'<img src="images/Performance.png"/>Performance Monitor <div class="access-box"><a id="showStats" href="javascript: void(0);">show</a></div>'
                                 .'</div>'
-                                
-                                
                                 .'<div class="clear"></div>'
                         .'</div>'
-                      //  .$this->renderFormRow('Ordinary nodes:',
-                               // $this->service->getCPU())#correggi questo
-/*			.$this->renderFormRow('Ordinary nodes Load: ',
-                               '<span id="ordinaryLoad"></span> ' )
-                        .$this->renderFormRow('LoadBalancer nodes Load:',
-                                //$this->service->getMeanLoad()
-			'Unimplemented(for now!!!)'
-			)
-                        .$this->renderFormRow(
-			'<input id="autoscale" type="button" value="Autoscale"  />'   
-			  ,'Unimplemented(for now!!!)')
-*/                      . '<div id="stats_div" style="width: 780px; height: 400px;"></div>'
-			.'<link href="lib/ui/page/galera/galeraGanglia.css" rel="stylesheet" type="text/css">
-			<table class="Information" id="tableID">
-  			<thead> <! parte iniziale della tabella, contiene le indicazioni sul contenuto delle celle>
+                        .'<div id="monitor_div" style="display:none; padding:10px">'
+                        .''
+			.'<table class="st_table" id="tableID">
+  			<thead>
     			<tr>
       			<td>Hostname</td>
       			<td>CPU<br>Usage</td>
@@ -236,8 +223,9 @@ class GaleraPage extends ServicePage {
   			</tbody>
 			
 			</table>'
+			.'<div id="stats_div" style="width: 780px; height: 400px;"></div>'
 			.'<div id="chart_div" style="width: 780px; height: 450px;"></div>'
-			.'</div>';
+			.'</div></div>';
         }
 	
 	public function renderContent() {

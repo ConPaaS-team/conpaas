@@ -501,9 +501,10 @@ class BasicWebserversManager(BaseManager):
         if config.web_count == 1 and config.getWebServiceNodes()[0] in config.getProxyServiceNodes():
             config.web_count = 0
 
-        self.state_set(self.S_RUNNING)
+        
         self._configuration_set(config)
         self.memcache.set('nodes_additional', [])
+        return True
 
     # @expose('POST')
     # def add_nodes(self, kwargs):

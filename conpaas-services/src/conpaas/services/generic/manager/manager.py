@@ -277,7 +277,7 @@ echo "" >> /root/generic.out
         self._update_code(config, node_instances)
 
         self._do_execute_script('notify', nodes_before)
-        self.state_set(self.S_RUNNING)
+        return True
 
 
     def on_remove_nodes(self, node_roles):

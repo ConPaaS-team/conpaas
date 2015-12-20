@@ -373,7 +373,10 @@ class ApplicationManager(BaseManager):
 
         self.nodes += nodes
         service_manager.nodes += nodes
-        service_manager.on_add_nodes(nodes)
+        if service_manager.on_add_nodes(nodes):
+            service_manager.state_set(self.S_RUNNING)
+        else:
+            service_manager.state_set(self.S_ERROR)
 
     @expose('POST')
     def remove_nodes(self, kwargs):

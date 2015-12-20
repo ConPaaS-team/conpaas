@@ -38,6 +38,7 @@ class GaleraManager(BaseManager):
 
         #(genc): this is ignored at the moment
         # self.controller.config_clouds({"mem": "512", "cpu": "1"})
+        self.root_pass = None
         self.config = Configuration(conf)
         self.logger.debug("Leaving GaleraServer initialization")
 
@@ -71,9 +72,11 @@ class GaleraManager(BaseManager):
         return nodes    
 
     def get_context_replacement(self):
-        self.root_pass = ''.join([choice(string.letters + string.digits) for i in range(10)])
-        # self.root_pass='password'
-        return dict(mysql_username='mysqldb', mysql_password=self.root_pass)
+        if not self.root_pass:
+            self.root_pass='password'
+            # self.root_pass = ''.join([choice(string.letters + string.digits) for i in range(10)])
+        self.logger.debug('setting context to %s' % dict(mysql_username='mysqldb', mysql_password=self.root_pass))
+        return dict(mysql_username='mysqldb', mysql_password=str(self.root_pass))
     
 
     def on_start(self, nodes):
@@ -193,6 +196,9 @@ class GaleraManager(BaseManager):
             self._start_glbd(gal_nodes)
             self.config.addGLBServiceNodes(gal_nodes)
 
+        # _strat_mysql raises an exception
+        return True
+
 
 
     @expose('GET')
@@ -226,6 +232,7 @@ class GaleraManager(BaseManager):
         inserts=[]
         insert=0
         for node in nodes:
+            # self.logger.debug('connecting to: %s, using username: %s and pwd: %s' % (node.ip, 'mysqldb', self.root_pass))
             db = MySQLdb.connect(node.ip, 'mysqldb', self.root_pass)
             exc = db.cursor()
             exc.execute("SHOW STATUS LIKE 'wsrep_local_recv_queue_avg';")
@@ -493,8 +500,6 @@ class GaleraManager(BaseManager):
             return HttpErrorResponse("%s" % ex)
         return HttpJsonResponse({'state': self.state, 'type': 'galera'})
 
-
-
     def on_stop(self):
         res = self._do_remove_nodes(self.config.serviceNodes.values(),self.config.glb_service_nodes.values())
         self.config.serviceNodes = {}
@@ -591,8 +596,6 @@ class GaleraManager(BaseManager):
             return HttpJsonResponse(out)
         else:
             return HttpErrorResponse("Failed to run mysqldump: %s." % error)
-
-
 
 
     @expose('GET')
