@@ -915,6 +915,8 @@ with the current configuration of workers.
 demand.  The bag is executed with the existing configuration.
 
 
+.. _the-generic-service:
+
 The Generic service
 ===================
 
@@ -1625,4 +1627,3 @@ can be accessed using the backend VM's IP address (note that the protocol should
      stack@nutshell:~$ cps-tools service delete 1
      Deleting service... 
      Service 1 has been deleted.
-

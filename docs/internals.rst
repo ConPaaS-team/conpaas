@@ -702,3 +702,172 @@ The procedure for creating a new appliance on VirtualBox is quite standard:
 #. Memory size: Since the Nutshell runs a significant number of services and also requires some memory for the containers, we suggest to choose at least 3 GB of RAM.
 
 #. Hard drive: Select "User an existing virtual hard drive file", browse to the location of the *nutshell.vdi* file generated earlier and press *create*.
+
+
+.. _preinstall-app-in-conpaas-image:
+
+Preinstalling an application into a ConPaaS Services Image
+==========================================================
+
+A ConPaaS Services Image contains all the necessary components needed in order
+to run the ConPaaS services. For deploying arbitrary applications using ConPaaS,
+the :ref:`the-generic-service` provides a mechanism to install and run the application,
+along with its dependencies. The installation, however, has to happen during the
+initialization of every new node that is started, for example in the ``init.sh``
+script of the Generic Service. If installing the application with its dependencies
+takes a long time or, in general, is not desired to happen during every deployment
+of a new node, another option is available: preinstalling the application inside the
+ConPaaS Services Image. The current section describes this process.
+
+1. Download a ConPaaS Services Image appropriate for your computer architecture
+   and virtualization technology. Here are the download links for the latest images:
+   
+   **ConPaaS VM image for Amazon EC2 (x86_64):**
+     | http://www.conpaas.eu/dl/conpaas-amazon.img
+     | MD5: f883943fa01c5b1c094d6dddeb64da86
+     | size: 2.0 GB
+   
+   **ConPaaS VM image for OpenStack with KVM (x86_64):**
+     | http://www.conpaas.eu/dl/conpaas-openstack-kvm.img
+     | MD5: 28299ac49cc216dde57b107000078c4f
+     | size: 1.8 GB
+   
+   **ConPaaS VM image for OpenStack with LXC (x86_64):**
+     | http://www.conpaas.eu/dl/conpaas-openstack-lxc.img
+     | MD5: 45296e4cfcd44325a13703dc67da1d0b
+     | size: 1.8 GB
+   
+   **ConPaaS VM image for OpenNebula with KVM (x86_64):**
+     | http://www.conpaas.eu/dl/conpaas-opennebula-kvm.img
+     | MD5: 32022d0e50f3253b121198d30c336ae8
+     | size: 2.0 GB
+   
+   **ConPaaS VM image for OpenStack with LXC for the Raspberry Pi (arm):**
+     | http://www.conpaas.eu/dl/ConPaaS-RPI/conpaas-rpi.img
+     | MD5: 46de3a24904fc24fb32ab8ddccbe36ba
+     | size: 2.0 GB
+   
+   .. warning::
+     If you choose to use one of the images above, it is always a good idea to check
+     its integrity before continuing to the next step. A corrupt image may result in
+     unexpected behaviour which may be hard to trace. You can check the integrity by
+     verifying the its MD5 hash with the following command: ``md5sum conpaas.img``.
+   
+   Alternatively, you can also create one such image using the instructions provided
+   in the section :ref:`image-creation`.
+   
+   The following steps will use as an example the image for the Raspberry PI.
+   For other architecture or virtualization technologies, the commands are the
+   same.
+   
+   .. warning::
+     The following steps need to be performed on a machine with the same architecture
+     and a similar operating system. For the regular images, this means the 64 bit
+     version of a Debian or Ubuntu system. For the Raspberry PI image, the steps need
+     to be performed on the Raspberry PI itself (with a Raspbian installation, arm
+     architecture). Trying to customize the Raspberry PI image on a x86 system will not
+     work!
+
+2. Log in as root and change to the directory where you downloaded the image.
+
+3. Map a loop device to the ConPaaS image::
+   
+     root@raspberrypi:/home/pi# losetup -fv conpaas-rpi.img
+     Loop device is /dev/loop0
+   
+   .. warning::
+     If you already have other loop devices in use, the output of this command may
+     contain a different loop device. Take a note of it and replace *loop0* with the
+     correct device in the following commands.
+
+4. Create a new directory and mount the image to it::
+   
+     root@raspberrypi:/home/pi# mkdir conpaas-img
+     root@raspberrypi:/home/pi# mount /dev/loop0 conpaas-img/
+   
+   Now you can access the contents of the image inside the ``conpaas-img`` directory.
+
+5. Copy your application's binaries and any other static content that you want to
+   include in the image somewhere under the ``conpaas-img`` directory.
+
+6. To install any prerequisites, you may want to change the root directory to
+   ``conpaas-img``. But first, you will need to mount ``/dev``, ``/dev/pts`` and ``/proc``
+   in the ``conpaas-img`` directory (which will become the new root directory), or
+   else the installation of some packages may fail::
+   
+     root@raspberrypi:/home/pi# mount -obind /dev conpaas-img/dev
+     root@raspberrypi:/home/pi# mount -obind /dev/pts conpaas-img/dev/pts
+     root@raspberrypi:/home/pi# mount -t proc proc conpaas-img/proc
+
+7. You can now execute the chroot::
+   
+     root@raspberrypi:/home/pi# chroot conpaas-img
+   
+   Your root directory is now the root of the image.
+
+8. To use *apt-get*, you need to set a working DNS server::
+   
+     root@raspberrypi:/# echo "nameserver 8.8.8.8" > /etc/resolv.conf
+   
+   This example uses the Google Public DNS, you may however use any DNS server you
+   prefer.
+   
+   Check that the Internet works in this new environment::
+   
+     root@raspberrypi:/# ping www.conpaas.eu
+     PING carambolier.irisa.fr (131.254.150.34) 56(84) bytes of data.
+     64 bytes from carambolier.irisa.fr (131.254.150.34): icmp_seq=1 ttl=50 time=35.8 ms
+     [... output omitted ...]
+
+9. Use *apt-get* to install any packages that your application requires::
+   
+     root@raspberrypi:/# apt-get update
+     Hit http://archive.raspbian.org wheezy Release.gpg
+     Hit http://archive.raspbian.org wheezy Release
+     [... output omitted ...]
+     
+     root@raspberrypi:/# apt-get install <...>
+
+10. Make the final configurations (if needed) and make sure that everything works.
+
+11. Clean-up:
+    
+    Exit the chroot::
+    
+      root@raspberrypi:/# exit
+      exit
+      root@raspberrypi:/home/pi#
+    
+    Unmount ``/dev``, ``/dev/pts`` and ``/proc``::
+    
+      root@raspberrypi:/home/pi# umount conpaas-img/proc
+      root@raspberrypi:/home/pi# umount conpaas-img/dev/pts
+      root@raspberrypi:/home/pi# umount conpaas-img/dev
+
+    Unmount the image::
+    
+      root@raspberrypi:/home/pi# umount conpaas-img
+    
+    Remove the directory::
+    
+      root@raspberrypi:/home/pi# rm -r conpaas-img
+    
+    Delete the loop device mapping::
+    
+      root@raspberrypi:/home/pi# losetup -d /dev/loop0
+    
+    That's it! Now the file ``conpaas-rpi.img`` contains the new ConPaaS image
+    with your application pre-installed.
+    
+    You can now register the new image to the cloud of your choice and update the
+    ConPaaS Director's settings to use the new image. Instructions are available
+    in the Installation guide:
+    
+    **For Amazon EC2:**
+      :ref:`registering-image-on-ec2`
+    
+    **For OpenStack:**
+      :ref:`registering-image-on-openstack`
+    
+    **For OpenNebula:**
+      :ref:`registering-image-on-opennebula`
