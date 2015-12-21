@@ -1146,14 +1146,14 @@ The recommended system requirements for optimal performance::
 
 #. Import the Nutshell appliance using the menu *File* > *Import Appliance*, or by
    simply double-clicking the *.ova* file in your file manager.
-
-.. warning::
-   Make sure you have enough free space on your hard drive before attempting this
-   step as importing the appliance will extract the VM's hard disk image from the
-   *.ova* archive, which occupies around 21 GB of hard disk space. Creating snapshots
-   of the Nutshell VM will also require additional space, so for optimal operation,
-   the recommended free space that should be available before importing the VM is
-   30 GB.
+   
+   .. warning::
+      Make sure you have enough free space on your hard drive before attempting this
+      step as importing the appliance will extract the VM's hard disk image from the
+      *.ova* archive, which occupies around 21 GB of hard disk space. Creating snapshots
+      of the Nutshell VM will also require additional space, so for optimal operation,
+      the recommended free space that should be available before importing the VM is
+      30 GB.
 
 #. Once the Nutshell has been imported, you may adjust the amount of memory and
    the number of CPUs you want to dedicate to it by clicking on the Nutshell VM,
