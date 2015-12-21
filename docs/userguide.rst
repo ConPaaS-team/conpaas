@@ -1274,40 +1274,29 @@ and/or to run it in a single physical machine.
 Starting the Nutshell
 ---------------------
 
-The easiest way to start the Nutshell is using VirtualBox:
+In this section, we assume that the Nutshell is already installed into VirtualBox
+according to the instructions in the Installation guide. If this is not the case,
+you may want to check these instructions first: :ref:`conpaas-in-a-nutshell`.
 
-#. If you haven't done this already, create a host-only network on
-   VirtualBox. To do so from the VirtualBox GUI, go to:
-   File>Preferences>Network>Host-only Networks and click add. If you
-   already see a host-only network (probably called *vboxnet0*), then
-   you do not need to add another one.
+#. Open VirtualBox and start the Nutshell by selecting it from the list on the left
+   side and then clicking the *Start* button. Wait a few seconds until you see a
+   login prompt. Any messages that may appear in the VM window at this stage are
+   usually harmless debug messages which can be ignored.
 
-#. Import the Nutshell appliance using the menu File->Import
-   Appliance, or by simply double-clicking on the file in your file
-   manager.
-
-#. Once the Nutshell has been imported, you may adjust the amount of
-   memory and the number of CPUs you want to dedicate to it by
-   clicking on the Nutshell, then Settings->System->Motherboard/Processor.
-   We recommend allocating at least 3 GB of RAM for the Nutshell to
-   function properly.
-
-#. Start the Nutshell by clicking "Start".
-
-#. Once the Nutshell is started, you can log into it. Wait a few
-   seconds until you see a login prompt. The login credentials are::
-
+#. Once the Nutshell is started and the login prompt appears, you can log into it.
+   The login credentials are::
+   
     Username: stack
     Password: contrail
 
 #. One important piece of information which you may want to note down is
    the IP address assigned to the Nutshell VM. This can be used to access
-   the web frontend directly from your machine or to SSH into the Nutshell
+   the web frontend directly from your host machine or to SSH into the Nutshell
    VM in order to execute command-line interface commands or to copy files.
    To find it, type the following command::
-
-    $ ifconfig br200
-
+   
+     $ ifconfig br200
+   
    The IP address will appear in the second line of text.
 
 
@@ -1319,10 +1308,18 @@ Nutshell VM in your Web browser, **making sure to add https:// in front of it**:
 
   https://192.168.56.xxx 
 
+.. warning::
+  The first time you access the web frontend, a security warning will appear,
+  stating that the SSL certificate of the website is invalid. This is normal, as
+  the certificate is self-signed and the server name is usually different from the
+  IP address you are using to access it. To proceed further, you need to confirm
+  that you want to continue anyway. The procedure is different depending on your
+  web browser.
+
 Note that the frontend is accessible only from your local
 machine. Other machines will not be able to access it. A default user
 is available for you, its credentials are::
-  
+
   ConPaaS
   Username: test
   Password: password
@@ -1332,7 +1329,7 @@ creating applications, services etc. Note that the services are also
 only accessible from your local machine.
 
 Note that also *Horizon* (the Openstack dashboard) is running on it as
-well. In case you are curious and you want to look inside the system, 
+well. In case you are curious and want to have a look under the hood,
 Horizon can be reached (using HTTP, not HTTPS) at the same IP address::
 
   http://192.168.56.xxx
@@ -1349,7 +1346,7 @@ Using the Nutshell via the command-line interface
 
 You can also use the command-line to control your Nutshell installation.
 You need to log in as the *stack* user directly in the VirtualBox window
-or using SSH to connect to the Nutshell VM's IP address.
+or using SSH to connect to the Nutshell VM's IP address (the preferred method).
 
 On login, both the ConPaaS and OpenStack users will already be authenticated.
 You should be able to execute ConPaaS commands, for example starting a
@@ -1384,14 +1381,17 @@ tabs and scroll up and down the logs, please consult the manual page
 for the *screen* command.
 
 
+.. _changing-the-ips-of-the-nutshell:
+
 Changing the IP address space used by the Nutshell
 --------------------------------------------------
 
 The Nutshell VM uses an IP address assigned by the DHCP server of the
 host-only network of VirtualBox. In the default settings, the DHCP server
 uses a range from ``192.168.56.101`` to ``192.168.56.254``. If you want to change
-this IP range, you can go to: File>Preferences>Network>Host-only Networks,
-select *vboxnet0* and click the edit button and then "DHCP server".
+this IP range, you can do this in the VirtualBox window by going to *File* >
+*Preferences* > *Network* > *Host-only Networks*. Select the *vboxnet0* network
+and click on the *Edit host-only network* button and then *DHCP server*.
 
 Note that ConPaaS services running inside the Nutshell VM also need to have
 IP addresses assigned. This is done using OpenStack's floating IP mechanism.
@@ -1445,6 +1445,9 @@ The following ConPaaS services are supported on the Raspberry PI version of ConP
 -  **xtreemfs**: XtreemFS-1.5 distributed file system
 
 -  **generic**: deployment of arbitrary server-side applications
+
+For instructions on how to install the Raspberry PI version of ConPaaS, please refer
+to the relevant section in the Installation guide: :ref:`conpaas-on-raspberrypi`.
 
 
 Access credentials

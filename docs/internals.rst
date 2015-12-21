@@ -679,7 +679,7 @@ The rest of the settings specify the distro and kernel versions that the Nutshel
 For the moment we have tested it only for Ubuntu 12.04 with kernel 3.5.0.
 
 In order to run the image generating script, the procedure is almost the same as for a standard image.
-From the *create_vm* diretory run:: 
+From the *create_vm* directory run::
 
     $ python create-img-script.py
     $ sudo ./create-img-nutshell.sh

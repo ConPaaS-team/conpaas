@@ -1073,6 +1073,12 @@ for VirtualBox. This can be done from the following link:
   | http://www.conpaas.eu/dl/Nutshell-1.5.1.ova
   | MD5: 018ea0eaa6b6108ef020e00391ef3a96
 
+.. warning::
+  It is always a good idea to check the integrity of a downloaded image before continuing
+  with the next step, as a corrupted image can lead to unexpected behaviour. You can do
+  this by comparing its MD5 hash with the one shown above. To obtain the MD5 hash, you
+  can use the ``md5sum`` command.
+
 Alternatively, you can also create such an image or a similar one that runs
 on standard clouds (OpenNebula, OpenStack and Amazon EC2 are supported) by
 following the instructions in the Internals guide, section :ref:`creating-a-nutshell`.
@@ -1080,11 +1086,90 @@ following the instructions in the Internals guide, section :ref:`creating-a-nuts
 Running the Nutshell in VirtualBox
 ----------------------------------
 
-Before running the appliance it is strongly suggested to 
-create a host-only network on VirtualBox in case there is not already one created. To do so from the VirtualBox GUI, go to: File>Preferences>Network>Host-only Networks and click add.  Then use the File>Import appliance menu to import the image in VirtualBox.
+The easiest way to start the Nutshell is using VirtualBox.
 
+As a lot of services run inside the Nutshell VM, it requires a significant amount
+of resources. The minimum requirements for a system to be able to run the Nutshell
+are as follows::
 
-For more information regarding the usage of the Nutshell please consult the :ref:`nutshell-guide` section in the guide.
+  CPU: dual-core processor with hardware virtualization instructions
+  Memory: at least 6 GM of RAM (from which 3 GB should be allocated to the VM)
+  HDD: at least 30 GB of available space
+
+The recommended system requirements for optimal performance::
+
+  CPU: Intel i7 processor or equivalent
+  Memory: at least 8 GB of RAM (from which 4 GB should be allocated to the VM)
+  HDD: Solid State Drive (SSD) with at least 30 GB of available space
+
+.. warning::
+  It is highly advised to run the Nutshell on a system that meets the recommended
+  system requirements, or else the its performance may be severely impacted. For
+  systems that do not meet the recommended requirements (but still meet the minimum
+  requirements), a very careful split of the resources between the VM and the host
+  system needs to be performed.
+
+#. Make sure that hardware virtualization extensions are activated in your
+   computer's BIOS. The procedure for activating them is highly dependent on
+   your computer's manufacturer and model. Some general instructions can be found
+   here:
+   
+   https://goo.gl/ZGxK9Z
+
+#. If you haven't done this already, create a host-only network in VirtualBox.
+   This is needed in order to allow access to the Nutshell VM and to the applications
+   deployed in it from your host machine. To do so from the VirtualBox GUI, go to:
+   *File* > *Preferences* > *Network* > *Host-only Networks*. Check if there
+   is already a host-only network configured (usually called *vboxnet0*). If not,
+   add one by clicking on the *Add host-only network* button.
+
+#. Verify the settings of the host-only network. In the same window, select the
+   host-only network (*vboxnet0*) and press the *Edit host-only network* button.
+   In the *Adapter* tab, make sure that the following fields have these values::
+   
+     IPv4 address: 192.168.56.1
+     IPv4 Network Mask: 255.255.255.0
+   
+   and in the *DHCP Server* tab::
+   
+     Enable Server is checked
+     Server Address: 192.168.56.100
+     Server Mask: 255.255.255.0
+     Lower Address Bound: 192.168.56.101
+     Upper Address Bound: 192.168.56.254
+   
+   You can also use other values than the defaults presented above. In this case,
+   note that you will also need to adjust the IP address range allocated by
+   OpenStack to the containers to match your settings. You can do this by following
+   the instructions from the following section of the User guide:
+   :ref:`changing-the-ips-of-the-nutshell`.
+
+#. Import the Nutshell appliance using the menu *File* > *Import Appliance*, or by
+   simply double-clicking the *.ova* file in your file manager.
+
+.. warning::
+   Make sure you have enough free space on your hard drive before attempting this
+   step as importing the appliance will extract the VM's hard disk image from the
+   *.ova* archive, which occupies around 21 GB of hard disk space. Creating snapshots
+   of the Nutshell VM will also require additional space, so for optimal operation,
+   the recommended free space that should be available before importing the VM is
+   30 GB.
+
+#. Once the Nutshell has been imported, you may adjust the amount of memory and
+   the number of CPUs you want to dedicate to it by clicking on the Nutshell VM,
+   then following the menu: *Settings* > *System* > *Motherboard* / *Processor*.
+   We recommend allocating at least 3 GB of RAM for the Nutshell to function properly
+   (4 GB is recommended). Make sure that enough memory remains for the host system to
+   operate properly and never allocate more CPUs than what is available in your host
+   computer.
+
+#. It is also a very good idea to create a snapshot of the initial state of the
+   Nutshell VM, immediately after it was imported. This allows the possibility to
+   quickly revert to the initial state without importing the VM again, when something
+   goes wrong.
+
+For more information regarding the usage of the Nutshell please consult the
+:ref:`nutshell-guide` section in the User guide.
 
 
 .. _conpaas-on-raspberrypi:
@@ -1118,6 +1203,12 @@ The two images can be downloaded from the following links:
   | http://www.conpaas.eu/dl/ConPaaS-RPI/ConPaaS-RPI-Backend-VM.ova
   | MD5: 0e6022423b3f940c73204320a5f4f669
 
+.. warning::
+  It is always a good idea to check the integrity of a downloaded image before continuing
+  with the next steps, as a corrupted image can lead to unexpected behaviour. You can do
+  this by comparing its MD5 hash with the ones shown above. To obtain the MD5 hash, you
+  can use the ``md5sum`` command.
+
 Installing the image on the Raspberry PI
 ----------------------------------------
 You need to write the image to the Raspberry PI's SD card on a different machine (equipped
@@ -1133,11 +1224,11 @@ You can follow the official instructions from the RaspberryPi.org website:
   https://www.raspberrypi.org/documentation/installation/installing-images/mac.md
 
 .. warning::
-  decompressing the image will result in a 32 GB file (the raw SD card image), so please
+  Decompressing the image will result in a 32 GB file (the raw SD card image), so please
   make sure that you have enough free space before attempting this step.
 
 .. warning::
-  before writing the image, please make sure that the SD card has a capacity of at least
+  Before writing the image, please make sure that the SD card has a capacity of at least
   31998345216 bytes.
 
 The image was designed to fit the majority of the 32 GB SD cards, as the actual size varies
@@ -1148,7 +1239,7 @@ the partitions by moving the swap partition near the end of the card and expandi
 *ext4* partition.
 
 .. warning::
-  if you adjust the partitions, please make sure that the beginning of every partition
+  If you adjust the partitions, please make sure that the beginning of every partition
   remains aligned on a 4 MB boundary (the usual size of the SD card's erase block) or else
   performance may be negatively affected.
 
