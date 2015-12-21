@@ -858,16 +858,16 @@ ConPaaS Services Image. The current section describes this process.
     
     That's it! Now the file ``conpaas-rpi.img`` contains the new ConPaaS image
     with your application pre-installed.
-    
-    You can now register the new image to the cloud of your choice and update the
-    ConPaaS Director's settings to use the new image. Instructions are available
-    in the Installation guide:
-    
-    **For Amazon EC2:**
-      :ref:`registering-image-on-ec2`
-    
-    **For OpenStack:**
-      :ref:`registering-image-on-openstack`
-    
-    **For OpenNebula:**
-      :ref:`registering-image-on-opennebula`
+
+You can now register the new image to the cloud of your choice and update the
+ConPaaS Director's settings to use the new image. Instructions are available
+in the Installation guide:
+
+**For Amazon EC2:**
+  :ref:`registering-image-on-ec2`
+
+**For OpenStack:**
+  :ref:`registering-image-on-openstack`
+
+**For OpenNebula:**
+  :ref:`registering-image-on-opennebula`

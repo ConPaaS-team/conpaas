@@ -726,6 +726,7 @@ You can use one of these values when configuring your ConPaaS director
 installation as described in :ref:`director-installation`.
 
 .. _registering-image-on-ec2:
+
 Registering your custom VM image to Amazon EC2
 ----------------------------------------------
 Using pre-built Amazon Machine Images is the recommended way of running ConPaaS
@@ -846,6 +847,7 @@ instances using::
     $ euca-describe-instances
 
 .. _registering-image-on-openstack:
+
 Registering your ConPaaS image to OpenStack
 --------------------------------------------
 This section assumes that you already have created a ConPaaS services image as
@@ -960,6 +962,7 @@ OpenNebula to run ConPaaS. You can skip this section if you plan to
 deploy ConPaaS over Amazon Web Services or OpenStack.
 
 .. _registering-image-on-opennebula:
+
 Registering your ConPaaS image to OpenNebula
 --------------------------------------------
 This section assumed that you already have created a ConPaaS services image as
