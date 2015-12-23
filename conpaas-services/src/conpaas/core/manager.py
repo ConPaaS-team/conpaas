@@ -216,7 +216,7 @@ class ApplicationManager(BaseManager):
                                 # 'methods': self._get_supporeted_functions(),
                                 'states': self._get_manager_states(),
                                 'nodes': [node.id for node in self.nodes],
-                                'volumes':self.volumes
+                                'volumes': self.volumes.keys()
             })    
 
     @expose('POST')
@@ -462,7 +462,7 @@ class ApplicationManager(BaseManager):
 
             try:
                 # try to find a dev name that is not already in use by the node
-                dev_names_in_use = [ vol['dev_name'] for vol in self.volumes if vol['vm_id'] == agentId]
+                dev_names_in_use = [ vol['dev_name'] for vol in self.volumes.values() if vol['vm_id'] == agentId]
                 dev_name = self.config_parser.get('manager', 'DEV_TARGET')
                 while dev_name in dev_names_in_use:
                     # increment the last char from dev_name
