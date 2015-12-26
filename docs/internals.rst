@@ -719,7 +719,7 @@ takes a long time or, in general, is not desired to happen during every deployme
 of a new node, another option is available: preinstalling the application inside the
 ConPaaS Services Image. The current section describes this process.
 
-1. Download a ConPaaS Services Image appropriate for your computer architecture
+#. Download a ConPaaS Services Image appropriate for your computer architecture
    and virtualization technology. Here are the download links for the latest images:
    
    **ConPaaS VM image for Amazon EC2 (x86_64):**
@@ -768,9 +768,24 @@ ConPaaS Services Image. The current section describes this process.
      architecture). Trying to customize the Raspberry PI image on a x86 system will not
      work!
 
-2. Log in as root and change to the directory where you downloaded the image.
+#. Log in as root and change to the directory where you downloaded the image.
 
-3. Map a loop device to the ConPaaS image::
+#. (Optional) If you need to expand the size of the image, you can do it right now.
+   As the image is in the raw format, expanding the size can be done by increasing
+   the size of the image file. For example, to increase the size with 1 GB::
+   
+     root@raspberrypi:/home/pi# dd if=/dev/zero bs=4M count=256 >> conpaas-rpi.img
+     256+0 records in
+     256+0 records out
+     1073741824 bytes (1.1 GB) copied, 56.05551 s, 19 MB/s
+   
+   If you have the package ``qemu-utils`` installed, you can also use ``qemu-img``
+   instead::
+   
+     root@raspberrypi:/home/pi# qemu-img resize conpaas-rpi.img +1G
+     Image resized.
+
+#. Map a loop device to the ConPaaS image::
    
      root@raspberrypi:/home/pi# losetup -fv conpaas-rpi.img
      Loop device is /dev/loop0
@@ -780,17 +795,37 @@ ConPaaS Services Image. The current section describes this process.
      contain a different loop device. Take a note of it and replace *loop0* with the
      correct device in the following commands.
 
-4. Create a new directory and mount the image to it::
+#. If you increased the size of the image in step 3, you now need to also expand the
+   file system. First, check the integrity of the file system with the following
+   command::
+   
+     root@raspberrypi:/home/pi# e2fsck -f /dev/loop0
+     e2fsck 1.42.9 (4-Feb-2014)
+     Pass 1: Checking inodes, blocks, and sizes
+     Pass 2: Checking directory structure
+     Pass 3: Checking directory connectivity
+     Pass 4: Checking reference counts
+     Pass 5: Checking group summary information
+     root: 44283/117840 files (9.1% non-contiguous), 409442/470528 blocks
+   
+   You can now expand the file system::
+   
+     root@raspberrypi:/home/pi# resize2fs /dev/loop0
+     resize2fs 1.42.9 (4-Feb-2014)
+     Resizing the filesystem on /dev/loop0 to 732672 (4k) blocks.
+     The filesystem on /dev/loop0 is now 732672 blocks long.
+
+#. Create a new directory and mount the image to it::
    
      root@raspberrypi:/home/pi# mkdir conpaas-img
      root@raspberrypi:/home/pi# mount /dev/loop0 conpaas-img/
    
    Now you can access the contents of the image inside the ``conpaas-img`` directory.
 
-5. Copy your application's binaries and any other static content that you want to
+#. Copy your application's binaries and any other static content that you want to
    include in the image somewhere under the ``conpaas-img`` directory.
 
-6. To install any prerequisites, you may want to change the root directory to
+#. To install any prerequisites, you may want to change the root directory to
    ``conpaas-img``. But first, you will need to mount ``/dev``, ``/dev/pts`` and ``/proc``
    in the ``conpaas-img`` directory (which will become the new root directory), or
    else the installation of some packages may fail::
@@ -799,13 +834,13 @@ ConPaaS Services Image. The current section describes this process.
      root@raspberrypi:/home/pi# mount -obind /dev/pts conpaas-img/dev/pts
      root@raspberrypi:/home/pi# mount -t proc proc conpaas-img/proc
 
-7. You can now execute the chroot::
+#. You can now execute the chroot::
    
      root@raspberrypi:/home/pi# chroot conpaas-img
    
    Your root directory is now the root of the image.
 
-8. To use *apt-get*, you need to set a working DNS server::
+#. To use *apt-get*, you need to set a working DNS server::
    
      root@raspberrypi:/# echo "nameserver 8.8.8.8" > /etc/resolv.conf
    
@@ -819,7 +854,7 @@ ConPaaS Services Image. The current section describes this process.
      64 bytes from carambolier.irisa.fr (131.254.150.34): icmp_seq=1 ttl=50 time=35.8 ms
      [... output omitted ...]
 
-9. Use *apt-get* to install any packages that your application requires::
+#. Use *apt-get* to install any packages that your application requires::
    
      root@raspberrypi:/# apt-get update
      Hit http://archive.raspbian.org wheezy Release.gpg
@@ -828,36 +863,36 @@ ConPaaS Services Image. The current section describes this process.
      
      root@raspberrypi:/# apt-get install <...>
 
-10. Make the final configurations (if needed) and make sure that everything works.
+#. Make the final configurations (if needed) and make sure that everything works.
 
-11. Clean-up:
+#. Clean-up:
+   
+   Exit the chroot::
+   
+     root@raspberrypi:/# exit
+     exit
+     root@raspberrypi:/home/pi#
+   
+   Unmount ``/dev``, ``/dev/pts`` and ``/proc``::
+   
+     root@raspberrypi:/home/pi# umount conpaas-img/proc
+     root@raspberrypi:/home/pi# umount conpaas-img/dev/pts
+     root@raspberrypi:/home/pi# umount conpaas-img/dev
     
-    Exit the chroot::
-    
-      root@raspberrypi:/# exit
-      exit
-      root@raspberrypi:/home/pi#
-    
-    Unmount ``/dev``, ``/dev/pts`` and ``/proc``::
-    
-      root@raspberrypi:/home/pi# umount conpaas-img/proc
-      root@raspberrypi:/home/pi# umount conpaas-img/dev/pts
-      root@raspberrypi:/home/pi# umount conpaas-img/dev
-
-    Unmount the image::
-    
-      root@raspberrypi:/home/pi# umount conpaas-img
-    
-    Remove the directory::
-    
-      root@raspberrypi:/home/pi# rm -r conpaas-img
-    
-    Delete the loop device mapping::
-    
-      root@raspberrypi:/home/pi# losetup -d /dev/loop0
-    
-    That's it! Now the file ``conpaas-rpi.img`` contains the new ConPaaS image
-    with your application pre-installed.
+   Unmount the image::
+   
+     root@raspberrypi:/home/pi# umount conpaas-img
+   
+   Remove the directory::
+   
+     root@raspberrypi:/home/pi# rm -r conpaas-img
+   
+   Delete the loop device mapping::
+   
+     root@raspberrypi:/home/pi# losetup -d /dev/loop0
+   
+   That's it! Now the file ``conpaas-rpi.img`` contains the new ConPaaS image
+   with your application pre-installed.
 
 You can now register the new image to the cloud of your choice and update the
 ConPaaS Director's settings to use the new image. Instructions are available
