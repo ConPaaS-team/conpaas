@@ -577,122 +577,16 @@ As a last step, restart your Apache web server::
 
 At this point, your front-end should be working!
 
-.. _image-creation:
-
-Creating A ConPaaS Services VM Image
-====================================
-Various services require certain packages and configurations to be present in
-the VM image. ConPaaS provides facilities for creating specialized VM images
-that contain these dependencies. Furthermore, for the convenience of users,
-there are prebuilt Amazon AMIs that contain the dependencies for *all*
-available services. If you intend to run ConPaaS on Amazon EC2 and do not need
-a specialized VM image, then you can skip this section and proceed to
-:ref:`conpaas-on-ec2`.
-
-Configuring your VM image
--------------------------
-The configuration file for customizing your VM image is located at 
-*conpaas-services/scripts/create_vm/create-img-script.cfg*. 
-
-In the **CUSTOMIZABLE** section of the configuration file, you can define
-whether you plan to run ConPaaS on Amazon EC2, OpenStack or OpenNebula. Depending on the
-virtualization technology that your target cloud uses, you should choose either
-KVM or Xen for the hypervisor. Note that for Amazon EC2 this variable needs to
-be set to Xen. Please do not make the recommended size for the image file
-smaller than the default. The *optimize* flag enables certain optimizations to
-reduce the necessary packages and disk size. These optimizations allow for
-smaller VM images and faster VM startup.
-
-In the **SERVICES** section of the configuration file, you have the opportunity
-to disable any service that you do not need in your VM image. If a service is
-disabled, its package dependencies are not installed in the VM image. Paired
-with the *optimize* flag, the end result will be a minimal VM image that runs
-only what you need.
-
-Note that te configuration file contains also a **NUTSHELL** section. The 
-settings in this section are explained in details in :ref:`conpaas-in-a-nutshell`.
-However, in order to generate a regular customized VM image, make sure that both
-*container* and *nutshell* flags in this section are set to *false*.
-
-Once you are done with the configuration, you should run this command in the
-*create_vm* directory:: 
-
-    $ python create-img-script.py
-
-This program generates a script file named *create-img-conpaas.sh*. This script
-is based on your specific configurations.
-
-Creating your VM image
-----------------------
-To create the image you can execute *create-img-conpaas.sh* in any 64-bit
-Debian or Ubuntu machine. Please note that you will need to have root
-privileges on such a system. In case you do not have root access to a Debian or
-Ubuntu machine please consider installing a virtual machine using your favorite
-virtualization technology, or running a Debian/Ubuntu instance in the cloud.
-
-#. Make sure your system has the following executables installed (they
-   are usually located in ``/sbin`` or ``/usr/sbin``, so make sure these
-   directories are in your ``$PATH``): *dd parted losetup kpartx
-   mkfs.ext3 tune2fs mount debootstrap chroot umount grub-install*
-
-#. It is particularly important that you use Grub version 2. To install
-   it::
-
-         sudo apt-get install grub2
-         
-#. Execute *create-img-conpaas.sh* as root.
-
-
-The last step can take a very long time. If all goes well, the final VM image
-is stored as *conpaas.img*. This file is later registered to your target IaaS
-cloud as your ConPaaS services image.
-
-If things go wrong
-------------------
-Note that if anything fails during the image file creation, the script
-will stop and it will try to revert any change it has done. However, it
-might not always reset your system to its original state. To undo
-everything the script has done, follow these instructions:
-
-#. The image has been mounted as a separate file system. Find the
-   mounted directory using command ``df -h``. The directory should be in
-   the form of ``/tmp/tmp.X``.
-
-#. There may be a ``dev`` and a ``proc`` directories mounted inside it.
-   Unmount everything using::
-
-           sudo umount /tmp/tmp.X/dev /tmp/tmp.X/proc /tmp/tmp.X
-         
-
-#. Find which loop device you are using::
-
-           sudo losetup -a
-         
-
-#. Remove the device mapping::
-
-           sudo kpartx -d /dev/loopX
-         
-
-#. Remove the binding of the loop device::
-
-           sudo losetup -d /dev/loopX
-         
-
-#. Delete the image file
-
-#. Your system should be back to its original state.
-
 
 .. _conpaas-on-ec2:
 
 ConPaaS on Amazon EC2
 =====================
-ConPaaS is capable of running over the Elastic Compute
-Cloud (EC2) of Amazon Web Services (AWS). This section describes the
-process of configuring an AWS account to run ConPaaS.
-You can skip this section if you plan to install ConPaaS over
-OpenStack or OpenNebula.
+ConPaaS is capable of running over the Elastic Compute Cloud (EC2) of Amazon
+Web Services (AWS). This section describes the process of configuring an AWS
+account to run ConPaaS. You can skip this section if you plan to install ConPaaS
+over OpenStack or OpenNebula, or use specialized versions such as the Nutshell
+or ConPaaS on Raspberry PI.
 
 If you are new to EC2, you will need to create an account on the `Amazon
 Elastic Compute Cloud <http://aws.amazon.com/ec2/>`_. A very good introduction
@@ -729,28 +623,40 @@ installation as described in :ref:`director-installation`.
 
 Registering your custom VM image to Amazon EC2
 ----------------------------------------------
-Using pre-built Amazon Machine Images is the recommended way of running ConPaaS
-on Amazon EC2, as described in the previous section. However, you can also
-create a new Amazon Machine Image yourself, for example in case you wish to run
-ConPaaS in a different Availability Zone or if you prefer to use a custom
-services image. If this is the case, you should have already created your VM
-image (*conpaas.img*) as explained in :ref:`image-creation`.
+Using prebuilt Amazon Machine Images is the recommended way of running ConPaaS
+on Amazon EC2, as described in the previous section. If you plan to use one
+of these AMIs, you can skip this section and continue with the configuration of
+the Security Group. 
+
+You can also download a prebuilt ConPaaS services image that is suitable to be
+used with Amazon EC2, for example in case you wish to run ConPaaS in a different
+Availability Zone. This image is available from the following link::
+
+   **ConPaaS VM image for Amazon EC2 (x86_64):**
+     | http://www.conpaas.eu/dl/conpaas-amazon.img
+     | MD5: f883943fa01c5b1c094d6dddeb64da86
+     | size: 2.0 GB
+
+In case you prefer to use a custom services image, you can also create a new
+Amazon Machine Image yourself, by following the instructions from the Internals
+guide: :ref:`image-creation`. Come back to this section after you already
+generated the ``conpaas.img`` file.
 
 Amazon AMIs are either stored on Amazon S3 (i.e. S3-backed AMIs) or on Elastic
 Block Storage (i.e. EBS-backed AMIs). Each option has its own advantages;
-S3-backed AMIs are usually more cost-efficient, but if you plan to use t1.micro
+S3-backed AMIs are usually more cost-efficient, but if you plan to use *t1.micro*
 (free tier) your VM image should be hosted on EBS.
 
-For an EBS-backed AMI, you should either create your *conpaas.img* on an Amazon
-EC2 instance, or transfer the image to one. Once *conpaas.img* is there, you
-should execute *register-image-ec2-ebs.sh* as root on the EC2 instance to
+For an EBS-backed AMI, you should either create your ``conpaas.img`` on an Amazon
+EC2 instance, or transfer the image to one. Once ``conpaas.img`` is there, you
+should execute ``register-image-ec2-ebs.sh`` as root on the EC2 instance to
 register your AMI. The script requires your **EC2_ACCESS_KEY** and
 **EC2_SECRET_KEY** to proceed. At the end, the script will output your new AMI
 ID. You can check this in your Amazon dashboard in the AMI section.
 
 For a S3-backed AMI, you do not need to register your image from an EC2
-instance. Simply run *register-image-ec2-s3.sh* where you have created your
-*conpaas.img*. Note that you need an EC2 certificate with private key to be
+instance. Simply run ``register-image-ec2-s3.sh`` where you have created your
+``conpaas.img``. Note that you need an EC2 certificate with private key to be
 able to do so. Registering an S3-backed AMI requires administrator privileges.
 More information on Amazon credentials can be found at
 `About AWS Security Credentials <http://docs.aws.amazon.com/AWSSecurityCredentials/1.0/AboutAWSCredentials.html>`_.
@@ -782,6 +688,7 @@ The following ports should be open for all running instances:
 
 AWS documentation is available at
 http://docs.amazonwebservices.com/AWSEC2/latest/UserGuide/index.html?using-network-security.html.
+
 
 .. _conpaas-on-openstack:
 
@@ -850,10 +757,30 @@ instances using::
 
 Registering your ConPaaS image to OpenStack
 --------------------------------------------
-This section assumes that you already have created a ConPaaS services image as
-explained in :ref:`image-creation` and uploaded it to your OpenStack controller
-node. To register this image with OpenStack, you may use either Horizon or the
-command line client of Glance (the OpenStack image management service).
+The prebuilt ConPaaS images suitable to be used with OpenStack can be downloaded
+from the following links, depending on the virtualization tehnology and
+system architecture you are using:
+
+   **ConPaaS VM image for OpenStack with KVM (x86_64):**
+     | http://www.conpaas.eu/dl/conpaas-openstack-kvm.img
+     | MD5: 28299ac49cc216dde57b107000078c4f
+     | size: 1.8 GB
+   
+   **ConPaaS VM image for OpenStack with LXC (x86_64):**
+     | http://www.conpaas.eu/dl/conpaas-openstack-lxc.img
+     | MD5: 45296e4cfcd44325a13703dc67da1d0b
+     | size: 1.8 GB
+   
+   **ConPaaS VM image for OpenStack with LXC for the Raspberry Pi (arm):**
+     | http://www.conpaas.eu/dl/ConPaaS-RPI/conpaas-rpi.img
+     | MD5: 46de3a24904fc24fb32ab8ddccbe36ba
+     | size: 2.0 GB
+
+This section assumes that you already downloaded one of the images above or
+created one as explained in :ref:`image-creation` and uploaded it to your
+OpenStack controller node. To register this image with OpenStack, you may
+use either Horizon or the command line client of Glance (the OpenStack image
+management service).
 
 In Horizon, you can register the ConPaaS image by navigating to the *Project* >
 *Compute* > *Images* menu in the left pane and then pressing the *Create Image*
@@ -956,36 +883,45 @@ be obtained using::
 
 ConPaaS on OpenNebula
 =====================
-ConPaaS is capable of running over an OpenNebula
-installation. This section describes the process of configuring
-OpenNebula to run ConPaaS. You can skip this section if you plan to
-deploy ConPaaS over Amazon Web Services or OpenStack.
+ConPaaS is capable of running over an OpenNebula installation. This section
+describes the process of configuring OpenNebula to run ConPaaS. You can skip
+this section if you plan to deploy ConPaaS over Amazon Web Services or OpenStack,
+or use specialized versions such as the Nutshell or ConPaaS on Raspberry PI.
 
 .. _registering-image-on-opennebula:
 
 Registering your ConPaaS image to OpenNebula
 --------------------------------------------
-This section assumed that you already have created a ConPaaS services image as
-explained in :ref:`image-creation`. Upload your image (i.e. *conpaas.img*) to
-your OpenNebula headnode. The headnode is where OpenNebula services are
-running. You need have a valid OpenNebula account on the headnode (i.e. onevm
-list works!). Although you have a valid account on OpenNebula, you may have a problem similar to this:
+The prebuilt ConPaaS image suitable to be used with OpenNebula can be downloaded
+from the following link:
+
+   **ConPaaS VM image for OpenNebula with KVM (x86_64):**
+     | http://www.conpaas.eu/dl/conpaas-opennebula-kvm.img
+     | MD5: 32022d0e50f3253b121198d30c336ae8
+     | size: 2.0 GB
+
+This section assumes that you already downloaded the image from the link above or
+created one as explained in :ref:`image-creation`. Upload your image (i.e.
+``conpaas.img``) to your OpenNebula headnode. The headnode is where OpenNebula
+services are running. You need have a valid OpenNebula account on the headnode
+(i.e. ``onevm list`` works!). Although you have a valid account on OpenNebula,
+you may have a problem similar to this:
 
 */usr/lib/one/ruby/opennebula/client.rb:119:in `initialize': ONE_AUTH file not present (RuntimeError)*
 
-You can fix it setting the ONE_AUT variable like follows::
+You can fix it setting the ``ONE_AUT`` variable like follows::
 
     $ export ONE_AUTH="/var/lib/one/.one/one_auth"
 
-To register your image, you should execute *register-image-opennebula.sh* on
-the headnode. *register-image-opennebula.sh* needs the path to *conpaas.img* as
-well as OpenNebula's datastore ID and  architecture Type.
+To register your image, you should execute ``register-image-opennebula.sh`` on
+the headnode. ``register-image-opennebula.sh`` needs the path to ``conpaas.img`` as
+well as OpenNebula's datastore ID and architecture type.
 
 To get the datastore ID, you should execute this command on the headnode::
     
     $ onedatastore list
 
-The output of *register-image-opennebula.sh* will be your ConPaaS OpenNebula
+The output of ``register-image-opennebula.sh`` will be your ConPaaS OpenNebula
 image ID.
 
 Make sure OpenNebula is properly configured

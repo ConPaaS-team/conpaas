@@ -630,6 +630,112 @@ Files to be added
             │── helloworld.png
 
 
+.. _image-creation:
+
+Creating A ConPaaS Services VM Image
+====================================
+Various services require certain packages and configurations to be present in
+the VM image. ConPaaS provides facilities for creating specialized VM images
+that contain these dependencies. Furthermore, for the convenience of users,
+there are prebuilt images that contain the dependencies for *all* available
+services. If you intend to use these images and do not need a specialized VM
+image, then you can skip this section.
+
+Configuring your VM image
+-------------------------
+The configuration file for customizing your VM image is located at
+``conpaas-services/scripts/create_vm/create-img-script.cfg``.
+
+In the **CUSTOMIZABLE** section of the configuration file, you can define
+whether you plan to run ConPaaS on Amazon EC2, OpenStack or OpenNebula. Depending
+on the virtualization technology that your target cloud uses, you should choose
+either KVM or Xen for the hypervisor. Note that for Amazon EC2 this variable
+needs to be set to Xen. Please do not make the recommended size for the image
+file smaller than the default. The *optimize* flag enables certain optimizations
+to reduce the necessary packages and disk size. These optimizations allow for
+smaller VM images and faster VM startup.
+
+In the **SERVICES** section of the configuration file, you have the opportunity
+to disable any service that you do not need in your VM image. If a service is
+disabled, its package dependencies are not installed in the VM image. Paired
+with the *optimize* flag, the end result will be a minimal VM image that runs
+only what you need.
+
+Note that te configuration file contains also a **NUTSHELL** section. The
+settings in this section are explained in details in :ref:`conpaas-in-a-nutshell`.
+However, in order to generate a regular customized VM image, make sure that both
+*container* and *nutshell* flags in this section are set to *false*.
+
+Once you are done with the configuration, you should run this command in the
+``create_vm`` directory::
+
+    $ python create-img-script.py
+
+This program generates a script file named ``create-img-conpaas.sh``. This script
+is based on your specific configurations.
+
+Creating your VM image
+----------------------
+To create the image you can execute ``create-img-conpaas.sh`` in any 64-bit
+Debian or Ubuntu machine. Please note that you will need to have root
+privileges on such a system. In case you do not have root access to a Debian or
+Ubuntu machine please consider installing a virtual machine using your favorite
+virtualization technology, or running a Debian/Ubuntu instance in the cloud.
+
+#. Make sure your system has the following executables installed (they
+   are usually located in ``/sbin`` or ``/usr/sbin``, so make sure these
+   directories are in your ``$PATH``): **dd parted losetup kpartx
+   mkfs.ext3 tune2fs mount debootstrap chroot umount grub-install**
+
+#. It is particularly important that you use Grub version 2. To install
+   it::
+
+         sudo apt-get install grub2
+
+#. Execute ``create-img-conpaas.sh`` as root.
+
+
+The last step can take a very long time. If all goes well, the final VM image
+is stored as ``conpaas.img``. This file is later registered to your target IaaS
+cloud as your ConPaaS services image.
+
+If things go wrong
+------------------
+Note that if anything fails during the image file creation, the script
+will stop and it will try to revert any change it has done. However, it
+might not always reset your system to its original state. To undo
+everything the script has done, follow these instructions:
+
+#. The image has been mounted as a separate file system. Find the
+   mounted directory using command ``df -h``. The directory should be in
+   the form of ``/tmp/tmp.X``.
+
+#. There may be a ``dev`` and a ``proc`` directories mounted inside it.
+   Unmount everything using::
+
+           sudo umount /tmp/tmp.X/dev /tmp/tmp.X/proc /tmp/tmp.X
+         
+
+#. Find which loop device you are using::
+
+           sudo losetup -a
+         
+
+#. Remove the device mapping::
+
+           sudo kpartx -d /dev/loopX
+         
+
+#. Remove the binding of the loop device::
+
+           sudo losetup -d /dev/loopX
+
+
+#. Delete the image file
+
+#. Your system should be back to its original state.
+
+
 .. _creating-a-nutshell:
 
 Creating a Nutshell image
@@ -652,56 +758,64 @@ to be considered.
 Most importantly, there are two flags in the **Nutshell** section of the 
 configuration file, *nutshell* and *container* which control the kind of image
 that is going to be generated. Since these two flags can take either value
-true of false, we distinguish four cases:
+*true* of *false*, we distinguish four cases:
 
-#. nutshell = false, container = false: In this case a standard ConPaaS VM
-   image is generated and the nutshell configurations are not taken into consideration.
-   This is the default configuration which should be used when ConPaaS is deployed on a
-   standard cloud.
+#. *nutshell = false*, *container = false*: In this case a standard ConPaaS VM
+   image is generated and the nutshell configurations are not taken into
+   consideration. This is the default configuration which should be used when
+   ConPaaS is deployed on a standard cloud.
 
-#. nutshell = false, container = true: In this case the user indicates that the
-   image that will be generated will be a LXC container image. This image is similar
-   to a standard VM one, but it does not contain a kernel installation. 
+#. *nutshell = false*, *container = true*: In this case the user indicates that
+   the image that will be generated will be a LXC container image. This image
+   is similar to a standard VM one, but it does not contain a kernel installation. 
 
-#. nutshell = true, container = false. In this case a Nutshell image is generated
-   and a standard ConPaaS VM image will be embedded in it. This configuration should be
-   used for deploying ConPaaS in nested standard VMs within a single VM.
+#. *nutshell = true*, *container = false*. In this case a Nutshell image is
+   generated and a standard ConPaaS VM image will be embedded in it. This
+   configuration should be used for deploying ConPaaS in nested standard VMs
+   within a single VM.
 
-#. nutshell = true, container = true. Similar to the previous case, a Nutshell image
-   is generated but this time a container image is embedded in it instead of a VM one.
-   Therefore, in order to generate a Nutshell based on LXC containers, make sure to set these
-   flags to this configuration. This is the default configuration for our distribution of
-   the Nutshell.
+#. *nutshell = true*, *container = true*. Similar to the previous case, a Nutshell
+   image is generated but this time a container image is embedded in it instead
+   of a VM one. Therefore, in order to generate a Nutshell based on LXC containers,
+   make sure to set these flags to this configuration. This is the default
+   configuration for our distribution of the Nutshell.
 
-Another important setting for generating the Nutshell image is also the path to a directory
-containing the ConPaaS tarballs (cps*.tar.gz files). 
-The rest of the settings specify the distro and kernel versions that the Nutshell VM would have.
+Another important setting for generating the Nutshell image is also the path to
+a directory containing the ConPaaS tarballs (cps*.tar.gz files). The rest of the
+settings specify the distro and kernel versions that the Nutshell VM would have.
 For the moment we have tested it only for Ubuntu 12.04 with kernel 3.5.0.
 
-In order to run the image generating script, the procedure is almost the same as for a standard image.
-From the *create_vm* directory run::
+In order to run the image generating script, the procedure is almost the same
+as for a standard image. From the ``create_vm`` directory run::
 
     $ python create-img-script.py
     $ sudo ./create-img-nutshell.sh
 
-Note that if the *nutshell* flag is enabled the generated script file is called *create-img-nutshell.sh*.
-Otherwise, the generated script file is called *create-img-conpaas.sh* as indicated previously.
+Note that if the *nutshell* flag is enabled the generated script file is called
+``create-img-nutshell.sh``. Otherwise, the generated script file is called
+``create-img-conpaas.sh`` as indicated previously.
 
 Creating a Nutshell image for VirtualBox
 ----------------------------------------
 
-As mentioned earlier the Nutshell VM can also run on VirtualBox. In order to generate a Nutshell image
-compatible with VirtualBox, you have to set the *cloud* value to *vbox* in the **Customizable** section of the configuration file.
-The rest of the procedure is the same as for other clouds. The result of the image generation script would be a
-*nutshell.vdi* image file which can be used as a virtual hard drive when creating a new appliance on VirtualBox.
+As mentioned earlier the Nutshell VM can also run on VirtualBox. In order to
+generate a Nutshell image compatible with VirtualBox, you have to set the
+*cloud* value to *vbox* in the **Customizable** section of the configuration
+file. The rest of the procedure is the same as for other clouds. The result
+of the image generation script would be a ``nutshell.vdi`` image file which
+can be used as a virtual hard drive when creating a new appliance on VirtualBox.
 
 The procedure for creating a new appliance on VirtualBox is quite standard:
 
-#. Name and OS: You choose a custom name for the appliance but use *Linux* and *Ubuntu (64 bit)* for the type and version.
+#. Name and OS: You choose a custom name for the appliance but use *Linux* and
+   *Ubuntu (64 bit)* for the type and version.
 
-#. Memory size: Since the Nutshell runs a significant number of services and also requires some memory for the containers, we suggest to choose at least 3 GB of RAM.
+#. Memory size: Since the Nutshell runs a significant number of services and
+   also requires some memory for the containers, we suggest to choose at least
+   3 GB of RAM.
 
-#. Hard drive: Select "User an existing virtual hard drive file", browse to the location of the *nutshell.vdi* file generated earlier and press *create*.
+#. Hard drive: Select "User an existing virtual hard drive file", browse to the
+   location of the ``nutshell.vdi`` file generated earlier and press *create*.
 
 
 .. _preinstall-app-in-conpaas-image:
