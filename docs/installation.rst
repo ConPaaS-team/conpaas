@@ -9,8 +9,8 @@ more. **cpsdirector** is a web service exposing all its
 functionalities via an HTTP-based API.
 
 ConPaaS can be used either via a command line interface (called
-**cpsclient**) or through a web frontend (**cpsfrontend**).  Recently
-a new experimental command line interface called **cps-tools** has
+**cpsclient**) or through a web frontend (**cpsfrontend**). More
+recently, a new command line interface called **cps-tools** has
 become available (note: **cps-tools** requires Python 2.7). This
 document explains how to install and configure all the aforementioned
 components.
@@ -31,11 +31,11 @@ Installing ConPaaS requires to take the following steps:
 
 #. Choose a VM image customized for hosting the services, or create a
    new one. Details on how to do this vary depending on the choice of cloud
-   where ConPaaS will run. Instructions on how to find or create a ConPaaS image
-   suitable to run on Amazon EC2 can be found in :ref:`conpaas-on-ec2`.
-   The section :ref:`conpaas-on-openstack` describes how to create a ConPaaS
-   image for OpenStack and section :ref:`conpaas-on-opennebula` describes how to
-   create an image for OpenNebula.
+   where ConPaaS will run. Instructions on how to configure ConPaaS with
+   Amazon EC2 can be found in :ref:`conpaas-on-ec2`. The section
+   :ref:`conpaas-on-openstack` describes how to configure ConPaaS to work
+   with an OpenStack cloud and section :ref:`conpaas-on-opennebula` describes
+   the configurations needed for an OpenNebula cloud.
 
 #. Install and configure **cpsdirector** as explained in
    :ref:`director-installation`. All system configuration takes place in the
@@ -630,7 +630,7 @@ the Security Group.
 
 You can also download a prebuilt ConPaaS services image that is suitable to be
 used with Amazon EC2, for example in case you wish to run ConPaaS in a different
-Availability Zone. This image is available from the following link::
+Availability Zone. This image is available from the following link:
 
    **ConPaaS VM image for Amazon EC2 (x86_64):**
      | http://www.conpaas.eu/dl/conpaas-amazon.img
@@ -909,7 +909,7 @@ you may have a problem similar to this:
 
 */usr/lib/one/ruby/opennebula/client.rb:119:in `initialize': ONE_AUTH file not present (RuntimeError)*
 
-You can fix it setting the ``ONE_AUT`` variable like follows::
+You can fix it setting the ``ONE_AUTH`` variable like follows::
 
     $ export ONE_AUTH="/var/lib/one/.one/one_auth"
 
