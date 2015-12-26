@@ -632,10 +632,10 @@ You can also download a prebuilt ConPaaS services image that is suitable to be
 used with Amazon EC2, for example in case you wish to run ConPaaS in a different
 Availability Zone. This image is available from the following link:
 
-   **ConPaaS VM image for Amazon EC2 (x86_64):**
-     | http://www.conpaas.eu/dl/conpaas-amazon.img
-     | MD5: f883943fa01c5b1c094d6dddeb64da86
-     | size: 2.0 GB
+**ConPaaS VM image for Amazon EC2 (x86_64):**
+  | http://www.conpaas.eu/dl/conpaas-amazon.img
+  | MD5: f883943fa01c5b1c094d6dddeb64da86
+  | size: 2.0 GB
 
 In case you prefer to use a custom services image, you can also create a new
 Amazon Machine Image yourself, by following the instructions from the Internals
@@ -761,20 +761,20 @@ The prebuilt ConPaaS images suitable to be used with OpenStack can be downloaded
 from the following links, depending on the virtualization tehnology and
 system architecture you are using:
 
-   **ConPaaS VM image for OpenStack with KVM (x86_64):**
-     | http://www.conpaas.eu/dl/conpaas-openstack-kvm.img
-     | MD5: 28299ac49cc216dde57b107000078c4f
-     | size: 1.8 GB
-   
-   **ConPaaS VM image for OpenStack with LXC (x86_64):**
-     | http://www.conpaas.eu/dl/conpaas-openstack-lxc.img
-     | MD5: 45296e4cfcd44325a13703dc67da1d0b
-     | size: 1.8 GB
-   
-   **ConPaaS VM image for OpenStack with LXC for the Raspberry Pi (arm):**
-     | http://www.conpaas.eu/dl/ConPaaS-RPI/conpaas-rpi.img
-     | MD5: 46de3a24904fc24fb32ab8ddccbe36ba
-     | size: 2.0 GB
+**ConPaaS VM image for OpenStack with KVM (x86_64):**
+  | http://www.conpaas.eu/dl/conpaas-openstack-kvm.img
+  | MD5: 28299ac49cc216dde57b107000078c4f
+  | size: 1.8 GB
+
+**ConPaaS VM image for OpenStack with LXC (x86_64):**
+  | http://www.conpaas.eu/dl/conpaas-openstack-lxc.img
+  | MD5: 45296e4cfcd44325a13703dc67da1d0b
+  | size: 1.8 GB
+
+**ConPaaS VM image for OpenStack with LXC for the Raspberry Pi (arm):**
+  | http://www.conpaas.eu/dl/ConPaaS-RPI/conpaas-rpi.img
+  | MD5: 46de3a24904fc24fb32ab8ddccbe36ba
+  | size: 2.0 GB
 
 This section assumes that you already downloaded one of the images above or
 created one as explained in :ref:`image-creation` and uploaded it to your
@@ -895,10 +895,10 @@ Registering your ConPaaS image to OpenNebula
 The prebuilt ConPaaS image suitable to be used with OpenNebula can be downloaded
 from the following link:
 
-   **ConPaaS VM image for OpenNebula with KVM (x86_64):**
-     | http://www.conpaas.eu/dl/conpaas-opennebula-kvm.img
-     | MD5: 32022d0e50f3253b121198d30c336ae8
-     | size: 2.0 GB
+**ConPaaS VM image for OpenNebula with KVM (x86_64):**
+  | http://www.conpaas.eu/dl/conpaas-opennebula-kvm.img
+  | MD5: 32022d0e50f3253b121198d30c336ae8
+  | size: 2.0 GB
 
 This section assumes that you already downloaded the image from the link above or
 created one as explained in :ref:`image-creation`. Upload your image (i.e.
