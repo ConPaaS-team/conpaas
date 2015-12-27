@@ -38,6 +38,7 @@ from httplib import HTTPConnection
 
 from conpaas.core.misc import file_get_contents
 
+import time
 import json
 import httplib
 
@@ -130,10 +131,15 @@ class SSLConnectionWrapper(object):
 
         fileobject = StringIO()
         try:
-            buf = self._ssl_conn.recv(_buf_size)
-            while buf:
+            while True:
+                try:
+                    buf = self._ssl_conn.recv(_buf_size)
+                except SSL.WantReadError:
+                    time.sleep(1)
+                    continue
+                if not buf:
+                    break
                 fileobject.write(buf)
-                buf = self._ssl_conn.recv(_buf_size)
 
         except (SSL.ZeroReturnError, SSL.SysCallError):
             # Ignore the exception thrown by httplib

@@ -15,6 +15,7 @@ import time, copy
 import os.path
 import os
 import subprocess
+import re
 
 from conpaas.core import https 
 from conpaas.core.log import create_logger
@@ -422,6 +423,9 @@ class ApplicationManager(BaseManager):
                       ]
         [ volumeName, volumeSize, agentId ] = check_arguments(exp_params, kwargs)
 
+        if not re.compile('^[A-za-z0-9-_]+$').match(volumeName):
+            return HttpErrorResponse('Volume name contains invalid characters')
+
         # TODO: decide if this methods gets pulled to appmanager or we have a before_create_volume()
         # in the serice managers  
         # if self._are_scripts_running():
@@ -529,6 +533,9 @@ class ApplicationManager(BaseManager):
 
         exp_params = [('volumeName', is_in_list(self.volumes.keys()))]        
         volumeName = check_arguments(exp_params, kwargs)    
+
+        if not re.compile('^[A-za-z0-9-_]+$').match(volumeName):
+            return HttpErrorResponse('Volume name contains invalid characters')
 
         volume = self.volumes[volumeName]
         node = [ node for node in self.nodes if node.id == volume['vm_id'] ][0]

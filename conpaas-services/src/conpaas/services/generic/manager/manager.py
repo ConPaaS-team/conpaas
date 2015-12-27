@@ -636,7 +636,6 @@ echo "" >> /root/generic.out
         self._configuration_set(config)
 
         return HttpJsonResponse()
-
     
     def on_create_volume(self, node, volume):
         client.mount_volume(node.ip, self.AGENT_PORT, volume['dev_name'], volume['vol_name'])
