@@ -14,7 +14,6 @@ WEB_PORT = 8080
 PROXY_PORT = 80
 DEFAULT_WEIGHT = 100
 
-memcache = None
 iaas = None
 
 import time

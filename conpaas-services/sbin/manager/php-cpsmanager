@@ -70,9 +70,9 @@ if __name__ == '__main__':
     print >>sys.stderr, 'Failed to read configuration file'
     sys.exit(1)
   config_vars = {
-    'manager': ['TYPE', 'BOOTSTRAP', 'MEMCACHE_ADDR', 'LOG_FILE',
-                'ETC', 'VAR_TMP', 'VAR_CACHE', 'VAR_RUN', 'CODE_REPO',
-                'CREDIT_URL', 'TERMINATE_URL', 'SERVICE_ID'],
+    'manager': ['TYPE', 'BOOTSTRAP', 'LOG_FILE', 'ETC', 'VAR_TMP',
+                'VAR_CACHE', 'VAR_RUN', 'CODE_REPO', 'CREDIT_URL',
+                'TERMINATE_URL', 'SERVICE_ID'],
     'iaas': ['DRIVER'],
   }
   config_ok = True

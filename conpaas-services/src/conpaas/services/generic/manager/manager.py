@@ -36,7 +36,6 @@ POSSIBILITY OF SUCH DAMAGE.
 """
 
 from threading import Thread
-# import memcache
 from shutil import rmtree
 import pickle
 import zipfile
@@ -801,9 +800,7 @@ echo "" >> /root/generic.out
             return HttpErrorResponse(ex.message)
 
     def _configuration_get(self):
-        # return self.memcache.get(self.CONFIG)
         return self.service_config
 
     def _configuration_set(self, config):
         self.service_config = config
-        # self.memcache.set(self.CONFIG, config)

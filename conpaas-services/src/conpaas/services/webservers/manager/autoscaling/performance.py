@@ -16,7 +16,7 @@ class ServiceNodePerf(object):
 
     """
     This class will contain performance info about the nodes (i.e. the performance profiles).
-    A dictionary with objects of this type will be stored in the memcache and will be accessed by
+    A dictionary with objects of this type will be stored and will be accessed by
     the provisioning and profiling managers.
     """
 
