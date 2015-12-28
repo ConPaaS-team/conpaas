@@ -805,15 +805,20 @@ input.button {
 	width: 210px;
 }
 
+.generic-instance-name {
+	width: 485px;
+}
+
 .generic-script-status {
-	padding-right: 35px;
+	padding: 3px 3px 0px 0px;
 	font-weight: normal;
 	color: #666;
 	font-size: 10px;
 }
 
 .generic-agent-logs {
-	padding-right: 25px;
+	padding-right: 12px;
+	padding-left: 12px;
 	font-weight: normal;
 	color: #666;
 	font-size: 10px;

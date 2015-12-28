@@ -7,7 +7,6 @@ Monitoring Controller collects all the informantion extracted using Ganglia moni
 
 import sys
 from subprocess import Popen, PIPE
-import memcache
 import socket
 from time import time
 from os import path, listdir
@@ -39,14 +38,6 @@ class Monitoring_Controller:
             print >>sys.stderr, 'Failed to read configuration file'
             sys.exit(1)
 
-        # initialize a memcache client
-        memcache_addr = config_parser.get('manager', 'MEMCACHE_ADDR')
-
-        if memcache_addr == '':
-            print >>sys.stderr, 'Failed to find memcache address in the config file'
-            sys.exit(1)
-
-        self.memcache = memcache.Client([memcache_addr])
         self.perf_info = ServicePerformance()
         self._performance_info_set(self.perf_info)
 
@@ -56,10 +47,10 @@ class Monitoring_Controller:
                                          'php_request_rate_lb', 'php_response_time_lb', 'cpu_user', 'boottime']
 
     def _performance_info_get(self):
-        return self.memcache.get('performance_info')
+        return self.performance_info
 
     def _performance_info_set(self, perf_info):
-        self.memcache.set('performance_info', perf_info)
+        self.performance_info = perf_info
 
     def nodes_info_update(self, killed_backends):
         #conpaas_init_ssl_ctx(self.certs_dir, 'manager')

@@ -63,10 +63,6 @@ class GenericService extends Service {
 		return array('master', 'node');
 	}
 
-	public function fetchStateLog() {
-		return array();
-	}
-
 	public function createInstanceUI($node) {
 		$info = $this->getNodeInfo($node);
 		if ($this->scriptStatus) {

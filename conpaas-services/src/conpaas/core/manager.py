@@ -15,6 +15,7 @@ import time, copy
 import os.path
 import os
 import subprocess
+import re
 
 from conpaas.core import https 
 from conpaas.core.log import create_logger
@@ -216,7 +217,7 @@ class ApplicationManager(BaseManager):
                                 # 'methods': self._get_supporeted_functions(),
                                 'states': self._get_manager_states(),
                                 'nodes': [node.id for node in self.nodes],
-                                'volumes':self.volumes
+                                'volumes': self.volumes.keys()
             })    
 
     @expose('POST')
@@ -425,6 +426,9 @@ class ApplicationManager(BaseManager):
                       ]
         [ volumeName, volumeSize, agentId ] = check_arguments(exp_params, kwargs)
 
+        if not re.compile('^[A-za-z0-9-_]+$').match(volumeName):
+            return HttpErrorResponse('Volume name contains invalid characters')
+
         # TODO: decide if this methods gets pulled to appmanager or we have a before_create_volume()
         # in the serice managers  
         # if self._are_scripts_running():
@@ -465,7 +469,7 @@ class ApplicationManager(BaseManager):
 
             try:
                 # try to find a dev name that is not already in use by the node
-                dev_names_in_use = [ vol['dev_name'] for vol in self.volumes if vol['vm_id'] == agentId]
+                dev_names_in_use = [ vol['dev_name'] for vol in self.volumes.values() if vol['vm_id'] == agentId]
                 dev_name = self.config_parser.get('manager', 'DEV_TARGET')
                 while dev_name in dev_names_in_use:
                     # increment the last char from dev_name
@@ -532,6 +536,9 @@ class ApplicationManager(BaseManager):
 
         exp_params = [('volumeName', is_in_list(self.volumes.keys()))]        
         volumeName = check_arguments(exp_params, kwargs)    
+
+        if not re.compile('^[A-za-z0-9-_]+$').match(volumeName):
+            return HttpErrorResponse('Volume name contains invalid characters')
 
         volume = self.volumes[volumeName]
         node = [ node for node in self.nodes if node.id == volume['vm_id'] ][0]

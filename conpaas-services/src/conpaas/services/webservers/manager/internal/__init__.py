@@ -61,7 +61,6 @@ Created on Feb 8, 2011
 
 from threading import Thread, Timer
 import collections
-import memcache
 import tempfile
 import os
 import os.path
@@ -83,9 +82,6 @@ from conpaas.core import git
 
 
 class BasicWebserversManager(BaseManager):
-    # memcache keys
-    CONFIG = 'config'
-    DEPLOYMENT_STATE = 'deployment_state'
 
     # Default load balancing weight for nodes.
     DEFAULT_NODE_WEIGHT = 100
@@ -94,11 +90,6 @@ class BasicWebserversManager(BaseManager):
         BaseManager.__init__(self, config_parser)
 
         # self.controller.generate_context('web')
-        memcache_addr = config_parser.get('manager', 'MEMCACHE_ADDR')
-        self.memcache = memcache.Client([memcache_addr])
-
-        from conpaas.services.webservers.manager import config
-        config.memcache = self.memcache
 
         self.code_repo = config_parser.get('manager', 'CODE_REPO')
 
@@ -106,16 +97,16 @@ class BasicWebserversManager(BaseManager):
         return 'web'
 
     def _configuration_get(self):
-        return self.memcache.get(self.CONFIG)
+        return self.service_config
 
     def _configuration_set(self, config):
-        self.memcache.set(self.CONFIG, config)
+        self.service_config = config
 
-    def _adapting_set_count(self, count):
-        self.memcache.set('adapting_count', count)
+    # def _adapting_set_count(self, count):
+    #     self.memcache.set('adapting_count', count)
 
-    def _adapting_get_count(self):
-        return self.memcache.get('adapting_count')
+    # def _adapting_get_count(self):
+    #     return self.memcache.get('adapting_count')
 
     def _start_proxy(self, config, nodes):
         raise Exception("BasicWebservicesManager._start_proxy(...) must be overridden by extending classes.")
@@ -192,7 +183,7 @@ class BasicWebserversManager(BaseManager):
             nr_agents = 1
 
         # (genc): maybe not neccessary at this moment 
-        self._adapting_set_count(nr_agents)
+        # self._adapting_set_count(nr_agents)
         return [{'cloud':None} for _ in range(nr_agents)]
 
 
@@ -256,7 +247,7 @@ class BasicWebserversManager(BaseManager):
 
         self._configuration_set(config)  # update configuration
         
-        self.memcache.set('nodes_additional', [])  
+        # self.memcache.set('nodes_additional', [])  
         return True
 
     def on_stop(self):
@@ -503,7 +494,7 @@ class BasicWebserversManager(BaseManager):
 
         
         self._configuration_set(config)
-        self.memcache.set('nodes_additional', [])
+        # self.memcache.set('nodes_additional', [])
         return True
 
     # @expose('POST')
@@ -1553,20 +1544,20 @@ class BasicWebserversManager(BaseManager):
         self._configuration_set(config)
         return HttpJsonResponse({'codeVersionId': codeVersionId})
 
-    @expose('GET')
-    def getSummerSchool(self, kwargs):
-        pac = self.memcache.get_multi(
-            [self.DEPLOYMENT_STATE, self.CONFIG, 'adapting_count', 'nodes_additional'])
-        ret = [pac[self.DEPLOYMENT_STATE], len(pac[self.CONFIG].serviceNodes)]
-        if 'adapting_count' in pac:
-            ret += [pac['adapting_count']]
-        else:
-            ret += [0]
-        nodes = [i.id for i in pac[self.CONFIG].serviceNodes.values()]
-        if 'nodes_additional' in pac:
-            nodes += pac['nodes_additional']
-        ret += [str(nodes)]
-        return ret
+    # @expose('GET')
+    # def getSummerSchool(self, kwargs):
+    #     pac = self.memcache.get_multi(
+    #         [self.DEPLOYMENT_STATE, self.CONFIG, 'adapting_count', 'nodes_additional'])
+    #     ret = [pac[self.DEPLOYMENT_STATE], len(pac[self.CONFIG].serviceNodes)]
+    #     if 'adapting_count' in pac:
+    #         ret += [pac['adapting_count']]
+    #     else:
+    #         ret += [0]
+    #     nodes = [i.id for i in pac[self.CONFIG].serviceNodes.values()]
+    #     if 'nodes_additional' in pac:
+    #         nodes += pac['nodes_additional']
+    #     ret += [str(nodes)]
+    #     return ret
 
     # def upload_script(self, kwargs, filename):
     #     """Write the file uploaded in kwargs['script'] to filesystem.

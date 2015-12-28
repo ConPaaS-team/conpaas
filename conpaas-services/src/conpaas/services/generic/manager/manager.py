@@ -36,7 +36,6 @@ POSSIBILITY OF SUCH DAMAGE.
 """
 
 from threading import Thread
-# import memcache
 from shutil import rmtree
 import pickle
 import zipfile
@@ -636,7 +635,6 @@ echo "" >> /root/generic.out
         self._configuration_set(config)
 
         return HttpJsonResponse()
-
     
     def on_create_volume(self, node, volume):
         client.mount_volume(node.ip, self.AGENT_PORT, volume['dev_name'], volume['vol_name'])
@@ -802,9 +800,7 @@ echo "" >> /root/generic.out
             return HttpErrorResponse(ex.message)
 
     def _configuration_get(self):
-        # return self.memcache.get(self.CONFIG)
         return self.service_config
 
     def _configuration_set(self, config):
         self.service_config = config
-        # self.memcache.set(self.CONFIG, config)

@@ -365,7 +365,12 @@ def get_manager_cert():
 
 
 def _deduct_credit(decrement):
-    
+
+    # Require decrement to be a positive integer
+    if decrement <= 0:
+        log('Decrement should be a positive integer')
+        return False
+
     log('Decrement user credit: uid=%s, old_credit=%s, decrement=%s' % (g.user.uid, g.user.credit, decrement))
     g.user.credit -= decrement
     if g.user.credit > -1:
@@ -373,7 +378,7 @@ def _deduct_credit(decrement):
         db.session.commit()
         log('New credit for user %s: %s' % (g.user.uid, g.user.credit))
         return True
-        
+
     db.session.rollback()
     log('User %s does not have enough credit' % g.user.uid)
     return False
@@ -389,7 +394,7 @@ def credit():
     had enough credit, True otherwise.
     """
     app_id = int(request.values.get('aid', -1))
-    decrement = int(request.values.get('decrement', 0))
+    decrement = int(request.values.get('decrement', 1))
     success = _deduct_credit(app_id, decrement)
     if success:
         return jsonify({'error': False})

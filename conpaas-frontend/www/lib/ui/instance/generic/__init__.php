@@ -101,7 +101,8 @@ class GenericInstance extends Instance {
             .' name="'.$this->info['id'].'">'
                 .'<tr>'
                     .'<td><div>volume name</div></td>'
-                    .'<td><input id="'.$this->info['id'].'-volumeName" type="text" /></td>'
+                    .'<td><input id="'.$this->info['id'].'-volumeName" type="text" '
+                        .'title="Allowed characters: A-Z a-z 0-9 - _"/></td>'
                 .'</tr>'
                 .'<tr>'
                     .'<td><div>size (MB)</div></td>'
@@ -186,22 +187,27 @@ class GenericInstance extends Instance {
         return
         '<div class="instance dualbox">'
             .'<div class="left">'
-                .'<i class="title">Instance '.$this->info['id'].'</i>'
-                .'<span class="brief">running</span>'
-                .'<div id="'.$this->info['id'].'-volumesWrapper">'
-                    .$this->renderVolumesTable($this->volumes)
+                .'<div class="left generic-instance-name">'
+                    .'<i class="title">Instance '.$this->info['id'].'</i>'
+                    .'<span class="right brief">running</span>'
                 .'</div>'
-                .$this->renderAddVolumeLink()
-                .$this->renderVolumeCreateForm()
+                .'<div class="clear"></div>'
+                .'<div class="left">'
+                    .'<div id="'.$this->info['id'].'-volumesWrapper">'
+                        .$this->renderVolumesTable($this->volumes)
+                    .'</div>'
+                    .$this->renderAddVolumeLink()
+                    .$this->renderVolumeCreateForm()
+                .'</div>'
+                .'<div id="'.$this->info['id'].'-scriptStatusWrapper" class="right generic-script-status">'
+                    .self::renderScriptStatusTable($this->scriptStatus)
+                .'</div>'
             .'</div>'
             .'<div class="right generic-ip-address">'
                 .'<i class="address">'.$this->info['ip'].'</i>'
             .'</div>'
             .'<div class="right generic-agent-logs">'
                 .$this->renderAgentLogs()
-            .'</div>'
-            .'<div id="'.$this->info['id'].'-scriptStatusWrapper" class="right generic-script-status">'
-                .self::renderScriptStatusTable($this->scriptStatus)
             .'</div>'
             .'<div class="clear"></div>'
             .$this->renderVolumeCreateButton()

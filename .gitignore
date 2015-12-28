@@ -1,6 +1,7 @@
 *.tar.gz
 *.LOG
 conpaas-services/src/conpaas/services/xtreemfs/etc/policies/ConpaasX509AuthProvider.class
+conpaas-services/src/conpaas/services/taskfarm/lib/conpaas-bot.jar
 cps-tools/Makefile
 cps-tools/autom4te.cache/
 cps-tools/config.log

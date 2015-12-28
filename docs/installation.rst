@@ -9,8 +9,8 @@ more. **cpsdirector** is a web service exposing all its
 functionalities via an HTTP-based API.
 
 ConPaaS can be used either via a command line interface (called
-**cpsclient**) or through a web frontend (**cpsfrontend**).  Recently
-a new experimental command line interface called **cps-tools** has
+**cpsclient**) or through a web frontend (**cpsfrontend**). More
+recently, a new command line interface called **cps-tools** has
 become available (note: **cps-tools** requires Python 2.7). This
 document explains how to install and configure all the aforementioned
 components.
@@ -31,11 +31,11 @@ Installing ConPaaS requires to take the following steps:
 
 #. Choose a VM image customized for hosting the services, or create a
    new one. Details on how to do this vary depending on the choice of cloud
-   where ConPaaS will run. Instructions on how to find or create a ConPaaS image
-   suitable to run on Amazon EC2 can be found in :ref:`conpaas-on-ec2`.
-   The section :ref:`conpaas-on-openstack` describes how to create a ConPaaS
-   image for OpenStack and section :ref:`conpaas-on-opennebula` describes how to
-   create an image for OpenNebula.
+   where ConPaaS will run. Instructions on how to configure ConPaaS with
+   Amazon EC2 can be found in :ref:`conpaas-on-ec2`. The section
+   :ref:`conpaas-on-openstack` describes how to configure ConPaaS to work
+   with an OpenStack cloud and section :ref:`conpaas-on-opennebula` describes
+   the configurations needed for an OpenNebula cloud.
 
 #. Install and configure **cpsdirector** as explained in
    :ref:`director-installation`. All system configuration takes place in the
@@ -577,122 +577,16 @@ As a last step, restart your Apache web server::
 
 At this point, your front-end should be working!
 
-.. _image-creation:
-
-Creating A ConPaaS Services VM Image
-====================================
-Various services require certain packages and configurations to be present in
-the VM image. ConPaaS provides facilities for creating specialized VM images
-that contain these dependencies. Furthermore, for the convenience of users,
-there are prebuilt Amazon AMIs that contain the dependencies for *all*
-available services. If you intend to run ConPaaS on Amazon EC2 and do not need
-a specialized VM image, then you can skip this section and proceed to
-:ref:`conpaas-on-ec2`.
-
-Configuring your VM image
--------------------------
-The configuration file for customizing your VM image is located at 
-*conpaas-services/scripts/create_vm/create-img-script.cfg*. 
-
-In the **CUSTOMIZABLE** section of the configuration file, you can define
-whether you plan to run ConPaaS on Amazon EC2, OpenStack or OpenNebula. Depending on the
-virtualization technology that your target cloud uses, you should choose either
-KVM or Xen for the hypervisor. Note that for Amazon EC2 this variable needs to
-be set to Xen. Please do not make the recommended size for the image file
-smaller than the default. The *optimize* flag enables certain optimizations to
-reduce the necessary packages and disk size. These optimizations allow for
-smaller VM images and faster VM startup.
-
-In the **SERVICES** section of the configuration file, you have the opportunity
-to disable any service that you do not need in your VM image. If a service is
-disabled, its package dependencies are not installed in the VM image. Paired
-with the *optimize* flag, the end result will be a minimal VM image that runs
-only what you need.
-
-Note that te configuration file contains also a **NUTSHELL** section. The 
-settings in this section are explained in details in :ref:`conpaas-in-a-nutshell`.
-However, in order to generate a regular customized VM image, make sure that both
-*container* and *nutshell* flags in this section are set to *false*.
-
-Once you are done with the configuration, you should run this command in the
-*create_vm* directory:: 
-
-    $ python create-img-script.py
-
-This program generates a script file named *create-img-conpaas.sh*. This script
-is based on your specific configurations.
-
-Creating your VM image
-----------------------
-To create the image you can execute *create-img-conpaas.sh* in any 64-bit
-Debian or Ubuntu machine. Please note that you will need to have root
-privileges on such a system. In case you do not have root access to a Debian or
-Ubuntu machine please consider installing a virtual machine using your favorite
-virtualization technology, or running a Debian/Ubuntu instance in the cloud.
-
-#. Make sure your system has the following executables installed (they
-   are usually located in ``/sbin`` or ``/usr/sbin``, so make sure these
-   directories are in your ``$PATH``): *dd parted losetup kpartx
-   mkfs.ext3 tune2fs mount debootstrap chroot umount grub-install*
-
-#. It is particularly important that you use Grub version 2. To install
-   it::
-
-         sudo apt-get install grub2
-         
-#. Execute *create-img-conpaas.sh* as root.
-
-
-The last step can take a very long time. If all goes well, the final VM image
-is stored as *conpaas.img*. This file is later registered to your target IaaS
-cloud as your ConPaaS services image.
-
-If things go wrong
-------------------
-Note that if anything fails during the image file creation, the script
-will stop and it will try to revert any change it has done. However, it
-might not always reset your system to its original state. To undo
-everything the script has done, follow these instructions:
-
-#. The image has been mounted as a separate file system. Find the
-   mounted directory using command ``df -h``. The directory should be in
-   the form of ``/tmp/tmp.X``.
-
-#. There may be a ``dev`` and a ``proc`` directories mounted inside it.
-   Unmount everything using::
-
-           sudo umount /tmp/tmp.X/dev /tmp/tmp.X/proc /tmp/tmp.X
-         
-
-#. Find which loop device you are using::
-
-           sudo losetup -a
-         
-
-#. Remove the device mapping::
-
-           sudo kpartx -d /dev/loopX
-         
-
-#. Remove the binding of the loop device::
-
-           sudo losetup -d /dev/loopX
-         
-
-#. Delete the image file
-
-#. Your system should be back to its original state.
-
 
 .. _conpaas-on-ec2:
 
 ConPaaS on Amazon EC2
 =====================
-ConPaaS is capable of running over the Elastic Compute
-Cloud (EC2) of Amazon Web Services (AWS). This section describes the
-process of configuring an AWS account to run ConPaaS.
-You can skip this section if you plan to install ConPaaS over
-OpenStack or OpenNebula.
+ConPaaS is capable of running over the Elastic Compute Cloud (EC2) of Amazon
+Web Services (AWS). This section describes the process of configuring an AWS
+account to run ConPaaS. You can skip this section if you plan to install ConPaaS
+over OpenStack or OpenNebula, or use specialized versions such as the Nutshell
+or ConPaaS on Raspberry PI.
 
 If you are new to EC2, you will need to create an account on the `Amazon
 Elastic Compute Cloud <http://aws.amazon.com/ec2/>`_. A very good introduction
@@ -725,30 +619,44 @@ availability zone supported by ConPaaS. The AMI IDs of said images are:
 You can use one of these values when configuring your ConPaaS director
 installation as described in :ref:`director-installation`.
 
+.. _registering-image-on-ec2:
+
 Registering your custom VM image to Amazon EC2
 ----------------------------------------------
-Using pre-built Amazon Machine Images is the recommended way of running ConPaaS
-on Amazon EC2, as described in the previous section. However, you can also
-create a new Amazon Machine Image yourself, for example in case you wish to run
-ConPaaS in a different Availability Zone or if you prefer to use a custom
-services image. If this is the case, you should have already created your VM
-image (*conpaas.img*) as explained in :ref:`image-creation`.
+Using prebuilt Amazon Machine Images is the recommended way of running ConPaaS
+on Amazon EC2, as described in the previous section. If you plan to use one
+of these AMIs, you can skip this section and continue with the configuration of
+the Security Group. 
+
+You can also download a prebuilt ConPaaS services image that is suitable to be
+used with Amazon EC2, for example in case you wish to run ConPaaS in a different
+Availability Zone. This image is available from the following link:
+
+**ConPaaS VM image for Amazon EC2 (x86_64):**
+  | http://www.conpaas.eu/dl/conpaas-amazon.img
+  | MD5: f883943fa01c5b1c094d6dddeb64da86
+  | size: 2.0 GB
+
+In case you prefer to use a custom services image, you can also create a new
+Amazon Machine Image yourself, by following the instructions from the Internals
+guide: :ref:`image-creation`. Come back to this section after you already
+generated the ``conpaas.img`` file.
 
 Amazon AMIs are either stored on Amazon S3 (i.e. S3-backed AMIs) or on Elastic
 Block Storage (i.e. EBS-backed AMIs). Each option has its own advantages;
-S3-backed AMIs are usually more cost-efficient, but if you plan to use t1.micro
+S3-backed AMIs are usually more cost-efficient, but if you plan to use *t1.micro*
 (free tier) your VM image should be hosted on EBS.
 
-For an EBS-backed AMI, you should either create your *conpaas.img* on an Amazon
-EC2 instance, or transfer the image to one. Once *conpaas.img* is there, you
-should execute *register-image-ec2-ebs.sh* as root on the EC2 instance to
+For an EBS-backed AMI, you should either create your ``conpaas.img`` on an Amazon
+EC2 instance, or transfer the image to one. Once ``conpaas.img`` is there, you
+should execute ``register-image-ec2-ebs.sh`` as root on the EC2 instance to
 register your AMI. The script requires your **EC2_ACCESS_KEY** and
 **EC2_SECRET_KEY** to proceed. At the end, the script will output your new AMI
 ID. You can check this in your Amazon dashboard in the AMI section.
 
 For a S3-backed AMI, you do not need to register your image from an EC2
-instance. Simply run *register-image-ec2-s3.sh* where you have created your
-*conpaas.img*. Note that you need an EC2 certificate with private key to be
+instance. Simply run ``register-image-ec2-s3.sh`` where you have created your
+``conpaas.img``. Note that you need an EC2 certificate with private key to be
 able to do so. Registering an S3-backed AMI requires administrator privileges.
 More information on Amazon credentials can be found at
 `About AWS Security Credentials <http://docs.aws.amazon.com/AWSSecurityCredentials/1.0/AboutAWSCredentials.html>`_.
@@ -781,6 +689,7 @@ The following ports should be open for all running instances:
 AWS documentation is available at
 http://docs.amazonwebservices.com/AWSEC2/latest/UserGuide/index.html?using-network-security.html.
 
+
 .. _conpaas-on-openstack:
 
 ConPaaS on OpenStack
@@ -796,6 +705,12 @@ authenticated and able to run OpenStack commands (such as ``nova list``) on the
 controller node. If this is not the case, please refer first to the OpenStack
 documentation:
 http://docs.openstack.org/openstack-ops/content/lay_of_the_land.html.
+
+If OpenStack was installed using the DevStack script, the easiest way to
+set the environment variables that authenticate the user is to source the
+``openrc`` script from the ``devstack`` directory::
+
+    $ source devstack/openrc admin admin
 
 Getting the OpenStack API access credentials
 --------------------------------------------
@@ -822,7 +737,9 @@ Ubuntu system, this can be done using the following command::
 
 Before executing any commands from this package, you must first export the
 **EC2_URL**, **EC2_ACCESS_KEY** and **EC2_SECRET_KEY** environment variables,
-using the values obtained by following the instructions above.
+using the values obtained by following the instructions above. In newer versions
+of this package, these environment variables are renamed to **EC2_URL**,
+**AWS_ACCESS_KEY** and **AWS_SECRET_KEY**.
 
 Alternatively, OpenStack provides a script that, when sourced, automatically
 exports all the required environment variables. Using the Horizon dashboard,
@@ -836,12 +753,34 @@ instances using::
 
     $ euca-describe-instances
 
+.. _registering-image-on-openstack:
+
 Registering your ConPaaS image to OpenStack
 --------------------------------------------
-This section assumes that you already have created a ConPaaS services image as
-explained in :ref:`image-creation` and uploaded it to your OpenStack controller
-node. To register this image with OpenStack, you may use either Horizon or the
-command line client of Glance (the OpenStack image management service).
+The prebuilt ConPaaS images suitable to be used with OpenStack can be downloaded
+from the following links, depending on the virtualization tehnology and
+system architecture you are using:
+
+**ConPaaS VM image for OpenStack with KVM (x86_64):**
+  | http://www.conpaas.eu/dl/conpaas-openstack-kvm.img
+  | MD5: 28299ac49cc216dde57b107000078c4f
+  | size: 1.8 GB
+
+**ConPaaS VM image for OpenStack with LXC (x86_64):**
+  | http://www.conpaas.eu/dl/conpaas-openstack-lxc.img
+  | MD5: 45296e4cfcd44325a13703dc67da1d0b
+  | size: 1.8 GB
+
+**ConPaaS VM image for OpenStack with LXC for the Raspberry Pi (arm):**
+  | http://www.conpaas.eu/dl/ConPaaS-RPI/conpaas-rpi.img
+  | MD5: 46de3a24904fc24fb32ab8ddccbe36ba
+  | size: 2.0 GB
+
+This section assumes that you already downloaded one of the images above or
+created one as explained in :ref:`image-creation` and uploaded it to your
+OpenStack controller node. To register this image with OpenStack, you may
+use either Horizon or the command line client of Glance (the OpenStack image
+management service).
 
 In Horizon, you can register the ConPaaS image by navigating to the *Project* >
 *Compute* > *Images* menu in the left pane and then pressing the *Create Image*
@@ -852,11 +791,7 @@ image (i.e. *conpaas.img*). The image format should be set to *Raw*.
 Alternatively, using the command line, the ConPaaS image can be registered in
 the following way::
 
-    $ glance image-create --name <image_name> \
-        --is-public true \
-        --disk-format raw \
-        --container-format bare \
-        --file <conpaas.img>
+    $ glance image-create --name <image_name> --disk-format raw --container-format bare --file <conpaas.img>
 
 In both cases, you need to obtain the AMI ID associated with the image in order
 to allow ConPaaS to refer to it when using the EC2 API. To do this, you need to
@@ -866,6 +801,32 @@ execute the following command::
 
 The AMI ID appears in the second column of the output.
 
+Networking setup
+----------------
+ConPaaS requires instances to have public (floating) IP addresses assigned and
+will only communicate with an instance using its public IP address.
+
+First, you need to make sure that floating addresses are configured. You can
+get a list containing all the configured floating IP addresses as follows::
+
+    $ nova floating-ip-bulk-list
+
+If there are no addresses configured, you can add a new IP address range using
+the following command::
+
+    $ nova floating-ip-bulk-create --pool public --interface <interface> <new_range>
+
+for example, using the **br100** interface and the **172.16.0.224/27** address
+range::
+
+    $ nova floating-ip-bulk-create --pool public --interface br100 172.16.0.224/27
+
+Second, OpenStack should be configured to assign a floating IP address at every
+new instance creation. This can be done by adding the following line to the *[DEFAULT]*
+section of the nova configuration file (``/etc/nova/nova.conf``)::
+
+    auto_assign_floating_ip = True
+
 Security Group
 --------------
 As in the case of Amazon Web Services deployments, OpenStack deployments use
@@ -873,43 +834,94 @@ security groups to limit the the network connections allowed to an instance.
 The list of ports that should be opened for every instance is the same as in
 the case of Amazon Web Services and can be consulted here: :ref:`security-group-ec2`.
 
+Your configured security groups can be found in Horizon by navigating to the
+*Project* > *Compute* > *Access & Security* menu in the left pane of the dashboard
+and then selecting the *Security Groups* tab.
+
+Using the command line, the security groups can be listed using::
+
+    $ nova secgroup-list
+
+You can use the ``default`` security group that is automatically created in every
+project. However note that, unless the its default settings are changed, this
+security group denies all incoming traffic.
+
 For more details on creating and editing a security group, please refer to the
 OpenStack documentation available at
 http://docs.openstack.org/openstack-ops/content/security_groups.html.
+
+SSH Key Pair
+------------
+In order to use your OpenStack deployment with ConPaaS, you need to configure
+an SSH key pair that will allow you to login to an instance without using a
+password.
+
+In Horizon, the key pairs can be found by navigating to the *Project* > *Compute* >
+*Access & Security* menu and then selecting the *Key Pairs* tab.
+
+Using the command line, the key pairs can be listed using::
+
+    $ nova keypair-list
+
+By default there is no key pair configured, so you should create a new one or
+import an already existing one.
+
+Flavor
+------
+ConPaaS needs to know which instance type it can use, called *flavor* in OpenStack
+terminology. There are quite a few flavors configured by default, which can also
+be customized if needed.
+
+The list of available flavors can obtained in Horizon by navigating to the
+*Admin* > *System* > *Flavors* menu. Using the command line, the same result can
+be obtained using::
+
+    $ nova flavor-list
 
 
 .. _conpaas-on-opennebula:
 
 ConPaaS on OpenNebula
 =====================
-ConPaaS is capable of running over an OpenNebula
-installation. This section describes the process of configuring
-OpenNebula to run ConPaaS. You can skip this section if you plan to
-deploy ConPaaS over Amazon Web Services or OpenStack.
+ConPaaS is capable of running over an OpenNebula installation. This section
+describes the process of configuring OpenNebula to run ConPaaS. You can skip
+this section if you plan to deploy ConPaaS over Amazon Web Services or OpenStack,
+or use specialized versions such as the Nutshell or ConPaaS on Raspberry PI.
+
+.. _registering-image-on-opennebula:
 
 Registering your ConPaaS image to OpenNebula
 --------------------------------------------
-This section assumed that you already have created a ConPaaS services image as
-explained in :ref:`image-creation`. Upload your image (i.e. *conpaas.img*) to
-your OpenNebula headnode. The headnode is where OpenNebula services are
-running. You need have a valid OpenNebula account on the headnode (i.e. onevm
-list works!). Although you have a valid account on OpenNebula, you may have a problem similar to this:
+The prebuilt ConPaaS image suitable to be used with OpenNebula can be downloaded
+from the following link:
+
+**ConPaaS VM image for OpenNebula with KVM (x86_64):**
+  | http://www.conpaas.eu/dl/conpaas-opennebula-kvm.img
+  | MD5: 32022d0e50f3253b121198d30c336ae8
+  | size: 2.0 GB
+
+This section assumes that you already downloaded the image from the link above or
+created one as explained in :ref:`image-creation`. Upload your image (i.e.
+``conpaas.img``) to your OpenNebula headnode. The headnode is where OpenNebula
+services are running. You need have a valid OpenNebula account on the headnode
+(i.e. ``onevm list`` works!). Although you have a valid account on OpenNebula,
+you may have a problem similar to this:
 
 */usr/lib/one/ruby/opennebula/client.rb:119:in `initialize': ONE_AUTH file not present (RuntimeError)*
 
-You can fix it setting the ONE_AUT variable like follows::
+You can fix it setting the ``ONE_AUTH`` variable like follows::
 
     $ export ONE_AUTH="/var/lib/one/.one/one_auth"
 
-To register your image, you should execute *register-image-opennebula.sh* on
-the headnode. *register-image-opennebula.sh* needs the path to *conpaas.img* as
-well as OpenNebula's datastore ID and  architecture Type.
+To register your image, you should execute ``register-image-opennebula.sh`` on
+the headnode. ``register-image-opennebula.sh`` needs the path to ``conpaas.img`` as
+well as OpenNebula's datastore ID and architecture type.
 
 To get the datastore ID, you should execute this command on the headnode::
     
     $ onedatastore list
 
-The output of *register-image-opennebula.sh* will be your ConPaaS OpenNebula
+The output of ``register-image-opennebula.sh`` will be your ConPaaS OpenNebula
 image ID.
 
 Make sure OpenNebula is properly configured
@@ -972,10 +984,12 @@ with::
 
     :DoNotReverseLookup => true,
 
+
 .. _conpaas-in-a-nutshell:
 
 ConPaaS in a Nutshell
 =====================
+
 ConPaaS in a Nutshell is an extension to the ConPaaS project which aims at 
 providing a cloud environment and a ConPaaS installation running on it, all
 in a single VM, called the Nutshell. More specifically, this VM has an 
@@ -988,78 +1002,198 @@ standard clouds such as OpenNebula, OpenStack and EC2 but also on simpler
 virtualization tools such as VirtualBox. Therefore, it provides a great developing 
 and testing environment for ConPaaS without the need of accessing a cloud.
 
+The easiest way to try the Nutshell is to download the preassembled image
+for VirtualBox. This can be done from the following link:
 
-Creating a Nutshell image
--------------------------
-The procedure for creating a Nutshell image is very similar to the one for 
-creating a standard customized image described in section :ref:`image-creation`.
-However, there are a few settings in the configuration file which need 
-to be considered.
+**VirtualBox VM containing ConPaaS in a Nutshell (7.6 GB):**
+  | http://www.conpaas.eu/dl/Nutshell-1.5.1.ova
+  | MD5: 018ea0eaa6b6108ef020e00391ef3a96
 
-Most importantly, there are two flags in the **Nutshell** section of the 
-configuration file, *nutshell* and *container* which control the kind of image
-that is going to be generated. Since these two flags can take either value
-true of false, we distinguish four cases:
+.. warning::
+  It is always a good idea to check the integrity of a downloaded image before continuing
+  with the next step, as a corrupted image can lead to unexpected behaviour. You can do
+  this by comparing its MD5 hash with the one shown above. To obtain the MD5 hash, you
+  can use the ``md5sum`` command.
 
-#. nutshell = false, container = false: In this case a standard ConPaaS VM
-   image is generated and the nutshell configurations are not taken into consideration.
-   This is the default configuration which should be used when ConPaaS is deployed on a
-   standard cloud.
-
-#. nutshell = false, container = true: In this case the user indicates that the
-   image that will be generated will be a LXC container image. This image is similar
-   to a standard VM one, but it does not contain a kernel installation. 
-
-#. nutshell = true, container = false. In this case a Nutshell image is generated
-   and a standard ConPaaS VM image will be embedded in it. This configuration should be
-   used for deploying ConPaaS in nested standard VMs within a single VM.
-
-#. nutshell = true, container = true. Similar to the previous case, a Nutshell image
-   is generated but this time a container image is embedded in it instead of a VM one.
-   Therefore, in order to generate a Nutshell based on containers, make sure to set these
-   flags to this configuration. This is the default configuration for our distribution of
-   the Nutshell.
-
-Another important setting for generating the Nutshell image is also the path to a directory
-containing the ConPaaS tarballs (cps*.tar.gz files). 
-The rest of the settings specify the distro and kernel versions that the Nutshell VM would have.
-For the moment we have tested it only for Ubuntu 12.04 with kernel 3.5.0.
-
-In order to run the image generating script, the procedure is almost the same as for a standard image.
-From the create_vm diretory run:: 
-
-    $ python create-img-script.py
-    $ sudo ./create-img-nutshell.sh
-
-Note that if the *nutshell* flag is enabled the generated script file is called *create-img-nutshell.sh*.
-Otherwise, the generated script file is called *create-img-conpaas.sh* as indicated previously.
-
-
-   
-Creating a Nutshell image for VirtualBox
-----------------------------------------
-
-As mentioned earlier the Nutshell VM can run on VirtualBox. In order to generate a Nutshell image
-compatible with VirtualBox, you have to set the *cloud* value to *vbox* on the **Customizable** section of the configuration file.
-The rest of the procedure is the same as for other clouds. The result of the image generation script would be a
-*nutshell.vdi* image file which can be used as a virtual hard drive when creating a new appliance on VirtualBox.
-
-The procedure for creating a new appliance on VirtualBox is quite standard:
-
-#. Name and OS: You choose a custom name for the appliance but use *Linux* and *Ubuntu (64 bit)* for the type and version.
-
-#. Memory size: Since the Nutshell runs a significant number of services and also requires some memory for the containers, we suggest to choose at least 3 GB of RAM.
-
-#. Hard drive: Select "User an existing virtual hard drive file", browse to the location of the *nutshell.vdi* file generated earlier and press create.
+Alternatively, you can also create such an image or a similar one that runs
+on standard clouds (OpenNebula, OpenStack and Amazon EC2 are supported) by
+following the instructions in the Internals guide, section :ref:`creating-a-nutshell`.
 
 Running the Nutshell in VirtualBox
 ----------------------------------
-  
-From the 1.4.1 release though, ConPaaS is shipped together with a VirtualBox appliance containing the Nutshell
-VM image as well. 
 
-Before running the appliance it is strongly suggested to 
-create a host-only network on VirtualBox in case there is not already one created. To do so from the VirtualBox GUI, go to: File>Preferences>Network>Host-only Networks and click add.  Then use the File>Import appliance menu to import the image in VirtualBox.
+The easiest way to start the Nutshell is using VirtualBox.
+
+As a lot of services run inside the Nutshell VM, it requires a significant amount
+of resources. The minimum requirements for a system to be able to run the Nutshell
+are as follows::
+
+  CPU: dual-core processor with hardware virtualization instructions
+  Memory: at least 6 GM of RAM (from which 3 GB should be allocated to the VM)
+  HDD: at least 30 GB of available space
+
+The recommended system requirements for optimal performance::
+
+  CPU: Intel i7 processor or equivalent
+  Memory: at least 8 GB of RAM (from which 4 GB should be allocated to the VM)
+  HDD: Solid State Drive (SSD) with at least 30 GB of available space
+
+.. warning::
+  It is highly advised to run the Nutshell on a system that meets the recommended
+  system requirements, or else the its performance may be severely impacted. For
+  systems that do not meet the recommended requirements (but still meet the minimum
+  requirements), a very careful split of the resources between the VM and the host
+  system needs to be performed.
+
+#. Make sure that hardware virtualization extensions are activated in your
+   computer's BIOS. The procedure for activating them is highly dependent on
+   your computer's manufacturer and model. Some general instructions can be found
+   here:
+   
+   https://goo.gl/ZGxK9Z
+
+#. If you haven't done this already, create a host-only network in VirtualBox.
+   This is needed in order to allow access to the Nutshell VM and to the applications
+   deployed in it from your host machine. To do so from the VirtualBox GUI, go to:
+   *File* > *Preferences* > *Network* > *Host-only Networks*. Check if there
+   is already a host-only network configured (usually called *vboxnet0*). If not,
+   add one by clicking on the *Add host-only network* button.
+
+#. Verify the settings of the host-only network. In the same window, select the
+   host-only network (*vboxnet0*) and press the *Edit host-only network* button.
+   In the *Adapter* tab, make sure that the following fields have these values::
+   
+     IPv4 address: 192.168.56.1
+     IPv4 Network Mask: 255.255.255.0
+   
+   and in the *DHCP Server* tab::
+   
+     Enable Server is checked
+     Server Address: 192.168.56.100
+     Server Mask: 255.255.255.0
+     Lower Address Bound: 192.168.56.101
+     Upper Address Bound: 192.168.56.254
+   
+   You can also use other values than the defaults presented above. In this case,
+   note that you will also need to adjust the IP address range allocated by
+   OpenStack to the containers to match your settings. You can do this by following
+   the instructions from the following section of the User guide:
+   :ref:`changing-the-ips-of-the-nutshell`.
+
+#. Import the Nutshell appliance using the menu *File* > *Import Appliance*, or by
+   simply double-clicking the *.ova* file in your file manager.
+   
+   .. warning::
+      Make sure you have enough free space on your hard drive before attempting this
+      step as importing the appliance will extract the VM's hard disk image from the
+      *.ova* archive, which occupies around 21 GB of hard disk space. Creating snapshots
+      of the Nutshell VM will also require additional space, so for optimal operation,
+      the recommended free space that should be available before importing the VM is
+      30 GB.
+
+#. Once the Nutshell has been imported, you may adjust the amount of memory and
+   the number of CPUs you want to dedicate to it by clicking on the Nutshell VM,
+   then following the menu: *Settings* > *System* > *Motherboard* / *Processor*.
+   We recommend allocating at least 3 GB of RAM for the Nutshell to function properly
+   (4 GB is recommended). Make sure that enough memory remains for the host system to
+   operate properly and never allocate more CPUs than what is available in your host
+   computer.
+
+#. It is also a very good idea to create a snapshot of the initial state of the
+   Nutshell VM, immediately after it was imported. This allows the possibility to
+   quickly revert to the initial state without importing the VM again, when something
+   goes wrong.
+
+For more information regarding the usage of the Nutshell please consult the
+:ref:`nutshell-guide` section in the User guide.
 
 
-For more information regarding the usage of the Nutshell please consult the :ref:`nutshell-guide` section in the guide.
+.. _conpaas-on-raspberrypi:
+
+ConPaaS on Raspberry PI
+=======================
+ConPaaS on Raspberry PI is an extension to the ConPaaS project which uses one (or more)
+Raspberry PI(s) 2 Model B to create a cloud for deploying applications. Each Raspberry PI is
+configured as an OpenStack compute node (using LXC containers), running only the minimal
+number of OpenStack services required on such a node (``nova-compute`` and ``cinder-volume``).
+All the other OpenStack services, such as Glance, Keystone, Horizon etc., are moved outside
+of the PI, on a more powerful machine configured as an OpenStack controller node. The ConPaaS
+Director and both clients (command line and web frontend) also run on the controller node.
+
+To ease the deployment of the system, we provide an image containing the raw contents of
+the Raspberry PI's SD card, along with a VirtualBox VM image (in the Open Virtualization
+Archive format) that contains the controller node and can be deployed on any machine
+connected to the same local network as the Raspberry PI(s). So, for a minimal working setup,
+you will need at least one Raspberry PI 2 Model B (equipped with a 32 GB SD card) and one
+laptop/desktop computer (with VirtualBox installed) that will host the backend VM. The two
+have to be connected to the same local network which, in the default configuration, uses IPs
+in the ``172.16.0.0/24`` range.
+
+The two images can be downloaded from the following links:
+
+**RPI's SD card image (4.7 GB):**
+  | http://www.conpaas.eu/dl/ConPaaS-RPI/ConPaaS-RPI-SDCard-32G.img.tar.gz
+  | MD5: b49a33dac4c6bdba9417b4feef1cd2aa
+
+**VirtualBox VM containing the backend server (7.4 GB):**
+  | http://www.conpaas.eu/dl/ConPaaS-RPI/ConPaaS-RPI-Backend-VM.ova
+  | MD5: 0e6022423b3f940c73204320a5f4f669
+
+.. warning::
+  It is always a good idea to check the integrity of a downloaded image before continuing
+  with the next steps, as a corrupted image can lead to unexpected behaviour. You can do
+  this by comparing its MD5 hash with the ones shown above. To obtain the MD5 hash, you
+  can use the ``md5sum`` command.
+
+Installing the image on the Raspberry PI
+----------------------------------------
+You need to write the image to the Raspberry PI's SD card on a different machine (equipped
+with an SD card reader) and then move the SD card back into the Raspberry PI.
+
+Download and decompress the image, then write it to the SD card using the *dd* utility.
+You can follow the official instructions from the RaspberryPi.org website:
+
+**Linux**:
+  https://www.raspberrypi.org/documentation/installation/installing-images/linux.md
+
+**MacOS**:
+  https://www.raspberrypi.org/documentation/installation/installing-images/mac.md
+
+.. warning::
+  Decompressing the image will result in a 32 GB file (the raw SD card image), so please
+  make sure that you have enough free space before attempting this step.
+
+.. warning::
+  Before writing the image, please make sure that the SD card has a capacity of at least
+  31998345216 bytes.
+
+The image was designed to fit the majority of the 32 GB SD cards, as the actual size varies
+between manufacturers. As a result, its size may be a little lower than the actual size of
+your card, leaving some unused space near the end of the card. A lot more unused space
+remains if a bigger SD card (64 GB) is used. To recover this wasted space, you may adjust
+the partitions by moving the swap partition near the end of the card and expanding the main
+*ext4* partition.
+
+.. warning::
+  If you adjust the partitions, please make sure that the beginning of every partition
+  remains aligned on a 4 MB boundary (the usual size of the SD card's erase block) or else
+  performance may be negatively affected.
+
+Deploying the Backend VM
+------------------------
+Download the *.ova* file and import it into VirtualBox. In a graphical environment, you
+can usually do this by double-clicking the *.ova* file.
+
+Adjust the resources allocated to the VM. Although the default settings use a pretty
+generous amount of resources (4 CPUs and 4 GB of RAM), reducing this to a less powerful
+configuration should work fine (for example 1 CPU and 2 GB of RAM). 
+
+Another very important configuration is setting the VM's network interfaces. Two interfaces
+should be present: the first one (called *eth0* inside the VM) should be configured as the
+*NAT* type to allow Internet access to the VM. The second interface (*eth1* inside the VM)
+should be bridged to an adapter connected to the same local network as the Raspberry PI,
+so in the VM's properties select *Bridged adapter* and choose the interface to which the
+Raspberry PIs are connected.
+
+For more information regarding the usage of ConPaaS on Raspberry PI, please consult the
+:ref:`raspberrypi-guide` section in the user guide.

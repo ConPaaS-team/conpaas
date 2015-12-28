@@ -28,10 +28,6 @@ class SeleniumService extends Service {
 		return array('hub', 'node');
 	}
 
-	public function fetchStateLog() {
-		return array();
-	}
-
 	public function createInstanceUI($node) {
 		$info = $this->getNodeInfo($node);
 		return new SeleniumInstance($info);

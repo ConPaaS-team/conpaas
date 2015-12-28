@@ -26,10 +26,6 @@ class XtreemFSService extends Service {
 		return array('dir', 'mrc', 'osd');
 	}
 
-	public function fetchStateLog() {
-		return array();
-	}
-
 	public function needsPolling() {
 		return parent::needsPolling() || $this->state == self::STATE_INIT;
 	}

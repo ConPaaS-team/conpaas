@@ -32,10 +32,6 @@ class ScalarisService extends Service {
 		return array('scalaris');
 	}
 
-	public function fetchStateLog() {
-		return array();
-	}
-
 	public function createInstanceUI($node) {
 		$info = $this->getNodeInfo($node);
 		return new ScalarisInstance($info);

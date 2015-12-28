@@ -9,8 +9,6 @@
     :copyright: (C) 2010-2013 by Contrail Consortium.
 """
 
-memcache = None
-
 import time
 
 class CodeVersion(object):

@@ -29,10 +29,6 @@ class GaleraService extends Service {
 		return array('nodes', 'glb_nodes');
 	}
 
-	public function fetchStateLog() {
-		return array();
-	}
-
 	public function createInstanceUI($node) {
 		$info = $this->getNodeInfo($node);
 		return new GaleraInstance($info);
