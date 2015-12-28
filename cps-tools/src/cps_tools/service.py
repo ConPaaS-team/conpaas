@@ -2,6 +2,7 @@
 import argcomplete
 import logging
 import sys
+import time
 
 from .base import BaseClient
 from .config import config
@@ -34,6 +35,7 @@ class ServiceCmd(object):
         self._add_stop()
         self._add_get_config()
         self._add_get_state()
+        self._add_get_history()
         self._add_rename()
         self._add_remove()
         self._add_add_nodes()
@@ -264,6 +266,26 @@ class ServiceCmd(object):
             if key == 'type' and value == 'galera':
                 value = 'mysql'
             print "%s: %s" % (key, value)
+
+    # ========== get_history
+    def _add_get_history(self):
+        subparser = self.add_parser('get_history', help="display the service's history")
+        subparser.set_defaults(run_cmd=self.get_history, parser=subparser)
+        subparser.add_argument('app_name_or_id',
+                               help="Name or identifier of an application")
+        subparser.add_argument('serv_name_or_id',
+                               help="Name or identifier of a service")
+
+    def get_history(self, args):
+        app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
+        res = self.client.call_manager_get(app_id, service_id, "get_service_history")
+
+        if res:
+            for entry in res['state_log']:
+                time_str = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(entry['time'])))
+                print "%s %s %s" % (time_str, entry['state'], entry['reason'])
+        else:
+            self.client.error("Failed to obtain the history for service %s." % service_id)
 
     # ========== rename
     def _add_rename(self):

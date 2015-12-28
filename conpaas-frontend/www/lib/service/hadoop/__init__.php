@@ -22,10 +22,6 @@ class HadoopService extends Service {
 		return false;
 	}
 
-	public function fetchStateLog() {
-		return array();
-	}
-
 	public function needsPolling() {
 		return parent::needsPolling() || $this->state == self::STATE_INIT;
 	}

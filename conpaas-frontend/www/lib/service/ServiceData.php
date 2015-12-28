@@ -9,30 +9,29 @@ require_module('logging');
 class ServiceData {
 
     public static function createService($default_name, $type, $cloud, $uid,
-    		$initial_state) {
+            $initial_state) {
         $query = sprintf("INSERT INTO services ".
-    		"(name, type, cloud, state, creation_date, uid) VALUES ".
-    		"('%s', '%s', '%s', '%s', '%s', %d)",
-    		mysql_escape_string($default_name),
-    		mysql_escape_string($type),
-    		mysql_escape_string($cloud),
-    		mysql_escape_string($initial_state),
-    		date("Y-m-d H:i:s"),
-    		mysql_escape_string($uid)
-    	);
-    	$res = mysql_query($query, DB::getConn());
-    	if ($res === false) {
-    		throw new DBException(DB::getConn());
-    	}
+            "(name, type, cloud, state, creation_date, uid) VALUES ".
+            "('%s', '%s', '%s', '%s', '%s', %d)",
+            mysql_escape_string($default_name),
+            mysql_escape_string($type),
+            mysql_escape_string($cloud),
+            mysql_escape_string($initial_state),
+            date("Y-m-d H:i:s"),
+            mysql_escape_string($uid)
+        );
+        $res = mysql_query($query, DB::getConn());
+        if ($res === false) {
+            throw new DBException(DB::getConn());
+        }
 
-    	/* get the service id */
-    	$sid = mysql_insert_id(DB::getConn());
-    	return $sid;
+        /* get the service id */
+        $sid = mysql_insert_id(DB::getConn());
+        return $sid;
     }
 
-	public static function getServicesByUser($uid, $aid) {
+    public static function getServicesByUser($uid, $aid) {
        $res = HTTPS::post(Conf::DIRECTOR . '/list/' . $aid, array(), false, $uid);
-	
 
        $services = array();
        foreach(json_decode($res) as $service) {
@@ -41,14 +40,14 @@ class ServiceData {
            if ($serv['type'] == 'helloworld')
                continue;
            // $service['uid'] = $service['user_id'];
-           // $serv['creation_date'] = $serv['created'];
+           $serv['creation_date'] = $serv['created'];
            $full_serv = array("service" => $serv, "application" => $application,);
            array_push($services, $full_serv);
        }
        return $services;
-	}
+    }
 
-	public static function getServiceById($sid) {
+    public static function getServiceById($sid) {
         $services = ServiceData::getServicesByUser($_SESSION['uid'], $_SESSION['aid']);
         foreach ($services as $service) {
             if ($service['service']['sid'] == $sid) {
@@ -56,53 +55,53 @@ class ServiceData {
             }
         }
         throw new Exception('Service does not exist');
-	}
+    }
 
-	public static function updateVmid($sid, $vmid) {
-		$query = sprintf("UPDATE services SET vmid='%s' WHERE sid=%d",
-			mysql_escape_string($vmid), mysql_escape_string($sid));
-		$res = mysql_query($query, DB::getConn());
-		if ($res === false) {
-			throw new DBException(DB::getConn());
-		}
-	}
+    public static function updateVmid($sid, $vmid) {
+        $query = sprintf("UPDATE services SET vmid='%s' WHERE sid=%d",
+            mysql_escape_string($vmid), mysql_escape_string($sid));
+        $res = mysql_query($query, DB::getConn());
+        if ($res === false) {
+            throw new DBException(DB::getConn());
+        }
+    }
 
-	public static function updateName($sid, $name) {
+    public static function updateName($sid, $name) {
         $res = HTTPS::post(Conf::DIRECTOR . '/rename', 
             array('name' => $name, 'app_id' => $_SESSION['aid'], 'service_id' => $sid), false, $_SESSION['uid']);
 
-		if (json_decode($res) !== true) {
-			throw new Exception('Cannot rename service');
-		}
-	}
+        if (json_decode($res) !== true) {
+            throw new Exception('Cannot rename service');
+        }
+    }
 
-	public static function updateState($sid, $state) {
-	}
+    public static function updateState($sid, $state) {
+    }
 
-	public static function getAvailableCds($uid) {
-		$query = sprintf("SELECT * FROM services WHERE type='cds'"
-			." and state='RUNNING'"
-			." and cloud='ec2'"
-			." and (uid = 1 or uid = %d)",
-			mysql_escape_string($uid));
-		$res = mysql_query($query, DB::getConn());
-		if ($res === false) {
-			throw new DBException(DB::getConn());
-		}
-		return DB::fetchAssocAll($res);
-	}
+    public static function getAvailableCds($uid) {
+        $query = sprintf("SELECT * FROM services WHERE type='cds'"
+            ." and state='RUNNING'"
+            ." and cloud='ec2'"
+            ." and (uid = 1 or uid = %d)",
+            mysql_escape_string($uid));
+        $res = mysql_query($query, DB::getConn());
+        if ($res === false) {
+            throw new DBException(DB::getConn());
+        }
+        return DB::fetchAssocAll($res);
+    }
 
-	public static function getCdsByAddress($address) {
-		$query = sprintf("SELECT * FROM services WHERE type='cds'"
-			." and manager like '%s'",
-			'%'.mysql_escape_string($address).'%');
-		$res = mysql_query($query, DB::getConn());
-		if ($res === false) {
-			throw new DBException(DB::getConn());
-		}
-		$entries = DB::fetchAssocAll($res);
-		return $entries[0];
-	}
+    public static function getCdsByAddress($address) {
+        $query = sprintf("SELECT * FROM services WHERE type='cds'"
+            ." and manager like '%s'",
+            '%'.mysql_escape_string($address).'%');
+        $res = mysql_query($query, DB::getConn());
+        if ($res === false) {
+            throw new DBException(DB::getConn());
+        }
+        $entries = DB::fetchAssocAll($res);
+        return $entries[0];
+    }
 }
 
 ?>
