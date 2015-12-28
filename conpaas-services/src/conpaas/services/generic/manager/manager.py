@@ -293,7 +293,7 @@ echo "" >> /root/generic.out
             self.master_ip = None
             self.state_set(self.S_STOPPED)
         else:
-            self._do_execute_script('notify', self.cp_nodes)
+            self._do_execute_script('notify', cp_nodes)
             self.state_set(self.S_RUNNING)
 
         return del_nodes

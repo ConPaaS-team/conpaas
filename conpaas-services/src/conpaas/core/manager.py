@@ -380,7 +380,6 @@ class ApplicationManager(BaseManager):
 
     @expose('POST')
     def remove_nodes(self, kwargs):
-        # COMMENT(genc): how are roles going to be managed here?
         # exp_params = [('service_id', is_in_list(self.httpsserver.instances.keys())),('node', is_pos_int)]
         exp_params = [('service_id', is_in_list(self.httpsserver.instances.keys())),('nodes', is_dict)]
         # [service_id, count ] = check_arguments(exp_params, kwargs)
@@ -410,6 +409,10 @@ class ApplicationManager(BaseManager):
             service_manager.nodes.remove(filter(lambda n: n.id == node.id, service_manager.nodes)[0])
         self.logger.debug("Current nodes: %s, current volumes: %s" % (self.nodes, self.volumes))
         self.callbacker.remove_nodes(nodes)
+        # if len(service_manager.nodes) == 0:
+        #     service_manager.state_set(self.S_STOPPED)    
+        # else: 
+        #     service_manager.state_set(self.S_RUNNING)
         
 
     @expose('POST')

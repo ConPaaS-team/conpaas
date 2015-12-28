@@ -71,6 +71,19 @@ class XtreemFSManager(BaseManager):
         nodes = [{'cloud':None, 'volumes':[volume]}]
         return nodes
 
+    def get_add_nodes_info(self, noderoles, cloud):
+        device_name=self.config_parser.get('manager', 'DEV_TARGET')
+        count = sum(noderoles.values())
+        nodes_info = [{'cloud':cloud} for _ in range(count)]
+        osd_nodes = noderoles.get('osd', 0)
+        for node_info in nodes_info:
+            if osd_nodes:
+                volume = {'vol_name':'osd-%(vm_id)s', 'vol_size': self.osd_volume_size, 'dev_name':device_name}
+                node_info['volumes'] = [volume]
+                osd_nodes -= 1
+
+        return nodes_info
+
     def __get__uuid(self, node_id, node_type):
         if node_type == 'dir':
             node_map = self.dir_node_uuid_map
@@ -200,33 +213,9 @@ class XtreemFSManager(BaseManager):
     def _start_osd(self, nodes):
         dev_name = None
         for idx, node in enumerate(nodes):
-
-            # osd_uuid = self.__get__uuid(node.id, 'osd')
-
-            # volume_associated = osd_uuid in self.osd_uuid_volume_map
-
-            # # We need a storage volume for each OSD node. Check if this OSD
-            # # node needs a new volume to be created.
-            # if volume_associated:
-            #     # No need to create a new volume.
-            #     volume = self.get_volume(self.osd_uuid_volume_map[osd_uuid])
-
-            #     self.logger.debug(
-            #         '%s already has an associated storage volume (%s)' %
-            #             (osd_uuid, volume.id))
-            # else:
-            #     # We need to create a new volume.
-            #     volume_name = "osd-%s" % osd_uuid
-            #     volume = self.create_volume(self.osd_volume_size, volume_name,
-            #             node.vmid, cloud)
-            #     self.osd_uuid_volume_map[osd_uuid] = volume.id
-
-            # try:
-            #     _, dev_name = self.attach_volume(volume.id, node.vmid)
-            # except Exception, err:
-            #     self.logger.error("attach_volume: %s" % err)
             volume_associated = False
-            osd_uuid = node.volumes[0].vol_name
+            osd_uuid = self.__get__uuid(node.id, 'osd')
+            # osd_uuid = node.volumes[0].vol_name
             self.osd_uuid_volume_map[osd_uuid] = node.volumes[0].vol_id
             dev_name = node.volumes[0].dev_name
             try:
@@ -291,16 +280,16 @@ class XtreemFSManager(BaseManager):
                 self.state_set(self.S_ERROR)
                 raise
 
-            volume_id = self.osd_uuid_volume_map[self.osd_node_uuid_map[node.id]]
-            self.detach_volume(volume_id)
+            # volume_id = self.osd_uuid_volume_map[self.osd_node_uuid_map[node.id]]
+            # self.detach_volume(volume_id)
 
-            # destroy volumes and delete entries from internal state 
-            if remove:
-                self.destroy_volume(volume_id)
-                del self.osd_uuid_volume_map[self.osd_node_uuid_map[node.id]]
-                del self.osd_node_uuid_map[node.id]
-            else:
-                self.logger.debug('Not destroying volume %s' % volume_id)
+            # # destroy volumes and delete entries from internal state 
+            # if remove:
+            #     self.destroy_volume(volume_id)
+            #     del self.osd_uuid_volume_map[self.osd_node_uuid_map[node.id]]
+            #     del self.osd_node_uuid_map[node.id]
+            # else:
+            #     self.logger.debug('Not destroying volume %s' % volume_id)
 
 
     def on_start(self, nodes, resuming=False):
@@ -396,13 +385,13 @@ class XtreemFSManager(BaseManager):
         self._stop_mrc(self.mrcNodes, remove=remove)
         self._stop_dir(self.dirNodes, remove=remove)
 
-    def _do_stop(self, stop_services=True):
+    def on_stop(self, stop_services=True):
         # check if we need to stop the services or not, i.e. when called at 
         # the end of get_snapshot()
         if stop_services:
             self._stop_all(remove=True)
 
-        self.controller.delete_nodes(self.nodes)
+        all_nodes = self.nodes[:]
         self.nodes = []
         self.dirNodes = []          
         self.mrcNodes = []
@@ -418,99 +407,81 @@ class XtreemFSManager(BaseManager):
 
         self.osd_uuid_volume_map = {}
 
-        self.state_set(self.S_STOPPED)
-        return HttpJsonResponse()
+        return all_nodes
 
-    @expose('POST')
-    def add_nodes(self, kwargs):
-        #self.controller.add_context_replacement(dict(STRING='xtreemfs'))
-        if self.state_get() != self.S_RUNNING:
-            return HttpErrorResponse('ERROR: Wrong state to add_nodes')
 
-        nr_dir = 0
-        nr_mrc = 0 
-        nr_osd = 0
-        
-        resuming = False;
-        
-        if 'resuming' in kwargs:
-            resuming = kwargs['resuming']
-        
-        
-        # Adding DIR Nodes
-        if 'dir' in kwargs:
-            if not isinstance(kwargs['dir'], int):
-                return invalid_arg('Expected an integer value for "dir"')
-            nr_dir = int(kwargs.pop('dir'))    
-            if nr_dir < 0: 
-                return invalid_arg('Expected a positive integer value for "dir"')
+    # def _do_stop(self, stop_services=True):
+    #     # check if we need to stop the services or not, i.e. when called at 
+    #     # the end of get_snapshot()
+    #     if stop_services:
+    #         self._stop_all(remove=True)
 
-        # Adding MRC Nodes
-        if 'mrc' in kwargs:
-            if not isinstance(kwargs['mrc'], int):
-                return invalid_arg('Expected an integer value for "mrc"')
-            nr_mrc = int(kwargs.pop('mrc'))
-            if nr_mrc < 0: 
-                return invalid_arg('Expected a positive integer value for "mrc"')
-
-        # TODO: 'osd' is no longer required, when adding other services is supported
-        if not 'osd' in kwargs:
-            return HttpErrorResponse('ERROR: Required argument doesn\'t exist')
-        if not isinstance(kwargs['osd'], int):
-            return HttpErrorResponse('ERROR: Expected an integer value for "osd"')
-
-        nr_osd = int(kwargs.pop('osd'))
-        if nr_osd < 0: 
-            return invalid_arg('Expected a positive integer value for "nr osd"')
-
-        self.state_set(self.S_ADAPTING)
-        Thread(target=self._do_add_nodes, args=[nr_dir, nr_mrc, nr_osd, kwargs['cloud'], resuming]).start()
-        return HttpJsonResponse()
+    #     self.controller.delete_nodes(self.nodes)
+    #     self.nodes = []
+    #     self.dirNodes = []          
+    #     self.mrcNodes = []
+    #     self.osdNodes = []   
     
-    # TODO: currently not used
-    def KillOsd(self, nodes):
-        for node in nodes:
-            client.stopOSD(node.ip, 5555)
-            self.osdNodes.remove(node)
+    #     self.dirCount = 0
+    #     self.mrcCount = 0
+    #     self.osdCount = 0
 
-    def _do_add_nodes(self, nr_dir, nr_mrc, nr_osd, cloud, resuming=False):
-        startCloud = self._init_cloud(cloud)
-        totalNodes = nr_dir + nr_mrc + nr_osd
+    #     self.dir_node_uuid_map = {}
+    #     self.mrc_node_uuid_map = {}
+    #     self.osd_node_uuid_map = {}
 
-        # try to create totalNodes new nodes
-        try:
-            node_instances = self.controller.create_nodes(totalNodes, 
-                client.check_agent_process, 5555, startCloud)      
-        except:
-            self.logger.exception('_do_add_nodes: Failed to request a new node')
-            self.state_set(self.S_STOPPED)
-            return
+    #     self.osd_uuid_volume_map = {}
 
-        self.nodes += node_instances 
+    #     self.state_set(self.S_STOPPED)
+    #     return HttpJsonResponse()
 
-        dirNodesAdded = node_instances[:nr_dir]
+
+    def on_add_nodes(self, nodes):
+        # (genc): should manage the param checking somehow
+        resuming = False;
+        # if 'resuming' in kwargs:
+        #     resuming = kwargs['resuming']
+        
+        
+        # # Adding DIR Nodes
+        # if 'dir' in kwargs:
+        #     if not isinstance(kwargs['dir'], int):
+        #         return invalid_arg('Expected an integer value for "dir"')
+        #     nr_dir = int(kwargs.pop('dir'))    
+        #     if nr_dir < 0: 
+        #         return invalid_arg('Expected a positive integer value for "dir"')
+
+        # # Adding MRC Nodes
+        # if 'mrc' in kwargs:
+        #     if not isinstance(kwargs['mrc'], int):
+        #         return invalid_arg('Expected an integer value for "mrc"')
+        #     nr_mrc = int(kwargs.pop('mrc'))
+        #     if nr_mrc < 0: 
+        #         return invalid_arg('Expected a positive integer value for "mrc"')
+
+        # # TODO: 'osd' is no longer required, when adding other services is supported
+        # if not 'osd' in kwargs:
+        #     return HttpErrorResponse('ERROR: Required argument doesn\'t exist')
+        # if not isinstance(kwargs['osd'], int):
+        #     return HttpErrorResponse('ERROR: Expected an integer value for "osd"')
+
+        # nr_osd = int(kwargs.pop('osd'))
+        # if nr_osd < 0: 
+        #     return invalid_arg('Expected a positive integer value for "nr osd"')
+
+        dirNodesAdded = filter(lambda n: n.role == 'dir', nodes)
+        mrcNodesAdded = filter(lambda n: n.role == 'mrc', nodes)
+        osdNodesAdded = filter(lambda n: n.role == 'osd', nodes)
         self.dirNodes += dirNodesAdded
-
-        mrcNodesAdded = node_instances[nr_dir:nr_mrc+nr_dir]
         self.mrcNodes += mrcNodesAdded
-
-        osdNodesAdded = node_instances[nr_mrc+nr_dir:] 
         self.osdNodes += osdNodesAdded
 
-        # TODO: maybe re-enable when OSD-removal moves data to another node before shutting down the service.
-        #KilledOsdNodes = []
-        # The first node will contain the OSD service so it will be removed
-        # from there
-        #if nr_osd > 0 and self.osdCount == 0:
-        #    KilledOsdNodes.append(self.dirNodes[0])
-        #self.KillOsd(KilledOsdNodes)
-
-        for node in node_instances:
+        for node in nodes:
             client.startup(node.ip, 5555)
         
         if not resuming:
             # create certificates for DIR, MRC, OSD and copy them to the agent 
-            self._create_certs(node_instances)
+            self._create_certs(nodes)
 
         # Startup DIR agents
         for node in dirNodesAdded:
@@ -526,18 +497,101 @@ class XtreemFSManager(BaseManager):
 
         # Startup OSD agents (if not resuming)
         if not resuming:
-            self._start_osd(osdNodesAdded, startCloud)
+            self._start_osd(osdNodesAdded)
       
         self.osdCount += len(osdNodesAdded)
+        return True
 
-        #for node in osdNodesAdded:
-        #    client.startup(node.ip, 5555)
-        #    data = client.createOSD(node.ip, 5555, self.dirNodes[0].ip)
-        #    self.logger.info('Received %s from %s', data, node.id)         
-        #    self.osdCount += 1
 
-        self.state_set(self.S_RUNNING)
-        return HttpJsonResponse()
+        
+
+    # @expose('POST')
+    # def add_nodes(self, kwargs):
+    #     #self.controller.add_context_replacement(dict(STRING='xtreemfs'))
+    #     if self.state_get() != self.S_RUNNING:
+    #         return HttpErrorResponse('ERROR: Wrong state to add_nodes')
+
+    #     nr_dir = 0
+    #     nr_mrc = 0 
+    #     nr_osd = 0
+        
+        
+
+    #     self.state_set(self.S_ADAPTING)
+    #     Thread(target=self._do_add_nodes, args=[nr_dir, nr_mrc, nr_osd, kwargs['cloud'], resuming]).start()
+    #     return HttpJsonResponse()
+    
+    # # TODO: currently not used
+    # def KillOsd(self, nodes):
+    #     for node in nodes:
+    #         client.stopOSD(node.ip, 5555)
+    #         self.osdNodes.remove(node)
+
+    # def _do_add_nodes(self, nr_dir, nr_mrc, nr_osd, cloud, resuming=False):
+    #     startCloud = self._init_cloud(cloud)
+    #     totalNodes = nr_dir + nr_mrc + nr_osd
+
+    #     # try to create totalNodes new nodes
+    #     try:
+    #         node_instances = self.controller.create_nodes(totalNodes, 
+    #             client.check_agent_process, 5555, startCloud)      
+    #     except:
+    #         self.logger.exception('_do_add_nodes: Failed to request a new node')
+    #         self.state_set(self.S_STOPPED)
+    #         return
+
+    #     self.nodes += node_instances 
+
+    #     dirNodesAdded = node_instances[:nr_dir]
+    #     self.dirNodes += dirNodesAdded
+
+    #     mrcNodesAdded = node_instances[nr_dir:nr_mrc+nr_dir]
+    #     self.mrcNodes += mrcNodesAdded
+
+    #     osdNodesAdded = node_instances[nr_mrc+nr_dir:] 
+    #     self.osdNodes += osdNodesAdded
+
+    #     # TODO: maybe re-enable when OSD-removal moves data to another node before shutting down the service.
+    #     #KilledOsdNodes = []
+    #     # The first node will contain the OSD service so it will be removed
+    #     # from there
+    #     #if nr_osd > 0 and self.osdCount == 0:
+    #     #    KilledOsdNodes.append(self.dirNodes[0])
+    #     #self.KillOsd(KilledOsdNodes)
+
+    #     for node in node_instances:
+    #         client.startup(node.ip, 5555)
+        
+    #     if not resuming:
+    #         # create certificates for DIR, MRC, OSD and copy them to the agent 
+    #         self._create_certs(node_instances)
+
+    #     # Startup DIR agents
+    #     for node in dirNodesAdded:
+    #         data = client.createDIR(node.ip, 5555)
+    #         self.logger.info('Received %s from %s', data, node.id)
+    #         self.dirCount += 1
+
+    #     # Startup MRC agents
+    #     for node in mrcNodesAdded:
+    #         data = client.createMRC(node.ip, 5555, self.dirNodes[0].ip)
+    #         self.logger.info('Received %s from %s', data, node.id)
+    #         self.mrcCount += 1
+
+    #     # Startup OSD agents (if not resuming)
+    #     if not resuming:
+    #         self._start_osd(osdNodesAdded, startCloud)
+      
+    #     self.osdCount += len(osdNodesAdded)
+
+    #     #for node in osdNodesAdded:
+    #     #    client.startup(node.ip, 5555)
+    #     #    data = client.createOSD(node.ip, 5555, self.dirNodes[0].ip)
+    #     #    self.logger.info('Received %s from %s', data, node.id)         
+    #     #    self.osdCount += 1
+
+    #     self.state_set(self.S_RUNNING)
+    #     return HttpJsonResponse()
 
     @expose('GET')
     def list_nodes(self, kwargs):
@@ -585,6 +639,80 @@ class XtreemFSManager(BaseManager):
                             'osd': serviceNode in self.osdNodes
                             }
             })
+
+
+    def on_remove_nodes(self, noderoles):
+        
+        # (genc): again make a method to check these parameters    
+        # # Removing DIR Nodes
+        # if 'dir' in kwargs:
+        #     if not isinstance(kwargs['dir'], int):
+        #         return invalid_arg('Expected an integer value for "dir"')
+        #     nr_dir = int(kwargs.pop('dir'))    
+        #     if nr_dir < 0: 
+        #         return invalid_arg('Expected a positive integer value for "dir"')
+        #     if nr_dir > self.dirCount - 1: # we need at least 1 DIR
+        #         return invalid_arg('Cannot remove_nodes that many DIR nodes')
+     
+        # # Removing MRC nodes
+        # if 'mrc' in kwargs:
+        #     if not isinstance(kwargs['mrc'], int):
+        #         return invalid_arg('Expected an integer value for "mrc"')
+        #     nr_mrc = int(kwargs.pop('mrc'))
+        #     if nr_mrc < 0: 
+        #         return invalid_arg('Expected a positive integer value for "mrc"')
+        #     if nr_mrc > self.mrcCount - 1: # we need at least 1 MRC
+        #         return invalid_arg('Cannot remove_nodes that many MRC nodes')
+
+        # # TODO: 'osd' is no longer required, when removing other services is supported
+        # if not 'osd' in kwargs:
+        #     return HttpErrorResponse('ERROR: Required argument doesn\'t exist')
+        # if not isinstance(kwargs['osd'], int):
+        #     return HttpErrorResponse(
+        #         'ERROR: Expected an integer value for "osd"')
+
+        # nr_osd = int(kwargs.pop('osd'))
+        # if nr_osd < 0: 
+        #     return invalid_arg('Expected a positive integer value for "osd"')
+        # if nr_osd > self.osdCount - 1: # we need at least 1 OSD
+        #     return invalid_arg('Cannot remove_nodes that many OSD nodes')
+
+        nr_dir = noderoles.get('dir', 0)
+        nr_mrc = noderoles.get('mrc', 0)
+        nr_osd = noderoles.get('osd', 0)
+
+        self.logger.info('Removing %s dir, %s mrc and %s osd nodes' % (nr_dir, nr_mrc, nr_osd))
+        rem_nodes = []
+        if nr_dir > 0:
+            for _ in range(0, nr_dir):
+                node = self.dirNodes.pop(1)
+                self._stop_dir([node], remove=True)
+                rem_nodes += [node]
+            self.dirCount -= nr_osd
+
+        if nr_mrc > 0:
+            for _ in range(0, nr_mrc):
+                node = self.mrcNodes.pop(1)
+                self._stop_mrc([node], remove=True)
+                rem_nodes += [node]
+            self.mrcCount -= nr_mrc
+
+        if nr_osd > 0:
+            for _ in range(0, nr_osd):
+                node = self.osdNodes.pop(1)
+                self._stop_osd([node], remove=True, drain=True)
+                rem_nodes += [node]
+            self.osdCount -= nr_osd
+
+        self.logger.info('Nodes to remove: %s' % (rem_nodes))
+
+
+        if len(self.osdNodes) + len(self.mrcNodes) + len(self.dirNodes) == 0:
+            self.state_set(self.S_STOPPED)    
+        else: 
+            self.state_set(self.S_RUNNING)
+        return rem_nodes
+
 
     @expose('POST')
     def remove_nodes(self, kwargs):
