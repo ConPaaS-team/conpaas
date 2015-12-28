@@ -127,8 +127,10 @@ class GaleraCmd(ServiceCmd):
         app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
         with open(args.filename) as dump_file:
             contents = dump_file.read()
+        params = { 'service_id': service_id,
+                   'method': "load_dump" }
         files = [('mysqldump_file', args.filename, contents)]
-        res = self.client.call_manager_post(app_id, service_id, "/", {'method': "load_dump", }, files)
+        res = self.client.call_manager_post(app_id, service_id, "/", params, files)
         if 'error' in res:
             self.client.error(res['error'])
 

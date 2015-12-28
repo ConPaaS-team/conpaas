@@ -40,7 +40,8 @@ class GenericCmd(ServiceCmd):
     def upload_key(self, args):
         app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
         contents = open(args.filename).read()
-        params = {'method': "upload_authorized_key"}
+        params = { 'service_id': service_id,
+                   'method': "upload_authorized_key" }
         files = [('key', args.filename, contents)]
         res = self.client.call_manager_post(app_id, service_id, "/", params, files)
         if 'error' in res:
@@ -86,12 +87,12 @@ class GenericCmd(ServiceCmd):
             self.client.error("Cannot upload code: filename '%s' not found or "
                               "access is denied" % filename)
 
+        params = { 'service_id': service_id,
+                   'method': "upload_code_version" }
         contents = open(filename).read()
         files = [ ( 'code', filename, contents ) ]
 
-        res = self.client.call_manager_post(app_id, service_id,  "/",
-                                            {'method': "upload_code_version", },
-                                            files)
+        res = self.client.call_manager_post(app_id, service_id, "/", params, files)
         if 'error' in res:
             self.client.error(res['error'])
         else:

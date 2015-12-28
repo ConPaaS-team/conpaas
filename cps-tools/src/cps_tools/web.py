@@ -36,7 +36,8 @@ class WebCmd(ServiceCmd):
     def upload_key(self, args):
         app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
         contents = open(args.filename).read()
-        params = {'method': "upload_authorized_key"}
+        params = { 'service_id': service_id,
+                   'method': "upload_authorized_key" }
         files = [('key', args.filename, contents)]
         res = self.client.call_manager_post(service_id, "/", params, files)
         if 'error' in res:
@@ -79,11 +80,11 @@ class WebCmd(ServiceCmd):
         app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
         contents = open(args.filename).read()
 
+        params = { 'service_id': service_id,
+                   'method': "upload_code_version" }
         files = [('code', args.filename, contents)]
 
-        res = self.client.call_manager_post(app_id, service_id, "/",
-                                            {'method': "upload_code_version", },
-                                            files)
+        res = self.client.call_manager_post(app_id, service_id, "/", params, files)
         if 'error' in res:
             self.client.error("Cannot upload code: %s" % res['error'])
         else:
