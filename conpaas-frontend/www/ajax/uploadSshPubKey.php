@@ -36,7 +36,8 @@ file_put_contents($tmp, $_POST['sshkey']);
 
 $params = array(
 	'key' => '@'.$tmp,
-	'method' => 'upload_authorized_key'
+	'method' => 'upload_authorized_key',
+	'service_id' => $service->getSID()
 );
 
 try {
