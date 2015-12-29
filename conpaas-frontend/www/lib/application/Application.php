@@ -8,7 +8,7 @@ require_module('https');
 
 class Application {
 
-	protected $aid, $name, $user_id, $manager, $status, $vmid;
+	protected $aid, $name, $user_id, $manager, $manager_ip, $status, $vmid;
 
 
 	private $errorMessage = null;
@@ -22,8 +22,10 @@ class Application {
 			$this->$key = $value;
 		}
 
-		if (isset($this->manager))
+		if (isset($this->manager)) {
+			$this->manager_ip = $this->manager;
 			$this->manager = 'https://'. $this->manager;
+		}
 	}
 
 	public function getErrorMessage() {
@@ -48,6 +50,10 @@ class Application {
 
 	public function getManager() {
 		return $this->manager;
+	}
+
+	public function getManagerIP() {
+		return $this->manager_ip;
 	}
 
 	public function isManagerSet() {

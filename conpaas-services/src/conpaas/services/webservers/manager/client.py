@@ -202,8 +202,3 @@ def update_java_configuration(host, port, codeVersionId):
 def get_service_performance(host, port):
     method = 'get_service_performance'
     return _check(https.client.jsonrpc_get(host, port, '/', method))
-
-
-def git_push_hook(host, port):
-    method = 'git_push_hook'
-    return _check(https.client.jsonrpc_post(host, port, '/', method))

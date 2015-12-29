@@ -223,9 +223,7 @@ class ServicePage extends Page {
 		foreach (array_reverse($stateLog) as $stateChange) {
 			if (Service::stateIsStable($stateChange['state'])) {
 				$ts = TimeHelper::timeRelativeDescr($stateChange['time']);
-				$state = ($stateChange['state'] == 'RUNNING') ?
-					'started' : strtolower($stateChange['state']);
-				return $state.' '.$ts.' ago';
+				return 'since '.$ts.' ago';
 			}
 		}
 		// default

@@ -108,11 +108,6 @@ def upload_authorized_key(host, port, filepath):
     files = [('key', filepath, file_get_contents(filepath))]
     return _check(https.client.https_post(host, port, '/', params, files=files))
 
-def git_push_hook(host, port):
-    """POST () git_push_hook"""
-    method = 'git_push_hook'
-    return _check(https.client.jsonrpc_post(host, port, '/', method))
-
 def upload_code_version(host, port, filepath):
     """UPLOAD (code) upload_code_version"""
     params = { 'method' : 'upload_code_version' }

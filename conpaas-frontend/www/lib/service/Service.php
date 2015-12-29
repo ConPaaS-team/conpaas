@@ -395,6 +395,10 @@ class Service {
 		return $this->application->getManager();
 	}
 
+	public function getManagerIP() {
+		return $this->application->getManagerIP();
+	}
+
 	public function getVersion() {
 		return $this->sw_version;
 	}

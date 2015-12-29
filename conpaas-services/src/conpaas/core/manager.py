@@ -17,6 +17,7 @@ import os
 import subprocess
 import re
 
+from conpaas.core import git
 from conpaas.core import https 
 from conpaas.core.log import create_logger
 from conpaas.core.expose import expose
@@ -137,6 +138,9 @@ class BaseManager(ConpaasRequestHandlerComponent):
         pass
 
     def on_delete_volume(self, node, volume):
+        pass
+
+    def on_git_push(self):
         pass
 
     def get_starting_nodes(self):
@@ -769,12 +773,27 @@ class ApplicationManager(BaseManager):
         except IOError:
             return HttpErrorResponse('No startup script')
 
+    @expose('POST')
+    def git_push_hook(self, kwargs):
+        if len(kwargs) != 0:
+            ex = ManagerException(
+                ManagerException.E_ARGS_UNEXPECTED, kwargs.keys())
+            return HttpErrorResponse(ex.message)
+
+        repo = git.DEFAULT_CODE_REPO
+        revision = git.git_code_version(repo)
+
+        for service_id in self.httpsserver.instances:
+            if service_id != 0:
+                self.httpsserver.instances[service_id].on_git_push()
+
+        return HttpJsonResponse({ 'revision' : revision })
 
     @expose('POST')
     def test(self,kwargs):
         return HttpJsonResponse({ 'msg': 'hello' })
 
-        
+
 class ManagerException(Exception):
 
     E_CONFIG_READ_FAILED = 0

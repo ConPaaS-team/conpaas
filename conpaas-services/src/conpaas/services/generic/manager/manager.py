@@ -72,7 +72,6 @@ class GenericManager(BaseManager):
     list_code_versions() -- GET
     list_authorized_keys() -- GET
     upload_authorized_key(key) -- UPLOAD
-    git_push_hook() -- POST
     upload_code_version(code, description) -- UPLOAD
     download_code_version(codeVersionId) -- GET
     enable_code(codeVersionId) -- POST
@@ -420,13 +419,7 @@ echo "" >> /root/generic.out
 
         return HttpJsonResponse({'outcome': "%s keys added to authorized_keys" % num_added})
 
-    @expose('POST')
-    def git_push_hook(self, kwargs):
-        if len(kwargs) != 0:
-            ex = ManagerException(
-                ManagerException.E_ARGS_UNEXPECTED, kwargs.keys())
-            return HttpErrorResponse(ex.message)
-
+    def on_git_push(self):
         config = self._configuration_get()
 
         repo = git.DEFAULT_CODE_REPO
@@ -439,7 +432,6 @@ echo "" >> /root/generic.out
                                                          description=git.git_last_description(repo))
 
         self._configuration_set(config)
-        return HttpJsonResponse({'codeVersionId': codeVersionId})
 
     @expose('UPLOAD')
     def upload_code_version(self, kwargs):

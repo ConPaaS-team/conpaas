@@ -1523,13 +1523,7 @@ class BasicWebserversManager(BaseManager):
             'response_time': 0,
         })
 
-    @expose('POST')
-    def git_push_hook(self, kwargs):
-        if len(kwargs) != 0:
-            ex = ManagerException(
-                ManagerException.E_ARGS_UNEXPECTED, kwargs.keys())
-            return HttpErrorResponse(ex.message)
-
+    def on_git_push(self):
         config = self._configuration_get()
 
         repo = git.DEFAULT_CODE_REPO
@@ -1542,7 +1536,6 @@ class BasicWebserversManager(BaseManager):
                                                          description=git.git_last_description(repo))
 
         self._configuration_set(config)
-        return HttpJsonResponse({'codeVersionId': codeVersionId})
 
     # @expose('GET')
     # def getSummerSchool(self, kwargs):
