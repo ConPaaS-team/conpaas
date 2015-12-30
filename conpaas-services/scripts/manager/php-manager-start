@@ -1,5 +1,6 @@
 #!/bin/bash
 
+export HOME=$ROOT_DIR
 /usr/bin/scalarisctl -d -f -s start
 
 # $CPS_HOME/sbin/manager/php-cpsmanager -c $ROOT_DIR/config.cfg -s $IP_PUBLIC 1>$ROOT_DIR/manager.out 2>$ROOT_DIR/manager.err &
