@@ -1,6 +1,8 @@
 #!/bin/bash
 
 /etc/init.d/memcached start
+
+export HOME=$ROOT_DIR
 /usr/bin/scalarisctl -d -f -s start
 
 # Enable GIT-based code uploads
