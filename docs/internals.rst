@@ -865,7 +865,7 @@ ConPaaS Services Image. The current section describes this process.
      If you choose to use one of the images above, it is always a good idea to check
      its integrity before continuing to the next step. A corrupt image may result in
      unexpected behaviour which may be hard to trace. You can check the integrity by
-     verifying the its MD5 hash with the following command: ``md5sum conpaas.img``.
+     verifying the MD5 hash with the ``md5sum`` command.
    
    Alternatively, you can also create one such image using the instructions provided
    in the section :ref:`image-creation`.
@@ -882,7 +882,7 @@ ConPaaS Services Image. The current section describes this process.
      architecture). Trying to customize the Raspberry PI image on a x86 system will not
      work!
 
-#. Log in as root and change to the directory where you downloaded the image.
+#. Log in as **root** and change to the directory where you downloaded the image.
 
 #. (Optional) If you need to expand the size of the image, you can do it right now.
    As the image is in the raw format, expanding the size can be done by increasing
