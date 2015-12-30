@@ -858,7 +858,7 @@ ConPaaS Services Image. The current section describes this process.
    
    **ConPaaS VM image for OpenStack with LXC for the Raspberry Pi (arm):**
      | http://www.conpaas.eu/dl/ConPaaS-RPI/conpaas-rpi.img
-     | MD5: 46de3a24904fc24fb32ab8ddccbe36ba
+     | MD5: c29cd086e8e0ebe7f0793e7d54304da4
      | size: 2.0 GB
    
    .. warning::
