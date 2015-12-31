@@ -110,11 +110,13 @@ def check_agent_process(host, port):
     return _check(https.client.jsonrpc_get(host, port, '/', method))
 
 
-def createPHP(host, port, php_port, scalaris, php_conf):
+def createPHP(host, port, php_port, scalaris, scalaris_first, scalaris_hosts, php_conf):
     method = 'createPHP'
     params = {
         'port': php_port,
         'scalaris': scalaris,
+        'scalaris_first': scalaris_first,
+        'scalaris_hosts': scalaris_hosts,
         'configuration': php_conf,
     }
     return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))

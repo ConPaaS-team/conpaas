@@ -105,11 +105,28 @@ class PHPManager(BasicWebserversManager):
                 self.state_set(self.S_ERROR, msg='Failed to update proxy at node %s' % str(proxyNode))
                 raise
 
+    def _render_scalaris_node(self, node, role):
+        ip = node.ip.replace('.', ',')
+        return '{{' + ip + '},14195,' + role + '}'
+
+    def _render_scalaris_hosts(self, backend_nodes):
+        rendered_nodes = [self._render_scalaris_node(node, 'service_per_vm') for node in backend_nodes]
+        return '[' + ', '.join(rendered_nodes) + ']'
+
     def _start_backend(self, config, nodes):
+        backend_nodes = config.getBackendServiceNodes()
+
+        # if there are no other backend nodes, we need to select one to be the first
+        scalaris_first_node = len(nodes) == len(backend_nodes);
+
         for serviceNode in nodes:
             try:
                 client.createPHP(serviceNode.ip, 5555, config.backend_config.port,
-                                 config.backend_config.scalaris, config.backend_config.php_conf.conf)
+                                 config.backend_config.scalaris,
+                                 scalaris_first_node,
+                                 self._render_scalaris_hosts(backend_nodes),
+                                 config.backend_config.php_conf.conf)
+                scalaris_first_node = False
             except client.AgentException:
                 self.logger.exception('Failed to start php at node %s' % str(serviceNode))
                 self.state_set(self.S_ERROR, msg='Failed to start php at node %s' % str(serviceNode))

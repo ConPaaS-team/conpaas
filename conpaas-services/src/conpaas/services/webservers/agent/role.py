@@ -9,7 +9,7 @@
 # pylint: disable=E1101
 
 from os.path import join, devnull, exists
-from os import kill, chown, setuid, setgid
+from os import kill, chown, setuid, setgid, environ
 from pwd import getpwnam
 from signal import SIGINT, SIGTERM, SIGUSR2, SIGHUP
 from subprocess import Popen
@@ -29,6 +29,9 @@ logger = create_logger(__name__)
 
 NGINX_CMD = None
 PHP_FPM = None
+SCALARIS_CFG = None
+SCALARIS_CTL = None
+SCALARIS_HOME = None
 TOMCAT_INSTANCE_CREATE = None
 TOMCAT_STARTUP = None
 
@@ -38,11 +41,13 @@ VAR_RUN = None
 ETC = None
 MY_IP = None
 
-
 def init(config_parser):
-    global NGINX_CMD, PHP_FPM, TOMCAT_INSTANCE_CREATE, TOMCAT_STARTUP
+    global NGINX_CMD, PHP_FPM, SCALARIS_CFG, SCALARIS_CTL, SCALARIS_HOME, TOMCAT_INSTANCE_CREATE, TOMCAT_STARTUP
     NGINX_CMD = config_parser.get('nginx', 'NGINX')
     PHP_FPM = config_parser.get('php', 'PHP_FPM')
+    SCALARIS_CFG = config_parser.get('scalaris', 'SCALARIS_CFG')
+    SCALARIS_CTL = config_parser.get('scalaris', 'SCALARIS_CTL')
+    SCALARIS_HOME = config_parser.get('scalaris', 'SCALARIS_HOME')
     TOMCAT_INSTANCE_CREATE = config_parser.get('tomcat', 'TOMCAT_INSTANCE_CREATE')
     TOMCAT_STARTUP = config_parser.get('tomcat', 'TOMCAT_STARTUP')
     global VAR_TMP, VAR_CACHE, VAR_RUN, ETC, MY_IP
@@ -317,12 +322,12 @@ class Tomcat6:
 
 class PHPProcessManager:
 
-    def __init__(self, port=None, scalaris=None, configuration=None):
+    def __init__(self, port=None, scalaris=None, configuration=None, scalaris_first=False, scalaris_hosts='[]'):
         self.config_template = join(ETC, 'fpm.tmpl')
         self.cmd = PHP_FPM
         self.state = S_INIT
         self.configure(port=port, scalaris=scalaris, configuration=configuration)
-        self.start()
+        self.start(scalaris_first=scalaris_first, scalaris_hosts=scalaris_hosts)
 
     def configure(self, port=None, scalaris=None, configuration=None):
         if port is None:
@@ -369,8 +374,10 @@ class PHPProcessManager:
         self.port = port
         self.configuration = configuration
 
-    def start(self):
+    def start(self, scalaris_first=False, scalaris_hosts='[]'):
         self.state = S_STARTING
+
+        # starting PHP FPM
         devnull_fd = open(devnull, 'w')
         logger.info('cmd ' + str(self.cmd) + '  ' + str(self.config_file))
         proc = Popen([self.cmd, '--fpm-config', self.config_file], stdout=devnull_fd, stderr=devnull_fd, close_fds=True)
@@ -379,12 +386,36 @@ class PHPProcessManager:
             logger.critical('Failed to start the php-fpm')
             # FIXME EC2: It raises this error but the php-fpm is started... Guessing why it happens.
             # raise OSError('Failed to start the php-fpm')
-        self.state = S_RUNNING
         logger.info('php-fpm started')
+
+        # writing Scalaris config
+        conf_fd = open(SCALARIS_CFG, 'w')
+        conf_fd.write('{mgmt_server, null}.\n')
+        conf_fd.write('{known_hosts, %s}.\n' % scalaris_hosts)
+        conf_fd.close()
+        logger.info('Scalaris configuration written to %s', SCALARIS_CFG)
+
+        # starting Scalaris
+        scalaris_args = [ SCALARIS_CTL, '-d' ]
+        if scalaris_first:
+            scalaris_args.append('-f')
+        scalaris_args.extend([ '-s', 'start' ])
+        logger.info('cmd ' + ' '.join(scalaris_args))
+        proc = Popen(scalaris_args, stdout=devnull_fd, stderr=devnull_fd, close_fds=True,
+                     env=dict(environ, HOME=SCALARIS_HOME))
+
+        if proc.wait() != 0:
+            logger.critical('Failed to start Scalaris')
+        else:
+            logger.info('Scalaris started')
+
+        self.state = S_RUNNING
 
     def stop(self):
         if self.state == S_RUNNING:
             self.state = S_STOPPING
+
+            # stopping PHP FPM
             if exists(self.pid_file):
                 try:
                     pid = int(open(self.pid_file, 'r').read().strip())
@@ -404,6 +435,19 @@ class PHPProcessManager:
             else:
                 logger.critical('Could not find PID file %s to kill php-fpm' % (self.pid_file))
                 raise IOError('Could not find PID file %s to kill php-fpm' % (self.pid_file))
+
+            # stopping Scalaris
+            devnull_fd = open(devnull, 'w')
+            scalaris_args = [ SCALARIS_CTL, 'stop' ]
+            logger.info('cmd ' + ' '.join(scalaris_args))
+            proc = Popen(scalaris_args, stdout=devnull_fd, stderr=devnull_fd, close_fds=True,
+                     env=dict(environ, HOME=SCALARIS_HOME))
+
+            if proc.wait() != 0:
+                logger.critical('Failed to stop Scalaris')
+            else:
+                logger.info('Scalaris stopped')
+
         else:
             logger.warning('Request to kill php-fpm while it is not running')
 

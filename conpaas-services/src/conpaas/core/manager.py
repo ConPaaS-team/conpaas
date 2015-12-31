@@ -256,7 +256,7 @@ class ApplicationManager(BaseManager):
 
         service_config_parser = copy.copy(self.config_parser)
         self._add_manager_configuration(service_config_parser, str(self.service_id), service_type)
-        self._run_manager_start_script(service_config_parser, service_type)
+        # self._run_manager_start_script(service_config_parser, service_type)
 
         self.config_parsers[self.service_id] = service_config_parser
         
@@ -682,14 +682,14 @@ class ApplicationManager(BaseManager):
                 if value.startswith('%') and value.endswith('%'):
                     config_parser.set('manager', key, config.get('root', value.strip('%').lower()))
 
-    def _run_manager_start_script(self, config_parser, service_type):
-        #before running the manager script get again the variable values from the context
-        conpaas_home = config_parser.get('manager', 'conpaas_home')
-        mngr_scripts_dir = os.path.join(conpaas_home, 'scripts', 'manager')
-        mngr_startup_scriptname = os.path.join(mngr_scripts_dir, service_type + '-manager-start')          
-        if os.path.isfile(mngr_startup_scriptname):
-            proc = subprocess.Popen(['bash', mngr_startup_scriptname] , close_fds=True)
-            proc.wait()
+    # def _run_manager_start_script(self, config_parser, service_type):
+    #     #before running the manager script get again the variable values from the context
+    #     conpaas_home = config_parser.get('manager', 'conpaas_home')
+    #     mngr_scripts_dir = os.path.join(conpaas_home, 'scripts', 'manager')
+    #     mngr_startup_scriptname = os.path.join(mngr_scripts_dir, service_type + '-manager-start')
+    #     if os.path.isfile(mngr_startup_scriptname):
+    #         proc = subprocess.Popen(['bash', mngr_startup_scriptname] , close_fds=True)
+    #         proc.wait()
 
 
     def upload_script(self, kwargs, filename):
