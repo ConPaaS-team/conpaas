@@ -602,10 +602,9 @@ class AgentController(Controller):
         # Get agent start file - if none for this service, use the default one
         if os.path.isfile(agent_scripts_dir +'/' + self._conpaas_service_type + '-agent-start'):
             agent_start_file = open(agent_scripts_dir +'/' + self._conpaas_service_type + '-agent-start')
-            agent_start = Template(agent_start_file.read()).safe_substitute(context_replacement)
         else:
             agent_start_file = open(agent_scripts_dir + '/default-agent-start')
-            agent_start = agent_start_file.read()
+        agent_start = agent_start_file.read()
 
         # Get key and a certificate from CA
         # agent_certs = self._get_certificate()

@@ -29,6 +29,15 @@ def _check(response):
         return True
 
 
+def createScalaris(host, port, first_node, known_hosts):
+    method = 'createScalaris'
+    params = {
+        'first_node': first_node,
+        'known_hosts': known_hosts
+    }
+    return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
+
+
 def createWebServer(host, port, web_port, code_versions):
     method = 'createWebServer'
     params = {
