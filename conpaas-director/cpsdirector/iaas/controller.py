@@ -205,11 +205,10 @@ class Controller(object):
         if self.role == 'manager':
             role_abbr = 'mgr'
             service_type = ''
-            name = "%s-u%s-a%s-r%s" % (self._conpaas_name, self._conpaas_user_id, self._conpaas_app_id, role_abbr)
+            name = "%s-u%s-a%s-%s" % (self._conpaas_name, self._conpaas_user_id, self._conpaas_app_id, role_abbr)
         else:
-            role_abbr = 'agt'
             service_type = self.config_parser.get('manager', 'TYPE')
-            name = "%s-u%s-a%s-s%s-t%s-r%s" % (self._conpaas_name, self._conpaas_user_id, self._conpaas_app_id, self._conpaas_service_id, service_type, role_abbr)
+            name = "%s-u%s-a%s-s%s-%s" % (self._conpaas_name, self._conpaas_user_id, self._conpaas_app_id, self._conpaas_service_id, service_type)
         for ni in nodes_info:
             ni['name']=name
         self._logger.debug("[create_nodes]: cloud.new_instances(%s)" % str(nodes_info) )
