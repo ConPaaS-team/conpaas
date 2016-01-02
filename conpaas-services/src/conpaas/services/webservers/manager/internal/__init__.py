@@ -108,6 +108,16 @@ class BasicWebserversManager(BaseManager):
     # def _adapting_get_count(self):
     #     return self.memcache.get('adapting_count')
 
+    def _render_scalaris_hosts(self, nodes):
+        return ','.join([node.ip for node in nodes])
+
+    def get_context_replacement(self):
+        config = self._configuration_get()
+        return {
+            'SCALARIS_FIRST_NODE': str(not config.serviceNodes),
+            'SCALARIS_KNOWN_HOSTS': str(self._render_scalaris_hosts(config.serviceNodes.values()))
+        }
+
     def _start_proxy(self, config, nodes):
         raise Exception("BasicWebservicesManager._start_proxy(...) must be overridden by extending classes.")
 

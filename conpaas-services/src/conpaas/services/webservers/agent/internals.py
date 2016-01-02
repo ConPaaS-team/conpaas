@@ -281,10 +281,6 @@ class WebServersAgent(BaseAgent):
         if 'scalaris' not in kwargs:
             raise AgentException(AgentException.E_ARGS_MISSING, 'scalaris')
         ret['scalaris'] = kwargs.pop('scalaris')
-        if 'scalaris_first' in kwargs:
-            ret['scalaris_first'] = kwargs.pop('scalaris_first')
-        if 'scalaris_hosts' in kwargs:
-            ret['scalaris_hosts'] = kwargs.pop('scalaris_hosts')
         if 'configuration' not in kwargs:
             raise AgentException(AgentException.E_ARGS_MISSING, 'configuration')
         if not isinstance(kwargs['configuration'], dict):

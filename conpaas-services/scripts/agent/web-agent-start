@@ -1,5 +1,23 @@
 #!/bin/bash
 
+# writing Scalaris config
+SCALARIS_CFG=/etc/scalaris/scalaris.local.cfg
+echo "{mgmt_server, null}." > $SCALARIS_CFG
+echo -n "{known_hosts, [" >> $SCALARIS_CFG
+echo -n "{{$IP_PUBLIC}, 14195, service_per_vm}" | tr "." "," >> $SCALARIS_CFG
+for IP in $(echo "$SCALARIS_KNOWN_HOSTS" | tr "," "\n"); do
+    echo -n ",{{$IP}, 14195, service_per_vm}" | tr "." "," >> $SCALARIS_CFG
+done
+echo "]}." >> $SCALARIS_CFG
+
+# starting Scalaris
+export HOME=$ROOT_DIR
+if [ "$SCALARIS_FIRST_NODE" = "True" ]; then
+    /usr/bin/scalarisctl -d -f -s start
+else
+    /usr/bin/scalarisctl -d -s start
+fi
+
 cp $CPS_HOME/src/conpaas/services/webservers/etc/* $ETC/
 
 mkdir $VAR_CACHE/www
