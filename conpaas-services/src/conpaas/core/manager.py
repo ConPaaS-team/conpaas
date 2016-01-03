@@ -661,26 +661,30 @@ class ApplicationManager(BaseManager):
         return functions
 
     def _add_manager_configuration(self, config_parser, service_id, service_type):
-        # Add service-specific config file (if any)
+        # Add service-specific configurations
         config_parser.set('manager', 'TYPE', service_type)
         config_parser.set('manager', 'SERVICE_ID', service_id)
-        conpaas_home = config_parser.get('manager', 'conpaas_home')
-        mngr_cfg_dir = os.path.join(conpaas_home, 'config', 'manager')
-        mngr_service_cfg = os.path.join(mngr_cfg_dir, service_type + '-manager.cfg')
-        if os.path.isfile(mngr_service_cfg):
-            config_parser.read(mngr_service_cfg)
 
-            #TODO:(genc) get rid of static path 
-            vars_cfg = os.path.join("/root", 'vars.cfg')
-            ini_str = '[root]\n' + open(vars_cfg, 'r').read()
-            ini_fp = StringIO.StringIO(ini_str)
-            config = ConfigParser.RawConfigParser()
-            config.readfp(ini_fp)
-            
-            # populate values refering to other values
-            for key, value in config_parser.items('manager'):
-                if value.startswith('%') and value.endswith('%'):
-                    config_parser.set('manager', key, config.get('root', value.strip('%').lower()))
+        # (teodor) We don't need to support this anymore, as no service is currently
+        #          using configuration files. It was an ugly hack anyway.
+        # 
+        # conpaas_home = config_parser.get('manager', 'conpaas_home')
+        # mngr_cfg_dir = os.path.join(conpaas_home, 'config', 'manager')
+        # mngr_service_cfg = os.path.join(mngr_cfg_dir, service_type + '-manager.cfg')
+        # if os.path.isfile(mngr_service_cfg):
+        #     config_parser.read(mngr_service_cfg)
+        # 
+        #     #TODO:(genc) get rid of static path
+        #     vars_cfg = os.path.join("/root", 'vars.cfg')
+        #     ini_str = '[root]\n' + open(vars_cfg, 'r').read()
+        #     ini_fp = StringIO.StringIO(ini_str)
+        #     config = ConfigParser.RawConfigParser()
+        #     config.readfp(ini_fp)
+        #     
+        #     # populate values refering to other values
+        #     for key, value in config_parser.items('manager'):
+        #         if value.startswith('%') and value.endswith('%'):
+        #             config_parser.set('manager', key, config.get('root', value.strip('%').lower()))
 
     # def _run_manager_start_script(self, config_parser, service_type):
     #     #before running the manager script get again the variable values from the context

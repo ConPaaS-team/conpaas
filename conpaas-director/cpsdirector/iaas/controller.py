@@ -773,7 +773,7 @@ class ManagerController(Controller):
         
         # Add default manager startup script
         tmpl_values['mngr_start_script'] = file_get_contents(os.path.join(mngr_scripts_dir, 'default-manager-start'))
-        tmpl_values['mngr_vars_script'] = file_get_contents(os.path.join(mngr_scripts_dir, 'default-manager-vars'))
+        # tmpl_values['mngr_vars_script'] = file_get_contents(os.path.join(mngr_scripts_dir, 'default-manager-vars'))
 
         # Get key and a certificate from CA
         mngr_certs = self._get_certificate(role="manager",
@@ -808,7 +808,5 @@ EOF
 
 
 %(mngr_start_script)s
-
-%(mngr_vars_script)s
 
 """ % tmpl_values

@@ -35,9 +35,6 @@ class PHPManager(BasicWebserversManager):
         if kwargs['reset_config']:
             self._create_initial_configuration()
 
-        self._register_scalaris(config_parser.get('manager', 'SCALARIS'))
-        # self._register_scalaris(kwargs['scalaris'])
-
         if ProvisioningManager is None:
             self.logger.info('Provisioning Manager can not be initialized: %s' % provision_mng_error)
             self.scaler = None
@@ -316,11 +313,6 @@ class PHPManager(BasicWebserversManager):
         os.remove(path)
         config.codeVersions['code-default'] = CodeVersion('code-default', 'code-default.tar', 'tar', description='Initial version')
         config.currentCodeVersion = 'code-default'
-        self._configuration_set(config)
-
-    def _register_scalaris(self, scalaris):
-        config = self._configuration_get()
-        config.backend_config.scalaris = scalaris
         self._configuration_set(config)
 
     @expose('POST')

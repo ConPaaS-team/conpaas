@@ -13,6 +13,7 @@ BACKEND_PORT = 9000
 WEB_PORT = 8080
 PROXY_PORT = 80
 DEFAULT_WEIGHT = 100
+LOCALHOST = '127.0.0.1'
 
 iaas = None
 
@@ -98,7 +99,7 @@ class PHPINIConfiguration(object):
 
 class PHP_FPM_Configuration(object):
 
-    def __init__(self, port=BACKEND_PORT, scalaris='', php_conf=PHPINIConfiguration()):
+    def __init__(self, port=BACKEND_PORT, scalaris=LOCALHOST, php_conf=PHPINIConfiguration()):
         self.port = port
         self.php_conf = php_conf
         self.scalaris = scalaris
