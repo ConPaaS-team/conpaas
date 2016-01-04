@@ -1,7 +1,7 @@
 
 import urlparse, json, os
 from conpaas.core import https
-from conpaas.core.log import create_logger, init
+from conpaas.core.log import create_logger
 from conpaas.core.node import ServiceNode
 
 class DirectorCallbacker(object):

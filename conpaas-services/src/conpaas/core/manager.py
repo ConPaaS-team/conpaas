@@ -16,10 +16,11 @@ import os.path
 import os
 import subprocess
 import re
+import logging
 
 from conpaas.core import git
 from conpaas.core import https 
-from conpaas.core.log import create_logger
+from conpaas.core.log import create_logger, create_standalone_logger
 from conpaas.core.expose import expose
 from conpaas.core.callbacker import DirectorCallbacker
 from conpaas.core.https.server import HttpJsonResponse
@@ -74,9 +75,16 @@ class BaseManager(ConpaasRequestHandlerComponent):
 
     def __init__(self, config_parser):
         ConpaasRequestHandlerComponent.__init__(self)
-        self.logger = create_logger(__name__)
 
+        logger_name = __name__
         self.logfile = config_parser.get('manager', 'LOG_FILE')
+        if config_parser.has_option('manager', 'SERVICE_ID'):
+            service_id = config_parser.get('manager', 'SERVICE_ID')
+            logger_name = logger_name.replace('manager', 'manager%s' % service_id)
+            self.logger = create_standalone_logger(logger_name, self.logfile)
+        else:
+            self.logger = create_logger(logger_name)
+
         self.config_parser = config_parser
         self.state_log = []
         self.state_set(self.S_INIT)
@@ -154,7 +162,6 @@ class BaseManager(ConpaasRequestHandlerComponent):
     # this should be overwritten from the service managers if applicable 
     def get_context_replacement(self):
         return {}
-        # raise Exception("get_context_replacement method not implemented for this service")
 
     # this should be overwritten from all the service managers 
     def get_service_type(self):
@@ -179,9 +186,7 @@ class ApplicationManager(BaseManager):
         self.callbacker = DirectorCallbacker(config_parser)
         self.service_id = 0
         self.httpsserver = httpsserver
-        # self.config_parser = config_parser
         self.kwargs = kwargs
-        self.config_parsers = {}
 
         # IPOP setup
         ipop.configure_conpaas_node(config_parser)
@@ -254,11 +259,9 @@ class ApplicationManager(BaseManager):
         #probably lock it 
         self.service_id = self.service_id + 1 
 
-        service_config_parser = copy.copy(self.config_parser)
+        service_config_parser = copy.deepcopy(self.config_parser)
         self._add_manager_configuration(service_config_parser, str(self.service_id), service_type)
         # self._run_manager_start_script(service_config_parser, service_type)
-
-        self.config_parsers[self.service_id] = service_config_parser
         
         #Create an instance of the service class
         service_insance = instance_class(service_config_parser, **self.kwargs)
@@ -412,7 +415,7 @@ class ApplicationManager(BaseManager):
                         del self.volumes[k]    
             self.nodes.remove(filter(lambda n: n.id == node.id, self.nodes)[0])
             service_manager.nodes.remove(filter(lambda n: n.id == node.id, service_manager.nodes)[0])
-        self.logger.debug("Current nodes: %s, current volumes: %s" % (self.nodes, self.volumes))
+        self.logger.debug("Current nodes: %s, current volumes: %s" % (self.nodes, self.volumes.keys()))
         self.callbacker.remove_nodes(nodes)
         # if len(service_manager.nodes) == 0:
         #     service_manager.state_set(self.S_STOPPED)    
@@ -456,19 +459,19 @@ class ApplicationManager(BaseManager):
     def _do_create_volume(self, volumeName, volumeSize, agentId, service_manager):
         """Create a new volume and attach it to the specified agent"""
 
-        self.logger.info("Going to create a new volume")
+        service_manager.logger.info("Going to create a new volume")
 
         try:
             node = [ node for node in self.nodes if node.id == agentId ][0]
             try:
                 # We try to create a new volume.
                 volume_name = "vol-%s" % volumeName
-                self.logger.debug("Trying to create a volume for the node=%s" % node.id)
+                service_manager.logger.debug("Trying to create a volume for the node=%s" % node.id)
                 
                 volume = self.callbacker.create_volume(volumeSize, volume_name, node.vmid, node.cloud_name)
                 volume_id = volume['volume_id']
             except Exception, ex:
-                self.logger.exception("Failed to create volume %s: %s" % (volume_name, ex))
+                service_manager.logger.exception("Failed to create volume %s: %s" % (volume_name, ex))
                 raise
 
             try:
@@ -479,10 +482,10 @@ class ApplicationManager(BaseManager):
                     # increment the last char from dev_name
                     dev_name = dev_name[:-1] + chr(ord(dev_name[-1]) + 1)
                 # attach the volume
-                _, dev_name = self.attach_volume(volume_id, node.vmid, dev_name, node.cloud_name)
+                _, dev_name = self.attach_volume(volume_id, node.vmid, service_manager, dev_name, node.cloud_name)
 
             except Exception, ex:
-                self.logger.exception("Failed to attach disk to Generic node %s: %s" % (node.id, ex))
+                service_manager.logger.exception("Failed to attach disk to Generic node %s: %s" % (node.id, ex))
                 self.destroy_volume({'vol_id':volume_id, 'cloud': node.cloud_name})
                 raise
 
@@ -492,27 +495,27 @@ class ApplicationManager(BaseManager):
             try:
                 service_manager.on_create_volume(node, volume)
             except Exception, ex:
-                self.logger.exception('Failed to configure Generic node %s: %s' % (node.id, ex))
+                service_manager.logger.exception('Failed to configure Generic node %s: %s' % (node.id, ex))
                 self.detach_volume(volume)
                 self.destroy_volume(volume)
                 raise
         except Exception, ex:
-            self.logger.exception('Failed to create volume: %s.' % ex)
+            service_manager.logger.exception('Failed to create volume: %s.' % ex)
             service_manager.state_set(self.S_ERROR)
             return
 
         self.volumes[volumeName] = volume
         
-        self.logger.info('Volume %s created and attached' % volumeName)
-        # self.logger.info('Current volumes %s ' % self.volumes)
+        service_manager.logger.info('Volume %s created and attached' % volumeName)
+        self.logger.info('Current volumes %s ' % self.volumes.keys())
         service_manager.state_set(self.S_RUNNING)
 
-    def attach_volume(self, volume_id, vm_id, device_name=None, cloud=None):
+    def attach_volume(self, volume_id, vm_id, service_manager, device_name=None, cloud=None):
 
         if device_name is None:
             device_name=self.config_parser.get('manager', 'DEV_TARGET')
 
-        self.logger.info("Attaching volume %s to VM %s as %s" % (volume_id,vm_id, device_name))
+        service_manager.logger.info("Attaching volume %s to VM %s as %s" % (volume_id, vm_id, device_name))
 
         # try:
         #     volume = self.get_volume(volume_id)
@@ -525,7 +528,7 @@ class ApplicationManager(BaseManager):
                 ret = self.callbacker.attach_volume(vm_id, volume_id, device_name, cloud), device_name
                 break;
             except Exception, err:
-                self.logger.info("Attempt %s: %s" % (attempt, err))
+                service_manager.logger.info("Attempt %s: %s" % (attempt, err))
                 # It might take a bit for the volume to actually be
                 # created. Let's wait a little and try again.
                 time.sleep(10)
@@ -566,42 +569,42 @@ class ApplicationManager(BaseManager):
 
     def _do_delete_volume(self, volume, node, service_manager):
         """Detach a volume and delete it"""
-        self.logger.info("Going to remove volume %s" % volume['vol_name'])
+        service_manager.logger.info("Going to remove volume %s" % volume['vol_name'])
 
-        # self.logger.debug("Detaching and deleting volume %s" % volume['vol_name'])
+        # service_manager.logger.debug("Detaching and deleting volume %s" % volume['vol_name'])
         try:
             service_manager.on_delete_volume(node, volume)
         except Exception, ex:
-            self.logger.exception('Failed to mount volume on node %s: %s' % (node.id, ex))
-        self.detach_volume(volume)
-        self.destroy_volume(volume)
+            service_manager.logger.exception('Failed to mount volume on node %s: %s' % (node.id, ex))
+        self.detach_volume(volume, service_manager)
+        self.destroy_volume(volume, service_manager)
 
         self.volumes.pop(volume['vol_name'])
         
-        self.logger.info('Volume %s removed' % volume['vol_name'])
+        service_manager.logger.info('Volume %s removed' % volume['vol_name'])
         service_manager.state_set(self.S_RUNNING)
 
-    def destroy_volume(self, volume):
-        self.logger.info("Destroying volume with id %s" %  volume['vol_id'])
+    def destroy_volume(self, volume, service_manager):
+        service_manager.logger.info("Destroying volume with id %s" %  volume['vol_id'])
         
         for attempt in range(1, 11):
             try:
                 ret = self.callbacker.destroy_volume(volume['vol_id'], volume['cloud'])
                 break
             except Exception, err:
-                self.logger.info("Attempt %s: %s" % (attempt, err))
+                service_manager.logger.info("Attempt %s: %s" % (attempt, err))
                 # It might take a bit for the volume to actually be
                 # detached. Let's wait a little and try again.
                 time.sleep(10)
 
-        # self.logger.debug("destroy volume ret %s" %  ret)        
+        # service_manager.logger.debug("destroy volume ret %s" %  ret)
         if 'error' in ret:
             raise Exception("Error destroying volume %s" % volume['vol_id'])
 
-    def detach_volume(self, volume):
-        self.logger.info("Detaching volume %s..." % volume['vol_id'])
+    def detach_volume(self, volume, service_manager):
+        service_manager.logger.info("Detaching volume %s..." % volume['vol_id'])
         ret = self.callbacker.detach_volume(volume['vol_id'], volume['cloud'])
-        self.logger.info("Volume %s detached" % volume['vol_id'])
+        service_manager.logger.info("Volume %s detached" % volume['vol_id'])
         return ret
 
     @expose('POST')
@@ -664,6 +667,10 @@ class ApplicationManager(BaseManager):
         # Add service-specific configurations
         config_parser.set('manager', 'TYPE', service_type)
         config_parser.set('manager', 'SERVICE_ID', service_id)
+
+        logfile = config_parser.get('manager', 'LOG_FILE')
+        logfile = logfile.replace('manager', 'manager%s' % service_id)
+        config_parser.set('manager', 'LOG_FILE', logfile)
 
         # (teodor) We don't need to support this anymore, as no service is currently
         #          using configuration files. It was an ugly hack anyway.

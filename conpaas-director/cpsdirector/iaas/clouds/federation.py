@@ -18,7 +18,7 @@ from libcloud.compute.providers import get_driver
 from .base import Cloud
 
 import logging
-from conpaas.core.log import create_logger, init
+from conpaas.core.log import create_logger
 
 DEFAULT_API_VERSION = '0.1'
 
