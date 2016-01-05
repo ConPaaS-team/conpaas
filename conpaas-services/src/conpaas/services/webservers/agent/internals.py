@@ -28,6 +28,7 @@ class WebServersAgent(BaseAgent):
 
         role.init(config_parser)
 
+        self.SERVICE_ID = config_parser.get('agent', 'SERVICE_ID')
         self.VAR_TMP = config_parser.get('agent', 'VAR_TMP')
         self.VAR_CACHE = config_parser.get('agent', 'VAR_CACHE')
         self.VAR_RUN = config_parser.get('agent', 'VAR_RUN')
@@ -416,10 +417,10 @@ class WebServersAgent(BaseAgent):
             rmtree(target_dir)
 
         if filetype == 'git':
-            git_dir = join(self.VAR_CACHE, 'www')
-            self.logger.debug("git_enable_revision('%s', '%s', '%s')" % (git_dir, source, revision))
-            git_dir = git.git_enable_revision(git_dir, source, revision)
-            rename(git_dir, target_dir)
+            subdir = str(self.SERVICE_ID)
+            self.logger.debug("git_enable_revision('%s', '%s', '%s', '%s')" %
+                    (target_dir, source, revision, subdir))
+            git.git_enable_revision(target_dir, source, revision, subdir)
         else:
             source.extractall(target_dir)
 
@@ -503,10 +504,10 @@ class WebServersAgent(BaseAgent):
             rmtree(target_dir)
 
         if filetype == 'git':
-            git_dir = join(self.VAR_CACHE, 'tomcat_instance', 'webapps')
-            self.logger.debug("git_enable_revision('%s', '%s', '%s')" % (git_dir, source, revision))
-            git_dir = git.git_enable_revision(git_dir, source, revision)
-            rename(git_dir, target_dir)
+            subdir = str(self.SERVICE_ID)
+            self.logger.debug("git_enable_revision('%s', '%s', '%s', '%s')" %
+                    (target_dir, source, revision, subdir))
+            git.git_enable_revision(target_dir, source, revision, subdir)
         else:
             source.extractall(target_dir)
 
