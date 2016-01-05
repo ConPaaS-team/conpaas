@@ -344,6 +344,9 @@ class ApplicationManager(BaseManager):
             self.callbacker.remove_nodes(nodes)
 
         if remove:
+            code_repo = service_manager.config_parser.get('manager', 'CODE_REPO')
+            os.system("rm -rf %s" % code_repo)
+
             del self.httpsserver.instances[service_id]
             self.httpsserver._deregister_methods(service_id)
             self.state_set(self.S_RUNNING)
@@ -671,6 +674,10 @@ class ApplicationManager(BaseManager):
         logfile = config_parser.get('manager', 'LOG_FILE')
         logfile = logfile.replace('manager', 'manager%s' % service_id)
         config_parser.set('manager', 'LOG_FILE', logfile)
+
+        code_repo = config_parser.get('manager', 'CODE_REPO')
+        code_repo = os.path.join(code_repo, str(service_id))
+        config_parser.set('manager', 'CODE_REPO', code_repo)
 
         # (teodor) We don't need to support this anymore, as no service is currently
         #          using configuration files. It was an ugly hack anyway.
