@@ -108,6 +108,10 @@ class BasicWebserversManager(BaseManager):
     # def _adapting_get_count(self):
     #     return self.memcache.get('adapting_count')
 
+    def _start_scalaris(self, config, nodes, first_start):
+        # If needed, must be overridden by extending classes
+        pass
+
     def _start_proxy(self, config, nodes):
         raise Exception("BasicWebservicesManager._start_proxy(...) must be overridden by extending classes.")
 
@@ -227,6 +231,9 @@ class BasicWebserversManager(BaseManager):
                 node_instances[i], **kwargs)
             i += 1
         config.update_mappings()
+
+        # start the Scalaris process to keep the session data
+        self._start_scalaris(config, nodes, True)
 
         # issue orders to agents to start PHP inside
         self._start_backend(config, config.getBackendServiceNodes())
@@ -455,6 +462,9 @@ class BasicWebserversManager(BaseManager):
             newNodes += [config.serviceNodes[node_instances[i].id]]
             i += 1
         config.update_mappings()
+
+        # start the Scalaris process to keep the session data
+        self._start_scalaris(config, nodes, False)
 
         # add new service nodes
         self._start_backend(

@@ -10,6 +10,7 @@
 """
 
 import os
+import shutil
 import tempfile
 
 from conpaas.core.misc import run_cmd
@@ -104,26 +105,23 @@ def git_last_description(repo):
     cmd = 'git log -1 --pretty=oneline --format="%s"'
     return run_cmd(cmd, repo)[0].rstrip()
 
-def git_enable_revision(target_dir, repo, rev):
-    """This function clones a local git repository into target_dir/rev.
-    It then performs a git-checkout of the specified revision.
-
-    As an example, the following invocation:
-
-      git_enable_revision("/var/www", "/home/git/code", "8d3b8a6")
-
-    is roughly equivalent to these shell commands:
-
-      git clone /home/git/code /var/www/8d3b8a6
-      cd /var/www/8d3b8a6
-      git checkout 8d3b8a6
-
-    As a result, a directory is created containing the specified revision of the
-    given repository, and its absolute pathname is returned as a string.
+def git_enable_revision(target_dir, repo, rev, subdir=None):
+    """This function clones a local git repository and performs a
+    git-checkout of the specified revision. The contents are moved to
+    'target_dir'. If the 'subdir' parameter is present, only its contents
+    are moved to 'target_dir'.
     """
-    dest_dir = os.path.join(target_dir, rev)
 
-    run_cmd(cmd='git clone %s %s' % (repo, rev), directory=target_dir)
-    run_cmd(cmd='git checkout %s' % rev, directory=dest_dir)
+    temp_dir = tempfile.mkdtemp()
+    run_cmd(cmd='git clone %s %s' % (repo, temp_dir))
+    run_cmd(cmd='git checkout %s' % rev, directory=temp_dir)
 
-    return dest_dir
+    if subdir is None:
+        os.rename(temp_dir, target_dir)
+    else:
+        temp_sub_dir = os.path.join(temp_dir, subdir)
+        if os.path.isdir(temp_sub_dir):
+            os.rename(temp_sub_dir, target_dir)
+        else:
+            os.makedirs(target_dir)
+        shutil.rmtree(temp_dir)

@@ -9,7 +9,7 @@
 # pylint: disable=E1101
 
 from os.path import join, devnull, exists
-from os import kill, chown, setuid, setgid
+from os import kill, chown, setuid, setgid, environ
 from pwd import getpwnam
 from signal import SIGINT, SIGTERM, SIGUSR2, SIGHUP
 from subprocess import Popen
@@ -31,6 +31,9 @@ NGINX_CMD = None
 PHP_FPM = None
 TOMCAT_INSTANCE_CREATE = None
 TOMCAT_STARTUP = None
+SCALARIS_CFG = None
+SCALARIS_CTL = None
+SCALARIS_HOME = None
 
 VAR_TMP = None
 VAR_CACHE = None
@@ -40,11 +43,14 @@ MY_IP = None
 
 
 def init(config_parser):
-    global NGINX_CMD, PHP_FPM, TOMCAT_INSTANCE_CREATE, TOMCAT_STARTUP
+    global NGINX_CMD, PHP_FPM, TOMCAT_INSTANCE_CREATE, TOMCAT_STARTUP, SCALARIS_CFG, SCALARIS_CTL, SCALARIS_HOME
     NGINX_CMD = config_parser.get('nginx', 'NGINX')
     PHP_FPM = config_parser.get('php', 'PHP_FPM')
     TOMCAT_INSTANCE_CREATE = config_parser.get('tomcat', 'TOMCAT_INSTANCE_CREATE')
     TOMCAT_STARTUP = config_parser.get('tomcat', 'TOMCAT_STARTUP')
+    SCALARIS_CFG = config_parser.get('scalaris', 'SCALARIS_CFG')
+    SCALARIS_CTL = config_parser.get('scalaris', 'SCALARIS_CTL')
+    SCALARIS_HOME = config_parser.get('scalaris', 'SCALARIS_HOME')
     global VAR_TMP, VAR_CACHE, VAR_RUN, ETC, MY_IP
     VAR_TMP = config_parser.get('agent', 'VAR_TMP')
     VAR_CACHE = config_parser.get('agent', 'VAR_CACHE')
@@ -433,3 +439,47 @@ class PHPProcessManager:
 
     def status(self):
         return {'state': self.state, 'port': self.port}
+
+
+class ScalarisProcessManager:
+
+    def __init__(self, first_node, known_hosts):
+        self.start(first_node, known_hosts)
+
+    def start(self, first_node, known_hosts):
+
+        # writing Scalaris config
+        conf_fd = open(SCALARIS_CFG, 'w')
+        conf_fd.write('{mgmt_server, null}.\n')
+        conf_fd.write('{known_hosts, %s}.\n' % known_hosts)
+        conf_fd.close()
+        logger.info('Scalaris configuration written to %s', SCALARIS_CFG)
+
+        # starting Scalaris
+        scalaris_args = [ SCALARIS_CTL, '-d' ]
+        if first_node:
+            scalaris_args.append('-f')
+        scalaris_args.extend([ '-s', 'start' ])
+        logger.info('cmd ' + ' '.join(scalaris_args))
+        devnull_fd = open(devnull, 'w')
+        proc = Popen(scalaris_args, stdout=devnull_fd, stderr=devnull_fd, close_fds=True,
+                     env=dict(environ, HOME=SCALARIS_HOME))
+
+        if proc.wait() != 0:
+            logger.critical('Failed to start Scalaris')
+        else:
+            logger.info('Scalaris started')
+
+    def stop(self):
+
+            # stopping Scalaris
+            scalaris_args = [ SCALARIS_CTL, 'stop' ]
+            logger.info('cmd ' + ' '.join(scalaris_args))
+            devnull_fd = open(devnull, 'w')
+            proc = Popen(scalaris_args, stdout=devnull_fd, stderr=devnull_fd, close_fds=True,
+                     env=dict(environ, HOME=SCALARIS_HOME))
+
+            if proc.wait() != 0:
+                logger.critical('Failed to stop Scalaris')
+            else:
+                logger.info('Scalaris stopped')

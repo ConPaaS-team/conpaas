@@ -205,11 +205,10 @@ class Controller(object):
         if self.role == 'manager':
             role_abbr = 'mgr'
             service_type = ''
-            name = "%s-u%s-a%s-r%s" % (self._conpaas_name, self._conpaas_user_id, self._conpaas_app_id, role_abbr)
+            name = "%s-u%s-a%s-%s" % (self._conpaas_name, self._conpaas_user_id, self._conpaas_app_id, role_abbr)
         else:
-            role_abbr = 'agt'
             service_type = self.config_parser.get('manager', 'TYPE')
-            name = "%s-u%s-a%s-s%s-t%s-r%s" % (self._conpaas_name, self._conpaas_user_id, self._conpaas_app_id, self._conpaas_service_id, service_type, role_abbr)
+            name = "%s-u%s-a%s-s%s-%s" % (self._conpaas_name, self._conpaas_user_id, self._conpaas_app_id, self._conpaas_service_id, service_type)
         for ni in nodes_info:
             ni['name']=name
         self._logger.debug("[create_nodes]: cloud.new_instances(%s)" % str(nodes_info) )
@@ -598,7 +597,6 @@ class AgentController(Controller):
             agent_cfg_file = open(agent_cfg_dir +'/' + self._conpaas_service_type + '-agent.cfg')
             # agent_cfg += '\n' + Template(agent_cfg_file.read()).safe_substitute(CLOUD_TYPE=cloud_type,)
             agent_cfg += '\n' + Template(agent_cfg_file.read()).safe_substitute(context_replacement)
-           
 
         # Get agent start file - if none for this service, use the default one
         if os.path.isfile(agent_scripts_dir +'/' + self._conpaas_service_type + '-agent-start'):
@@ -613,7 +611,6 @@ class AgentController(Controller):
                                             email="info@conpaas.eu",
                                             cn="ConPaaS",
                                             org="Contrail")
-        
 
         # Concatenate the files
         context_file = (cloud_script + '\n\n'
@@ -776,7 +773,7 @@ class ManagerController(Controller):
         
         # Add default manager startup script
         tmpl_values['mngr_start_script'] = file_get_contents(os.path.join(mngr_scripts_dir, 'default-manager-start'))
-        tmpl_values['mngr_vars_script'] = file_get_contents(os.path.join(mngr_scripts_dir, 'default-manager-vars'))
+        # tmpl_values['mngr_vars_script'] = file_get_contents(os.path.join(mngr_scripts_dir, 'default-manager-vars'))
 
         # Get key and a certificate from CA
         mngr_certs = self._get_certificate(role="manager",
@@ -811,7 +808,5 @@ EOF
 
 
 %(mngr_start_script)s
-
-%(mngr_vars_script)s
 
 """ % tmpl_values

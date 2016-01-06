@@ -54,7 +54,6 @@ from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse,\
 from conpaas.services.generic.misc import archive_open, archive_get_members,\
     archive_close, archive_get_type, archive_extract_file
 
-from conpaas.core.log import create_logger
 from conpaas.services.generic.agent import client
 from conpaas.services.generic.manager.config import CodeVersion,\
     ServiceConfiguration, VolumeInfo

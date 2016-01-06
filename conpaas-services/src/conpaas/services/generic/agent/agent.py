@@ -43,7 +43,6 @@ import signal
 from threading import Thread
 from subprocess import Popen, PIPE
 from os.path import exists, devnull, join, lexists
-from os import remove, makedirs, fdopen, rename
 from shutil import rmtree
 import pickle
 import zipfile
@@ -78,6 +77,7 @@ class GenericAgent(BaseAgent):
         """
         BaseAgent.__init__(self, config_parser)
 
+        self.SERVICE_ID = config_parser.get('agent', 'SERVICE_ID')
         self.generic_dir = config_parser.get('agent', 'CONPAAS_HOME')
         self.VAR_CACHE = config_parser.get('agent', 'VAR_CACHE')
         self.LOG_FILE = config_parser.get('agent', 'LOG_FILE')
@@ -174,10 +174,10 @@ class GenericAgent(BaseAgent):
             rmtree(target_dir)
 
         if filetype == 'git':
-            self.logger.debug("git_enable_revision('%s', '%s', '%s')" %
-                    (self.VAR_CACHE, source, revision))
-            git_dir = git.git_enable_revision(self.VAR_CACHE, source, revision)
-            rename(git_dir, target_dir)
+            subdir = str(self.SERVICE_ID)
+            self.logger.debug("git_enable_revision('%s', '%s', '%s', '%s')" %
+                    (target_dir, source, revision, subdir))
+            git.git_enable_revision(target_dir, source, revision, subdir)
         else:
             source.extractall(target_dir)
 

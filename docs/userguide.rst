@@ -340,16 +340,29 @@ public key. This can be done either using the command line tool:
 
 An SSH public key can also be uploaded using the ConPaaS frontend by
 choosing the “checking out repository” option in the “Code management”
-section of your PHP service. Once the key is uploaded the frontend will
-show the ``git`` command to be executed in order to obtain a copy of the
-repository. The repository itself can then be used as usual. A new
-version of your application can be uploaded with ``git push``.
+section of your PHP service. There is only one git repository per
+application, so you only need to upload your SSH key once.
+
+Below the area for entering the SSH key, the frontend will show the ``git``
+command to be executed in order to obtain a copy of the repository. As there is
+only a single repository for all the services running inside an application,
+**the code that belongs to a specific service has to be placed in a directory
+with the name identical to the service id**, which has to be created by the
+user. The repository itself can then be used as usual. A new version of your
+application can be uploaded with ``git push``.
 
 ::
 
-    user@host:~/code$ git add index.php
-    user@host:~/code$ git commit -am "New index.php version"
+    user@host:~/code$ mkdir 1
+    user@host:~/code$ vi 1/index.php
+    user@host:~/code$ git add 1/index.php
+    user@host:~/code$ git commit -am "New index.php version for service 1"
     user@host:~/code$ git push origin master
+
+.. warning::
+  Do not forget to place the code belonging to a service in a directory
+  with the name identical to the service id, or else the service will be
+  unable to find the files.
 
 Access the application
 ----------------------
@@ -1081,18 +1094,31 @@ SSH keys::
 
   $ cpsclient.py list_keys <serviceid>
 
-Once the key is uploaded, the following command has to be executed in order to
+There is only one git repository per application, so you only need to upload
+your SSH key once.
+
+After the key is uploaded, the following command has to be executed in order to
 obtain a copy of the repository::
 
   $ git clone git@<generic-manager-ip>:code
 
-The repository itself can then be used as usual. A new version of your
-application can be uploaded with ``git push``::
+As there is only a single repository for all the services running inside an
+application, **the code that belongs to a specific service has to be placed
+in a directory with the name identical to the service id**, which has to be
+created by the user. The repository itself can then be used as usual. A new
+version of your application can be uploaded with ``git push``::
 
   $ cd code
-  $ git add {init,notify,run,interrupt,cleanup}.sh
+  $ mkdir 1
+  $ <create the scripts in this directory>
+  $ git add 1/{init,notify,run,interrupt,cleanup}.sh
   $ git commit -m "New code version"
   $ git push origin master
+
+.. warning::
+  Do not forget to place the code belonging to a service in a directory
+  with the name identical to the service id, or else the service will be
+  unable to find the files.
 
 The ``git push`` command will trigger the updating of the available code versions.
 To activate the new code version, the same procedure as before must be followed.

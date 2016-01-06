@@ -37,7 +37,16 @@ def init(log_file):
   file_handler = logging.FileHandler(log_file)
   file_handler.setFormatter(log_formatter)
   handlers.append(file_handler)
-  
+
+def create_standalone_logger(name, log_file):
+  logger = logging.getLogger(name)
+  logger.setLevel(logging_level)
+  file_handler = logging.FileHandler(log_file)
+  file_handler.setFormatter(log_formatter)
+  logger.addHandler(file_handler)
+  loggers.append(logger)
+  return logger
+
 #  import sys
 #  err_handler = logging.StreamHandler(sys.stderr)
 #  err_handler.setFormatter(log_formatter)

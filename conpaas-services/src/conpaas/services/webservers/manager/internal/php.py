@@ -34,9 +34,6 @@ class PHPManager(BasicWebserversManager):
         BasicWebserversManager.__init__(self, config_parser)
         if kwargs['reset_config']:
             self._create_initial_configuration()
-        
-        self._register_scalaris(config_parser.get('manager', 'SCALARIS'))
-        # self._register_scalaris(kwargs['scalaris'])
 
         if ProvisioningManager is None:
             self.logger.info('Provisioning Manager can not be initialized: %s' % provision_mng_error)
@@ -46,6 +43,25 @@ class PHPManager(BasicWebserversManager):
                 self.scaler = ProvisioningManager(config_parser)
             except Exception as ex:
                 self.logger.exception('Failed to initialize the Provisioning Manager %s' % str(ex))
+
+    def _render_scalaris_node(self, node, role):
+        ip = node.ip.replace('.', ',')
+        return '{{' + ip + '},14195,' + role + '}'
+
+    def _render_scalaris_hosts(self, nodes):
+        rendered_nodes = [self._render_scalaris_node(node, 'service_per_vm') for node in nodes]
+        return '[' + ', '.join(rendered_nodes) + ']'
+
+    def _start_scalaris(self, config, nodes, first_start):
+        known_hosts = self._render_scalaris_hosts(config.serviceNodes.values())
+        for serviceNode in nodes:
+            try:
+                client.createScalaris(serviceNode.ip, 5555, first_start, known_hosts)
+                first_start = False
+            except client.AgentException:
+                self.logger.exception('Failed to start Scalaris at node %s' % str(serviceNode))
+                self.state_set(self.S_ERROR, msg='Failed to start Scalaris at node %s' % str(serviceNode))
+                raise
 
     def _update_code(self, config, nodes):
         for serviceNode in nodes:
@@ -297,11 +313,6 @@ class PHPManager(BasicWebserversManager):
         os.remove(path)
         config.codeVersions['code-default'] = CodeVersion('code-default', 'code-default.tar', 'tar', description='Initial version')
         config.currentCodeVersion = 'code-default'
-        self._configuration_set(config)
-
-    def _register_scalaris(self, scalaris):
-        config = self._configuration_get()
-        config.backend_config.scalaris = scalaris
         self._configuration_set(config)
 
     @expose('POST')

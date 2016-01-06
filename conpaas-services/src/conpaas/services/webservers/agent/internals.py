@@ -28,6 +28,7 @@ class WebServersAgent(BaseAgent):
 
         role.init(config_parser)
 
+        self.SERVICE_ID = config_parser.get('agent', 'SERVICE_ID')
         self.VAR_TMP = config_parser.get('agent', 'VAR_TMP')
         self.VAR_CACHE = config_parser.get('agent', 'VAR_CACHE')
         self.VAR_RUN = config_parser.get('agent', 'VAR_RUN')
@@ -37,12 +38,14 @@ class WebServersAgent(BaseAgent):
         self.httpproxy_file = join(self.VAR_TMP, 'proxy.pickle')
         self.php_file = join(self.VAR_TMP, 'php.pickle')
         self.tomcat_file = join(self.VAR_TMP, 'tomcat.pickle')
+        self.scalaris_file = join(self.VAR_TMP, 'scalaris.pickle')
 
         self.web_lock = Lock()
         self.webservertomcat_lock = Lock()
         self.httpproxy_lock = Lock()
         self.php_lock = Lock()
         self.tomcat_lock = Lock()
+        self.scalaris_lock = Lock()
 
         self.WebServer = role.NginxStatic
         self.HttpProxy = role.NginxProxy
@@ -145,6 +148,32 @@ class WebServersAgent(BaseAgent):
             ex = AgentException(AgentException.E_UNKNOWN, detail=e)
             self.logger.exception(e)
             return HttpErrorResponse(ex.message)
+
+    def _scalaris_get_params(self, kwargs):
+        ret = {}
+        if 'first_node' not in kwargs:
+            raise AgentException(AgentException.E_ARGS_MISSING, 'first_node')
+        if not isinstance(kwargs['first_node'], bool):
+            raise AgentException(AgentException.E_ARGS_INVALID, detail='Invalid "first_node" value')
+        ret['first_node'] = kwargs.pop('first_node')
+        if 'known_hosts' not in kwargs:
+            raise AgentException(AgentException.E_ARGS_MISSING, 'known_hosts')
+        ret['known_hosts'] = kwargs.pop('known_hosts')
+
+        if len(kwargs) != 0:
+            raise AgentException(AgentException.E_ARGS_UNEXPECTED, kwargs.keys())
+        return ret
+
+    @expose('POST')
+    def createScalaris(self, kwargs):
+        """Create the ScalarisProcessManager"""
+        try:
+            kwargs = self._scalaris_get_params(kwargs)
+        except AgentException as e:
+            return HttpErrorResponse(e.message)
+        else:
+            with self.scalaris_lock:
+                return self._create(kwargs, self.scalaris_file, role.ScalarisProcessManager)
 
     def _webserver_get_params(self, kwargs):
         ret = {}
@@ -388,10 +417,10 @@ class WebServersAgent(BaseAgent):
             rmtree(target_dir)
 
         if filetype == 'git':
-            git_dir = join(self.VAR_CACHE, 'www')
-            self.logger.debug("git_enable_revision('%s', '%s', '%s')" % (git_dir, source, revision))
-            git_dir = git.git_enable_revision(git_dir, source, revision)
-            rename(git_dir, target_dir)
+            subdir = str(self.SERVICE_ID)
+            self.logger.debug("git_enable_revision('%s', '%s', '%s', '%s')" %
+                    (target_dir, source, revision, subdir))
+            git.git_enable_revision(target_dir, source, revision, subdir)
         else:
             source.extractall(target_dir)
 
@@ -475,10 +504,10 @@ class WebServersAgent(BaseAgent):
             rmtree(target_dir)
 
         if filetype == 'git':
-            git_dir = join(self.VAR_CACHE, 'tomcat_instance', 'webapps')
-            self.logger.debug("git_enable_revision('%s', '%s', '%s')" % (git_dir, source, revision))
-            git_dir = git.git_enable_revision(git_dir, source, revision)
-            rename(git_dir, target_dir)
+            subdir = str(self.SERVICE_ID)
+            self.logger.debug("git_enable_revision('%s', '%s', '%s', '%s')" %
+                    (target_dir, source, revision, subdir))
+            git.git_enable_revision(target_dir, source, revision, subdir)
         else:
             source.extractall(target_dir)
 
