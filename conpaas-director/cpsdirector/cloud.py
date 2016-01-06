@@ -11,6 +11,7 @@ from cpsdirector.x509cert import generate_certificate
 from cpsdirector.common import config_parser, log
 from cpsdirector.user import User
 from cpsdirector import db
+from datetime import datetime
 
 from flask import Blueprint, request, g 
 # from cpsdirector.iaas import iaas
@@ -31,21 +32,26 @@ class Resource(db.Model):
     vmid = db.Column(db.String(80), unique=True, nullable=False)
     app_id = db.Column(db.Integer, db.ForeignKey('application.aid'))
     service_id = db.Column(db.Integer, db.ForeignKey('service.sid'))
+    charged = db.Column(db.Integer)
     ip = db.Column(db.String(80))
     role = db.Column(db.String(10))
     cloud = db.Column(db.String(20))
+    created = db.Column(db.DateTime) 
     application = db.relationship('Application', backref=db.backref('resource', lazy="dynamic"))
 
     def __init__(self, **kwargs):
         # Default values
         for key, val in kwargs.items():
             setattr(self, key, val)
+        self.charged = 0
+        self.created = datetime.now()
 
     def to_dict(self):
         res = {}
         for c in self.__table__.columns:
             res[c.name] = getattr(self, c.name)
         res['app_name'] = self.application.name
+        res['created'] = str(res['created'])
         return res
 
 
@@ -63,6 +69,7 @@ def get_resource_by_id(vmid):
         return
     return res
 
+
 @cloud_page.route("/available_clouds", methods=['GET'])
 def available_clouds():
     """GET /available_clouds"""
@@ -74,9 +81,9 @@ def available_clouds():
     return simplejson.dumps(clouds)
 
 
-
+from cpsdirector.credits import Credit
 def _create_nodes(kwargs):
-    log('some nodes are being created')
+    
     role = kwargs.pop('role')
     cloud_name = kwargs.pop('cloud_name')
     
@@ -85,7 +92,9 @@ def _create_nodes(kwargs):
     user_id = kwargs.pop('user_id')
     nodes = None
     service_id = 0
+
     
+
     from cpsdirector.application import Application, get_app_by_id
     application = get_app_by_id(user_id, app_id)
     if role == 'manager':
@@ -116,10 +125,11 @@ def _create_nodes(kwargs):
         for node in nodes:
             resource = Resource(vmid=node.vmid, ip=node.ip, app_id=app_id, service_id=service_id, role=role, cloud=cloud_name)
             db.session.add(resource)
-    
-        # flush() is needed to get auto-incremented rid
+
         db.session.flush()
         db.session.commit()
+
+        Credit().check_credits()
       
     return nodes
 
@@ -140,14 +150,17 @@ def create_nodes():
     # log('startup_script :%s' % startup_script)
     # FIXME: make this get driectly a json
     nodes_info = simplejson.loads(request.values.get('nodes_info').replace("u'", '"').replace("'", '"'))
-    cloud_name = request.values.get('cloud_name')
+    cloud_name = request.values.get('cloud_name', 'default')
     context = simplejson.loads(request.values.get('context').replace("'", "\""))
     # inst_type = request.values.get('inst_type')
+    
+    if g.user.credit <= 0:
+        return simplejson.dumps({ 'error': True,'msg': 'Insufficient credits'})
+
     nodes = _create_nodes({'role':'agent', 'app_id':app_id, 'user_id':'%s'%g.user.uid, 'cloud_name':cloud_name, 
                     'service_id':service_id, 'service_type':service_type, 'nodes_info':nodes_info, 
                     'manager_ip':manager_ip, 'context':context, 'startup_script':startup_script})
     
-    log('nodes string: %s' % simplejson.dumps([node.to_dict() for node in nodes]))
     return simplejson.dumps([node.to_dict() for node in nodes])
 
 
@@ -243,6 +256,13 @@ def destroy_volume():
     return simplejson.dumps({})
 
 
+# putting this in the user_page wasn't working for some non-obvious reason
+@cloud_page.route("/credit", methods=['POST'])
+@cert_required(role='manager')
+def credit():
+    log('manager is asking for credits')
+    return simplejson.dumps({'credit': g.user.credit})
+
 
 @cloud_page.route("/list_resources", methods=['GET'])
 @cert_required(role='user')
@@ -251,3 +271,4 @@ def list_resources():
     res = [res.to_dict() for res in Resource.query.join(Application).filter_by(user_id=g.user.uid)]
     
     return build_response(simplejson.dumps(res))
+

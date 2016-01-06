@@ -26,6 +26,11 @@ class DirectorCallbacker(object):
     #     return nodes
 
     def create_nodes(self, nodes_info, service_id, service_manager):
+        #set cloud if not already set
+        for node in nodes_info:
+            if not node['cloud']:
+                node['cloud'] = 'default'
+
         params = {'nodes_info':nodes_info, 
                  'app_id':self.config_parser.get("manager", "APP_ID"), 
                  'service_id':service_id,
@@ -46,8 +51,10 @@ class DirectorCallbacker(object):
         ret = self._dic_callback('/create_nodes', params)
         nodes = None
         if ret:
-            nodes = [ServiceNode.from_dict(node) for node in ret]        
-        
+            if 'error' in ret:
+                return ret
+            else:
+                nodes = [ServiceNode.from_dict(node) for node in ret]        
         return nodes
 
     def remove_nodes(self, nodes):
@@ -71,6 +78,10 @@ class DirectorCallbacker(object):
     def destroy_volume(self, volume_id, cloud):
         params = {'volume_id':volume_id, 'cloud':cloud}
         return self._dic_callback('/destroy_volume', params)
+
+    def check_credits(self):
+        params = {}
+        return self._dic_callback('/credit', params)
 
     def _dic_callback(self, path, params, files=[]):
         try:

@@ -176,6 +176,8 @@ def _startapp(user_id, app_id, cloud_name, new_thread=True):
         return { 'error': True, 'msg': 'Application not found' }    
     if app.status not in (Application.A_INIT, Application.A_STOPPED) :
         return { 'error': True, 'msg': 'Application already started' }
+    if g.user.credit <= 0:
+        return { 'error': True, 'msg': 'Insufficient credits' }
     try:
         app.status = Application.A_EPILOGUE
        
@@ -186,10 +188,8 @@ def _startapp(user_id, app_id, cloud_name, new_thread=True):
         if new_thread:
             Thread(target=create_nodes, args=[man_args]).start()
         else:
-            create_nodes(man_args)
-        # create_nodes({'role':'manager','user_id':user_id, 'app_id':app_id, 'vpn':vpn, 'cloud_name':cloud_name})
-        
-        
+            res = create_nodes(man_args)
+
         log('Application %s is starting' % (app_id))
         return True
     except Exception, err:

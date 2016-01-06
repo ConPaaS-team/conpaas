@@ -28,6 +28,16 @@ IP_ADDRESS="\$(ip addr show | perl -ne 'print "\$1\n" if /inet ([\d.]+).*scope g
 
 EOT
 
+ls $lib > /dev/null 2>&1 &&
+{
+cat <<EOT >> $TMPFILE
+sudo rm -r /usr/local/lib/python2.7/dist-packages/cpslib-*-py2.7.egg/
+sudo easy_install cpslib-*.tar.gz
+rm cpslib-*.tar.gz
+EOT
+taballs+="$lib "
+}
+
 
 ls $director > /dev/null 2>&1 && 
 {
@@ -56,15 +66,6 @@ EOT
 taballs+="$manager "
 }
 
-ls $lib > /dev/null 2>&1 && 
-{
-cat <<EOT >> $TMPFILE
-sudo rm -r /usr/local/lib/python2.7/dist-packages/cpslib-*-py2.7.egg/
-sudo easy_install cpslib-*.tar.gz
-rm cpslib-*.tar.gz
-EOT
-taballs+="$lib "
-}
 
 ls $tools > /dev/null 2>&1 && 
 {

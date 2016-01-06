@@ -33,9 +33,11 @@ try {
 		throw new Exception('User not logged in');
 	}
 
-	echo json_encode(array(
-		'start' => 1
-	));
+	if (property_exists($res, 'msg')) {
+		echo json_encode(array('error' => $res->msg));
+	}else{
+		echo json_encode(array('start' => 1));
+	}
 } catch (Exception $e) {
 	error_log($e->getTraceAsString());
 	echo json_encode(array(

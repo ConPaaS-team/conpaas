@@ -144,7 +144,7 @@ class BaseManager(ConpaasRequestHandlerComponent):
         pass
 
     def get_starting_nodes(self):
-        return [{'cloud':None}]
+        return [{'cloud':'default'}]
 
     #overwrite this method in case the newly added nodes require also volumes
     def get_add_nodes_info(self, noderoles, cloud):
@@ -234,6 +234,7 @@ class ApplicationManager(BaseManager):
                         ('cloud_name', is_string)]
         [service_type, cloud ] = check_arguments(exp_params, kwargs)
 
+
         services = manager_services
 
         try:
@@ -288,6 +289,10 @@ class ApplicationManager(BaseManager):
         exp_params = [('service_id', is_in_list(self.httpsserver.instances.keys())),
                       ('cloud', is_string)]
         [service_id, cloud ] = check_arguments(exp_params, kwargs)
+
+        credit =self.callbacker.check_credits()
+        if credit['credit'] <= 0:
+            return HttpErrorResponse('Insufficient credits')
 
         service_manager = self.httpsserver.instances[service_id]
 
@@ -356,6 +361,10 @@ class ApplicationManager(BaseManager):
         # [service_id, cloud, count ] = check_arguments(exp_params, kwargs)
         [service_id, noderoles, cloud ] = check_arguments(exp_params, kwargs)
         
+        credit =self.callbacker.check_credits()
+        if credit['credit'] <= 0:
+            return HttpErrorResponse('Insufficient credits')
+
         service_manager = self.httpsserver.instances[service_id]
         service_manager.state_set(self.S_ADAPTING)
         Thread(target=self._do_add_nodes, args=[service_id, noderoles, cloud]).start()
