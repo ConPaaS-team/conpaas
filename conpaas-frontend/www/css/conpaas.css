@@ -576,11 +576,12 @@ tr.service {
 
 .createpage .form {
 	margin: 0px 0px 5px 5px;
-	padding: 10px 0px 10px 5px;
+	padding: 10px 10px 10px 5px;
 }
 
 .form td {
 	vertical-align: top;
+
 }
 
 .form #status {
@@ -657,6 +658,7 @@ tr.service {
 	font-weight: bold;
 	vertical-align: middle;
 	padding-left: 10px;
+	width: 150px;
 }
 
 .createpage .form .service .radio {
@@ -694,6 +696,11 @@ tr.service {
 	color: #333;
 	font-weight: bold;
 	font-size: 12px;
+}
+
+table.form 
+{
+	width:100%;
 }
 
 input.button {

@@ -117,7 +117,7 @@ $page = new CreatePage();
           <table class="form" cellspacing="0" cellpading="0">
 
               <tr>
-                  <td>&nbsp;</td>
+                  <td colspan="2">&nbsp;</td>
               </tr>
               <tr>
                   <td class="description">cloud provider</td>

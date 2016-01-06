@@ -30,20 +30,20 @@ conpaas.ui = (function (this_module) {
             that.selectedService = $(this);
             $(this).removeClass("service");
             $(this).addClass("selectedservice");
-            $(this).find(':radio').attr('checked', true);
-            $('#create').attr('disabled', false);
+            $(this).find(':radio').prop('checked', true);
+            $('#create').prop('disabled', false);
         });
     },
     onCreate: function (event) {
         var page = event.data,
             button = event.target;
-        if ($(button).attr('disabled') === 'disabled') {
+        if ($(button).prop('disabled') === 'disabled') {
             return;
         }
         if (!page.selectedService) {
             return;
         }
-        $(button).attr('disabled', 'disabled');
+        $(button).prop('disabled', 'disabled');
         $(button).removeClass('button');
         $(button).addClass('button-disabled');
         $('#pgstatLoadingText').html('adding service...');
