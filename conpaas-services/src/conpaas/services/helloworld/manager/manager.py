@@ -28,45 +28,6 @@ class HelloWorldManager(BaseManager):
         # self.controller.generate_context('helloworld')
         self.state = self.S_INIT
 
-    def _do_startup(self, nodes):
-        self.logger.info('nodes: %s' % nodes)
-        
-        # startCloud = self._init_cloud(cloud)
-
-        # self.controller.add_context_replacement(dict(STRING='helloworld'))
-
-        try:
-            # nodes = self.controller.create_nodes(1,
-            #     client.check_agent_process, self.AGENT_PORT, startCloud)
-
-            node = nodes[0]
-
-            client.startup(node.ip, self.AGENT_PORT)
-
-            # Extend the nodes list with the newly created one
-            self.nodes += nodes
-            self.state = self.S_RUNNING
-        except Exception, err:
-            self.logger.exception('_do_startup: Failed to create node: %s' % err)
-            self.state = self.S_ERROR
-
-
-    # @expose('POST')
-    # def shutdown(self, kwargs):
-    #     self.state = self.S_EPILOGUE
-    #     Thread(target=self._do_shutdown, args=[]).start()
-    #     return HttpJsonResponse()
-
-    # def _do_shutdown(self):
-    #     self.controller.delete_nodes(self.nodes)
-    #     self.nodes = []
-    #     self.state = self.S_STOPPED
-    
-
-    def _do_stop(self):
-        self.controller.delete_nodes(self.nodes)
-        self.nodes = []
-        self.state = self.S_STOPPED
 
     def get_service_type(self):
         return 'helloworld'
@@ -74,83 +35,40 @@ class HelloWorldManager(BaseManager):
     def get_context_replacement(self):
         return dict(STRING='helloworld')
 
-    # @expose('POST')
-    # def add_nodes(self, kwargs):
-    #     if self.state != self.S_RUNNING:
-    #         return HttpErrorResponse('ERROR: Wrong state to add_nodes')
 
-    #     if 'node' in kwargs:
-    #         kwargs['count'] = kwargs['node']
+    def on_start(self, nodes):
+        return self.on_new_nodes(nodes)
 
-    #     if not 'count' in kwargs:
-    #         return HttpErrorResponse("ERROR: Required argument doesn't exist")
+    def on_stop(self):
+        self.logger.info("Removing nodes: %s" %[ node.id for node in self.nodes ])
+        return self.nodes[:]
 
-    #     if not isinstance(kwargs['count'], int):
-    #         return HttpErrorResponse('ERROR: Expected an integer value for "count"')
+    def on_add_nodes(self, nodes):
+        return self.on_new_nodes(nodes)
 
-    #     count = int(kwargs['count'])
-
-    #     cloud = kwargs.pop('cloud', 'iaas')
-    #     try:
-    #         cloud = self._init_cloud(cloud)
-    #     except Exception as ex:
-    #             return HttpErrorResponse(
-    #                 "A cloud named '%s' could not be found" % cloud)
-
-    #     self.state = self.S_ADAPTING
-    #     Thread(target=self._do_add_nodes, args=[count, cloud]).start()
-    #     return HttpJsonResponse()
-
-    # def _do_add_nodes(self, count, cloud):
-    #     node_instances = self.controller.create_nodes(count,
-    #             client.check_agent_process, self.AGENT_PORT, cloud)
-
-    #     self.nodes += node_instances
-    #     # Startup agents
-    #     for node in node_instances:
-    #         client.startup(node.ip, self.AGENT_PORT)
-
-    #     self.state = self.S_RUNNING
-    #     return HttpJsonResponse()
-
-    # @expose('POST')
-    # def remove_nodes(self, kwargs):
-    #     if self.state != self.S_RUNNING:
-    #         return HttpErrorResponse('ERROR: Wrong state to remove_nodes')
-
-    #     if 'node' in kwargs:
-    #         kwargs['count'] = kwargs['node']
-
-    #     if not 'count' in kwargs:
-    #         return HttpErrorResponse("ERROR: Required argument doesn't exist")
-
-    #     if not isinstance(kwargs['count'], int):
-    #         return HttpErrorResponse('ERROR: Expected an integer value for "count"')
-
-    #     count = int(kwargs['count'])
-    #     self.state = self.S_ADAPTING
-    #     Thread(target=self._do_remove_nodes, args=[count]).start()
-    #     return HttpJsonResponse()
-
-    # def _do_remove_nodes(self, count):
-    #     for _ in range(0, count):
-    #         self.controller.delete_nodes([ self.nodes.pop() ])
-
-    #     self.state = self.S_RUNNING
-    #     return HttpJsonResponse()
-
-    def add_nodes(self, nodes):
-        self.nodes += nodes
-        for node in nodes:
-            client.startup(node.ip, self.AGENT_PORT)
-        self.state = self.S_RUNNING
-
-    def remove_nodes(self, nodes):
-        # (genc): for the moment i am supposing only the number is passed and not the roles
+    def on_remove_nodes(self, noderoles):
+        count = sum(noderoles.values())
         del_nodes = []
-        for _ in range(0, nodes):
-            del_nodes += [ self.nodes.pop() ]
+        cp_nodes = self.nodes[:]
+        for _ in range(0, count):
+            node = cp_nodes.pop()
+            del_nodes += [ node ]
+        if not cp_nodes:         
+            self.state = self.S_STOPPED
+        else:
+            self.state = self.S_RUNNING
+
+        self.logger.info("Removing nodes: %s" %[ node.id for node in del_nodes ])
         return del_nodes
+
+    def on_new_nodes(self, nodes):
+        try:
+            for node in nodes:
+                client.startup(node.ip, self.AGENT_PORT)
+            return True
+        except Exception, err:
+            self.logger.exception('_do_startup: Failed to create node: %s' % err)
+            return False
 
 
     @expose('GET')
