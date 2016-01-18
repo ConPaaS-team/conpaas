@@ -136,7 +136,7 @@ Better disable line-length rule first:  pep8 --ignore=E501  mycode.py
 
 Some part of ConPaaS code is already complying to PEP8 without line-length rule
  * $CPS_ROOT/conpaas-services/src/conpaas/services/webservers/*
- * $CPS_ROOT/conpaas-services/src/conpaas/services/galera/*
+ * $CPS_ROOT/conpaas-services/src/conpaas/services/mysql/*
 It is enforced by the $CPS_ROOT/conpaas-services/src/tests/unit-tests.sh script to prevent any regression regarding PEP8.
 
 Do not manually fix existing code to comply to PEP8, there is a script to do that:
@@ -153,7 +153,7 @@ It helps detect some errors before running a Python script, however it is quite 
 
 Some ConPaaS code is passing Pylint:
  * $CPS_ROOT/conpaas-services/src/conpaas/services/webservers/*
- * $CPS_ROOT/conpaas-services/src/conpaas/services/galera/*
+ * $CPS_ROOT/conpaas-services/src/conpaas/services/mysql/*
 It is enforced by the $CPS_ROOT/conpaas-services/src/tests/unit-tests.sh script to prevent any regression regarding Pylint.
 
 
@@ -309,7 +309,7 @@ On an agent:
 For web frontend:
   /var/log/apache2/error.log
   Javascript console in browser
-On mysql/galera agents:
+On mysql agents:
   /root/mysql.log
   
 

@@ -128,7 +128,7 @@ _cps_service_complete()
 }
 
 
-_cps_galera_complete()
+_cps_mysql_complete()
 {
    _cps_service_complete
 }
@@ -186,14 +186,14 @@ _cps_tools_complete()
             	COMPREPLY=()
             	return 0
             	;;
-            galera)
-            	_cps_galera_complete
+            mysql)
+            	_cps_mysql_complete
             	return 0
             	;;
         esac
     done
 
-    COMPREPLY=( $( compgen -W 'user application service cloud help galera' -- "$cur" ) )
+    COMPREPLY=( $( compgen -W 'user application service cloud help mysql' -- "$cur" ) )
 }
 
 complete -F _cps_tools_complete cps-tools

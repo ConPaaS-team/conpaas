@@ -1,4 +1,4 @@
-# Section: 502-galera
+# Section: 502-mysql
 
 cat <<EOF >> $ROOT_DIR/conpaas_install
 

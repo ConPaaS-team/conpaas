@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+from datetime import datetime
 """
     conpaas.core.node
     =================
@@ -39,6 +39,7 @@ class ServiceNode(object):
         self.weight_backend = weight_backend
         self.role = role
         self.volumes = []
+        self.created = datetime.now()
 
     def __repr__(self):
         return 'ServiceNode(id=%s, ip=%s)' % (str(self.id), self.ip)

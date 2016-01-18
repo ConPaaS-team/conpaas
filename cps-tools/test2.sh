@@ -15,11 +15,11 @@ function php_check_working() {
 services="$services $service"
 
 
-## Galera service
-service[type]='galera'
-service[check_working]='galera_check_working'
+## Mysql service
+service[type]='mysql'
+service[check_working]='mysql_check_working'
 
-function galera_check_working() {
+function mysql_check_working() {
     ## need an ip address....
     entry_ip=$1
 }

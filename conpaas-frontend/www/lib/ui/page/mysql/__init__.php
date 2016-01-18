@@ -6,14 +6,14 @@
 require_module('ui');
 require_module('ui/page');
 
-class GaleraPage extends ServicePage {
+class MySQLPage extends ServicePage {
 
 	public function __construct(Service $service) {
 		parent::__construct($service);
 		$this->addJS('https://www.google.com/jsapi');
         // $this->addJS('http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js');
 		$this->addJS('js/jquery.form.js');
-		$this->addJS('js/galera.js');
+		$this->addJS('js/mysql.js');
 		
                
 		if ($this->service->isRunning() && $this->needsPasswordReset()) {

@@ -170,18 +170,19 @@ dist_cpstools_PYTHON = \
 	cps_tools.py \
 	config.py \
 	java.py \
-	galera.py \
-	htc.py \
+	mysql.py \
 	php.py \
-	scalaris.py \
-	selenium.py \
 	service.py \
-	taskfarm.py \
 	user.py \
 	xtreemfs.py \
 	helloworld.py \
 	generic.py \
 	web.py
+
+##htc.py \
+##scalaris.py \
+##selenium.py \	
+##taskfarm.py \
 
 cpstoolsdir = $(pythondir)/cps_tools
 all: all-am

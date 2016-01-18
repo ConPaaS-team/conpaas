@@ -11,7 +11,7 @@ import pickle
 
 #from conpaas.core.misc import get_ip_address
 from conpaas.core.agent import BaseAgent
-from conpaas.services.galera.agent import role
+from conpaas.services.mysql.agent import role
 
 from conpaas.core.https.server import HttpErrorResponse, HttpJsonResponse, FileUploadField
 from conpaas.core.expose import expose
@@ -29,7 +29,7 @@ class AgentException(Exception):
     pass
 
 
-class GaleraAgent(BaseAgent):
+class MySQLAgent(BaseAgent):
 
     def __init__(self, config_parser):
         BaseAgent.__init__(self, config_parser)
@@ -97,7 +97,7 @@ class GaleraAgent(BaseAgent):
         No parameters.
         """
         if len(kwargs) > 0:
-            self.logger.warning('Galera agent "stop" was called with arguments that will be ignored: "%s"' % kwargs)
+            self.logger.warning('MySQL agent "stop" was called with arguments that will be ignored: "%s"' % kwargs)
         try:
             exp_params = []
             check_arguments(exp_params, kwargs)
@@ -261,7 +261,7 @@ class GaleraAgent(BaseAgent):
 
         """
 	if len(kwargs) > 0:
-            self.logger.warning('Galera agent "stop" was called with arguments that will be ignored: "%s"' % kwargs)
+            self.logger.warning('MySQL agent "stop" was called with arguments that will be ignored: "%s"' % kwargs)
         try:
 	    exp_params = []
 	    check_arguments(exp_params, kwargs)

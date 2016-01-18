@@ -5,7 +5,7 @@
 
 require_module('ui/instance');
 
-class GaleraInstance extends Instance {
+class MySQLInstance extends Instance {
 
 	public function __construct($info) {
 		parent::__construct($info);

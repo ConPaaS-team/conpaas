@@ -1,4 +1,4 @@
-Include Galera into ConPaaS services
+Include MySQL Galera into ConPaaS services
 
 1. Copy galera folder into conpaas/conpaas-services/src/conpaas/services.
 2. Add the following configuration into conpaas/conpaas-services/config/agent/mysql-agent.cfg.
@@ -10,7 +10,7 @@ wsrep_sst_password=sstpasswd
 wsrep_provider=/usr/lib/galera/libgalera_smm.so
 wsrep_sst_method=rsync
 
-3. Register galera in conpaas/conpaas-services/src/conpaas/core/services.py. It should look like:
+3. Register mysql in conpaas/conpaas-services/src/conpaas/core/services.py. It should look like:
 
 manager_services = {'php'    : {'class' : 'PHPManager', 
                                 'module': 'conpaas.services.webservers.manager.internal.php'},
@@ -24,8 +24,8 @@ manager_services = {'php'    : {'class' : 'PHPManager',
                                     'module': 'conpaas.services.helloworld.manager.manager'},
                     'mysql' : {'class' : 'MySQLManager',
                                'module': 'conpaas.services.mysql.manager.manager'},
-                    'galera' : {'class' : 'GaleraManager',
-                               'module': 'conpaas.services.galera.manager.manager'},
+                    'mysql' : {'class' : 'MySQLManager',
+                               'module': 'conpaas.services.mysql.manager.manager'},
                     'xtreemfs' : {'class' : 'XtreemFSManager',
                                   'module': 'conpaas.services.xtreemfs.manager.manager'},
                     'selenium' : {'class' : 'SeleniumManager',
@@ -45,8 +45,8 @@ agent_services = {'web' : {'class' : 'WebServersAgent',
                                   'module': 'conpaas.services.helloworld.agent.agent'},
                   'mysql' : {'class' : 'MySQLAgent',
                              'module': 'conpaas.services.mysql.agent.internals'},
-                  'galera' : {'class' : 'GaleraAgent',
-                             'module': 'conpaas.services.galera.agent.internals'},
+                  'mysql' : {'class' : 'MySQLAgent',
+                             'module': 'conpaas.services.mysql.agent.internals'},
                   'xtreemfs' : {'class' : 'XtreemFSAgent',
                                 'module': 'conpaas.services.xtreemfs.agent.agent'},
                   'selenium' : {'class' : 'SeleniumAgent',
@@ -56,7 +56,7 @@ agent_services = {'web' : {'class' : 'WebServersAgent',
 #""" BLUE_PRINT_INSERT_AGENT 		do not remove this line: it is a placeholder for installing new services """
 		  }
 
-4. Move galera* script into conpaas/conpaas-services/scripts/create_vm. 
+4. Move mysql* script into conpaas/conpaas-services/scripts/create_vm. 
 
 
 

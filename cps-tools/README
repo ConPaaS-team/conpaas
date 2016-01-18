@@ -70,7 +70,6 @@ Pass option '-h' or '--help' to get the list of sub-commands and options::
         application        manage applications
         service            manage services
         mysql              manage MySQL services
-        galera             manage MySQL services
         generic            manage Generic services
         htc                manage HTC services
         php                manage PHP services

@@ -70,7 +70,7 @@ A new service should be added in a new python module under the
     │   │   │   │── services.py
     │   │   │── services
     │   │       │── cds/
-    │   │       │── galera/
+    │   │       │── mysql/
     │   │       │── helloworld/
     │   │       │── htc/
     │   │       │── htcondor/
@@ -259,7 +259,7 @@ configuration files described above.
     │── config
     │   │── agent
     │   │   │── default-agent.cfg
-    │   │   │── galera-agent.cfg
+    │   │   │── mysql-agent.cfg
     │   │   │── helloworld-agent.cfg
     │   │   │── htc-agent.cfg
     │   │   │── htcondor.cfg
@@ -329,7 +329,7 @@ configuration files described above.
         │       │── 003-create-image
         │       │── 004-conpaas-core
         │       │── 501-php
-        │       │── 502-galera
+        │       │── 502-mysql
         │       │── 503-condor
         │       │── 504-selenium
         │       │── 505-hadoop

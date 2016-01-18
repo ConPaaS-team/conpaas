@@ -20,9 +20,9 @@ class ServiceFactory {
 			case 'java':
 				require_module('service/java');
 				return new JavaService($service_data, $application);
-			case 'galera':
-                require_module('service/galera');
-                return new GaleraService($service_data, $application);
+			case 'mysql':
+                require_module('service/mysql');
+                return new MySQLService($service_data, $application);
 			case 'taskfarm':
 				require_module('service/taskfarm');
 				return new TaskFarmService($service_data, $application);

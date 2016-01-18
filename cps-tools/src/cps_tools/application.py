@@ -1,7 +1,7 @@
 
 import argcomplete
-import logging
-import sys
+import logging, simplejson
+import sys, os.path
 
 from .base import BaseClient
 from .config import config
@@ -61,6 +61,8 @@ class ApplicationCmd:
         self._add_rename()
         self._add_stop()
         self._add_delete()
+
+        self._add_manifest()
         
         self._add_create_volume()
         self._add_delete_volume()
@@ -105,7 +107,7 @@ class ApplicationCmd:
         apps = self.client.call_director_get("listapp")
         
         if apps:
-            print(self.client.prettytable(('aid', 'name', 'manager'), apps))
+            print(self.client.prettytable(('aid', 'name', 'manager', 'status'), apps))
         else:
             print "No existing applications"
 
@@ -196,6 +198,42 @@ class ApplicationCmd:
             self.client.error('Failed to stop application \'%s\' (id %s).'
                               % (app_name, app_id))
 
+    
+    def _add_manifest(self):
+        subparser = self.add_parser('manifest', help="upload a manifest")
+        subparser.set_defaults(run_cmd=self.manifest, parser=subparser)
+        subparser.add_argument('man_path',
+                               help="The manifest file")
+
+    def manifest(self, args):
+        man = args.man_path
+        ok, json = self.check_manifest(man)
+        if ok:
+            res = self.client.call_director_post("upload_manifest", { 'manifest': json, 'thread':True })
+            
+            if res:
+                print "The application is being created based on the specified manifest."
+            else:
+                print "Failed: %s" % res
+        
+
+    def check_manifest(self, json):
+        if not os.path.isfile(json):
+            print('The specified path does not contain a file')
+            return False, None
+        try:
+            json = open(json, 'r').read()
+            parse = simplejson.loads(json)
+        except:
+            print('The uploaded manifest is not valid json')
+            return False, None
+
+        for service in parse.get('Services'):
+            if not service.get('Type'):
+                print('The "Type" field is mandatory')
+                return False, None
+
+        return True, json
 
     # ========== create_volume 
     def _add_create_volume(self):
@@ -205,7 +243,7 @@ class ApplicationCmd:
         subparser.add_argument('vol_name', help="Volume name")
         subparser.add_argument('vol_size', help="Volume size (MB)")
         # subparser.add_argument('--vm_id', metavar='VM_ID', default=None, help="Id of the agent to which it will be attached (only for EC2)")
-        subparser.add_argument('vm_id', help="Id of the agent to which it will be attached (only for EC2)")
+        subparser.add_argument('vm_id', help="Id of the agent to which it will be attached")
 
     def create_volume(self, args):
         try:

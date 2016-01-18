@@ -3,7 +3,7 @@
 UNIT_TEST_LOG_DIR="./unit-tests-logs"
 MODULES=""
 MODULES="$MODULES ../conpaas/services/webservers"
-MODULES="$MODULES ../conpaas/services/galera"
+MODULES="$MODULES ../conpaas/services/mysql"
 
 export PYTHONPATH=".."
 

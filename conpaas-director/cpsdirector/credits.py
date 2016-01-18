@@ -62,12 +62,8 @@ class Credit(Thread):
             to_charge = 0
             rescs = Resource.query.join(Application).filter_by(user_id=user.uid)
             for res in rescs:
-                created = res.created
-                now = datetime.now()
-                created_ts = time.mktime(created.timetuple())
-                now_ts = time.mktime(now.timetuple())
-                mins_from_creation = int(now_ts-created_ts) / 60
-                tot_cost = mins_from_creation / self.charging_unit
+                m_f_c = self.mins_from_creation(res.created)
+                tot_cost = m_f_c / self.charging_unit
 
                 if tot_cost >= res.charged or res.charged == 0:
                     self._logger.debug('Charge for resource %s' % res.vmid)
@@ -100,12 +96,21 @@ class Credit(Thread):
         res_vmids = [res.vmid for res in Resource.query.all()]
         vms_to_remove = []
         for vm in vms:
-            if vm.id not in res_vmids:
+            if vm.vmid not in res_vmids and self.mins_from_creation(vm.created) > 1:
                 vms_to_remove += [vm]
         
+
         if len(vms_to_remove) > 0:
+            self._logger.debug('Removing the following VMs as they are not present in the list of resources: %s' % [vm.vmid for vm in vms_to_remove])
             self.controller.delete_nodes(vms_to_remove)
         
+    def mins_from_creation(self, created):
+        now = datetime.now()
+        created_ts = time.mktime(created.timetuple())
+        now_ts = time.mktime(now.timetuple())
+        return int(now_ts-created_ts) / 60
+         
+
 
 def register_background_taks(app):
     @app.before_first_request

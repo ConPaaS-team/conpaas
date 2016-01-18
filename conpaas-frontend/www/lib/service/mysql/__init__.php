@@ -6,9 +6,9 @@
 require_module('cloud');
 require_module('https');
 require_module('service');
-require_module('ui/instance/galera');
+require_module('ui/instance/mysql');
 
-class GaleraService extends Service {
+class MySQLService extends Service {
 
 	public function __construct($data, $manager) {
 		parent::__construct($data, $manager);
@@ -31,7 +31,7 @@ class GaleraService extends Service {
 
 	public function createInstanceUI($node) {
 		$info = $this->getNodeInfo($node);
-		return new GaleraInstance($info);
+		return new MySQLInstance($info);
 	}
 
 	public function needsPasswordReset() {

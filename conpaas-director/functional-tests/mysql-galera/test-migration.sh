@@ -60,7 +60,7 @@ test_db_is_working() {
     return $test_passed
 }
 
-mysql_sid=$(start_service "galera")
+mysql_sid=$(start_service "mysql")
 
 wait_for_running $mysql_sid
 
@@ -242,9 +242,9 @@ wait_for_stopped $mysql_sid
 
 cpsclient.py terminate $mysql_sid
 
-cpsclient.py list | grep -v "galera   $mysql_sid"
+cpsclient.py list | grep -v "mysql   $mysql_sid"
 if [ $? -ne 0 ]
 then
-    echo "ERROR: could not delete Galera service $mysql_sid."
+    echo "ERROR: could not delete MySQL service $mysql_sid."
     exit 1
 fi

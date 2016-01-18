@@ -7,11 +7,8 @@ dist_cpstools_PYTHON = \
 	cps_tools.py \
 	config.py \
 	java.py \
-	galera.py \
-	htc.py \
-	php.py \
-	scalaris.py \
-	selenium.py \
+	mysql.py \
+	php.py \	
 	service.py \
 	taskfarm.py \
 	user.py \
@@ -19,6 +16,10 @@ dist_cpstools_PYTHON = \
 	helloworld.py \
 	generic.py \
 	web.py
+
+##htc.py \
+##scalaris.py \
+##selenium.py \
 
 ## destination of byte-compiled files
 cpstoolsdir = $(pythondir)/cps_tools

@@ -164,10 +164,7 @@ class MGeneral(object):
 
     def get_service_manifest(self, service):
         tmp = {}
-        if service.type == "galera":
-            tmp['Type'] = "mysql"
-        else:
-            tmp['Type'] = service.type
+        tmp['Type'] = service.type
         tmp['ServiceName'] = service.name
         tmp['Cloud'] = service.cloud
 
@@ -221,9 +218,9 @@ class MGeneral(object):
     def update_environment(self, appid):
         env = ''
 
-        # Find galera ip address
+        # Find mysql ip address
         try:
-            sid = Service.query.filter_by(application_id=appid, type='galera').first().sid
+            sid = Service.query.filter_by(application_id=appid, type='mysql').first().sid
             nodes = callmanager(appid, sid, "list_nodes", False, {})
 
             if nodes['glb_nodes']:
@@ -926,7 +923,7 @@ def get_manifest_class(service_type):
         return MPhp
     elif service_type == 'java':
         return MJava
-    elif service_type == 'galera':
+    elif service_type == 'mysql':
         return MMySql
     # elif service_type == 'scalaris':
     #     return MScalaris
@@ -998,16 +995,13 @@ def new_manifest(json, cloud = 'default'):
     db.session.commit()
 
     for service in parse.get('Services'):
-        if service.get('Type') == "mysql":
-            service['Type'] = "galera"
-
         try:
             cls = get_manifest_class(service.get('Type'))
         except Exception:
             return 'Service %s does not exists' % service.get('Type')
 
         msg = 'ok'
-        # if service.get('Type') == 'galera':
+        
         msg = cls().start(service, appid)
 
         if msg is not 'ok':

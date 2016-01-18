@@ -195,8 +195,7 @@ class BaseClient(object):
         sys.stdout.flush()
 
         data = {}
-        if service_type == "mysql":
-            service_type = "galera"
+        
         if application_id is not None:
             data['appid'] = application_id
         if cloud is None:
@@ -278,8 +277,6 @@ class BaseClient(object):
         additional information needed. Returns service_dict"""
         service = self.service_dict(app_id, service_id)
         for key, value in service.items():
-            if key == 'type' and value == 'galera':
-                value = 'mysql'
             print "%s: %s" % (key, value)
 
         res = self.callmanager(app_id, service['sid'], "get_service_info", False, {})
@@ -406,10 +403,7 @@ class BaseClient(object):
                 print cloud
         else:
             for service in self.available_services():
-                if service == 'galera':
-                    print 'mysql'
-                else:
-                    print service
+                print service
 
     def upload_startup_script(self, aid, sid, filename):
         contents = open(filename).read()
@@ -580,8 +574,6 @@ Do you want to continue? (y/N): """
             servs = []
             for row in services:
                 servs.append(row['service'])
-                if row['service']['type'] == 'galera':
-                    row['service']['type'] = 'mysql'
             print self.prettytable(( 'sid', 'type', 'application_id', 'name'), servs)
         else:
             print "No running services"
@@ -646,8 +638,6 @@ Do you want to continue? (y/N): """
                     # St_usage wants a service type. Check if we got one, and if
                     # it is acceptable.
                     service_type = argv[2]
-                    if service_type == 'mysql':
-                        service_type = 'galera'
                     if service_type not in self.available_services():
                         raise IndexError
                     # normal service usage
@@ -663,8 +653,6 @@ Do you want to continue? (y/N): """
                     # Add wants a service type. Check if we got one, and if
                     # it is acceptable.
                     service_type = argv[2]
-                    if service_type == 'mysql':
-                        service_type = 'galera'
                     if service_type not in self.available_services():
                         print 'E: Service type "%s" is not supported' % service_type
                         sys.exit(1)

@@ -270,8 +270,7 @@ class Controller(object):
     #                 service_type = self.config_parser.get('manager', 'TYPE')
     #                 name = "%s-u%s-a%s-s%s-t%s-r%s" % (self._conpaas_name, self._conpaas_user_id, self._conpaas_app_id, self._conpaas_service_id, service_type, role_abbr)
 
-    #             if service_type == 'galera':
-    #                 service_type = 'mysql'
+
                 
     #             if (service_type == 'htc'):
     #                 # If HTC is used we need to update here as well (as I see no way to do this elsewhere)

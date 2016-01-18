@@ -17,14 +17,14 @@ from conpaas.core.manager import BaseManager, ManagerException
 from conpaas.core.misc import check_arguments, is_pos_nul_int, is_string, is_list_dict2, is_uploaded_file
 from conpaas.core.misc import run_cmd_code
 
-import conpaas.services.galera.agent.client as agent
-from conpaas.services.galera.agent.client import AgentException
-from conpaas.services.galera.manager.config import Configuration
+import conpaas.services.mysql.agent.client as agent
+from conpaas.services.mysql.agent.client import AgentException
+from conpaas.services.mysql.manager.config import Configuration
 
 import logging
 import commands
 import MySQLdb
-class GaleraManager(BaseManager):
+class MySQLManager(BaseManager):
 
     # MySQL Galera node types
     REGULAR_NODE = 'node'  # regular node running a mysqld daemon
@@ -33,17 +33,17 @@ class GaleraManager(BaseManager):
     def __init__(self, conf, **kwargs):
         BaseManager.__init__(self, conf)
 
-        self.logger.debug("Entering GaleraServerManager initialization")
-        # self.controller.generate_context('galera')
+        self.logger.debug("Entering MySQLServerManager initialization")
+        
 
         #(genc): this is ignored at the moment
         # self.controller.config_clouds({"mem": "512", "cpu": "1"})
         self.root_pass = None
         self.config = Configuration(conf)
-        self.logger.debug("Leaving GaleraServer initialization")
+        self.logger.debug("Leaving MySQLServer initialization")
 
     def get_service_type(self):
-        return 'galera'
+        return 'mysql'
 
     def get_starting_nodes(self):
         device_name=self.config_parser.get('manager', 'DEV_TARGET')
@@ -75,7 +75,7 @@ class GaleraManager(BaseManager):
         if not self.root_pass:
             self.root_pass='password'
             # self.root_pass = ''.join([choice(string.letters + string.digits) for i in range(10)])
-        self.logger.debug('setting context to %s' % dict(mysql_username='mysqldb', mysql_password=self.root_pass))
+        # self.logger.debug('setting context to %s' % dict(mysql_username='mysqldb', mysql_password=self.root_pass))
         return dict(mysql_username='mysqldb', mysql_password=str(self.root_pass))
     
 
@@ -92,11 +92,11 @@ class GaleraManager(BaseManager):
             try:
                 agent.start_mysqld(serviceNode.ip, self.config.AGENT_PORT, existing_nodes, serviceNode.volumes[0].dev_name)
             except AgentException, ex:
-                self.logger.exception('Failed to start Galera node %s: %s' % (str(serviceNode), ex))
+                self.logger.exception('Failed to start MySQL node %s: %s' % (str(serviceNode), ex))
                 raise
         try:
             glb_nodes = self.config.get_glb_nodes()
-            self.logger.debug('Galera node already active: %s' % glb_nodes) 
+            self.logger.debug('MySQL Galera node already active: %s' % glb_nodes) 
             nodesIp=[]
             nodesIp = ["%s:%s" % (node.ip, self.config.MYSQL_PORT)  # FIXME: find real mysql port instead of default 3306
                          for node in nodes]
@@ -104,7 +104,7 @@ class GaleraManager(BaseManager):
                 agent.add_glbd_nodes(glb.ip, self.config.AGENT_PORT, nodesIp)
             return True
         except Exception as ex:
-            self.logger.exception('Failed to configure GLB nodes with new Galera nodes: %s' % ex)
+            self.logger.exception('Failed to configure new MySQL GLB: %s' % ex)
             raise
             
 
@@ -114,11 +114,11 @@ class GaleraManager(BaseManager):
             try:
                 nodes = ["%s:%s" % (node.ip, self.config.MYSQL_PORT)  # FIXME: find real mysql port instead of default 3306
                          for node in self.config.get_nodes()]
-                self.logger.debug('create_glb_node all galera nodes = %s' % nodes)
+                self.logger.debug('create_glb_node all mysql nodes = %s' % nodes)
                 self.logger.debug('create_glb_node for new_glb.ip  = %s' % new_glb.ip)
                 agent.start_glbd(new_glb.ip, self.config.AGENT_PORT, nodes)
             except AgentException:
-                self.logger.exception('Failed to start Galera GLB Node at node %s' % new_glb.ip)
+                self.logger.exception('Failed to start MySQL GLB Node at node %s' % new_glb.ip)
                 raise
 
     @expose('GET')
@@ -498,7 +498,7 @@ class GaleraManager(BaseManager):
             check_arguments(exp_params, kwargs)
         except Exception as ex:
             return HttpErrorResponse("%s" % ex)
-        return HttpJsonResponse({'state': self.state, 'type': 'galera'})
+        return HttpJsonResponse({'state': self.state, 'type': 'mysql'})
 
     def on_stop(self):
         res = self._do_remove_nodes(self.config.serviceNodes.values(),self.config.glb_service_nodes.values())

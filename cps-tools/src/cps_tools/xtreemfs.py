@@ -49,7 +49,7 @@ class XtreemFSCmd(ServiceCmd):
 
     def list_volumes(self, args):
         app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
-        res = self.client.call_manager_get(service_id, "listVolumes")
+        res = self.client.call_manager_get(app_id, service_id, "listVolumes")
         if 'error' in res:
             self.client.error("Could not list volumes: %s" % res['error'])
         else:
@@ -69,7 +69,7 @@ class XtreemFSCmd(ServiceCmd):
     def add_volume(self, args):
         app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
         data = {'volumeName': args.volume_name}
-        res = self.client.call_manager_post(service_id, "createVolume", data)
+        res = self.client.call_manager_post(app_id, service_id, "createVolume", data)
         if 'error' in res:
             self.client.error("Could not add volume to XtreemFS service %d: %s"
                               % (service_id, res['error']))
@@ -91,7 +91,7 @@ class XtreemFSCmd(ServiceCmd):
     def remove_volume(self, args):
         app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
         data = {'volumeName': args.volume_name}
-        res = self.client.call_manager_post(service_id, "deleteVolume", data)
+        res = self.client.call_manager_post(app_id, service_id, "deleteVolume", data)
         if 'error' in res:
             self.client.error("Could not remove volume %s from XtreemFS service %d: %s"
                               % (args.volume_name, service_id, res['error']))
@@ -120,7 +120,7 @@ class XtreemFSCmd(ServiceCmd):
         data = { 'passphrase': args.passphrase,
                  'adminflag': str(args.adminflag).lower() in ("yes", "y", "true", "t", "1") }
         filename = args.filename
-        res = self.client.call_manager_post(service_id, "get_client_cert", data)
+        res = self.client.call_manager_post(app_id, service_id, "get_client_cert", data)
         if 'error' in res:
             self.client.error("Could not create client certificate %s from XtreemFS service %d: %s"
                               % (args.filename, service_id, res['error']))
@@ -156,7 +156,7 @@ class XtreemFSCmd(ServiceCmd):
                   'passphrase': args.passphrase,
                   'adminflag': str(args.adminflag).lower() in ("yes", "y", "true", "t", "1") }
         filename = args.filename
-        res = self.client.call_manager_post(service_id, "get_user_cert", data)
+        res = self.client.call_manager_post(app_id, service_id, "get_user_cert", data)
         if 'error' in res:
             self.client.error("Could not create user certificate %s from XtreemFS service %d: %s"
                               % (args.filename, service_id, res['error']))
@@ -179,7 +179,7 @@ class XtreemFSCmd(ServiceCmd):
 
     def list_policies(self, args):
         app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
-        res = self.client.call_manager_get(service_id, POLICIES[args.policy_type]['list'])
+        res = self.client.call_manager_get(app_id, service_id, POLICIES[args.policy_type]['list'])
         if 'error' in res:
             self.client.error('Could not list XtreemFS policies'
                               ' for service id %s'
@@ -203,7 +203,7 @@ class XtreemFSCmd(ServiceCmd):
 
     def set_policy(self, args):
         app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
-        res = self.client.call_manager_post(service_id, POLICIES[args.policy_type]['set'])
+        res = self.client.call_manager_post(app_id, service_id, POLICIES[args.policy_type]['set'])
         if 'error' in res:
             self.client.error('Could not set XtreemFS policy'
                               ' for service id %s'
@@ -225,7 +225,7 @@ class XtreemFSCmd(ServiceCmd):
 
     def toggle_persistent(self, args):
         app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
-        res = self.client.call_manager_post(service_id, 'toggle_persistent')
+        res = self.client.call_manager_post(app_id, service_id, 'toggle_persistent')
         if 'error' in res:
             self.client.error('Could not set XtreemFS policy'
                               ' for service id %s'
@@ -252,7 +252,7 @@ class XtreemFSCmd(ServiceCmd):
         if args.volume_size <= 0:
             self.client.error('Cannot resize a volume to %s MB.' % args.volume_size)
         data = {'size': args.volume_size}
-        res = self.client.call_manager_post(service_id, 'set_osd_size', data)
+        res = self.client.call_manager_post(app_id, service_id, 'set_osd_size', data)
         if 'error' in res:
             self.client.error('Could not set XtreemFS volume size'
                               ' for service id %s'
