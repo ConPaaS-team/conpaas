@@ -35,6 +35,7 @@ class ServiceCmd(object):
         self._add_stop()
         self._add_get_config()
         self._add_get_state()
+        self._add_get_log()
         self._add_get_history()
         self._add_rename()
         self._add_remove()
@@ -261,6 +262,24 @@ class ServiceCmd(object):
 
         for key, value in res.items():
             print "%s: %s" % (key, value)
+
+    # ========== get_log
+    def _add_get_log(self):
+        subparser = self.add_parser('get_log', help="get service log")
+        subparser.set_defaults(run_cmd=self.get_log, parser=subparser)
+        subparser.add_argument('app_name_or_id',
+                               help="Name or identifier of an application")
+        subparser.add_argument('serv_name_or_id',
+                               help="Name or identifier of a service")
+
+    def get_log(self, args):
+        app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
+        res = self.client.call_manager_get(app_id, service_id, "getLog")
+        if res:
+            print("%s" % res['log'])
+        else:
+            self.client.error("Failed to retrieve log for service %s: %s"
+                              % (service_id, res['error']))
 
     # ========== get_history
     def _add_get_history(self):
