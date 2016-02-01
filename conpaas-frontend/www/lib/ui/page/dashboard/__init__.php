@@ -57,6 +57,14 @@ class Dashboard extends Page {
 	// 	return '';
 	// }
 
+	protected function renderRightMenu() {
+		return
+			'<div class="rightmenu">'.
+				LinkUI('application manager log', 'viewlog.php')
+					->setExternal(true).
+			'</div>';
+	}
+
 	private function renderName() {
 		return
 			'<div class="nameWrapper">'
@@ -72,6 +80,7 @@ class Dashboard extends Page {
     		.'<div class="info">'
     			.$this->renderName()
     		.'</div>'
+		.$this->renderRightMenu()
   		.'<div class="clear"></div>'
   	.'</div>';
 	}

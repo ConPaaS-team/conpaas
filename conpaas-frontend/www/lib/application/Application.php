@@ -68,6 +68,12 @@ class Application {
 		return $this->status;
 	}
 
+	public function fetchLog() {
+		$json = $this->managerRequest('get', 'getLog', 0, array());
+		$log = json_decode($json, true);
+		return $log['result']['log'];
+	}
+
 	private function decodeResponse($json, $method) {
 		$response = json_decode($json, true);
 		if ($response == null) {
