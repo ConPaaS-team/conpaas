@@ -183,7 +183,9 @@ class Service {
 		if ($info == null) {
 			return false;
 		}
-		return $info['result']['serviceNode'];
+		$info = $info['result']['serviceNode'];
+		$info['sid'] = $this->sid;
+		return $info;
 	}
 
 	protected function fetchNodesLists() {
@@ -244,6 +246,12 @@ class Service {
  		$log = json_decode($json, true);
  		return $log['result']['log'];
  	}
+
+	public function fetchAgentLog($params) {
+		$json = $this->application->managerRequest('get', 'get_agent_log', 0, $params);
+		$log = json_decode($json, true);
+		return $log['result']['log'];
+	}
 
  	private function changeNodes($command, $params) {
  		$nodes = array();

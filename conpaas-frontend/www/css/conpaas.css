@@ -750,6 +750,19 @@ input.button {
 	text-align: right;
 }
 
+.agent-logs {
+	padding-right: 12px;
+	padding-left: 12px;
+	font-weight: normal;
+	color: #666;
+	font-size: 10px;
+}
+
+.agent-ip-address {
+	width: 110px;
+	text-align: right;
+}
+
 .mysql-access .name {
 	width: 100px;
 }
@@ -821,19 +834,6 @@ input.button {
 	font-weight: normal;
 	color: #666;
 	font-size: 10px;
-}
-
-.generic-agent-logs {
-	padding-right: 12px;
-	padding-left: 12px;
-	font-weight: normal;
-	color: #666;
-	font-size: 10px;
-}
-
-.generic-ip-address {
-	width: 110px;
-	text-align: right;
 }
 
 .generic.create-volume-link {

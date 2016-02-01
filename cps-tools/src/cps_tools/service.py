@@ -42,6 +42,7 @@ class ServiceCmd(object):
         self._add_add_nodes()
         self._add_list_nodes()
         self._add_remove_nodes()
+        self._add_get_agent_log()
         self._add_help(serv_parser)
 
 
@@ -465,6 +466,32 @@ class ServiceCmd(object):
             # state = self.client.wait_for_state(app_id, service_id, ['RUNNING', 'ERROR'])
             # if state in ['ERROR']:
             #     self.client.error("Failed to remove nodes from service %s of application %s." % (service_id, app_id))
+
+    # ========== get_agent_log
+    def _add_get_agent_log(self):
+        subparser = self.add_parser('get_agent_log',
+                                    help="get the agent logs")
+        subparser.set_defaults(run_cmd=self.get_agent_log, parser=subparser)
+        subparser.add_argument('app_name_or_id',
+                               help="Name or identifier of an application")
+        subparser.add_argument('serv_name_or_id',
+                               help="Name or identifier of a service")
+        subparser.add_argument('agent_id',
+                               help="Id of the agent")
+        subparser.add_argument('-f', '--filename', metavar='FILENAME',
+                               default=None, help="log file name")
+
+    def get_agent_log(self, args):
+        app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
+        params = { 'agentId': args.agent_id }
+        if args.filename:
+            params['filename'] = args.filename
+        res = self.client.call_manager_get(app_id, 0, "get_agent_log", params)
+
+        if 'error' in res:
+            self.client.error(res['error'])
+        else:
+            print res['log']
 
 
 def main():

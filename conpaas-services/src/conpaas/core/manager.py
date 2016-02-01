@@ -17,6 +17,7 @@ import os
 import subprocess
 import re
 import logging
+import json, httplib
 
 from conpaas.core import git
 from conpaas.core import https 
@@ -175,7 +176,22 @@ class BaseManager(ConpaasRequestHandlerComponent):
         except:
             return HttpErrorResponse('Failed to read log')
 
-    
+    # the following two methods are the base agent client
+    def _check(self, response):
+        code, body = response
+        if code != httplib.OK: raise HttpError('Received http response code %d' % (code))
+        data = json.loads(body)
+        if data['error']: raise Exception(data['error'])
+        else : return data['result']
+
+    def fetch_agent_log(self, host, port, filename=None):
+        """GET (filename) get_log"""
+        method = 'get_log'
+        params = {}
+        if filename:
+            params['filename'] = filename
+        return self._check(https.client.jsonrpc_get(host, port, '/', method, params=params))
+
 
 
 class ApplicationManager(BaseManager):
@@ -799,6 +815,46 @@ class ApplicationManager(BaseManager):
             return HttpJsonResponse(open(fullpath).read())
         except IOError:
             return HttpErrorResponse('No startup script')
+
+    @expose('GET')
+    def get_agent_log(self, kwargs):
+        """Return logfile"""
+        if 'agentId' not in kwargs:
+            ex = ManagerException(ManagerException.E_ARGS_MISSING,
+                                  'agentId')
+            return HttpErrorResponse(ex.message)
+        if isinstance(kwargs['agentId'], dict):
+            ex = ManagerException(ManagerException.E_ARGS_INVALID,
+                                  detail='agentId should be a string')
+            return HttpErrorResponse(ex.message)
+        agentId = kwargs.pop('agentId')
+
+        if agentId not in [ node.id for node in self.nodes ]:
+            ex = ManagerException(ManagerException.E_ARGS_INVALID,
+                                  detail='Invalid agentId')
+            return HttpErrorResponse(ex.message)
+
+        if 'filename' not in kwargs:
+            filename = None
+        else:
+            if isinstance(kwargs['filename'], dict):
+                ex = ManagerException(ManagerException.E_ARGS_INVALID,
+                                      detail='filename should be a string')
+                return HttpErrorResponse(ex.message)
+            filename = kwargs.pop('filename')
+
+        if len(kwargs) != 0:
+            ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
+                                  kwargs.keys())
+            return HttpErrorResponse(ex.message)
+
+        try:
+            node_ip = [ node.ip for node in self.nodes
+                        if node.id == agentId ][0]
+            res = self.fetch_agent_log(node_ip, self.AGENT_PORT, filename)
+            return HttpJsonResponse(res)
+        except Exception, ex:
+            return HttpErrorResponse(ex.message)
 
     @expose('POST')
     def git_push_hook(self, kwargs):

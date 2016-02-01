@@ -59,7 +59,7 @@ class Dashboard extends Page {
 
 	protected function renderRightMenu() {
 		return
-			'<div class="rightmenu">'.
+			'<div id="appRightMenu" class="rightmenu" style="display:none">'.
 				LinkUI('application manager log', 'viewlog.php')
 					->setExternal(true).
 			'</div>';

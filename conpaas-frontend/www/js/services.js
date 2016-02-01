@@ -100,6 +100,7 @@ conpaas.ui = (function (this_module) {
                     if(app.status == 'INIT' || app.status == 'STOPPED' || app.status == 'EPILOGUE'){
                         $("#btnAddService").hide();
                         $("#btnStopApp").hide();
+                        $("#appRightMenu").hide();
                         if(app.status == 'EPILOGUE'){
                             that.displayInfo_('Starting application manager...');
                             return false
@@ -112,6 +113,7 @@ conpaas.ui = (function (this_module) {
                         $("#btnStartApp").hide();
                         $("#btnAddService").show();
                         $("#btnStopApp").show();
+                        $("#appRightMenu").show();
                         html = '<div class="instance dualbox"><div class="left"><i class="title">Instance iaas'+app.vmid+'</i><div class="tag blue">&nbsp;Application manager&nbsp;</div><div class="brief">running</div></div><div class="right"><i class="address">'+app.manager.replace('https://', '')+'</i></div><div class="clear"></div></div>'
                         $("#instances").html(html);
                         that.startingApp = false;

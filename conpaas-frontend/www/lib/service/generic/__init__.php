@@ -75,7 +75,7 @@ class GenericService extends Service {
 		} else {
 			$volumes = null;
 		}
-		return new GenericInstance($info, $this->sid, $volumes, $scriptStatus);
+		return new GenericInstance($info, $volumes, $scriptStatus);
 	}
 
 	public function createScriptStatusUI() {
@@ -112,12 +112,6 @@ class GenericService extends Service {
 		} else {
 			$this->scriptStatus = $status['result']['agents'];
 		}
-	}
-
-	public function fetchAgentLog($params) {
-		$json = $this->managerRequest('get', 'get_agent_log', $params);
-		$log = json_decode($json, true);
-		return $log['result']['log'];
 	}
 }
 

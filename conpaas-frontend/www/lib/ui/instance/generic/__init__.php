@@ -43,9 +43,8 @@ class GenericInstance extends Instance {
     private $scriptStatus = null;
     private $volumes = null;
 
-    public function __construct($info, $sid, $volumes, $scriptStatus) {
+    public function __construct($info, $volumes, $scriptStatus) {
         parent::__construct($info);
-        $this->sid = $sid;
         $this->volumes = $volumes;
         $this->scriptStatus = $scriptStatus;
     }
@@ -164,16 +163,16 @@ class GenericInstance extends Instance {
 
     private function renderAgentLogs() {
         $linkAgentLogs = LinkUI('agent log',
-            'viewlog.php?sid='.$this->sid
+            'viewlog.php?sid='.$this->info['sid']
             .'&agentId='.$this->info['id']
         )->setExternal(true);
         $linkAgentOut = LinkUI('agent output',
-            'viewlog.php?sid='.$this->sid
+            'viewlog.php?sid='.$this->info['sid']
             .'&agentId='.$this->info['id']
             .'&filename=agent.out'
         )->setExternal(true);
         $linkAgentErr = LinkUI('agent error',
-            'viewlog.php?sid='.$this->sid
+            'viewlog.php?sid='.$this->info['sid']
             .'&agentId='.$this->info['id']
             .'&filename=agent.err'
         )->setExternal(true);
@@ -203,10 +202,10 @@ class GenericInstance extends Instance {
                     .self::renderScriptStatusTable($this->scriptStatus)
                 .'</div>'
             .'</div>'
-            .'<div class="right generic-ip-address">'
+            .'<div class="right agent-ip-address">'
                 .'<i class="address">'.$this->info['ip'].'</i>'
             .'</div>'
-            .'<div class="right generic-agent-logs">'
+            .'<div class="right agent-logs">'
                 .$this->renderAgentLogs()
             .'</div>'
             .'<div class="clear"></div>'

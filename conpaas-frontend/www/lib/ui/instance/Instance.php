@@ -11,6 +11,15 @@ class Instance {
 		$this->info = $info;
 	}
 
+    private function renderAgentLogs() {
+        $linkAgentLogs = LinkUI('agent log',
+            'viewlog.php?sid='.$this->info['sid']
+            .'&agentId='.$this->info['id']
+        )->setExternal(true);
+        $html = $linkAgentLogs;
+        return $html;
+    }
+
 	public function render() {
 		return
 		'<div class="instance dualbox">'
@@ -19,8 +28,11 @@ class Instance {
 				.$this->renderCapabs()
 				.'<div class="brief">running</div>'
 			.'</div>'
-			.'<div class="right">'
+			.'<div class="right agent-ip-address">'
 				.'<i class="address">'.$this->info['ip'].'</i>'
+			.'</div>'
+			.'<div class="right agent-logs">'
+				.$this->renderAgentLogs()
 			.'</div>'
 			.'<div class="clear"></div>'
 		.'</div>';
@@ -33,8 +45,11 @@ class Instance {
 				.'<i class="title">Instance '.$this->info['id'].'</i>'
 				.'<i class="timestamp">running</i>'
 			.'</div>'
-			.'<div class="right">'
+			.'<div class="right agent-ip-address">'
 				.'<i class="address">'.$this->info['ip'].'</i>'
+			.'</div>'
+			.'<div class="right agent-logs">'
+				.$this->renderAgentLogs()
 			.'</div>'
 			.'<div class="clear"></div>'
 		.'</div>';

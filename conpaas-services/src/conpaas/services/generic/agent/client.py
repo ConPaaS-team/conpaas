@@ -116,11 +116,3 @@ def get_script_status(host, port):
     """GET () get_script_status"""
     method = 'get_script_status'
     return _check(https.client.jsonrpc_get(host, port, '/', method))
-
-def get_log(host, port, filename=None):
-    """GET (filename) get_log"""
-    method = 'get_log'
-    params = {}
-    if filename:
-        params['filename'] = filename
-    return _check(https.client.jsonrpc_get(host, port, '/', method, params=params))

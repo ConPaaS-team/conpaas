@@ -750,46 +750,6 @@ echo "" >> /root/generic.out
                 return HttpErrorResponse(ex.message)
         return HttpJsonResponse({ 'agents' : agents })
 
-    @expose('GET')
-    def get_agent_log(self, kwargs):
-        """Return logfile"""
-        if 'agentId' not in kwargs:
-            ex = ManagerException(ManagerException.E_ARGS_MISSING,
-                                  'agentId')
-            return HttpErrorResponse(ex.message)
-        if isinstance(kwargs['agentId'], dict):
-            ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                  detail='agentId should be a string')
-            return HttpErrorResponse(ex.message)
-        agentId = kwargs.pop('agentId')
-
-        if agentId not in [ node.id for node in self.nodes ]:
-            ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                  detail='Invalid agentId')
-            return HttpErrorResponse(ex.message)
-
-        if 'filename' not in kwargs:
-            filename = None
-        else:
-            if isinstance(kwargs['filename'], dict):
-                ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                      detail='filename should be a string')
-                return HttpErrorResponse(ex.message)
-            filename = kwargs.pop('filename')
-
-        if len(kwargs) != 0:
-            ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
-                                  kwargs.keys())
-            return HttpErrorResponse(ex.message)
-
-        try:
-            node_ip = [ node.ip for node in self.nodes
-                        if node.id == agentId ][0]
-            res = client.get_log(node_ip, self.AGENT_PORT, filename)
-            return HttpJsonResponse(res)
-        except Exception, ex:
-            return HttpErrorResponse(ex.message)
-
     def _configuration_get(self):
         return self.service_config
 

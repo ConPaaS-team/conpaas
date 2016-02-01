@@ -8,6 +8,7 @@
 
     :copyright: (C) 2010-2013 by Contrail Consortium.
 """
+import os.path
 
 from conpaas.core.expose import expose
 from conpaas.core.log import create_logger
@@ -34,6 +35,9 @@ class BaseAgent(ConpaasRequestHandlerComponent):
         service_type = config_parser.get('agent', 'TYPE')
         user_id      = config_parser.get('agent', 'USER_ID')
         service_id   = config_parser.get('agent', 'SERVICE_ID')
+
+        self.LOG_FILE = config_parser.get('agent', 'LOG_FILE')
+        self.ROOT_DIR = '/root'
 
         self.logger.info("'%s' agent started (uid=%s, sid=%s)" % (
             service_type, user_id, service_id))
@@ -67,6 +71,27 @@ class BaseAgent(ConpaasRequestHandlerComponent):
         if len(kwargs) != 0:
             return HttpErrorResponse('ERROR: Arguments unexpected')
         return HttpJsonResponse()
+
+    @expose('GET')
+    def get_log(self, kwargs):
+        """Return the contents of a logfile"""
+        if 'filename' not in kwargs:
+            filename = self.LOG_FILE
+        else:
+            filename = kwargs.pop('filename')
+            if filename not in ( 'agent.out', 'agent.err' ):
+                return HttpErrorResponse("ERROR: Invalid log filename: '%s'"
+                        % filename)
+            filename = os.path.join(self.ROOT_DIR, filename)
+
+        if len(kwargs) != 0:
+            return HttpErrorResponse(AgentException(
+                AgentException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
+
+        try:
+            return HttpJsonResponse({'log': open(filename).read()})
+        except:
+            return HttpErrorResponse("Failed to read log file: '%s'" % filename)
 
 class AgentException(Exception):
 
