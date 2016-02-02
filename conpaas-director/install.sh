@@ -8,7 +8,7 @@ fi
 
 # Installing required Debian packages
 apt-get update
-apt-get -y --force-yes install build-essential python-setuptools python-dev apache2 libapache2-mod-wsgi libcurl4-openssl-dev ntpdate lynx moreutils
+apt-get -y --force-yes install build-essential python-setuptools python-dev apache2 libapache2-mod-wsgi libcurl4-openssl-dev ntpdate lynx moreutils python-cheetah
 
 # Reinstalling setuptools (fixes a bug on some upgrade installations)
 apt-get -y --force-yes --reinstall install python-setuptools
