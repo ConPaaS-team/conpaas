@@ -35,8 +35,9 @@ class MySQLService extends Service {
 	}
 
 	public function needsPasswordReset() {
+		$flag = 'must_reset_passwd_for_aid'.$_SESSION['aid'].'_sid'.$this->sid;
 		return
-			isset($_SESSION['must_reset_passwd_for_'.$this->sid]);
+			isset($_SESSION[$flag]);
 	}
 
 	public function setPassword($user, $password) {
@@ -44,7 +45,8 @@ class MySQLService extends Service {
 			'user' => $user,
 			'password' => $password
 		));
-		unset($_SESSION['must_reset_passwd_for_'.$this->sid]);
+		$flag = 'must_reset_passwd_for_aid'.$_SESSION['aid'].'_sid'.$this->sid;
+		unset($_SESSION[$flag]);
 		return $resp;
 	}
 
