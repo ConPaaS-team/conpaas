@@ -87,9 +87,9 @@ class Configuration(object):
     glb_service_nodes = {}
     serviceNodes = {}
 
-    def __init__(self, configuration):
+    def __init__(self, configuration, logger):
         '''Representation of the deployment configuration'''
-        self.logger = create_logger(__name__)
+        self.logger = logger
         self.mysql_count = 0
         self.serviceNodes = {}
         self.glb_service_nodes = {}

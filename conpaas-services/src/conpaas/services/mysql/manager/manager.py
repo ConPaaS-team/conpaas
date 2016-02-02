@@ -34,12 +34,11 @@ class MySQLManager(BaseManager):
         BaseManager.__init__(self, conf)
 
         self.logger.debug("Entering MySQLServerManager initialization")
-        
 
         #(genc): this is ignored at the moment
         # self.controller.config_clouds({"mem": "512", "cpu": "1"})
         self.root_pass = None
-        self.config = Configuration(conf)
+        self.config = Configuration(conf, self.logger)
         self.logger.debug("Leaving MySQLServer initialization")
 
     def get_service_type(self):
