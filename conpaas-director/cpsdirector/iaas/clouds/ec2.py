@@ -77,48 +77,112 @@ class EC2Cloud(Cloud):
         if context is not None:
             self._context = context
 
-    def new_instances(self, count, name='conpaas', inst_type=None):
+    def new_instances(self, nodes_info):
         if self.connected is False:
             self._connect()
 
-        if inst_type is None:
-            inst_type = self.size_id
+        lc_nodes = []
 
-        # available sizes
-        sizes = self.driver.list_sizes()
+        for node_info in nodes_info:
 
-        # available size IDs
-        size_ids = [ size.id for size in sizes ] 
+            if 'inst_type' in node_info and node_info['inst_type'] is not None:
+                inst_type = node_info['inst_type']
+            else:
+                inst_type = self.size_id
 
-        try:
-            # index of the size we want
-            size_idx = size_ids.index(inst_type)
-        except ValueError:
-            # size not found
-            raise Exception("Requested size not found. '%s' not in %s" % (
-                inst_type, size_ids)) 
+            # available sizes
+            sizes = self.driver.list_sizes()
 
-        size = sizes[size_idx]
+            # available size IDs
+            size_ids = [ size.id for size in sizes ]
 
-        img = NodeImage(self.img_id, '', None)
+            try:
+                # index of the size we want
+                size_idx = size_ids.index(inst_type)
+            except ValueError:
+                # size not found
+                raise Exception("Requested size not found. '%s' not in %s" % (
+                    inst_type, size_ids))
 
-        kwargs = {
-            'size': size,
-            'image': img,
-            'name': name,
-            'ex_mincount': str(count),
-            'ex_maxcount': str(count),
-            'ex_securitygroup': self.sg,
-            'ex_keyname': self.key_name,
-            'ex_userdata': self.get_context(),
-        }
+            size = sizes[size_idx]
 
-        nodes = self._create_service_nodes(self.driver.create_node(**kwargs))
+            img = NodeImage(self.img_id, '', None)
 
-        if type(nodes) is list:
-            return nodes
+            kwargs = {
+                'size': size,
+                'image': img,
+                'name': node_info['name'],
+                'ex_mincount': 1,
+                'ex_maxcount': 1,
+                'ex_securitygroup': self.sg,
+                'ex_keyname': self.key_name,
+                'ex_userdata': self.get_context(),
+            }
 
-        return [ nodes ]
+            lc_node = self.driver.create_node(**kwargs)
+
+            node_info['id'] = lc_node.id
+
+            if 'volumes' in node_info:
+                for vol in node_info['volumes']:
+                    vol['vm_id'] = lc_node.id
+                    vol['vol_name'] = vol['vol_name'] % vol
+                    lc_volume = self.create_volume(vol['vol_size'], vol['vol_name'], vol['vm_id'])
+                    vol['vol_id'] = lc_volume.id
+                    class volume:
+                        id = vol['vol_id']
+                    class node:
+                        id = vol['vm_id']
+                    self.attach_volume(node, volume, vol['dev_name'])
+
+            lc_nodes += [lc_node]
+
+        nodes = self._create_service_nodes(lc_nodes, nodes_info)
+
+        return nodes
+
+    # def new_instances(self, count, name='conpaas', inst_type=None):
+    #     if self.connected is False:
+    #         self._connect()
+
+    #     if inst_type is None:
+    #         inst_type = self.size_id
+
+    #     # available sizes
+    #     sizes = self.driver.list_sizes()
+
+    #     # available size IDs
+    #     size_ids = [ size.id for size in sizes ]
+
+    #     try:
+    #         # index of the size we want
+    #         size_idx = size_ids.index(inst_type)
+    #     except ValueError:
+    #         # size not found
+    #         raise Exception("Requested size not found. '%s' not in %s" % (
+    #             inst_type, size_ids))
+
+    #     size = sizes[size_idx]
+
+    #     img = NodeImage(self.img_id, '', None)
+
+    #     kwargs = {
+    #         'size': size,
+    #         'image': img,
+    #         'name': name,
+    #         'ex_mincount': str(count),
+    #         'ex_maxcount': str(count),
+    #         'ex_securitygroup': self.sg,
+    #         'ex_keyname': self.key_name,
+    #         'ex_userdata': self.get_context(),
+    #     }
+
+    #     nodes = self._create_service_nodes(self.driver.create_node(**kwargs))
+
+    #     if type(nodes) is list:
+    #         return nodes
+
+    #     return [ nodes ]
 
     def create_volume(self, size, name, vm_id):
         node = [ node for node in self.driver.list_nodes() 
@@ -148,4 +212,15 @@ class EC2Cloud(Cloud):
                 time.sleep(10)
 
         self.logger.exception("Volume %s NOT available after timeout" %
+                volume)
+
+    def destroy_volume(self, volume):
+        for _ in range(10):
+            try:
+                return self.driver.destroy_volume(volume)
+            except Exception:
+                self.logger.info("Volume %s cannot be destroyed yet" % volume)
+                time.sleep(10)
+
+        self.logger.exception("Volume %s still cannot be destroyed after timeout" %
                 volume)

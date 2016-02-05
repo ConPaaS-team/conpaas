@@ -475,7 +475,7 @@ class Controller(object):
         class volume:
             id = volume_id
         self._logger.debug("destroy_volume(volume=%s)" % volume.id)
-        return cloud.driver.destroy_volume(volume)    
+        return cloud.destroy_volume(volume)
 
 
     def _create_manager_config(self, user_id, app_id, vpn=None):

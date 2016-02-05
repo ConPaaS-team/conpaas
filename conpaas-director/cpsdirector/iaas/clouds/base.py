@@ -213,23 +213,29 @@ class Cloud:
             self._connect()
 
         libcloud_node = node.as_libcloud_node()
-        # Delete also the volumes atached to the node (not sure if this is cross-cloud)
-        volumes = filter(lambda x: False if len(x.extra['attachments'])==0 else x.extra['attachments'][0]['serverId']==libcloud_node.id, self.driver.list_volumes())
-        self.logger.debug('delete these volumes: %s' % volumes)
-        for volume in volumes:
-            self.detach_volume(volume)
-            status=volume.extra['state']
-            while status != 'available':
-                status=filter(lambda x: x.id==volume.id, self.driver.list_volumes())[0].extra['state']
-                time.sleep(1)
-                
-            self.driver.destroy_volume(volume)
 
+        # Delete also the volumes atached to the node (not sure if this is cross-cloud)
+
+        # (teodor) This of course does not work on Amazon EC2.
+        #          For the moment, I ignore any exception thrown, which will result in
+        #          volumes not being deleted on EC2.
+        # TODO:    This needs to be fixed asap.!
+
+        try:
+            volumes = filter(lambda x: False if len(x.extra['attachments'])==0 else x.extra['attachments'][0]['serverId']==libcloud_node.id, self.driver.list_volumes())
+            self.logger.debug('delete these volumes: %s' % volumes)
+            for volume in volumes:
+                self.detach_volume(volume)
+                status=volume.extra['state']
+                while status != 'available':
+                    status=filter(lambda x: x.id==volume.id, self.driver.list_volumes())[0].extra['state']
+                    time.sleep(1)
+
+                self.driver.destroy_volume(volume)
+        except Exception:
+            pass
 
         destroy_res = self.driver.destroy_node(libcloud_node)
-        
-        
-        
         return destroy_res
 
     def create_volume(self, size, name, vm_id=None):
@@ -242,4 +248,6 @@ class Cloud:
     def detach_volume(self, volume):
         return self.driver.detach_volume(volume)
 
-   
+    def destroy_volume(self, volume):
+        return self.driver.destroy_volume(volume)
+

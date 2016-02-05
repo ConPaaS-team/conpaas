@@ -146,7 +146,7 @@ class OpenStackCloud(Cloud):
                 for vol in node_info['volumes']:
                     vol['vm_id'] = lc_node.id
                     vol['vol_name'] = vol['vol_name'] % vol
-                    lc_volume=self.create_volume(vol['vol_size'], vol['vol_name'])
+                    lc_volume=self.create_volume(vol['vol_size'], vol['vol_name'], vol['vm_id'])
                     vol['vol_id'] = lc_volume.id
                     class volume:
                         id = vol['vol_id']
