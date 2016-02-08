@@ -251,10 +251,8 @@ class ApplicationManager(BaseManager):
         self.state_set(self.S_ADAPTING)
         self.kwargs.update(kwargs)
 
-        exp_params = [('service_type', is_in_list(manager_services.keys())),
-                        ('cloud_name', is_string)]
-        [service_type, cloud ] = check_arguments(exp_params, kwargs)
-
+        exp_params = [('service_type', is_in_list(manager_services.keys()))]
+        service_type = check_arguments(exp_params, kwargs)
 
         services = manager_services
 

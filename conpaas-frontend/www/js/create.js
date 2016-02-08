@@ -49,8 +49,7 @@ conpaas.ui = (function (this_module) {
         $('#pgstatLoadingText').html('adding service...');
         conpaas.ui.visible('pgstatLoading', true);
         page.server.req('ajax/addService.php', {
-            type: page.selectedService.find(':radio').val(),
-            cloud: $('input[name=available_clouds]:checked').val(),
+            type: page.selectedService.find(':radio').val()
         }, 'post', function (response) {
             var service, servicePage;
             conpaas.ui.visible('pgstatLoading', false);

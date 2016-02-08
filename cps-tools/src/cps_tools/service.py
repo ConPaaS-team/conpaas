@@ -92,8 +92,6 @@ class ServiceCmd(object):
         if self.type is None:
             subparser.add_argument('service_type',
                                    help="Type of the new service")
-        subparser.add_argument('--cloud', metavar='NAME', default=None,
-                               help="Cloud name where the service manager will be created.")
         subparser.add_argument('--application', metavar='ID_OR_NAME',
                                default=None, help="Application for which the service is created.")
 
@@ -107,11 +105,7 @@ class ServiceCmd(object):
         else:
             stype = args.service_type
 
-        if args.cloud is None:
-            res = self.client.call_director_post("add/" + stype, data)
-        else:
-            res = self.client.call_director_post("add/" + stype
-                                                 + '/' + args.cloud, data)
+        res = self.client.call_director_post("add/" + stype, data)
         if 'error' in res:
             self.client.error("failed to add %s service" % stype)
         else:
@@ -418,7 +412,7 @@ class ServiceCmd(object):
         
         app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
         # res = self.client.call_manager_post(app_id, service_id, "add_nodes", data)
-        
+
         data={}
         data['nodes'] = nodes
         data['service_id'] = service_id

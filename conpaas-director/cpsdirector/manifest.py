@@ -337,7 +337,7 @@ class MGeneral(object):
         if json.get('Cloud'):
             cloud = json.get('Cloud')
 
-        res = add_service(servicetype, cloud, appid)
+        res = add_service(servicetype, appid)
         
         #FIXME: fix this error checking here
         # error = self.check_error(res)

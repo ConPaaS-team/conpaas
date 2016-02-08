@@ -104,17 +104,20 @@ conpaas.ui = (function (this_module) {
                         if(app.status == 'EPILOGUE'){
                             that.displayInfo_('Starting application manager...');
                             return false
-                        }else
+                        } else {
                             $("#btnStartApp").show();
+                            $("#cloudProviders").show();
+                        }
 
 
                     }else
                     {
                         $("#btnStartApp").hide();
+                        $("#cloudProviders").hide();
                         $("#btnAddService").show();
                         $("#btnStopApp").show();
                         $("#appRightMenu").show();
-                        html = '<div class="instance dualbox"><div class="left"><i class="title">Instance iaas'+app.vmid+'</i><div class="tag blue">&nbsp;Application manager&nbsp;</div><div class="brief">running</div></div><div class="right"><i class="address">'+app.manager.replace('https://', '')+'</i></div><div class="clear"></div></div>'
+                        html = '<div class="instance dualbox"><div class="left"><i class="title">Instance '+app.cloud+app.vmid+'</i><div class="tag blue">&nbsp;Application manager&nbsp;</div><div class="brief">running</div></div><div class="right"><i class="address">'+app.manager.replace('https://', '')+'</i></div><div class="clear"></div></div>'
                         $("#instances").html(html);
                         that.startingApp = false;
                         that.poller = new conpaas.http.Poller(that.server, 'ajax/checkServices.php', 'get');
@@ -141,7 +144,10 @@ conpaas.ui = (function (this_module) {
         var page = event.data;
         page.startingApp = true;
         $("#btnStartApp").hide();
-        page.server.req('ajax/startApplication.php', {}, 'post', 
+        $("#cloudProviders").hide();
+        page.server.req('ajax/startApplication.php', {
+                cloud: $('input[name=available_clouds]:checked').val()
+            }, 'post',
             function(){
                 page.displayInfo_('Starting application manager...');
                 page.checkApplication();      

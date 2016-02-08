@@ -14,6 +14,36 @@ class Dashboard extends Page {
 		$this->addJS('js/services.js');
 	}
 
+	public function renderCloudProviders() {
+		$clouds = json_decode(HTTPS::get(Conf::DIRECTOR . '/available_clouds'));
+		$clouds_html = '';
+
+		foreach($clouds as $cloud) {
+			if ($cloud === 'default')
+				$checked = 'checked';
+			else
+				$checked = '';
+
+			$clouds_html .= '<input type="radio"' . $checked
+				.' name="available_clouds" value="'.$cloud.'"/>'
+				.$cloud.'<br/>';
+		}
+
+		return
+			'<table id="cloudProviders" class="form" cellspacing="0" cellpading="0" '
+					.'style="display:none">'
+  				.'<tr>'
+  				.'<td colspan="2">&nbsp;</td>'
+  				.'</tr>'
+  				.'<tr>'
+  				.'<td class="appdescription">cloud provider</td>'
+  				.'<td class="input">'
+  				.$clouds_html
+  				.'</td>'
+  				.'</tr>'
+  				.'</table>';
+	}
+
 	public function renderPageHeader() {
 		return
 			'<div class="menu">'
@@ -23,7 +53,9 @@ class Dashboard extends Page {
   				.'</a>'
   				.'<a id="btnStartApp" class="button" href="#" style="display:none">'
   					.'<img  src="images/play.png"/> start application'
-  				.'</a></td><td align="right">'
+  				.'</a>'
+				.$this->renderCloudProviders()
+				.'</td><td align="right">'
   				.'<a id="btnStopApp" class="button" href="#" style="display:none">'
   					.'<img  src="images/remove.png"/> stop application'
   				.'</a>'

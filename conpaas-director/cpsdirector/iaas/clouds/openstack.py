@@ -116,10 +116,9 @@ class OpenStackCloud(Cloud):
     def new_instances(self, nodes_info):
         if self.connected is False:
             self._connect()
-        
-    
+
         lc_nodes = []
-        
+
         for node_info in nodes_info:
             flavor = self.size
             if 'inst_type' in node_info and node_info['inst_type'] is not None:
@@ -134,19 +133,19 @@ class OpenStackCloud(Cloud):
                 'ex_keyname': self.key_name,
                 'ex_userdata': self.get_context()
             }
-            
+
             if self.network:
                 kwargs['networks'] = [self.network]
 
             lc_node = self.driver.create_node(**kwargs)
-            
-            node_info['id']=lc_node.id
+
+            node_info['id'] = lc_node.id
 
             if 'volumes' in node_info:
                 for vol in node_info['volumes']:
                     vol['vm_id'] = lc_node.id
                     vol['vol_name'] = vol['vol_name'] % vol
-                    lc_volume=self.create_volume(vol['vol_size'], vol['vol_name'], vol['vm_id'])
+                    lc_volume = self.create_volume(vol['vol_size'], vol['vol_name'], vol['vm_id'])
                     vol['vol_id'] = lc_volume.id
                     class volume:
                         id = vol['vol_id']
@@ -155,7 +154,7 @@ class OpenStackCloud(Cloud):
                     self.attach_volume(node, volume, vol['dev_name'])
 
             lc_nodes += [lc_node]
-        
+
         if not self.auto_assing_floating:
             self.associate_floating_ips(lc_nodes)
 

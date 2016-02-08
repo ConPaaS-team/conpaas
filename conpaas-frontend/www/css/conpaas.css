@@ -602,6 +602,16 @@ tr.service {
 	width: 80px;
 }
 
+.form .appdescription {
+	color: #666;
+	font-size: 12px;
+	font-weight: bold;
+	padding: 5px 0px 5px 0px;
+	text-align: right;
+	line-height: 20px;
+	width: 60px;
+}
+
 .createpage .form .service {
 	cursor: pointer;
 }

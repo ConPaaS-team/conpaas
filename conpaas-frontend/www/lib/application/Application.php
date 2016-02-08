@@ -8,7 +8,7 @@ require_module('https');
 
 class Application {
 
-	protected $aid, $name, $user_id, $manager, $manager_ip, $status, $vmid;
+	protected $aid, $name, $user_id, $manager, $manager_ip, $status, $vmid, $cloud;
 
 
 	private $errorMessage = null;
@@ -64,6 +64,10 @@ class Application {
 		return $this->vmid;
 	}
 
+	public function getCloud() {
+		return $this->cloud;
+	}
+
 	public function getStatus() {
 		return $this->status;
 	}
@@ -108,6 +112,7 @@ class Application {
 			'name' => $this->name,
 			'manager' => $this->manager,
 			'vmid' => $this->vmid,
+			'cloud' => $this->cloud,
 			'status' => $this->status,
 		);
 	}

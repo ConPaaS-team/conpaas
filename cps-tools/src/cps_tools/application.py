@@ -105,7 +105,7 @@ class ApplicationCmd:
 
     def list_appl(self, _args):
         apps = self.client.call_director_get("listapp")
-        
+
         if apps:
             print(self.client.prettytable(('aid', 'name', 'manager', 'status'), apps))
         else:
@@ -162,6 +162,8 @@ class ApplicationCmd:
         subparser.set_defaults(run_cmd=self.start_appl, parser=subparser)
         subparser.add_argument('appl_id',
                                help="Identifier of the application to start")
+        subparser.add_argument('--cloud', metavar='NAME', default=None,
+                               help="Cloud where the application manager will be created.")
 
     def start_appl(self, args):
         try:
@@ -170,7 +172,10 @@ class ApplicationCmd:
             ex = sys.exc_info()[1]
             self.client.error("%s" % ex)
 
-        res = self.client.call_director_post("startapp/%d" % app_id)
+        if args.cloud is None:
+            res = self.client.call_director_post("startapp/%d" % app_id)
+        else:
+            res = self.client.call_director_post("startapp/%d/%s" % (app_id, args.cloud))
         if res:
             print("Application \'%s\' with id %s has started." % (app_name, app_id))
         else:

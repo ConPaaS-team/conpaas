@@ -26,17 +26,17 @@ class DirectorCallbacker(object):
     #     return nodes
 
     def create_nodes(self, nodes_info, service_id, service_manager):
-        #set cloud if not already set
+        # set cloud if not already set
         for node in nodes_info:
             if not node['cloud']:
                 node['cloud'] = 'default'
 
-        params = {'nodes_info':nodes_info, 
-                 'app_id':self.config_parser.get("manager", "APP_ID"), 
-                 'service_id':service_id,
-                 'manager_ip':self.config_parser.get("manager", "MY_IP"), 
-                 'service_type':service_manager.get_service_type(),
-                 'context': service_manager.get_context_replacement()}
+        params = { 'nodes_info':nodes_info,
+                   'app_id':self.config_parser.get("manager", "APP_ID"),
+                   'service_id':service_id,
+                   'manager_ip':self.config_parser.get("manager", "MY_IP"),
+                   'service_type':service_manager.get_service_type(),
+                   'context': service_manager.get_context_replacement() }
 
         basedir = self.config_parser.get('manager', 'CONPAAS_HOME')
         filename = 'startup.sh'

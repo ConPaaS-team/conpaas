@@ -161,7 +161,7 @@ from cpsdirector.application import get_default_app, get_app_by_id
 
 from cpsdirector.user import cert_required
 
-def _add(service_type, cloud_name, app_id):
+def _add(service_type, app_id):
     log('User %s creating a new %s service for application %s' % (g.user.username, service_type, app_id))
 
     # Use default application id if no appid was specified
@@ -180,7 +180,7 @@ def _add(service_type, cloud_name, app_id):
         log(error_msg)
         return build_response(jsonify({ 'error': True,'msg': error_msg }))
 
-    data = {'service_type': service_type, 'cloud_name': cloud_name}
+    data = { 'service_type': service_type }
     res  = callmanager(app_id, 0, "add_service", True, data)
     
     if 'service_id' in res:  
@@ -197,9 +197,8 @@ def _add(service_type, cloud_name, app_id):
 
 
 @service_page.route("/add/<servicetype>", methods=['POST'])
-@service_page.route("/add/<servicetype>/<cloudname>", methods=['POST'])
 @cert_required(role='user')
-def add(servicetype, cloudname="default"):
+def add(servicetype):
     """eg: POST /start/php
 
     POSTed values might contain 'appid' to specify that the service to be
@@ -212,7 +211,7 @@ def add(servicetype, cloudname="default"):
     """
     appid = request.values.get('appid')
 
-    return build_response(jsonify(_add(servicetype, cloudname, appid)))
+    return build_response(jsonify(_add(servicetype, appid)))
 
 def _rename(app_id, serviceid, newname):
     log('User %s attempting to rename service %s' % (g.user.uid, serviceid))

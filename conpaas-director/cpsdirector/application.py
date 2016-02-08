@@ -72,10 +72,13 @@ class Application(db.Model):
             self.status = Application.A_INIT
 
     def to_dict(self):
-        app_to_dict = {'aid': self.aid, 'name': self.name, 'uid':self.user_id, 'status':self.status, 'manager':None, 'vmid':None}
+        app_to_dict = { 'aid': self.aid, 'name': self.name,
+                        'uid' : self.user_id, 'status' : self.status,
+                        'manager' : None, 'vmid' : None, 'cloud' : None }
         if self.manager:
             app_to_dict['manager'] = self.manager.ip
             app_to_dict['vmid'] = self.manager.vmid
+            app_to_dict['cloud'] = self.manager.cloud
         return app_to_dict
        
 
@@ -180,11 +183,11 @@ def _startapp(user_id, app_id, cloud_name, new_thread=True):
         return { 'error': True, 'msg': 'Insufficient credits' }
     try:
         app.status = Application.A_EPILOGUE
-       
+
         vpn = app.get_available_vpn_subnet()
 
-        # node = create_nodes({'role':'manager','user_id':user_id, 'app_id':app_id, 'vpn':vpn, 'cloud_name':cloud_name})[0]
-        man_args = {'role':'manager','user_id':user_id, 'app_id':app_id, 'vpn':vpn, 'cloud_name':cloud_name}
+        man_args = { 'role' : 'manager', 'user_id' : user_id, 'app_id' : app_id,
+                    'vpn' : vpn, 'nodes_info' : [{ 'cloud' : cloud_name }] }
         if new_thread:
             Thread(target=create_nodes, args=[man_args]).start()
         else:

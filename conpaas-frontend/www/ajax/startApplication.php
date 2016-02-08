@@ -23,10 +23,11 @@ try {
 	}
 
 	$aid = $_SESSION['aid'];
-	
+	$cloud= $_POST['cloud'];
+
 	session_write_close();
 
-	$res = json_decode(HTTPS::post(Conf::DIRECTOR . '/startapp/' . $aid,
+	$res = json_decode(HTTPS::post(Conf::DIRECTOR . '/startapp/' . $aid . '/' . $cloud,
 		array(), false, $_SESSION['uid']));
 
 	if (!$res) {

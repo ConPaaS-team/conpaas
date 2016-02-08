@@ -114,27 +114,6 @@ $page = new CreatePage();
 -->
 <!--    BLUE_PRINT_INSERT    do not remove this line: it is a placeholder for installing new services -->
           </table>
-          <table class="form" cellspacing="0" cellpading="0">
-
-              <tr>
-                  <td colspan="2">&nbsp;</td>
-              </tr>
-              <tr>
-                  <td class="description">cloud provider</td>
-                  <td class="input">
-                  <?php
-                       $clouds = json_decode(HTTPS::get(Conf::DIRECTOR . '/available_clouds'));
-                       
-                       foreach($clouds as $cloud){
-                           if ($cloud === 'default')
-                            $checked = 'checked';
-                           else
-                            $checked = '';
-                           echo '<input type="radio"' . $checked . ' name="available_clouds" value="'.$cloud.'"/>'.$cloud.'<br/>';
-                       }?>
-                  </td>
-              </tr>
-          </table>
           <div class="createWrap">
             <a id="create" class="button" href="javascript: void(0);">
                   <img src="images/service-plus.png" style="vertical-align: top;"/> add service

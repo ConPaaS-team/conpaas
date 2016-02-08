@@ -81,33 +81,37 @@ def available_clouds():
     return simplejson.dumps(clouds)
 
 
+def _get_cloud_list(nodes_info):
+    # the default cloud is always called 'iaas'
+    for ninfo in nodes_info:
+        if not ninfo['cloud'] or ninfo['cloud'] == 'default' or ninfo['cloud'] == 'None':
+            ninfo['cloud'] = 'iaas'
+
+    return list(set([ninfo['cloud'] for ninfo in nodes_info]))
+
+
 from cpsdirector.credits import Credit
 def _create_nodes(kwargs):
-    
+
     role = kwargs.pop('role')
-    cloud_name = kwargs.pop('cloud_name')
-    
+    nodes_info = kwargs.pop('nodes_info')
+    clouds = _get_cloud_list(nodes_info)
+
     app_id = kwargs.pop('app_id')
-    # user_id = '%s'%g.user.uid
     user_id = kwargs.pop('user_id')
     nodes = None
     service_id = 0
-
-    
 
     from cpsdirector.application import Application, get_app_by_id
     application = get_app_by_id(user_id, app_id)
     if role == 'manager':
         vpn = kwargs.pop('vpn')
         controller = ManagerController(user_id, app_id, vpn)
-        controller.generate_context(cloud_name)      
-        # nodes = controller.create_nodes(1,  cloud_name)
-        nodes = controller.create_nodes([{'cloud':cloud_name}])
-        
-        application.status = Application.A_RUNNING
+        controller.generate_context(clouds)
+        nodes = controller.create_nodes(nodes_info, clouds)
 
+        application.status = Application.A_RUNNING
     else:
-        nodes_info = kwargs.pop('nodes_info')
         service_id = kwargs.pop('service_id')
         service_type = kwargs.pop('service_type')
         manager_ip = kwargs.pop('manager_ip')
@@ -115,22 +119,21 @@ def _create_nodes(kwargs):
         startup_script = kwargs.pop('startup_script')
 
         log('type: %s' % service_type)
-  
+
         controller = AgentController(user_id, app_id, service_id, service_type, manager_ip)
-        controller.generate_context(cloud_name, context, startup_script)
-        
-        nodes = controller.create_nodes(nodes_info)
-    
+        controller.generate_context(clouds, context, startup_script)
+        nodes = controller.create_nodes(nodes_info, clouds)
+
     if nodes:
         for node in nodes:
-            resource = Resource(vmid=node.vmid, ip=node.ip, app_id=app_id, service_id=service_id, role=role, cloud=cloud_name)
+            resource = Resource(vmid=node.vmid, ip=node.ip, app_id=app_id, service_id=service_id, role=role, cloud=node.cloud_name)
             db.session.add(resource)
 
         db.session.flush()
         db.session.commit()
 
         Credit().check_credits()
-      
+
     return nodes
 
 
@@ -139,7 +142,7 @@ def _create_nodes(kwargs):
 @cert_required(role='manager')
 def create_nodes():
     """GET /create_nodes"""
-    
+
     app_id = request.values.get('app_id')
     service_id = request.values.get('service_id')
     service_type = request.values.get('service_type')
@@ -150,17 +153,16 @@ def create_nodes():
     # log('startup_script :%s' % startup_script)
     # FIXME: make this get driectly a json
     nodes_info = simplejson.loads(request.values.get('nodes_info').replace("u'", '"').replace("'", '"'))
-    cloud_name = request.values.get('cloud_name', 'default')
     context = simplejson.loads(request.values.get('context').replace("'", "\""))
     # inst_type = request.values.get('inst_type')
-    
-    if g.user.credit <= 0:
-        return simplejson.dumps({ 'error': True,'msg': 'Insufficient credits'})
 
-    nodes = _create_nodes({'role':'agent', 'app_id':app_id, 'user_id':'%s'%g.user.uid, 'cloud_name':cloud_name, 
+    if g.user.credit <= 0:
+        return simplejson.dumps({ 'error': True,'msg': 'Insufficient credits' })
+
+    nodes = _create_nodes({ 'role':'agent', 'app_id':app_id, 'user_id':'%s'%g.user.uid,
                     'service_id':service_id, 'service_type':service_type, 'nodes_info':nodes_info, 
-                    'manager_ip':manager_ip, 'context':context, 'startup_script':startup_script})
-    
+                    'manager_ip':manager_ip, 'context':context, 'startup_script':startup_script })
+
     return simplejson.dumps([node.to_dict() for node in nodes])
 
 

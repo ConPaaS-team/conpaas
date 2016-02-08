@@ -106,23 +106,16 @@ class Controller(object):
     #=========================================================================#
     #               generate_context(self, service_name, replace, cloud)      #
     #=========================================================================#
-    def generate_context(self, cloud_name=None, context_replacement={}, startup_script=None, ip_whitelist=None):
-        """Generates the contextualization file for the default/given cloud.
-
-            @param cloud (Optional) If specified, the context will be generated
-                         for it, otherwise it will be generated for all the
-                         available clouds
-
-            @param service_name Used to know which config_files and scripts
-                                to select
+    def generate_context(self, clouds, context_replacement={}, startup_script=None, ip_whitelist=None):
+        """Generates the contextualization file for the given clouds.
         """
         # COMMENT (genc): what is ip_whitelist?
 
-        cloud = self.get_cloud_by_name(cloud_name)
+        for cloud_name in clouds:
+            cloud = self.get_cloud_by_name(cloud_name)
 
-        
-        contxt = self._generate_context_file(cloud, context_replacement, startup_script)
-        cloud.set_context(contxt)
+            context = self._generate_context_file(cloud, context_replacement, startup_script)
+            cloud.set_context(context)
 
     def generate_config_file(self, cloud_name):
         #TODO (genc) copy the config generation part of the method below here
@@ -146,53 +139,37 @@ class Controller(object):
     #=========================================================================#
     #               create_nodes(self, count, contextFile, test_agent)        #
     #=========================================================================#
-    def create_nodes(self, nodes_info):
+    def create_nodes(self, nodes_info, clouds):
         self._logger.debug('[create_nodes]: %s' % nodes_info)
-        ready = []
-        poll = []
-        iteration = 0
-        count=len(nodes_info)
-        if count == 0:
-            return []
-        clouds=list(set([n['cloud'] for n in nodes_info]))
-        failed = nodes_info[:]
-        while len(ready) < count:
-            iteration += 1
-            try:
-                self._force_terminate_lock.acquire()
-                if iteration == 1:
-                    request_start = time.time()
 
-                for c in clouds:
-                    cloud = self._default_cloud
-                    ninfo = failed
-                    if c is not None or c!='':
-                        cloud = self.get_cloud_by_name(c)
-                        ninfo = filter(lambda n: n['cloud']==c, failed)
+        try:
+            self._force_terminate_lock.acquire()
 
-                    msg = '[create_nodes] iter %d: creating %d nodes on cloud %s' % (iteration, count - len(ready), cloud)
-                    self._logger.debug(msg)
+            self._partially_created_nodes = []
+            for cloud_name in clouds:
+                cloud = self.get_cloud_by_name(cloud_name)
+                ninfo = filter(lambda ni : ni['cloud'] == cloud_name, nodes_info)
 
-                    self._partially_created_nodes = self._create_nodes(ninfo,cloud)
-                    self._logger.debug('[create_nodes] _partially_created_nodes: %s' % self._partially_created_nodes)
+                msg = '[create_nodes] creating %d nodes on cloud %s' % (len(ninfo), cloud_name)
+                self._logger.debug(msg)
 
-            except Exception as e:
-                self._logger.exception('[create_nodes]: Failed to request new nodes')
-                self.delete_nodes(ready)
-                self._partially_created_nodes = []
-                raise e
-            finally:
-                self._force_terminate_lock.release()
+                self._partially_created_nodes += self._create_nodes(ninfo, cloud)
+                self._logger.debug('[create_nodes] _partially_created_nodes: %s' % self._partially_created_nodes)
+        except Exception as e:
+            self._logger.exception('[create_nodes]: Failed to request new nodes')
+            self._partially_created_nodes = []
+            raise e
+        finally:
+            self._force_terminate_lock.release()
 
-            poll, failed = self._wait_for_nodes(self._partially_created_nodes)
-            ready += poll
-            poll = []
-            if failed:
-                self._logger.debug('[create_nodes]: %d nodes '
-                                    'failed to startup properly: %s'
-                                    % (len(failed), str(failed)))
-                self._partially_created_nodes = []
-                self.delete_nodes(failed)
+        ready, failed = self._wait_for_nodes(self._partially_created_nodes)
+        if failed:
+            # TODO (teodor): retry starting the nodes that failed
+            self._logger.debug('[create_nodes]: %d nodes '
+                                'failed to startup properly: %s'
+                                % (len(failed), str(failed)))
+            self._partially_created_nodes = []
+            self.delete_nodes(failed)
 
         self._force_terminate_lock.acquire()
         self._created_nodes += ready
@@ -204,13 +181,12 @@ class Controller(object):
     def _create_nodes(self, nodes_info, cloud):
         if self.role == 'manager':
             role_abbr = 'mgr'
-            service_type = ''
             name = "%s-u%s-a%s-%s" % (self._conpaas_name, self._conpaas_user_id, self._conpaas_app_id, role_abbr)
         else:
             service_type = self.config_parser.get('manager', 'TYPE')
             name = "%s-u%s-a%s-s%s-%s" % (self._conpaas_name, self._conpaas_user_id, self._conpaas_app_id, self._conpaas_service_id, service_type)
         for ni in nodes_info:
-            ni['name']=name
+            ni['name'] = name
         self._logger.debug("[create_nodes]: cloud.new_instances(%s)" % str(nodes_info) )
         return cloud.new_instances(nodes_info)
 
