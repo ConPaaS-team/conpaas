@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # supported_comps=('director' 'manager' 'lib' 'tools' 'frontend')
-CPSVERSION="100"
+#CPSVERSION="100"
+CPSVERSION="2.0"
 director="cpsdirector-$CPSVERSION.tar.gz" 
 manager="ConPaaS-$CPSVERSION.tar.gz" 
 lib="cpslib-$CPSVERSION.tar.gz"
@@ -10,7 +11,8 @@ frontend="cpsfrontend-$CPSVERSION.tar.gz"
 
 taballs=""
 
-IP_PREFIX=172.16.0
+#IP_PREFIX=172.16.0
+IP_PREFIX=10.158.114
 
 rm -f *$CPSVERSION*.tar.gz
 
@@ -89,7 +91,7 @@ ls $frontend > /dev/null 2>&1 &&
 cat <<EOT >> $TMPFILE
 tar -xaf cpsfrontend*.tar.gz
 rm cpsfrontend*.tar.gz
-cp -r cpsfrontend-*/www/* /var/www/
+sudo cp -r cpsfrontend-*/www/* /var/www/
 rm -rf cpsfrontend*
 EOT
 taballs+="$frontend "

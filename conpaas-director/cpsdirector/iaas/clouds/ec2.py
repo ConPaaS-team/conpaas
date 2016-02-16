@@ -184,6 +184,37 @@ class EC2Cloud(Cloud):
 
     #     return [ nodes ]
 
+    def kill_instance(self, node):
+        '''Kill a VM instance.
+
+           @param node: A ServiceNode instance, where node.id is the
+                        vm_id
+        '''
+        self.logger.debug('kill_instance(node=%s)' % node)
+
+        if self.connected is False:
+            self._connect()
+
+        libcloud_node = node.as_libcloud_node()
+
+        volumes = self.list_instance_volumes(libcloud_node)
+        destroy_res = self.driver.destroy_node(libcloud_node)
+
+        # for ec2 we can delete instances first and then volumes
+        self.logger.debug('delete these volumes: %s' % volumes)
+        for volume in volumes:
+            max_trials = 20
+            status=volume.extra['state']
+            while status != 'available' and max_trials > 0:
+                status=filter(lambda x: x.id==volume.id, self.driver.list_volumes())[0].extra['state']
+                time.sleep(10)
+                max_trials -= 1
+
+            self.driver.destroy_volume(volume)        
+        
+        return destroy_res
+
+
     def create_volume(self, size, name, vm_id):
         node = [ node for node in self.driver.list_nodes() 
                 if node.id == vm_id ][0]
@@ -224,3 +255,6 @@ class EC2Cloud(Cloud):
 
         self.logger.exception("Volume %s still cannot be destroyed after timeout" %
                 volume)
+
+    def list_instance_volumes(self, instance):
+        return filter(lambda x: x.extra['instance_id']==instance.id and x.extra['device']!='/dev/sda1', self.driver.list_volumes())

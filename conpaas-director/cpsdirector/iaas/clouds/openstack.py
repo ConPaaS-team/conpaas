@@ -211,3 +211,6 @@ class OpenStackCloud(Cloud):
     def detach_volume(self, volume):
         volume = filter(lambda x: x.id==volume.id, self.driver.list_volumes())[0]
         return self.driver.detach_volume(volume)
+
+    def list_instance_volumes(self, instance):
+        return filter(lambda x: False if len(x.extra['attachments'])==0 else x.extra['attachments'][0]['serverId']==instance.id, self.driver.list_volumes())

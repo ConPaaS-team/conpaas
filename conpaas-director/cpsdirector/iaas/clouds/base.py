@@ -221,20 +221,22 @@ class Cloud:
         #          volumes not being deleted on EC2.
         # TODO:    This needs to be fixed asap.!
 
-        try:
-            volumes = filter(lambda x: False if len(x.extra['attachments'])==0 else x.extra['attachments'][0]['serverId']==libcloud_node.id, self.driver.list_volumes())
-            self.logger.debug('delete these volumes: %s' % volumes)
-            for volume in volumes:
-                self.detach_volume(volume)
-                status=volume.extra['state']
-                while status != 'available':
-                    status=filter(lambda x: x.id==volume.id, self.driver.list_volumes())[0].extra['state']
-                    time.sleep(1)
+        
+        # volumes = filter(lambda x: False if len(x.extra['attachments'])==0 else x.extra['attachments'][0]['serverId']==libcloud_node.id, self.driver.list_volumes())
+        volumes = self.list_instance_volumes(libcloud_node)
+        self.logger.debug('delete these volumes: %s' % volumes)
+        
+        for volume in volumes:
+            max_trials = 20
+            self.detach_volume(volume)
+            status=volume.extra['state']
+            while status != 'available' and max_trials > 0:
+                status=filter(lambda x: x.id==volume.id, self.driver.list_volumes())[0].extra['state']
+                time.sleep(10)
+                max_trials -= 1
 
-                self.driver.destroy_volume(volume)
-        except Exception:
-            pass
-
+            self.driver.destroy_volume(volume)
+    
         destroy_res = self.driver.destroy_node(libcloud_node)
         return destroy_res
 
@@ -251,3 +253,6 @@ class Cloud:
     def destroy_volume(self, volume):
         return self.driver.destroy_volume(volume)
 
+    def list_instance_volumes(self, instance):
+        raise NotImplementedError(
+            'list_instance_volumes not implemented for this cloud driver')
