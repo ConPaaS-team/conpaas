@@ -243,3 +243,7 @@ exit 101
 EOF
 chmod 755 $ROOT_DIR/usr/sbin/policy-rc.d
 
+# add the pseudo-terminals to securetty
+# this allows root to connect with 'virsh console ...'
+echo "pts/0" >> $ROOT_DIR/etc/securetty
+echo "pts/1" >> $ROOT_DIR/etc/securetty

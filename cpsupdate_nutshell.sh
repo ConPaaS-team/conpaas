@@ -11,8 +11,8 @@ frontend="cpsfrontend-$CPSVERSION.tar.gz"
 
 taballs=""
 
-#IP_PREFIX=172.16.0
-IP_PREFIX=10.158.114
+IP_PREFIX=172.16.0
+#IP_PREFIX=10.158.114
 
 rm -f *$CPSVERSION*.tar.gz
 
