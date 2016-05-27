@@ -42,12 +42,25 @@ class HTTPS {
 
 		$http_method = strtolower($http_method);
 		if ($http_method == 'post') {
-			$opts[CURLOPT_POST] = 1;
-			if ($rpc) {
-  			  $opts[CURLOPT_POSTFIELDS] = json_encode($data);
-			} else {
-			  $opts[CURLOPT_POSTFIELDS] = $data;
+		    $opts[CURLOPT_POST] = 1;
+		    if ($rpc) {
+		      $opts[CURLOPT_POSTFIELDS] = json_encode($data);
+		    } else {
+			// convert @ prefixed file names to CurlFile class
+			if (is_array($data) == true && function_exists('curl_file_create')) {
+			    // check each post field
+			    foreach ($data as $k => $val) {
+				// convert values starting with '@' prefix
+				if (strpos($val, '@') === 0) {
+				    // get the file name
+				    $filename = ltrim($val, '@');
+				    // convert the value to the new class
+				    $data[$k] = curl_file_create($filename);
+				}
+			    }
 			}
+			$opts[CURLOPT_POSTFIELDS] = $data;
+		    }
 		}
 		$opts[CURLOPT_URL] = $url;
 		$opts[CURLOPT_SSL_VERIFYPEER] = TRUE;
