@@ -22,7 +22,7 @@ components.
 ConPaaS's **cpsdirector** and its two clients, **cpsclient** and **cpsfrontend**,
 can be installed on your own hardware or on virtual machines running on public
 or private clouds. If you wish to install them on Amazon EC2, the Official Debian
-Wheezy, Ubuntu 12.04 or Ubuntu 14.04 images are known to work well.
+Wheezy, Ubuntu 12.04, Ubuntu 14.04 and Ubuntu 16.04 images are known to work well.
 
 ConPaaS services are designed to run either in an `OpenStack` or `OpenNebula` cloud
 installation or in the `Amazon Web Services` cloud.
@@ -60,9 +60,9 @@ applications. Users can create, configure and terminate their cloud
 applications through it. This section describes the process of setting up a
 ConPaaS director on a Debian/Ubuntu GNU/Linux system. Although the ConPaaS director
 might run on other distributions, only Debian versions 6.0 (Squeeze) and 7.0 (Wheezy),
-and Ubuntu versions 12.04 (Precise Pangolin) and 14.04 (Trusty Tahr) are officially supported.
-Also, only official APT repositories should be enabled in :file:`/etc/apt/sources.list` and
-:file:`/etc/apt/sources.list.d/`. 
+and Ubuntu versions 12.04 (Precise Pangolin), 14.04 (Trusty Tahr) and 16.04 (Xenial
+Xerus) are officially supported. Also, only official APT repositories should be
+enabled in :file:`/etc/apt/sources.list` and :file:`/etc/apt/sources.list.d/`.
 
 **cpsdirector** is available here:
 http://www.conpaas.eu/dl/cpsdirector-1.x.x.tar.gz. The tarball includes an
@@ -134,7 +134,7 @@ SSL certificates
 ----------------
 ConPaaS uses SSL certificates in order to secure the communication
 between you and the director, but also to ensure that only authorized
-parties such as yourself and the various component of ConPaaS can
+parties such as yourself and the various components of ConPaaS can
 interact with the system.
 
 It is therefore crucial that the SSL certificate of your director contains the
@@ -522,10 +522,10 @@ Install python argparse and argcomplete modules::
 Frontend installation
 =====================
 As for the Director, only Debian versions 6.0 (Squeeze) and 7.0 (Wheezy), and
-Ubuntu versions 12.04 (Precise Pangolin) and 14.04 (Trusty Tahr) are officially
-supported, and no external APT repository should be enabled. In a typical setup
-Director and Frontend are installed on the same host, but such does not need to
-be the case.
+Ubuntu versions 12.04 (Precise Pangolin), 14.04 (Trusty Tahr) and 16.04 (Xenial
+Xerus) are officially supported, and no external APT repository should be
+enabled. In a typical setup, Director and Frontend are installed on the same
+host, but such does not need to be the case.
 
 The ConPaaS Frontend can be downloaded from
 http://www.conpaas.eu/dl/cpsfrontend-1.x.x.tar.gz. 
@@ -533,6 +533,11 @@ http://www.conpaas.eu/dl/cpsfrontend-1.x.x.tar.gz.
 After having uncompressed it you should install the required packages::
 
    $ sudo apt-get install libapache2-mod-php5 php5-curl
+
+If you use Ubuntu 16.04 (which ships with PHP 7), the following command
+may be used (the Frontend supports PHP 7 as well)::
+
+   $ sudo apt-get install libapache2-mod-php php-curl php-zip
 
 Copy all the files contained in the :file:`www` directory underneath your web
 server document root. For example::
@@ -559,8 +564,9 @@ By default, PHP sets a default maximum size for uploaded files to 2Mb
 However, in the web frontend, users will need to upload larger files
 (for example, a WordPress tarball is about 5Mb, a MySQL dump can be tens of Mb).
 To set higher limits, set the properties `post_max_size` and `upload_max_filesize`
-in file :file:`/etc/php5/apache2/php.ini`. Note that property `upload_max_filesize`
-cannot be larger than property `post_max_size`.
+in file :file:`/etc/php5/apache2/php.ini` (or
+:file:`nano /etc/php/7.0/apache2/php.ini` for PHP 7.0). Note that property
+`upload_max_filesize` cannot be larger than property `post_max_size`.
 
 Enable SSL if you want to use your frontend via https, for example by
 issuing the following commands::
