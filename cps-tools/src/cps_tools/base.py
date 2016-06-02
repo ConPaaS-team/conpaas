@@ -7,6 +7,7 @@ import sys
 import time
 import urllib
 import urllib2
+import ssl
 
 from conpaas.core.https import client
 
@@ -121,7 +122,14 @@ class BaseClient(object):
                 os.path.join(self.confdir, 'key.pem'),
                 os.path.join(self.confdir, 'cert.pem')))
         else:
-            opener = urllib2.build_opener(urllib2.HTTPSHandler())
+            try:
+                ssl_ctx = ssl._create_unverified_context()
+            except AttributeError:
+                # Legacy Python that doesn't verify HTTPS certificates by default
+                opener = urllib2.build_opener(urllib2.HTTPSHandler())
+            else:
+                # For Python versions >= 2.7.9, we need to explicitly disable certificate validation
+                opener = urllib2.build_opener(urllib2.HTTPSHandler(context=ssl_ctx))
             data['password'] = self._get_password()
 
         if self.debug:

@@ -78,6 +78,7 @@ cd cps-tools-*
 ./configure --sysconf=/etc
 sudo make install
 #mkdir -p $HOME/.conpaas
+cps-user get_certificate
 cd ..
 sudo rm -rf cps-tools*
 
