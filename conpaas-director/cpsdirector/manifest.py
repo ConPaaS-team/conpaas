@@ -18,10 +18,20 @@ import base64
 import socket
 import urllib2
 import simplejson
+import ssl
 
 from cpsdirector import db
 from cpsdirector.common import log
 from cpsdirector.common import build_response
+
+try:
+    _create_unverified_https_context = ssl._create_unverified_context
+except AttributeError:
+    # Legacy Python that doesn't verify HTTPS certificates by default
+    pass
+else:
+    # Handle target environment that doesn't support HTTPS verification
+    ssl._create_default_https_context = _create_unverified_https_context
 
 manifest_page = Blueprint('manifest_page', __name__)
 
