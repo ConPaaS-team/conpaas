@@ -97,21 +97,21 @@ conpaas.ui = (function (this_module) {
                 function (response) {
                     app = response.data[0];
                     that.application = app;
-                    if(app.status == 'INIT' || app.status == 'STOPPED' || app.status == 'EPILOGUE'){
+                    if (app.status == 'INIT' || app.status == 'STOPPED' || app.status == 'PROLOGUE' || app.status == 'EPILOGUE') {
                         $("#btnAddService").hide();
                         $("#btnStopApp").hide();
                         $("#appRightMenu").hide();
-                        if(app.status == 'EPILOGUE'){
+                        if (app.status == 'PROLOGUE') {
                             that.displayInfo_('Starting application manager...');
+                            return false
+                        } else if (app.status == 'EPILOGUE') {
+                            that.displayInfo_('Stopping application manager...');
                             return false
                         } else {
                             $("#btnStartApp").show();
                             $("#cloudProviders").show();
                         }
-
-
-                    }else
-                    {
+                    } else {
                         $("#btnStartApp").hide();
                         $("#cloudProviders").hide();
                         $("#btnAddService").show();

@@ -182,7 +182,7 @@ def _startapp(user_id, app_id, cloud_name, new_thread=True):
     if g.user.credit <= 0:
         return { 'error': True, 'msg': 'Insufficient credits' }
     try:
-        app.status = Application.A_EPILOGUE
+        app.status = Application.A_PROLOGUE
 
         vpn = app.get_available_vpn_subnet()
 
