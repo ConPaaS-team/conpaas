@@ -85,7 +85,7 @@ class ServiceCmd(object):
     def user_help(self, args):
         args.parser.print_help()
 
-    # ========== create
+    # ========== add
     def _add_add(self):
         subparser = self.add_parser('add', help="add a new service")
         subparser.set_defaults(run_cmd=self.add_serv, parser=subparser)
@@ -128,9 +128,17 @@ class ServiceCmd(object):
     def _add_list(self):
         subparser = self.add_parser('list', help="list services")
         subparser.set_defaults(run_cmd=self.list_serv, parser=subparser)
+        subparser.add_argument('--application', metavar='ID_OR_NAME',
+                               default=None, help="Name or identifier of an application")
 
     def list_serv(self, args):
-        services = self.client.get_services(self.type)
+        if args.application is not None:
+            app_id, _app_name = check_appl_name(self.client, args.application)
+        else:
+            app_id = None
+
+        services = self.client.get_services(app_id, self.type)
+
         sorted_serv = []
         for row in services:
             sorted_serv.append(row['service'])
@@ -141,6 +149,7 @@ class ServiceCmd(object):
         sorted_serv = sorted(sorted_serv, key=lambda k: k['type'])
         # primary sort per application
         sorted_serv = sorted(sorted_serv, key=lambda k: k['application_id'])
+
         table = self.client.prettytable(('application_id', 'type', 'sid', 'name'),
                                         sorted_serv)
         if table:

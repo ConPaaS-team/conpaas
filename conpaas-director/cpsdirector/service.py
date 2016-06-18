@@ -287,7 +287,7 @@ def remove():
 def list_all_services():
     """POST /list
 
-    List running ConPaaS services under a specific application if the user is
+    List running ConPaaS services under all applications if the user is
     authenticated. Return False otherwise.
     """
     return build_response(simplejson.dumps([

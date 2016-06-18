@@ -173,13 +173,16 @@ class BaseClient(object):
             self.services = self.call_director_get('list')
         services = self.services
 
+        # filter out services from different apps if an app is specified
+        if app_id is not None:
+            services = [service for service in services
+                        if service['service']['application_id'] == app_id]
+
         # filter out services of unexpected type if a type is specified
         if serv_type is not None:
-            services = [service for service in self.services
+            services = [service for service in services
                         if service['service']['type'] == serv_type]
-        if app_id is not None:
-            services = [service for service in self.services
-                        if service['service']['application_id'] == app_id]
+
         return services
 
 

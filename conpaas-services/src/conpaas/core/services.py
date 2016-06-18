@@ -25,15 +25,15 @@ manager_services = {'php'    : {'class' : 'PHPManager',
                     #               'module': 'conpaas.services.selenium.manager.manager'},
                     # 'taskfarm' : {'class' : 'TaskFarmManager',
                     #               'module': 'conpaas.services.taskfarm.manager.manager'},
-		                'mysql' : {'class' : 'MySQLManager',
+                    'mysql' : {'class' : 'MySQLManager',
                                'module': 'conpaas.services.mysql.manager.manager'},
 
-#                    'htcondor' : {'class' : 'HTCondorManager',
-#                                  'module': 'conpaas.services.htcondor.manager.manager'},
+                    # 'htcondor' : {'class' : 'HTCondorManager',
+                    #               'module': 'conpaas.services.htcondor.manager.manager'},
                     # 'htc' : {'class' : 'HTCManager',
                     #               'module': 'conpaas.services.htc.manager.manager'},
                     'generic' : {'class' : 'GenericManager',
-                                  'module': 'conpaas.services.generic.manager.manager'},
+                                 'module': 'conpaas.services.generic.manager.manager'},
 
 #""" BLUE_PRINT_INSERT_MANAGER 		do not remove this line: it is a placeholder for installing new services """
 		    }

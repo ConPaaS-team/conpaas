@@ -160,14 +160,14 @@ class ApplicationCmd:
     def _add_start(self):
         subparser = self.add_parser('start', help="start an application")
         subparser.set_defaults(run_cmd=self.start_appl, parser=subparser)
-        subparser.add_argument('appl_id',
-                               help="Identifier of the application to start")
+        subparser.add_argument('app_name_or_id',
+                               help="Name or identifier of an application")
         subparser.add_argument('--cloud', metavar='NAME', default=None,
                                help="Cloud where the application manager will be created.")
 
     def start_appl(self, args):
         try:
-            app_id, app_name = check_appl_name(self.client, args.appl_id)
+            app_id, app_name = check_appl_name(self.client, args.app_name_or_id)
         except:
             ex = sys.exc_info()[1]
             self.client.error("%s" % ex)
@@ -186,12 +186,12 @@ class ApplicationCmd:
     def _add_stop(self):
         subparser = self.add_parser('stop', help="stop an application")
         subparser.set_defaults(run_cmd=self.stop_appl, parser=subparser)
-        subparser.add_argument('appl_id',
-                               help="Identifier of the application to start")
+        subparser.add_argument('app_name_or_id',
+                               help="Name or identifier of an application")
 
     def stop_appl(self, args):
         try:
-            app_id, app_name = check_appl_name(self.client, args.appl_id)
+            app_id, app_name = check_appl_name(self.client, args.app_name_or_id)
         except:
             ex = sys.exc_info()[1]
             self.client.error("%s" % ex)
