@@ -112,12 +112,12 @@ class Configuration(object):
         return [serviceNode for serviceNode in self.glb_service_nodes.values()]
 
     def getMySQLNode(self, id):
-	self.logger.debug('Entering getMysqlNodes id= %s ' % id)
+	# self.logger.debug('Entering getMysqlNodes id= %s ' % id)
 	if self.serviceNodes.has_key(id) :
         	node = self.serviceNodes[id]
 	else:
 		node = self.glb_service_nodes[id]
-	self.logger.debug('Exit getMySQlNode node = %s' %node)
+	# self.logger.debug('Exit getMySQlNode node = %s' %node)
 	return node
 
     def addGLBServiceNodes(self, nodes):

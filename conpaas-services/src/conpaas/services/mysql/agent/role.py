@@ -444,10 +444,10 @@ class GLBNode(object):
         devnull_fd = open(devnull, 'w')
         command = [self.glbd_location, "add"]
         for i in hosts:
-        command.extend([i])
+            command.extend([i])
             proc = Popen(command, stdout=devnull_fd, stderr=devnull_fd, close_fds=True)
             proc.wait()
-        command.pop()
+            command.pop()
         sql_logger.debug('GLB: added nodes to balance: %s' % hosts)
 
     def remove(self, hosts=None):
@@ -457,8 +457,8 @@ class GLBNode(object):
         devnull_fd = open(devnull, 'w')
         command = [self.glbd_location, "remove"]
         for i in hosts:
-                command.extend([i])
-                proc = Popen(command, stdout=devnull_fd, stderr=devnull_fd, close_fds=True)
-                proc.wait()
-                command.pop()
+            command.extend([i])
+            proc = Popen(command, stdout=devnull_fd, stderr=devnull_fd, close_fds=True)
+            proc.wait()
+            command.pop()
         sql_logger.debug('GLB: removed nodes to balance: %s' % hosts)
