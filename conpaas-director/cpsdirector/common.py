@@ -22,7 +22,7 @@ if os.getenv('DIRECTOR_TESTING'):
 config_parser.read(CONFFILE)
 
 # from conpaas.core import https
-# https.client.conpaas_init_ssl_ctx('/etc/cpsdirector/certs', 'director') 
+# https.client.conpaas_init_ssl_ctx('/etc/cpsdirector/certs', 'director')
 
 if os.getenv('DIRECTOR_TESTING'):
     if not config_parser.has_section('iaas'):
@@ -56,7 +56,13 @@ def log(msg):
     except RuntimeError:
         print msg
 
+def log_error(msg):
+    log('ERROR: %s' % msg)
+
 def build_response(data):
     response = make_response(data)
     response.headers['Access-Control-Allow-Origin'] = '*'
     return response
+
+def error_response(message):
+    return { 'error': message }

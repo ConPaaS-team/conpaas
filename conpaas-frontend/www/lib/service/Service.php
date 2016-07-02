@@ -104,7 +104,7 @@ class Service {
 		foreach ($data as $key => $value) {
 			$this->$key = $value;
 		}
-        
+
         // if ($this->type === 'taskfarm') {
         // 	$this->manager = 'http://'.$application->getManager();
         //     // $this->manager = 'http://'.$this->manager;
@@ -242,7 +242,7 @@ class Service {
  	}
 
  	public function fetchLog() {
- 		$json = $this->managerRequest('get', 'getLog', array());
+ 		$json = $this->managerRequest('get', 'get_manager_log', array());
  		$log = json_decode($json, true);
  		return $log['result']['log'];
  	}
@@ -270,7 +270,7 @@ class Service {
  		return $this->application->managerRequest('post', $command, 0, $data);
  	}
 
- 	public function upload_startup_script($script) {
+ 	public function uploadStartupScript($script) {
  		$command = 'upload_startup_script';
  		$data = array();
  		$data['service_id'] = 0;
@@ -279,15 +279,13 @@ class Service {
  		return $this->application->managerRequest('upload', $command, 0, $data);
  	}
 
- 	public function get_startup_script() {
+ 	public function getStartupScript() {
  		$command = 'get_startup_script';
  		$data = array();
  		$data['sid'] = $this->sid;
  		return HTTPS::jsonrpc($this->getManager(), 'get', $command, 0, $data, false);
  		// return $this->application->managerRequest('get', $command, 0, $data);
  	}
-
- 	
 
  	public function addServiceNodes($params) {
  		return $this->changeNodes('add_nodes', $params);
@@ -314,7 +312,7 @@ class Service {
  	 */
  	public function removeService() {
 
-        $res = HTTPS::post(Conf::DIRECTOR . '/remove', 
+        $res = HTTPS::post(Conf::DIRECTOR . '/remove',
             array( 'app_id' => $this->application->getAID(), 'service_id' => $this->sid ), true, $this->application->getUID());
 
         if (!json_decode($res)) {

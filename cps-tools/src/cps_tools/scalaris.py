@@ -38,7 +38,7 @@
 #             data['cloud'] = 'default'
 #         else:
 #             data['cloud'] = args.cloud
-#         service_id = self.get_service_id(args.serv_name_or_id)
+#         service_id = self.check_service(args.serv_name_or_id)
 #         res = self.client.call_manager_post(service_id, "add_nodes", data)
 #         if 'error' in res:
 #             raise Exception("Could not add nodes to service %s: %s" % (service_id, res['error']))
@@ -46,7 +46,7 @@
 #             # TODO: display the following message only in verbose mode  ===> use logger.info() ?
 #             print("Starting %s new nodes for service %s..."
 #                   % (total_nodes, service_id))
-#             state = self.client.wait_for_state(service_id, ['RUNNING', 'ERROR'])
+#             state = self.client.wait_for_service_state(service_id, ['RUNNING', 'ERROR'])
 #             if state in ['ERROR']:
 #                 self.client.error("Failed to add nodes to service %s." % service_id)
 

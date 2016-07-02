@@ -30,7 +30,7 @@
 
 #     def remove_nodes(self, args):
 #         """Overrides ServiceCmd.remove_nodes(self, args)."""
-#         app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
+#         app_id, service_id = self.check_service(args.app_name_or_id, args.serv_name_or_id)
 #         data = {'node': 1, 'id': args.node_id}
 #         res = self.client.call_manager_post(app_id, service_id, "remove_nodes", data)
 #         if 'error' in res:
@@ -52,7 +52,7 @@
 #         subparser.add_argument('filename', help="path to job file")
 
 #     def create_job(self, args):
-#         app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
+#         app_id, service_id = self.check_service(args.app_name_or_id, args.serv_name_or_id)
 #         with open(args.filename, 'r') as jobfile:
 #             contents = jobfile.read()
 #         files = [(args.filename, args.filename, contents)]
@@ -74,7 +74,7 @@
 #         subparser.add_argument('filename', help="path to file")
 
 #     def upload_file(self, args):
-#         app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
+#         app_id, service_id = self.check_service(args.app_name_or_id, args.serv_name_or_id)
 #         with open(args.filename, 'r') as jobfile:
 #             contents = jobfile.read()
 #         files = [(args.filename, args.filename, contents)]
@@ -97,7 +97,7 @@
 #         subparser.add_argument('filename', help="path to job file")
 
 #     def add(self, args):
-#         app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
+#         app_id, service_id = self.check_service(args.app_name_or_id, args.serv_name_or_id)
 #         with open(args.filename, 'r') as jobfile:
 #             contents = jobfile.read()
 #         files = [(args.filename, args.filename, contents)]
@@ -119,7 +119,7 @@
 #         subparser.add_argument('job_id', type=int, help="Job identifier")
 
 #     def sample(self, args):
-#         app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
+#         app_id, service_id = self.check_service(args.app_name_or_id, args.serv_name_or_id)
 #         params = {'job_id': args.job_id}
 #         res = self.client.call_manager_post(app_id, service_id, "sample", params)
 #         if 'error' in res:
@@ -138,7 +138,7 @@
 #         subparser.add_argument('job_id', type=int, help="Job identifier")
 
 #     def submit(self, args):
-#         app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
+#         app_id, service_id = self.check_service(args.app_name_or_id, args.serv_name_or_id)
 
 #         params = {'job_id': args.job_id}
 #         res = self.client.call_manager_post(app_id, service_id, "execute", params)
@@ -159,7 +159,7 @@
 #         subparser.add_argument('throughput', type=int, help="target throughput")
 
 #     def get_config(self, args):
-#         app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
+#         app_id, service_id = self.check_service(args.app_name_or_id, args.serv_name_or_id)
 #         params = {'t': args.throughput}
 #         res = self.client.call_manager_post(app_id, service_id, "get_config", params)
 #         print "%s" % res
@@ -175,7 +175,7 @@
 #         subparser.add_argument('throughput', type=int, help="target throughput")
 
 #     def throughput(self, args):
-#         app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
+#         app_id, service_id = self.check_service(args.app_name_or_id, args.serv_name_or_id)
 #         params = {'t': args.throughput}
 #         res = self.client.call_manager_post(app_id, service_id, "get_m", params)
 #         print "%s" % res
@@ -191,7 +191,7 @@
 #         subparser.add_argument('throughput', type=int, help="target throughput")
 
 #     def select(self, args):
-#         app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
+#         app_id, service_id = self.check_service(args.app_name_or_id, args.serv_name_or_id)
 #         params = {'t': args.throughput}
 #         res = self.client.call_manager_post(app_id, service_id, "select", params)
 #         print "%s" % res

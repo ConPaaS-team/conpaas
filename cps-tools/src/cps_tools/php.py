@@ -34,17 +34,23 @@ class PHPCmd(WebCmd):
         subparser.add_argument('code_version', help="Code version")
 
     def enable_code(self, args):
-        app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
+        app_id, service_id = self.check_service(args.app_name_or_id, args.serv_name_or_id)
+
         code_version = args.code_version
         params = {'codeVersionId': code_version}
-
-        res = self.client.call_manager_post(app_id, service_id,
+        self.client.call_manager_post(app_id, service_id,
                                             "update_php_configuration",
                                             params)
-        if 'error' in res:
-            self.client.error(res['error'])
+
+        print "Enabling code version '%s'... " % code_version,
+        sys.stdout.flush()
+
+        state = self.client.wait_for_service_state(app_id, service_id,
+                                ['INIT', 'STOPPED', 'RUNNING', 'ERROR'])
+        if state != 'ERROR':
+            print "done."
         else:
-            print code_version, 'enabled'
+            print "FAILED!"
 
     # ========== get_configuration
     def _add_get_configuration(self):
@@ -57,11 +63,10 @@ class PHPCmd(WebCmd):
                                help="Name or identifier of a service")
 
     def get_configuration(self, args):
-        app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
+        app_id, service_id = self.check_service(args.app_name_or_id, args.serv_name_or_id)
+
         conf = self.client.call_manager_get(app_id, service_id, 'get_configuration')
-        if 'error' in conf:
-            self.client.error("Cannot get configuration for PHP service: %s."
-                              % conf['error'])
+
         print "%s" % conf
 
     # ========== debug
@@ -77,20 +82,20 @@ class PHPCmd(WebCmd):
                                help="'on' or 'off'")
 
     def debug(self, args):
-        app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
+        app_id, service_id = self.check_service(args.app_name_or_id, args.serv_name_or_id)
+
         debug_mode = args.on_off.capitalize()
         if debug_mode != 'On' and debug_mode != 'Off':
-            self.client.error("Expecting 'on' or 'off' for argument on_off."
+            raise Exception("Expecting 'on' or 'off' for argument on_off."
                               " Argument was '%s'" % args.on_off)
+
         params = {'phpconf': {}}
         params['phpconf']['display_errors'] = debug_mode
-
-        res = self.client.call_manager_post(app_id, service_id,
+        self.client.call_manager_post(app_id, service_id,
                                             "update_php_configuration",
                                             params)
-        if 'error' in res:
-            self.client.error("Could not set debug mode to %s: %s"
-                              % (args.on_off, res['error']))
+
+        print("Debug mode set to %s." % args.on_off)
 
     # ========== enable_autoscaling
     def _add_enable_autoscaling(self):
@@ -110,14 +115,15 @@ class PHPCmd(WebCmd):
                                help="one of %(choices)s")
 
     def enable_autoscaling(self, args):
-        app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
+        app_id, service_id = self.check_service(args.app_name_or_id, args.serv_name_or_id)
+
         params = {'cool_down': args.adapt_interval,
                   'response_time': args.response_time_limit,
                   'strategy': args.strategy,
                   }
-        res = self.client.call_manager_post(app_id, service_id, 'on_autoscaling', params)
-        if 'error' in res:
-            self.client.error("Could not enable autoscaling: %s" % res['error'])
+        self.client.call_manager_post(app_id, service_id, 'on_autoscaling', params)
+
+        print "Autoscaling enabled."
 
     # ========== disable_autoscaling
     def _add_disable_autoscaling(self):
@@ -130,10 +136,11 @@ class PHPCmd(WebCmd):
                                help="Name or identifier of a service")
 
     def disable_autoscaling(self, args):
-        app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
-        res = self.client.call_manager_post(app_id, service_id, 'off_autoscaling')
-        if 'error' in res:
-            self.client.error("Could not disable autoscaling: %s" % res['error'])
+        app_id, service_id = self.check_service(args.app_name_or_id, args.serv_name_or_id)
+
+        self.client.call_manager_post(app_id, service_id, 'off_autoscaling')
+
+        print "Autoscaling disabled."
 
 
 def main():
@@ -155,10 +162,17 @@ def main():
                           args.debug)
     try:
         args.run_cmd(args)
-    except:
-        e = sys.exc_info()[1]
-        sys.stderr.write("ERROR: %s\n" % e)
+    except Exception:
+        if args.debug:
+            traceback.print_exc()
+        else:
+            ex = sys.exc_info()[1]
+            if str(ex).startswith("ERROR"):
+                sys.stderr.write("%s\n" % ex)
+            else:
+                sys.stderr.write("ERROR: %s\n" % ex)
         sys.exit(1)
+
 
 if __name__ == '__main__':
     main()

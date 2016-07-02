@@ -21,7 +21,7 @@ S_STARTING = 'STARTING'
 S_RUNNING = 'RUNNING'
 S_STOPPING = 'STOPPING'
 S_STOPPED = 'STOPPED'
-import logging 
+import logging
 sql_logger = create_logger(__name__)
 
 
@@ -41,7 +41,7 @@ class MySQLServer(object):
         :param  _dummy_config: Set to `True` when used in unit testing.
         :type boolean: boolean value.
         """
-	sql_logger.debug("Trying to Mount the device.")
+        sql_logger.debug("Trying to Mount the device.")
         try:
             # Mount device
             self.dev_name = "/dev/%s" % device_name
@@ -73,11 +73,11 @@ class MySQLServer(object):
             lines = f.readlines()
             f.close()
             f = open(self.mycnf_filepath, "w")
-	    #Creating the MySQL directory tree in the external disk
-	    sql_logger.debug("Creating the MySQL directory tree in the external disk")
-	    run_cmd("mkdir -p %s/data/" % self.mount_point)
-	    run_cmd("mkdir -p %s/tmp/" % self.mount_point)	    
-	    run_cmd("cp -a /var/lib/mysql/* %s/data/" % self.mount_point)
+            #Creating the MySQL directory tree in the external disk
+            sql_logger.debug("Creating the MySQL directory tree in the external disk")
+            run_cmd("mkdir -p %s/data/" % self.mount_point)
+            run_cmd("mkdir -p %s/tmp/" % self.mount_point)
+            run_cmd("cp -a /var/lib/mysql/* %s/data/" % self.mount_point)
             run_cmd("chown  -R mysql:mysql  %s/" % self.mount_point)
 
             for line in lines:
@@ -199,7 +199,7 @@ class MySQLServer(object):
                 sql_logger.exception('Failed to stop MySQL daemon: %s' % e)
                 raise e
             try:
-                self.unmount()                
+                self.unmount()
             except Exception as e:
                 sql_logger.exception('Failed to unmount disk %s' % self.dev_name)
                 raise e
@@ -317,9 +317,9 @@ class MySQLServer(object):
         db = MySQLdb.connect(self.conn_location, 'root', self.conn_password)
         exc = db.cursor()
         exc.execute("SHOW STATUS LIKE 'wsrep_local_recv_queue_avg';")
-    	result=exc.fetchone()[1]        
-	db.close()
-	return result
+        result=exc.fetchone()[1]
+        db.close()
+        return result
 
     def mount(self, mkfs):
         self.state = S_STARTING
@@ -334,7 +334,7 @@ class MySQLServer(object):
                 dev_found = True
                 break
             else:
-                # On EC2 the device name gets changed 
+                # On EC2 the device name gets changed
                 # from /dev/sd[a-z] to /dev/xvd[a-z]
                 if lexists(self.dev_name.replace(dev_prefix, 'xvd')):
                     dev_found = True
@@ -378,7 +378,7 @@ class MySQLServer(object):
             else:
                 sql_logger.info("OSD node has prepared and mounted %s" % self.dev_name)
         else:
-            sql_logger.critical("Block device %s unavailable, falling back to image space" 
+            sql_logger.critical("Block device %s unavailable, falling back to image space"
                     % self.dev_name)
 
     def unmount(self):
@@ -414,7 +414,6 @@ class GLBNode(object):
         self.state = S_STOPPED
         self.glbd_location = config.get('Galera_configuration', 'glbd_location')
         self.start(nodes)
-        
 
     def start(self, hosts=None):
         hosts = hosts or []
@@ -427,7 +426,6 @@ class GLBNode(object):
         self.state = S_RUNNING
         if hosts:
             self.add(hosts)
-        
 
     def stop(self):
         self.state = S_STOPPING
@@ -440,17 +438,17 @@ class GLBNode(object):
 
     def add(self, hosts=None):
         hosts = hosts or []
-	sql_logger.debug('GLB: try to add nodes to balance: %s' % hosts)
+        sql_logger.debug('GLB: try to add nodes to balance: %s' % hosts)
         if self.state != S_RUNNING:
             raise Exception("Wrong state to add nodes to GLB: state is %s, instead of expected %s." % (self.state, S_RUNNING))
         devnull_fd = open(devnull, 'w')
         command = [self.glbd_location, "add"]
         for i in hosts:
-		command.extend([i])
-        	proc = Popen(command, stdout=devnull_fd, stderr=devnull_fd, close_fds=True)
-        	proc.wait()
-		command.pop()
-	sql_logger.debug('GLB: added nodes to balance: %s' % hosts)
+        command.extend([i])
+            proc = Popen(command, stdout=devnull_fd, stderr=devnull_fd, close_fds=True)
+            proc.wait()
+        command.pop()
+        sql_logger.debug('GLB: added nodes to balance: %s' % hosts)
 
     def remove(self, hosts=None):
         hosts = hosts or []
@@ -464,4 +462,3 @@ class GLBNode(object):
                 proc.wait()
                 command.pop()
         sql_logger.debug('GLB: removed nodes to balance: %s' % hosts)
-

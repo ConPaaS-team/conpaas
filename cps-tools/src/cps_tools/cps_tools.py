@@ -59,12 +59,12 @@ def main():
     subparsers = parser.add_subparsers(help='',
                                        metavar="<sub-command>")
 
-    client = BaseClient(logger)
+    cmd_client = BaseClient(logger)
 
     def add_sub_command(cmd_name, help_msg, cmd_class):
         subparser = subparsers.add_parser(cmd_name, help=help_msg,
                                           formatter_class=format_help)
-        _sub_cmd = cmd_class(subparser, client)
+        _sub_cmd = cmd_class(subparser, cmd_client)
 
     add_sub_command('user', "manage users", UserCmd)
     add_sub_command('cloud', "manage clouds", CloudCmd)
@@ -85,8 +85,8 @@ def main():
 
     argcomplete.autocomplete(parser)
     args = parser.parse_args(argv)
-    client.set_config(args.director_url, args.username, args.password,
-                      args.debug)
+    cmd_client.set_config(args.director_url, args.username, args.password,
+                          args.debug)
     try:
         args.run_cmd(args)
     except Exception:
@@ -94,7 +94,10 @@ def main():
             traceback.print_exc()
         else:
             ex = sys.exc_info()[1]
-            sys.stderr.write("ERROR:  %s\n" % ex)
+            if str(ex).startswith("ERROR"):
+                sys.stderr.write("%s\n" % ex)
+            else:
+                sys.stderr.write("ERROR: %s\n" % ex)
         sys.exit(1)
 
 

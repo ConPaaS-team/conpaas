@@ -13,8 +13,6 @@ sys.setdefaultencoding('utf-8')
 from cpsdirector import common
 
 
-
-
 app = Flask(__name__, template_folder="/etc/cpsdirector/templates", static_folder="/var/www/static")
 
 # copied from OpenID example

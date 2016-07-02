@@ -14,7 +14,10 @@ import collections
 from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse, FileUploadField
 from conpaas.core.expose import expose
 from conpaas.core.manager import BaseManager, ManagerException
-from conpaas.core.misc import check_arguments, is_pos_nul_int, is_string, is_list_dict2, is_uploaded_file
+from conpaas.core.misc import check_arguments, is_in_list, is_not_in_list,\
+    is_list, is_non_empty_list, is_list_dict, is_list_dict2, is_string,\
+    is_int, is_pos_nul_int, is_pos_int, is_dict, is_dict2, is_bool,\
+    is_uploaded_file
 from conpaas.core.misc import run_cmd_code
 
 import conpaas.services.mysql.agent.client as agent
@@ -24,12 +27,14 @@ from conpaas.services.mysql.manager.config import Configuration
 import logging
 import commands
 import MySQLdb
+
 class MySQLManager(BaseManager):
 
     # MySQL Galera node types
     REGULAR_NODE = 'node'  # regular node running a mysqld daemon
     GLB_NODE = 'glb_node'  # load balancer running a glbd daemon
-    volumes_dict={}
+    volumes_dict = {}
+
     def __init__(self, conf, **kwargs):
         BaseManager.__init__(self, conf)
 
@@ -63,12 +68,11 @@ class MySQLManager(BaseManager):
 
         return nodes_info
 
-
     def get_node_volumes(self, nodes):
         device_name=self.config_parser.get('manager', 'DEV_TARGET')
         volume = {'vol_name':'mysql-%(vm_id)s', 'vol_size': 1024, 'dev_name':device_name}
         nodes = [{'cloud':None, 'volumes':[volume]}]
-        return nodes    
+        return nodes
 
     def get_context_replacement(self):
         if not self.root_pass:
@@ -76,7 +80,6 @@ class MySQLManager(BaseManager):
             # self.root_pass = ''.join([choice(string.letters + string.digits) for i in range(10)])
         # self.logger.debug('setting context to %s' % dict(mysql_username='mysqldb', mysql_password=self.root_pass))
         return dict(mysql_username='mysqldb', mysql_password=str(self.root_pass))
-    
 
     def on_start(self, nodes):
         succ = self._start_mysqld(nodes)
@@ -95,7 +98,7 @@ class MySQLManager(BaseManager):
                 raise
         try:
             glb_nodes = self.config.get_glb_nodes()
-            self.logger.debug('MySQL Galera node already active: %s' % glb_nodes) 
+            self.logger.debug('MySQL Galera node already active: %s' % glb_nodes)
             nodesIp=[]
             nodesIp = ["%s:%s" % (node.ip, self.config.MYSQL_PORT)  # FIXME: find real mysql port instead of default 3306
                          for node in nodes]
@@ -105,8 +108,6 @@ class MySQLManager(BaseManager):
         except Exception as ex:
             self.logger.exception('Failed to configure new MySQL GLB: %s' % ex)
             raise
-            
-
 
     def _start_glbd(self, new_glb_nodes):
         for new_glb in new_glb_nodes:
@@ -136,6 +137,11 @@ class MySQLManager(BaseManager):
             check_arguments(exp_params, kwargs)
         except Exception as ex:
             return HttpErrorResponse("%s" % ex)
+
+        try:
+            self.check_state([self.S_RUNNING, self.S_ADAPTING])
+        except:
+            return HttpJsonResponse({})
 
         return HttpJsonResponse({'nodes': [node.id for node in self.config.get_nodes()],
                                  'glb_nodes': [node.id for node in self.config.get_glb_nodes()],
@@ -176,8 +182,8 @@ class MySQLManager(BaseManager):
                                                  'ip': serviceNode.ip,
                                                  'vmid': serviceNode.vmid,
                                                  'cloud': serviceNode.cloud_name,
-                         'isNode': serviceNode.isNode,
-                         'isGlb_node': serviceNode.isGlb_node
+                                                 'isNode': serviceNode.isNode,
+                                                 'isGlb_node': serviceNode.isGlb_node
                                                  }
                                  })
 
@@ -189,7 +195,7 @@ class MySQLManager(BaseManager):
         if len(reg_nodes):
             self._start_mysqld(reg_nodes)
             self.config.addMySQLServiceNodes(reg_nodes)
-        
+
         gal_nodes = filter(lambda n: n.role=='glb_nodes', nodes)
         if len(gal_nodes):
             self._start_glbd(gal_nodes)
@@ -197,8 +203,6 @@ class MySQLManager(BaseManager):
 
         # _strat_mysql raises an exception
         return True
-
-
 
     @expose('GET')
     def getMeanLoad(self, kwargs):
@@ -258,7 +262,7 @@ class MySQLManager(BaseManager):
             localUpdate=exc.fetchone()[1]
             updates.append(localUpdate)
             update=update+float(localUpdate)
-        
+
         if len(nodes)!=0 :
             l=len(nodes)
         else:
@@ -299,6 +303,7 @@ class MySQLManager(BaseManager):
             xml=commands.getstatusoutput("curl -s telnet://localhost:8651/")
         except Exception as ex:
             return HttpErrorResponse("%s" % ex)
+
         return HttpJsonResponse({'Ganglia': xml})
 
     @expose('GET')
@@ -320,6 +325,7 @@ class MySQLManager(BaseManager):
             check_arguments(exp_params, kwargs)
         except Exception as ex:
             return HttpErrorResponse("%s" % ex)
+
         return HttpJsonResponse({
                  'request_rate': 0,
                                  'error_rate': 0,
@@ -328,13 +334,12 @@ class MySQLManager(BaseManager):
                                  })
 
     def on_remove_nodes(self, noderoles):
-        #We assume arguments are checked here!
+        # We assume arguments are checked here!
         nodes = noderoles.get('nodes', 0)
         glb_nodes = noderoles.get('glb_nodes', 0)
         rm_reg_nodes = self.config.get_nodes()[:nodes]
         rm_glb_nodes = self.config.get_glb_nodes()[:glb_nodes]
         return self._do_remove_nodes(rm_reg_nodes,rm_glb_nodes)
-
 
     def _do_remove_nodes(self,rm_reg_nodes,rm_glb_nodes):
         glb_nodes = self.config.get_glb_nodes()
@@ -377,11 +382,11 @@ class MySQLManager(BaseManager):
              to the IP address of the new node.
         """
         try:
-            self._check_state([self.S_RUNNING])
             exp_keys = ['from_cloud', 'vmid', 'to_cloud']
             exp_params = [('nodes', is_list_dict2(exp_keys)),
                           ('delay', is_pos_nul_int, 0)]
             nodes, delay = check_arguments(exp_params, kwargs)
+            self.check_state([self.S_RUNNING])
         except Exception, ex:
             return HttpErrorResponse('%s' % ex)
 
@@ -497,6 +502,7 @@ class MySQLManager(BaseManager):
             check_arguments(exp_params, kwargs)
         except Exception as ex:
             return HttpErrorResponse("%s" % ex)
+
         return HttpJsonResponse({'state': self.state, 'type': 'mysql'})
 
     def on_stop(self):
@@ -509,10 +515,10 @@ class MySQLManager(BaseManager):
     def set_password(self, kwargs):
         self.logger.debug('Setting password')
         try:
-            self._check_state([self.S_RUNNING])
             exp_params = [('user', is_string),
                           ('password', is_string)]
             user, password = check_arguments(exp_params, kwargs)
+            self.check_state([self.S_RUNNING])
         except Exception as ex:
             return HttpErrorResponse("Cannot set new password: %s." % ex)
 
@@ -539,9 +545,9 @@ class MySQLManager(BaseManager):
         """
         self.logger.debug('Uploading mysql dump')
         try:
-            self._check_state([self.S_RUNNING])
             exp_params = [('mysqldump_file', is_uploaded_file)]
             mysqldump_file = check_arguments(exp_params, kwargs)
+            self.check_state([self.S_RUNNING])
         except Exception as ex:
             return HttpErrorResponse("%s" % ex)
 
@@ -574,9 +580,9 @@ class MySQLManager(BaseManager):
         Returns the dump of the database.
         """
         try:
-            self._check_state([self.S_RUNNING])
             exp_params = []
             check_arguments(exp_params, kwargs)
+            self.check_state([self.S_RUNNING])
         except Exception as ex:
             return HttpErrorResponse("%s" % ex)
 
@@ -612,11 +618,12 @@ class MySQLManager(BaseManager):
         Returns an error if "nodes + glb_nodes == 0".
         """
         try:
-            self._check_state([self.S_RUNNING])
             exp_params = [('ip', is_string)]
             ip = check_arguments(exp_params, kwargs)
+            self.check_state([self.S_RUNNING])
         except Exception as ex:
             return HttpErrorResponse("%s" % ex)
+
         self.state_set(self.S_ADAPTING)
         rm_reg_nodes = self.config.get_nodes()
         rm_glb_nodes = self.config.get_glb_nodes()
@@ -652,12 +659,12 @@ class MySQLManager(BaseManager):
             name of MySQL variable
         value : string
             value to set
-        
+
         """
         try:
-            self._check_state([self.S_RUNNING])
-            exp_params = [('variable', is_string),('value',is_string)]
+            exp_params = [('variable', is_string),('value', is_string)]
             variable, value = check_arguments(exp_params, kwargs)
+            self.check_state([self.S_RUNNING])
             nodes = self.config.get_nodes()
             for node in nodes:
                 db = MySQLdb.connect(node.ip, 'mysqldb', self.root_pass)
@@ -671,4 +678,5 @@ class MySQLManager(BaseManager):
                     exc.execute('set global ' + variable + ' = ' + n + ';')'''
         except Exception as ex:
             return HttpErrorResponse("%s" % ex)
+
         return HttpJsonResponse("OK!")

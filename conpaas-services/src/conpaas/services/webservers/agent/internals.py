@@ -12,6 +12,7 @@ from threading import Lock
 import pickle
 import zipfile
 import tarfile
+import copy
 
 from conpaas.core.agent import BaseAgent, AgentException
 from conpaas.services.webservers.agent import role
@@ -19,6 +20,11 @@ from conpaas.services.webservers.agent import role
 from conpaas.core.https.server import HttpErrorResponse, HttpJsonResponse, FileUploadField
 from conpaas.core.expose import expose
 from conpaas.core import git
+
+from conpaas.core.misc import check_arguments, is_in_list, is_not_in_list,\
+    is_list, is_non_empty_list, is_list_dict, is_list_dict2, is_string,\
+    is_int, is_pos_nul_int, is_pos_int, is_dict, is_dict2, is_bool,\
+    is_uploaded_file
 
 
 class WebServersAgent(BaseAgent):
@@ -149,215 +155,172 @@ class WebServersAgent(BaseAgent):
             self.logger.exception(e)
             return HttpErrorResponse(ex.message)
 
-    def _scalaris_get_params(self, kwargs):
-        ret = {}
-        if 'first_node' not in kwargs:
-            raise AgentException(AgentException.E_ARGS_MISSING, 'first_node')
-        if not isinstance(kwargs['first_node'], bool):
-            raise AgentException(AgentException.E_ARGS_INVALID, detail='Invalid "first_node" value')
-        ret['first_node'] = kwargs.pop('first_node')
-        if 'known_hosts' not in kwargs:
-            raise AgentException(AgentException.E_ARGS_MISSING, 'known_hosts')
-        ret['known_hosts'] = kwargs.pop('known_hosts')
-
-        if len(kwargs) != 0:
-            raise AgentException(AgentException.E_ARGS_UNEXPECTED, kwargs.keys())
-        return ret
-
     @expose('POST')
     def createScalaris(self, kwargs):
         """Create the ScalarisProcessManager"""
+        orig_kwargs = copy.copy(kwargs)
+        exp_params = [('first_node', is_bool),
+                      ('known_hosts', is_string)]
         try:
-            kwargs = self._scalaris_get_params(kwargs)
-        except AgentException as e:
-            return HttpErrorResponse(e.message)
-        else:
-            with self.scalaris_lock:
-                return self._create(kwargs, self.scalaris_file, role.ScalarisProcessManager)
+            check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
-    def _webserver_get_params(self, kwargs):
-        ret = {}
-
-        if 'port' not in kwargs:
-            raise AgentException(AgentException.E_ARGS_MISSING, 'port')
-        if not isinstance(kwargs['port'], int):
-            raise AgentException(AgentException.E_ARGS_INVALID, detail='Invalid "port" value')
-        ret['port'] = int(kwargs.pop('port'))
-
-        if 'code_versions' not in kwargs:
-            raise AgentException(AgentException.E_ARGS_MISSING, 'code_versions')
-        ret['code_versions'] = kwargs.pop('code_versions')
-
-        if len(kwargs) != 0:
-            raise AgentException(AgentException.E_ARGS_UNEXPECTED, kwargs.keys())
-        return ret
+        with self.scalaris_lock:
+            return self._create(orig_kwargs, self.scalaris_file, role.ScalarisProcessManager)
 
     @expose('POST')
     def createWebServer(self, kwargs):
         """Create the WebServer"""
+        orig_kwargs = copy.copy(kwargs)
+        exp_params = [('port', is_pos_int),
+                      ('code_versions', is_list)]
         try:
-            kwargs = self._webserver_get_params(kwargs)
-        except AgentException as e:
-            return HttpErrorResponse(e.message)
-        else:
-            with self.web_lock:
-                return self._create(kwargs, self.webserver_file, self.WebServer)
+            check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
+
+        with self.web_lock:
+            return self._create(orig_kwargs, self.webserver_file, self.WebServer)
 
     @expose('POST')
     def updateWebServer(self, kwargs):
         """UPDATE the WebServer"""
+        orig_kwargs = copy.copy(kwargs)
+        exp_params = [('port', is_pos_int),
+                      ('code_versions', is_list)]
         try:
-            kwargs = self._webserver_get_params(kwargs)
-        except AgentException as e:
-            return HttpErrorResponse(e.message)
-        else:
-            with self.web_lock:
-                return self._update(kwargs, self.webserver_file, self.WebServer)
+            check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
-    @expose('POST')
-    def stopWebServer(self, kwargs):
-        """KILL the WebServer"""
-        if len(kwargs) != 0:
-            return HttpErrorResponse(AgentException(
-                AgentException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
         with self.web_lock:
-            return self._stop(kwargs, self.webserver_file, self.WebServer)
-
-    def _httpproxy_get_params(self, kwargs):
-        ret = {}
-        if 'port' not in kwargs:
-            raise AgentException(AgentException.E_ARGS_MISSING, 'port')
-        if not isinstance(kwargs['port'], int):
-            raise AgentException(
-                AgentException.E_ARGS_INVALID, detail='Invalid "port" value')
-        ret['port'] = int(kwargs.pop('port'))
-
-        if 'code_version' not in kwargs:
-            raise AgentException(
-                AgentException.E_ARGS_MISSING, 'code_version')
-        ret['code_version'] = kwargs.pop('code_version')
-
-        if 'web_list' in kwargs:
-            web_list = kwargs.pop('web_list')
-        else:
-            web_list = []
-        if len(web_list) == 0:
-            raise AgentException(
-                AgentException.E_ARGS_INVALID, detail='At least one web_list is required')
-        ret['web_list'] = web_list
-
-        if 'fpm_list' in kwargs:
-            ret['fpm_list'] = kwargs.pop('fpm_list')
-
-        if 'tomcat_list' in kwargs:
-            ret['tomcat_list'] = kwargs.pop('tomcat_list')
-            if 'tomcat_servlets' in kwargs:
-                ret['tomcat_servlets'] = kwargs.pop('tomcat_servlets')
-
-        ret['cdn'] = kwargs.get('cdn', None)
-        return ret
+            return self._update(orig_kwargs, self.webserver_file, self.WebServer)
 
     @expose('GET')
     def getHttpProxyState(self, kwargs):
         """GET state of HttpProxy"""
-        if len(kwargs) != 0:
-            return HttpErrorResponse(AgentException(
-                AgentException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
+        try:
+            exp_params = []
+            check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
+
         with self.httpproxy_lock:
             return self._get(kwargs, self.httpproxy_file, self.HttpProxy)
 
     @expose('POST')
+    def stopWebServer(self, kwargs):
+        """KILL the WebServer"""
+        try:
+            exp_params = []
+            check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
+
+        with self.web_lock:
+            return self._stop(kwargs, self.webserver_file, self.WebServer)
+
+    @expose('POST')
     def createHttpProxy(self, kwargs):
         """Create the HttpProxy"""
+        orig_kwargs = copy.copy(kwargs)
+        exp_params = [('port', is_pos_int),
+                      ('code_version', is_string),
+                      ('web_list', is_non_empty_list),
+                      ('fpm_list', is_list, []),
+                      ('tomcat_list', is_list, []),
+                      ('tomcat_servlets', is_list, []),
+                      ('cdn', is_bool, None)]
         try:
-            kwargs = self._httpproxy_get_params(kwargs)
-        except AgentException as e:
-            return HttpErrorResponse(e.message)
-        else:
-            with self.httpproxy_lock:
-                return self._create(kwargs, self.httpproxy_file, self.HttpProxy)
+            check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
+
+        with self.httpproxy_lock:
+            return self._create(orig_kwargs, self.httpproxy_file, self.HttpProxy)
 
     @expose('POST')
     def updateHttpProxy(self, kwargs):
+        orig_kwargs = copy.copy(kwargs)
+        exp_params = [('port', is_pos_int),
+                      ('code_version', is_string),
+                      ('web_list', is_non_empty_list),
+                      ('fpm_list', is_list, []),
+                      ('tomcat_list', is_list, []),
+                      ('tomcat_servlets', is_list, []),
+                      ('cdn', is_bool, None)]
         try:
-            kwargs = self._httpproxy_get_params(kwargs)
+            check_arguments(exp_params, kwargs)
+
             with self.httpproxy_lock:
-                return self._update(kwargs, self.httpproxy_file, self.HttpProxy)
-        except AgentException as e:
-            self.logger.exception(e)
-            return HttpErrorResponse(e.message)
-        except Exception as e:
-            self.logger.exception(e)
-            return HttpErrorResponse(str(e))
+                return self._update(orig_kwargs, self.httpproxy_file, self.HttpProxy)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
     @expose('POST')
     def stopHttpProxy(self, kwargs):
         """KILL the HttpProxy"""
-        if len(kwargs) != 0:
-            return HttpErrorResponse(AgentException(
-                AgentException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
+        try:
+            exp_params = []
+            check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
+
         with self.httpproxy_lock:
             return self._stop(kwargs, self.httpproxy_file, self.HttpProxy)
-
-    def _php_get_params(self, kwargs):
-        ret = {}
-        if 'port' not in kwargs:
-            raise AgentException(AgentException.E_ARGS_MISSING, 'port')
-        if not isinstance(kwargs['port'], int):
-            raise AgentException(
-                AgentException.E_ARGS_INVALID, detail='Invalid "port" value')
-        ret['port'] = int(kwargs.pop('port'))
-        if 'scalaris' not in kwargs:
-            raise AgentException(AgentException.E_ARGS_MISSING, 'scalaris')
-        ret['scalaris'] = kwargs.pop('scalaris')
-        if 'configuration' not in kwargs:
-            raise AgentException(AgentException.E_ARGS_MISSING, 'configuration')
-        if not isinstance(kwargs['configuration'], dict):
-            raise AgentException(
-                AgentException.E_ARGS_INVALID, detail='invalid "configuration" object')
-        ret['configuration'] = kwargs.pop('configuration')
-
-        if len(kwargs) != 0:
-            raise AgentException(AgentException.E_ARGS_UNEXPECTED, kwargs.keys())
-        return ret
 
     @expose('GET')
     def getPHPState(self, kwargs):
         """GET state of PHPProcessManager"""
-        if len(kwargs) != 0:
-            return HttpErrorResponse(AgentException(
-                AgentException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
+        try:
+            exp_params = []
+            check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
+
         with self.php_lock:
             return self._get(kwargs, self.php_file, role.PHPProcessManager)
 
     @expose('POST')
     def createPHP(self, kwargs):
         """Create the PHPProcessManager"""
+        orig_kwargs = copy.copy(kwargs)
+        exp_params = [('port', is_pos_int),
+                      ('scalaris', is_string),
+                      ('configuration', is_dict)]
         try:
-            kwargs = self._php_get_params(kwargs)
-        except AgentException as e:
-            return HttpErrorResponse(e.message)
-        else:
-            with self.php_lock:
-                return self._create(kwargs, self.php_file, role.PHPProcessManager)
+            check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
+
+        with self.php_lock:
+            return self._create(orig_kwargs, self.php_file, role.PHPProcessManager)
 
     @expose('POST')
     def updatePHP(self, kwargs):
         """UPDATE the PHPProcessManager"""
+        orig_kwargs = copy.copy(kwargs)
+        exp_params = [('port', is_pos_int),
+                      ('scalaris', is_string),
+                      ('configuration', is_dict)]
         try:
-            kwargs = self._php_get_params(kwargs)
-        except AgentException as e:
-            return HttpErrorResponse(e.message)
-        else:
-            with self.php_lock:
-                return self._update(kwargs, self.php_file, role.PHPProcessManager)
+            check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
+
+        with self.php_lock:
+            return self._update(orig_kwargs, self.php_file, role.PHPProcessManager)
 
     @expose('POST')
     def stopPHP(self, kwargs):
         """KILL the PHPProcessManager"""
-        if len(kwargs) != 0:
-            return HttpErrorResponse(AgentException(
-                AgentException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
+        try:
+            exp_params = []
+            check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
+
         with self.php_lock:
             return self._stop(kwargs, self.php_file, role.PHPProcessManager)
 
@@ -374,31 +337,19 @@ class WebServersAgent(BaseAgent):
 
     @expose('UPLOAD')
     def updatePHPCode(self, kwargs):
-
-        if 'filetype' not in kwargs:
-            return HttpErrorResponse(AgentException(
-                AgentException.E_ARGS_MISSING, 'filetype').message)
-        filetype = kwargs.pop('filetype')
-
-        if 'codeVersionId' not in kwargs:
-            return HttpErrorResponse(AgentException(
-                AgentException.E_ARGS_MISSING, 'codeVersionId').message)
-        codeVersionId = kwargs.pop('codeVersionId')
-
-        if 'file' not in kwargs:
-            return HttpErrorResponse(AgentException(
-                AgentException.E_ARGS_MISSING, 'file').message)
-        file = kwargs.pop('file')
-
-        if filetype != 'git' and not isinstance(file, FileUploadField):
-            return HttpErrorResponse(AgentException(
-                AgentException.E_ARGS_INVALID, detail='"file" should be a file').message)
-        else:
-            revision = file
-
-        if len(kwargs) != 0:
-            return HttpErrorResponse(AgentException(
-                AgentException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
+        valid_filetypes = [ 'zip', 'tar', 'git' ]
+        exp_params = [('filetype', is_in_list(valid_filetypes)),
+                      ('codeVersionId', is_string),
+                      ('file', is_uploaded_file, None),
+                      ('revision', is_string, '')]
+        try:
+            filetype, codeVersionId, file, revision = check_arguments(exp_params, kwargs)
+            if filetype != 'git' and not file:
+                raise Exception("The '%s' filetype requires an uploaded file" % filetype)
+            elif filetype == 'git' and not revision:
+                raise Exception("The 'git' filetype requires the 'revision' parameter")
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
         if filetype == 'zip':
             source = zipfile.ZipFile(file.file, 'r')
@@ -406,8 +357,6 @@ class WebServersAgent(BaseAgent):
             source = tarfile.open(fileobj=file.file)
         elif filetype == 'git':
             source = git.DEFAULT_CODE_REPO
-        else:
-            return HttpErrorResponse('Unknown archive type ' + str(filetype))
 
         if not exists(join(self.VAR_CACHE, 'www')):
             makedirs(join(self.VAR_CACHE, 'www'))
@@ -432,63 +381,55 @@ class WebServersAgent(BaseAgent):
     @expose('GET')
     def getTomcatState(self, kwargs):
         """GET state of Tomcat6"""
-        if len(kwargs) != 0:
-            return HttpErrorResponse(AgentException(
-                AgentException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
+        try:
+            exp_params = []
+            check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
+
         with self.tomcat_lock:
             return self._get(kwargs, self.tomcat_file, role.Tomcat6)
 
     @expose('POST')
     def createTomcat(self, kwargs):
         """Create Tomcat6"""
-        ret = {}
-        if 'tomcat_port' not in kwargs:
-            return HttpErrorResponse(AgentException(
-                AgentException.E_ARGS_MISSING, 'tomcat_port').message)
-        ret['tomcat_port'] = kwargs.pop('tomcat_port')
-
-        if len(kwargs) != 0:
-            return HttpErrorResponse(AgentException(
-                AgentException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
+        orig_kwargs = copy.copy(kwargs)
+        exp_params = [('tomcat_port', is_pos_int)]
+        try:
+            check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
         with self.tomcat_lock:
-            return self._create(ret, self.tomcat_file, role.Tomcat6)
+            return self._create(orig_kwargs, self.tomcat_file, role.Tomcat6)
 
     @expose('POST')
     def stopTomcat(self, kwargs):
         """KILL Tomcat6"""
-        if len(kwargs) != 0:
-            return HttpErrorResponse(AgentException(
-                AgentException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
+        try:
+            exp_params = []
+            check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
+
         with self.tomcat_lock:
             return self._stop(kwargs, self.tomcat_file, role.Tomcat6)
 
     @expose('UPLOAD')
     def updateTomcatCode(self, kwargs):
-        if 'filetype' not in kwargs:
-            return HttpErrorResponse(AgentException(
-                AgentException.E_ARGS_MISSING, 'filetype').message)
-        filetype = kwargs.pop('filetype')
-
-        if 'codeVersionId' not in kwargs:
-            return HttpErrorResponse(AgentException(
-                AgentException.E_ARGS_MISSING, 'codeVersionId').message)
-        codeVersionId = kwargs.pop('codeVersionId')
-
-        if 'file' not in kwargs:
-            return HttpErrorResponse(AgentException(
-                AgentException.E_ARGS_MISSING, 'file').message)
-        file = kwargs.pop('file')
-
-        if filetype != 'git' and not isinstance(file, FileUploadField):
-            return HttpErrorResponse(AgentException(
-                AgentException.E_ARGS_INVALID, detail='"file" should be a file').message)
-        else:
-            revision = file
-
-        if len(kwargs) != 0:
-            return HttpErrorResponse(AgentException(
-                AgentException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
+        valid_filetypes = [ 'zip', 'tar', 'git' ]
+        exp_params = [('filetype', is_in_list(valid_filetypes)),
+                      ('codeVersionId', is_string),
+                      ('file', is_uploaded_file, None),
+                      ('revision', is_string, '')]
+        try:
+            filetype, codeVersionId, file, revision = check_arguments(exp_params, kwargs)
+            if filetype != 'git' and not file:
+                raise Exception("The '%s' filetype requires an uploaded file" % filetype)
+            elif filetype == 'git' and not revision:
+                raise Exception("The 'git' filetype requires the 'revision' parameter")
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
         if filetype == 'zip':
             source = zipfile.ZipFile(file.file, 'r')
@@ -496,8 +437,6 @@ class WebServersAgent(BaseAgent):
             source = tarfile.open(fileobj=file.file)
         elif filetype == 'git':
             source = git.DEFAULT_CODE_REPO
-        else:
-            return HttpErrorResponse('Unsupported archive type ' + str(filetype))
 
         target_dir = join(self.VAR_CACHE, 'tomcat_instance', 'webapps', codeVersionId)
         if exists(target_dir):

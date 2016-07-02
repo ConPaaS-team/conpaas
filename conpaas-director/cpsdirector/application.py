@@ -19,11 +19,11 @@ from netaddr import IPNetwork
 
 from threading import Thread
 from cpsdirector import db
-#from cpsdirector import cloud as manager_controller
 from cpsdirector.iaas.controller import Controller
 
-from cpsdirector.common import log
-from cpsdirector.common import build_response
+
+from cpsdirector.common import log, log_error, build_response
+from cpsdirector.common import error_response
 from cpsdirector.common import config_parser
 from cpsdirector.cloud import _create_nodes as create_nodes, Resource
 
@@ -38,8 +38,8 @@ class Application(db.Model):
     A_INIT = 'INIT'         # application initialized but not yet started
     A_PROLOGUE = 'PROLOGUE' # application is starting up
     A_RUNNING = 'RUNNING'   # application is running
-    A_ADAPTING = 'ADAPTING' # application is in a transient state 
-                            
+    A_ADAPTING = 'ADAPTING' # application is in a transient state
+
     A_EPILOGUE = 'EPILOGUE' # application is shutting down
     A_STOPPED = 'STOPPED'   # application stopped
     A_ERROR = 'ERROR'       # application is in error state
@@ -55,7 +55,7 @@ class Application(db.Model):
     user = db.relationship('User', backref=db.backref('applications',
                            lazy="dynamic"))
     manager = db.relationship('Resource', uselist=False,
-                            primaryjoin="and_(Application.aid==Resource.app_id, Resource.role=='manager')", 
+                            primaryjoin="and_(Application.aid==Resource.app_id, Resource.role=='manager')",
                             backref='applciation')
 
     # manager = Resource.query.filter_by(app_id=aid).filter_by(role='manager').first()
@@ -67,7 +67,7 @@ class Application(db.Model):
 
         for key, val in kwargs.items():
             setattr(self, key, val)
-        
+
         if not self.status:
             self.status = Application.A_INIT
 
@@ -80,7 +80,7 @@ class Application(db.Model):
             app_to_dict['vmid'] = self.manager.vmid
             app_to_dict['cloud'] = self.manager.cloud
         return app_to_dict
-       
+
 
     def get_available_vpn_subnet(self):
         """Find an available VPN subnet for the next service to be created in
@@ -91,8 +91,8 @@ class Application(db.Model):
             srvbits = config_parser.get('conpaas', 'VPN_SERVICE_BITS')
         except ConfigParser.NoOptionError:
             return
-            
-        # Split the given network into subnets. 
+
+        # Split the given network into subnets.
         base_net = IPNetwork(network + '/' + netmask)
         vpn_subnets = base_net.subnet(32 - base_net.prefixlen - int(srvbits))
 
@@ -149,15 +149,19 @@ def check_app_exists(app_name):
     return False
 
 def _createapp(app_name, cloud_name):
-    log('User %s creating a new application %s' % (g.user.username, app_name))
+    log("User '%s' is attempting to create a new application '%s'"
+        % (g.user.username, app_name))
+
+    if not app_name:
+        msg = '"name" is a required argument'
+        log_error(msg)
+        return error_response(msg)
 
     # check if the application already exists
     if check_app_exists(app_name):
-        log('Application name %s already exists' % app_name)
-
-        return jsonify({
-            'error': True,
-            'msg': 'Application name "%s" already taken' % app_name })
+        msg = 'Application name "%s" is already taken' % app_name
+        log_error(msg)
+        return error_response(msg)
 
     a = Application(name=app_name, user=g.user)
 
@@ -167,20 +171,36 @@ def _createapp(app_name, cloud_name):
 
     db.session.commit()
 
-    
     # store_app_controller(g.user.uid, a.aid, cloud_name)
 
-    log('Application %s created properly' % (a.aid))
-    return jsonify(a.to_dict())
+    log('Application %s created successfully' % (a.aid))
+    return a.to_dict()
+
+from cpsdirector.user import cert_required
+@application_page.route("/createapp", methods=['POST'])
+@application_page.route("/createapp/<cloudname>", methods=['POST'])
+@cert_required(role='user')
+def createapp(cloudname="default"):
+    app_name = request.values.get('name')
+    return build_response(jsonify(_createapp(app_name, cloudname)))
 
 def _startapp(user_id, app_id, cloud_name, new_thread=True):
+    log("User '%s' is attempting to start application %s"
+        % (g.user.username, app_id))
+
     app = get_app_by_id(user_id, app_id)
     if not app:
-        return { 'error': True, 'msg': 'Application not found' }    
-    if app.status not in (Application.A_INIT, Application.A_STOPPED) :
-        return { 'error': True, 'msg': 'Application already started' }
+        msg = 'Application not found'
+        log_error(msg)
+        return error_response(msg)
+    if app.status not in (Application.A_INIT, Application.A_STOPPED):
+        msg = 'Application already started'
+        log_error(msg)
+        return error_response(msg)
     if g.user.credit <= 0:
-        return { 'error': True, 'msg': 'Insufficient credits' }
+        msg = 'Insufficient credits'
+        log_error(msg)
+        return error_response(msg)
     try:
         app.status = Application.A_PROLOGUE
 
@@ -194,27 +214,39 @@ def _startapp(user_id, app_id, cloud_name, new_thread=True):
             res = create_nodes(man_args)
 
         log('Application %s is starting' % (app_id))
-        return True
+        return {}
     except Exception, err:
         app.status = Application.A_STOPPED
         exc_type, exc_value, exc_traceback = sys.exc_info()
         lines = traceback.format_exception(exc_type, exc_value, exc_traceback)
         log(''.join('!! ' + line for line in lines))
-        error_msg = 'Error upon application starting: %s %s' % (type(err), err)
-        log(error_msg)
-        return { 'error': True, 'msg': error_msg }
+        msg = 'Error upon application starting: %s %s' % (type(err), err)
+        log_error(msg)
+        return error_response(msg)
     finally:
         db.session.commit()
+
+@application_page.route("/startapp/<int:appid>", methods=['POST'])
+@application_page.route("/startapp/<int:appid>/<cloudname>", methods=['POST'])
+@cert_required(role='user')
+def startapp(appid, cloudname="default"):
+    return build_response(jsonify(_startapp(g.user.uid, appid, cloudname)))
 
 def delete_nodes(nodes):
     controller = Controller()
     controller.setup_default()
     controller.delete_nodes(nodes)
 
+from cpsdirector.service import Service
+# from cpsdirector.service import _remove as remove_service
+# from cpsdirector.service import callmanager
+
 def _deleteapp(user_id, app_id, del_app_entry):
     app = get_app_by_id(user_id, app_id)
     if not app:
-        return False
+        msg = 'Application not found'
+        log_error(msg)
+        return error_response(msg)
 
     # stop all services
     # we could ask the manager to kill the agents or kill them right here
@@ -241,44 +273,26 @@ def _deleteapp(user_id, app_id, del_app_entry):
     # delete the applciation from the database
     if del_app_entry:
         db.session.delete(app)
+        msg = "Application %s was deleted successfully" % app_id
+    else:
+        msg = "Application %s was stopped successfully" % app_id
     db.session.commit()
 
-    return True
-
-from cpsdirector.user import cert_required
-@application_page.route("/createapp", methods=['POST'])
-@application_page.route("/createapp/<cloudname>", methods=['POST'])
-@cert_required(role='user')
-def createapp(cloudname="default"):
-    app_name = request.values.get('name')
-    if not app_name:
-        log('"name" is a required argument')
-        return build_response(simplejson.dumps(False))
-
-    return build_response(_createapp(app_name, cloudname))
-
-@application_page.route("/startapp/<int:appid>", methods=['POST'])
-@application_page.route("/startapp/<int:appid>/<cloudname>", methods=['POST'])
-@cert_required(role='user')
-def startapp(appid, cloudname="default"):
-    return build_response(simplejson.dumps(_startapp(g.user.uid, appid, cloudname)))
-
-from cpsdirector.service import Service
-from cpsdirector.service import _remove as remove_service
-from cpsdirector.service import callmanager
-
+    log(msg)
+    return {}
 
 @application_page.route("/stopapp/<int:appid>", methods=['POST'])
 @cert_required(role='user')
 def stopapp(appid, cloudname="default"):
+    log("User '%s' is attempting to stop application %s" % (g.user.username, appid))
+
     return build_response(simplejson.dumps(_deleteapp(g.user.uid, appid, False)))
 
-    
     # app = get_app_by_id(g.user.uid, appid)
     # if not app:
     #     return build_response(simplejson.dumps(False))
 
-    # # this will delete all the services and the application manager 
+    # # this will delete all the services and the application manager
 
     # res = callmanager(appid, 0, "infoapp", False, {})
     # if 'states' in res:
@@ -290,8 +304,6 @@ def stopapp(appid, cloudname="default"):
     #     return build_response(simplejson.dumps({ 'error': True,'msg': res['msg'] }))
     # return build_response(simplejson.dumps(True))
 
-
-
 @application_page.route("/deleteapp/<int:appid>", methods=['POST'])
 @cert_required(role='user')
 def delete(appid):
@@ -302,29 +314,41 @@ def delete(appid):
     Returns a boolean value. True in case of successful authentication and
     proper service termination. False otherwise.
     """
-    log('User %s attempting to delete application %s' % (g.user.uid, appid))
+    log("User '%s' is attempting to delete application %s" % (g.user.username, appid))
+
     return build_response(simplejson.dumps(_deleteapp(g.user.uid, appid, True)))
 
 def _renameapp(appid, newname):
-    log('User %s attempting to rename application %s' % (g.user.uid, appid))
+    log("User '%s' is attempting to rename application %s" % (g.user.username, appid))
+
+    if not newname:
+        msg = '"name" is a required argument'
+        log_error(msg)
+        return error_response(msg)
 
     app = get_app_by_id(g.user.uid, appid)
     if not app:
-        return build_response(simplejson.dumps(False))
+        msg = 'Application not found'
+        log_error(msg)
+        return error_response(msg)
+
+    # check if the new name is already taken
+    if check_app_exists(newname):
+        msg = 'Application name "%s" is already taken' % newname
+        log_error(msg)
+        return error_response(msg)
 
     app.name = newname
     db.session.commit()
-    return simplejson.dumps(True)
+
+    log("Application %s renamed successfully" % appid)
+    return {}
 
 @application_page.route("/renameapp/<int:appid>", methods=['POST'])
 @cert_required(role='user')
 def renameapp(appid):
     newname = request.values.get('name')
-    if not newname:
-        log('"name" is a required argument')
-        return build_response(simplejson.dumps(False))
-
-    return _renameapp(appid, newname)
+    return build_response(jsonify(_renameapp(appid, newname)))
 
 @application_page.route("/listapp", methods=['POST', 'GET'])
 @cert_required(role='user')

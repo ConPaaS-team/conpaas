@@ -56,19 +56,13 @@ from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse,\
 from conpaas.core.agent import BaseAgent, AgentException
 from conpaas.core import git
 from conpaas.core.misc import run_cmd
+from conpaas.core.misc import check_arguments, is_in_list, is_not_in_list,\
+    is_list, is_non_empty_list, is_list_dict, is_list_dict2, is_string,\
+    is_int, is_pos_nul_int, is_pos_int, is_dict, is_dict2, is_bool,\
+    is_uploaded_file
 
 class GenericAgent(BaseAgent):
-    """Agent class with the following exposed methods:
 
-    check_agent_process() -- GET
-    init_agent(agents_info, ip) -- POST
-    update_code(filetype, codeVersionId, file) -- UPLOAD
-    mount_volume(dev_name, vol_name) -- POST
-    unmount_volume(dev_name) -- POST
-    execute_script(command, parameters, agents_info) -- POST
-    get_script_status() -- GET
-    get_log(filename) -- GET
-    """
     def __init__(self, config_parser, **kwargs):
         """Initialize Generic Agent.
 
@@ -78,7 +72,7 @@ class GenericAgent(BaseAgent):
         BaseAgent.__init__(self, config_parser)
 
         self.SERVICE_ID = config_parser.get('agent', 'SERVICE_ID')
-        self.generic_dir = config_parser.get('agent', 'CONPAAS_HOME')
+        self.GENERIC_DIR = config_parser.get('agent', 'CONPAAS_HOME')
         self.VAR_CACHE = config_parser.get('agent', 'VAR_CACHE')
         self.CODE_DIR = join(self.VAR_CACHE, 'bin')
         self.VOLUME_DIR = '/media'
@@ -89,21 +83,13 @@ class GenericAgent(BaseAgent):
     def init_agent(self, kwargs):
         """Set the environment variables"""
 
-        if 'agents_info' not in kwargs:
-            return HttpErrorResponse(AgentException(
-                AgentException.E_ARGS_MISSING, 'agents_info').message)
-        agents_info = simplejson.loads(kwargs.pop('agents_info'))
-
-        if 'ip' not in kwargs:
-            return HttpErrorResponse(AgentException(
-                AgentException.E_ARGS_MISSING, 'ip').message)
-        agent_ip = kwargs.pop('ip')
-
-        if len(kwargs) != 0:
-            return HttpErrorResponse(AgentException(
-                AgentException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
-
-        self.state = 'ADAPTING'
+        exp_params = [('agents_info', is_string),
+                      ('ip', is_string)]
+        try:
+            agents_info, agent_ip = check_arguments(exp_params, kwargs)
+            agents_info = simplejson.loads(agents_info)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
         self.logger.info('Setting agent environment')
 
@@ -118,39 +104,26 @@ class GenericAgent(BaseAgent):
         self.env.update({'MY_ROLE':agent_role})
         self.env.update({'MASTER_IP':master_ip})
 
-        self.state = 'RUNNING'
         self.logger.info('Agent initialized')
         return HttpJsonResponse()
 
     @expose('UPLOAD')
     def update_code(self, kwargs):
-
-        if 'filetype' not in kwargs:
-            return HttpErrorResponse(AgentException(
-                AgentException.E_ARGS_MISSING, 'filetype').message)
-        filetype = kwargs.pop('filetype')
-
-        if 'codeVersionId' not in kwargs:
-            return HttpErrorResponse(AgentException(
-                AgentException.E_ARGS_MISSING, 'codeVersionId').message)
-        codeVersionId = kwargs.pop('codeVersionId')
-
-        if 'file' not in kwargs:
-            return HttpErrorResponse(AgentException(
-                AgentException.E_ARGS_MISSING, 'file').message)
-        file = kwargs.pop('file')
-
-        if filetype != 'git' and not isinstance(file, FileUploadField):
-            return HttpErrorResponse(AgentException(
-                AgentException.E_ARGS_INVALID, detail='"file" should be a file').message)
-        else:
-            revision = file
+        valid_filetypes = [ 'zip', 'tar', 'git' ]
+        exp_params = [('filetype', is_in_list(valid_filetypes)),
+                      ('codeVersionId', is_string),
+                      ('file', is_uploaded_file, None),
+                      ('revision', is_string, '')]
+        try:
+            filetype, codeVersionId, file, revision = check_arguments(exp_params, kwargs)
+            if filetype != 'git' and not file:
+                raise Exception("The '%s' filetype requires an uploaded file" % filetype)
+            elif filetype == 'git' and not revision:
+                raise Exception("The 'git' filetype requires the 'revision' parameter")
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
         self.logger.info("Updating code to version '%s'" % codeVersionId)
-
-        if len(kwargs) != 0:
-            return HttpErrorResponse(AgentException(
-                AgentException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
 
         if filetype == 'zip':
             source = zipfile.ZipFile(file.file, 'r')
@@ -158,8 +131,6 @@ class GenericAgent(BaseAgent):
             source = tarfile.open(fileobj=file.file)
         elif filetype == 'git':
             source = git.DEFAULT_CODE_REPO
-        else:
-            return HttpErrorResponse('Unknown archive type ' + str(filetype))
 
         # kill all scripts that may still be running
         if self.processes:
@@ -186,40 +157,33 @@ class GenericAgent(BaseAgent):
 
         return HttpJsonResponse()
 
+    def check_volume_name(self, vol_name):
+        if not re.compile('^[A-za-z0-9-_]+$').match(vol_name):
+            raise Exception('Volume name contains invalid characters')
+
     @expose('POST')
     def mount_volume(self, kwargs):
         """Mount a volume to a Generic node."""
 
-        if 'dev_name' not in kwargs:
-            return HttpErrorResponse(AgentException(
-                AgentException.E_ARGS_MISSING, 'dev_name').message)
-        dev_name = "/dev/%s" % kwargs.pop('dev_name')
-
-        if 'vol_name' not in kwargs:
-            return HttpErrorResponse(AgentException(
-                AgentException.E_ARGS_MISSING, 'vol_name').message)
-        vol_name = kwargs.pop('vol_name')
-
-        if not re.compile('^[A-za-z0-9-_]+$').match(vol_name):
-            return HttpErrorResponse('Volume name contains invalid characters')
-
-        if len(kwargs) != 0:
-            return HttpErrorResponse(AgentException(
-                AgentException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
+        exp_params = [('dev_name', is_string),
+                      ('vol_name', is_string)]
+        try:
+            dev_name, vol_name = check_arguments(exp_params, kwargs)
+            dev_name = "/dev/%s" % dev_name
+            self.check_volume_name(vol_name)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
         self.logger.info("Mount operation starting up for volume '%s' on '%s'"
                 % (vol_name, dev_name))
 
-        self.state = 'ADAPTING'
         try:
             mount_point = join(self.VOLUME_DIR, vol_name)
             self._mount(dev_name, mount_point, True)
         except Exception as e:
             self.logger.exception("Failed to mount volume '%s'" % vol_name)
-            self.state = 'ERROR'
             return HttpErrorResponse('Failed to mount volume: ' + e.message)
 
-        self.state = 'RUNNING'
         self.logger.info('Mount operation completed')
         return HttpJsonResponse()
 
@@ -303,30 +267,22 @@ class GenericAgent(BaseAgent):
     def unmount_volume(self, kwargs):
         """Unmount a volume to a Generic node."""
 
-        if 'vol_name' not in kwargs:
-            return HttpErrorResponse(AgentException(
-                AgentException.E_ARGS_MISSING, 'vol_name').message)
-        vol_name = kwargs.pop('vol_name')
-
-        if not re.compile('^[A-za-z0-9-_]+$').match(vol_name):
-            return HttpErrorResponse('Volume name contains invalid characters')
-
-        if len(kwargs) != 0:
-            return HttpErrorResponse(AgentException(
-                AgentException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
+        exp_params = [('vol_name', is_string)]
+        try:
+            vol_name = check_arguments(exp_params, kwargs)
+            self.check_volume_name(vol_name)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
         self.logger.info("Unmount operation starting up for volume '%s'"
                 % vol_name)
 
-        self.state = 'ADAPTING'
         try:
             self._unmount(vol_name)
         except Exception as e:
             self.logger.exception("Failed to unmount volume '%s'" % vol_name)
-            self.state = 'ERROR'
             return HttpErrorResponse('Failed to unmount volume: ' + e.message)
 
-        self.state = 'RUNNING'
         self.logger.info('Unmount operation completed')
         return HttpJsonResponse()
 
@@ -352,34 +308,21 @@ class GenericAgent(BaseAgent):
 
     @expose('POST')
     def execute_script(self, kwargs):
-        if 'command' not in kwargs:
-            return HttpErrorResponse(AgentException(
-                AgentException.E_ARGS_MISSING, 'command').message)
-        command = kwargs.pop('command')
-        if command not in ( 'notify', 'run', 'interrupt', 'cleanup' ):
-            return HttpErrorResponse('Invalid command: %s' % command)
-
-        if 'parameters' not in kwargs:
-            parameters = ''
-        else:
-            parameters = kwargs.pop('parameters')
-
-        if 'agents_info' not in kwargs:
-            return HttpErrorResponse(AgentException(
-                AgentException.E_ARGS_MISSING, 'agents_info').message)
-        agents_info = simplejson.loads(kwargs.pop('agents_info'))
-
-        if len(kwargs) != 0:
-            return HttpErrorResponse(AgentException(
-                AgentException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
+        valid_commands = [ 'notify', 'run', 'interrupt', 'cleanup' ]
+        exp_params = [('command', is_in_list(valid_commands)),
+                      ('parameters', is_string, ''),
+                      ('agents_info', is_string)]
+        try:
+            command, parameters, agents_info = check_arguments(exp_params, kwargs)
+            agents_info = simplejson.loads(agents_info)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
         if command == 'notify':
             self.logger.info("Executing the '%s' command" % command)
         else:
             self.logger.info("Executing the '%s' command with parameters '%s'"
                     % (command, parameters))
-
-        self.state = 'ADAPTING'
 
         target_dir = self.VAR_CACHE
         with open(join(target_dir, 'agents.json'), 'w') as outfile:
@@ -407,7 +350,6 @@ class GenericAgent(BaseAgent):
             else:
                 self._execute_script(command, parameters)
 
-        self.state = 'RUNNING'
         return HttpJsonResponse()
 
     def _do_interrupt(self, parameters):
@@ -432,7 +374,7 @@ class GenericAgent(BaseAgent):
             return
 
         start_args = [ "bash",  script_path ] + parameters.split()
-        self.processes[command] = Popen(start_args, cwd=self.generic_dir,
+        self.processes[command] = Popen(start_args, cwd=self.GENERIC_DIR,
                 env=self.env, close_fds=True, preexec_fn=os.setsid)
 
         self.logger.info("Script '%s' is running" % script_name)
@@ -456,14 +398,17 @@ class GenericAgent(BaseAgent):
 
     @expose('GET')
     def get_script_status(self, kwargs):
-        if len(kwargs) != 0:
-            return HttpErrorResponse(AgentException(
-                AgentException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
+        try:
+            exp_params = []
+            check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
         scripts = {}
         for command in ( 'init', 'notify', 'run', 'interrupt', 'cleanup' ):
             script_name = "%s.sh" % command
             scripts[script_name] = self._get_script_status(command)
+
         return HttpJsonResponse({ 'scripts' : scripts })
 
     def _get_script_status(self, command):

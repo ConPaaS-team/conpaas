@@ -22,14 +22,20 @@ class JavaCmd(WebCmd):
         subparser.add_argument('code_version', help="Code version")
 
     def enable_code(self, args):
-        app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
-        code_version = args.code_version
-        params = {'codeVersionId': code_version}
+        app_id, service_id = self.check_service(args.app_name_or_id, args.serv_name_or_id)
 
-        res = self.client.call_manager_post(app_id, service_id,
+        code_version = args.code_version
+        params = { 'codeVersionId': code_version }
+        self.client.call_manager_post(app_id, service_id,
                                             "update_java_configuration",
                                             params)
-        if 'error' in res:
-            self.client.error("Could not enable code %s: %s" % (code_version, res['error']))
+
+        print "Enabling code version '%s'... " % code_version,
+        sys.stdout.flush()
+
+        state = self.client.wait_for_service_state(app_id, service_id,
+                                ['INIT', 'STOPPED', 'RUNNING', 'ERROR'])
+        if state != 'ERROR':
+            print "done."
         else:
-            print "Code %s enabled." % code_version
+            print "FAILED!"

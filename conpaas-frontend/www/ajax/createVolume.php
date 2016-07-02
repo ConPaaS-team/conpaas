@@ -20,9 +20,9 @@ try {
 	    throw new Exception('Not allowed');
 	}
 
-    $volumeName = $_POST['volumeName'];
-    $owner = $_POST['owner'];
-	$response = $service->createVolume($volumeName,$owner);
+	$volumeName = $_POST['volumeName'];
+	$owner = $_POST['owner'];
+	$response = $service->createVolume($volumeName, $owner);
 	echo $response;
 } catch (Exception $e) {
 	echo json_encode(array('error' => $e->getMessage()));

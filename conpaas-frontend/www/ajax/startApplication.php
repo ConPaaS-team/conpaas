@@ -34,8 +34,8 @@ try {
 		throw new Exception('User not logged in');
 	}
 
-	if (property_exists($res, 'msg')) {
-		echo json_encode(array('error' => $res->msg));
+	if (property_exists($res, 'error')) {
+		echo json_encode(array('error' => $res->error));
 	}else{
 		echo json_encode(array('start' => 1));
 	}

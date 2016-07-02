@@ -19,8 +19,6 @@ class WebCmd(ServiceCmd):
         self._add_delete_code()
         self._add_migrate_nodes()
 
-
-    
     # ========== upload_key
     def _add_upload_key(self):
         subparser = self.add_parser('upload_key',
@@ -34,16 +32,15 @@ class WebCmd(ServiceCmd):
                                help="File containing the key")
 
     def upload_key(self, args):
-        app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
+        app_id, service_id = self.check_service(args.app_name_or_id, args.serv_name_or_id)
+
         contents = open(args.filename).read()
         params = { 'service_id': service_id,
                    'method': "upload_authorized_key" }
         files = [('key', args.filename, contents)]
         res = self.client.call_manager_post(service_id, "/", params, files)
-        if 'error' in res:
-            self.client.error(res['error'])
-        else:
-            print res['outcome']
+
+        print res['outcome']
 
     # ========== list_keys
     def _add_list_keys(self):
@@ -56,18 +53,16 @@ class WebCmd(ServiceCmd):
                                help="Name or identifier of a service")
 
     def list_keys(self, args):
-        app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
+        app_id, service_id = self.check_service(args.app_name_or_id, args.serv_name_or_id)
+
         res = self.client.call_manager_get(app_id, service_id, "list_authorized_keys")
 
-        if 'error' in res:
-            self.client.error("Cannot list keys: %s" % res['error'])
-        else:
-            print "%s" % res['authorizedKeys']
+        print "%s" % res['authorizedKeys']
 
     # ========== upload_code
     def _add_upload_code(self):
         subparser = self.add_parser('upload_code',
-                                    help="upload code to Web server")
+                                    help="upload a new code version")
         subparser.set_defaults(run_cmd=self.upload_code, parser=subparser)
         subparser.add_argument('app_name_or_id',
                                help="Name or identifier of an application")
@@ -77,23 +72,20 @@ class WebCmd(ServiceCmd):
                                help="File containing the code")
 
     def upload_code(self, args):
-        app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
-        contents = open(args.filename).read()
+        app_id, service_id = self.check_service(args.app_name_or_id, args.serv_name_or_id)
 
+        contents = open(args.filename).read()
         params = { 'service_id': service_id,
                    'method': "upload_code_version" }
         files = [('code', args.filename, contents)]
-
         res = self.client.call_manager_post(app_id, service_id, "/", params, files)
-        if 'error' in res:
-            self.client.error("Cannot upload code: %s" % res['error'])
-        else:
-            print "Code version %(codeVersionId)s uploaded" % res
+
+        print "Code version %(codeVersionId)s uploaded" % res
 
     # ========== list_codes
     def _add_list_codes(self):
         subparser = self.add_parser('list_codes',
-                                    help="list code versions from web service")
+                                    help="list uploaded code versions")
         subparser.set_defaults(run_cmd=self.list_codes, parser=subparser)
         subparser.add_argument('app_name_or_id',
                                help="Name or identifier of an application")
@@ -101,16 +93,21 @@ class WebCmd(ServiceCmd):
                                help="Name or identifier of a service")
 
     def list_codes(self, args):
-        app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
+        app_id, service_id = self.check_service(args.app_name_or_id, args.serv_name_or_id)
+
         res = self.client.call_manager_get(app_id, service_id, "list_code_versions")
 
-        if 'error' in res:
-            self.client.error("Cannot list code versions: %s" % res['error'])
-
+        code_versions = []
         for code in res['codeVersions']:
-            current = "*" if 'current' in code else ""
-            print " %s %s: %s \"%s\"" % (current, code['codeVersionId'],
-                                         code['filename'], code['description'])
+            if 'current' in code:
+                code['current'] = '      *'
+            else:
+                code['current'] = ''
+            code_versions.append(code)
+
+        print self.client.prettytable(
+                ( 'current', 'codeVersionId', 'filename', 'description' ),
+                code_versions)
 
     # ========== download_code
     def _add_download_code(self):
@@ -126,19 +123,14 @@ class WebCmd(ServiceCmd):
                                help="Version of code to download")
 
     def download_code(self, args):
-        app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
+        app_id, service_id = self.check_service(args.app_name_or_id, args.serv_name_or_id)
 
         res = self.client.call_manager_get(app_id, service_id, "list_code_versions")
-
-        if 'error' in res:
-            self.client.error("Cannot list code versions: %s" % res['error'])
-            sys.exit(0)
 
         filenames = [ code['filename'] for code in res['codeVersions']
                 if code['codeVersionId'] == args.version ]
         if not filenames:
-            self.client.error("Cannot download code: invalid version %s" % args.version)
-            sys.exit(0)
+            raise Exception("Invalid version %s" % args.version)
 
         destfile = filenames[0]
 
@@ -146,12 +138,8 @@ class WebCmd(ServiceCmd):
         res = self.client.call_manager_get(app_id, service_id, "download_code_version",
                                            params)
 
-        if 'error' in res:
-            self.client.error("Cannot download code: %s" % res['error'])
-
-        else:
-            open(destfile, 'w').write(res)
-            print destfile, 'written'
+        open(destfile, 'w').write(res)
+        print destfile, 'written'
 
     # ========== delete_code
     def _add_delete_code(self):
@@ -166,17 +154,13 @@ class WebCmd(ServiceCmd):
                                help="Code version to be deleted")
 
     def delete_code(self, args):
-        app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
+        app_id, service_id = self.check_service(args.app_name_or_id, args.serv_name_or_id)
+
         code_version = args.code_version
-
         params = { 'codeVersionId': code_version }
+        self.client.call_manager_post(app_id, service_id, "delete_code_version", params)
 
-        res = self.client.call_manager_post(app_id, service_id, "delete_code_version", params)
-
-        if 'error' in res:
-            self.client.error(res['error'])
-        else:
-            print code_version, 'deleted'
+        print code_version, 'deleted'
 
     # ========== migrate_nodes
     def _add_migrate_nodes(self):
@@ -192,9 +176,10 @@ class WebCmd(ServiceCmd):
                                help="Delay in seconds before removing the original nodes")
 
     def migrate_nodes(self, args):
-        app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
+        app_id, service_id = self.check_service(args.app_name_or_id, args.serv_name_or_id)
+
         if args.delay < 0:
-            self.client.error("Cannot delay %s seconds." % args.delay)
+            raise Exception("Cannot delay %s seconds." % args.delay)
         try:
             migr_all = args.nodes.split(',')
             nodes = []
@@ -205,18 +190,15 @@ class WebCmd(ServiceCmd):
                              'to_cloud': to_cloud}
                 nodes.append(migr_dict)
         except:
-            self.client.error('Argument "nodes" does not match format c1:n:c2[,c1:n:c2]*: %s' % args.nodes)
+            raise Exception('Argument "nodes" does not match format c1:n:c2[,c1:n:c2]*: %s' % args.nodes)
 
         data = {'migration_plan': nodes, 'delay': args.delay}
-        res = self.client.call_manager_post(app_id, service_id, "migrate_nodes", data)
-        if 'error' in res:
-            self.client.error("Could not migrate nodes in Web service %s: %s"
-                              % (service_id, res['error']))
+        self.client.call_manager_post(app_id, service_id, "migrate_nodes", data)
+
+        if args.delay == 0:
+            print("Migration of nodes %s has been successfully started"
+                  " for Web service %s." % (args.nodes, service_id))
         else:
-            if args.delay == 0:
-                print("Migration of nodes %s has been successfully started"
-                      " for Web service %s." % (args.nodes, service_id))
-            else:
-                print("Migration of nodes %s has been successfully started"
-                      " for Web service %s with a delay of %s seconds."
-                      % (args.nodes, service_id, args.delay))
+            print("Migration of nodes %s has been successfully started"
+                  " for Web service %s with a delay of %s seconds."
+                  % (args.nodes, service_id, args.delay))

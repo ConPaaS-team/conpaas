@@ -1,7 +1,7 @@
 import time
-from threading import Thread, Event 
+from threading import Thread, Event
 from cpsdirector import db
-from cpsdirector.common import log
+from cpsdirector.common import log, log_error
 from cpsdirector.cloud import Resource
 from cpsdirector.user import User
 
@@ -22,7 +22,7 @@ class Credit(Thread):
         # self.credit_step = 1
         self.credit_step = 5
         self.sanity_step = 15
-        
+
         self.count = 0
         self.daemon = True
 
@@ -51,12 +51,10 @@ class Credit(Thread):
     def stop(self):
         self.event.set()
 
-    
     def check_credits(self):
         from cpsdirector.application import Application
-        from cpsdirector.application import _deleteapp as stop_application 
+        from cpsdirector.application import _deleteapp as stop_application
         self._logger.debug('Checking credits @%s' % datetime.now())
-        # open('/tmp/miao', 'a').write('Checking credits @%s \n' % datetime.now())   
         users = User.query.all()
         for user in users:
             to_charge = 0
@@ -67,28 +65,20 @@ class Credit(Thread):
 
                 if tot_cost >= res.charged or res.charged == 0:
                     self._logger.debug('Charge for resource %s' % res.vmid)
-                    # open('/tmp/miao', 'a').write('Charge for resource %s\n' % res.vmid)    
                     to_charge += tot_cost - res.charged + 1
                     res.charged += to_charge
-                    # open('/tmp/miao', 'a').write('to_charge = %s\n' % to_charge)    
 
             user.credit -= to_charge
             if user.credit < 0:
                 user.credit == 0
             if user.credit == 0:
                 self._logger.debug('Stop all the applications for user %s\n' % user.uid)
-                # open('/tmp/miao', 'a').write('Stop all the applications for user %s\n' % user.uid)    
                 apps = Application.query.filter_by(user_id=user.uid)
                 for app in apps:
                     stop_application(user.uid, app.aid, False)
-                
+
             if to_charge != 0:
-                db.session.commit()        
-            
-
-
-
-        # log('Checking credits')
+                db.session.commit()
 
     def check_sanity(self):
         self._logger.debug('Sanity check @%s' % datetime.now())
@@ -98,18 +88,16 @@ class Credit(Thread):
         for vm in vms:
             if vm.vmid not in res_vmids and self.mins_from_creation(vm.created) > 1:
                 vms_to_remove += [vm]
-        
 
         if len(vms_to_remove) > 0:
             self._logger.debug('Removing the following VMs as they are not present in the list of resources: %s' % [vm.vmid for vm in vms_to_remove])
             self.controller.delete_nodes(vms_to_remove)
-        
+
     def mins_from_creation(self, created):
         now = datetime.now()
         created_ts = time.mktime(created.timetuple())
         now_ts = time.mktime(now.timetuple())
         return int(now_ts-created_ts) / 60
-         
 
 
 def register_background_taks(app):

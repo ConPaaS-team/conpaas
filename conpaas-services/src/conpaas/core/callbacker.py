@@ -79,7 +79,7 @@ class DirectorCallbacker(object):
         params = {'volume_id':volume_id, 'cloud':cloud}
         return self._dic_callback('/destroy_volume', params)
 
-    def check_credits(self):
+    def get_credit(self):
         params = {}
         return self._dic_callback('/credit', params)
 

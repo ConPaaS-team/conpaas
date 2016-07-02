@@ -22,6 +22,11 @@ from . import BasicWebserversManager, ManagerException
 from conpaas.core.expose import expose
 from conpaas.core import git
 
+from conpaas.core.misc import check_arguments, is_in_list, is_not_in_list,\
+    is_list, is_non_empty_list, is_list_dict, is_list_dict2, is_string,\
+    is_int, is_pos_nul_int, is_pos_int, is_dict, is_dict2, is_bool,\
+    is_uploaded_file
+
 
 class JavaManager(BasicWebserversManager):
 
@@ -116,34 +121,34 @@ class JavaManager(BasicWebserversManager):
 
     @expose('GET')
     def get_service_info(self, kwargs):
-        if len(kwargs) != 0:
-            ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
-                                  kwargs.keys())
-            return HttpErrorResponse(ex.message)
+        try:
+            exp_params = []
+            check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
+
         return HttpJsonResponse({'state': self.state_get(), 'type': 'JAVA'})
 
     @expose('GET')
     def get_configuration(self, kwargs):
-        if len(kwargs) != 0:
-            ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
-                                  kwargs.keys())
-            return HttpErrorResponse(ex.message)
+        try:
+            exp_params = []
+            check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
+
         config = self._configuration_get()
         return HttpJsonResponse({'codeVersionId': config.currentCodeVersion})
 
     @expose('POST')
     def update_java_configuration(self, kwargs):
-        if 'codeVersionId' not in kwargs:
-            ex = ManagerException(ManagerException.E_ARGS_MISSING,
-                                  'at least one of "codeVersionId"')
-            return HttpErrorResponse(ex.message)
-        codeVersionId = kwargs.pop('codeVersionId')
         config = self._configuration_get()
-
-        if len(kwargs) != 0:
-            ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
-                                  kwargs.keys())
-            return HttpErrorResponse(ex.message)
+        exp_params = [('codeVersionId', is_in_list(config.codeVersions))]
+        try:
+            codeVersionId = check_arguments(exp_params, kwargs)
+            self.check_state([self.S_INIT, self.S_STOPPED, self.S_RUNNING])
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
         state = self.state_get()
         if state == self.S_INIT or state == self.S_STOPPED:
@@ -153,8 +158,7 @@ class JavaManager(BasicWebserversManager):
         elif state == self.S_RUNNING:
             self.state_set(self.S_ADAPTING, msg='Updating configuration')
             Thread(target=self.do_update_configuration, args=[config, codeVersionId]).start()
-        else:
-            return HttpErrorResponse(ManagerException(ManagerException.E_STATE_ERROR).message)
+
         return HttpJsonResponse()
 
     def _get_servlet_urls_from_webxml(self, webxml_filename):

@@ -84,11 +84,10 @@ def update_code(host, port, codeVersionId, filetype, filepath):
         # File-based code uploads
         files = [('file', filepath, file_get_contents(filepath))]
         return _check(https.client.https_post(host, port, '/', params=params, files=files))
-
-    # git-based code uploads do not need a FileUploadField.
-    # Pass filepath as a dummy value for the 'file' parameter.
-    params['file'] = filepath
-    return _check(https.client.https_post(host, port, '/', params=params))
+    else:
+        # For git-based code uploads, filepath contains the git revision
+        params['revision'] = filepath
+        return _check(https.client.https_post(host, port, '/', params=params))
 
 def mount_volume(host, port, dev_name, vol_name):
     """POST (dev_name, vol_name) mount_volume"""

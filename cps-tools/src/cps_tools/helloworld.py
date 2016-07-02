@@ -19,9 +19,8 @@ class HelloWorldCmd(ServiceCmd):
                                help="Name or identifier of a service")
 
     def get_helloworld(self, args):
-        app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
-        res = self.client.call_manager(app_id, service_id, "get_helloworld", False, {})
-        if 'error' in res:
-            self.client.error(res['error'])
-        else:
-            print res['helloworld']
+        app_id, service_id = self.check_service(args.app_name_or_id, args.serv_name_or_id)
+
+        res = self.client.call_manager_get(app_id, service_id, "get_helloworld")
+
+        print res['helloworld']

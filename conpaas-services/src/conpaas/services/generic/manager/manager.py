@@ -58,41 +58,12 @@ from conpaas.services.generic.agent import client
 from conpaas.services.generic.manager.config import CodeVersion,\
     ServiceConfiguration, VolumeInfo
 
+from conpaas.core.misc import check_arguments, is_in_list, is_not_in_list,\
+    is_list, is_non_empty_list, is_list_dict, is_list_dict2, is_string,\
+    is_int, is_pos_nul_int, is_pos_int, is_dict, is_dict2, is_bool,\
+    is_uploaded_file
+
 class GenericManager(BaseManager):
-    """Manager class with the following exposed methods:
-
-    startup() -- POST
-    shutdown() -- POST
-    add_nodes(count) -- POST
-    remove_nodes(count) -- POST
-    list_nodes() -- GET
-    get_service_info() -- GET
-    get_node_info(serviceNodeId) -- GET
-    list_code_versions() -- GET
-    list_authorized_keys() -- GET
-    upload_authorized_key(key) -- UPLOAD
-    upload_code_version(code, description) -- UPLOAD
-    download_code_version(codeVersionId) -- GET
-    enable_code(codeVersionId) -- POST
-    delete_code_version(codeVersionId) -- POST
-    list_volumes() -- GET
-    generic_create_volume(volumeName, volumeSize, agentId) -- POST
-    generic_delete_volume(volumeName) -- POST
-    execute_script(command, parameters) -- POST
-    get_script_status() -- GET
-    get_agent_log(filename) -- GET
-    """
-
-    # String template for error messages returned when performing actions in
-    # the wrong state
-    WRONG_STATE_MSG = "ERROR: cannot perform %(action)s in state %(curstate)s"
-
-    # String template for error messages returned when a required argument is
-    # missing
-    REQUIRED_ARG_MSG = "ERROR: %(arg)s is a required argument"
-
-    # String template for debugging messages logged on nodes creation
-    ACTION_REQUESTING_NODES = "requesting %(count)s nodes in %(action)s"
 
     # String used as an error message when 'interrupt' is called when no
     # scripts are currently running
@@ -103,8 +74,6 @@ class GenericManager(BaseManager):
     SCRIPTS_ARE_RUNNING_MSG = "ERROR: Scripts are still running inside at "\
                                 "least one agent. Please wait for them to "\
                                 "finish execution or call 'interrupt' first."
-
-
 
     def __init__(self, config_parser, **kwargs):
         """Initialize a Generic Manager.
@@ -170,17 +139,14 @@ echo "" >> /root/generic.out
         config.currentCodeVersion = 'code-default'
         self._configuration_set(config)
 
-   
-
     def on_start(self, nodes):
         """Start up the service. The first node will be the master node."""
 
         nr_instances = 1
 
-
         vals = { 'action': '_do_startup', 'count': nr_instances }
         self.logger.debug(self.ACTION_REQUESTING_NODES % vals)
-        try:            
+        try:
             config = self._configuration_get()
 
             roles = {'master':'1'}
@@ -191,14 +157,13 @@ echo "" >> /root/generic.out
             self._update_code(config, nodes)
 
             # Extend the nodes list with the newly created one
-            
+
             self.agents_info += agents_info
             self.master_ip = nodes[0].ip
             return True
         except Exception, err:
             self.logger.exception('_do_startup: Failed to create agents: %s' % err)
             return False
-            
 
     def _update_agents_info(self, nodes, roles):
         id_ip = []
@@ -228,10 +193,9 @@ echo "" >> /root/generic.out
                 self.state_set(self.S_ERROR, msg='Failed to initialize agent at node %s'
                         % str(serviceNode))
                 raise
-    
+
     def on_stop(self):
         """Delete all nodes and switch to status STOPPED"""
-        
 
         self.logger.info("Removing nodes: %s" %
                 [ node.id for node in self.nodes ])
@@ -240,24 +204,6 @@ echo "" >> /root/generic.out
         self.agents_info = []
         self.master_ip = None
         return del_nodes
-
-    def __check_count_in_args(self, kwargs):
-        """Return 'count' if all is good. HttpErrorResponse otherwise."""
-        count = None
-
-        if 'count' in kwargs:
-            count = kwargs.pop('count')
-        # The frontend sends count under 'node'.
-        elif 'node' in kwargs:
-            count = kwargs.pop('node')
-        else:
-            return HttpErrorResponse(self.REQUIRED_ARG_MSG % { 'arg': 'count' })
-
-        if not isinstance(count, int):
-            return HttpErrorResponse(
-                "ERROR: Expected an integer value for 'count'")
-
-        return count
 
     def on_add_nodes(self, node_instances):
         # (genc): i have to figure out how to deal with the roles
@@ -275,7 +221,6 @@ echo "" >> /root/generic.out
 
         self._do_execute_script('notify', nodes_before)
         return True
-
 
     def on_remove_nodes(self, node_roles):
         count = sum(node_roles.values())
@@ -302,15 +247,16 @@ echo "" >> /root/generic.out
     @expose('GET')
     def list_nodes(self, kwargs):
         """Return a list of running nodes"""
-        state = self.state_get()
-        if state != self.S_RUNNING:
-            vals = { 'curstate': state, 'action': 'list_nodes' }
-            return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
+        try:
+            exp_params = []
+            check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
-        if len(kwargs) != 0:
-            ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
-                                  kwargs.keys())
-            return HttpErrorResponse(ex.message)
+        try:
+            self.check_state([self.S_RUNNING, self.S_ADAPTING])
+        except:
+            return HttpJsonResponse({})
 
         generic_nodes = [
             node.id for node in self.nodes if not self.__is_master(node)
@@ -327,10 +273,11 @@ echo "" >> /root/generic.out
     @expose('GET')
     def get_service_info(self, kwargs):
         """Return the service state and type"""
-        if len(kwargs) != 0:
-            ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
-                                  kwargs.keys())
-            return HttpErrorResponse(ex.message)
+        try:
+            exp_params = []
+            check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
         return HttpJsonResponse({'state': self.state_get(), 'type': 'generic'})
 
@@ -339,16 +286,12 @@ echo "" >> /root/generic.out
         """Return information about the node identified by the given
         kwargs['serviceNodeId']"""
 
-        # serviceNodeId is a required parameter
-        if 'serviceNodeId' not in kwargs:
-            vals = { 'arg': 'serviceNodeId' }
-            return HttpErrorResponse(self.REQUIRED_ARG_MSG % vals)
-        serviceNodeId = kwargs.pop('serviceNodeId')
-
-        if len(kwargs) != 0:
-            ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
-                                  kwargs.keys())
-            return HttpErrorResponse(ex.message)
+        node_ids = [ str(node.id) for node in self.nodes ]
+        exp_params = [('serviceNodeId', is_in_list(node_ids))]
+        try:
+            serviceNodeId = check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
         serviceNode = None
         for node in self.nodes:
@@ -356,24 +299,23 @@ echo "" >> /root/generic.out
                 serviceNode = node
                 break
 
-        if serviceNode is None:
-            return HttpErrorResponse(
-                'ERROR: Cannot find node with serviceNode=%s' % serviceNodeId)
-
         return HttpJsonResponse({
             'serviceNode': {
                 'id': serviceNode.id,
                 'ip': serviceNode.ip,
+                'vmid': serviceNode.vmid,
+                'cloud': serviceNode.cloud_name,
                 'is_master': self.__is_master(serviceNode)
             }
         })
 
     @expose('GET')
     def list_code_versions(self, kwargs):
-        if len(kwargs) != 0:
-            ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
-                                  kwargs.keys())
-            return HttpErrorResponse(ex.message)
+        try:
+            exp_params = []
+            check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
         config = self._configuration_get()
         versions = []
@@ -389,29 +331,21 @@ echo "" >> /root/generic.out
 
     @expose('GET')
     def list_authorized_keys(self, kwargs):
-        if len(kwargs) != 0:
-            ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
-                                  kwargs.keys())
-            return HttpErrorResponse(ex.message)
+        try:
+            exp_params = []
+            check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
         return HttpJsonResponse({'authorizedKeys' : git.get_authorized_keys()})
 
     @expose('UPLOAD')
     def upload_authorized_key(self, kwargs):
-        if 'key' not in kwargs:
-            ex = ManagerException(ManagerException.E_ARGS_MISSING, 'key')
-            return HttpErrorResponse(ex.message)
-
-        key = kwargs.pop('key')
-
-        if len(kwargs) != 0:
-            ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
-                                  kwargs.keys())
-            return HttpErrorResponse(ex.message)
-        if not isinstance(key, FileUploadField):
-            ex = ManagerException(
-                ManagerException.E_ARGS_INVALID, detail='key should be a file')
-            return HttpErrorResponse(ex.message)
+        exp_params = [('key', is_uploaded_file)]
+        try:
+            key = check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
         key_lines = key.file.readlines()
         num_added = git.add_authorized_keys(key_lines)
@@ -434,24 +368,12 @@ echo "" >> /root/generic.out
 
     @expose('UPLOAD')
     def upload_code_version(self, kwargs):
-        if 'code' not in kwargs:
-            ex = ManagerException(ManagerException.E_ARGS_MISSING, 'code')
-            return HttpErrorResponse(ex.message)
-        code = kwargs.pop('code')
-        if not isinstance(code, FileUploadField):
-            ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                  detail='codeVersionId should be a file')
-            return HttpErrorResponse(ex.message)
-
-        if 'description' in kwargs:
-            description = kwargs.pop('description')
-        else:
-            description = ''
-
-        if len(kwargs) != 0:
-            ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
-                                  kwargs.keys())
-            return HttpErrorResponse(ex.message)
+        exp_params = [('code', is_uploaded_file),
+                      ('description', is_string, '')]
+        try:
+            code, description = check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
         config = self._configuration_get()
         fd, name = tempfile.mkstemp(prefix='code-', dir=self.code_repo)
@@ -470,7 +392,7 @@ echo "" >> /root/generic.out
             os.remove(name)
             ex = ManagerException(ManagerException.E_ARGS_INVALID,
                                   detail='Invalid archive format')
-            return HttpErrorResponse(ex.message)
+            return HttpErrorResponse("%s" % ex)
 
         for fname in archive_get_members(arch):
             if fname.startswith('/') or fname.startswith('..'):
@@ -478,7 +400,7 @@ echo "" >> /root/generic.out
                 os.remove(name)
                 ex = ManagerException(ManagerException.E_ARGS_INVALID,
                     detail='Absolute file names are not allowed in archive members')
-                return HttpErrorResponse(ex.message)
+                return HttpErrorResponse("%s" % ex)
         archive_close(arch)
         config.codeVersions[codeVersionId] = CodeVersion(
             codeVersionId, os.path.basename(code.filename), archive_get_type(name),
@@ -488,27 +410,12 @@ echo "" >> /root/generic.out
 
     @expose('GET')
     def download_code_version(self, kwargs):
-        if 'codeVersionId' not in kwargs:
-            ex = ManagerException(ManagerException.E_ARGS_MISSING,
-                                  'codeVersionId')
-            return HttpErrorResponse(ex.message)
-        if isinstance(kwargs['codeVersionId'], dict):
-            ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                  detail='codeVersionId should be a string')
-            return HttpErrorResponse(ex.message)
-        codeVersionId = kwargs.pop('codeVersionId')
-
-        if len(kwargs) != 0:
-            ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
-                                  kwargs.keys())
-            return HttpErrorResponse(ex.message)
-
         config = self._configuration_get()
-
-        if codeVersionId not in config.codeVersions:
-            ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                  detail='Invalid codeVersionId')
-            return HttpErrorResponse(ex.message)
+        exp_params = [('codeVersionId', is_in_list(config.codeVersions))]
+        try:
+            codeVersionId = check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
         if config.codeVersions[codeVersionId].type == 'git':
             return HttpErrorResponse(
@@ -518,28 +425,19 @@ echo "" >> /root/generic.out
         if not filename.startswith(self.code_repo + '/') or not os.path.exists(filename):
             ex = ManagerException(ManagerException.E_ARGS_INVALID,
                                   detail='Invalid codeVersionId')
-            return HttpErrorResponse(ex.message)
+            return HttpErrorResponse("%s" % ex)
         return HttpFileDownloadResponse(config.codeVersions[codeVersionId].filename,
                 filename)
 
     @expose('POST')
     def enable_code(self, kwargs):
-        if 'codeVersionId' not in kwargs:
-            ex = ManagerException(ManagerException.E_ARGS_MISSING,
-                                  'codeVersionId')
-            return HttpErrorResponse(ex.message)
-        codeVersionId = kwargs.pop('codeVersionId')
-
-        if len(kwargs) != 0:
-            ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
-                                  kwargs.keys())
-            return HttpErrorResponse(ex.message)
-
         config = self._configuration_get()
-        if codeVersionId not in config.codeVersions:
-            ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                    detail='Unknown code version identifier "%s"' % codeVersionId)
-            return HttpErrorResponse(ex.message)
+        exp_params = [('codeVersionId', is_in_list(config.codeVersions))]
+        try:
+            codeVersionId = check_arguments(exp_params, kwargs)
+            self.check_state([self.S_INIT, self.S_STOPPED, self.S_RUNNING])
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
         state = self.state_get()
         if state == self.S_INIT or state == self.S_STOPPED:
@@ -552,8 +450,7 @@ echo "" >> /root/generic.out
                 return HttpErrorResponse(self.SCRIPTS_ARE_RUNNING_MSG);
             self.state_set(self.S_ADAPTING, msg='Updating configuration')
             Thread(target=self._do_enable_code, args=[config, codeVersionId]).start()
-        else:
-            return HttpErrorResponse(ManagerException(ManagerException.E_STATE_ERROR).message)
+
         return HttpJsonResponse()
 
     def _do_enable_code(self, config, codeVersionId):
@@ -586,39 +483,24 @@ echo "" >> /root/generic.out
 
     @expose('POST')
     def delete_code_version(self, kwargs):
-        if 'codeVersionId' not in kwargs:
-            ex = ManagerException(ManagerException.E_ARGS_MISSING,
-                                  'codeVersionId')
-            return HttpErrorResponse(ex.message)
-        if isinstance(kwargs['codeVersionId'], dict):
-            ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                  detail='codeVersionId should be a string')
-            return HttpErrorResponse(ex.message)
-        codeVersionId = kwargs.pop('codeVersionId')
-
-        if len(kwargs) != 0:
-            ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
-                                  kwargs.keys())
-            return HttpErrorResponse(ex.message)
-
         config = self._configuration_get()
-
-        if codeVersionId not in config.codeVersions:
-            ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                  detail='Invalid codeVersionId')
-            return HttpErrorResponse(ex.message)
+        exp_params = [('codeVersionId', is_in_list(config.codeVersions))]
+        try:
+            codeVersionId = check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
         if codeVersionId == config.currentCodeVersion:
             ex = ManagerException(ManagerException.E_ARGS_INVALID,
                                   detail='Cannot remove the active code version')
-            return HttpErrorResponse(ex.message)
+            return HttpErrorResponse("%s" % ex)
 
         if not config.codeVersions[codeVersionId].type == 'git':
             filename = os.path.abspath(os.path.join(self.code_repo, codeVersionId))
             if not filename.startswith(self.code_repo + '/') or not os.path.exists(filename):
                 ex = ManagerException(ManagerException.E_ARGS_INVALID,
                                       detail='Invalid codeVersionId')
-                return HttpErrorResponse(ex.message)
+                return HttpErrorResponse("%s" % ex)
 
             os.remove(filename)
 
@@ -626,7 +508,7 @@ echo "" >> /root/generic.out
         self._configuration_set(config)
 
         return HttpJsonResponse()
-    
+
     def on_create_volume(self, node, volume):
         client.mount_volume(node.ip, self.AGENT_PORT, volume['dev_name'], volume['vol_name'])
 
@@ -635,38 +517,14 @@ echo "" >> /root/generic.out
 
     @expose('POST')
     def execute_script(self, kwargs):
-        state = self.state_get()
-        if state != self.S_RUNNING:
-            vals = { 'curstate': state, 'action': 'execute_script' }
-            return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
-
-        if 'command' not in kwargs:
-            ex = ManagerException(ManagerException.E_ARGS_MISSING,
-                                  'command')
-            return HttpErrorResponse(ex.message)
-        if isinstance(kwargs['command'], dict):
-            ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                  detail='command should be a string')
-            return HttpErrorResponse(ex.message)
-        command = kwargs.pop('command')
-        if command not in ( 'run', 'interrupt', 'cleanup' ):
-            ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                  detail='invalid command')
-            return HttpErrorResponse(ex.message)
-
-        if 'parameters' not in kwargs:
-            parameters = ''
-        else:
-            if isinstance(kwargs['parameters'], dict):
-                ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                      detail='parameters should be a string')
-                return HttpErrorResponse(ex.message)
-            parameters = kwargs.pop('parameters')
-
-        if len(kwargs) != 0:
-            ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
-                                  kwargs.keys())
-            return HttpErrorResponse(ex.message)
+        valid_commands = [ 'run', 'interrupt', 'cleanup' ]
+        exp_params = [('command', is_in_list(valid_commands)),
+                      ('parameters', is_string, '')]
+        try:
+            command, parameters = check_arguments(exp_params, kwargs)
+            self.check_state([self.S_RUNNING])
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
         self.logger.info("Received request for executing the '%s' command "
                 "with parameters '%s'" % (command, parameters))
@@ -728,26 +586,24 @@ echo "" >> /root/generic.out
 
     @expose('GET')
     def get_script_status(self, kwargs):
-        state = self.state_get()
-        if state != self.S_RUNNING:
-            vals = { 'curstate': state, 'action': 'get_script_status' }
-            return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
-
-        if len(kwargs) != 0:
-            ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
-                                  kwargs.keys())
-            return HttpErrorResponse(ex.message)
+        try:
+            exp_params = []
+            check_arguments(exp_params, kwargs)
+            self.check_state([self.S_RUNNING])
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
         agents = {}
         for node in self.nodes:
             try:
                 res = client.get_script_status(node.ip, self.AGENT_PORT)
                 agents[node.id] = res['scripts']
-            except client.AgentException:
+            except client.AgentException as ex:
                 message = ("Failed to obtain script status at node %s" % str(node));
                 self.logger.exception(message)
                 self.state_set(self.S_ERROR, msg=message)
-                return HttpErrorResponse(ex.message)
+                return HttpErrorResponse("%s" % ex)
+
         return HttpJsonResponse({ 'agents' : agents })
 
     def _configuration_get(self):

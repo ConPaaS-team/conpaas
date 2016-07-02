@@ -9,11 +9,12 @@ from conpaas.core.node import ServiceNode
 
 from cpsdirector.x509cert import generate_certificate
 from cpsdirector.common import config_parser, log
+from cpsdirector.common import error_response
 from cpsdirector.user import User
 from cpsdirector import db
 from datetime import datetime
 
-from flask import Blueprint, request, g 
+from flask import jsonify, Blueprint, request, g
 # from cpsdirector.iaas import iaas
 from cpsdirector.iaas.controller import Controller, ManagerController, AgentController
 # from cpsdirector.iaas.controller import Controller
@@ -21,8 +22,6 @@ from cpsdirector.user import cert_required
 from ConfigParser import ConfigParser
 from conpaas.core.node import ServiceNode
 from cpsdirector.common import build_response
-
-
 
 
 cloud_page = Blueprint('cloud_page', __name__)
@@ -36,7 +35,7 @@ class Resource(db.Model):
     ip = db.Column(db.String(80))
     role = db.Column(db.String(10))
     cloud = db.Column(db.String(20))
-    created = db.Column(db.DateTime) 
+    created = db.Column(db.DateTime)
     application = db.relationship('Application', backref=db.backref('resource', lazy="dynamic"))
 
     def __init__(self, **kwargs):
@@ -118,7 +117,7 @@ def _create_nodes(kwargs):
         context = kwargs.pop('context')
         startup_script = kwargs.pop('startup_script')
 
-        log('type: %s' % service_type)
+        log('Create node called for service type: %s' % service_type)
 
         controller = AgentController(user_id, app_id, service_id, service_type, manager_ip)
         controller.generate_context(clouds, context, startup_script)
@@ -157,10 +156,10 @@ def create_nodes():
     # inst_type = request.values.get('inst_type')
 
     if g.user.credit <= 0:
-        return simplejson.dumps({ 'error': True,'msg': 'Insufficient credits' })
+        return build_response(jsonify(error_response('Insufficient credits')))
 
     nodes = _create_nodes({ 'role':'agent', 'app_id':app_id, 'user_id':'%s'%g.user.uid,
-                    'service_id':service_id, 'service_type':service_type, 'nodes_info':nodes_info, 
+                    'service_id':service_id, 'service_type':service_type, 'nodes_info':nodes_info,
                     'manager_ip':manager_ip, 'context':context, 'startup_script':startup_script })
 
     return simplejson.dumps([node.to_dict() for node in nodes])
@@ -172,9 +171,9 @@ def create_nodes():
 def remove_nodes():
     """GET /create_nodes"""
     nodes = simplejson.loads(request.values.get('nodes'))
-    
+
     log('Deleting %s nodes' % len(nodes))
-    serv_nodes = [ServiceNode(node['vmid'], node['ip'],node['private_ip'],node['cloud_name'],node['weight_backend']) for node in nodes]        
+    serv_nodes = [ServiceNode(node['vmid'], node['ip'],node['private_ip'],node['cloud_name'],node['weight_backend']) for node in nodes]
     controller = Controller()
     controller.setup_default()
     controller.delete_nodes(serv_nodes)
@@ -202,7 +201,7 @@ def create_volume():
     volume  = controller.create_volume(size, name, vm_id, cloud)
 
     log('Created volume %s ' % volume.id)
-    
+
     return simplejson.dumps({'volume_id':volume.id })
 
 
@@ -210,18 +209,18 @@ def create_volume():
 @cert_required(role='manager')
 def attach_volume():
     """POST /attach_volume"""
-    
+
     vm_id =str(request.values.get('vm_id'))
     volume_id = str(request.values.get('volume_id'))
     device_name = str(request.values.get('device_name'))
     cloud = str(request.values.get('cloud'))
-    
+
     controller = Controller()
     controller.setup_default()
     controller.attach_volume(vm_id, volume_id, device_name, cloud)
 
     log('Attached volume %s to vm %s (cloud: %s)' % (volume_id, vm_id, cloud))
-    
+
     return simplejson.dumps({})
 
 
@@ -232,13 +231,13 @@ def detach_volume():
 
     volume_id = str(request.values.get('volume_id'))
     cloud = str(request.values.get('cloud'))
-    
+
     controller = Controller()
     controller.setup_default()
     controller.detach_volume(volume_id, cloud)
 
     log('Detached volume %s (cloud: %s)' % (volume_id, cloud))
-    
+
     return simplejson.dumps({})
 
 @cloud_page.route("/destroy_volume", methods=['POST'])
@@ -248,13 +247,13 @@ def destroy_volume():
 
     volume_id = str(request.values.get('volume_id'))
     cloud = str(request.values.get('cloud'))
-    
+
     controller = Controller()
     controller.setup_default()
     controller.destroy_volume(volume_id, cloud)
 
     log('Destroyed volume %s (cloud: %s)' % (volume_id, cloud))
-    
+
     return simplejson.dumps({})
 
 
@@ -262,7 +261,7 @@ def destroy_volume():
 @cloud_page.route("/credit", methods=['POST'])
 @cert_required(role='manager')
 def credit():
-    log('manager is asking for credits')
+    log('Manager is asking for credits')
     return simplejson.dumps({'credit': g.user.credit})
 
 
@@ -271,6 +270,9 @@ def credit():
 def list_resources():
     from cpsdirector.application import Application
     res = [res.to_dict() for res in Resource.query.join(Application).filter_by(user_id=g.user.uid)]
-    
-    return build_response(simplejson.dumps(res))
 
+    for row in res:
+        if row['cloud'] == 'iaas':
+            row['cloud'] = 'default'
+
+    return build_response(simplejson.dumps(res))

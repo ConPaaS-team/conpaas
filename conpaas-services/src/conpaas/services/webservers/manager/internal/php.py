@@ -19,6 +19,11 @@ from conpaas.core.expose import expose
 
 from conpaas.core import git
 
+from conpaas.core.misc import check_arguments, is_in_list, is_not_in_list,\
+    is_list, is_non_empty_list, is_list_dict, is_list_dict2, is_string,\
+    is_int, is_pos_nul_int, is_pos_int, is_dict, is_dict2, is_bool,\
+    is_uploaded_file
+
 try:
     from conpaas.services.webservers.manager.autoscaling.scaler import ProvisioningManager
 except ImportError as ex:
@@ -152,14 +157,22 @@ class PHPManager(BasicWebserversManager):
 
     @expose('GET')
     def get_service_info(self, kwargs):
-        if len(kwargs) != 0:
-            return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
+        try:
+            exp_params = []
+            check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
+
         return HttpJsonResponse({'state': self.state_get(), 'type': 'PHP'})
 
     @expose('GET')
     def get_configuration(self, kwargs):
-        if len(kwargs) != 0:
-            return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
+        try:
+            exp_params = []
+            check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
+
         config = self._configuration_get()
         phpconf = {}
         for key in config.backend_config.php_conf.defaults:
@@ -167,6 +180,7 @@ class PHPManager(BasicWebserversManager):
                 phpconf[key] = config.backend_config.php_conf.conf[key]
             else:
                 phpconf[key] = config.backend_config.php_conf.defaults[key]
+
         return HttpJsonResponse({
             'codeVersionId': config.currentCodeVersion,
             'phpconf': phpconf,
@@ -191,66 +205,74 @@ class PHPManager(BasicWebserversManager):
             one of "low", "medium_down", "medium_up", "medium", "high"
         """
         self.logger.info('on_autoscaling entering')
-        if not self.scaler:
-            return HttpErrorResponse(
-                'Provisioning Manager has not been initialized: %s' % provision_mng_error)
-
         try:
+            valid_strategy = [ 'low', 'medium_down', 'medium_up', 'medium', 'high' ]
+            exp_params = [('cool_down', is_pos_nul_int),
+                          ('reponse_time', is_pos_nul_int),
+                          ('strategy', is_in_list(valid_strategy))]
+            cool_down, reponse_time, strategy = check_arguments(exp_params, kwargs)
+
+            if not self.scaler:
+                raise Exception(
+                    'Provisioning Manager has not been initialized: %s' %
+                    provision_mng_error)
+
             self.autoscaling_threads = ThreadPool(processes=1)
-            if isinstance(int(kwargs['cool_down']), int) and isinstance(int(kwargs['response_time']), int) and kwargs['strategy']:
-                self.autoscaling_threads.apply_async(self.scaler.do_provisioning, (int(kwargs.pop('response_time')), int(kwargs.pop('cool_down')), kwargs.pop('strategy')))
-                #self.logger.info('on_autoscaling passed %s' % str( int(kwargs.pop('response_time')) ) )
-                config = self._configuration_get()
-                config.autoscaling = True
-                self._configuration_set(config)
+            self.autoscaling_threads.apply_async(self.scaler.do_provisioning, (response_time, cool_down, strategy))
+            config = self._configuration_get()
+            config.autoscaling = True
+            self._configuration_set(config)
+
             return HttpJsonResponse({'autoscaling': config.autoscaling})
         except Exception as ex:
-            self.logger.critical('Error when trying to start the autoscaling mechanism ')
-            return HttpErrorResponse(str(ex))
+            self.logger.critical('Error when trying to stop the autoscaling mechanism: %s' % ex)
+            return HttpErrorResponse("%s" % ex)
 
     @expose('POST')
     def off_autoscaling(self, kwargs):
         self.logger.info('off_autoscaling entering')
-        if not self.scaler:
-            return HttpErrorResponse(
-                'Provisioning Manager has not been initialized: %s' % provision_mng_error)
-
         try:
+            exp_params = []
+            check_arguments(exp_params, kwargs)
+
+            if not self.scaler:
+                raise Exception(
+                    'Provisioning Manager has not been initialized: %s' %
+                    provision_mng_error)
+
             self.autoscaling_threads.terminate()
             self.scaler.stop_provisioning()
             config = self._configuration_get()
             config.autoscaling = False
             self._configuration_set(config)
 
-            self.logger.info('off_autoscaling done.')
+            self.logger.info('off_autoscaling done')
             return HttpJsonResponse({'autoscaling': config.autoscaling})
         except Exception as ex:
-            self.logger.critical('Error when trying to stop the autoscaling mechanism ')
-            return HttpErrorResponse(str(ex))
+            self.logger.critical('Error when trying to stop the autoscaling mechanism: %s' % ex)
+            return HttpErrorResponse("%s" % ex)
 
     @expose('POST')
     def update_php_configuration(self, kwargs):
-        codeVersionId = None
-        if 'codeVersionId' in kwargs:
-            codeVersionId = kwargs.pop('codeVersionId')
         config = self._configuration_get()
-        phpconf = {}
-        if 'phpconf' in kwargs:
-            phpconf = kwargs.pop('phpconf')
+        exp_params = [('codeVersionId', is_in_list(config.codeVersions), None),
+                      ('phpconf', is_dict, {})]
+        try:
+            codeVersionId, phpconf = check_arguments(exp_params, kwargs)
+            self.check_state([self.S_INIT, self.S_STOPPED, self.S_RUNNING])
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
+
+        if codeVersionId is None and not phpconf:
+            return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_MISSING,
+                    'at least one of "codeVersionId" or "phpconf"').message)
+
+        if phpconf:
             for key in phpconf.keys():
                 if key not in config.backend_config.php_conf.defaults:
                     return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_UNEXPECTED, 'phpconf attribute "%s"' % (str(key))).message)
                 if not re.match(config.backend_config.php_conf.format[key], phpconf[key]):
                     return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_INVALID).message)
-
-        if len(kwargs) != 0:
-            return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
-
-        if codeVersionId is None and not phpconf:
-            return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_MISSING, 'at least one of "codeVersionId" or "phpconf"').message)
-
-        if codeVersionId and codeVersionId not in config.codeVersions:
-            return HttpErrorResponse(ManagerException(ManagerException.E_ARGS_INVALID, detail='Unknown code version identifier "%s"' % codeVersionId).message)
 
         state = self.state_get()
         if state == self.S_INIT or state == self.S_STOPPED:
@@ -262,8 +284,7 @@ class PHPManager(BasicWebserversManager):
         elif state == self.S_RUNNING:
             self.state_set(self.S_ADAPTING, msg='Updating configuration')
             Thread(target=self.do_update_configuration, args=[config, codeVersionId, phpconf]).start()
-        else:
-            return HttpErrorResponse(ManagerException(ManagerException.E_STATE_ERROR).message)
+
         return HttpJsonResponse()
 
     def do_update_configuration(self, config, codeVersionId, phpconf):
@@ -316,24 +337,26 @@ class PHPManager(BasicWebserversManager):
         self._configuration_set(config)
 
     @expose('POST')
-    def cdn_enable(self, params):
+    def cdn_enable(self, kwargs):
         '''
         Enable/disable CDN offloading.
         The changes must be reflected on the load balancer a.k.a proxy
         '''
         try:
-            enable = params['enable']
+            exp_params = [('enable', is_bool),
+                          ('address', is_string, False)]
+            enable, cdn = check_arguments(exp_params, kwargs)
+
             if enable:
-                cdn = params['address']
                 self.logger.info('Enabling CDN hosted at "%s"' % (cdn))
             else:
-                cdn = False
                 self.logger.info('Disabling CDN')
+
             config = self._configuration_get()
             config.cdn = cdn
             self._update_proxy(config, config.getProxyServiceNodes())
             self._configuration_set(config)
             return HttpJsonResponse({'cdn': config.cdn})
-        except Exception as e:
-            self.logger.exception(e)
-            return HttpErrorResponse(str(e))
+        except Exception as ex:
+            self.logger.exception(ex)
+            return HttpErrorResponse("%s" % ex)

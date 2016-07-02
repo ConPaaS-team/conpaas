@@ -9,14 +9,14 @@
 
     Class ConpaasSecureServer is instantiated in the sbin/
     sripts:
- 
+
         from conpaas.core import https
-        d = https.server.ConpaasSecureServer( 
+        d = https.server.ConpaasSecureServer(
                          (options.address, options.port),
                          config_parser,
                          role) # role='agent' or 'manager'
         d.serve_forever()
- 
+
     It uses basic HTTP classes from the standard library
     and the pyopenssl library. The trick is to replace the
     normal socket used inside the HTTP classes from standard
@@ -31,7 +31,7 @@ import urlparse
 import httplib
 import json
 import cgi
-import os 
+import os
 import sys
 import traceback
 
@@ -42,8 +42,8 @@ from OpenSSL import SSL
 from conpaas.core import log
 from conpaas.core.expose import exposed_functions_http_methods
 # from conpaas.core.expose import exposed_functions
-# from conpaas.core.services import manager_services 
-from conpaas.core.services import agent_services 
+# from conpaas.core.services import manager_services
+from conpaas.core.services import agent_services
 
 
 class HttpError(Exception): pass
@@ -122,13 +122,13 @@ class ConpaasSecureServer(HTTPSServer):
             # services = manager_services
         else:
             services = agent_services
-        
+
             # Instantiate the requested service class
             service_type = config_parser.get(role, 'TYPE')
             try:
                 module = __import__(services[service_type]['module'], globals(), locals(), ['*'])
             except ImportError:
-                raise Exception('Could not import module containing service class "%(module)s"' % 
+                raise Exception('Could not import module containing service class "%(module)s"' %
                     services[service_type])
 
             # Get the appropriate class for this service
@@ -144,7 +144,7 @@ class ConpaasSecureServer(HTTPSServer):
         self.instances[0] = service_instance
 
         handler_exposed_functions = service_instance.get_exposed_methods()
-        
+
 
         for http_method in handler_exposed_functions:
             for func_name in handler_exposed_functions[http_method]:
@@ -163,7 +163,7 @@ class ConpaasSecureServer(HTTPSServer):
     def _deregister_methods(self, service_id):
         for http_method in self.callback_dict:
             del self.callback_dict[http_method][service_id]
-        
+
     # def _register_method(self, http_method, func_name, callback):
     #     self.callback_dict[http_method][func_name] = callback
 
@@ -175,7 +175,7 @@ class ConpaasSecureServer(HTTPSServer):
             and sid.
         '''
         components = x509.get_subject().get_components()
-        
+
         dict = {}
 
         '''
@@ -197,15 +197,15 @@ class ConpaasSecureServer(HTTPSServer):
         if dict['role'] not in ('manager', 'agent'):
             return False
 
-       
+
         uid = self.config_parser.get('agent', 'USER_ID')
         aid = self.config_parser.get('agent', 'APP_ID')
-       
-       
+
+
         if dict['UID'] != uid or dict['serviceLocator'] != aid:
             return False
-       
-       
+
+
         #print 'Received request from %s' % x509.get_subject()
         #sys.stdout.flush()
         return ok
@@ -221,7 +221,7 @@ class ConpaasSecureServer(HTTPSServer):
         '''
         components = x509.get_subject().get_components()
         dict = {}
-        
+
         '''
             Somehow this function gets called twice: once with the CA's
             certificate and once with the peer's certificate. So first
@@ -245,7 +245,7 @@ class ConpaasSecureServer(HTTPSServer):
         if dict['UID'] != uid:
             return False
 
-        
+
         #print 'Received request from %s' % x509.get_subject()
         #sys.stdout.flush()
 
@@ -293,7 +293,7 @@ class ConpaasRequestHandler(BaseHTTPRequestHandler):
                           'application/json',
                           'application/jsonrequest']
     MULTIPART_CONTENT_TYPE = 'multipart/form-data'
-    
+
     def setup(self):
         """
         Overriding StreamRequestHandler.setup() in SocketServer.py
@@ -394,15 +394,15 @@ class ConpaasRequestHandler(BaseHTTPRequestHandler):
         if int(params['service_id']) not in self.server.callback_dict[callback_type]:
             self.send_service_not_found(callback_type, params)
             return
-        
+
         callback_service_id = int(params.pop('service_id'))
 
         if 'method' not in params:
             self.send_method_missing(callback_type, params)
             return
         if params['method'] not in self.server.callback_dict[callback_type][callback_service_id]:
-            self.send_method_not_found(callback_type, params)        
-            return 
+            self.send_method_not_found(callback_type, params)
+            return
 
         callback_name = params.pop('method')
         callback_params = {}

@@ -27,9 +27,9 @@ class XtreemFSCmd(ServiceCmd):
         ServiceCmd.__init__(self, xtreemfs_parser, client, "xtreemfs",
                             ['osd', 'mrc', 'dir'],
                             "XtreemFS service sub-commands help")
-        self._add_add_volume()
-        self._add_list_volumes()
-        self._add_remove_volume()
+        self._add_add_xfs_volume()
+        self._add_list_xfs_volumes()
+        self._add_remove_xfs_volume()
         self._add_get_client_cert()
         self._add_get_user_cert()
         self._add_list_policies()
@@ -37,67 +37,61 @@ class XtreemFSCmd(ServiceCmd):
         self._add_toggle_persistent()
         self._add_set_osd_size()
 
-    # ========== list_volumes
-    def _add_list_volumes(self):
-        subparser = self.add_parser('list_volumes',
+    # ========== list_xfs_volumes
+    def _add_list_xfs_volumes(self):
+        subparser = self.add_parser('list_xfs_volumes',
                                     help="list volumes of an XtreemFS service")
-        subparser.set_defaults(run_cmd=self.list_volumes, parser=subparser)
+        subparser.set_defaults(run_cmd=self.list_xfs_volumes, parser=subparser)
         subparser.add_argument('app_name_or_id',
                                help="Name or identifier of an application")
         subparser.add_argument('serv_name_or_id',
                                help="Name or identifier of a service")
 
-    def list_volumes(self, args):
-        app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
+    def list_xfs_volumes(self, args):
+        app_id, service_id = self.check_service(args.app_name_or_id, args.serv_name_or_id)
+
         res = self.client.call_manager_get(app_id, service_id, "listVolumes")
-        if 'error' in res:
-            self.client.error("Could not list volumes: %s" % res['error'])
-        else:
-            print "%s" % res['volumes']
 
-    # ========== add_volume
-    def _add_add_volume(self):
-        subparser = self.add_parser('add_volume',
+        print "%s" % res['volumes']
+
+    # ========== add_xfs_volume
+    def _add_add_xfs_volume(self):
+        subparser = self.add_parser('add_xfs_volume',
                                     help="add a volume to XtreemFS service")
-        subparser.set_defaults(run_cmd=self.add_volume, parser=subparser)
+        subparser.set_defaults(run_cmd=self.add_xfs_volume, parser=subparser)
         subparser.add_argument('app_name_or_id',
                                help="Name or identifier of an application")
         subparser.add_argument('serv_name_or_id',
                                help="Name or identifier of a service")
         subparser.add_argument('volume_name', help="Name of volume")
 
-    def add_volume(self, args):
-        app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
-        data = {'volumeName': args.volume_name}
-        res = self.client.call_manager_post(app_id, service_id, "createVolume", data)
-        if 'error' in res:
-            self.client.error("Could not add volume to XtreemFS service %d: %s"
-                              % (service_id, res['error']))
-        else:
-            # TODO: display the following message only in verbose mode  ===> use self.client.info() ?
-            print("Volume %s has been added." % args.volume_name)
+    def add_xfs_volume(self, args):
+        app_id, service_id = self.check_service(args.app_name_or_id, args.serv_name_or_id)
 
-    # ========== remove_volume
-    def _add_remove_volume(self):
-        subparser = self.add_parser('remove_volume',
+        data = {'volumeName': args.volume_name}
+        self.client.call_manager_post(app_id, service_id, "createVolume", data)
+
+        print("Volume %s has been added." % args.volume_name)
+
+    # ========== remove_xfs_volume
+    def _add_remove_xfs_volume(self):
+        subparser = self.add_parser('remove_xfs_volume',
                                     help="remove volume from XtreemFS service")
-        subparser.set_defaults(run_cmd=self.remove_volume, parser=subparser)
+        subparser.set_defaults(run_cmd=self.remove_xfs_volume, parser=subparser)
         subparser.add_argument('app_name_or_id',
                                help="Name or identifier of an application")
         subparser.add_argument('serv_name_or_id',
                                help="Name or identifier of a service")
         subparser.add_argument('volume_name', help="Name of volume")
 
-    def remove_volume(self, args):
-        app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
+    def remove_xfs_volume(self, args):
+        app_id, service_id = self.check_service(args.app_name_or_id, args.serv_name_or_id)
+
         data = {'volumeName': args.volume_name}
-        res = self.client.call_manager_post(app_id, service_id, "deleteVolume", data)
-        if 'error' in res:
-            self.client.error("Could not remove volume %s from XtreemFS service %d: %s"
-                              % (args.volume_name, service_id, res['error']))
-        else:
-            print("Volume %s has been successfully removed from XtreemFS service %d."
-                  % (args.volume_name, service_id))
+        self.client.call_manager_post(app_id, service_id, "deleteVolume", data)
+
+        print("Volume %s has been successfully removed from XtreemFS service %d."
+              % (args.volume_name, service_id))
 
     # ========== get_client_cert
     def _add_get_client_cert(self):
@@ -116,18 +110,16 @@ class XtreemFSCmd(ServiceCmd):
                                help="Name of the PKCS#12 certificate file to be generated")
 
     def get_client_cert(self, args):
-        app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
+        app_id, service_id = self.check_service(args.app_name_or_id, args.serv_name_or_id)
+
         data = { 'passphrase': args.passphrase,
                  'adminflag': str(args.adminflag).lower() in ("yes", "y", "true", "t", "1") }
         filename = args.filename
         res = self.client.call_manager_post(app_id, service_id, "get_client_cert", data)
-        if 'error' in res:
-            self.client.error("Could not create client certificate %s from XtreemFS service %d: %s"
-                              % (args.filename, service_id, res['error']))
-        else:
-            open(filename, 'wb').write(base64.b64decode(res['cert']))
-            print("Client certificate %s has been successfully created from XtreemFS service %d."
-                  % (args.filename, service_id))
+
+        open(filename, 'wb').write(base64.b64decode(res['cert']))
+        print("Client certificate '%s' has been successfully created from XtreemFS service %d."
+              % (args.filename, service_id))
 
     # ========== get_user_cert
     def _add_get_user_cert(self):
@@ -150,20 +142,18 @@ class XtreemFSCmd(ServiceCmd):
                                help="Name of the PKCS#12 certificate file to be generated")
 
     def get_user_cert(self, args):
-        app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
+        app_id, service_id = self.check_service(args.app_name_or_id, args.serv_name_or_id)
+
         data = {  'user': args.user,
                   'group': args.group,
                   'passphrase': args.passphrase,
                   'adminflag': str(args.adminflag).lower() in ("yes", "y", "true", "t", "1") }
         filename = args.filename
         res = self.client.call_manager_post(app_id, service_id, "get_user_cert", data)
-        if 'error' in res:
-            self.client.error("Could not create user certificate %s from XtreemFS service %d: %s"
-                              % (args.filename, service_id, res['error']))
-        else:
-            open(filename, 'wb').write(base64.b64decode(res['cert']))
-            print("User certificate %s has been successfully created from XtreemFS service %d."
-                  % (args.filename, service_id))
+
+        open(filename, 'wb').write(base64.b64decode(res['cert']))
+        print("User certificate '%s' has been successfully created from XtreemFS service %d."
+              % (args.filename, service_id))
 
     # ========== list_policies
     def _add_list_policies(self):
@@ -178,16 +168,11 @@ class XtreemFSCmd(ServiceCmd):
                                help="Type of XtreemFS policy.")
 
     def list_policies(self, args):
-        app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
+        app_id, service_id = self.check_service(args.app_name_or_id, args.serv_name_or_id)
+
         res = self.client.call_manager_get(app_id, service_id, POLICIES[args.policy_type]['list'])
-        if 'error' in res:
-            self.client.error('Could not list XtreemFS policies'
-                              ' for service id %s'
-                              ' for policy type %s'
-                              ': %s'
-                              % (service_id, args.policy_type, res['error']))
-        else:
-            print '%s' % res['policies']
+
+        print '%s' % res['policies']
 
     # ========== set_policy
     def _add_set_policy(self):
@@ -202,16 +187,11 @@ class XtreemFSCmd(ServiceCmd):
                                help="Type of XtreemFS policy.")
 
     def set_policy(self, args):
-        app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
+        app_id, service_id = self.check_service(args.app_name_or_id, args.serv_name_or_id)
+
         res = self.client.call_manager_post(app_id, service_id, POLICIES[args.policy_type]['set'])
-        if 'error' in res:
-            self.client.error('Could not set XtreemFS policy'
-                              ' for service id %s'
-                              ' for policy type %s'
-                              ': %s'
-                              % (service_id, args.policy_type, res['error']))
-        else:
-            print '%s' % res['stdout']
+
+        print '%s' % res['stdout']
 
     # ========== toggle_persistent
     def _add_toggle_persistent(self):
@@ -224,16 +204,11 @@ class XtreemFSCmd(ServiceCmd):
                                help="Name or identifier of a service")
 
     def toggle_persistent(self, args):
-        app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
+        app_id, service_id = self.check_service(args.app_name_or_id, args.serv_name_or_id)
+
         res = self.client.call_manager_post(app_id, service_id, 'toggle_persistent')
-        if 'error' in res:
-            self.client.error('Could not set XtreemFS policy'
-                              ' for service id %s'
-                              ' for policy type %s'
-                              ': %s'
-                              % (service_id, args.policy_type, res['error']))
-        else:
-            print '%s' % res['stdout']
+
+        print '%s' % res['stdout']
 
     # ========== set_osd_size
     def _add_set_osd_size(self):
@@ -248,19 +223,15 @@ class XtreemFSCmd(ServiceCmd):
                                help="Size of volume in MB.")
 
     def set_osd_size(self, args):
-        app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
+        app_id, service_id = self.check_service(args.app_name_or_id, args.serv_name_or_id)
+
         if args.volume_size <= 0:
-            self.client.error('Cannot resize a volume to %s MB.' % args.volume_size)
+            raise Exception('Cannot resize a volume to %s MB.' % args.volume_size)
+
         data = {'size': args.volume_size}
         res = self.client.call_manager_post(app_id, service_id, 'set_osd_size', data)
-        if 'error' in res:
-            self.client.error('Could not set XtreemFS volume size'
-                              ' for service id %s'
-                              ' for policy type %s'
-                              ': %s'
-                              % (service_id, args.policy_type, res['error']))
-        else:
-            print "OSD volume size is now %s MBs" % res['osd_volume_size']
+
+        print "OSD volume size is now %s MBs" % res['osd_volume_size']
 
 
 def main():
@@ -272,7 +243,7 @@ def main():
 
     cmd_client = BaseClient(logger)
 
-    parser, argv = config('Manage ConPaaS PHP services.', logger)
+    parser, argv = config('Manage ConPaaS XtreemFS services.', logger)
 
     _serv_cmd = XtreemFSCmd(parser, cmd_client)
 
@@ -282,10 +253,17 @@ def main():
                           args.debug)
     try:
         args.run_cmd(args)
-    except:
-        e = sys.exc_info()[1]
-        sys.stderr.write("ERROR: %s\n" % e)
+    except Exception:
+        if args.debug:
+            traceback.print_exc()
+        else:
+            ex = sys.exc_info()[1]
+            if str(ex).startswith("ERROR"):
+                sys.stderr.write("%s\n" % ex)
+            else:
+                sys.stderr.write("ERROR: %s\n" % ex)
         sys.exit(1)
+
 
 if __name__ == '__main__':
     main()

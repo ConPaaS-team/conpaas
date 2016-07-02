@@ -20,17 +20,18 @@ from conpaas.core.ganglia import AgentGanglia
 from conpaas.core.https.server import HttpJsonResponse
 from conpaas.core.https.server import HttpErrorResponse
 from conpaas.core.https.server import ConpaasRequestHandlerComponent
-                          
-class BaseAgent(ConpaasRequestHandlerComponent):
-    """Agent class with the following exposed methods:
 
-    check_agent_process() -- GET
-    """
+from conpaas.core.misc import file_get_contents
+from conpaas.core.misc import check_arguments, is_in_list, is_not_in_list,\
+    is_list, is_non_empty_list, is_list_dict, is_list_dict2, is_string,\
+    is_int, is_pos_nul_int, is_pos_int, is_dict, is_dict2, is_bool,\
+    is_uploaded_file
+
+class BaseAgent(ConpaasRequestHandlerComponent):
 
     def __init__(self, config_parser):
         ConpaasRequestHandlerComponent.__init__(self)
-        self.logger = create_logger(__name__)    
-        self.state = 'INIT'
+        self.logger = create_logger(__name__)
 
         service_type = config_parser.get('agent', 'TYPE')
         user_id      = config_parser.get('agent', 'USER_ID')
@@ -44,7 +45,7 @@ class BaseAgent(ConpaasRequestHandlerComponent):
 
         # IPOP setup
         ipop.configure_conpaas_node(config_parser)
-    
+
         # Ganglia setup
         self.ganglia = AgentGanglia(config_parser)
 
@@ -68,28 +69,29 @@ class BaseAgent(ConpaasRequestHandlerComponent):
     @expose('GET')
     def check_process(self, kwargs):
         """Check if agent process started - just return an empty response"""
-        if len(kwargs) != 0:
-            return HttpErrorResponse('ERROR: Arguments unexpected')
+        try:
+            exp_params = []
+            check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
+
         return HttpJsonResponse()
 
     @expose('GET')
     def get_log(self, kwargs):
         """Return the contents of a logfile"""
-        if 'filename' not in kwargs:
-            filename = self.LOG_FILE
-        else:
-            filename = kwargs.pop('filename')
-            if filename not in ( 'agent.out', 'agent.err' ):
-                return HttpErrorResponse("ERROR: Invalid log filename: '%s'"
-                        % filename)
+        other_log_files = [ 'agent.out', 'agent.err' ]
+        exp_params = [('filename', is_in_list(other_log_files), self.LOG_FILE)]
+        try:
+            filename = check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
+
+        if filename in other_log_files:
             filename = os.path.join(self.ROOT_DIR, filename)
 
-        if len(kwargs) != 0:
-            return HttpErrorResponse(AgentException(
-                AgentException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
-
         try:
-            return HttpJsonResponse({'log': open(filename).read()})
+            return HttpJsonResponse({'log': file_get_contents(filename)})
         except:
             return HttpErrorResponse("Failed to read log file: '%s'" % filename)
 
@@ -121,7 +123,7 @@ class AgentException(Exception):
         self.code = code
         self.args = args
         if 'detail' in kwargs:
-            self.message = '%s DETAIL:%s' % ((self.E_STRINGS[code] % args), 
+            self.message = '%s DETAIL:%s' % ((self.E_STRINGS[code] % args),
                                              str(kwargs['detail']))
         else:
             self.message = self.E_STRINGS[code] % args

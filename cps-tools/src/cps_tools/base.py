@@ -75,9 +75,19 @@ class BaseClient(object):
         else:
             return self.password
 
-    def wait_for_state(self, aid, sid, states):
+    def wait_for_app_state(self, aid, states):
+        """Poll the state of application 'aid' till it matches one of expected 'states'."""
+        state = None
+        while state not in states:
+            try:
+                state = self.application_dict(aid)['status']
+            except (socket.error, urllib2.URLError):
+                time.sleep(2)
+        return state
+
+    def wait_for_service_state(self, aid, sid, states):
         """Poll the state of service 'sid' till it matches one of expected 'states'."""
-        res = {'state': None}
+        res = { 'state' : None }
         while res['state'] not in states:
             try:
                 res = self.call_manager_get(aid, sid, "get_service_info")
@@ -162,7 +172,7 @@ class BaseClient(object):
         try:
             res = simplejson.loads(rawdata)
             if type(res) is dict and 'error' in res:
-                raise Exception(res['msg'] + " while calling %s" % method)
+                raise Exception(res['error'])
 
             return res
         except simplejson.decoder.JSONDecodeError:
@@ -185,7 +195,6 @@ class BaseClient(object):
 
         return services
 
-
     def service_dict(self, app_id, service_id):
         """Return service's data as a dictionary"""
         services = self.get_services(app_id)
@@ -198,11 +207,11 @@ class BaseClient(object):
     def application_dict(self, app_id):
         """Return application's data as a dictionary"""
         applications = self.call_director_get("listapp")
-        
+
         for application in applications:
             if str(application['aid']) == str(app_id):
                 return application
-        return None 
+        return None
 
     def call_manager(self, app_id, service_id, method, post, data=None, files=None):
         """Call the manager API.
@@ -243,7 +252,11 @@ class BaseClient(object):
                 # Not JSON, simply return what we got
                 return res[1]
 
-            return data.get('result', data)
+            res = data.get('result', data)
+            if type(res) is dict and 'error' in res:
+                raise Exception(res['error'])
+
+            return res
 
         raise Exception("Call to method %s on %s failed: %s.\nParams = %s" % (
             method, application['manager'], res[1], data))

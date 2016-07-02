@@ -1,17 +1,27 @@
-
 from argparse import ArgumentParser
 import ConfigParser
 import logging
 import os
 import sys
 
-
 CONF_FILE = "cps-tools.conf"
+
+
+class CpsParser(ArgumentParser):
+
+    def __init__(self, *args, **kwargs):
+       ArgumentParser.__init__(self, *args, **kwargs)
+
+    # Override this method to print the parser's error messages in the usual format
+    def error(self, message):
+        self.print_usage(sys.stderr)
+        sys.stderr.write('ERROR: %s\n' % message)
+        sys.exit(2)
 
 
 def config(description, logger):
     # Turn off help, so we print all options in response to -h
-    parser = ArgumentParser(add_help=False,)
+    parser = CpsParser(add_help=False,)
     parser.add_argument('-d', '--debug', action='store_true',
                         help="Display debug messages.")
     parser.add_argument("--conf_file", help="Specify a configuration file",
@@ -64,9 +74,9 @@ def config(description, logger):
         logger.warning('Skipping unknown sections of configuration files: %s'
                        % other_sections)
 
-    parser = ArgumentParser(description=description, parents=[parser],
-                            epilog="See %s <command> -h' for more information on a specific command."
-                            % sys.argv[0])
+    parser = CpsParser(description=description, parents=[parser],
+                       epilog="See %s <command> -h' for more information on a specific command."
+                       % sys.argv[0])
 
     parser.add_argument('--director_url', metavar='URL',
                         help='ConPaaS\'s director URL')

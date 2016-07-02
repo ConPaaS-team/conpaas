@@ -6,19 +6,19 @@
     ConPaaS core: HTTPS client-side support.
 
     It module is used by both agents and managers.
- 
+
     It uses the python-openssl library and standard python
     classes from httplib.
- 
+
     It constucts a wrapper over the httplib.HTTPConnection
     to force it to use a SSL connection instead of a standard
     socket.
- 
+
     It also provides a wrapper over OpenSSL.SSL.Connection to
     implement the missing function 'makefile', which is
     part by the python socket API and thus required to work
     with httplib.
- 
+
     It implements the following methods:
         - https_get
         - https_post
@@ -74,7 +74,7 @@ def conpaas_init_ssl_ctx(dir, role, uid=None, aid=None):
 
 class HTTPSConnection(HTTPConnection):
     """
-        This class allows communication via SSL using 
+        This class allows communication via SSL using
         an OpenSSL Connection.
 
         It is a wrapper over the httplib.HTTPConnection
@@ -108,13 +108,13 @@ class SSLConnectionWrapper(object):
     default_buf_size = 8192
     def __init__(self, ssl_ctx, sock):
         self._ssl_conn = SSL.Connection(ssl_ctx, sock)
-     
+
     def __getattr__(self, name):
         """
             Forward everything to underlying socket.
         """
         return getattr(self._ssl_conn, name)
-    
+
     def makefile(self, *args):
         """
             This is the method that is missing from SSL.Connection.
@@ -151,7 +151,7 @@ class SSLConnectionWrapper(object):
         return fileobject
 
 
-def _init_context(protocol, cert_file, key_file, 
+def _init_context(protocol, cert_file, key_file,
                  ca_cert_file, verify_callback, verify_depth=9):
     ctx=SSL.Context(protocol)
     ctx.use_privatekey_file (key_file)
@@ -160,7 +160,7 @@ def _init_context(protocol, cert_file, key_file,
     ctx.set_verify(SSL.VERIFY_PEER|SSL.VERIFY_FAIL_IF_NO_PEER_CERT, verify_callback)
 
     return ctx
-    
+
 def _conpaas_callback_agent(connection, x509, errnum, errdepth, ok):
     '''
         The custom certificate verification function called on the
@@ -171,7 +171,7 @@ def _conpaas_callback_agent(connection, x509, errnum, errdepth, ok):
 
     components = x509.get_subject().get_components()
     dict = {}
-    
+
     '''
         Somehow this function gets called twice: once with the CA's
         certificate and once with the peer's certificate. So first
@@ -190,8 +190,8 @@ def _conpaas_callback_agent(connection, x509, errnum, errdepth, ok):
     # if dict['UID'] != __uid or dict['serviceLocator'] != __sid:
     if dict['UID'] != __uid or dict['serviceLocator'] != __aid:
        return False
-        
-    return ok 
+
+    return ok
 
 def _conpaas_callback_manager(connection, x509, errnum, errdepth, ok):
     #TODO: For all callback functions - the user certificate
@@ -237,7 +237,7 @@ def _conpaas_callback_user(connection, x509, errnum, errdepth, ok):
         user's client side. The user might sends requests only to
         its managers.
     '''
-    
+
     components = x509.get_subject().get_components()
     dict = {}
 
@@ -255,11 +255,11 @@ def _conpaas_callback_user(connection, x509, errnum, errdepth, ok):
 
     if dict['role'] != 'manager':
         return False
-    
+
     if dict['UID'] != __uid:
        return False
-        
-    return ok 
+
+    return ok
 
 def _conpaas_callback_director(connection, x509, errnum, errdepth, ok):
     '''
@@ -267,7 +267,7 @@ def _conpaas_callback_director(connection, x509, errnum, errdepth, ok):
         director's client side. The director might sends requests only to
         managers.
     '''
-    
+
     components = x509.get_subject().get_components()
     dict = {}
     for key,value in components:
@@ -280,7 +280,7 @@ def _conpaas_callback_director(connection, x509, errnum, errdepth, ok):
     # if dict['role'] != 'manager':
        return False
 
-    return ok 
+    return ok
 
 def https_get(host, port, uri, params=None):
     """Creates the VMs associated with the list of nodes. It also tests
@@ -343,7 +343,7 @@ def _encode_multipart_formdata(params, files):
     """
         @param params A dictionary containing key:value pairs
                       for regular form fields.
-      
+
         @param files A sequence of (name, filename, value) tuples for
                      data to be uploaded as files.
 
@@ -393,21 +393,21 @@ def jsonrpc_get(host, port, uri, method, service_id=0, params=None):
         and the response to the HTTP request
     """
     h = HTTPSConnection(host, port=port, ssl_context=__client_ctx)
-    
-    all_params = {'service_id':service_id, 'method': method, 'id': '1'}
+
+    all_params = { 'service_id': service_id, 'method': method, 'id': '1' }
     # all_params = {'method': method, 'id': '1'}
     if params:
         all_params['params'] = json.dumps(params)
-    
+
     h.putrequest('GET', '%s?%s' % (uri, urlencode(all_params)))
     h.putheader('content-type', 'application/json')
     h.endheaders()
     r = h.getresponse()
     body = r.read()
     h.close()
-    
-    
-    return r.status, body 
+
+
+    return r.status, body
 
 def jsonrpc_post(host, port, uri, method, service_id=0, params={}):
     """
@@ -422,7 +422,7 @@ def jsonrpc_post(host, port, uri, method, service_id=0, params={}):
         @return A tuple containing the return code
         and the response to the HTTP request
     """
-    all_params = { 'service_id':service_id, 'method': method, 'params': params, 'id': '1'}
+    all_params = { 'service_id': service_id, 'method': method, 'params': params, 'id': '1' }
     body = json.dumps(all_params)
 
     # body = json.dumps({'method': method, 'params': params, 'id': '1'})
@@ -441,18 +441,18 @@ def check_response(response):
     """Check the given HTTP response, returning the result if everything went
     fine"""
     code, body = response
-    if code != httplib.OK: 
+    if code != httplib.OK:
         raise Exception('Received http response code %d' % (code))
 
     data = json.loads(body)
-    if data['error']: 
+    if data['error']:
         raise Exception(data['error'])
-    
+
     return data['result']
 
 if __name__ == "__main__":
     conpaas_init_ssl_ctx('/etc/conpaas-security/certs', 'manager')
-    print https_post('testbed2.conpaas.eu', 443, 
+    print https_post('testbed2.conpaas.eu', 443,
             '/security/callback/decrementUserCredit.php', params={'sid': 454, 'decrement': 1})
     #print https_get('testbed2.conpaas.eu', 443, '/')
     #print r.status

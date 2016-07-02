@@ -23,8 +23,8 @@ class UserData {
 
         $res = json_decode(HTTPS::post(Conf::DIRECTOR . '/new_user', $data));
 
-        if (property_exists($res, 'msg')) {
-            throw new Exception($res->msg);
+        if (property_exists($res, 'error')) {
+            throw new Exception($res->error);
         }
 
     	return $res->uid;

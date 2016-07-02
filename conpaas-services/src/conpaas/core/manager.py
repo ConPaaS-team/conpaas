@@ -20,7 +20,7 @@ import logging
 import json, httplib
 
 from conpaas.core import git
-from conpaas.core import https 
+from conpaas.core import https
 from conpaas.core.log import create_logger, create_standalone_logger
 from conpaas.core.expose import expose
 from conpaas.core.callbacker import DirectorCallbacker
@@ -30,37 +30,32 @@ from conpaas.core.https.server import FileUploadField
 from conpaas.core.node import ServiceNode
 from conpaas.core.https.server import ConpaasRequestHandlerComponent
 
+from conpaas.core.misc import file_get_contents, file_write_contents
+from conpaas.core.misc import check_arguments, is_in_list, is_not_in_list,\
+    is_list, is_non_empty_list, is_list_dict, is_list_dict2, is_string,\
+    is_int, is_pos_nul_int, is_pos_int, is_dict, is_dict2, is_bool,\
+    is_uploaded_file
 
-from conpaas.core.misc import check_arguments, is_in_list, is_not_in_list, is_string, is_pos_int, is_dict
 from conpaas.core import ipop
 from conpaas.core.ganglia import ManagerGanglia
 
 from conpaas.core.services import manager_services
 
 class BaseManager(ConpaasRequestHandlerComponent):
-    """Manager class with the following exposed methods:
 
-    startup() -- POST
-    getLog() -- GET
-    upload_startup_script() -- UPLOAD
-    get_startup_script() -- GET
-    delete() -- POST
-    """
-
-    # Manager states 
-    S_INIT = 'INIT'         # manager initialized but not yet started
+   # Manager states
+    S_INIT     = 'INIT'     # manager initialized but not yet started
     S_PROLOGUE = 'PROLOGUE' # manager is starting up
-    S_RUNNING = 'RUNNING'   # manager is running
-    S_ADAPTING = 'ADAPTING' # manager is in a transient state - frontend will 
+    S_RUNNING  = 'RUNNING'  # manager is running
+    S_ADAPTING = 'ADAPTING' # manager is in a transient state - frontend will
                             # keep polling until manager out of transient state
     S_EPILOGUE = 'EPILOGUE' # manager is shutting down
-    S_STOPPED = 'STOPPED'   # manager stopped
-    S_ERROR = 'ERROR'       # manager is in error state
+    S_STOPPED  = 'STOPPED'  # manager stopped
+    S_ERROR    = 'ERROR'    # manager is in error state
 
     # String template for error messages returned when performing actions in
     # the wrong state
     WRONG_STATE_MSG = "ERROR: cannot perform %(action)s in state %(curstate)s"
-
 
     WRONG_NR_NODES = "ERROR: requestion to delete %(count)s while only %(current)s nodes available"
     # String template for error messages returned when a required argument is
@@ -70,9 +65,7 @@ class BaseManager(ConpaasRequestHandlerComponent):
     # String template for debugging messages logged on nodes creation
     ACTION_REQUESTING_NODES = "requesting %(count)s nodes in %(action)s"
 
-
     AGENT_PORT = 5555
-
 
     def __init__(self, config_parser):
         ConpaasRequestHandlerComponent.__init__(self)
@@ -103,12 +96,17 @@ class BaseManager(ConpaasRequestHandlerComponent):
                                'reason': msg})
         self.logger.debug('STATE %s: %s' % (target_state, msg))
 
-    def _check_state(self, expected_states):
+    def check_state(self, expected_states):
         state = self.state_get()
         if state not in expected_states:
             raise Exception("Wrong service state: was expecting one of %s"\
                             " but current state is '%s'" \
                             % (expected_states, state))
+
+    def check_credits(self):
+        credit = self.callbacker.get_credit()
+        if credit['credit'] <= 0:
+            raise Exception('Insufficient credits')
 
     def _wait_state(self, expected_states, timeout=10 * 60):
         polling_interval = 10   # seconds
@@ -122,15 +120,7 @@ class BaseManager(ConpaasRequestHandlerComponent):
                             " while waiting for manager state to become one of %s."
                             % (timeout, polling_interval, expected_states))
 
-    @expose('GET')
-    def get_service_history(self, kwargs):
-        if len(kwargs) != 0:
-            ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
-                                  kwargs.keys())
-            return HttpErrorResponse(ex.message)
-        return HttpJsonResponse({'state_log': self.state_log})
-
-    # return true if successful 
+    # return true if successful
     def on_start(self, nodes):
         raise Exception("start method not implemented for this service")
 
@@ -155,24 +145,40 @@ class BaseManager(ConpaasRequestHandlerComponent):
     def get_starting_nodes(self):
         return [{'cloud':'default'}]
 
-    #overwrite this method in case the newly added nodes require also volumes
+    # overwrite this method in case the newly added nodes also require volumes
     def get_add_nodes_info(self, noderoles, cloud):
         count = sum(noderoles.values())
         return [{'cloud':cloud} for _ in range(count)]
 
-    # this should be overwritten from the service managers if applicable 
+    # this should be overwritten from the service managers if applicable
     def get_context_replacement(self):
         return {}
 
-    # this should be overwritten from all the service managers 
+    # this should be overwritten from all the service managers
     def get_service_type(self):
         raise Exception("get_service_type method not implemented for this service (%s)" % self.__class__.__name__)
 
     @expose('GET')
-    def getLog(self, kwargs):
+    def get_service_history(self, kwargs):
+        try:
+            exp_params = []
+            check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
+
+        return HttpJsonResponse({'state_log': self.state_log})
+
+    @expose('GET')
+    def get_manager_log(self, kwargs):
         """Return logfile"""
         try:
-            return HttpJsonResponse({'log': open(self.logfile).read()})
+            exp_params = []
+            check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
+
+        try:
+            return HttpJsonResponse({'log': file_get_contents(self.logfile)})
         except:
             return HttpErrorResponse('Failed to read log')
 
@@ -195,6 +201,7 @@ class BaseManager(ConpaasRequestHandlerComponent):
 
 
 class ApplicationManager(BaseManager):
+
     def __init__(self, httpsserver, config_parser, **kwargs):
         BaseManager.__init__(self, config_parser)
 
@@ -231,36 +238,47 @@ class ApplicationManager(BaseManager):
     @expose('GET')
     def check_process(self, kwargs):
         """Check if manager process started - just return an empty response"""
-        if len(kwargs) != 0:
-            return HttpErrorResponse('ERROR: Arguments unexpected')
-        return HttpJsonResponse()    
+        try:
+            exp_params = []
+            check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
+
+        return HttpJsonResponse()
 
     @expose('GET')
-    def infoapp(self, kwargs):
+    def get_app_info(self, kwargs):
+        try:
+            exp_params = []
+            check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
-        return HttpJsonResponse({'info':'this application is doing fine, don\'t worry!',
+        return HttpJsonResponse({
                                 # 'methods': self._get_supporeted_functions(),
                                 'states': self._get_manager_states(),
                                 'nodes': [node.id for node in self.nodes],
                                 'volumes': self.volumes.keys()
-            })    
+                                })
 
     @expose('POST')
     def add_service(self, kwargs):
         """Expose methods relative to a specific service manager"""
-        self.state_set(self.S_ADAPTING)
-        self.kwargs.update(kwargs)
 
         exp_params = [('service_type', is_in_list(manager_services.keys()))]
-        service_type = check_arguments(exp_params, kwargs)
+        try:
+            service_type = check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
+        self.kwargs.update(kwargs)
         services = manager_services
 
         try:
             module = __import__(services[service_type]['module'], globals(), locals(), ['*'])
         except ImportError:
             self.state_set(self.S_ERROR)
-            raise Exception('Could not import module containing service class "%(module)s"' % 
+            raise Exception('Could not import module containing service class "%(module)s"' %
                 services[service_type])
 
         # Get the appropriate class for this service
@@ -271,33 +289,37 @@ class ApplicationManager(BaseManager):
             self.state_set(self.S_ERROR)
             raise Exception('Could not get service class %s from module %s' % (service_class, module))
 
-        #probably lock it 
-        self.service_id = self.service_id + 1 
+        self.state_set(self.S_ADAPTING)
+
+        #probably lock it
+        self.service_id = self.service_id + 1
 
         service_config_parser = copy.deepcopy(self.config_parser)
         self._add_manager_configuration(service_config_parser, str(self.service_id), service_type)
         # self._run_manager_start_script(service_config_parser, service_type)
-        
+
         #Create an instance of the service class
         service_insance = instance_class(service_config_parser, **self.kwargs)
-        
+
         self.httpsserver.instances[self.service_id] = service_insance
         service_manager_exposed_functions = service_insance.get_exposed_methods()
-        
+
         for http_method in service_manager_exposed_functions:
            for func_name in service_manager_exposed_functions[http_method]:
                self.httpsserver._register_method(http_method, self.service_id, func_name, service_manager_exposed_functions[http_method][func_name])
 
-
         self.state_set(self.S_RUNNING)
-        return HttpJsonResponse({'service_id':self.service_id})
+        return HttpJsonResponse({ 'service_id': self.service_id })
 
     @expose('POST')
     def remove_service(self, kwargs):
-        self.state_set(self.S_ADAPTING)
         exp_params = [('service_id', is_in_list(self.httpsserver.instances.keys()))]
-        service_id = check_arguments(exp_params, kwargs)
+        try:
+            service_id = check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
+        self.state_set(self.S_ADAPTING)
         Thread(target=self._do_stop_service, args=[service_id, True]).start()
         return HttpJsonResponse()
 
@@ -305,24 +327,20 @@ class ApplicationManager(BaseManager):
     def start_service(self, kwargs):
         exp_params = [('service_id', is_in_list(self.httpsserver.instances.keys())),
                       ('cloud', is_string)]
-        [service_id, cloud ] = check_arguments(exp_params, kwargs)
+        try:
+            service_id, cloud = check_arguments(exp_params, kwargs)
+            self.check_credits()
 
-        credit =self.callbacker.check_credits()
-        if credit['credit'] <= 0:
-            return HttpErrorResponse('Insufficient credits')
-
-        service_manager = self.httpsserver.instances[service_id]
-
-        sm_state = service_manager.state_get()
-        if sm_state != self.S_INIT and sm_state != self.S_STOPPED:
-            vals = { 'curstate': sm_state, 'action': 'startup' }
-            return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
+            service_manager = self.httpsserver.instances[service_id]
+            service_manager.check_state([self.S_INIT, self.S_STOPPED])
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
         service_manager.logger.info('Manager starting up')
         service_manager.state_set(self.S_PROLOGUE)
 
         Thread(target=self._do_start_service, args=[service_id, cloud]).start()
-        
+
         return HttpJsonResponse({ 'state': service_manager.state_get() })
 
     def _do_start_service(self, service_id, cloud):
@@ -340,7 +358,12 @@ class ApplicationManager(BaseManager):
 
     @expose('POST')
     def stop_service(self, kwargs):
-        service_id = kwargs.pop('service_id')
+        exp_params = [('service_id', is_in_list(self.httpsserver.instances.keys()))]
+        try:
+            service_id = check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
+
         service_manager = self.httpsserver.instances[service_id]
         service_manager.state_set(self.S_EPILOGUE)
         Thread(target=self._do_stop_service, args=[service_id, False]).start()
@@ -353,12 +376,12 @@ class ApplicationManager(BaseManager):
             service_manager.nodes = []
             service_manager.state_set(self.S_STOPPED)
             for node in nodes:
-                
+
                 # remove also the volumes associated to those nodes
                 for k, v in self.volumes.items():
                     if v['vm_id']==node.id:
-                        del self.volumes[k]    
-                   
+                        del self.volumes[k]
+
                 self.nodes.remove(filter(lambda n: n.id == node.id, self.nodes)[0])
             self.callbacker.remove_nodes(nodes)
 
@@ -372,20 +395,18 @@ class ApplicationManager(BaseManager):
 
     @expose('POST')
     def add_nodes(self, kwargs):
-        
         exp_params = [('service_id', is_in_list(self.httpsserver.instances.keys())),
                       ('nodes', is_dict),
-                      # ('cloud', is_string), ('node', is_pos_int)]
                       ('cloud', is_string)]
-        
-        # [service_id, cloud, count ] = check_arguments(exp_params, kwargs)
-        [service_id, noderoles, cloud ] = check_arguments(exp_params, kwargs)
-        
-        credit =self.callbacker.check_credits()
-        if credit['credit'] <= 0:
-            return HttpErrorResponse('Insufficient credits')
+        try:
+            service_id, noderoles, cloud = check_arguments(exp_params, kwargs)
+            self.check_credits()
 
-        service_manager = self.httpsserver.instances[service_id]
+            service_manager = self.httpsserver.instances[service_id]
+            service_manager.check_state([self.S_RUNNING])
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
+
         service_manager.state_set(self.S_ADAPTING)
         Thread(target=self._do_add_nodes, args=[service_id, noderoles, cloud]).start()
         return HttpJsonResponse({ 'state': service_manager.state_get() })
@@ -414,20 +435,21 @@ class ApplicationManager(BaseManager):
 
     @expose('POST')
     def remove_nodes(self, kwargs):
-        # exp_params = [('service_id', is_in_list(self.httpsserver.instances.keys())),('node', is_pos_int)]
-        exp_params = [('service_id', is_in_list(self.httpsserver.instances.keys())),('nodes', is_dict)]
-        # [service_id, count ] = check_arguments(exp_params, kwargs)
-        [service_id, noderoles] = check_arguments(exp_params, kwargs)
+        exp_params = [('service_id', is_in_list(self.httpsserver.instances.keys())),
+                      ('nodes', is_dict)]
+        try:
+            service_id, noderoles = check_arguments(exp_params, kwargs)
+
+            service_manager = self.httpsserver.instances[service_id]
+            service_manager.check_state([self.S_RUNNING])
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
         count = sum(noderoles.values())
-
-        service_manager = self.httpsserver.instances[service_id]
-
         if count > len(service_manager.nodes):
             vals = { 'count': count, 'current': len(service_manager.nodes) }
             return HttpErrorResponse(self.WRONG_NR_NODES % vals)
 
-        
         service_manager.state_set(self.S_ADAPTING)
         Thread(target=self._do_remove_nodes, args=[service_id, noderoles]).start()
         return HttpJsonResponse({ 'state': service_manager.state_get() })
@@ -438,49 +460,47 @@ class ApplicationManager(BaseManager):
         for node in nodes:
             for k, v in self.volumes.items():
                     if v['vm_id']==node.id:
-                        del self.volumes[k]    
+                        del self.volumes[k]
             self.nodes.remove(filter(lambda n: n.id == node.id, self.nodes)[0])
             service_manager.nodes.remove(filter(lambda n: n.id == node.id, service_manager.nodes)[0])
         self.logger.debug("Current nodes: %s, current volumes: %s" % (self.nodes, self.volumes.keys()))
         self.callbacker.remove_nodes(nodes)
         # if len(service_manager.nodes) == 0:
-        #     service_manager.state_set(self.S_STOPPED)    
-        # else: 
+        #     service_manager.state_set(self.S_STOPPED)
+        # else:
         #     service_manager.state_set(self.S_RUNNING)
-        
+
+    def check_volume_name(self, volumeName):
+        if not re.compile('^[A-za-z0-9-_]+$').match(volumeName):
+            raise Exception('Volume name contains invalid characters')
 
     @expose('POST')
     def create_volume(self, kwargs):
-
-        node_ids = [ node.id for node in self.nodes ]
+        node_ids = [ str(node.id) for node in self.nodes ]
         exp_params = [('volumeName', is_not_in_list(self.volumes.keys())),
                       ('volumeSize', is_pos_int),
-                      ('agentId', is_in_list(node_ids))
-                      ]
-        [ volumeName, volumeSize, agentId ] = check_arguments(exp_params, kwargs)
+                      ('agentId', is_in_list(node_ids))]
+        try:
+            volumeName, volumeSize, agentId = check_arguments(exp_params, kwargs)
+            self.check_volume_name(volumeName)
 
-        if not re.compile('^[A-za-z0-9-_]+$').match(volumeName):
-            return HttpErrorResponse('Volume name contains invalid characters')
+            service_id, _ = self.get_service_id_by_vm_id(agentId)
+
+            service_manager = self.httpsserver.instances[service_id]
+            service_manager.check_state([self.S_RUNNING])
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
         # TODO: decide if this methods gets pulled to appmanager or we have a before_create_volume()
-        # in the serice managers  
+        # in the serice managers
         # if self._are_scripts_running():
         #     self.logger.info("Volume creation is disabled when scripts are running")
         #     return HttpErrorResponse(self.SCRIPTS_ARE_RUNNING_MSG);
 
-        service_id, _ = self.get_service_id_by_vm_id(agentId)
-        service_manager = self.httpsserver.instances[service_id]
-
-        sm_state = service_manager.state_get()
-        if sm_state != self.S_RUNNING:
-            vals = { 'curstate': sm_state,
-                     'action': 'create_volume' }
-            return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
-
         service_manager.state_set(self.S_ADAPTING)
         Thread(target=self._do_create_volume, args=[volumeName, volumeSize, agentId, service_manager]).start()
 
-        return HttpJsonResponse({ 'state': service_manager.state_get() })
+        return HttpJsonResponse({ 'service_id': service_id })
 
     def _do_create_volume(self, volumeName, volumeSize, agentId, service_manager):
         """Create a new volume and attach it to the specified agent"""
@@ -493,7 +513,7 @@ class ApplicationManager(BaseManager):
                 # We try to create a new volume.
                 volume_name = "vol-%s" % volumeName
                 service_manager.logger.debug("Trying to create a volume for the node=%s" % node.id)
-                
+
                 volume = self.callbacker.create_volume(volumeSize, volume_name, node.vmid, node.cloud_name)
                 volume_id = volume['volume_id']
             except Exception, ex:
@@ -511,17 +531,17 @@ class ApplicationManager(BaseManager):
                 _, dev_name = self.attach_volume(volume_id, node.vmid, service_manager, dev_name, node.cloud_name)
 
             except Exception, ex:
-                service_manager.logger.exception("Failed to attach disk to Generic node %s: %s" % (node.id, ex))
+                service_manager.logger.exception("Failed to attach disk to node %s: %s" % (node.id, ex))
                 self.destroy_volume({'vol_id':volume_id, 'cloud': node.cloud_name})
                 raise
 
-            volume = {'vol_name':volumeName, 'vol_id' : volume_id, 
-                      'vol_size': volumeSize, 'vm_id': agentId, 
+            volume = {'vol_name':volumeName, 'vol_id' : volume_id,
+                      'vol_size': volumeSize, 'vm_id': agentId,
                       'dev_name':dev_name, 'cloud':node.cloud_name}
             try:
                 service_manager.on_create_volume(node, volume)
             except Exception, ex:
-                service_manager.logger.exception('Failed to configure Generic node %s: %s' % (node.id, ex))
+                service_manager.logger.exception('Failed to configure node %s: %s' % (node.id, ex))
                 self.detach_volume(volume)
                 self.destroy_volume(volume)
                 raise
@@ -530,8 +550,8 @@ class ApplicationManager(BaseManager):
             service_manager.state_set(self.S_ERROR)
             return
 
-        self.volumes[volumeName] = volume
-        
+        self.volumes[str(volumeName)] = volume
+
         service_manager.logger.info('Volume %s created and attached' % volumeName)
         self.logger.info('Current volumes %s ' % self.volumes.keys())
         service_manager.state_set(self.S_RUNNING)
@@ -563,26 +583,23 @@ class ApplicationManager(BaseManager):
             return ret
         else:
             raise Exception("Error attaching volume %s" % volume_id)
-    
+
     @expose('POST')
     def delete_volume(self, kwargs):
 
-        exp_params = [('volumeName', is_in_list(self.volumes.keys()))]        
-        volumeName = check_arguments(exp_params, kwargs)    
+        exp_params = [('volumeName', is_in_list(self.volumes.keys()))]
+        try:
+            volumeName = check_arguments(exp_params, kwargs)
+            self.check_volume_name(volumeName)
 
-        if not re.compile('^[A-za-z0-9-_]+$').match(volumeName):
-            return HttpErrorResponse('Volume name contains invalid characters')
+            volume = self.volumes[volumeName]
+            node = [ node for node in self.nodes if node.id == volume['vm_id'] ][0]
+            service_id, _ = self.get_service_id_by_vm_id(node.id)
 
-        volume = self.volumes[volumeName]
-        node = [ node for node in self.nodes if node.id == volume['vm_id'] ][0]
-        service_id, _ = self.get_service_id_by_vm_id(node.id)
-        service_manager = self.httpsserver.instances[service_id]
-
-        sm_state = service_manager.state_get()
-        if sm_state != self.S_RUNNING:
-            vals = { 'curstate': sm_state,
-                     'action': 'delete_volume' }
-            return HttpErrorResponse(self.WRONG_STATE_MSG % vals)
+            service_manager = self.httpsserver.instances[service_id]
+            service_manager.check_state([self.S_RUNNING])
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
         # if self._are_scripts_running():
         #     self.logger.info("Volume removal is disabled when scripts are running")
@@ -591,7 +608,7 @@ class ApplicationManager(BaseManager):
         service_manager.state_set(self.S_ADAPTING)
         Thread(target=self._do_delete_volume, args=[volume, node, service_manager]).start()
 
-        return HttpJsonResponse({ 'state': service_manager.state_get() })
+        return HttpJsonResponse({ 'service_id': service_id })
 
     def _do_delete_volume(self, volume, node, service_manager):
         """Detach a volume and delete it"""
@@ -602,17 +619,18 @@ class ApplicationManager(BaseManager):
             service_manager.on_delete_volume(node, volume)
         except Exception, ex:
             service_manager.logger.exception('Failed to mount volume on node %s: %s' % (node.id, ex))
+
         self.detach_volume(volume, service_manager)
         self.destroy_volume(volume, service_manager)
 
         self.volumes.pop(volume['vol_name'])
-        
+
         service_manager.logger.info('Volume %s removed' % volume['vol_name'])
         service_manager.state_set(self.S_RUNNING)
 
     def destroy_volume(self, volume, service_manager):
         service_manager.logger.info("Destroying volume with id %s" %  volume['vol_id'])
-        
+
         for attempt in range(1, 11):
             try:
                 ret = self.callbacker.destroy_volume(volume['vol_id'], volume['cloud'])
@@ -635,22 +653,30 @@ class ApplicationManager(BaseManager):
 
     @expose('POST')
     def list_volumes(self, kwargs):
+        exp_params = [('service_id', is_in_list(self.httpsserver.instances.keys()), 0)]
+        try:
+            service_id = check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
+
+        try:
+            self.check_state([self.S_RUNNING, self.S_ADAPTING])
+        except:
+            return HttpJsonResponse({ 'volumes': [] })
+
         vols = copy.copy(self.volumes)
         rep_vols = []
 
-        service_id = 0
-        if 'service_id' in kwargs:
-            service_id = kwargs.pop('service_id')
         for vol_name in vols:
             vol = vols[vol_name]
             vol['service_id'], vol['service_name'] = self.get_service_id_by_vm_id(vol['vm_id'])
-            
+
             if service_id != 0:
                 if vol['service_id'] == service_id:
                     rep_vols.append(vol)
-            else: 
+            else:
                 rep_vols.append(vol)
-                
+
         return HttpJsonResponse({ 'volumes': rep_vols })
 
     def get_service_id_by_vm_id(self, vm_id):
@@ -663,7 +689,7 @@ class ApplicationManager(BaseManager):
 
     @expose('POST')
     def stopall(self, kwargs):
-        for service_id in self.httpsserver.instances: 
+        for service_id in self.httpsserver.instances:
             if service_id != 0:
                 self._do_stop_service(service_id)
             # self.httpsserver.instances[service_id]._do_stop()
@@ -704,20 +730,20 @@ class ApplicationManager(BaseManager):
 
         # (teodor) We don't need to support this anymore, as no service is currently
         #          using configuration files. It was an ugly hack anyway.
-        # 
+        #
         # conpaas_home = config_parser.get('manager', 'conpaas_home')
         # mngr_cfg_dir = os.path.join(conpaas_home, 'config', 'manager')
         # mngr_service_cfg = os.path.join(mngr_cfg_dir, service_type + '-manager.cfg')
         # if os.path.isfile(mngr_service_cfg):
         #     config_parser.read(mngr_service_cfg)
-        # 
+        #
         #     #TODO:(genc) get rid of static path
         #     vars_cfg = os.path.join("/root", 'vars.cfg')
         #     ini_str = '[root]\n' + open(vars_cfg, 'r').read()
         #     ini_fp = StringIO.StringIO(ini_str)
         #     config = ConfigParser.RawConfigParser()
         #     config.readfp(ini_fp)
-        #     
+        #
         #     # populate values refering to other values
         #     for key, value in config_parser.items('manager'):
         #         if value.startswith('%') and value.endswith('%'):
@@ -732,134 +758,82 @@ class ApplicationManager(BaseManager):
     #         proc = subprocess.Popen(['bash', mngr_startup_scriptname] , close_fds=True)
     #         proc.wait()
 
-
-    def upload_script(self, kwargs, filename):
+    @expose('UPLOAD')
+    def upload_startup_script(self, kwargs):
         """Write the file uploaded in kwargs['script'] to filesystem.
 
         Return the script absoulte path on success, HttpErrorResponse on
         failure.
         """
-        self.logger.debug("upload_script: called with filename=%s" % filename)
+        exp_params = [('script', is_uploaded_file),
+                      ('sid', is_string)]
+        try:
+            script, service_id = check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
-        # Check if the required argument 'script' is present
-        if 'script' not in kwargs:
-            return HttpErrorResponse(ManagerException(
-                ManagerException.E_ARGS_MISSING, 'script').message)
-
-        if 'sid' not in kwargs:
-            return HttpErrorResponse(ManagerException(
-                ManagerException.E_ARGS_MISSING, 'sid').message)
-
-        script = kwargs.pop('script')
-        service_id = kwargs.pop('sid')
-        
-        # Check if any trailing parameter has been submitted
-        if len(kwargs) != 0:
-            return HttpErrorResponse(ManagerException(
-                ManagerException.E_ARGS_UNEXPECTED, kwargs.keys()).message)
-
-        # Script has to be a FileUploadField
-        if not isinstance(script, FileUploadField):
-            return HttpErrorResponse(ManagerException(
-                ManagerException.E_ARGS_INVALID,
-                detail='script should be a file'
-            ).message)
-
-        basedir = self.config_parser.get('manager', 'CONPAAS_HOME')
-        filedir = os.path.join(basedir, str(service_id)) 
-        if not os.path.exists(filedir):
-            os.makedirs(filedir)
-
-        fullpath = os.path.join(filedir, filename)
-        
-        # Write the uploaded script to filesystem
-        open(fullpath, 'w').write(script.file.read())
-
-        self.logger.debug("upload_script: script uploaded successfully to '%s'"
-                          % fullpath)
-
-        # Return the script absolute path
-        return fullpath
-        
-
-    @expose('UPLOAD')
-    def upload_startup_script(self, kwargs):
-        ret = self.upload_script(kwargs, 'startup.sh')
-
-        if type(ret) is HttpErrorResponse:
-            # Something went wrong. Return the error
-            return ret
-
-        # Rebuild context script 
+        # Rebuild context script
         # TODO (genc): fix this
         # self.controller.generate_context("web")
 
+        self.logger.debug("Uploading startup script for service %s" % service_id)
+
+        basedir = self.config_parser.get('manager', 'CONPAAS_HOME')
+        filedir = os.path.join(basedir, str(service_id))
+        if not os.path.exists(filedir):
+            os.makedirs(filedir)
+
+        filename = 'startup.sh'
+        fullpath = os.path.join(filedir, filename)
+
+        # Write the uploaded script to filesystem
+        file_write_contents(fullpath, script.file.read())
+
+        self.logger.debug("Script uploaded successfully to '%s'" % fullpath)
+
         # All is good. Return the filename of the uploaded script
-        return HttpJsonResponse({'filename': ret})
+        return HttpJsonResponse({'filename': fullpath})
 
     @expose('GET')
     def get_startup_script(self, kwargs):
         """Return contents of the currently defined startup script, if any"""
-        if 'sid' not in kwargs:
-            return HttpErrorResponse(ManagerException(
-                ManagerException.E_ARGS_MISSING, 'sid').message)
-
-        service_id = kwargs.pop('sid')
+        exp_params = [('sid', is_in_list(self.httpsserver.instances.keys()))]
+        try:
+            service_id = check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
         basedir = self.config_parser.get('manager', 'CONPAAS_HOME')
         fullpath = os.path.join(basedir, str(service_id), 'startup.sh')
 
         try:
-            return HttpJsonResponse(open(fullpath).read())
+            return HttpJsonResponse(file_get_contents(fullpath))
         except IOError:
             return HttpErrorResponse('No startup script')
 
     @expose('GET')
     def get_agent_log(self, kwargs):
         """Return logfile"""
-        if 'agentId' not in kwargs:
-            ex = ManagerException(ManagerException.E_ARGS_MISSING,
-                                  'agentId')
-            return HttpErrorResponse(ex.message)
-        if isinstance(kwargs['agentId'], dict):
-            ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                  detail='agentId should be a string')
-            return HttpErrorResponse(ex.message)
-        agentId = kwargs.pop('agentId')
-
-        if agentId not in [ node.id for node in self.nodes ]:
-            ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                  detail='Invalid agentId')
-            return HttpErrorResponse(ex.message)
-
-        if 'filename' not in kwargs:
-            filename = None
-        else:
-            if isinstance(kwargs['filename'], dict):
-                ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                      detail='filename should be a string')
-                return HttpErrorResponse(ex.message)
-            filename = kwargs.pop('filename')
-
-        if len(kwargs) != 0:
-            ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
-                                  kwargs.keys())
-            return HttpErrorResponse(ex.message)
-
+        node_ids = [ str(node.id) for node in self.nodes ]
+        exp_params = [('agentId', is_in_list(node_ids)),
+                      ('filename', is_string, None)]
         try:
+            agentId, filename = check_arguments(exp_params, kwargs)
+
             node_ip = [ node.ip for node in self.nodes
                         if node.id == agentId ][0]
             res = self.fetch_agent_log(node_ip, self.AGENT_PORT, filename)
             return HttpJsonResponse(res)
-        except Exception, ex:
-            return HttpErrorResponse(ex.message)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
     @expose('POST')
     def git_push_hook(self, kwargs):
-        if len(kwargs) != 0:
-            ex = ManagerException(
-                ManagerException.E_ARGS_UNEXPECTED, kwargs.keys())
-            return HttpErrorResponse(ex.message)
+        try:
+            exp_params = []
+            check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
         repo = git.DEFAULT_CODE_REPO
         revision = git.git_code_version(repo)
@@ -869,10 +843,6 @@ class ApplicationManager(BaseManager):
                 self.httpsserver.instances[service_id].on_git_push()
 
         return HttpJsonResponse({ 'revision' : revision })
-
-    @expose('POST')
-    def test(self,kwargs):
-        return HttpJsonResponse({ 'msg': 'hello' })
 
 
 class ManagerException(Exception):
@@ -905,7 +875,7 @@ class ManagerException(Exception):
         self.code = code
         self.args = args
         if 'detail' in kwargs:
-            self.message = '%s DETAIL:%s' % (
+            self.message = '%s (%s)' % (
                 (self.E_STRINGS[code] % args), str(kwargs['detail']))
         else:
             self.message = self.E_STRINGS[code] % args

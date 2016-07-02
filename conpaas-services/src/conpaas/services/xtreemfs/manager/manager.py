@@ -16,25 +16,35 @@ from conpaas.core.misc import run_cmd
 
 from conpaas.services.xtreemfs.agent import client
 
+from conpaas.core.misc import check_arguments, is_in_list, is_not_in_list,\
+    is_list, is_non_empty_list, is_list_dict, is_list_dict2, is_string,\
+    is_int, is_pos_nul_int, is_pos_int, is_dict, is_dict2, is_bool,\
+    is_uploaded_file
+
 import uuid
 import base64
 import subprocess
 import tempfile
+
+STRIPING_POLICIES = [ 'RAID0' ]
+REPLICATION_POLICIES = [ 'ronly', 'WaR1', 'WqRq' ]
+OSD_SEL_POLICIES = [ 'DEFAULT', 'FQDN', 'UUID', 'DCMAP', 'VIVALDI' ]
+REPLICA_SEL_POLICIES = [ 'DEFAULT', 'FQDN', 'DCMAP', 'VIVALDI' ]
 
 def invalid_arg(msg):
     return HttpErrorResponse(ManagerException(
         ManagerException.E_ARGS_INVALID, detail=msg).message)
 
 class XtreemFSManager(BaseManager):
-    
+
     def __init__(self, config_parser, **kwargs):
         BaseManager.__init__(self, config_parser)
 
         # node lists
-        self.nodes = []    # all nodes         
-        self.osdNodes = [] # only the OSD nodes  
+        self.nodes = []    # all nodes
+        self.osdNodes = [] # only the OSD nodes
         self.mrcNodes = [] # only the MRC nodes
-        self.dirNodes = [] # only the DIR nodes   
+        self.dirNodes = [] # only the DIR nodes
 
         # node counters
         self.dirCount = 0
@@ -51,13 +61,13 @@ class XtreemFSManager(BaseManager):
         self.dir_node_uuid_map = {}
         self.mrc_node_uuid_map = {}
         self.osd_node_uuid_map = {}
-        
+
         # dictionary mapping osd uuids to volume IDs
         self.osd_uuid_volume_map = {}
 
         # Setup the clouds' controller
         # self.controller.generate_context('xtreemfs')
-        
+
         # filename of the client certificate
         self.client_cert_filename = self.config_parser.get('manager', 'CERT_DIR') + "/client.p12"
         self.client_cert_passphrase = "asdf1234"
@@ -93,7 +103,7 @@ class XtreemFSManager(BaseManager):
             node_map = self.osd_node_uuid_map
         else:
             raise Exception("Unknown node type: %s" % node_type)
-        
+
         node_uuid = node_map.get(node_id)
 
         if node_uuid:
@@ -104,7 +114,7 @@ class XtreemFSManager(BaseManager):
             node_map[node_id] = node_uuid
             self.logger.debug("New uuid for %s (%s) -> %s" % (node_id,
                 node_type, node_uuid))
-            
+
         return node_uuid
 
     def _create_certs(self, nodes):
@@ -264,12 +274,12 @@ class XtreemFSManager(BaseManager):
 
     def _stop_osd(self, nodes, remove, drain):
         """Stop OSD service on the given nodes.
-        
+
         The volume is always detached.
-        
-        If remove is True, the volume is destroyed and node and volume are 
+
+        If remove is True, the volume is destroyed and node and volume are
         deleted from internal data structures.
-        
+
         If drain is True, data is moved to other OSDs."""
 
         for node in nodes:
@@ -283,7 +293,7 @@ class XtreemFSManager(BaseManager):
             # volume_id = self.osd_uuid_volume_map[self.osd_node_uuid_map[node.id]]
             # self.detach_volume(volume_id)
 
-            # # destroy volumes and delete entries from internal state 
+            # # destroy volumes and delete entries from internal state
             # if remove:
             #     self.destroy_volume(volume_id)
             #     del self.osd_uuid_volume_map[self.osd_node_uuid_map[node.id]]
@@ -300,11 +310,11 @@ class XtreemFSManager(BaseManager):
         self.osdNodes += nodes
 
         if not resuming:
-            # create certificates for DIR, MRC, OSD and copy them to the agent 
+            # create certificates for DIR, MRC, OSD and copy them to the agent
             self._create_certs(nodes)
             # create a client certificate used by the manager to invoke xtreemfs operations
             open(self.client_cert_filename, 'wb').write(self._create_client_cert(self.client_cert_passphrase, True))
-        
+
         # start DIR, MRC, OSD
         if not resuming:
             self._start_dir(self.dirNodes)
@@ -321,8 +331,8 @@ class XtreemFSManager(BaseManager):
         return True
 
     # def _do_startup(self, cloud, resuming=False):
-    #     """Starts up the service. The first nodes will contain all services. 
-        
+    #     """Starts up the service. The first nodes will contain all services.
+
     #     If 'resuming' is set to True, we do not start XtreemFS services now.
     #     set_service_snapshot will do that.
     #     """
@@ -338,7 +348,7 @@ class XtreemFSManager(BaseManager):
     #         # create 1 node
     #         node_instances = self.controller.create_nodes(1,
     #             client.check_agent_process, 5555, startCloud)
-          
+
     #         # use this node for DIR, MRC and OSD
     #         self.nodes += node_instances
     #         self.dirNodes += node_instances
@@ -346,11 +356,11 @@ class XtreemFSManager(BaseManager):
     #         self.osdNodes += node_instances
 
     #         if not resuming:
-    #             # create certificates for DIR, MRC, OSD and copy them to the agent 
+    #             # create certificates for DIR, MRC, OSD and copy them to the agent
     #             self._create_certs(node_instances)
     #             # create a client certificate used by the manager to invoke xtreemfs operations
     #             open(self.client_cert_filename, 'wb').write(self._create_client_cert(self.client_cert_passphrase, True))
-            
+
     #         # start DIR, MRC, OSD
     #         if not resuming:
     #             self._start_dir(self.dirNodes)
@@ -369,7 +379,7 @@ class XtreemFSManager(BaseManager):
     #         self.state_set(self.S_STOPPED)
     #         return
 
-    #     self.logger.info('XtreemFS service was started up')    
+    #     self.logger.info('XtreemFS service was started up')
     #     self.state_set(self.S_RUNNING)
 
     def _start_all(self):
@@ -381,22 +391,22 @@ class XtreemFSManager(BaseManager):
         """Stop all xtreemfs services on all agents (first osd, then mrc, then
         dir)."""
         # do not drain (move data to other OSDs), since we stop all
-        self._stop_osd(self.osdNodes, remove=remove, drain=False) 
+        self._stop_osd(self.osdNodes, remove=remove, drain=False)
         self._stop_mrc(self.mrcNodes, remove=remove)
         self._stop_dir(self.dirNodes, remove=remove)
 
     def on_stop(self, stop_services=True):
-        # check if we need to stop the services or not, i.e. when called at 
+        # check if we need to stop the services or not, i.e. when called at
         # the end of get_snapshot()
         if stop_services:
             self._stop_all(remove=True)
 
         all_nodes = self.nodes[:]
         self.nodes = []
-        self.dirNodes = []          
+        self.dirNodes = []
         self.mrcNodes = []
-        self.osdNodes = []   
-    
+        self.osdNodes = []
+
         self.dirCount = 0
         self.mrcCount = 0
         self.osdCount = 0
@@ -409,19 +419,18 @@ class XtreemFSManager(BaseManager):
 
         return all_nodes
 
-
     # def _do_stop(self, stop_services=True):
-    #     # check if we need to stop the services or not, i.e. when called at 
+    #     # check if we need to stop the services or not, i.e. when called at
     #     # the end of get_snapshot()
     #     if stop_services:
     #         self._stop_all(remove=True)
 
     #     self.controller.delete_nodes(self.nodes)
     #     self.nodes = []
-    #     self.dirNodes = []          
+    #     self.dirNodes = []
     #     self.mrcNodes = []
-    #     self.osdNodes = []   
-    
+    #     self.osdNodes = []
+
     #     self.dirCount = 0
     #     self.mrcCount = 0
     #     self.osdCount = 0
@@ -435,20 +444,18 @@ class XtreemFSManager(BaseManager):
     #     self.state_set(self.S_STOPPED)
     #     return HttpJsonResponse()
 
-
     def on_add_nodes(self, nodes):
         # (genc): should manage the param checking somehow
-        resuming = False;
+        resuming = False
         # if 'resuming' in kwargs:
         #     resuming = kwargs['resuming']
-        
-        
+
         # # Adding DIR Nodes
         # if 'dir' in kwargs:
         #     if not isinstance(kwargs['dir'], int):
         #         return invalid_arg('Expected an integer value for "dir"')
-        #     nr_dir = int(kwargs.pop('dir'))    
-        #     if nr_dir < 0: 
+        #     nr_dir = int(kwargs.pop('dir'))
+        #     if nr_dir < 0:
         #         return invalid_arg('Expected a positive integer value for "dir"')
 
         # # Adding MRC Nodes
@@ -456,7 +463,7 @@ class XtreemFSManager(BaseManager):
         #     if not isinstance(kwargs['mrc'], int):
         #         return invalid_arg('Expected an integer value for "mrc"')
         #     nr_mrc = int(kwargs.pop('mrc'))
-        #     if nr_mrc < 0: 
+        #     if nr_mrc < 0:
         #         return invalid_arg('Expected a positive integer value for "mrc"')
 
         # # TODO: 'osd' is no longer required, when adding other services is supported
@@ -466,7 +473,7 @@ class XtreemFSManager(BaseManager):
         #     return HttpErrorResponse('ERROR: Expected an integer value for "osd"')
 
         # nr_osd = int(kwargs.pop('osd'))
-        # if nr_osd < 0: 
+        # if nr_osd < 0:
         #     return invalid_arg('Expected a positive integer value for "nr osd"')
 
         dirNodesAdded = filter(lambda n: n.role == 'dir', nodes)
@@ -478,9 +485,9 @@ class XtreemFSManager(BaseManager):
 
         for node in nodes:
             client.startup(node.ip, 5555)
-        
+
         if not resuming:
-            # create certificates for DIR, MRC, OSD and copy them to the agent 
+            # create certificates for DIR, MRC, OSD and copy them to the agent
             self._create_certs(nodes)
 
         # Startup DIR agents
@@ -498,12 +505,9 @@ class XtreemFSManager(BaseManager):
         # Startup OSD agents (if not resuming)
         if not resuming:
             self._start_osd(osdNodesAdded)
-      
+
         self.osdCount += len(osdNodesAdded)
         return True
-
-
-        
 
     # @expose('POST')
     # def add_nodes(self, kwargs):
@@ -512,15 +516,13 @@ class XtreemFSManager(BaseManager):
     #         return HttpErrorResponse('ERROR: Wrong state to add_nodes')
 
     #     nr_dir = 0
-    #     nr_mrc = 0 
+    #     nr_mrc = 0
     #     nr_osd = 0
-        
-        
 
     #     self.state_set(self.S_ADAPTING)
     #     Thread(target=self._do_add_nodes, args=[nr_dir, nr_mrc, nr_osd, kwargs['cloud'], resuming]).start()
     #     return HttpJsonResponse()
-    
+
     # # TODO: currently not used
     # def KillOsd(self, nodes):
     #     for node in nodes:
@@ -533,14 +535,14 @@ class XtreemFSManager(BaseManager):
 
     #     # try to create totalNodes new nodes
     #     try:
-    #         node_instances = self.controller.create_nodes(totalNodes, 
-    #             client.check_agent_process, 5555, startCloud)      
+    #         node_instances = self.controller.create_nodes(totalNodes,
+    #             client.check_agent_process, 5555, startCloud)
     #     except:
     #         self.logger.exception('_do_add_nodes: Failed to request a new node')
     #         self.state_set(self.S_STOPPED)
     #         return
 
-    #     self.nodes += node_instances 
+    #     self.nodes += node_instances
 
     #     dirNodesAdded = node_instances[:nr_dir]
     #     self.dirNodes += dirNodesAdded
@@ -548,7 +550,7 @@ class XtreemFSManager(BaseManager):
     #     mrcNodesAdded = node_instances[nr_dir:nr_mrc+nr_dir]
     #     self.mrcNodes += mrcNodesAdded
 
-    #     osdNodesAdded = node_instances[nr_mrc+nr_dir:] 
+    #     osdNodesAdded = node_instances[nr_mrc+nr_dir:]
     #     self.osdNodes += osdNodesAdded
 
     #     # TODO: maybe re-enable when OSD-removal moves data to another node before shutting down the service.
@@ -561,9 +563,9 @@ class XtreemFSManager(BaseManager):
 
     #     for node in node_instances:
     #         client.startup(node.ip, 5555)
-        
+
     #     if not resuming:
-    #         # create certificates for DIR, MRC, OSD and copy them to the agent 
+    #         # create certificates for DIR, MRC, OSD and copy them to the agent
     #         self._create_certs(node_instances)
 
     #     # Startup DIR agents
@@ -581,13 +583,13 @@ class XtreemFSManager(BaseManager):
     #     # Startup OSD agents (if not resuming)
     #     if not resuming:
     #         self._start_osd(osdNodesAdded, startCloud)
-      
+
     #     self.osdCount += len(osdNodesAdded)
 
     #     #for node in osdNodesAdded:
     #     #    client.startup(node.ip, 5555)
     #     #    data = client.createOSD(node.ip, 5555, self.dirNodes[0].ip)
-    #     #    self.logger.info('Received %s from %s', data, node.id)         
+    #     #    self.logger.info('Received %s from %s', data, node.id)
     #     #    self.osdCount += 1
 
     #     self.state_set(self.S_RUNNING)
@@ -595,10 +597,17 @@ class XtreemFSManager(BaseManager):
 
     @expose('GET')
     def list_nodes(self, kwargs):
-        if len(kwargs) != 0:
-            return HttpErrorResponse('ERROR: Arguments unexpected')
-        if self.state_get() != self.S_RUNNING:
-            return HttpErrorResponse('ERROR: Wrong state to list_nodes')
+        try:
+            exp_params = []
+            check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
+
+        try:
+            self.check_state([self.S_RUNNING, self.S_ADAPTING])
+        except:
+            return HttpJsonResponse({})
+
         return HttpJsonResponse({
               'dir': [node.id for node in self.dirNodes ],
               'mrc': [node.id for node in self.mrcNodes],
@@ -607,10 +616,14 @@ class XtreemFSManager(BaseManager):
 
     @expose('GET')
     def get_service_info(self, kwargs):
-        if len(kwargs) != 0:
-            return HttpErrorResponse('ERROR: Arguments unexpected')
+        try:
+            exp_params = []
+            check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
+
         return HttpJsonResponse({
-            'state': self.state, 
+            'state': self.state,
             'type': 'xtreemfs',
             'persistent': self.persistent,
             'osd_volume_size': self.osd_volume_size
@@ -618,48 +631,50 @@ class XtreemFSManager(BaseManager):
 
     @expose('GET')
     def get_node_info(self, kwargs):
-        if 'serviceNodeId' not in kwargs:
-            return HttpErrorResponse('ERROR: Missing arguments')
-        serviceNodeId = kwargs.pop('serviceNodeId')
-        if len(kwargs) != 0:
-            return HttpErrorResponse('ERROR: Arguments unexpected')
-        serviceNode = None
+
+        node_ids = [ str(node.id) for node in self.nodes ]
+        exp_params = [('serviceNodeId', is_in_list(node_ids))]
+        try:
+            serviceNodeId = check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
+
         for node in self.nodes:
             if serviceNodeId == node.id:
                 serviceNode = node
                 break
-        if serviceNode is None:
-            return HttpErrorResponse('ERROR: Unknown service node identifier "%s"' % serviceNodeId)
+
         return HttpJsonResponse({
             'serviceNode': {
                             'id': serviceNode.id,
                             'ip': serviceNode.ip,
+                            'vmid': serviceNode.vmid,
+                            'cloud': serviceNode.cloud_name,
                             'dir': serviceNode in self.dirNodes,
                             'mrc': serviceNode in self.mrcNodes,
                             'osd': serviceNode in self.osdNodes
                             }
             })
 
-
     def on_remove_nodes(self, noderoles):
-        
-        # (genc): again make a method to check these parameters    
+
+        # (genc): again make a method to check these parameters
         # # Removing DIR Nodes
         # if 'dir' in kwargs:
         #     if not isinstance(kwargs['dir'], int):
         #         return invalid_arg('Expected an integer value for "dir"')
-        #     nr_dir = int(kwargs.pop('dir'))    
-        #     if nr_dir < 0: 
+        #     nr_dir = int(kwargs.pop('dir'))
+        #     if nr_dir < 0:
         #         return invalid_arg('Expected a positive integer value for "dir"')
         #     if nr_dir > self.dirCount - 1: # we need at least 1 DIR
         #         return invalid_arg('Cannot remove_nodes that many DIR nodes')
-     
+
         # # Removing MRC nodes
         # if 'mrc' in kwargs:
         #     if not isinstance(kwargs['mrc'], int):
         #         return invalid_arg('Expected an integer value for "mrc"')
         #     nr_mrc = int(kwargs.pop('mrc'))
-        #     if nr_mrc < 0: 
+        #     if nr_mrc < 0:
         #         return invalid_arg('Expected a positive integer value for "mrc"')
         #     if nr_mrc > self.mrcCount - 1: # we need at least 1 MRC
         #         return invalid_arg('Cannot remove_nodes that many MRC nodes')
@@ -672,7 +687,7 @@ class XtreemFSManager(BaseManager):
         #         'ERROR: Expected an integer value for "osd"')
 
         # nr_osd = int(kwargs.pop('osd'))
-        # if nr_osd < 0: 
+        # if nr_osd < 0:
         #     return invalid_arg('Expected a positive integer value for "osd"')
         # if nr_osd > self.osdCount - 1: # we need at least 1 OSD
         #     return invalid_arg('Cannot remove_nodes that many OSD nodes')
@@ -706,151 +721,145 @@ class XtreemFSManager(BaseManager):
 
         self.logger.info('Nodes to remove: %s' % (rem_nodes))
 
-
         if len(self.osdNodes) + len(self.mrcNodes) + len(self.dirNodes) == 0:
-            self.state_set(self.S_STOPPED)    
-        else: 
+            self.state_set(self.S_STOPPED)
+        else:
             self.state_set(self.S_RUNNING)
+
         return rem_nodes
 
+    # @expose('POST')
+    # def remove_nodes(self, kwargs):
+    #     if self.state_get() != self.S_RUNNING:
+    #         return HttpErrorResponse('ERROR: Wrong state to remove_nodes')
+
+    #     nr_dir = 0
+    #     nr_mrc = 0
+    #     nr_osd = 0
+
+    #     # Removing DIR Nodes
+    #     if 'dir' in kwargs:
+    #         if not isinstance(kwargs['dir'], int):
+    #             return invalid_arg('Expected an integer value for "dir"')
+    #         nr_dir = int(kwargs.pop('dir'))
+    #         if nr_dir < 0:
+    #             return invalid_arg('Expected a positive integer value for "dir"')
+    #         if nr_dir > self.dirCount - 1: # we need at least 1 DIR
+    #             return invalid_arg('Cannot remove_nodes that many DIR nodes')
+
+    #     # Removing MRC nodes
+    #     if 'mrc' in kwargs:
+    #         if not isinstance(kwargs['mrc'], int):
+    #             return invalid_arg('Expected an integer value for "mrc"')
+    #         nr_mrc = int(kwargs.pop('mrc'))
+    #         if nr_mrc < 0:
+    #             return invalid_arg('Expected a positive integer value for "mrc"')
+    #         if nr_mrc > self.mrcCount - 1: # we need at least 1 MRC
+    #             return invalid_arg('Cannot remove_nodes that many MRC nodes')
+
+    #     # TODO: 'osd' is no longer required, when removing other services is supported
+    #     if not 'osd' in kwargs:
+    #         return HttpErrorResponse('ERROR: Required argument doesn\'t exist')
+    #     if not isinstance(kwargs['osd'], int):
+    #         return HttpErrorResponse(
+    #             'ERROR: Expected an integer value for "osd"')
+
+    #     nr_osd = int(kwargs.pop('osd'))
+    #     if nr_osd < 0:
+    #         return invalid_arg('Expected a positive integer value for "osd"')
+    #     if nr_osd > self.osdCount - 1: # we need at least 1 OSD
+    #         return invalid_arg('Cannot remove_nodes that many OSD nodes')
+
+    #     self.state_set(self.S_ADAPTING)
+    #     Thread(target=self._do_remove_nodes, args=[nr_dir, nr_mrc, nr_osd]).start()
+    #     return HttpJsonResponse()
+
+    # def _do_remove_nodes(self, nr_dir, nr_mrc, nr_osd):
+    #     # NOTE: the logically unremovable first node which contains all
+    #     #       services is ignored by using 1 instead of 0 in:
+    #     #   for _ in range(0, nr_[dir|mrc|osd]):
+    #     #        node = self.[dir|mrc|osd]Nodes.pop(1)
+
+    #     if nr_dir > 0:
+    #         for _ in range(0, nr_dir):
+    #             node = self.dirNodes.pop(1)
+    #             self._stop_dir([node], remove=True)
+    #             self.controller.delete_nodes([node])
+    #             self.nodes.remove(node)
+    #         self.dirCount -= nr_osd
+
+    #     if nr_mrc > 0:
+    #         for _ in range(0, nr_mrc):
+    #             node = self.mrcNodes.pop(1)
+    #             self._stop_mrc([node], remove=True)
+    #             self.controller.delete_nodes([node])
+    #             self.nodes.remove(node)
+    #         self.mrcCount -= nr_mrc
+
+    #     if nr_osd > 0:
+    #         for _ in range(0, nr_osd):
+    #             node = self.osdNodes.pop(1)
+    #             self._stop_osd([node], remove=True, drain=True)
+    #             self.controller.delete_nodes([node])
+    #             self.nodes.remove(node)
+    #         self.osdCount -= nr_osd
+
+    #     self.state_set(self.S_RUNNING)
+
+    #     # TODO: maybe re-enable when OSD-removal moves data to another node before shutting down the service.
+    #     # if there are no more OSD nodes we need to start OSD service on the
+    #     # DIR node
+    #     #if self.osdCount == 0:
+    #     #    self.osdNodes.append(self.dirNodes[0])
+    #     #    self._start_osd(self.dirNodes)
+
+    #     return HttpJsonResponse()
+
+    # @expose('POST')
+    # def createMRC(self, kwargs):
+    #     if self.state_get() != self.S_RUNNING:
+    #         return HttpErrorResponse('ERROR: Wrong state to create MRC service')
+    #     # Just createMRC from all the agents
+    #     for node in self.nodes:
+    #         data = client.createMRC(node.ip, 5555, self.dirNodes[0].ip)
+    #         self.logger.info('Received %s from %s', data, node.id)
+    #     return HttpJsonResponse({
+    #         'xtreemfs': [ node.id for node in self.nodes ],
+    #         })
+
+    # @expose('POST')
+    # def createDIR(self, kwargs):
+    #     if self.state_get() != self.S_RUNNING:
+    #         return HttpErrorResponse('ERROR: Wrong state to create DIR service')
+    #     # Just createDIR from all the agents
+    #     for node in self.nodes:
+    #         data = client.createDIR(node.ip, 5555)
+    #         self.logger.info('Received %s from %s', data, node.id)
+    #     return HttpJsonResponse({
+    #         'xtreemfs': [ node.id for node in self.nodes ],
+    #         })
+
+    # @expose('POST')
+    # def createOSD(self, kwargs):
+    #     if self.state_get() != self.S_RUNNING:
+    #         return HttpErrorResponse('ERROR: Wrong state to create OSD service')
+    #     # Just createOSD from all the agents
+    #     for node in self.nodes:
+    #         data = client.createOSD(node.ip, 5555, self.dirNodes[0].ip)
+    #         self.logger.info('Received %s from %s', data, node.id)
+    #     return HttpJsonResponse({
+    #         'xtreemfs': [ node.id for node in self.nodes ],
+    #         })
 
     @expose('POST')
-    def remove_nodes(self, kwargs):
-        if self.state_get() != self.S_RUNNING:
-            return HttpErrorResponse('ERROR: Wrong state to remove_nodes')
-
-        nr_dir = 0
-        nr_mrc = 0
-        nr_osd = 0
-            
-        # Removing DIR Nodes
-        if 'dir' in kwargs:
-            if not isinstance(kwargs['dir'], int):
-                return invalid_arg('Expected an integer value for "dir"')
-            nr_dir = int(kwargs.pop('dir'))    
-            if nr_dir < 0: 
-                return invalid_arg('Expected a positive integer value for "dir"')
-            if nr_dir > self.dirCount - 1: # we need at least 1 DIR
-                return invalid_arg('Cannot remove_nodes that many DIR nodes')
-     
-        # Removing MRC nodes
-        if 'mrc' in kwargs:
-            if not isinstance(kwargs['mrc'], int):
-                return invalid_arg('Expected an integer value for "mrc"')
-            nr_mrc = int(kwargs.pop('mrc'))
-            if nr_mrc < 0: 
-                return invalid_arg('Expected a positive integer value for "mrc"')
-            if nr_mrc > self.mrcCount - 1: # we need at least 1 MRC
-                return invalid_arg('Cannot remove_nodes that many MRC nodes')
-
-        # TODO: 'osd' is no longer required, when removing other services is supported
-        if not 'osd' in kwargs:
-            return HttpErrorResponse('ERROR: Required argument doesn\'t exist')
-        if not isinstance(kwargs['osd'], int):
-            return HttpErrorResponse(
-                'ERROR: Expected an integer value for "osd"')
-
-        nr_osd = int(kwargs.pop('osd'))
-        if nr_osd < 0: 
-            return invalid_arg('Expected a positive integer value for "osd"')
-        if nr_osd > self.osdCount - 1: # we need at least 1 OSD
-            return invalid_arg('Cannot remove_nodes that many OSD nodes')
-
-        self.state_set(self.S_ADAPTING)
-        Thread(target=self._do_remove_nodes, args=[nr_dir, nr_mrc, nr_osd]).start()
-        return HttpJsonResponse()
-
-    def _do_remove_nodes(self, nr_dir, nr_mrc, nr_osd):
-        # NOTE: the logically unremovable first node which contains all
-        #       services is ignored by using 1 instead of 0 in:
-        #   for _ in range(0, nr_[dir|mrc|osd]):
-        #        node = self.[dir|mrc|osd]Nodes.pop(1)
-
-        if nr_dir > 0:
-            for _ in range(0, nr_dir):
-                node = self.dirNodes.pop(1)
-                self._stop_dir([node], remove=True)
-                self.controller.delete_nodes([node])
-                self.nodes.remove(node)
-            self.dirCount -= nr_osd
-
-        if nr_mrc > 0:
-            for _ in range(0, nr_mrc):
-                node = self.mrcNodes.pop(1)
-                self._stop_mrc([node], remove=True)
-                self.controller.delete_nodes([node])
-                self.nodes.remove(node)
-            self.mrcCount -= nr_mrc
-
-        if nr_osd > 0:
-            for _ in range(0, nr_osd):
-                node = self.osdNodes.pop(1)
-                self._stop_osd([node], remove=True, drain=True)
-                self.controller.delete_nodes([node])
-                self.nodes.remove(node)
-            self.osdCount -= nr_osd
-
-        self.state_set(self.S_RUNNING)
-
-        # TODO: maybe re-enable when OSD-removal moves data to another node before shutting down the service.
-        # if there are no more OSD nodes we need to start OSD service on the
-        # DIR node
-        #if self.osdCount == 0:
-        #    self.osdNodes.append(self.dirNodes[0])
-        #    self._start_osd(self.dirNodes)
-
-        return HttpJsonResponse()
-
-
-    @expose('POST')
-    def createMRC(self, kwargs):
-        if self.state_get() != self.S_RUNNING:
-            return HttpErrorResponse('ERROR: Wrong state to create MRC service')
-        # Just createMRC from all the agents
-        for node in self.nodes:
-            data = client.createMRC(node.ip, 5555, self.dirNodes[0].ip)
-            self.logger.info('Received %s from %s', data, node.id)
-        return HttpJsonResponse({
-            'xtreemfs': [ node.id for node in self.nodes ],
-            })   
-
-    @expose('POST')
-    def createDIR(self, kwargs):
-        if self.state_get() != self.S_RUNNING:
-            return HttpErrorResponse('ERROR: Wrong state to create DIR service')
-        # Just createDIR from all the agents
-        for node in self.nodes:
-            data = client.createDIR(node.ip, 5555)
-            self.logger.info('Received %s from %s', data, node.id)
-        return HttpJsonResponse({
-            'xtreemfs': [ node.id for node in self.nodes ],
-            })   
-
-    @expose('POST')
-    def createOSD(self, kwargs):
-        if self.state_get() != self.S_RUNNING:
-            return HttpErrorResponse('ERROR: Wrong state to create OSD service')
-        # Just createOSD from all the agents
-        for node in self.nodes:
-            data = client.createOSD(node.ip, 5555, self.dirNodes[0].ip)
-            self.logger.info('Received %s from %s', data, node.id)
-        return HttpJsonResponse({
-            'xtreemfs': [ node.id for node in self.nodes ],
-            }) 
-    
-    @expose('POST') 
     def createVolume(self, kwargs):
-        if self.state_get() != self.S_RUNNING:
-            return HttpErrorResponse('ERROR: Wrong state to create Volume')
-
-        if not 'volumeName' in kwargs:
-            return HttpErrorResponse(
-                'ERROR: Required argument (volumeName) doesn\'t exist')
-
-        volumeName = kwargs.pop('volumeName')
-
-        # Get the value of 'owner', if specified. 'xtreemfs' otherwise
-        owner = kwargs.pop('owner', 'xtreemfs')
+        exp_params = [('volumeName', is_string),
+                      ('owner', is_string, 'xtreemfs')]
+        try:
+            volumeName, owner = check_arguments(exp_params, kwargs)
+            self.check_state([self.S_RUNNING])
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
         args = [ 'mkfs.xtreemfs',
                  '%s:32636/%s' % (self.mrcNodes[0].ip, volumeName),
@@ -871,16 +880,14 @@ class XtreemFSManager(BaseManager):
         self.logger.info('Creating Volume: %s; %s', stdout, stderr)
         return HttpJsonResponse()
 
-    @expose('POST') 
+    @expose('POST')
     def deleteVolume(self, kwargs):
-        if self.state_get() != self.S_RUNNING:
-            return HttpErrorResponse('ERROR: Wrong state to delete Volume')
-
-        if not 'volumeName' in kwargs:
-            return HttpErrorResponse(
-                'ERROR: Required argument (volumeName) doesn\'t exist')
-
-        volumeName = kwargs.pop('volumeName')
+        exp_params = [('volumeName', is_string)]
+        try:
+            volumeName = check_arguments(exp_params, kwargs)
+            self.check_state([self.S_RUNNING])
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
         args = [ 'rmfs.xtreemfs',
                  '-f',
@@ -902,13 +909,14 @@ class XtreemFSManager(BaseManager):
 
     @expose('GET')
     def listVolumes(self, kwargs):
-        if len(kwargs) != 0:
-            return HttpErrorResponse('ERROR: Arguments unexpetced')
+        try:
+            exp_params = []
+            check_arguments(exp_params, kwargs)
+            self.check_state([self.S_RUNNING])
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
-        if self.state_get() != self.S_RUNNING:
-            return HttpErrorResponse('ERROR: Wrong state to view volumes')
-
-        args = [ 'lsfs.xtreemfs', 
+        args = [ 'lsfs.xtreemfs',
                  "--pkcs12-file-path", self.client_cert_filename,
                  "--pkcs12-passphrase", self.client_cert_passphrase,
                  self.mrcNodes[0].ip + ':32636' ]
@@ -926,31 +934,47 @@ class XtreemFSManager(BaseManager):
     # NOTE: see xtfsutil for the available policies
     @expose('GET')
     def list_striping_policies(self, kwargs):
-        if len(kwargs) != 0:
-            return HttpErrorResponse('ERROR: Arguments unexpetced')
-        return HttpJsonResponse({ 'policies': "RAID0" })
+        try:
+            exp_params = []
+            check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
+
+        return HttpJsonResponse({ 'policies': ', '.join(STRIPING_POLICIES) })
 
     @expose('GET')
     def list_replication_policies(self, kwargs):
-        if len(kwargs) != 0:
-            return HttpErrorResponse('ERROR: Arguments unexpetced')
-        return HttpJsonResponse({ 'policies': "ronly, WaR1, WqRq" })
+        try:
+            exp_params = []
+            check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
+
+        return HttpJsonResponse({ 'policies': ', '.join(REPLICATION_POLICIES) })
 
     @expose('GET')
     def list_osd_sel_policies(self, kwargs):
-        if len(kwargs) != 0:
-            return HttpErrorResponse('ERROR: Arguments unexpetced')
-        return HttpJsonResponse({ 'policies': "DEFAULT, FQDN, UUID, DCMAP, VIVALDI" })
+        try:
+            exp_params = []
+            check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
+
+        return HttpJsonResponse({ 'policies': ', '.join(OSD_SEL_POLICIES) })
 
     @expose('GET')
     def list_replica_sel_policies(self, kwargs):
-        if len(kwargs) != 0:
-            return HttpErrorResponse('ERROR: Arguments unexpetced')
-        return HttpJsonResponse({ 'policies': "DEFAULT, FQDN, DCMAP, VIVALDI" })
+        try:
+            exp_params = []
+            check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
+
+        return HttpJsonResponse({ 'policies': ', '.join(REPLICA_SEL_POLICIES) })
 
     def set_policy(self, volumeName, policyName, args):
         mountPoint = '/tmp/' + volumeName
-        
+
         # mkdir -p <mountpoint>
         process = subprocess.Popen(['mkdir', '-p', mountPoint])
         (stdout, stderr) = process.communicate()
@@ -964,7 +988,7 @@ class XtreemFSManager(BaseManager):
                                     "--pkcs12-file-path", self.client_cert_filename,
                                     "--pkcs12-passphrase", self.client_cert_passphrase,
                                     '%s:32638/%s' % (self.dirNodes[0].ip, volumeName),
-                                    mountPoint],  
+                                    mountPoint],
                                     stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         (stdout, stderr) = process.communicate()
         process.poll()
@@ -973,13 +997,13 @@ class XtreemFSManager(BaseManager):
             return HttpErrorResponse("Failed to set %s policy: %s; %s" % (policyName, stdout, stderr))
 
 #        # with python 2.7
-#        try: 
+#        try:
 #            # mkdir -p <mountpoint>
 #            subprocess.check_output(['mkdir', '-p', mountPoint])
 #            # mount.xtreemfs <dir_ip>:32638/<volumename> <mountpoint>
 #            subprocess.check_output(['mount.xtreemfs',
 #                                     '%s:32638/%s' % (self.dirNodes[0].ip, volumeName),
-#                                     mountPoint],  
+#                                     mountPoint],
 #                                    stdout=subprocess.STDOUT)
 #        except subprocess.CalledProcessError as e:
 #            return HttpErrorResponse('ERROR: could not mount volume: ' + e.output)
@@ -994,7 +1018,7 @@ class XtreemFSManager(BaseManager):
             return HttpErrorResponse("Failed to set %s policy: %s; %s" % (policyName, stdout, stderr))
 
         # umount <mountpoint>
-        process = subprocess.Popen(['umount', mountPoint],  
+        process = subprocess.Popen(['umount', mountPoint],
                                     stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         (stdout, stderr) = process.communicate()
         process.poll()
@@ -1011,7 +1035,7 @@ class XtreemFSManager(BaseManager):
             return HttpErrorResponse("Failed to set %s policy: %s; %s" % (policyName, stdout, stderr))
 
 #        # with python 2.7
-#        try: 
+#        try:
 #            # umount <mountpoint>
 #            subprocess.check_output(['umount', mountPoint])
 #            # fusermount -u <mountpoint>
@@ -1026,129 +1050,120 @@ class XtreemFSManager(BaseManager):
 
     @expose('POST')
     def set_osd_sel_policy(self, kwargs):
-        if self.state_get() != self.S_RUNNING:
-            return HttpErrorResponse('ERROR: Wrong state to set OSD selection policy.')
-
-        if not 'volumeName' in kwargs:
-            return HttpErrorResponse('ERROR: Required argument (volumeName) doesn\'t exist')
-        if not 'policy' in kwargs:
-            return HttpErrorResponse('ERROR: Required argument (policy) doesn\'t exist')
-
-        volumeName = kwargs.pop('volumeName')
-        policy = kwargs.pop('policy')
+        exp_params = [('volumeName', is_string),
+                      ('policy', is_in_list(OSD_SEL_POLICIES))]
+        try:
+            volumeName, policy = check_arguments(exp_params, kwargs)
+            self.check_state([self.S_RUNNING])
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
         # xtfsutil <path> --set-osp <policy>
         args = [ '--set-osp', policy ]
-        
+
         return self.set_policy(volumeName, 'OSD selection', args)
 
     @expose('POST')
     def set_replica_sel_policy(self, kwargs):
-        if self.state_get() != self.S_RUNNING:
-            return HttpErrorResponse('ERROR: Wrong state to set Replica selection policy.')
-
-        if not 'volumeName' in kwargs:
-            return HttpErrorResponse('ERROR: Required argument (volumeName) doesn\'t exist')
-        if not 'policy' in kwargs:
-            return HttpErrorResponse('ERROR: Required argument (policy) doesn\'t exist')
-
-        volumeName = kwargs.pop('volumeName')
-        policy = kwargs.pop('policy')
+        exp_params = [('volumeName', is_string),
+                      ('policy', is_in_list(REPLICA_SEL_POLICIES))]
+        try:
+            volumeName, policy = check_arguments(exp_params, kwargs)
+            self.check_state([self.S_RUNNING])
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
         # xtfsutil <path> --set-rsp <policy>
         args = [ '--set-rsp', policy ]
-        
+
         return self.set_policy(volumeName, 'Replica selection', args)
 
     @expose('POST')
     def set_replication_policy(self, kwargs):
-        if self.state_get() != self.S_RUNNING:
-            return HttpErrorResponse('ERROR: Wrong state to set Replication policy.')
-
-        if not 'volumeName' in kwargs:
-            return HttpErrorResponse('ERROR: Required argument (volumeName) doesn\'t exist')
-        if not 'policy' in kwargs:
-            return HttpErrorResponse('ERROR: Required argument (policy) doesn\'t exist')
-        if not 'factor' in kwargs:
-            return HttpErrorResponse('ERROR: Required argument (factor) doesn\'t exist')
-
-        volumeName = kwargs.pop('volumeName')
-        policy = kwargs.pop('policy')
-        factor = kwargs.pop('factor')
+        exp_params = [('volumeName', is_string),
+                      ('policy', is_in_list(REPLICATION_POLICIES)),
+                      ('factor', is_string)]
+        try:
+            volumeName, policy, factor = check_arguments(exp_params, kwargs)
+            self.check_state([self.S_RUNNING])
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
         # xtfsutil <path> --set-drp --replication-policy <policy> --replication-factor <factor>
         args = [ '--set-drp',
                  '--replication-policy', policy,
                  '--replication-factor', factor ]
-        
+
         return self.set_policy(volumeName, 'Replication', args)
 
     @expose('POST')
     def set_striping_policy(self, kwargs):
-        if self.state_get() != self.S_RUNNING:
-            return HttpErrorResponse('ERROR: Wrong state to set Striping policy.')
-
-        if not 'volumeName' in kwargs:
-            return HttpErrorResponse('ERROR: Required argument (volumeName) doesn\'t exist')
-        if not 'policy' in kwargs:
-            return HttpErrorResponse('ERROR: Required argument (policy) doesn\'t exist')
-        if not 'width' in kwargs:
-            return HttpErrorResponse('ERROR: Required argument (factor) doesn\'t exist')
-        if not 'stripe-size' in kwargs:
-            return HttpErrorResponse('ERROR: Required argument (stripe-size) doesn\'t exist')
-
-
-        volumeName = kwargs.pop('volumeName')
-        policy = kwargs.pop('policy')
-        width = kwargs.pop('width')
-        stripe_size = kwargs.pop('stripe-size')
+        exp_params = [('volumeName', is_string),
+                      ('policy', is_in_list(REPLICATION_POLICIES)),
+                      ('width', is_string),
+                      ('stripe-size', is_string)]
+        try:
+            volumeName, policy, width, stripe_size = check_arguments(exp_params, kwargs)
+            self.check_state([self.S_RUNNING])
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
         # xtfsutil <path> --set-dsp --striping-policy <policy> --striping-policy-width <width> --striping-policy-stripe-size <stripe-size>
         args = [ '--set-dsp',
                  '--striping-policy', policy,
                  '--striping-policy-width', width,
                  '--striping-policy-stripe-size', stripe_size ]
-        
+
         return self.set_policy(volumeName, 'Striping', args)
 
     @expose('POST')
     def toggle_persistent(self, kwargs):
+        try:
+            exp_params = []
+            check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
+
         self.persistent = not self.persistent
         self.logger.debug('toggle_persistent: %s' % self.persistent)
         return self.get_service_info({})
 
     @expose('POST')
     def set_osd_size(self, kwargs):
-        if not 'size' in kwargs:
-            return HttpErrorResponse("ERROR: Required argument (size) doesn't exist")
+        exp_params = [('size', is_pos_int)]
         try:
-            self.osd_volume_size = int(kwargs['size'])
-            self.logger.debug('set_osd_size: %s' % self.osd_volume_size)
-            return self.get_service_info({})
-        except ValueError:
-            return HttpErrorResponse("ERROR: Required argument (size) should be an integer")
+            size = check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
+
+        self.osd_volume_size = size
+        self.logger.debug('set_osd_size: %s' % self.osd_volume_size)
+        return self.get_service_info({})
 
     @expose('POST')
     def get_service_snapshot(self, kwargs):
-        if self.state_get() != self.S_RUNNING:
-            return HttpErrorResponse(
-                'ERROR: Wrong state to get service snapshot.')
+        try:
+            exp_params = []
+            check_arguments(exp_params, kwargs)
+            self.check_state([self.S_RUNNING])
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
         self.state_set(self.S_EPILOGUE)
 
-        # stop all agent services        
+        # stop all agent services
         self.logger.debug("Stopping all agent services")
         self._stop_all(remove=False)
 
         self.logger.debug("Calling get_snapshot on agents")
 
         # dictionary mapping node IDs to tuples of uuids/None (DIR, MRC, OSD)
-        nodes_snapshot = {}        
+        nodes_snapshot = {}
 
         for node in self.nodes:
             if node.id not in nodes_snapshot:
-                nodes_snapshot[node.id] = { 
-                        'data': None, 
+                nodes_snapshot[node.id] = {
+                        'data': None,
                         'dir_uuid': self.dir_node_uuid_map.get(node.id),
                         'mrc_uuid': self.mrc_node_uuid_map.get(node.id),
                         'osd_uuid': self.osd_node_uuid_map.get(node.id)
@@ -1175,7 +1190,7 @@ class XtreemFSManager(BaseManager):
             if volume_id:
                 volume = self.get_volume(volume_id)
                 nodes_snapshot[node.id]['cloud'] = volume.cloud.cloud_name
-        
+
             for key in 'dir_uuid', 'mrc_uuid', 'osd_uuid', 'volume':
                 self.logger.debug("nodes_snapshot[%s]['%s']: %s" % (node.id,
                     key, nodes_snapshot[node.id][key]))
@@ -1189,31 +1204,26 @@ class XtreemFSManager(BaseManager):
             self.logger.exception(err)
             return HttpErrorResponse(err)
         manager_data = base64.b64encode(open(filename, 'rb').read())
-        
+
         self.logger.debug("Shutting all agents down")
         self._do_shutdown(stop_services=False)
         return HttpJsonResponse({'nodes' : nodes_snapshot.values(), 'manager' : manager_data})
 
     @expose('POST')
     def set_service_snapshot(self, kwargs):
-        if self.state_get() != self.S_RUNNING:
-            return HttpErrorResponse(
-                'ERROR: Wrong state to set service snapshot.')
-
-        if not 'manager' in kwargs:
-            return HttpErrorResponse(
-               "ERROR: Required argument (manager) doesn't exist")
-        if not 'nodes' in kwargs:
-            return HttpErrorResponse(
-               "ERROR: Required argument (nodes) doesn't exist")
-
-        nodes = kwargs['nodes']
+        exp_params = [('manager', is_string),
+                      ('nodes', is_list)]
+        try:
+            manager_data, nodes = check_arguments(exp_params, kwargs)
+            self.check_state([self.S_RUNNING])
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
         if len(nodes) != len(self.nodes):
             err = "set_service_snapshot: len(nodes) != len(self.nodes)"
             self.logger.error(err)
             return HttpErrorResponse(err)
-                    
+
         self.logger.info("set_service_snapshot: stopping all agent services")
 
         # rewriting state
@@ -1272,10 +1282,9 @@ class XtreemFSManager(BaseManager):
                 raise err
 
         # restore manager data
-        manager_data = kwargs['manager']
         filename = "/root/manager_data.tar.gz"
         open(filename, 'wb').write(base64.b64decode(manager_data))
-        
+
         err, out = run_cmd("tar -xzf %s" % filename, "/")
         if err:
             self.logger.exception(err)
@@ -1285,27 +1294,29 @@ class XtreemFSManager(BaseManager):
         self._start_all()
         self.logger.info("set_service_snapshot: all agent services started")
         return HttpJsonResponse()
-        
 
     @expose('POST')
     def get_user_cert(self, kwargs):
-        if not 'user' in kwargs:
-            return HttpErrorResponse("ERROR: Required argument (user) doesn't exist")
-        if not 'group' in kwargs:
-            return HttpErrorResponse("ERROR: Required argument (group) doesn't exist")
-        if not 'passphrase' in kwargs:
-            return HttpErrorResponse("ERROR: Required argument (passphrase) doesn't exist")
-        if not 'adminflag' in kwargs:
-            return HttpErrorResponse("ERROR: Required argument (adminflag) doesn't exist")
-        cert = self._create_user_cert(kwargs['user'], kwargs['group'], 
-                kwargs['passphrase'], kwargs['adminflag'])
-        return HttpJsonResponse({'cert' : base64.b64encode(cert)}) 
+        exp_params = [('user', is_string),
+                      ('group', is_string),
+                      ('passphrase', is_string),
+                      ('adminflag', is_bool)]
+        try:
+            user, group, passphrase, adminflag = check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
+
+        cert = self._create_user_cert(user, group, passphrase, adminflag)
+        return HttpJsonResponse({'cert' : base64.b64encode(cert)})
 
     @expose('POST')
     def get_client_cert(self, kwargs):
-        if not 'passphrase' in kwargs:
-            return HttpErrorResponse("ERROR: Required argument (passphrase) doesn't exist")
-        if not 'adminflag' in kwargs:
-            return HttpErrorResponse("ERROR: Required argument (adminflag) doesn't exist")
-        cert = self._create_client_cert(kwargs['passphrase'], kwargs['adminflag'])
-        return HttpJsonResponse({'cert' : base64.b64encode(cert)}) 
+        exp_params = [('passphrase', is_string),
+                      ('adminflag', is_bool)]
+        try:
+            passphrase, adminflag = check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
+
+        cert = self._create_client_cert(passphrase, adminflag)
+        return HttpJsonResponse({'cert' : base64.b64encode(cert)})

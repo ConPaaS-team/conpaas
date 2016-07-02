@@ -1,10 +1,9 @@
 #!/bin/bash
 
 # supported_comps=('director' 'manager' 'lib' 'tools' 'frontend')
-#CPSVERSION="100"
-CPSVERSION="2.0"
-director="cpsdirector-$CPSVERSION.tar.gz" 
-manager="ConPaaS-$CPSVERSION.tar.gz" 
+CPSVERSION="2.0.0"
+director="cpsdirector-$CPSVERSION.tar.gz"
+manager="ConPaaS-$CPSVERSION.tar.gz"
 lib="cpslib-$CPSVERSION.tar.gz"
 tools="cps-tools-$CPSVERSION.tar.gz"
 frontend="cpsfrontend-$CPSVERSION.tar.gz"
@@ -12,13 +11,11 @@ frontend="cpsfrontend-$CPSVERSION.tar.gz"
 taballs=""
 
 IP_PREFIX=172.16.0
-#IP_PREFIX=10.158.114
 
 rm -f *$CPSVERSION*.tar.gz
 
-./mkdist.sh $CPSVERSION "$@" 
+./mkdist.sh $CPSVERSION "$@"
 
-# TMPFILE=$(mktemp)
 TMPFILE='/tmp/cpsinstall'
 
 cat <<EOT >> $TMPFILE
@@ -41,7 +38,7 @@ taballs+="$lib "
 }
 
 
-ls $director > /dev/null 2>&1 && 
+ls $director > /dev/null 2>&1 &&
 {
 cat <<EOT >> $TMPFILE
 echo "#installing director"
@@ -49,7 +46,7 @@ echo "#installing director"
 sudo rm -rf /usr/local/lib/python2.7/dist-packages/cpsdirector-*-py2.7.egg
 tar -xaf cpsdirector-*.tar.gz
 rm -f cpsdirector-*.tar.gz
-cd cpsdirector-* 
+cd cpsdirector-*
 echo \$IP_ADDRESS | sudo  make install
 cd ..
 sudo rm -rf cpsdirector-*
@@ -60,7 +57,7 @@ EOT
 taballs+="$director "
 }
 
-ls $manager > /dev/null 2>&1 && 
+ls $manager > /dev/null 2>&1 &&
 {
 cat <<EOT >> $TMPFILE
 mv $manager /etc/cpsdirector/ConPaaS.tar.gz
@@ -69,7 +66,7 @@ taballs+="$manager "
 }
 
 
-ls $tools > /dev/null 2>&1 && 
+ls $tools > /dev/null 2>&1 &&
 {
 cat <<EOT >> $TMPFILE
 sudo rm -rf /usr/local/lib/python2.7/dist-packages/cps_tools/
@@ -87,7 +84,7 @@ taballs+="$tools "
 }
 
 
-ls $frontend > /dev/null 2>&1 && 
+ls $frontend > /dev/null 2>&1 &&
 {
 cat <<EOT >> $TMPFILE
 tar -xaf cpsfrontend*.tar.gz

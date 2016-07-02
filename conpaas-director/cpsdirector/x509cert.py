@@ -8,25 +8,24 @@ from conpaas.core.https import x509
 
 def create_x509_cert(cert_dir, x509_req):
     # Load the CA cert
-    ca_cert = crypto.load_certificate(crypto.FILETYPE_PEM, 
+    ca_cert = crypto.load_certificate(crypto.FILETYPE_PEM,
         file_get_contents(os.path.join(cert_dir, "ca_cert.pem")))
-    
+
     # Load private key
-    key = crypto.load_privatekey(crypto.FILETYPE_PEM, 
+    key = crypto.load_privatekey(crypto.FILETYPE_PEM,
         file_get_contents(os.path.join(cert_dir, "ca_key.pem")))
 
     # Generate serial number
     serial = random.randint(1, 2048)
 
-    # Valid for one year starting from now 
+    # Valid for one year starting from now
     not_before = 0
     not_after  = 60 * 60 * 24 * 365
 
-    newcert = x509.create_cert(x509_req, 
+    newcert = x509.create_cert(x509_req,
         ca_cert, key, serial, not_before, not_after)
 
     return crypto.dump_certificate(crypto.FILETYPE_PEM, newcert)
-
 
 def generate_certificate(cert_dir, uid, aid, role, email, cn, org, ca_cert=None):
     """Generates a new x509 certificate for a manager from scratch.
@@ -41,16 +40,16 @@ def generate_certificate(cert_dir, uid, aid, role, email, cn, org, ca_cert=None)
     req_key  = x509.gen_rsa_keypair()
 
     # Generate certificate request
-    x509_req = x509.create_x509_req(req_key, userId=uid, serviceLocator=aid, 
+    x509_req = x509.create_x509_req(req_key, userId=uid, serviceLocator=aid,
         O=org, emailAddress=email, CN=cn, role=role)
 
     # Sign the request
     certificate = create_x509_cert(cert_dir, x509_req)
 
-    return { 'ca_cert': ca_cert, 
-             'key': crypto.dump_privatekey(crypto.FILETYPE_PEM, req_key), 
+    return { 'ca_cert': ca_cert,
+             'key': crypto.dump_privatekey(crypto.FILETYPE_PEM, req_key),
              'cert': certificate }
-             
+
 # def generate_certificate(cert_dir, uid, sid, role, email, cn, org, ca_cert=None):
 #     """Generates a new x509 certificate for a manager from scratch.
 
@@ -64,19 +63,19 @@ def generate_certificate(cert_dir, uid, aid, role, email, cn, org, ca_cert=None)
 #     req_key  = x509.gen_rsa_keypair()
 
 #     # Generate certificate request
-#     x509_req = x509.create_x509_req(req_key, userId=uid, serviceLocator=sid, 
+#     x509_req = x509.create_x509_req(req_key, userId=uid, serviceLocator=sid,
 #         O=org, emailAddress=email, CN=cn, role=role)
 
 #     # Sign the request
 #     certificate = create_x509_cert(cert_dir, x509_req)
 
-#     return { 'ca_cert': ca_cert, 
-#              'key': crypto.dump_privatekey(crypto.FILETYPE_PEM, req_key), 
+#     return { 'ca_cert': ca_cert,
+#              'key': crypto.dump_privatekey(crypto.FILETYPE_PEM, req_key),
 #              'cert': certificate }
 
 def get_cert_cname(cert_dir):
     """Return the CNAME value of director's certificate"""
-    cert = crypto.load_certificate(crypto.FILETYPE_PEM, 
+    cert = crypto.load_certificate(crypto.FILETYPE_PEM,
         file_get_contents(os.path.join(cert_dir, "cert.pem")))
 
     subject = cert.get_subject()

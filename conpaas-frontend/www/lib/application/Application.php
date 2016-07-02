@@ -73,7 +73,7 @@ class Application {
 	}
 
 	public function fetchLog() {
-		$json = $this->managerRequest('get', 'getLog', 0, array());
+		$json = $this->managerRequest('get', 'get_manager_log', 0, array());
 		$log = json_decode($json, true);
 		return $log['result']['log'];
 	}

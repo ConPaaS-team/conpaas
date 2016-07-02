@@ -120,7 +120,7 @@
 #                                help="Name or identifier of a service")
 
 #     def get_mode(self, args):
-#         app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
+#         app_id, service_id = self.check_service(args.app_name_or_id, args.serv_name_or_id)
 #         mode = self.get_string_mode(app_id, service_id)
 #         print "%s" % mode
 
@@ -139,7 +139,7 @@
 #         subparser.add_argument('mode', choices=MODES, help="mode")
 
 #     def set_mode(self, args):
-#         app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
+#         app_id, service_id = self.check_service(args.app_name_or_id, args.serv_name_or_id)
 #         old_mode = self.get_string_mode(app_id, service_id)
 #         if old_mode != 'NA':
 #             res = {'result': {'error': 'ERROR: mode is already set to %s' % old_mode}}
@@ -162,7 +162,7 @@
 #                                help="XtreemFS location, e.g., 192.168.122.1/uc3")
 
 #     def upload_bag_of_tasks(self, args):
-#         app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
+#         app_id, service_id = self.check_service(args.app_name_or_id, args.serv_name_or_id)
 #         mode = self.get_string_mode(app_id, service_id)
 #         if mode == 'NA':
 #             res = {'result': {'error': 'ERROR: to upload bag of task, first specify run mode.'}}
@@ -187,7 +187,7 @@
 #         subparser.add_argument('schedule', type=int, help="schedule identifier")
 
 #     def _select_schedule(self, args):
-#         app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
+#         app_id, service_id = self.check_service(args.app_name_or_id, args.serv_name_or_id)
 #         mode = self.get_mode(app_id, service_id)
 #         if mode == 'NA':
 #             return {'result': {'error': 'ERROR: to select a schedule, first specify run mode DEMO or REAL, then upload a bag of tasks '}}

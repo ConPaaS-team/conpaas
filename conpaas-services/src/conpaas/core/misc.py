@@ -16,6 +16,11 @@ def file_get_contents(filepath):
     f.close()
     return filecontent
 
+def file_write_contents(filepath, filecontent):
+    f = open(filepath, 'w')
+    f.write(filecontent)
+    f.close()
+
 def verify_port(port):
     '''Raise Type Error if port is not an integer.
     Raise ValueError if port is an invlid integer value.
@@ -96,7 +101,6 @@ def run_cmd(cmd, directory='/'):
     _return_code = pipe.wait()
     return out, error
 
-
 def run_cmd_code(cmd, directory='/'):
     """Same as run_cmd but it returns also the return code.
     Parameters
@@ -118,7 +122,6 @@ def run_cmd_code(cmd, directory='/'):
     return_code = pipe.wait()
     return out, error, return_code
 
-
 def rlinput(prompt, prefill=''):
     readline.set_startup_hook(lambda: readline.insert_text(prefill))
     try:
@@ -128,9 +131,9 @@ def rlinput(prompt, prefill=''):
 
 def list_lines(lines):
     """Returns the list of trimmed lines.
-    
+
     @param lines  Multi-line string
-    
+
     """
     return list(filter(None, (x.strip() for x in lines.splitlines())))
 
@@ -143,8 +146,9 @@ def is_constraint(constraint, filter_res, errmsg):
             raise Exception(errmsg(arg))
     return filter_constraint
 
+
 def represents_int(s):
-    try: 
+    try:
         int(s)
         return True
     except ValueError:
@@ -153,25 +157,35 @@ def represents_int(s):
 def is_int(argument):
     return is_constraint(lambda arg: represents_int(arg),
                          lambda arg: int(arg),
-                         lambda arg: "'%s' is not an integer but a %s." % (arg, type(arg)))(argument)
+                         lambda arg: "'%s' has type '%s', should be integer" % (arg, type(arg).__name__))(argument)
+
+
+def represents_bool(s):
+    return str(s).lower() in ("yes", "y", "true", "t", "1",
+                              "no", "n", "false", "f", "0")
+
+def is_bool(argument):
+    return is_constraint(lambda arg: represents_bool(arg),
+                         lambda arg: str(arg).lower() in ("yes", "y", "true", "t", "1"),
+                         lambda arg: "'%s' has type '%s', should be bool" % (arg, type(arg).__name__))(argument)
 
 
 def is_more_than(minval):
     return is_constraint(lambda arg: arg > minval,
                          lambda arg: arg,
-                         lambda arg: "'%s' is not more than '%s'." % (arg, minval))
+                         lambda arg: "%s is not more than %s" % (arg, minval))
 
 
 def is_more_or_eq_than(minval):
     return is_constraint(lambda arg: arg >= minval,
                          lambda arg: arg,
-                         lambda arg: "'%s' is not more or equal than '%s'." % (arg, minval))
+                         lambda arg: "%s is not more or equal than %s" % (arg, minval))
+
 
 def is_between(minval, maxval):
     return is_constraint(lambda arg: arg >= minval and arg <= maxval,
                          lambda arg: arg,
-                         lambda arg: "'%s' is not between '%s' and '%s'." % (arg, minval, maxval))
-
+                         lambda arg: "%s is not between %s and %s" % (arg, minval, maxval))
 
 
 def is_pos_int(argument):
@@ -187,38 +201,44 @@ def is_pos_nul_int(argument):
 def is_in_list(exp_list):
     return is_constraint(lambda arg: arg in exp_list,
                          lambda arg: arg,
-                         lambda arg: "'%s' must be one of '%s'." % (arg, exp_list))
+                         lambda arg: "'%s' must be one of %s" % (arg, exp_list))
 
 
 def is_not_in_list(exp_list):
     return is_constraint(lambda arg: arg not in exp_list,
                          lambda arg: arg,
-                         lambda arg: "'%s' must not be one of '%s'." % (arg, exp_list))
+                         lambda arg: "'%s' must not be one of %s" % (arg, exp_list))
 
 
 
 def is_string(argument):
     return is_constraint(lambda arg: isinstance(arg, str) or isinstance(arg, unicode),
                          lambda arg: arg,
-                         lambda arg: "'%s' is not a string but a %s." % (arg, type(arg)))(argument)
+                         lambda arg: "'%s' has type '%s', should be string" % (arg, type(arg).__name__))(argument)
+
+
+def is_non_empty_list(argument):
+    return is_constraint(lambda arg: isinstance(arg, list) and len(arg) > 0,
+                         lambda arg: arg,
+                         lambda arg: "'%s' has type '%s', should be non-empty list" % (arg, type(arg).__name__))(argument)
 
 
 def is_list(argument):
     return is_constraint(lambda arg: isinstance(arg, list),
                          lambda arg: arg,
-                         lambda arg: "'%s' is not a list but a %s." % (arg, type(arg)))(argument)
+                         lambda arg: "'%s' has type '%s', should be list" % (arg, type(arg).__name__))(argument)
 
 
 def is_dict(argument):
     return is_constraint(lambda arg: isinstance(arg, dict),
                          lambda arg: arg,
-                         lambda arg: "'%s' is not a dict but a %s." % (arg, type(arg)))(argument)
+                         lambda arg: "'%s' has type '%s', should be dict" % (arg, type(arg).__name__))(argument)
 
 
 def is_uploaded_file(argument):
     return is_constraint(lambda arg: isinstance(arg, FileUploadField),
                          lambda arg: arg,
-                         lambda arg: "'%s' is not uploaded file but a %s." % (arg, type(arg)))(argument)
+                         lambda arg: "'%s' has type '%s', should be uploaded file" % (arg, type(arg).__name__))(argument)
 
 
 def is_dict2(mandatory_keys, optional_keys=None):
@@ -229,7 +249,7 @@ def is_dict2(mandatory_keys, optional_keys=None):
             try:
                 keys.remove(mand_key)
             except:
-                raise Exception("Was expecting key %s in dict %s" \
+                raise Exception("Was expecting key '%s' in dict '%s'" \
                                 % (mand_key, argdict))
         if optional_keys is None:
             _optional_keys = []
@@ -241,7 +261,7 @@ def is_dict2(mandatory_keys, optional_keys=None):
             except:
                 continue
         if len(keys) > 0:
-            raise Exception("Unexpected key in dict %s: %s." % (argdict, keys))
+            raise Exception("Unexpected key in dict '%s': '%s'" % (argdict, keys))
         return argdict
     return _dict2
 
@@ -301,7 +321,7 @@ def check_arguments(expected_params, args):
                     # TODO: decide whether the default value should satisfy the constraint
                     parsed_args.append(default_value)
                 else:
-                    raise Exception("Missing the mandatory parameter %s." % name)
+                    raise Exception("Missing the mandatory parameter '%s'." % name)
         else:
             raise Exception("Unexpected number of arguments describing a parameter: %s" % param)
     if len(args) > 0:

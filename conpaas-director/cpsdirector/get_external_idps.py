@@ -6,7 +6,7 @@ def get_external_idps(director_configfile):
     """
 	get_external_idps(director_configfile)
 	Checks in the conpaas section if the support_external_idp option is present and set.
-	If so, checks if external_idps option is present, and for all 
+	If so, checks if external_idps option is present, and for all
 	named idps collects all the options in the respective idp sections.
 	Validation of option names and values n the idp sections is left to the calling program.
 	Returns a dictonary with all idps and their options.

@@ -7,41 +7,18 @@ from .base import BaseClient
 from .config import config
 
 
-def check_cloud_name(client, cloud_name_or_id):
+def check_cloud(client, cloud_name):
     """
-    Check if a given cloud name is a valid name or a valid
-    cloud identifier.
-
-    :return  a pair (cloud_identifier, cloud_name) if correct,
-             raise an exception otherwise.
+    Check if a given cloud name is valid, raise an exception otherwise.
     """
 
-    if cloud_name_or_id is None:
-        return (None, None)
+    if cloud_name is None:
+        return
 
-    clouds = client.call_director("available_clouds", True)
-    cloud_ids = [cloud['cid'] for cloud in clouds]
+    clouds = client.call_director_get("available_clouds")
 
-    try:
-        cloud_id = int(cloud_name_or_id)
-    except ValueError:
-        cloud_ids = [cloud['cid'] for cloud in clouds
-                     if cloud['name'] == cloud_name_or_id]
-        if len(cloud_ids) == 0:
-            client.error('Unknown cloud \'%s\'' % cloud_name_or_id)
-        elif len(cloud_ids) > 1:
-            raise Exception('%s clouds match the cloud name \'%s\''
-                            % (len(cloud_ids), cloud_name_or_id))
-        else:
-            cloud_id = cloud_ids[0]
-
-    if not cloud_id in cloud_ids:
-        raise Exception('Unknown cloud identifier \'%s\'' % cloud_id)
-
-    cloud_name = [cloud['name'] for cloud in clouds
-                  if cloud['cid'] == cloud_id][0]
-
-    return cloud_id, cloud_name
+    if not cloud_name in clouds:
+        raise Exception("Unknown cloud name '%s'" % cloud_name)
 
 
 class CloudCmd:
@@ -111,9 +88,17 @@ def main():
                           args.debug)
     try:
         args.run_cmd(args)
-    except Exception, ex:
-        sys.stderr.write("ERROR: %s\n" % ex)
+    except Exception:
+        if args.debug:
+            traceback.print_exc()
+        else:
+            ex = sys.exc_info()[1]
+            if str(ex).startswith("ERROR"):
+                sys.stderr.write("%s\n" % ex)
+            else:
+                sys.stderr.write("ERROR: %s\n" % ex)
         sys.exit(1)
+
 
 if __name__ == '__main__':
     main()

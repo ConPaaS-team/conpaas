@@ -76,7 +76,10 @@ from conpaas.core.expose import expose
 from conpaas.core.manager import BaseManager
 from conpaas.core.manager import ManagerException
 
-from conpaas.core.misc import check_arguments, is_list_dict2, is_pos_nul_int
+from conpaas.core.misc import check_arguments, is_in_list, is_not_in_list,\
+    is_list, is_non_empty_list, is_list_dict, is_list_dict2, is_string,\
+    is_int, is_pos_nul_int, is_pos_int, is_dict, is_dict2, is_bool,\
+    is_uploaded_file
 
 from conpaas.core import git
 
@@ -186,11 +189,9 @@ class BasicWebserversManager(BaseManager):
         if nr_agents == 0:
             nr_agents = 1
 
-        # (genc): maybe not neccessary at this moment 
+        # (genc): maybe not neccessary at this moment
         # self._adapting_set_count(nr_agents)
         return [{'cloud':None} for _ in range(nr_agents)]
-
-
 
     def on_start(self, nodes):
         config = self._configuration_get()
@@ -221,7 +222,7 @@ class BasicWebserversManager(BaseManager):
             serviceNodeKwargs.extend([{'runWeb': True}
                                      for _ in range(config.web_count)])
             serviceNodeKwargs.extend([{'runBackend': True}
-                                     for _ in range(config.backend_count)])   
+                                     for _ in range(config.backend_count)])
 
         node_instances = nodes
         config.serviceNodes.clear()
@@ -253,8 +254,8 @@ class BasicWebserversManager(BaseManager):
         self._start_proxy(config, config.getProxyServiceNodes())
 
         self._configuration_set(config)  # update configuration
-        
-        # self.memcache.set('nodes_additional', [])  
+
+        # self.memcache.set('nodes_additional', [])
         return True
 
     def on_stop(self):
@@ -268,7 +269,6 @@ class BasicWebserversManager(BaseManager):
         self._configuration_set(config)
         return del_nodes
 
-
     # @expose('POST')
     # def startup(self, kwargs):
 
@@ -277,7 +277,7 @@ class BasicWebserversManager(BaseManager):
     #     state = self.state_get()
     #     if state != self.S_INIT and state != self.S_STOPPED:
     #         ex = ManagerException(ManagerException.E_STATE_ERROR)
-    #         return HttpErrorResponse(ex.message)
+    #         return HttpErrorResponse("%s" % ex)
 
     #     if config.proxy_count == 1 \
     #             and (config.web_count == 0 or config.backend_count == 0):  # at least one is packed
@@ -321,12 +321,12 @@ class BasicWebserversManager(BaseManager):
     #     if len(kwargs) != 0:
     #         ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
     #                               kwargs.keys())
-    #         return HttpErrorResponse(ex.message)
+    #         return HttpErrorResponse("%s" % ex)
 
     #     state = self.state_get()
     #     if state != self.S_RUNNING:
     #         ex = ManagerException(ManagerException.E_STATE_ERROR)
-    #         return HttpErrorResponse(ex.message)
+    #         return HttpErrorResponse("%s" % ex)
 
     #     self.state_set(self.S_EPILOGUE, msg='Shutting down')
     #     Thread(target=self._do_stop, args=[]).start()
@@ -335,7 +335,7 @@ class BasicWebserversManager(BaseManager):
     def _update_code(self, config, nodes):
         raise Exception("BasicWebservicesManager._update_code(...) must be overridden by extending classes.")
 
-    
+
     # def do_startup(self, config, serviceNodeKwargs, cloud):
     #     self.logger.debug(
     #         'do_startup: Going to request %d new nodes' % len(serviceNodeKwargs))
@@ -397,8 +397,7 @@ class BasicWebserversManager(BaseManager):
         backend = len(filter(lambda n: n.role=='backend', nodes))
         web = len(filter(lambda n: n.role=='web', nodes))
         proxy = len(filter(lambda n: n.role=='proxy', nodes))
-        
-        
+
         webNodesNew = []
         proxyNodesNew = []
         backendNodesNew = []
@@ -502,7 +501,7 @@ class BasicWebserversManager(BaseManager):
         if config.web_count == 1 and config.getWebServiceNodes()[0] in config.getProxyServiceNodes():
             config.web_count = 0
 
-        
+
         self._configuration_set(config)
         # self.memcache.set('nodes_additional', [])
         return True
@@ -544,7 +543,7 @@ class BasicWebserversManager(BaseManager):
     #     state = self.state_get()
     #     if state != self.S_RUNNING:
     #         ex = ManagerException(ManagerException.E_STATE_ERROR)
-    #         return HttpErrorResponse(ex.message)
+    #         return HttpErrorResponse("%s" % ex)
 
     #     backend = 0
     #     web = 0
@@ -557,39 +556,39 @@ class BasicWebserversManager(BaseManager):
     #         if not isinstance(kwargs['backend'], int):
     #             ex = ManagerException(ManagerException.E_ARGS_INVALID,
     #                                   detail='Expected an integer value for "backend"')
-    #             return HttpErrorResponse(ex.message)
+    #             return HttpErrorResponse("%s" % ex)
     #         backend = int(kwargs.pop('backend'))
     #         if backend < 0:
     #             ex = ManagerException(ManagerException.E_ARGS_INVALID,
     #                                   detail='Expected a positive integer value for "backend"')
-    #             return HttpErrorResponse(ex.message)
+    #             return HttpErrorResponse("%s" % ex)
 
     #     if 'web' in kwargs:
     #         if not isinstance(kwargs['web'], int):
     #             ex = ManagerException(ManagerException.E_ARGS_INVALID,
     #                                   detail='Expected an integer value for "web"')
-    #             return HttpErrorResponse(ex.message)
+    #             return HttpErrorResponse("%s" % ex)
     #         web = int(kwargs.pop('web'))
     #         if web < 0:
     #             ex = ManagerException(ManagerException.E_ARGS_INVALID,
     #                                   detail='Expected a positive integer value for "web"')
-    #             return HttpErrorResponse(ex.message)
+    #             return HttpErrorResponse("%s" % ex)
 
     #     if 'proxy' in kwargs:
     #         if not isinstance(kwargs['proxy'], int):
     #             ex = ManagerException(ManagerException.E_ARGS_INVALID,
     #                                   detail='Expected an integer value for "proxy"')
-    #             return HttpErrorResponse(ex.message)
+    #             return HttpErrorResponse("%s" % ex)
     #         proxy = int(kwargs.pop('proxy'))
     #         if proxy < 0:
     #             ex = ManagerException(ManagerException.E_ARGS_INVALID,
     #                                   detail='Expected a positive integer value for "proxy"')
-    #             return HttpErrorResponse(ex.message)
+    #             return HttpErrorResponse("%s" % ex)
 
     #     if (backend + web + proxy) < 1:
     #         ex = ManagerException(ManagerException.E_ARGS_MISSING, ['backend', 'web', 'proxy'],
     #                               detail='Need a positive value for at least one')
-    #         return HttpErrorResponse(ex.message)
+    #         return HttpErrorResponse("%s" % ex)
 
     #     cloud = kwargs.pop('cloud', 'iaas')
     #     try:
@@ -604,12 +603,12 @@ class BasicWebserversManager(BaseManager):
     #         if not isinstance(str(kwargs['vm_backend_instance']), basestring):
     #             ex = ManagerException(ManagerException.E_ARGS_INVALID,
     #                                   detail='Expected a string value for "vm_backend_instance"')
-    #             return HttpErrorResponse(ex.message)
+    #             return HttpErrorResponse("%s" % ex)
     #         vm_backend_type = kwargs.pop('vm_backend_instance')
     #         if len(vm_backend_type) <= 0:
     #             ex = ManagerException(ManagerException.E_ARGS_INVALID,
     #                                   detail='Expected a string value for "vm_backend_instance"')
-    #             return HttpErrorResponse(ex.message)
+    #             return HttpErrorResponse("%s" % ex)
 
     #     if 'vm_web_instance' in kwargs:
     #         self.logger.info('VM WEB INSTANCE: %s' %
@@ -617,17 +616,17 @@ class BasicWebserversManager(BaseManager):
     #         if not isinstance(str(kwargs['vm_web_instance']), basestring):
     #             ex = ManagerException(ManagerException.E_ARGS_INVALID,
     #                                   detail='Expected a string value for "vm_web_instance"')
-    #             return HttpErrorResponse(ex.message)
+    #             return HttpErrorResponse("%s" % ex)
     #         vm_web_type = kwargs.pop('vm_web_instance')
     #         if len(vm_web_type) <= 0:
     #             ex = ManagerException(ManagerException.E_ARGS_INVALID,
     #                                   detail='Expected a string value for "vm_web_instance"')
-    #             return HttpErrorResponse(ex.message)
+    #             return HttpErrorResponse("%s" % ex)
 
     #     if (proxy + config.proxy_count) > 1 and ((web + config.web_count) == 0 or (backend + config.backend_count) == 0):
     #         ex = ManagerException(ManagerException.E_ARGS_INVALID,
     #                               detail='Cannot add more proxy servers without at least one "web" and one "backend"')
-    #         return HttpErrorResponse(ex.message)
+    #         return HttpErrorResponse("%s" % ex)
 
     #     self.state_set(
     #         self.S_ADAPTING, msg='Going to add proxy=%d, web=%d, backend=%d, vm_backend_type=%s, vm_web_type=%s, cloud=%s' %
@@ -746,7 +745,7 @@ class BasicWebserversManager(BaseManager):
         backend = web = proxy = 0
         if 'backend' in node_roles:
             backend = node_roles['backend']
-        
+
         if 'web' in node_roles:
             web = node_roles['web']
 
@@ -863,81 +862,81 @@ class BasicWebserversManager(BaseManager):
     #         if not isinstance(kwargs['backend'], int):
     #             ex = ManagerException(ManagerException.E_ARGS_INVALID,
     #                                   detail='Expected an integer value for "backend"')
-    #             return HttpErrorResponse(ex.message)
+    #             return HttpErrorResponse("%s" % ex)
     #         backend = int(kwargs.pop('backend'))
     #         if backend < 0:
     #             ex = ManagerException(ManagerException.E_ARGS_INVALID,
     #                                   detail='Expected a positive integer value for "backend"')
-    #             return HttpErrorResponse(ex.message)
+    #             return HttpErrorResponse("%s" % ex)
 
     #     if 'web' in kwargs:
     #         if not isinstance(kwargs['web'], int):
     #             ex = ManagerException(ManagerException.E_ARGS_INVALID,
     #                                   detail='Expected an integer value for "web"')
-    #             return HttpErrorResponse(ex.message)
+    #             return HttpErrorResponse("%s" % ex)
     #         web = int(kwargs.pop('web'))
     #         if web < 0:
     #             ex = ManagerException(ManagerException.E_ARGS_INVALID,
     #                                   detail='Expected a positive integer value for "web"')
-    #             return HttpErrorResponse(ex.message)
+    #             return HttpErrorResponse("%s" % ex)
 
     #     if 'proxy' in kwargs:
     #         if not isinstance(kwargs['proxy'], int):
     #             ex = ManagerException(ManagerException.E_ARGS_INVALID,
     #                                   detail='Expected an integer value for "proxy"')
-    #             return HttpErrorResponse(ex.message)
+    #             return HttpErrorResponse("%s" % ex)
     #         proxy = int(kwargs.pop('proxy'))
     #         if proxy < 0:
     #             ex = ManagerException(ManagerException.E_ARGS_INVALID,
     #                                   detail='Expected a positive integer value for "proxy"')
-    #             return HttpErrorResponse(ex.message)
+    #             return HttpErrorResponse("%s" % ex)
 
     #     if (backend + web + proxy) < 1:
     #         ex = ManagerException(ManagerException.E_ARGS_MISSING, ['backend', 'web', 'proxy'],
     #                               detail='Need a positive value for at least one')
-    #         return HttpErrorResponse(ex.message)
+    #         return HttpErrorResponse("%s" % ex)
 
     #     if 'node_ip' in kwargs:
     #         self.logger.info('IP Node to remove: %s' % str(kwargs['node_ip']))
     #         if not isinstance(str(kwargs['node_ip']), basestring):
     #             ex = ManagerException(ManagerException.E_ARGS_INVALID,
     #                                   detail='Expected a string value for "node_ip"')
-    #             return HttpErrorResponse(ex.message)
+    #             return HttpErrorResponse("%s" % ex)
     #         node_ip = kwargs.pop('node_ip')
     #         if len(node_ip) <= 0:
     #             ex = ManagerException(ManagerException.E_ARGS_INVALID,
     #                                   detail='Expected a string value for "node_ip"')
-    #             return HttpErrorResponse(ex.message)
+    #             return HttpErrorResponse("%s" % ex)
 
     #     if len(kwargs) != 0:
     #         ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
     #                               kwargs.keys())
-    #         return HttpErrorResponse(ex.message)
+    #         return HttpErrorResponse("%s" % ex)
 
     #     if config.proxy_count - proxy < 1:
     #         ex = ManagerException(ManagerException.E_ARGS_INVALID,
     #                               detail='Not enough proxy nodes  will be left')
-    #         return HttpErrorResponse(ex.message)
+    #         return HttpErrorResponse("%s" % ex)
 
     #     if config.web_count - web < 1 and config.proxy_count - proxy > 1:
     #         ex = ManagerException(ManagerException.E_ARGS_INVALID,
     #                               detail='Not enough web nodes will be left')
-    #         return HttpErrorResponse(ex.message)
+    #         return HttpErrorResponse("%s" % ex)
 
     #     if config.web_count - web < 0:
     #         ex = ManagerException(ManagerException.E_ARGS_INVALID,
     #                               detail='Cannot remove_nodes that many web nodes')
-    #         return HttpErrorResponse(ex.message)
+    #         return HttpErrorResponse("%s" % ex)
 
     #     if config.backend_count - backend < 1 and config.proxy_count - proxy > 1:
     #         ex = ManagerException(ManagerException.E_ARGS_INVALID,
     #                               detail='Not enough backend nodes will be left')
-    #         return HttpErrorResponse(ex.message)
+    #         return HttpErrorResponse("%s" % ex)
 
     #     if config.backend_count - backend < 0:
     #         ex = ManagerException(ManagerException.E_ARGS_INVALID,
     #                               detail='Cannot remove_nodes that many backend nodes')
-    #         return HttpErrorResponse(ex.message)
+    #         return HttpErrorResponse("%s" % ex)
 
     #     #state = self.state_get()
     #     # FIXME: Problem with the states
@@ -1045,37 +1044,23 @@ class BasicWebserversManager(BaseManager):
 
     @expose('POST')
     def update_nodes_weight(self, kwargs):
-        config = self._configuration_get()
-        state = self.state_get()
-        if state != self.S_RUNNING:
-            self.logger.critical('update_nodes_weight function: STATE_ERROR')
-            ex = ManagerException(ManagerException.E_STATE_ERROR)
-            return HttpErrorResponse(ex.message)
+        exp_params = [('web', is_dict),
+                      ('backend', is_dict)]
+        try:
+            web_weights, backend_weights = check_arguments(exp_params, kwargs)
+            self.check_state([self.S_RUNNING])
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
         self.logger.debug('Received request to update nodes weight...')
 
-        backend_weights = {}
-        web_weights = {}
-
-        if 'web' in kwargs:
-            if not isinstance(kwargs['web'], dict):
-                ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                      detail='Expected a dictionary value for "web"')
-                return HttpErrorResponse(ex.message)
-            web_weights = kwargs.pop('web')
-
-        if 'backend' in kwargs:
-            if not isinstance(kwargs['backend'], dict):
-                ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                      detail='Expected a dictionary value for "backend"')
-                return HttpErrorResponse(ex.message)
-            backend_weights = kwargs.pop('backend')
+        config = self._configuration_get()
 
         for web_id in web_weights:
             if web_id not in config.serviceNodes:
                 ex = ManagerException(ManagerException.E_ARGS_INVALID,
                                       detail='The web node ID does not exist')
-                return HttpErrorResponse(ex.message)
+                return HttpErrorResponse("%s" % ex)
             self.logger.debug('Updating web weight for node: %s to: %s ' %
                               (str(web_id), str(web_weights[web_id])))
             config.serviceNodes[web_id].weightWeb = int(web_weights[web_id])
@@ -1084,7 +1069,7 @@ class BasicWebserversManager(BaseManager):
             if backend_id not in config.serviceNodes:
                 ex = ManagerException(ManagerException.E_ARGS_INVALID,
                                       detail='The backend node ID does not exist')
-                return HttpErrorResponse(ex.message)
+                return HttpErrorResponse("%s" % ex)
             self.logger.debug('Updating backend weight for node: %s to: %s ' %
                               (str(backend_id), str(backend_weights[backend_id])))
             config.serviceNodes[backend_id].weightBackend = int(
@@ -1097,7 +1082,7 @@ class BasicWebserversManager(BaseManager):
             if web_id not in config.serviceNodes:
                 ex = ManagerException(ManagerException.E_ARGS_INVALID,
                                       detail='The web node ID does not exist')
-                return HttpErrorResponse(ex.message)
+                return HttpErrorResponse("%s" % ex)
             config.serviceNodes[web_id].webWeight = int(web_weights[web_id])
 
         config.update_mappings()
@@ -1109,15 +1094,16 @@ class BasicWebserversManager(BaseManager):
 
     @expose('GET')
     def list_nodes(self, kwargs):
-        if len(kwargs) != 0:
-            ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
-                                  kwargs.keys())
-            return HttpErrorResponse(ex.message)
+        try:
+            exp_params = []
+            check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
-        state = self.state_get()
-        if state != self.S_RUNNING and state != self.S_ADAPTING:
-            ex = ManagerException(ManagerException.E_STATE_ERROR)
-            return HttpErrorResponse(ex.message)
+        try:
+            self.check_state([self.S_RUNNING, self.S_ADAPTING])
+        except:
+            return HttpJsonResponse({})
 
         config = self._configuration_get()
         return HttpJsonResponse({
@@ -1128,21 +1114,13 @@ class BasicWebserversManager(BaseManager):
 
     @expose('GET')
     def get_node_info(self, kwargs):
-        if 'serviceNodeId' not in kwargs:
-            ex = ManagerException(ManagerException.E_ARGS_MISSING,
-                                  'serviceNodeId')
-            return HttpErrorResponse(ex.message)
-        serviceNodeId = kwargs.pop('serviceNodeId')
-        if len(kwargs) != 0:
-            ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
-                                  kwargs.keys())
-            return HttpErrorResponse(ex.message)
-
         config = self._configuration_get()
-        if serviceNodeId not in config.serviceNodes:
-            ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                  detail='Unknown "serviceNodeId": "%s"' % serviceNodeId)
-            return HttpErrorResponse(ex.message)
+        exp_params = [('serviceNodeId', is_in_list(config.serviceNodes))]
+        try:
+            serviceNodeId = check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
+
         serviceNode = config.serviceNodes[serviceNodeId]
         return HttpJsonResponse({
             'serviceNode': {'id': serviceNode.id,
@@ -1153,7 +1131,7 @@ class BasicWebserversManager(BaseManager):
                             'isRunningWeb': serviceNode.isRunningWeb,
                             'isRunningBackend': serviceNode.isRunningBackend,
                             'weightWeb': serviceNode.weightWeb,
-                            'weightBackend': serviceNode.weightBackend,
+                            'weightBackend': serviceNode.weightBackend
                             }
         })
 
@@ -1195,18 +1173,15 @@ class BasicWebserversManager(BaseManager):
             with default instance type which can be "small" for example.
         """
         try:
-            state = self.state_get()
-            if state != self.S_RUNNING:
-                raise Exception("Wrong service state: was expecting one of %s"
-                                " but current state is '%s'"
-                                % (self.S_RUNNING, state))
             exp_keys = ['from_cloud', 'vmid', 'to_cloud']
             exp_params = [('migration_plan', is_list_dict2(exp_keys)),
                           ('delay', is_pos_nul_int, 0)]
             migration_plan, delay = check_arguments(exp_params, kwargs)
             migration_plan = self._check_migrate_args(migration_plan)
+            self.check_state([self.S_RUNNING])
         except Exception as ex:
             return HttpErrorResponse("%s" % ex)
+
         self.state_set(self.S_ADAPTING, msg='Going to migrate nodes %s' % migration_plan)
         Thread(target=self._do_migrate_nodes, args=[migration_plan, delay]).start()
         return HttpJsonResponse()
@@ -1345,19 +1320,22 @@ class BasicWebserversManager(BaseManager):
 
     @expose('GET')
     def list_authorized_keys(self, kwargs):
-        if len(kwargs) != 0:
-            ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
-                                  kwargs.keys())
-            return HttpErrorResponse(ex.message)
+        try:
+            exp_params = []
+            check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
         return HttpJsonResponse({'authorizedKeys': git.get_authorized_keys()})
 
     @expose('GET')
     def list_code_versions(self, kwargs):
-        if len(kwargs) != 0:
-            ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
-                                  kwargs.keys())
-            return HttpErrorResponse(ex.message)
+        try:
+            exp_params = []
+            check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
+
         config = self._configuration_get()
         versions = []
         for version in config.codeVersions.values():
@@ -1372,57 +1350,32 @@ class BasicWebserversManager(BaseManager):
 
     @expose('GET')
     def download_code_version(self, kwargs):
-        if 'codeVersionId' not in kwargs:
-            ex = ManagerException(ManagerException.E_ARGS_MISSING,
-                                  'codeVersionId')
-            return HttpErrorResponse(ex.message)
-        if isinstance(kwargs['codeVersionId'], dict):
-            ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                  detail='codeVersionId should be a string')
-            return HttpErrorResponse(ex.message)
-        codeVersion = kwargs.pop('codeVersionId')
-        if len(kwargs) != 0:
-            ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
-                                  kwargs.keys())
-            return HttpErrorResponse(ex.message)
-
         config = self._configuration_get()
+        exp_params = [('codeVersionId', is_in_list(config.codeVersions))]
+        try:
+            codeVersionId = check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
-        if codeVersion not in config.codeVersions:
-            ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                  detail='Invalid codeVersionId')
-            return HttpErrorResponse(ex.message)
-
-        if config.codeVersions[codeVersion].type == 'git':
+        if config.codeVersions[codeVersionId].type == 'git':
             return HttpErrorResponse(
                 'ERROR: To download this code, please clone the git repository');
 
-        filename = os.path.abspath(os.path.join(self.code_repo, codeVersion))
+        filename = os.path.abspath(os.path.join(self.code_repo, codeVersionId))
         if not filename.startswith(self.code_repo + '/') or not os.path.exists(filename):
             ex = ManagerException(ManagerException.E_ARGS_INVALID,
                                   detail='Invalid codeVersionId')
-            return HttpErrorResponse(ex.message)
-        return HttpFileDownloadResponse(config.codeVersions[codeVersion].filename, filename)
+            return HttpErrorResponse("%s" % ex)
+        return HttpFileDownloadResponse(config.codeVersions[codeVersionId].filename, filename)
 
     @expose('UPLOAD')
     def upload_code_version(self, kwargs):
-        if 'code' not in kwargs:
-            ex = ManagerException(ManagerException.E_ARGS_MISSING, 'code')
-            return HttpErrorResponse(ex.message)
-        code = kwargs.pop('code')
-        if 'description' in kwargs:
-            description = kwargs.pop('description')
-        else:
-            description = ''
-
-        if len(kwargs) != 0:
-            ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
-                                  kwargs.keys())
-            return HttpErrorResponse(ex.message)
-        if not isinstance(code, FileUploadField):
-            ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                  detail='codeVersionId should be a file')
-            return HttpErrorResponse(ex.message)
+        exp_params = [('code', is_uploaded_file),
+                      ('description', is_string, '')]
+        try:
+            code, description = check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
         config = self._configuration_get()
         fd, name = tempfile.mkstemp(prefix='code-', dir=self.code_repo)
@@ -1441,7 +1394,7 @@ class BasicWebserversManager(BaseManager):
             os.remove(name)
             ex = ManagerException(ManagerException.E_ARGS_INVALID,
                                   detail='Invalid archive format')
-            return HttpErrorResponse(ex.message)
+            return HttpErrorResponse("%s" % ex)
 
         for fname in archive_get_members(arch):
             if fname.startswith('/') or fname.startswith('..'):
@@ -1449,7 +1402,7 @@ class BasicWebserversManager(BaseManager):
                 os.remove(name)
                 ex = ManagerException(ManagerException.E_ARGS_INVALID,
                                       detail='Absolute file names are not allowed in archive members')
-                return HttpErrorResponse(ex.message)
+                return HttpErrorResponse("%s" % ex)
         archive_close(arch)
         config.codeVersions[codeVersionId] = CodeVersion(
             codeVersionId, os.path.basename(code.filename), archive_get_type(name), description=description)
@@ -1458,62 +1411,39 @@ class BasicWebserversManager(BaseManager):
 
     @expose('POST')
     def delete_code_version(self, kwargs):
-        if 'codeVersionId' not in kwargs:
-            ex = ManagerException(ManagerException.E_ARGS_MISSING,
-                                  'codeVersionId')
-            return HttpErrorResponse(ex.message)
-        if isinstance(kwargs['codeVersionId'], dict):
-            ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                  detail='codeVersionId should be a string')
-            return HttpErrorResponse(ex.message)
-        codeVersion = kwargs.pop('codeVersionId')
-        if len(kwargs) != 0:
-            ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
-                                  kwargs.keys())
-            return HttpErrorResponse(ex.message)
-
         config = self._configuration_get()
+        exp_params = [('codeVersionId', is_in_list(config.codeVersions))]
+        try:
+            codeVersionId = check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
-        if codeVersion not in config.codeVersions:
-            ex = ManagerException(ManagerException.E_ARGS_INVALID,
-                                  detail='Invalid codeVersionId')
-            return HttpErrorResponse(ex.message)
-
-        if codeVersion == config.currentCodeVersion:
+        if codeVersionId == config.currentCodeVersion:
             ex = ManagerException(ManagerException.E_ARGS_INVALID,
                                   detail='Cannot remove the active code version')
-            return HttpErrorResponse(ex.message)
+            return HttpErrorResponse("%s" % ex)
 
-        if not config.codeVersions[codeVersion].type == 'git':
-            filename = os.path.abspath(os.path.join(self.code_repo, codeVersion))
+        if not config.codeVersions[codeVersionId].type == 'git':
+            filename = os.path.abspath(os.path.join(self.code_repo, codeVersionId))
             if not filename.startswith(self.code_repo + '/') or not os.path.exists(filename):
                 ex = ManagerException(ManagerException.E_ARGS_INVALID,
                                       detail='Invalid codeVersionId')
-                return HttpErrorResponse(ex.message)
+                return HttpErrorResponse("%s" % ex)
 
             os.remove(filename)
 
-        config.codeVersions.pop(codeVersion)
+        config.codeVersions.pop(codeVersionId)
         self._configuration_set(config)
 
         return HttpJsonResponse()
 
     @expose('UPLOAD')
     def upload_authorized_key(self, kwargs):
-        if 'key' not in kwargs:
-            ex = ManagerException(ManagerException.E_ARGS_MISSING, 'key')
-            return HttpErrorResponse(ex.message)
-
-        key = kwargs.pop('key')
-
-        if len(kwargs) != 0:
-            ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
-                                  kwargs.keys())
-            return HttpErrorResponse(ex.message)
-        if not isinstance(key, FileUploadField):
-            ex = ManagerException(
-                ManagerException.E_ARGS_INVALID, detail='key should be a file')
-            return HttpErrorResponse(ex.message)
+        exp_params = [('key', is_uploaded_file)]
+        try:
+            key = check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
         key_lines = key.file.readlines()
         num_added = git.add_authorized_keys(key_lines)
@@ -1522,10 +1452,12 @@ class BasicWebserversManager(BaseManager):
 
     @expose('GET')
     def get_service_performance(self, kwargs):
-        if len(kwargs) != 0:
-            ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
-                                  kwargs.keys())
-            return HttpErrorResponse(ex.message)
+        try:
+            exp_params = []
+            check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
+
         return HttpJsonResponse({
             'request_rate': 0,
             'error_rate': 0,
@@ -1573,7 +1505,7 @@ class BasicWebserversManager(BaseManager):
     #     # Check if the required argument 'script' is present
     #     if 'script' not in kwargs:
     #         ex = ManagerException(ManagerException.E_ARGS_MISSING, 'script')
-    #         return HttpErrorResponse(ex.message)
+    #         return HttpErrorResponse("%s" % ex)
 
     #     script = kwargs.pop('script')
 
@@ -1581,13 +1513,13 @@ class BasicWebserversManager(BaseManager):
     #     if len(kwargs) != 0:
     #         ex = ManagerException(ManagerException.E_ARGS_UNEXPECTED,
     #                               kwargs.keys())
-    #         return HttpErrorResponse(ex.message)
+    #         return HttpErrorResponse("%s" % ex)
 
     #     # Script has to be a FileUploadField
     #     if not isinstance(script, FileUploadField):
     #         ex = ManagerException(ManagerException.E_ARGS_INVALID,
     #                               detail='script should be a file')
-    #         return HttpErrorResponse(ex.message)
+    #         return HttpErrorResponse("%s" % ex)
 
     #     basedir = self.config_parser.get('manager', 'CONPAAS_HOME')
     #     fullpath = os.path.join(basedir, filename)
@@ -1626,16 +1558,3 @@ class BasicWebserversManager(BaseManager):
     #         return HttpJsonResponse(open(fullpath).read())
     #     except IOError:
     #         return HttpErrorResponse('No startup script')
-
-    @expose('UPLOAD')
-    def upload_adhoc_script(self, kwargs):
-        # TODO
-        # pop all the arguments besides 'script' from kwargs.
-        ret = self.upload_script(kwargs, 'adhoc.sh')
-
-        if type(ret) is HttpErrorResponse:
-                # Something went wrong. Return the error
-            return ret
-
-        # TODO
-        # All is good. Run the script on the specified subset of machines

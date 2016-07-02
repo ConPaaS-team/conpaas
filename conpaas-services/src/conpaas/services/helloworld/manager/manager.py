@@ -7,19 +7,12 @@ from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse
 
 from conpaas.services.helloworld.agent import client
 
+from conpaas.core.misc import check_arguments, is_in_list, is_not_in_list,\
+    is_list, is_non_empty_list, is_list_dict, is_list_dict2, is_string,\
+    is_int, is_pos_nul_int, is_pos_int, is_dict, is_dict2, is_bool,\
+    is_uploaded_file
+
 class HelloWorldManager(BaseManager):
-
-    # Manager states - Used by the Director
-    S_INIT = 'INIT'         # manager initialized but not yet started
-    S_PROLOGUE = 'PROLOGUE' # manager is starting up
-    S_RUNNING = 'RUNNING'   # manager is running
-    S_ADAPTING = 'ADAPTING' # manager is in a transient state - frontend will keep
-                            # polling until manager out of transient state
-    S_EPILOGUE = 'EPILOGUE' # manager is shutting down
-    S_STOPPED = 'STOPPED'   # manager stopped
-    S_ERROR = 'ERROR'       # manager is in error state
-
-    AGENT_PORT = 5555
 
     def __init__(self, config_parser, **kwargs):
         BaseManager.__init__(self, config_parser)
@@ -28,13 +21,11 @@ class HelloWorldManager(BaseManager):
         # self.controller.generate_context('helloworld')
         self.state = self.S_INIT
 
-
     def get_service_type(self):
         return 'helloworld'
 
     def get_context_replacement(self):
         return dict(STRING='helloworld')
-
 
     def on_start(self, nodes):
         return self.on_new_nodes(nodes)
@@ -53,7 +44,7 @@ class HelloWorldManager(BaseManager):
         for _ in range(0, count):
             node = cp_nodes.pop()
             del_nodes += [ node ]
-        if not cp_nodes:         
+        if not cp_nodes:
             self.state = self.S_STOPPED
         else:
             self.state = self.S_RUNNING
@@ -70,14 +61,18 @@ class HelloWorldManager(BaseManager):
             self.logger.exception('_do_startup: Failed to create node: %s' % err)
             return False
 
-
     @expose('GET')
     def list_nodes(self, kwargs):
-        if len(kwargs) != 0:
-            return HttpErrorResponse('ERROR: Arguments unexpected')
+        try:
+            exp_params = []
+            check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
-        if self.state != self.S_RUNNING:
-            return HttpErrorResponse('ERROR: Wrong state to list_nodes')
+        try:
+            self.check_state([self.S_RUNNING, self.S_ADAPTING])
+        except:
+            return HttpJsonResponse({})
 
         return HttpJsonResponse({
               'helloworld': [ node.id for node in self.nodes ],
@@ -85,43 +80,45 @@ class HelloWorldManager(BaseManager):
 
     @expose('GET')
     def get_service_info(self, kwargs):
-        if len(kwargs) != 0:
-            return HttpErrorResponse('ERROR: Arguments unexpected')
+        try:
+            exp_params = []
+            check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
-        return HttpJsonResponse({'state': self.state, 'type': 'helloworld'})
+        return HttpJsonResponse({'state': self.state_get(), 'type': 'helloworld'})
 
     @expose('GET')
     def get_node_info(self, kwargs):
-        if 'serviceNodeId' not in kwargs:
-            return HttpErrorResponse('ERROR: Missing arguments')
+        node_ids = [ str(node.id) for node in self.nodes ]
+        exp_params = [('serviceNodeId', is_in_list(node_ids))]
+        try:
+            serviceNodeId = check_arguments(exp_params, kwargs)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
-        serviceNodeId = kwargs.pop('serviceNodeId')
-
-        if len(kwargs) != 0:
-            return HttpErrorResponse('ERROR: Arguments unexpected')
-
-        serviceNode = None
         for node in self.nodes:
             if serviceNodeId == node.id:
                 serviceNode = node
                 break
 
-        if serviceNode is None:
-            return HttpErrorResponse('ERROR: Invalid arguments')
-
         return HttpJsonResponse({
             'serviceNode': {
                             'id': serviceNode.id,
-                            'ip': serviceNode.ip
+                            'ip': serviceNode.ip,
+                            'vmid': serviceNode.vmid,
+                            'cloud': serviceNode.cloud_name
                             }
             })
 
-    
-
     @expose('GET')
     def get_helloworld(self, kwargs):
-        if self.state != self.S_RUNNING:
-            return HttpErrorResponse('ERROR: Wrong state to get_helloworld')
+        try:
+            exp_params = []
+            check_arguments(exp_params, kwargs)
+            self.check_state([self.S_RUNNING])
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
         messages = []
 

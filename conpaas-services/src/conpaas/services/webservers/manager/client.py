@@ -75,8 +75,8 @@ def get_service_history(host, port):
     return _check(https.client.jsonrpc_get(host, port, '/', method))
 
 
-def getLog(host, port):
-    method = 'getLog'
+def get_manager_log(host, port):
+    method = 'get_manager_log'
     return _check(https.client.jsonrpc_get(host, port, '/', method))
 
 

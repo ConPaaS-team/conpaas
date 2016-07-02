@@ -21,8 +21,9 @@ import simplejson
 import ssl
 
 from cpsdirector import db
-from cpsdirector.common import log
-from cpsdirector.common import build_response
+
+from cpsdirector.common import log, log_error, build_response
+from cpsdirector.common import error_response
 
 try:
     _create_unverified_https_context = ssl._create_unverified_context
@@ -39,15 +40,26 @@ def check_manifest(json):
     try:
         parse = simplejson.loads(json)
     except:
-        log('The uploaded manifest is not valid json')
+        log_error('The uploaded manifest is not valid json')
         return False
 
     for service in parse.get('Services'):
         if not service.get('Type'):
-            log('The "Type" field is mandatory')
+            log_error('The "Type" field is mandatory')
             return False
 
     return True
+
+def read_from_url(url):
+    # reading data may fail for transient reasons, let's try again a few times
+    for attempt in range(1, 6):
+        try:
+            return urllib2.urlopen(url).read()
+        except Exception as ex:
+            if attempt == 5:
+                raise ex
+            else:
+                time.sleep(2)
 
 from cpsdirector.user import cert_required
 from multiprocessing import Process
@@ -56,30 +68,30 @@ from multiprocessing import Process
 def upload_manifest():
     json = request.values.get('manifest')
     if not json:
-        log('"manifest" is a required argument')
-        return build_response(simplejson.dumps(False))
+        msg = '"manifest" is a required argument'
+        log_error(msg)
+        return build_response(jsonify(error_response(msg)))
 
-    log('User %s has uploaded the following manifest %s' % (g.user.username, json))
+    log("User '%s' has uploaded the following manifest: %s" % (g.user.username, json))
 
     if not check_manifest(json):
-        return simplejson.dumps(False)
+        msg = 'The uploded manifest is not valid'
+        return build_response(jsonify(error_response(msg)))
 
     if request.values.get('thread'):
         log('Starting a new process for the manifest')
         p = Process(target=new_manifest, args=(json,))
         p.start()
+
         log('Process started, now return')
-        return simplejson.dumps(True)
+        return build_response(jsonify({}))
+    else:
+        msg = new_manifest(json)
+        if msg != 'ok':
+            return build_response(jsonify(error_response(msg)))
 
-    msg = new_manifest(json)
-
-    if msg != 'ok':
-        return build_response(jsonify({
-            'error' : True,
-            'msg' : msg }))
-
-    log('Manifest created')
-    return simplejson.dumps(True)
+        log('Manifest created')
+        return build_response(jsonify({}))
 
 from cpsdirector.service import callmanager
 def get_list_nodes(sid):
@@ -115,7 +127,7 @@ def create_startup_script(sid):
 
 def get_startup_script(sid):
     script = create_startup_script(sid)
-    
+
     if not script:
         return ''
 
@@ -138,8 +150,9 @@ def download_manifest(appid):
     app = get_app_by_id(g.user.uid, appid)
 
     if not app:
-        log('The appid %s does not exist' % appid)
-        return simplejson.dumps(False)
+        msg = 'The appid %s does not exist' % appid
+        log_error(msg)
+        return build_response(jsonify(error_response(msg)))
 
     manifest['Services'] = []
     manifest['Application'] = app.name
@@ -153,11 +166,11 @@ def download_manifest(appid):
                 service.type)().get_service_manifest(service)
 
         manifest['Services'].append(svc_manifest)
-    
+
     if do_delete:
         log("Deleting application %s, it contains an XtreemFS service" %
                 appid)
-        deleteapp(g.user.uid, appid)
+        deleteapp(g.user.uid, appid, True)
 
     return simplejson.dumps(manifest)
 
@@ -170,6 +183,8 @@ def download_data(fileid):
 
     return helpers.send_from_directory(get_userdata_dir(), fileid)
 
+from cpsdirector.service import _add as add_service
+from cpsdirector.service import _rename as rename_service
 class MGeneral(object):
 
     def get_service_manifest(self, service):
@@ -191,12 +206,6 @@ class MGeneral(object):
             tmp['StartupScript'] = ret
 
         return tmp
-
-    def check_error(self, ret):
-        try:
-            return simplejson.loads(ret.data).get('msg')
-        except:
-            return False
 
     def startup(self, app_id, service_id, cloud = 'default'):
         data = {'cloud': cloud}
@@ -269,20 +278,19 @@ class MGeneral(object):
         filename = 'env.sh'
 
         if url != '':
-            contents = environment + urllib2.urlopen(url).read()
+            contents = environment + read_from_url(url)
             filename = url.split('/')[-1]
 
         files = [ ( 'script', filename, contents ) ]
 
         res = callmanager(app_id, 0, "/", True,
-            { 'method': 'upload_startup_script', 'sid':service_id }, files)
+            { 'method': 'upload_startup_script', 'sid': service_id }, files)
 
         return res
 
     def add_nodes(self, appid, service_id, params):
         params['cloud'] = 'default'
         params['service_id'] = service_id
-
 
         res = callmanager(appid, 0, 'add_nodes', True, params)
 
@@ -298,19 +306,17 @@ class MGeneral(object):
     #         cloud = json.get('Cloud')
 
     #     res = add_service(servicetype, cloud, appid)
-    #     error = self.check_error(res)
-    #     if error:
-    #         return error
+    #     if 'error' in res:
+    #         return res['error']
 
-    #     sid = simplejson.loads(res.data).get('sid')
+    #     sid = res['service']['sid']
 
     #     self.wait_for_state(sid, 'INIT')
 
     #     if json.get('ServiceName'):
     #         res = rename_service(sid, json.get('ServiceName'))
-    #         error = self.check_error(res)
-    #         if error:
-    #             return error
+    #         if 'error' in res:
+    #             return res['error']
 
     #     env = ''
     #     if need_env:
@@ -348,24 +354,17 @@ class MGeneral(object):
             cloud = json.get('Cloud')
 
         res = add_service(servicetype, appid)
-        
-        #FIXME: fix this error checking here
-        # error = self.check_error(res)
-        # if error:
-        #     return error
+        if 'error' in res:
+            return res['error']
 
         sid = res['service']['sid']
-        
-        # sid = simplejson.loads(res.data).get('sid')
 
         # self.wait_for_state(sid, 'INIT')
 
         if json.get('ServiceName'):
             res = rename_service(appid, sid, json.get('ServiceName'))
-            #FIXME: check if there are erros here as well
-            # error = self.check_error(res)
-            # if error:
-            #     return error
+            if 'error' in res:
+                return res['error']
 
         env = ''
         if need_env:
@@ -385,7 +384,7 @@ class MGeneral(object):
         # if not json.get('Start') or json.get('Start') == 0:
         #     return sid
 
-        data = {'cloud': cloud, 'service_id':sid}
+        data = { 'cloud': cloud, 'service_id': sid }
         res = callmanager(appid, 0, "start_service", True, data)
         # # Start == 1
         # res = self.startup(sid)
@@ -396,10 +395,8 @@ class MGeneral(object):
         return sid
 
 
-from cpsdirector.service import _add as add_service
-from cpsdirector.service import _rename as rename_service 
 class MPhp(MGeneral):
-    
+
     def get_service_manifest(self, service):
         tmp = MGeneral.get_service_manifest(self, service)
 
@@ -437,7 +434,7 @@ class MPhp(MGeneral):
         return '%s/download_data/%s' % (get_director_url(), basename(temp_path))
 
     def upload_code(self, app_id, service_id, url):
-        contents = urllib2.urlopen(url).read()
+        contents = read_from_url(url)
         filename = url.split('/')[-1]
 
         files = [ ( 'code', filename, contents ) ]
@@ -536,7 +533,7 @@ class MMySql(MGeneral):
         return '%s/download_data/%s' % (get_director_url(), basename(temp_path))
 
     def load_dump(self, aid, sid, url):
-        contents = urllib2.urlopen(url).read()
+        contents = read_from_url(url)
         filename = url.split('/')[-1]
 
         files = [ ( 'mysqldump_file', filename, contents ) ]
@@ -679,7 +676,7 @@ class MXTreemFS(MGeneral):
         tmp = MGeneral.get_service_manifest(self, service)
 
         self.set_persistent(service.sid)
-        
+
         log('Calling get_service_snapshot')
         snapshot = callmanager(service.sid, 'get_service_snapshot', True, {})
 
@@ -724,7 +721,7 @@ class MXTreemFS(MGeneral):
             to_resume = { 'nodes': json['StartupInstances']['resume'] }
         except KeyError:
             to_resume = {}
-            
+
         # Set the resuming flag if necessary
         self.resuming = to_resume != {}
 
@@ -758,7 +755,7 @@ class MXTreemFS(MGeneral):
             # We have started the service already, so one OSD node is there
             # for sure.
             params['osd'] -= 1
-            
+
             params['resuming'] = to_resume
 
             res = self.add_nodes(sid, params)
@@ -809,7 +806,7 @@ class MHtc(MGeneral):
         return tmp
 
 class MGeneric(MGeneral):
-    
+
      #def get_archive(self, service_id):
         #res = callmanager(service_id, 'list_code_versions', False, {})
         #if 'error' in res:
@@ -838,7 +835,7 @@ class MGeneric(MGeneral):
         #return '%s/download_data/%s' % (get_director_url(), basename(temp_path))
 
     def upload_code(self, app_id, service_id, url):
-        contents = urllib2.urlopen(url).read()
+        contents = read_from_url(url)
         filename = url.split('/')[-1]
 
         files = [ ( 'code', filename, contents ) ]
@@ -856,11 +853,11 @@ class MGeneric(MGeneral):
 
     def start(self, json, appid):
         #start = json.get('Start')
-       
-        #this is to prevent startup being called without passing the manifest, should be changed 
+
+        #this is to prevent startup being called without passing the manifest, should be changed
         #json['Start'] = 0
         sid = MGeneral.start(self, json, appid)
-        
+
         #json['Start'] = start
 
         #if not json.get('Start') or json.get('Start') == 0:
@@ -873,7 +870,7 @@ class MGeneric(MGeneral):
 
         #self.wait_for_state(sid, 'RUNNING')
         #return sid
-        
+
         if json.get('Archive'):
             res = self.upload_code(appid, sid, json.get('Archive'))
             if 'error' in res:
@@ -890,7 +887,7 @@ class MGeneric(MGeneral):
             nr_instances = 0
             for role in instances:
                 nr_instances += int(instances[role])
-            
+
             if nr_instances:
                 start_role = '*'
                 if json.get('StartRole'):
@@ -915,8 +912,8 @@ class MGeneric(MGeneral):
 
         #res = callmanager(service_id, "startup", True, data)
 
-        #return res   
- 
+        #return res
+
     def get_service_manifest(self, service):
         tmp = MGeneral.get_service_manifest(self, service)
 
@@ -957,7 +954,7 @@ from cpsdirector.application import _createapp as createapp
 from cpsdirector.application import _startapp as startapp, Application
 
 def new_manifest(json, cloud = 'default'):
-    
+
     try:
         parse = simplejson.loads(json)
     except:
@@ -971,14 +968,18 @@ def new_manifest(json, cloud = 'default'):
     if not check_app_exists(app_name):
         # Create application if it does not exist yet
         res = createapp(app_name, cloud)
-        appid = simplejson.loads(res.data).get('aid')
+        if 'error' in res:
+            return res['error']
+        appid = res['aid']
     else:
         # Try different application names
         for i in range(2, 99):
             new_name = "%s (%d)" % (app_name, i)
             if not check_app_exists(new_name):
                 res = createapp(new_name, cloud)
-                appid = simplejson.loads(res.data).get('aid')
+                if 'error' in res:
+                    return res['error']
+                appid = res['aid']
                 break
 
         # If all the applications exists, then exit
@@ -989,18 +990,21 @@ def new_manifest(json, cloud = 'default'):
         return 'ok'
 
     # startapp(g.user.uid, appid, cloud, new_thread=False)
-    startapp(g.user.uid, appid, cloud)
+    res = startapp(g.user.uid, appid, cloud)
+    if 'error' in res:
+        return res['error']
+
     app = get_app_by_id(g.user.uid, appid)
-    
+
     #FIXME: add a timeout here
     while app.status != Application.A_RUNNING:
-        log('application is in status:%s, manager:%s' % (app.status, app.manager))   
+        log('application is in status:%s, manager:%s' % (app.status, app.manager))
         time.sleep(8)
         app = get_app_by_id(g.user.uid, appid)
         db.session.refresh(app)
         # app = get_app_by_id(g.user.uid, appid)
-    
-    log('now start adding services')   
+
+    log('now start adding services')
     app.status = Application.A_ADAPTING
     db.session.commit()
 
@@ -1010,16 +1014,13 @@ def new_manifest(json, cloud = 'default'):
         except Exception:
             return 'Service %s does not exists' % service.get('Type')
 
-        msg = 'ok'
-        
         msg = cls().start(service, appid)
-
         if msg is not 'ok':
-            log('new_manifest: error starting %s service -> %s' % (service,
+            log_error('new_manifest: error starting %s service -> %s' % (service,
                 msg))
             return msg
-    
+
     app.status = Application.A_RUNNING
     db.session.commit()
-    
+
     return 'ok'

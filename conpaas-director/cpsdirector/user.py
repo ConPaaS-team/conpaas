@@ -22,7 +22,9 @@ from StringIO import StringIO
 from OpenSSL import crypto
 
 from cpsdirector import db, x509cert
-from cpsdirector.common import log, config_parser, build_response
+
+from cpsdirector.common import log, log_error, config_parser, build_response
+from cpsdirector.common import error_response
 
 from conpaas.core import https
 
@@ -129,18 +131,18 @@ class User(db.Model):
 def get_user(username, password):
     """Return a User object if the specified (username, password) combination
     is valid."""
-    log('user login attempt with username %s' % username)
+    # log("user login attempt with username '%s'" % username)
     return User.query.filter_by(username=username,
                                 password=hashlib.md5(password).hexdigest()).first()
 
 def get_user_by_uuid(uuid):
     """Return a User object if the specified uuid is found."""
-    log('uuid login attempt with uuid %s' % uuid)
+    log("uuid login attempt with uuid '%s'" % uuid)
     return User.query.filter_by(uuid=uuid).first()
 
 def get_user_by_openid(openid):
     """Return a User object if the specified openid is found."""
-    log('openid login attempt with openid %s' % openid)
+    log("openid login attempt with openid %s'" % openid)
     return User.query.filter_by(openid=openid).first()
 
 # from cpsdirector.application import Application
@@ -197,7 +199,8 @@ def login_required(fn):
 
         # Getting user data from DB through username and password
         if len(username.strip()):
-            log('username authentication attempt for <%s, %s> ' % (username, password) )
+            log("User '%s' is attempting to authenticate with "
+                "username and password" % username)
             g.user = get_user(username, password)
 
             if g.user:
@@ -207,7 +210,7 @@ def login_required(fn):
         # authentication failed, try uuid
         # Getting user data from DB through uuid
         if len(uuid.strip()):
-            log('uuid authentication attempt for <%s> ' % (uuid) )
+            log("User is attempting to authenticate with uuid '%s'" % uuid)
             g.user = get_user_by_uuid(uuid)
 
             if g.user:
@@ -217,7 +220,7 @@ def login_required(fn):
         # authentication failed, try openid
         # Getting user data from DB through openid
         if len(openid.strip()):
-            log('openid authentication attempt for <%s> ' % (openid) )
+            log("User is attempting to authenticate with openid '%s'" % openid)
             g.user = get_user_by_openid(openid)
 
             if g.user:
@@ -244,31 +247,23 @@ def new_user():
         values[field] = request.values.get(field)
 
         if not values[field]:
-            log('Missing required field: %s' % field)
-
-            return build_response(jsonify({
-                'error': True, 'msg': '%s is a required field' % field,
-            }))
+            msg = 'Missing required field: %s' % field
+            log_error(msg)
+            return build_response(jsonify(error_response(msg)))
         if field == 'uuid' and values[field] == '<none>':
             values[field] = ''
 
     # check if the provided username already exists
     if User.query.filter_by(username=values['username']).first():
-        log('User %s already exists' % values['username'])
-
-        return build_response(jsonify({
-            'error': True,
-            'msg': 'Username "%s" already taken' % values['username'],
-        }))
+        msg = "Username '%s' is already taken" % values['username']
+        log_error(msg)
+        return build_response(jsonify(error_response(msg)))
 
     # check if the provided email already exists
     if False and User.query.filter_by(email=values['email']).first(): # for debugging purposes allow duplicate email address
-        log('Duplicate email: %s' % values['email'])
-
-        return build_response(jsonify({
-            'error': True,
-            'msg': 'E-mail "%s" already registered' % values['email'],
-        }))
+        msg = 'E-mail "%s" is already registered' % values['email']
+        log_error(msg)
+        return build_response(jsonify(error_response(msg)))
 
     # check that the requested credit does not exceed the maximum
     if config_parser.has_option('conpaas', 'MAX_CREDIT'):
@@ -276,11 +271,11 @@ def new_user():
         try:
             max_credit = int(max_credit)
         except ValueError:
-            log('ERROR: Parameter MAX_CREDIT "%s" is not a valid integer.'
+            log_error('Parameter MAX_CREDIT "%s" is not a valid integer.'
                 ' Defaulting to maximum credit %s.' % (max_credit, default_max_credit))
             max_credit = default_max_credit
         if max_credit < 0:
-            log('ERROR: Parameter MAX_CREDIT "%s" cannot be a negative number.'
+            log_error('Parameter MAX_CREDIT "%s" cannot be a negative number.'
                 ' Defaulting to maximum credit %s.' % (max_credit, default_max_credit))
             max_credit = default_max_credit
     else:
@@ -288,34 +283,34 @@ def new_user():
     try:
         req_credit = int(values['credit'])
     except ValueError:
-        return build_response(jsonify({
-            'error': True,
-            'msg': 'Required credit "%s" is not a valid integer.' % values['credit']}))
+        msg = 'Required credit "%s" is not a valid integer.' % values['credit']
+        log_error(msg)
+        return build_response(jsonify(error_response(msg)))
     if req_credit < 0:
-        return build_response(jsonify({
-            'error': True,
-            'msg': 'Required credit "%s" cannot be a negative integer.' % values['credit']}))
+        msg = 'Required credit "%s" cannot be a negative integer.' % values['credit']
+        log_error(msg)
+        return build_response(jsonify(error_response(msg)))
     if req_credit > max_credit:
-        return build_response(jsonify({
-            'error': True,
-            'msg': 'Cannot allocate %s credit for a new user (max credit %s).' % (values['credit'], max_credit)}))
+        msg = 'Cannot allocate %s credit for a new user (max credit %s).' % (values['credit'], max_credit)
+        log_error(msg)
+        return build_response(jsonify(error_response(msg)))
 
     try:
         user = create_user(**values)
         # successful creation
-        log('User %s created successfully' % user.username)
+        log("User '%s' created successfully" % user.username)
         return build_response(simplejson.dumps(user.to_dict()))
     except Exception, err:
         # something went wrong
-        error_msg = 'Error upon user creation: %s -> %s' % (type(err), err)
-        log(error_msg)
-        return build_response(jsonify({'error': True, 'msg': error_msg}))
+        msg = 'Error upon user creation: %s -> %s' % (type(err), err)
+        log_error(msg)
+        return build_response(jsonify(error_response(msg)))
 
 
 @user_page.route("/login", methods=['POST'])
 @login_required
 def login():
-    log('Successful login for user %s' % g.user.username)
+    log("Successful login for user '%s'" % g.user.username)
     # return user data
     return build_response(simplejson.dumps(g.user.to_dict()))
 
@@ -346,7 +341,7 @@ def get_user_certs():
     archive.close()
     zipdata.seek(0)
 
-    log('New certificates for user %s created' % g.user.username)
+    log("New certificates for user '%s' created" % g.user.username)
 
     # Send zip archive to the client
     return helpers.send_file(zipdata, mimetype="application/zip",
@@ -368,7 +363,7 @@ def _deduct_credit(decrement):
 
     # Require decrement to be a positive integer
     if decrement <= 0:
-        log('Decrement should be a positive integer')
+        log_error('Decrement should be a positive integer')
         return False
 
     log('Decrement user credit: uid=%s, old_credit=%s, decrement=%s' % (g.user.uid, g.user.credit, decrement))
@@ -380,7 +375,7 @@ def _deduct_credit(decrement):
         return True
 
     db.session.rollback()
-    log('User %s does not have enough credit' % g.user.uid)
+    log_error('User %s does not have enough credit' % g.user.uid)
     return False
 
 @user_page.route("/callback/decrementUserCredit.php", methods=['POST'])

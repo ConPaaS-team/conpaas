@@ -38,7 +38,7 @@ def init(config_parser):
 
 class DIR():
     def __init__(self, uuid):
-        self.state = S_INIT         
+        self.state = S_INIT
         self.start_args = [DIR_STARTUP,'start']
         self.stop_args = [DIR_STARTUP, 'stop']
         self.config_template = join(ETC,'dirconfig.properties')
@@ -53,7 +53,7 @@ class DIR():
         proc = Popen(self.start_args, stdout = devnull_fd, stderr = devnull_fd, close_fds = True)
         if proc.wait() != 0:
             logger.critical('Failed to start DIR service:(code=%d)' %proc.returncode)
-        logger.info('DIR Service started.') 
+        logger.info('DIR Service started.')
         self.state = S_RUNNING
 
     def stop(self):
@@ -64,10 +64,10 @@ class DIR():
             proc = Popen(self.stop_args, stdout = devnull_fd, stderr = devnull_fd, close_fds = True)
             if proc.wait() != 0:
                 logger.critical('Failed to stop DIR service:(code=%d)' %proc.returncode)
-            logger.info('DIR Service stopped.') 
+            logger.info('DIR Service stopped.')
             self.state = S_STOPPED
         else:
-            logger.warning('Request to stop DIR service while it is not running')      
+            logger.warning('Request to stop DIR service while it is not running')
 
     def configure(self):
         self._write_config()
@@ -83,8 +83,8 @@ class DIR():
 
 class MRC:
     def __init__(self, dir_serviceHost, uuid, hostname):
-        self.state = S_INIT         
-        self.start_args = [MRC_STARTUP,'start']        
+        self.state = S_INIT
+        self.start_args = [MRC_STARTUP,'start']
         self.stop_args = [MRC_STARTUP, 'stop']
         self.config_template = join(ETC,'mrcconfig.properties')
         logger = create_logger(__name__)
@@ -99,9 +99,9 @@ class MRC:
         proc = Popen(self.start_args, stdout = devnull_fd, stderr = devnull_fd, close_fds = True)
         if proc.wait() != 0:
             logger.critical('Failed to start mrc service:(code=%d)' %proc.returncode)
-        logger.info('MRC Service started.') 
+        logger.info('MRC Service started.')
         self.state = S_RUNNING
-    
+
     def stop(self):
         if self.state == S_RUNNING:
             self.state = S_STOPPING
@@ -110,16 +110,16 @@ class MRC:
             proc = Popen(self.stop_args, stdout = devnull_fd, stderr = devnull_fd, close_fds = True)
             if proc.wait() != 0:
                 logger.critical('Failed to stop mrc service:(code=%d)' %proc.returncode)
-            logger.info('MRC Service stopped.') 
+            logger.info('MRC Service stopped.')
             self.state = S_STOPPED
         else:
-            logger.warning('Request to stop MRC service while it is not running')      
-        
+            logger.warning('Request to stop MRC service while it is not running')
+
     def configure(self, dir_serviceHost, hostname):
         self.dir_serviceHost = dir_serviceHost
         self.hostname = hostname
         self._write_config()
-        
+
     def _write_config(self):
         tmpl = open(self.config_template).read()
         template = Template(tmpl,{
@@ -133,7 +133,7 @@ class MRC:
 
 class OSD:
     def __init__(self, dir_serviceHost, uuid, hostname, mkfs, device_name):
-        self.state = S_INIT         
+        self.state = S_INIT
         self.uuid = uuid
         self.hostname = hostname
         self.dir_serviceHost = dir_serviceHost
@@ -143,8 +143,8 @@ class OSD:
         self.mount_point = "/media/xtreemfs-objs"
 
         # To be filled once we get a dev_name
-        self.prepare_args = [] 
-        self.mount_args = [] 
+        self.prepare_args = []
+        self.mount_args = []
 
 #        self.mkdir_args = ['mkdir', '-p', self.mount_point]
         self.mkdir_cmd = "mkdir -p %s" % self.mount_point
@@ -170,7 +170,7 @@ class OSD:
                 dev_found = True
                 break
             else:
-                # On EC2 the device name gets changed 
+                # On EC2 the device name gets changed
                 # from /dev/sd[a-z] to /dev/xvd[a-z]
                 if lexists(self.dev_name.replace(dev_prefix, 'xvd')):
                     dev_found = True
@@ -214,7 +214,7 @@ class OSD:
             else:
                 logger.info("OSD node has prepared and mounted %s" % self.dev_name)
         else:
-            logger.critical("Block device %s unavailable, falling back to image space" 
+            logger.critical("Block device %s unavailable, falling back to image space"
                     % self.dev_name)
 
         # must be owned by xtreemfs:xtreemfs
@@ -227,7 +227,7 @@ class OSD:
         proc = Popen(self.start_args, stdout = devnull_fd, stderr = devnull_fd, close_fds = True)
         if proc.wait() != 0:
             logger.critical('Failed to start osd service:(code=%d)' %proc.returncode)
-        logger.info('OSD Service started.') 
+        logger.info('OSD Service started.')
         self.state = S_RUNNING
 
     def _write_config(self):
@@ -249,16 +249,16 @@ class OSD:
             if drain:
                 # remove (drain) OSD to avoid data loss
                 logger.info('OSD Service remove commandline: ' + str(self.remove_args))
-                logger.info('OSD Service stop commandline: ' + str(self.stop_args))  
+                logger.info('OSD Service stop commandline: ' + str(self.stop_args))
                 proc = Popen(self.remove_args, stdout = devnull_fd, stderr = devnull_fd, close_fds = True)
                 if proc.wait() != 0:
                     logger.critical('Failed to remove OSD service:(code=%d)' %proc.returncode)
-                logger.info('OSD Service removed.') 
+                logger.info('OSD Service removed.')
             # stop OSD
             proc = Popen(self.stop_args, stdout = devnull_fd, stderr = devnull_fd, close_fds = True)
             if proc.wait() != 0:
                 logger.critical('Failed to stop OSD service:(code=%d)' %proc.returncode)
-            logger.info('OSD Service stopped.') 
+            logger.info('OSD Service stopped.')
             # kill all processes still using the storage block device
             fuser_cmd = ' '.join(self.fuser_args)
             logger.debug("Running command '%s'" % fuser_cmd)
@@ -267,9 +267,9 @@ class OSD:
             proc = Popen(self.umount_args, stdout = devnull_fd, stderr = devnull_fd, close_fds = True)
             if proc.wait() != 0:
                 logger.critical('Failed to unmount storage device:(code=%d)' %proc.returncode)
-            logger.info('Storage block device unmounted.') 
+            logger.info('Storage block device unmounted.')
 
             self.state = S_STOPPED
         else:
-            logger.warning('Request to stop OSD service while it is not running')      
+            logger.warning('Request to stop OSD service while it is not running')
 

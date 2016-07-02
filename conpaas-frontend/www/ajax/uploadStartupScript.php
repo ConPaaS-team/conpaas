@@ -31,14 +31,8 @@ if (!isset($_POST['script'])) {
 $tmp = array_search('uri', @array_flip(stream_get_meta_data($GLOBALS[mt_rand()]=tmpfile())));
 file_put_contents($tmp, $_POST['script']);
 
-// $params = array(
-// 	'script' => '@'.$tmp,
-// 	'method' => 'upload_startup_script'
-// );
-
 try {
-	// $response = HTTPS::post($service->getManager(), $params);
-	$response = $service->upload_startup_script('@'.$tmp);
+	$response = $service->uploadStartupScript('@'.$tmp);
 	echo json_encode($response);
 } catch (Exception $e) {
 	echo json_encode(array('error' => $e->getMessage()));

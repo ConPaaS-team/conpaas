@@ -106,12 +106,8 @@ def add_glb_nodes(host, port, count):
     return _check(https.client.jsonrpc_post(host, port, '/', method, params=params))
 
 
-def get_log(host, port):
-    method = 'getLog'
-    return _check(https.client.jsonrpc_get(host, port, '/', method))
-
-def getLog(host, port):
-    method = 'getLog'
+def get_manager_log(host, port):
+    method = 'get_manager_log'
     return _check(https.client.jsonrpc_get(host, port, '/', method))
 
 

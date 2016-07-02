@@ -15,7 +15,10 @@ from conpaas.services.mysql.agent import role
 
 from conpaas.core.https.server import HttpErrorResponse, HttpJsonResponse, FileUploadField
 from conpaas.core.expose import expose
-from conpaas.core.misc import check_arguments, is_list, is_string, is_uploaded_file
+from conpaas.core.misc import check_arguments, is_in_list, is_not_in_list,\
+    is_list, is_non_empty_list, is_list_dict, is_list_dict2, is_string,\
+    is_int, is_pos_nul_int, is_pos_int, is_dict, is_dict2, is_bool,\
+    is_uploaded_file
 
 #logging
 import logging
@@ -60,7 +63,7 @@ class MySQLAgent(BaseAgent):
             synchronization group will be created by Galera.
         device_name : string
             the block device where the disks are attached to
-        """        
+        """
         try:
             exp_params = [('nodes', is_list, []),
                           ('device_name', is_string)]
@@ -273,5 +276,5 @@ class MySQLAgent(BaseAgent):
             return HttpErrorResponse("%s" % ex)
         else:
             return HttpJsonResponse({
-                                 'load': load 
+                                 'load': load
                                      })

@@ -21,11 +21,8 @@ if($service->getUID() !== $_SESSION['uid']) {
     throw new Exception('Not allowed');
 }
 
-// $params = array('method' => 'get_startup_script');
-
 try {
-	$response = $service->get_startup_script();
-	// $response = HTTPS::jsonrpc($service->getManager(), 'get', 'get_startup_script',$sid, array());
+	$response = $service->getStartupScript();
 	echo json_encode($response);
 } catch (Exception $e) {
 	echo json_encode(array('error' => $e->getMessage()));

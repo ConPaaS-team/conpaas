@@ -46,7 +46,7 @@ class UserCmd:
 
     def _check_director(self):
         if not HAS_LOCAL_DIRECTOR:
-            self.client.error("Cannot find a ConPaaS director on this machine.")
+            raise Exception("Cannot find a ConPaaS director on this machine.")
 
     # ========== help
     def _add_help(self, user_parser):
@@ -81,12 +81,9 @@ class UserCmd:
                      'affiliation': affiliation,
                      'password': password,
                      'credit': credit, }
-        res = self.client.call_director_post('new_user', arguments)
-        if res:
-            print("User %s created." % username)
-        else:
-            self.client.error("Failed to create user %s: %s"
-                              % (username, res['error']))
+        self.client.call_director_post('new_user', arguments)
+
+        print("User %s created." % username)
 
     # ========== create
     def _add_create(self):
@@ -119,7 +116,7 @@ class UserCmd:
         if args.username is not None or len(args.username) > 0:
             username = args.username
         else:
-            self.client.error("Missing user's username.")
+            raise Exception("Missing user's username.")
 
         if args.fname is not None:
             fname = args.fname
@@ -159,7 +156,7 @@ class UserCmd:
         else:
             credit = DEFAULT_CREDIT
         if credit <= 0:
-            self.client.error("Cannot create a user with %s credits." % credit)
+            raise Exception("Cannot create a user with %s credits." % credit)
 
         return username, fname, lname, email, affiliation, password, credit
 
@@ -202,13 +199,10 @@ class UserCmd:
     def get_config(self, args):
         res = self.client.call_director_get("user_config")
         if not res:
-            print "ERROR: failed to authenticate user with user certificate."
+            raise Exception("failed to authenticate user with user certificate.")
         else:
-            if 'error' in res:
-                print "ERROR: %s" % res['error']
-            else:
-                for key, value in res.items():
-                    print "%s: %s" % (key, value)
+            for key, value in res.items():
+                print "%s: %s" % (key, value)
 
     # ========== get_credit
     def _add_get_credit(self):
@@ -218,13 +212,8 @@ class UserCmd:
     def get_credit(self, args):
         res = self.client.call_director_get("user_credit")
         if not res:
-            print "ERROR: failed to authenticate user with user certificate."
-        elif isinstance(res, int):
-            print "%s" % res
-        elif 'error' in res:
-            print "ERROR: %s" % res['error']
-        else:
-            print "%s" % res
+            raise Exception("failed to authenticate user with user certificate.")
+        print "%s" % res
 
     # ========== get_credit
     def _add_add_credit(self):
@@ -236,10 +225,7 @@ class UserCmd:
     def add_credit(self, args):
         """Create a new user calling directly the local director."""
         self._check_director()
-        try:
-            cpsdirector.user.add_credit(args.username, args.credit)
-        except Exception as ex:
-            print "ERROR: %s" % ex
+        cpsdirector.user.add_credit(args.username, args.credit)
 
 
 def main():
@@ -261,11 +247,17 @@ def main():
                       args.debug)
     try:
         args.run_cmd(args)
-    except:
-        ex = sys.exc_info()[1]
-        sys.stderr.write("ERROR general: %s\n" % ex)
-        traceback.print_exc()
+    except Exception:
+        if args.debug:
+            traceback.print_exc()
+        else:
+            ex = sys.exc_info()[1]
+            if str(ex).startswith("ERROR"):
+                sys.stderr.write("%s\n" % ex)
+            else:
+                sys.stderr.write("ERROR: %s\n" % ex)
         sys.exit(1)
+
 
 if __name__ == '__main__':
     main()

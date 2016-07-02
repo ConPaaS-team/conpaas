@@ -8,7 +8,7 @@
 """
 
 import ConfigParser
-import pprint 
+import pprint
 
 from flask import Blueprint
 import flask_openid
@@ -128,9 +128,9 @@ def idplogin():
                                          extensions=[pape_req])
     return render_template('cpslogin.html', next=oid.get_next_url(),
                            error=oid.fetch_error(), items=ei_dict)
-    """The following strings can be used in the ask_for and 
-    ask_for_optional parameters: aim, blog, country, dob (date of birth), 
-    email, fullname, gender, icq, image, jabber, language, msn, nickname, 
+    """The following strings can be used in the ask_for and
+    ask_for_optional parameters: aim, blog, country, dob (date of birth),
+    email, fullname, gender, icq, image, jabber, language, msn, nickname,
     phone, postcode, skype, timezone, website, yahoo
     """
 

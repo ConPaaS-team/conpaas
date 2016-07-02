@@ -284,6 +284,7 @@ how to clean the director database
 ----------------------------------
 
     sudo sqlite3 /etc/cpsdirector/director.db
+    > delete from resource;
     > delete from service;
     > delete from application;
 
@@ -298,14 +299,16 @@ On the director:
 On a manager:
   /root/manager.err
   /root/manager.out
-  /var/log/cpsmanager.log
+  /var/log/cpsmanager.log                   # the application manager's log
+  /var/log/cpsmanager{1,2,3,...}.log        # the service manager's logs
   From client:
-     cpsclient.py logs <sid>
-     cps-tools service get_logs <sid>
+     cps-tools application get_log <aid>    # the application manager's log
+     cps-tools service get_log <aid> <sid>  # the service manager's logs
 On an agent:
   /root/agent.err
   /root/agent.out
   /var/log/cpsagent.log
+     cps-tools service get_agent_log <aid> <sid> <agent_id>
 For web frontend:
   /var/log/apache2/error.log
   Javascript console in browser

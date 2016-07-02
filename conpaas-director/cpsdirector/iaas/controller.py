@@ -16,7 +16,7 @@ from conpaas.core.misc import file_get_contents
 from cpsdirector.user import _deduct_credit as deduct_credit
 
 from cpsdirector.x509cert import generate_certificate
-from cpsdirector.iaas import iaas #from conpaas.core import iaas
+from cpsdirector.iaas import iaas
 
 from conpaas.core import https
 from ConfigParser import ConfigParser
@@ -24,11 +24,9 @@ from cpsdirector.common import config_parser as default_config_parser
 
 class Controller(object):
 
-    
     def __init__(self):
-        
 
-        https.client.conpaas_init_ssl_ctx('/etc/cpsdirector/certs', 'director') 
+        https.client.conpaas_init_ssl_ctx('/etc/cpsdirector/certs', 'director')
 
         init('/var/log/cpsdirector/debugging.log')
         self._logger = create_logger(__name__)
@@ -42,7 +40,7 @@ class Controller(object):
         self._available_clouds = []
         self._default_cloud = None
         self.role = ""
-    
+
     def _setup(self):
 
         self._conpaas_user_id = self.config_parser.get('manager', 'USER_ID')
@@ -50,7 +48,7 @@ class Controller(object):
         self._conpaas_name = self.config_parser.get('manager', 'DEPLOYMENT_NAME')
 
         # TODO (genc): The IPOP part is temporarily commented until we get it working with the new version
-        
+
         # Set the CA URL as IPOP's base namespace
         # self._ipop_base_namespace = self._conpaas_caUrl
 
@@ -131,7 +129,7 @@ class Controller(object):
             cloud_name = 'iaas'
 
         try:
-            return [ cloud for cloud in self._available_clouds 
+            return [ cloud for cloud in self._available_clouds
                 if cloud.get_cloud_name() == cloud_name ][0]
         except IndexError:
             raise Exception("Unknown cloud: %s. Available clouds: %s" % (cloud_name, self._available_clouds))
@@ -236,7 +234,7 @@ class Controller(object):
     #             self._force_terminate_lock.acquire()
     #             if iteration == 1:
     #                 request_start = time.time()
-                
+
     #             if self.role == 'manager':
     #                 role_abbr = 'mgr'
     #                 service_type = ''
@@ -247,7 +245,7 @@ class Controller(object):
     #                 name = "%s-u%s-a%s-s%s-t%s-r%s" % (self._conpaas_name, self._conpaas_user_id, self._conpaas_app_id, self._conpaas_service_id, service_type, role_abbr)
 
 
-                
+
     #             if (service_type == 'htc'):
     #                 # If HTC is used we need to update here as well (as I see no way to do this elsewhere)
     #                 self.add_context_replacement({
@@ -267,7 +265,7 @@ class Controller(object):
     #                 for _ in range(count - len(ready)):
     #                     vpn_ip = self.get_available_ipop_address()
     #                     self.add_context_replacement({ 'IPOP_IP_ADDRESS': vpn_ip }, cloud)
-                        
+
     #                     for newinst in cloud.new_instances(1, name, inst_type):
     #                         # Set VPN IP
     #                         newinst.ip = vpn_ip
@@ -425,7 +423,7 @@ class Controller(object):
         cloud = self.get_cloud_by_name(cloud)
         if cloud.connected is False:
             cloud._connect()
-       
+
         class volume:
             id = volume_id
 
@@ -490,7 +488,7 @@ class Controller(object):
         code, body = response
         if code != httplib.OK: raise HttpError('Received http response code %d' % (code))
         data = json.loads(body)
-        if data['error']: raise Exception(data['error']) 
+        if data['error']: raise Exception(data['error'])
         else : return data['result']
 
     def check_process(self, host):
@@ -526,7 +524,7 @@ class AgentController(Controller):
         cloud_type = cloud.get_cloud_type()
         # conpaas_home = self.config_parser.get('manager', 'CONPAAS_HOME')
         conpaas_home = self.config_parser.get('conpaas', 'CONF_DIR')
-        
+
         cloud_scripts_dir = conpaas_home + '/scripts/cloud'
         agent_cfg_dir = conpaas_home + '/config/agent'
         agent_scripts_dir = conpaas_home + '/scripts/agent'
@@ -544,7 +542,7 @@ class AgentController(Controller):
 
         # Get agent setup file
         agent_setup_file = open(agent_scripts_dir + '/agent-setup', 'r')
-        
+
         agent_setup = Template(agent_setup_file.read()).safe_substitute(DIRECTOR=director)
 
         # Get agent config file - add to the default one the one specific
@@ -602,7 +600,7 @@ class AgentController(Controller):
         # COMMENT (genc): the following code copies the start script from the menager to agents
         # i don't know if this can be possible at this point since we are at the director and agent
         # startup scritps are at the manager
-        
+
         # # Get user-provided startup script's absolute path
         # basedir = self.config_parser.get('manager', 'CONPAAS_HOME')
         # startup_script = os.path.join(basedir, 'startup.sh')
@@ -633,11 +631,11 @@ class ManagerController(Controller):
         # cloud_name = cloud.get_cloud_name()
         conpaas_home = self.config_parser.get('conpaas', 'CONF_DIR')
         mngr_cfg_dir = os.path.join(conpaas_home, 'config', 'manager')
-        
+
         if self.config_parser.has_option('conpaas', 'DEPLOYMENT_NAME'):
             conpaas_deployment_name = self.config_parser.get('conpaas', 'DEPLOYMENT_NAME')
         else:
-            conpaas_deployment_name = 'conpaas'        
+            conpaas_deployment_name = 'conpaas'
 
         cloud_sections = ['iaas']
         if self.config_parser.has_option('iaas', 'OTHER_CLOUDS'):
@@ -646,7 +644,7 @@ class ManagerController(Controller):
                  in self.config_parser.get('iaas', 'OTHER_CLOUDS').split(',')
                  if self.config_parser.has_section(cld_name)])
 
-        
+
         def _extract_cloud_cfg(section_name):
             tmpl_values['cloud_cfg'] += "["+section_name+"]\n"
             for key, value in self.config_parser.items(section_name):
@@ -657,24 +655,24 @@ class ManagerController(Controller):
             _extract_cloud_cfg(section_name)
 
         # Get manager config file
-        # mngr_cfg = file_get_contents(os.path.join(mngr_cfg_dir, 'default-manager.cfg')) 
+        # mngr_cfg = file_get_contents(os.path.join(mngr_cfg_dir, 'default-manager.cfg'))
         # TODO (genc): Don't forget about having two default manager files (delete one when done)
-        mngr_cfg = file_get_contents(os.path.join(mngr_cfg_dir, 'default-manager-new.cfg')) 
-       
+        mngr_cfg = file_get_contents(os.path.join(mngr_cfg_dir, 'default-manager-new.cfg'))
+
         # Modify manager config file setting the required variables
         mngr_cfg = mngr_cfg.replace('%CONPAAS_DEPLOYMENT_NAME%', conpaas_deployment_name)
-        
+
         # for option_name in 'SERVICE_ID', 'USER_ID', 'APP_ID':
         for option_name in 'USER_ID', 'APP_ID':
             mngr_cfg = mngr_cfg.replace('%CONPAAS_' + option_name + '%', self.config_parser.get("manager", option_name))
 
 
-        # COMMENT (genc): this part is commented because it is being used only by htc, not useful for the moment 
+        # COMMENT (genc): this part is commented because it is being used only by htc, not useful for the moment
 
         # mngr_cfg = mngr_cfg.replace('%CLOUD_NAME%', cloud_name);
-        
+
         # # OpenNebula, EC2. etc
-        # mngr_cfg = mngr_cfg.replace('%CLOUD_TYPE%', self.config_parser.get(cloud_name, 'DRIVER'))  
+        # mngr_cfg = mngr_cfg.replace('%CLOUD_TYPE%', self.config_parser.get(cloud_name, 'DRIVER'))
 
         # if self.config_parser.has_option(cloud_name, 'INST_TYPE'):
         #     mngr_cfg = mngr_cfg.replace('%CLOUD_MACHINE_TYPE%', self.config_parser.get(cloud_name, 'INST_TYPE'))
@@ -689,7 +687,7 @@ class ManagerController(Controller):
         #     mngr_cfg = mngr_cfg.replace('%CLOUD_MAX_VMS_ALL_CLOUDS%', self.config_parser.get('iaas', 'MAX_VMS_ALL_CLOUDS'))
         # # mngr_cfg = mngr_cfg.replace('%CLOUD_COST_PER_TIME%', cloud_cost_per_time);
 
-       
+
 
         # COMMENT (genc): the IPOP part is commented  until we have a working IPOP
 
@@ -743,9 +741,9 @@ class ManagerController(Controller):
 
         tmpl_values['mngr_setup'] = mngr_setup
 
-        tmpl_values['config'] = self.generate_config_file() 
+        tmpl_values['config'] = self.generate_config_file()
         # self.config
-        
+
         # Add default manager startup script
         tmpl_values['mngr_start_script'] = file_get_contents(os.path.join(mngr_scripts_dir, 'default-manager-start'))
         # tmpl_values['mngr_vars_script'] = file_get_contents(os.path.join(mngr_scripts_dir, 'default-manager-vars'))

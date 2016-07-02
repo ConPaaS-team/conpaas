@@ -29,8 +29,8 @@ try {
 		throw new Exception('The manifest has some errors in it');
 	}
 
-	if (property_exists($res, 'msg')) {
-		throw new Exception($res->msg);
+	if (property_exists($res, 'error')) {
+		throw new Exception($res->error);
 	}
 
 	echo json_encode(array(

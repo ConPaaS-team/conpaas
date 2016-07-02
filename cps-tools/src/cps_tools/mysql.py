@@ -27,11 +27,11 @@ class MySQLCmd(ServiceCmd):
                                help="Name or identifier of an application")
         subparser.add_argument('serv_name_or_id',
                                help="Name or identifier of a service")
-        subparser.add_argument('--password', metavar='new_password',
+        subparser.add_argument('-p', '--password', metavar='PASS',
                                default=None, help="New password (interactively queried if not specified)")
 
     def change_pwd(self, args):
-        app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
+        app_id, service_id = self.check_service(args.app_name_or_id, args.serv_name_or_id)
 
         if args.password:
             pwd1 = args.password
@@ -43,15 +43,11 @@ class MySQLCmd(ServiceCmd):
                 print('Passwords do not match. Try again')
                 pwd1, pwd2 = pprompt()
 
-        data = {'user': 'mysqldb', 'password': pwd1}
-        res = self.client.call_manager(app_id, service_id, "set_password", True, data)
-        if 'error' in res:
-            self.client.error("Could not update MySQL password for service %d: %s"
-                              % (service_id, res['error']))
-        else:
-            print("MySQL password updated successfully.")
+        data = { 'user': 'mysqldb', 'password': pwd1 }
+        self.client.call_manager_post(app_id, service_id, "set_password", data)
 
-    
+        print("MySQL password updated successfully.")
+
     # ========== migrate_nodes
     def _add_migrate_nodes(self):
         subparser = self.add_parser('migrate_nodes', help="migrate nodes in MySQL service")
@@ -62,13 +58,15 @@ class MySQLCmd(ServiceCmd):
                                help="Name or identifier of a service")
         subparser.add_argument('nodes', metavar='c1:n:c2[,c1:n:c2]*',
                                help="Nodes to migrate: node n from cloud c1 to cloud c2")
-        subparser.add_argument('--delay', '-d', metavar='SECONDS', type=int, default=0,
+        subparser.add_argument('-d', '--delay', metavar='SECONDS', type=int, default=0,
                                help="Delay in seconds before removing the original nodes")
 
     def migrate_nodes(self, args):
-        app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
+        app_id, service_id = self.check_service(args.app_name_or_id, args.serv_name_or_id)
+
         if args.delay < 0:
-            self.client.error("Cannot delay %s seconds." % args.delay)
+            raise Exception("Cannot delay %s seconds." % args.delay)
+
         try:
             migr_all = args.nodes.split(',')
             nodes = []
@@ -79,21 +77,18 @@ class MySQLCmd(ServiceCmd):
                              'to_cloud': to_cloud}
                 nodes.append(migr_dict)
         except:
-            self.client.error('Argument "nodes" does not match format c1:n:c2[,c1:n:c2]*: %s' % args.nodes)
+            raise Exception('Argument "nodes" does not match format c1:n:c2[,c1:n:c2]*: %s' % args.nodes)
 
         data = {'nodes': nodes, 'delay': args.delay}
-        res = self.client.call_manager_post(app_id, service_id, "migrate_nodes", data)
-        if 'error' in res:
-            self.client.error("Could not migrate nodes in MySQL service %s: %s"
-                              % (service_id, res['error']))
+        self.client.call_manager_post(app_id, service_id, "migrate_nodes", data)
+
+        if args.delay == 0:
+            print("Migration of nodes %s has been successfully started"
+                  " for MySQL service %s." % (args.nodes, service_id))
         else:
-            if args.delay == 0:
-                print("Migration of nodes %s has been successfully started"
-                      " for MySQL service %s." % (args.nodes, service_id))
-            else:
-                print("Migration of nodes %s has been successfully started"
-                      " for MySQL service %s with a delay of %s seconds."
-                      % (args.nodes, service_id, args.delay))
+            print("Migration of nodes %s has been successfully started"
+                  " for MySQL service %s with a delay of %s seconds."
+                  % (args.nodes, service_id, args.delay))
 
     # ========== dump
     def _add_dump(self):
@@ -105,12 +100,11 @@ class MySQLCmd(ServiceCmd):
                                help="Name or identifier of a service")
 
     def dump(self, args):
-        app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
+        app_id, service_id = self.check_service(args.app_name_or_id, args.serv_name_or_id)
+
         res = self.client.call_manager_get(app_id, service_id, "sqldump")
-        if type('error') is dict and 'error' in res:
-            self.client.error("Could not dump MySQL database: %s." % res['error'])
-        else:
-            print res
+
+        print res
 
     # ========== load_dump
     def _add_load_dump(self):
@@ -124,16 +118,17 @@ class MySQLCmd(ServiceCmd):
                                help="Name of file that contains the dump")
 
     def load_dump(self, args):
-        app_id, service_id = self.get_service_id(args.app_name_or_id, args.serv_name_or_id)
+        app_id, service_id = self.check_service(args.app_name_or_id, args.serv_name_or_id)
+
         with open(args.filename) as dump_file:
             contents = dump_file.read()
         params = { 'service_id': service_id,
                    'method': "load_dump" }
         files = [('mysqldump_file', args.filename, contents)]
-        res = self.client.call_manager_post(app_id, service_id, "/", params, files)
-        if 'error' in res:
-            self.client.error(res['error'])
 
+        self.client.call_manager_post(app_id, service_id, "/", params, files)
+
+        print "MySQL dump loaded successfully."
 
 def main():
     logger = logging.getLogger(__name__)
@@ -144,7 +139,7 @@ def main():
 
     cmd_client = BaseClient(logger)
 
-    parser, argv = config('Manage ConPaaS PHP services.', logger)
+    parser, argv = config('Manage ConPaaS MySQL services.', logger)
 
     _serv_cmd = MySqlCmd(parser, cmd_client)
 
@@ -154,10 +149,17 @@ def main():
                           args.debug)
     try:
         args.run_cmd(args)
-    except:
-        e = sys.exc_info()[1]
-        sys.stderr.write("ERROR: %s\n" % e)
+    except Exception:
+        if args.debug:
+            traceback.print_exc()
+        else:
+            ex = sys.exc_info()[1]
+            if str(ex).startswith("ERROR"):
+                sys.stderr.write("%s\n" % ex)
+            else:
+                sys.stderr.write("ERROR: %s\n" % ex)
         sys.exit(1)
+
 
 if __name__ == '__main__':
     main()

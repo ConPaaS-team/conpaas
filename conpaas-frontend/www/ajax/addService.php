@@ -39,8 +39,8 @@ try {
     }
 
     /* error creating new service */
-    if (property_exists($res, 'msg')) {
-        throw new Exception($res->msg);
+    if (property_exists($res, 'error')) {
+        throw new Exception($res->error);
     }
 
     $sid = $res->service->sid;
