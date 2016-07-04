@@ -31,7 +31,7 @@ conpaas.ui = (function (this_module) {
     },
     displayReason_: function () {
         var reason;
-        if (!this.reachable) {
+        if (this.service.reachable) {
             if (this.service.state === 'PREINIT') {
                 reason = 'service created, waiting to start';
             } else if (this.service.state === 'INIT') {
@@ -178,13 +178,14 @@ conpaas.ui = (function (this_module) {
     onClickStart: function (event) {
         var page = event.data;
         page.freezeInput(true);
+        page.displayInfo('command sent, waiting to start...');
         page.start(function (response) {
-            page.displayInfo('command sent, waiting to start...');
             page.pollState(function () {
                 window.location.reload();
             });
         }, function (response) {
             page.freezeInput(false);
+            conpaas.ui.visible('pgstatInfo', false);
         });
     },
     onClickStop: function (event) {
@@ -194,13 +195,14 @@ conpaas.ui = (function (this_module) {
             return;
         }
         page.freezeInput(true);
+        page.displayInfo('command sent, waiting to stop...');
         page.stop(function (response) {
-            page.displayInfo('command sent, waiting to stop...');
             page.pollState(function () {
                 window.location.reload();
             });
         }, function (response) {
             page.freezeInput(false);
+            conpaas.ui.visible('pgstatInfo', false);
         });
     },
     onClickRemove: function (event) {
@@ -284,18 +286,20 @@ conpaas.ui = (function (this_module) {
             return;
         }
         successHandler = function () {
-            page.displayInfo('command sent, waiting to stop...');
             page.pollState(function () {
                 window.location.reload();
             });
         };
         errorHandler = function () {
+            conpaas.ui.visible('pgstatInfo', false);
             page.freezeInput(false);
         }
         page.freezeInput(true);
         if (add) {
+            page.displayInfo('command sent, waiting to start...');
             page.addNodes(toChange, successHandler, errorHandler);
         } else {
+            page.displayInfo('command sent, waiting to stop...');
             page.removeNodes(toChange, successHandler, errorHandler);
         }
     }
