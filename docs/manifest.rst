@@ -37,7 +37,7 @@ the path to the PHP program that will be uploaded into the created PHP service.
 To create an application from a manifest, you can use either the web client or
 the command line client.
 
- * On the web client, after login, press button "deploy ready-made application",
+ * On the web client, after login, press button "deploy application from manifest",
    then press button "Browse..." and select your ``sudoku.mnf``. A popup will
    appear to confirm that the creation of the application has started.
 

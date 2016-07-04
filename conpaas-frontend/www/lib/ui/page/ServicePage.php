@@ -89,12 +89,12 @@ class ServicePage extends Page {
         $cloudChoice = Tag();
         $cloudChoice->setHTML($radios);
 
-                $serviceSelection = '';
-                $serviceSelector = $this->renderServiceSelection();
-                if ($serviceSelector != '') {
-                        $serviceSelection = Tag();
-                        $serviceSelection->setHTML($serviceSelector);
-                }
+		$serviceSelection = '';
+		$serviceSelector = $this->renderServiceSelection();
+		if ($serviceSelector != '') {
+				$serviceSelection = Tag();
+				$serviceSelection->setHTML($serviceSelector);
+		}
 
 		switch ($this->service->getState()) {
 			case Service::STATE_INIT:
@@ -103,9 +103,9 @@ class ServicePage extends Page {
 			case Service::STATE_RUNNING:
 				$startButton->setVisible(false);
 				$removeButton->setVisible(false);
-                                if ($serviceSelector != '') {
-                                        $serviceSelection->setVisible(false);
-                                }
+					if ($serviceSelector != '') {
+							$serviceSelection->setVisible(false);
+					}
 				break;
 			case Service::STATE_STOPPED:
 				$stopButton->setVisible(false);

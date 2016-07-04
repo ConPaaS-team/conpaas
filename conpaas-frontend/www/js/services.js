@@ -102,10 +102,10 @@ conpaas.ui = (function (this_module) {
                         $("#btnStopApp").hide();
                         $("#appRightMenu").hide();
                         if (app.status == 'PROLOGUE') {
-                            that.displayInfo_('Starting application manager...');
+                            that.displayInfo_('starting application manager...');
                             return false
                         } else if (app.status == 'EPILOGUE') {
-                            that.displayInfo_('Stopping application manager...');
+                            that.displayInfo_('stopping application manager...');
                             return false
                         } else {
                             $("#btnStartApp").show();
@@ -149,7 +149,7 @@ conpaas.ui = (function (this_module) {
                 cloud: $('input[name=available_clouds]:checked').val()
             }, 'post',
             function(){
-                page.displayInfo_('Starting application manager...');
+                page.displayInfo_('starting application manager...');
                 page.checkApplication();      
             }, 
             function (){

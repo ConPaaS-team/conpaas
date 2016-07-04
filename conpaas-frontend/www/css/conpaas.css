@@ -612,6 +612,14 @@ tr.service {
 	width: 60px;
 }
 
+.manifestpage {
+	color: #666;
+	font-size: 12px;
+	font-weight: bold;
+	padding: 5px 5px 5px 10px;
+	text-align: left;
+}
+
 .createpage .form .service {
 	cursor: pointer;
 }

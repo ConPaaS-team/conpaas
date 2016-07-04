@@ -148,7 +148,7 @@ def check_app_exists(app_name):
 
     return False
 
-def _createapp(app_name, cloud_name):
+def _createapp(app_name):
     log("User '%s' is attempting to create a new application '%s'"
         % (g.user.username, app_name))
 
@@ -171,20 +171,17 @@ def _createapp(app_name, cloud_name):
 
     db.session.commit()
 
-    # store_app_controller(g.user.uid, a.aid, cloud_name)
-
     log('Application %s created successfully' % (a.aid))
     return a.to_dict()
 
 from cpsdirector.user import cert_required
 @application_page.route("/createapp", methods=['POST'])
-@application_page.route("/createapp/<cloudname>", methods=['POST'])
 @cert_required(role='user')
-def createapp(cloudname="default"):
+def createapp():
     app_name = request.values.get('name')
-    return build_response(jsonify(_createapp(app_name, cloudname)))
+    return build_response(jsonify(_createapp(app_name)))
 
-def _startapp(user_id, app_id, cloud_name, new_thread=True):
+def _startapp(user_id, app_id, cloud_name, new_thread=True, ignore_status=False):
     log("User '%s' is attempting to start application %s"
         % (g.user.username, app_id))
 
@@ -193,7 +190,7 @@ def _startapp(user_id, app_id, cloud_name, new_thread=True):
         msg = 'Application not found'
         log_error(msg)
         return error_response(msg)
-    if app.status not in (Application.A_INIT, Application.A_STOPPED):
+    if not ignore_status and app.status not in (Application.A_INIT, Application.A_STOPPED):
         msg = 'Application already started'
         log_error(msg)
         return error_response(msg)
@@ -203,17 +200,20 @@ def _startapp(user_id, app_id, cloud_name, new_thread=True):
         return error_response(msg)
     try:
         app.status = Application.A_PROLOGUE
+        db.session.commit()
 
         vpn = app.get_available_vpn_subnet()
 
         man_args = { 'role' : 'manager', 'user_id' : user_id, 'app_id' : app_id,
-                    'vpn' : vpn, 'nodes_info' : [{ 'cloud' : cloud_name }] }
+                    'vpn' : vpn, 'nodes_info' : [{ 'cloud' : cloud_name }],
+                    'ignore_status': ignore_status }
         if new_thread:
             Thread(target=create_nodes, args=[man_args]).start()
+            log('Application %s is starting' % (app_id))
         else:
             res = create_nodes(man_args)
+            log('Application %s has started' % (app_id))
 
-        log('Application %s is starting' % (app_id))
         return {}
     except Exception, err:
         app.status = Application.A_STOPPED
@@ -263,7 +263,6 @@ def _deleteapp(user_id, app_id, del_app_entry):
     # delete them from database (no need to remove them from application manager)
     for service in Service.query.filter_by(application_id=app_id):
         service.remove()
-
 
     # stop the application manager
     # if app.manager:

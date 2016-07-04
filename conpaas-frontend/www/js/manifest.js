@@ -13,24 +13,12 @@ manifest['mediawiki'] = '{ "Application" : "New MediaWiki application", "Service
 
 
 $(document).ready(function() {
-	$('#fileForm').ajaxForm({
-		dataType: 'json',
-		success: function(response) {
-			if (typeof response.error != 'undefined' && response.error != null) {
-				alert('Error: ' + response.error);
-				$('#file').val('');
-				return;
-			}
-			alert("The manifest was correctly uploaded. Now it can take a while to start everything.")
-			window.location = 'index.php';
-		},
-		error: function(response) {
-			alert('#fileForm.ajaxForm() error: ' + response.error);
-		}
+	$('input:file').change(function() {
+		$('input[name=type]').attr('checked', false);
 	});
 
-	$('input:file').change(function() {
-		$('#fileForm').submit();
+	$('input[name=type]').change(function() {
+		$('input:file').val('');
 	});
 
     $('#logout').click(function () {
@@ -44,7 +32,37 @@ $(document).ready(function() {
     });
 
 	$('#deploy').click(function() {
+		if ($('input:file').val() != '') {
+			$('#fileForm').ajaxForm({
+				data: {
+					cloud: $('input[name=available_clouds]:checked').val()
+				},
+				dataType: 'json',
+				success: function(response) {
+					if (typeof response.error != 'undefined' && response.error != null) {
+						alert('Error: ' + response.error);
+						$('input:file').val('');
+						$('input[name=type]').attr('checked', false);
+						return;
+					}
+					alert("The manifest was correctly uploaded. Now it can take a while to start everything.")
+					window.location = 'services.php?aid=' + response.aid;
+				},
+				error: function(response) {
+					alert('#fileForm.ajaxForm() error: ' + response.error);
+				}
+			});
+
+			$('#fileForm').submit();
+			return;
+		}
+
 		type = $('input[name=type]:checked').val();
+		if (type == undefined) {
+			alert("Please upload a file or select a ready-made application to continue.");
+			return;
+		}
+
 		if (manifest[type] == '') {
 			alert("There is no manifest for this application.");
 			return;
@@ -53,16 +71,20 @@ $(document).ready(function() {
 		$.ajax({
 			type: "POST",
 			url: "ajax/uploadManifest.php",
-			data: { json: manifest[type] },
+			data: {
+				json: manifest[type],
+				cloud: $('input[name=available_clouds]:checked').val()
+			},
 			dataType: 'json'
 		}).done(function(response) {
 			if (typeof response.error != 'undefined' && response.error != null) {
 				alert('Error: ' + response.error);
-				$('#file').val('');
+				$('input:file').val('');
+				$('input[name=type]').attr('checked', false);
 				return;
 			}
 			alert("The manifest was correctly uploaded. Now it can take a while to start everything.")
-			window.location = 'index.php';
+			window.location = 'services.php?aid=' + response.aid;
 		});
 
 	});

@@ -12,7 +12,7 @@ $page = new ManifestPage();
 <html xmlns="http://www.w3.org/1999/xhtml">
    <head>
       <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-      <title>ConPaaS - Upload new manifest</title>
+      <title>ConPaaS - Create new application from manifest</title>
       <link type="text/css" rel="stylesheet" href="css/conpaas.css" />
       <?php echo $page->renderIcon(); ?>
       <script src="js/jquery-1.5.js"></script>
@@ -27,25 +27,17 @@ $page = new ManifestPage();
             <h1> <img src="images/create.png" /> Deploy application</h1>
             <div class="clear"></div>
          </div>
-
-         <table class="form" cellspacing="0" cellpading="0">
-            <tr>
-               <form id="fileForm" enctype="multipart/form-data" action="ajax/uploadManifest.php">
-                  Choose the specification file to upload: <input name="specfile" type="file"><br>
-               </form>
-            </tr>
-            <tr>
-               <td class="description" style="vertical-align: middle;">
-                  <img class="loading" src="images/icon_loading.gif" style="display: none;" />
-               </td>
-               <td class="description"></td>
-               <td>
-                  <i id="status"></i>
-                  <i id="error" style="display: none;"></i>
-               </td>
-            </tr>
-         </table>
-
+         <div class="manifestpage">
+            <br><br>
+            Please choose the manifest file to upload:
+            <br><br><br>
+            <form id="fileForm" enctype="multipart/form-data" action="ajax/uploadManifest.php">
+                <input name="specfile" type="file"><br>
+            </form>
+            <br><br><br><br><br>
+            or select one of the available ready-made applications:
+            <br><br>
+         </div>
          <table class="form" cellspacing="0" cellpading="0">
            <!--
            <tr class="service">
@@ -65,6 +57,8 @@ $page = new ManifestPage();
              <td class="info" width="480px"> MediaWiki version 1.21 deployment </td>
            </tr>
          </table>
+
+        <?php echo $page->renderCloudProviders(true); ?>
 
          <a id="deploy" class="button" href="javascript: void(0);">
                   <img src="images/play.png" style="vertical-align: top;"/> Deploy Application

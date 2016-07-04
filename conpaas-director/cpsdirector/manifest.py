@@ -61,6 +61,80 @@ def read_from_url(url):
             else:
                 time.sleep(2)
 
+
+from cpsdirector.application import check_app_exists, get_app_by_id
+from cpsdirector.application import _createapp as createapp
+from cpsdirector.application import _startapp as startapp, Application
+
+def create_manifest_app(parse):
+
+    # 'Application' has to be defined
+    app_name = parse.get('Application')
+    if not app_name:
+        return 'Application is not defined', None
+
+    if not check_app_exists(app_name):
+        # Create application if it does not exist yet
+        res = createapp(app_name)
+        if 'error' in res:
+            return res['error'], None
+        appid = res['aid']
+    else:
+        # Try different application names
+        for i in range(2, 100):
+
+            # If all the applications exists, then exit
+            if i is 99:
+                return 'Application cannot be created', None
+
+            new_name = "%s (%d)" % (app_name, i)
+            if not check_app_exists(new_name):
+                res = createapp(new_name)
+                if 'error' in res:
+                    return res['error'], None
+                appid = res['aid']
+                break
+
+    return 'ok', appid
+
+def start_manifest_app(parse, appid, cloud='default'):
+
+    res = startapp(g.user.uid, appid, cloud, new_thread=False, ignore_status=True)
+    # res = startapp(g.user.uid, appid, cloud, ignore_status=True)
+    if 'error' in res:
+        return res['error']
+
+    app = get_app_by_id(g.user.uid, appid)
+
+    # #FIXME: add a timeout here
+    # while app.status != Application.A_RUNNING:
+    #     # log('application is in status:%s, manager:%s' % (app.status, app.manager))
+    #     time.sleep(8)
+    #     app = get_app_by_id(g.user.uid, appid)
+    #     db.session.refresh(app)
+    #     # app = get_app_by_id(g.user.uid, appid)
+
+    log('Now start adding services for application %s' % appid)
+    app.status = Application.A_ADAPTING
+    db.session.commit()
+
+    for service in parse.get('Services'):
+        try:
+            cls = get_manifest_class(service.get('Type'))
+        except Exception:
+            return 'Service %s does not exists' % service.get('Type')
+
+        msg = cls().start(service, appid, cloud)
+        if msg is not 'ok':
+            log_error('Error starting %s service -> %s' % (service, msg))
+            return msg
+
+    log('All services of application %s are now running' % appid)
+    app.status = Application.A_RUNNING
+    db.session.commit()
+
+    return 'ok'
+
 from cpsdirector.user import cert_required
 from multiprocessing import Process
 @manifest_page.route("/upload_manifest", methods=['POST'])
@@ -78,20 +152,44 @@ def upload_manifest():
         msg = 'The uploded manifest is not valid'
         return build_response(jsonify(error_response(msg)))
 
+    try:
+        parse = simplejson.loads(json)
+    except:
+        msg = 'Error parsing json'
+        log_error(msg)
+        return build_response(jsonify(error_response(msg)))
+
+    msg, appid = create_manifest_app(parse)
+    if msg != 'ok':
+        log_error(msg)
+        return build_response(jsonify(error_response(msg)))
+
+    if not parse.get('Services'):
+        log('Manifest: Application not started, as no services are defined.')
+        return build_response(jsonify({}))
+
+    app = get_app_by_id(g.user.uid, appid)
+    app.status = Application.A_PROLOGUE
+    db.session.commit()
+
+    cloud = request.values.get('cloud')
+    if not cloud or cloud == 'None':
+        cloud = 'default'
+
     if request.values.get('thread'):
         log('Starting a new process for the manifest')
-        p = Process(target=new_manifest, args=(json,))
+        p = Process(target=start_manifest_app, args=(parse, appid, cloud))
         p.start()
 
         log('Process started, now return')
-        return build_response(jsonify({}))
+        return build_response(jsonify({ 'aid': appid }))
     else:
-        msg = new_manifest(json)
+        msg = start_manifest_app(parse, appid, cloud)
         if msg != 'ok':
+            log_error(msg)
             return build_response(jsonify(error_response(msg)))
 
-        log('Manifest created')
-        return build_response(jsonify({}))
+        return build_response(jsonify({ 'aid': appid }))
 
 from cpsdirector.service import callmanager
 def get_list_nodes(sid):
@@ -344,11 +442,10 @@ class MGeneral(object):
     #     self.wait_for_state(sid, 'RUNNING')
     #     return sid
 
-    def start(self, json, appid, need_env=False):
+    def start(self, json, appid, cloud='default', need_env=False):
         """Start the given service. Return service id upon successful
         termination."""
         servicetype = json.get('Type')
-        cloud = 'default'
 
         if json.get('Cloud'):
             cloud = json.get('Cloud')
@@ -450,9 +547,9 @@ class MPhp(MGeneral):
 
         return res
 
-    def start(self, json, appid):
+    def start(self, json, appid, cloud):
         # disabled for the moment
-        sid = MGeneral.start(self, json, appid, need_env=True)
+        sid = MGeneral.start(self, json, appid, cloud, need_env=True)
         # sid = MGeneral.start(self, json, appid, need_env=False)
 
         if type(sid) != int:
@@ -548,8 +645,8 @@ class MMySql(MGeneral):
 
         return res
 
-    def start(self, json, appid):
-        sid = MGeneral.start(self, json, appid)
+    def start(self, json, appid, cloud):
+        sid = MGeneral.start(self, json, appid, cloud)
 
         if type(sid) != int:
             # Error!
@@ -586,8 +683,8 @@ class MMySql(MGeneral):
         return 'ok'
 
 class MScalaris(MGeneral):
-    def start(self, json, appid):
-        sid = MGeneral.start(self, json, appid)
+    def start(self, json, appid, cloud):
+        sid = MGeneral.start(self, json, appid, cloud)
 
         if type(sid) != int:
             # Error!
@@ -608,8 +705,8 @@ class MScalaris(MGeneral):
         return 'ok'
 
 class MHadoop(MGeneral):
-    def start(self, json, appid):
-        sid = MGeneral.start(self, json, appid)
+    def start(self, json, appid, cloud):
+        sid = MGeneral.start(self, json, appid, cloud)
 
         if type(sid) != int:
             # Error!
@@ -630,8 +727,8 @@ class MHadoop(MGeneral):
         return 'ok'
 
 class MSelenium(MGeneral):
-    def start(self, json, appid):
-        sid = MGeneral.start(self, json, appid)
+    def start(self, json, appid, cloud):
+        sid = MGeneral.start(self, json, appid, cloud)
 
         if type(sid) != int:
             # Error!
@@ -716,7 +813,7 @@ class MXTreemFS(MGeneral):
 
         return callmanager(service_id, "startup", True, data)
 
-    def start(self, json, appid):
+    def start(self, json, appid, cloud):
         try:
             to_resume = { 'nodes': json['StartupInstances']['resume'] }
         except KeyError:
@@ -725,7 +822,7 @@ class MXTreemFS(MGeneral):
         # Set the resuming flag if necessary
         self.resuming = to_resume != {}
 
-        sid = MGeneral.start(self, json, appid)
+        sid = MGeneral.start(self, json, appid, cloud)
 
         if type(sid) != int:
             # Error!
@@ -776,8 +873,8 @@ class MXTreemFS(MGeneral):
         return 'ok'
 
 class MTaskFarm(MGeneral):
-    def start(self, json, appid):
-        sid = MGeneral.start(self, json, appid)
+    def start(self, json, appid, cloud):
+        sid = MGeneral.start(self, json, appid, cloud)
 
         if type(sid) != int:
             # Error!
@@ -851,12 +948,12 @@ class MGeneric(MGeneral):
 
         return res
 
-    def start(self, json, appid):
+    def start(self, json, appid, cloud):
         #start = json.get('Start')
 
         #this is to prevent startup being called without passing the manifest, should be changed
         #json['Start'] = 0
-        sid = MGeneral.start(self, json, appid)
+        sid = MGeneral.start(self, json, appid, cloud)
 
         #json['Start'] = start
 
@@ -923,8 +1020,6 @@ class MGeneric(MGeneral):
 
         return tmp
 
-
-
 def get_manifest_class(service_type):
     if service_type == 'php':
         return MPhp
@@ -948,79 +1043,3 @@ def get_manifest_class(service_type):
         return MGeneric
     else:
         raise Exception('Service type %s does not exists' % service_type)
-
-from cpsdirector.application import check_app_exists, get_app_by_id
-from cpsdirector.application import _createapp as createapp
-from cpsdirector.application import _startapp as startapp, Application
-
-def new_manifest(json, cloud = 'default'):
-
-    try:
-        parse = simplejson.loads(json)
-    except:
-        return 'Error parsing json'
-
-    # 'Application' has to be defined
-    app_name = parse.get('Application')
-    if not app_name:
-        return 'Application is not defined'
-
-    if not check_app_exists(app_name):
-        # Create application if it does not exist yet
-        res = createapp(app_name, cloud)
-        if 'error' in res:
-            return res['error']
-        appid = res['aid']
-    else:
-        # Try different application names
-        for i in range(2, 99):
-            new_name = "%s (%d)" % (app_name, i)
-            if not check_app_exists(new_name):
-                res = createapp(new_name, cloud)
-                if 'error' in res:
-                    return res['error']
-                appid = res['aid']
-                break
-
-        # If all the applications exists, then exit
-        if i is 99:
-            return 'Application can not be created'
-
-    if not parse.get('Services'):
-        return 'ok'
-
-    # startapp(g.user.uid, appid, cloud, new_thread=False)
-    res = startapp(g.user.uid, appid, cloud)
-    if 'error' in res:
-        return res['error']
-
-    app = get_app_by_id(g.user.uid, appid)
-
-    #FIXME: add a timeout here
-    while app.status != Application.A_RUNNING:
-        log('application is in status:%s, manager:%s' % (app.status, app.manager))
-        time.sleep(8)
-        app = get_app_by_id(g.user.uid, appid)
-        db.session.refresh(app)
-        # app = get_app_by_id(g.user.uid, appid)
-
-    log('now start adding services')
-    app.status = Application.A_ADAPTING
-    db.session.commit()
-
-    for service in parse.get('Services'):
-        try:
-            cls = get_manifest_class(service.get('Type'))
-        except Exception:
-            return 'Service %s does not exists' % service.get('Type')
-
-        msg = cls().start(service, appid)
-        if msg is not 'ok':
-            log_error('new_manifest: error starting %s service -> %s' % (service,
-                msg))
-            return msg
-
-    app.status = Application.A_RUNNING
-    db.session.commit()
-
-    return 'ok'

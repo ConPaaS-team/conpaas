@@ -20,7 +20,7 @@ class AppPage extends Page {
 					.'<img src="images/service-plus.png" /> create new application'
 				.'</a>'
 				.'<a class="button" href="manifest.php">'
-					.'<img src="images/active.png" /> deploy ready-made application'
+					.'<img src="images/active.png" /> deploy application from manifest'
 				.'</>'
   				.'<a class="button" href="ajax/getCertificate.php">'
   					.'<img src="images/green-down.png" /> download certificate'

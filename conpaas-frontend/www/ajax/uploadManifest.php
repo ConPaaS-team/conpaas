@@ -22,8 +22,10 @@ try {
 	$specs = preg_replace("/\n/", "", $specs);
 	$specs = preg_replace("/\t/", "", $specs);
 
+	$cloud = $_POST['cloud'];
 	$res = json_decode(HTTPS::post(Conf::DIRECTOR . '/upload_manifest',
-		array( 'manifest' => $specs, 'thread' => 1 ), false, $_SESSION['uid']));
+		array( 'manifest' => $specs, 'cloud' => $cloud, 'thread' => 1 ),
+		false, $_SESSION['uid']));
 
 	if (!$res) {
 		throw new Exception('The manifest has some errors in it');
@@ -35,6 +37,7 @@ try {
 
 	echo json_encode(array(
 		'upload' => 1,
+		'aid' => $res->aid
 	));
 } catch (Exception $e) {
 	echo json_encode(array(

@@ -222,6 +222,37 @@ class Page {
 			'</div>';
 	}
 
+	public function renderCloudProviders($display) {
+		$clouds = json_decode(HTTPS::get(Conf::DIRECTOR . '/available_clouds'));
+		$clouds_html = '';
+
+		foreach($clouds as $cloud) {
+			if ($cloud === 'default')
+				$checked = 'checked';
+			else
+				$checked = '';
+
+			$clouds_html .= '<input type="radio"' . $checked
+				.' name="available_clouds" value="'.$cloud.'"/>'
+				.$cloud.'<br/>';
+		}
+
+		return
+			'<table id="cloudProviders" class="form" cellspacing="0" cellpading="0"'
+					.($display ? '' : ' style="display:none"')
+				.'>'
+				.'<tr>'
+				.'<td colspan="2">&nbsp;</td>'
+				.'</tr>'
+				.'<tr>'
+				.'<td class="appdescription">cloud provider</td>'
+				.'<td class="input">'
+				.$clouds_html
+				.'</td>'
+				.'</tr>'
+				.'</table>';
+	}
+
 	public function generateJSGetParams() {
 		return
 			'<script>var GET_PARAMS = '.json_encode($_GET, JSON_HEX_TAG).';'

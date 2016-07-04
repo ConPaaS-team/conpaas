@@ -184,15 +184,26 @@ class ApplicationCmd:
         subparser.set_defaults(run_cmd=self.manifest, parser=subparser)
         subparser.add_argument('man_path',
                                help="The manifest file")
+        subparser.add_argument('-c', '--cloud', metavar='NAME', default='default',
+                               help="Cloud where the application will be deployed")
 
     def manifest(self, args):
         man = args.man_path
         json = self.check_manifest(man)
+        check_cloud(self.client, args.cloud)
 
-        self.client.call_director_post("upload_manifest",
-                { 'manifest': json, 'thread': True })
+        res = self.client.call_director_post("upload_manifest",
+                { 'manifest': json, 'cloud': args.cloud, 'thread': True })
 
-        print "The application is being created based on the specified manifest."
+        print "Application %s is being created based on the specified manifest... "\
+              % res['aid'],
+        sys.stdout.flush()
+
+        state = self.client.wait_for_app_state(res['aid'], ['RUNNING', 'ERROR'])
+        if state == 'RUNNING':
+            print "done."
+        else:
+            print "FAILED!"
 
     def check_manifest(self, json):
         if not os.path.isfile(json):

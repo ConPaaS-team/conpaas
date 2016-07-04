@@ -101,15 +101,16 @@ def _create_nodes(kwargs):
     nodes = None
     service_id = 0
 
-    from cpsdirector.application import Application, get_app_by_id
-    application = get_app_by_id(user_id, app_id)
     if role == 'manager':
         vpn = kwargs.pop('vpn')
         controller = ManagerController(user_id, app_id, vpn)
         controller.generate_context(clouds)
         nodes = controller.create_nodes(nodes_info, clouds)
 
-        application.status = Application.A_RUNNING
+        if not kwargs.pop('ignore_status'):
+            from cpsdirector.application import Application, get_app_by_id
+            application = get_app_by_id(user_id, app_id)
+            application.status = Application.A_RUNNING
     else:
         service_id = kwargs.pop('service_id')
         service_type = kwargs.pop('service_type')
