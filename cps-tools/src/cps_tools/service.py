@@ -138,9 +138,25 @@ class ServiceCmd(object):
 
         services = self.client.get_services(app_id, self.type)
 
+        # update service states with information from the application manager(s)
+        service_states = {}
+        app_ids = set(map(lambda s: s['service']['application_id'], services))
+        for aid in app_ids:
+            service_states[aid] = {}
+            try:
+                appinfo = self.client.call_manager_get(aid, 0, "get_app_info")
+                for sid in appinfo['states']:
+                    service_states[aid][int(sid)] = appinfo['states'][sid]
+            except:
+                pass # do not stop if a call to the app manager fails
+
         sorted_serv = []
         for row in services:
-            row['service']['aid'] = row['service']['application_id']
+            aid = row['service']['application_id']
+            sid = row['service']['sid']
+
+            row['service']['aid'] = aid
+            row['service']['status'] = service_states[aid].get(sid, 'N/A')
             sorted_serv.append(row['service'])
 
         # secondary sort per service id
@@ -148,7 +164,7 @@ class ServiceCmd(object):
         # primary sort per application
         sorted_serv = sorted(sorted_serv, key=lambda k: k['aid'])
 
-        table = self.client.prettytable(('aid', 'sid', 'type', 'name'),
+        table = self.client.prettytable(('aid', 'sid', 'type', 'name', 'status'),
                                         sorted_serv)
         if table:
             print "%s" % table
