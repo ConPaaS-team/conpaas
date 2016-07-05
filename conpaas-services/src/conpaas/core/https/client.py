@@ -83,11 +83,9 @@ class HTTPSConnection(HTTPConnection):
 
     def __init__(self, host, port=None, strict=None, **ssl):
         try:
-            # open('/tmp/lesh', 'a').write('createing connection for host: %s \n' % host)
             self.ssl_ctx = ssl['ssl_context']
             assert isinstance(self.ssl_ctx, SSL.Context), self.ssl_ctx
         except KeyError:
-            open('/tmp/lesh', 'a').write('it threw some shit exception\n')
             self.ssl_ctx = SSL.Context(SSL.SSLv23_METHOD)
         HTTPConnection.__init__(self, host, port, strict)
 
