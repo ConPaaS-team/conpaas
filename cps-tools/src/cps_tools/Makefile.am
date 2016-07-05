@@ -1,6 +1,7 @@
 ## files to byte-compile
 dist_cpstools_PYTHON = \
 	__init__.py \
+	director.py \
 	application.py \
 	base.py \
 	cloud.py \

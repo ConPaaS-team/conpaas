@@ -164,6 +164,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 dist_cpstools_PYTHON = \
 	__init__.py \
+	director.py \
 	application.py \
 	base.py \
 	cloud.py \

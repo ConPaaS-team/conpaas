@@ -16,6 +16,7 @@ from .base import BaseClient
 from .user import UserCmd
 from .application import ApplicationCmd
 from .service import ServiceCmd
+from .director import DirectorCmd
 from .mysql import MySQLCmd
 # from .htc import HTCCmd
 from .cloud import CloudCmd
@@ -70,6 +71,7 @@ def main():
     add_sub_command('cloud', "manage clouds", CloudCmd)
     add_sub_command('application', "manage applications", ApplicationCmd)
     add_sub_command('service', "manage services", ServiceCmd)
+    add_sub_command('director', "manage the director", DirectorCmd)
     add_sub_command('mysql', "manage MySQL services", MySQLCmd)
     # add_sub_command('htc', "manage HTC services", HTCCmd)
     add_sub_command('php', "manage PHP services", PHPCmd)
