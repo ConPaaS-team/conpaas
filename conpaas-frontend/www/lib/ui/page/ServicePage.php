@@ -66,9 +66,7 @@ class ServicePage extends Page {
 			->setId('remove');
 
         $clouds = json_decode(HTTPS::get(Conf::DIRECTOR . '/available_clouds'));
-	// TODO: select the cloud of the Application Manager
-	// $selectedCloud = $this->service->getApplication()->getCloud();
-        $selectedCloud = 'default';
+        $selectedCloud = $this->service->getApplication()->getCloud();
         if ($selectedCloud === 'iaas') {
             $selectedCloud = 'default';
         }
