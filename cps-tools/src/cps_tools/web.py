@@ -118,28 +118,39 @@ class WebCmd(ServiceCmd):
                                help="Name or identifier of an application")
         subparser.add_argument('serv_name_or_id',
                                help="Name or identifier of a service")
-        # TODO: make version optional to retrieve the last version by default
-        subparser.add_argument('version',
-                               help="Version of code to download")
+        subparser.add_argument('-v', '--version', metavar='CODE', default=None,
+                               help="Version of code to download (default is the active one)")
 
     def download_code(self, args):
         app_id, service_id = self.check_service(args.app_name_or_id, args.serv_name_or_id)
+        destfile = self.check_code_version(app_id, service_id, args.version)
 
-        res = self.client.call_manager_get(app_id, service_id, "list_code_versions")
-
-        filenames = [ code['filename'] for code in res['codeVersions']
-                if code['codeVersionId'] == args.version ]
-        if not filenames:
-            raise Exception("Invalid version %s" % args.version)
-
-        destfile = filenames[0]
-
-        params = {'codeVersionId': args.version}
+        if args.version:
+            params = { 'codeVersionId': args.version }
+        else:
+            params = {}
         res = self.client.call_manager_get(app_id, service_id, "download_code_version",
                                            params)
 
         open(destfile, 'w').write(res)
-        print destfile, 'written'
+        print "File '%s' written." % destfile
+
+    def check_code_version(self, app_id, service_id, code_version):
+        res = self.client.call_manager_get(app_id, service_id, "list_code_versions")
+
+        if code_version:
+            filenames = [ code['filename'] for code in res['codeVersions']
+                    if code['codeVersionId'] == code_version ]
+            if not filenames:
+                raise Exception("Invalid code version '%s'" % code_version)
+
+            return filenames[0]
+        else:
+            for code in res['codeVersions']:
+                if 'current' in code:
+                    return code['filename']
+
+            raise Exception("There is no code version currently enabled")
 
     # ========== delete_code
     def _add_delete_code(self):

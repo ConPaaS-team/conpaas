@@ -1351,7 +1351,9 @@ class BasicWebserversManager(BaseManager):
     @expose('GET')
     def download_code_version(self, kwargs):
         config = self._configuration_get()
-        exp_params = [('codeVersionId', is_in_list(config.codeVersions))]
+        exp_params = [('codeVersionId',
+                       is_in_list(config.codeVersions),
+                       config.currentCodeVersion)]
         try:
             codeVersionId = check_arguments(exp_params, kwargs)
         except Exception as ex:
@@ -1366,7 +1368,8 @@ class BasicWebserversManager(BaseManager):
             ex = ManagerException(ManagerException.E_ARGS_INVALID,
                                   detail='Invalid codeVersionId')
             return HttpErrorResponse("%s" % ex)
-        return HttpFileDownloadResponse(config.codeVersions[codeVersionId].filename, filename)
+        return HttpFileDownloadResponse(config.codeVersions[codeVersionId].filename,
+                filename)
 
     @expose('UPLOAD')
     def upload_code_version(self, kwargs):

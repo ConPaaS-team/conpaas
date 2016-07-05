@@ -411,7 +411,9 @@ echo "" >> /root/generic.out
     @expose('GET')
     def download_code_version(self, kwargs):
         config = self._configuration_get()
-        exp_params = [('codeVersionId', is_in_list(config.codeVersions))]
+        exp_params = [('codeVersionId',
+                       is_in_list(config.codeVersions),
+                       config.currentCodeVersion)]
         try:
             codeVersionId = check_arguments(exp_params, kwargs)
         except Exception as ex:

@@ -1,3 +1,4 @@
+import sys
 
 from .web import WebCmd
 
