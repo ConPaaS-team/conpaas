@@ -185,11 +185,13 @@ class UserCmd:
         subparser.set_defaults(run_cmd=self.get_certificate, parser=subparser)
 
     def get_certificate(self, args):
-        res = self.client.call_director("getcerts", True, {}, use_certs=False)
+        res = self.client.call_director_post("getcerts", {}, use_certs=False)
 
         zipdata = zipfile.ZipFile(StringIO.StringIO(res))
         zipdata.extractall(path=self.client.confdir)
         https.client.conpaas_init_ssl_ctx(self.client.confdir, 'user')
+
+        print "User certificates installed successfully."
 
     # ========== get_config
     def _add_get_config(self):

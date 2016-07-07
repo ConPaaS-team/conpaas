@@ -88,7 +88,7 @@ class DirectorCallbacker(object):
             director_url = self.config_parser.get('manager', 'DIRECTOR_URL')
             parsed_url = urlparse.urlparse(director_url)
             _, body = https.client.https_post(parsed_url.hostname,
-                                              parsed_url.port or 443,
+                                              parsed_url.port or 5555,
                                               path,
                                               params,
                                               files)

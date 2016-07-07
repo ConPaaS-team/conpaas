@@ -77,7 +77,7 @@ def available_clouds():
         clouds.extend([cloud_name for cloud_name
             in config_parser.get('iaas', 'OTHER_CLOUDS').split(',')
             if config_parser.has_section(cloud_name)])
-    return simplejson.dumps(clouds)
+    return build_response(simplejson.dumps(clouds))
 
 
 def _get_cloud_list(nodes_info):
@@ -163,7 +163,7 @@ def create_nodes():
                     'service_id':service_id, 'service_type':service_type, 'nodes_info':nodes_info,
                     'manager_ip':manager_ip, 'context':context, 'startup_script':startup_script })
 
-    return simplejson.dumps([node.to_dict() for node in nodes])
+    return build_response(simplejson.dumps([node.to_dict() for node in nodes]))
 
 
 
@@ -183,7 +183,7 @@ def remove_nodes():
         res = get_resource_by_id(node['vmid'])
         res.remove()
 
-    return simplejson.dumps({})
+    return build_response(simplejson.dumps({}))
 
 
 
@@ -203,7 +203,7 @@ def create_volume():
 
     log('Created volume %s ' % volume.id)
 
-    return simplejson.dumps({'volume_id':volume.id })
+    return build_response(simplejson.dumps({'volume_id':volume.id }))
 
 
 @cloud_page.route("/attach_volume", methods=['POST'])
@@ -222,7 +222,7 @@ def attach_volume():
 
     log('Attached volume %s to vm %s (cloud: %s)' % (volume_id, vm_id, cloud))
 
-    return simplejson.dumps({})
+    return build_response(simplejson.dumps({}))
 
 
 @cloud_page.route("/detach_volume", methods=['POST'])
@@ -239,7 +239,7 @@ def detach_volume():
 
     log('Detached volume %s (cloud: %s)' % (volume_id, cloud))
 
-    return simplejson.dumps({})
+    return build_response(simplejson.dumps({}))
 
 @cloud_page.route("/destroy_volume", methods=['POST'])
 @cert_required(role='manager')
@@ -255,7 +255,7 @@ def destroy_volume():
 
     log('Destroyed volume %s (cloud: %s)' % (volume_id, cloud))
 
-    return simplejson.dumps({})
+    return build_response(simplejson.dumps({}))
 
 
 # putting this in the user_page wasn't working for some non-obvious reason
@@ -263,7 +263,7 @@ def destroy_volume():
 @cert_required(role='manager')
 def credit():
     log('Manager is asking for credits')
-    return simplejson.dumps({'credit': g.user.credit})
+    return build_response(simplejson.dumps({'credit': g.user.credit}))
 
 
 @cloud_page.route("/list_resources", methods=['GET'])

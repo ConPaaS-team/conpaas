@@ -62,6 +62,7 @@ def log_error(msg):
 def build_response(data):
     response = make_response(data)
     response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Connection'] = 'close'
     return response
 
 def error_response(message):

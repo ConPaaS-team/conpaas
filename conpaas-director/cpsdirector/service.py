@@ -154,7 +154,7 @@ def callmanager(app_id, service_id, method, post, data, files=[]):
 @service_page.route("/available_services", methods=['GET'])
 def available_services():
     """GET /available_services"""
-    return simplejson.dumps(valid_services)
+    return build_response(simplejson.dumps(valid_services))
 
 
 from cpsdirector.application import get_default_app, get_app_by_id

@@ -44,7 +44,6 @@ def config(description, logger):
     read_files = config_parser.read(config_files)
 
     unread_files = [f for f in config_files if f not in read_files]
-    logger.info("Configuration files successfully read are: %s" % read_files)
     if unread_files != []:
         errors = "\n"
         for f in unread_files:
@@ -52,8 +51,9 @@ def config(description, logger):
                 open(f)
             except:
                 ex = sys.exc_info()[1]
-                errors += "%s\n" % ex
+                errors += "%s" % ex
         logger.info("Skipping configuration files that cannot be read: %s" % errors)
+    logger.info("Configuration files successfully read are: %s" % read_files)
 
     cps_tools_section = "cps-tools"
     conf_values = dict()

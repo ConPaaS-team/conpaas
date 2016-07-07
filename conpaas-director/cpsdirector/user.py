@@ -392,8 +392,8 @@ def credit():
     decrement = int(request.values.get('decrement', 1))
     success = _deduct_credit(app_id, decrement)
     if success:
-        return jsonify({'error': False})
-    return jsonify({'error': True})
+        return build_response(jsonify({'error': False}))
+    return build_response(jsonify({'error': True}))
 
 
 @user_page.route("/user_config", methods=['GET'])
@@ -404,8 +404,7 @@ def user_config():
     """
     user = g.user.to_dict()
     user.pop('password', None)
-    res = build_response(simplejson.dumps(user))
-    return res
+    return build_response(simplejson.dumps(user))
 
 
 @user_page.route("/user_credit", methods=['GET'])

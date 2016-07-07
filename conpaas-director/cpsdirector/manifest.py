@@ -25,15 +25,6 @@ from cpsdirector import db
 from cpsdirector.common import log, log_error, build_response
 from cpsdirector.common import error_response
 
-try:
-    _create_unverified_https_context = ssl._create_unverified_context
-except AttributeError:
-    # Legacy Python that doesn't verify HTTPS certificates by default
-    pass
-else:
-    # Handle target environment that doesn't support HTTPS verification
-    ssl._create_default_https_context = _create_unverified_https_context
-
 manifest_page = Blueprint('manifest_page', __name__)
 
 def check_manifest(json):
@@ -50,17 +41,27 @@ def check_manifest(json):
 
     return True
 
-def read_from_url(url):
-    # reading data may fail for transient reasons, let's try again a few times
+def read_from_url(url, ssl_check=False): # do not check by default
+    if not ssl_check:
+        try:
+            # This will only work in Python versions >= 2.7.9
+            context = ssl._create_unverified_context()
+        except AttributeError:
+            # Legacy Python that doesn't verify HTTPS certificates anyway
+            context = None
+
+    # Reading data may fail for transient reasons, let's try again a few times
     for attempt in range(1, 6):
         try:
-            return urllib2.urlopen(url).read()
+            if context:
+                return urllib2.urlopen(url, context=context).read()
+            else:
+                return urllib2.urlopen(url).read()
         except Exception as ex:
             if attempt == 5:
                 raise ex
             else:
-                time.sleep(2)
-
+                time.sleep(5)
 
 from cpsdirector.application import check_app_exists, get_app_by_id
 from cpsdirector.application import _createapp as createapp
@@ -270,7 +271,7 @@ def download_manifest(appid):
                 appid)
         deleteapp(g.user.uid, appid, True)
 
-    return simplejson.dumps(manifest)
+    return build_response(simplejson.dumps(manifest))
 
 from os.path import exists
 from flask import helpers
@@ -999,7 +1000,6 @@ class MGeneric(MGeneral):
                     return res['error']
 
         return 'ok'
-
 
     #def startup(self, service_id, json, cloud = 'default'):
         #data = {

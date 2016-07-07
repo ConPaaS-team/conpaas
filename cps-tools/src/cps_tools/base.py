@@ -1,13 +1,12 @@
 import getpass
-import httplib
 import os
 import simplejson
 import socket
 import sys
 import time
-import urllib
 import urllib2
-import ssl
+import urlparse
+import traceback
 
 from conpaas.core.https import client
 
@@ -34,12 +33,6 @@ class BaseClient(object):
         self.director_url = None
         self.debug = False
         self.services = None
-
-    def error(self, error_msg, error_code=1):
-        if not error_msg.startswith("ERROR"):
-            error_msg = "ERROR: " + error_msg
-        print error_msg
-        sys.exit(error_code)
 
     def set_director_url(self, dir_url):
         if dir_url is None:
@@ -95,11 +88,11 @@ class BaseClient(object):
                 time.sleep(2)
         return res['state']
 
-    def call_director_post(self, method, data=None, user_certs=True):
-        return self.call_director(method, True, data, user_certs)
+    def call_director_post(self, method, data=None, use_certs=True):
+        return self.call_director(method, True, data, use_certs)
 
-    def call_director_get(self, method, data=None, user_certs=True):
-        return self.call_director(method, False, data, user_certs)
+    def call_director_get(self, method, data=None, use_certs=True):
+        return self.call_director(method, False, data, use_certs)
 
     def call_director(self, method, post, data=None, use_certs=True):
         """Call the director API.
@@ -122,61 +115,80 @@ class BaseClient(object):
 
         if data is None:
             data = {}
-
         data['username'] = self.username
 
-        url = "%s/%s" % (self.director_url, method)
-
         if use_certs:
-            opener = urllib2.build_opener(HTTPSClientAuthHandler(
-                os.path.join(self.confdir, 'key.pem'),
-                os.path.join(self.confdir, 'cert.pem')))
+            # If certificates are used, the ssl context should already have
+            # been initialized with the user's certificates in __init__
+            if not client.is_ssl_ctx_initialized():
+                raise Exception("Cannot call the ConPaaS director:"
+                                " user certificates are not present.\n"
+                                "Try to run 'cps-user get_certificate'"
+                                " first.")
+
+            if self.debug:
+                self.logger.debug("User certificates are present and will be used.")
         else:
-            try:
-                ssl_ctx = ssl._create_unverified_context()
-            except AttributeError:
-                # Legacy Python that doesn't verify HTTPS certificates by default
-                opener = urllib2.build_opener(urllib2.HTTPSHandler())
-            else:
-                # For Python versions >= 2.7.9, we need to explicitly disable certificate validation
-                opener = urllib2.build_opener(urllib2.HTTPSHandler(context=ssl_ctx))
+            # If not, we need to send the user's password and initialize the
+            # ssl context with one that does not use certificates
             data['password'] = self._get_password()
+            client.conpaas_init_ssl_ctx_no_certs()
+
+            if self.debug:
+                self.logger.debug("User certificates will NOT be used.")
+
+        url = "%s/%s" % (self.director_url, method)
 
         if self.debug:
             if 'password' in data:
                 data_log = dict(data)
                 # hiding password from log
                 if data_log['password'] == '':
-                    data_log['password'] = '<empty_password>'
+                    data_log['password'] = '<empty>'
                 else:
-                    data_log['password'] = '<hidden_password>'
+                    data_log['password'] = '<hidden>'
             else:
                 data_log = data
-            self.logger.debug("Requesting %s with data %s." % (url, data_log))
+            self.logger.info("Requesting '%s' with data %s." % (url, data_log))
 
-        data = urllib.urlencode(data)
-
+        parsed_url = urlparse.urlparse(self.director_url)
         try:
             if post:
-                res = opener.open(url, data)
+                status, body = client.https_post(parsed_url.hostname,
+                                                 parsed_url.port or 443,
+                                                 url,
+                                                 data)
             else:
-                url += "?" + data
-                res = opener.open(url)
+                status, body = client.https_get(parsed_url.hostname,
+                                                parsed_url.port or 443,
+                                                url,
+                                                data)
         except:
+            if self.debug:
+                traceback.print_exc()
             ex = sys.exc_info()[1]
-            self.error("Cannot contact the director at URL %s: %s"
-                       % (self.director_url, ex))
+            raise Exception("Cannot contact the director at URL '%s': %s"
+                            % (url, ex))
 
-        rawdata = res.read()
+        if status != 200:
+            raise Exception("Call to method '%s' on '%s' failed: HTTP status %s.\n"
+                            "Params = %s" % (method, url, status, data))
 
         try:
-            res = simplejson.loads(rawdata)
-            if type(res) is dict and 'error' in res:
-                raise Exception(res['error'])
-
-            return res
+            res = simplejson.loads(body)
         except simplejson.decoder.JSONDecodeError:
-            return rawdata
+            # Not JSON, simply return what we got
+            if self.debug:
+                self.logger.info("Call succeeded, result is not json.")
+            return body
+
+        if type(res) is dict and 'error' in res:
+            if self.debug:
+                self.logger.info("Call succeeded, result contains an error")
+            raise Exception(res['error'])
+
+        self.logger.info("Call succeeded, result is: %s" % res)
+        return res
 
     def get_services(self, app_id=None, serv_type=None):
         if self.services is None:
@@ -228,38 +240,69 @@ class BaseClient(object):
         application = self.application_dict(app_id)
 
         if application['manager'] is None:
-            self.error('Application %s has not started. Try to start it first.' % app_id)
+            raise Exception('Application %s has not started. Try to start it first.'
+                            % app_id)
 
         if data is None:
             data = {}
         if files is None:
             files = []
 
-        # File upload
-        if files:
-            res = client.https_post(application['manager'], 443, '/', data, files)
-        # POST
-        elif post:
-            res = client.jsonrpc_post(application['manager'], 443, '/', method, service_id, data)
-        # GET
-        else:
-            res = client.jsonrpc_get(application['manager'], 443, '/', method, service_id, data)
+        # Certificates are always used, the ssl context should already have
+        # been initialized with the user's certificates in __init__
+        if not client.is_ssl_ctx_initialized():
+            raise Exception("Cannot call the manager:"
+                            " user certificates are not present.\n"
+                            "Try to run 'cps-user get_certificate'"
+                            " first.")
+        if self.debug:
+            self.logger.debug("User certificates are present and will be used.")
+            url = "https://%s/" % application['manager']
+            self.logger.info("Requesting '%s' with aid %s, sid %s, method '%s', "
+                              "data %s and %s files." %
+                              (url, app_id, service_id, method, data, len(files)))
 
-        if res[0] == 200:
-            try:
-                data = simplejson.loads(res[1])
-            except simplejson.decoder.JSONDecodeError:
-                # Not JSON, simply return what we got
-                return res[1]
+        try:
+            # File upload
+            if files:
+                status, body = client.https_post(application['manager'], 443,
+                                        '/', data, files)
+            # POST
+            elif post:
+                status, body = client.jsonrpc_post(application['manager'], 443,
+                                        '/', method, service_id, data)
+            # GET
+            else:
+                status, body = client.jsonrpc_get(application['manager'], 443,
+                                        '/', method, service_id, data)
+        except:
+            if self.debug:
+                traceback.print_exc()
+            ex = sys.exc_info()[1]
+            raise Exception("Cannot contact the manager at URL '%s': %s"
+                            % (url, ex))
 
-            res = data.get('result', data)
-            if type(res) is dict and 'error' in res:
-                raise Exception(res['error'])
+        if status != 200:
+            raise Exception("Call to method '%s' on '%s' failed: HTTP status %s.\n"
+                            "Params = %s" % (method, application['manager'],
+                            status, data))
 
-            return res
+        try:
+            data = simplejson.loads(body)
+        except simplejson.decoder.JSONDecodeError:
+            # Not JSON, simply return what we got
+            if self.debug:
+                self.logger.info("Call succeeded, result is not json.")
+            return body
 
-        raise Exception("Call to method %s on %s failed: %s.\nParams = %s" % (
-            method, application['manager'], res[1], data))
+        res = data.get('result', data)
+        if type(res) is dict and 'error' in res:
+            if self.debug:
+                self.logger.info("Call succeeded, result contains an error")
+            raise Exception(res['error'])
+
+        self.logger.info("Call succeeded, result is: %s" % res)
+        return res
 
     def call_manager_post(self, app_id, service_id, method, data=None, files=None):
         if files is None:
@@ -301,17 +344,3 @@ class BaseClient(object):
             output += "\n" + " ".join(rowstr).format(**row)
 
         return output
-
-
-class HTTPSClientAuthHandler(urllib2.HTTPSHandler):
-
-    def __init__(self, key, cert):
-        urllib2.HTTPSHandler.__init__(self)
-        self.key = key
-        self.cert = cert
-
-    def https_open(self, req):
-        return self.do_open(self.get_connection, req)
-
-    def get_connection(self, host, timeout=300):
-        return httplib.HTTPSConnection(host, key_file=self.key, cert_file=self.cert)

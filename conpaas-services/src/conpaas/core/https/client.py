@@ -72,6 +72,13 @@ def conpaas_init_ssl_ctx(dir, role, uid=None, aid=None):
     __uid = uid
     __aid = aid
 
+def conpaas_init_ssl_ctx_no_certs():
+    global __client_ctx
+    __client_ctx = SSL.Context(SSL.SSLv23_METHOD)
+
+def is_ssl_ctx_initialized():
+    return isinstance(__client_ctx, SSL.Context)
+
 class HTTPSConnection(HTTPConnection):
     """
         This class allows communication via SSL using
@@ -133,7 +140,7 @@ class SSLConnectionWrapper(object):
                 try:
                     buf = self._ssl_conn.recv(_buf_size)
                 except SSL.WantReadError:
-                    time.sleep(1)
+                    # time.sleep(1)
                     continue
                 if not buf:
                     break
@@ -164,7 +171,7 @@ def _conpaas_callback_agent(connection, x509, errnum, errdepth, ok):
         The custom certificate verification function called on the
         agent's client side. The agent might sends requests only to
         other agents pertaining to the same user and the same
-        service.
+        application.
     '''
 
     components = x509.get_subject().get_components()
@@ -185,7 +192,6 @@ def _conpaas_callback_agent(connection, x509, errnum, errdepth, ok):
     if dict['role'] != 'agent':
        return False
 
-    # if dict['UID'] != __uid or dict['serviceLocator'] != __sid:
     if dict['UID'] != __uid or dict['serviceLocator'] != __aid:
        return False
 
@@ -196,7 +202,7 @@ def _conpaas_callback_manager(connection, x509, errnum, errdepth, ok):
     '''
         The custom certificate verification function called on the
         manager's client side. The manager might send requests only to
-        its agents or the frontend.
+        its agents or the director.
 
 	Note: Because of the GIT hook, the manager can be
 	a client to itself (uses its own certificate to connect
@@ -217,6 +223,7 @@ def _conpaas_callback_manager(connection, x509, errnum, errdepth, ok):
             if value == 'CA':
                 return ok
 
+    # FIXME(teodor): the director uses a certificate with the 'frontend' role
     if dict['role'] == 'frontend':
         return ok
 
@@ -224,7 +231,6 @@ def _conpaas_callback_manager(connection, x509, errnum, errdepth, ok):
        return False
 
     if dict['UID'] != __uid or dict['serviceLocator'] != __aid:
-    # if dict['UID'] != __uid or dict['serviceLocator'] != __sid:
        return False
 
     return ok
@@ -233,7 +239,7 @@ def _conpaas_callback_user(connection, x509, errnum, errdepth, ok):
     '''
         The custom certificate verification function called on the
         user's client side. The user might sends requests only to
-        its managers.
+        the director or one of its managers.
     '''
 
     components = x509.get_subject().get_components()
@@ -251,6 +257,10 @@ def _conpaas_callback_user(connection, x509, errnum, errdepth, ok):
             if value == 'CA':
                 return ok
 
+    # FIXME(teodor): the director uses a certificate with the 'frontend' role
+    if dict['role'] == 'frontend':
+        return ok
+
     if dict['role'] != 'manager':
         return False
 
@@ -263,7 +273,7 @@ def _conpaas_callback_director(connection, x509, errnum, errdepth, ok):
     '''
         The custom certificate verification function called on the
         director's client side. The director might sends requests only to
-        managers.
+        managers and agents.
     '''
 
     components = x509.get_subject().get_components()
@@ -275,7 +285,6 @@ def _conpaas_callback_director(connection, x509, errnum, errdepth, ok):
                 return ok
 
     if dict['role'] != 'manager' and dict['role'] != 'agent':
-    # if dict['role'] != 'manager':
        return False
 
     return ok
@@ -303,6 +312,7 @@ def https_get(host, port, uri, params=None):
         h.putrequest('GET', '%s?%s' % (uri, urlencode(params)))
     else:
         h.putrequest('GET', uri)
+    h.putheader('Connection', 'close')
     h.endheaders()
     r = h.getresponse()
     body = r.read()
@@ -328,8 +338,9 @@ def https_post(host, port, uri, params={}, files=[]):
     content_type, body = _encode_multipart_formdata(params, files)
     h = HTTPSConnection(host, port=port, ssl_context=__client_ctx)
     h.putrequest('POST', uri)
-    h.putheader('content-type', content_type)
-    h.putheader('content-length', str(len(body)))
+    h.putheader('Content-Type', content_type)
+    h.putheader('Content-Length', str(len(body)))
+    h.putheader('Connection', 'close')
     h.endheaders()
     h.send(body)
     r = h.getresponse()
@@ -398,13 +409,12 @@ def jsonrpc_get(host, port, uri, method, service_id=0, params=None):
         all_params['params'] = json.dumps(params)
 
     h.putrequest('GET', '%s?%s' % (uri, urlencode(all_params)))
-    h.putheader('content-type', 'application/json')
+    h.putheader('Content-Type', 'application/json')
+    h.putheader('Connection', 'close')
     h.endheaders()
     r = h.getresponse()
     body = r.read()
     h.close()
-
-
     return r.status, body
 
 def jsonrpc_post(host, port, uri, method, service_id=0, params={}):
@@ -426,8 +436,9 @@ def jsonrpc_post(host, port, uri, method, service_id=0, params={}):
     # body = json.dumps({'method': method, 'params': params, 'id': '1'})
     h = HTTPSConnection(host, port=port, ssl_context=__client_ctx)
     h.putrequest('POST', uri)
-    h.putheader('content-type', 'application/json')
-    h.putheader('content-length', str(len(body)))
+    h.putheader('Content-Type', 'application/json')
+    h.putheader('Content-Length', str(len(body)))
+    h.putheader('Connection', 'close')
     h.endheaders()
     h.send(body)
     r = h.getresponse()
