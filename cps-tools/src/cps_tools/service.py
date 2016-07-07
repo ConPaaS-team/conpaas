@@ -335,10 +335,13 @@ class ServiceCmd(object):
         subparser.set_defaults(run_cmd=self.get_types, parser=subparser)
 
     def get_types(self, args):
-        res = self.client.call_director_get("available_services")
+        if self.type:
+            print "%s" % self.type
+        else:
+            res = self.client.call_director_get("available_services")
 
-        for serv_type in res:
-            print("%s" % serv_type)
+            for serv_type in res:
+                print "%s" % serv_type
 
     # ========== list_nodes
     def _add_list_nodes(self):
