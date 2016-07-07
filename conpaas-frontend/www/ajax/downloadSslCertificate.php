@@ -15,11 +15,30 @@ try {
     }
 
     $cert_type = $_GET['cert_type'];
-    $user = $_GET['user'];
-    $group = $_GET['group'];
-    $passphrase = $_GET['passphrase'];
-    $adminflag = $_GET['adminflag'];
-    $filename = $_GET['filename'];
+
+    if (isset($_GET['user']))
+        $user = $_GET['user'];
+
+    if (isset($_GET['group']))
+        $group = $_GET['group'];
+    else
+        $group = '';
+
+    if (isset($_GET['passphrase']))
+        $passphrase = $_GET['passphrase'];
+    else
+        $passphrase = '';
+
+    if (isset($_GET['adminflag']))
+        $adminflag = $_GET['adminflag'];
+    else
+        $adminflag = 'no';
+
+    if (isset($_GET['filename']))
+        $filename = $_GET['filename'];
+    else
+        $filename = $cert_type . '_cert.p12';
+
     $sid = $_GET['sid'];
     $service_data = ServiceData::getServiceById($sid);
     $service = ServiceFactory::create($service_data);
@@ -28,25 +47,9 @@ try {
         throw new Exception('Not allowed');
     }
 
-    if (is_null($passphrase)) {
-        $passphrase = '';
-    }
-
-    if (empty($adminflag)) {
-        $adminflag = 'no';
-    }
-
-    if (empty($filename)) {
-        $filename = $cert_type . '_cert.p12';
-    }
-
     if ($cert_type == 'user') {
         if (empty($user)) {
             throw new Exception('The user field must not be empty!');
-        }
-
-        if (is_null($group)) {
-            $group = '';
         }
 
         $method = 'get_user_cert';

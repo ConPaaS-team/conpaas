@@ -12,6 +12,7 @@ conpaas.ui = (function (this_module) {
     attachHandlers: function () {
         var that = this;
         $('#toregister').click(this, this.onShowRegister);
+        $('#togoback').click(this, this.onShowLogin);
         $('#login').click(this, this.onLogin);
         $('#clearForm').click(this, this.onClearForm);
         $('#but_contrail').click(this, this.onContrail);
@@ -74,6 +75,7 @@ conpaas.ui = (function (this_module) {
         $('#login-title').hide('slow');
         $('#register-title').show();
         $(this).hide();
+        $('#togoback').show();
         $('.register_form').show('slow');
         $('#login').toggleClass('active');
         $('#register').toggleClass('active');
@@ -84,6 +86,28 @@ conpaas.ui = (function (this_module) {
         $('#uuid').removeClass('invisible'); // remove later
         $('#openid').removeClass('invisible'); // remove later
         $('#selected').removeClass('invisible'); // remove later
+
+        $('#username').focus();
+        $('.login .form').width(320);
+    },
+    onShowLogin: function (event) { // #togoback
+        var page = event.data;
+        page.state = 'login';
+        $(document).attr('title', 'ConPaaS - management interface - Login');
+        $('#login-title').show();
+        $('#register-title').hide('slow');
+        $(this).hide();
+        $('#toregister').show();
+        $('.register_form').hide();
+        $('#login').toggleClass('active');
+        $('#register').toggleClass('active');
+        $('#login').show();
+        $('#register').hide();
+        $('#but_contrail').removeClass('invisible');
+        $('#but_openid').removeClass('invisible');
+        $('#uuid').addClass('invisible'); // remove later
+        $('#openid').addClass('invisible'); // remove later
+        $('#selected').addClass('invisible'); // remove later
 
         $('#username').focus();
         $('.login .form').width(320);
@@ -335,6 +359,7 @@ $(document).ready(function () {
     page = new conpaas.ui.LoginPage(server);
     page.attachHandlers();
     $('#username').focus();
+    /*
     if (jPosts["4get"] == "4get" || jGets["4get"] == "4get") {
         if (jPosts["4set"]) { $('#selected').val(jPosts["4set"]) ; } 
         if (jGets["4set"]) { $('#selected').val(jGets["4set"]) ; } 
@@ -347,4 +372,5 @@ $(document).ready(function () {
         $(button).click();
         //$('#but_contrail').click();
     }
+    */
 });

@@ -122,6 +122,11 @@ conpaas.http = (function (this_module) {
     },
     /* methods */{
     handleError: function (error) {
+        // If the error is "User not logged in", better redirect to the login page
+        if (error.details.toLowerCase().indexOf("not logged in") >= 0) {
+            window.location = 'login.php';
+            return;
+        }
         $('#pgstatErrorName').html(error.name);
         $('#pgstatErrorDetails').click(function () {
             alert(error.details);
@@ -334,7 +339,7 @@ conpaas.ui = (function (this_module) {
                     function (error) {
                         console.log('ConPaaS: logout ERROR');
                         //alert('ConPaaS logout error');
-                        page.displayError(error.name, error.details);
+                        that.displayError(error.name, error.details);
                     }, 
                     null,
                     false /* wait for request to complete */
@@ -347,7 +352,7 @@ conpaas.ui = (function (this_module) {
                 } else if (loggedOutFromConPaaS && uuid && uuid.length > 0) {
                     window.location = 'contrail/contrail-logout.php?returnTo=/index.php';
                 } else {
-                    window.location = 'index.php'; 
+                    window.location = 'index.php';
                 }
             });
         },

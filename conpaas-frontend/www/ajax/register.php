@@ -60,6 +60,8 @@ try {
 	$_SESSION['password'] = $_POST['password'];
 	$user->loadByName($_POST['username']);
 	$user->establishSession();
+	// Uncomment the following lines to enable sending the welcome email
+	/*
 	$mailsent = $user->sendWelcomeEmail();
 	if (!$mailsent) {
 	  		// throw an error in the log, but still login the user
@@ -67,6 +69,7 @@ try {
 	  		dlog($msg);
 	  		error_log($msg);
 	}
+	*/
 	// registered ok
 	echo json_encode(array('registered' => 1));
 } catch (Exception $e) {

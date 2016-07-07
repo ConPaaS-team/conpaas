@@ -59,7 +59,7 @@ class User {
                 $_SESSION['openid'] = $openid;
 
 		$uinfo = UserData::getUserByOpenid($openid, true);
-                user_error('getUserByOpenid ' . json_encode($uinfo), E_USER_NOTICE);
+		// user_error('getUserByOpenid ' . json_encode($uinfo), E_USER_NOTICE);
 		if ($uinfo === false) {
 			return false;
 		}
@@ -73,7 +73,7 @@ class User {
                 $_SESSION['uuid'] = $uuid;
 
 		$uinfo = UserData::getUserByUuid($uuid, true);
-                user_error('getUserByUuid ' . json_encode($uinfo), E_USER_NOTICE);
+		// user_error('getUserByUuid ' . json_encode($uinfo), E_USER_NOTICE);
 		if ($uinfo === false) {
 			return false;
 		}

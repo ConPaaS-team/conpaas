@@ -20,6 +20,7 @@ $support_openid = Director::getSupportOpenID();
 <html>
     <head>
         <script src="js/jquery-1.5.js"></script>
+        <!--
         <script>
             // example found on   http://stackoverflow.com/questions/439463/how-to-get-get-and-post-variables-with-jquery
             // maybe move this code to login.js ??
@@ -36,6 +37,7 @@ $support_openid = Director::getSupportOpenID();
             }
             ?>
         </script>
+        -->
         <?php 
         echo $page->renderContentType(); 
         if (isset($_GET['get']) || isset($_POST['get'])) {
@@ -150,20 +152,20 @@ $support_openid = Director::getSupportOpenID();
                     <td class="name invisible">uuid</td>
                     <td class="input invisible">
                     -->
-                    <td class="name ">uuid</td>
-                    <td class="input ">
+                    <td class="name invisible">uuid</td>
+                    <td class="input invisible">
                         <input type="text" name="uuid" id="uuid" size="30" value="<none>" />
                     </td>
                 </tr>
                 <tr class="register_form" style="display: none">
-                    <td class="name ">openid</td>
-                    <td class="input ">
+                    <td class="name invisible">openid</td>
+                    <td class="input invisible">
                         <input type="text" name="openid" id="openid" size="30" value="<none>" />
                     </td>
                 </tr>
                 <tr class="register_form" style="display: none">
-                    <td class="name ">selected</td>
-                    <td class="input ">
+                    <td class="name invisible">selected</td>
+                    <td class="input invisible">
                         <input type="text" name="selected" id="selected" size="30" value="<none>" />
                     </td>
                 </tr>
@@ -192,8 +194,8 @@ $support_openid = Director::getSupportOpenID();
                     <td class="actions">
                         <input class="active" type="submit" value="login" id="login" onclick="return false;" />
                         <input type="button" class="invisible" value="register" id="register" />
-                        <!-- <input type="button" value="myregister" id="myregister" /> -->
                         <a id="toregister" href="javascript: void(0);">register</a>
+                        <a id="togoback" class="invisible" href="javascript: void(0);">back</a>
                     </td>
                 </tr>
                 <tr>

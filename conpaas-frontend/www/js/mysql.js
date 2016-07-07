@@ -98,10 +98,10 @@ conpaas.ui = (function (this_module) {
         coords=[['time', 'Misalignment' ]]
         for(i=10; i>=0;i--)
             coords.push([i+'s', 0])
-        
+
         for (i=1;i<coords.length-1;i++)
             coords[i][1]=coords[i+1][1];
-        
+
         this.server.req('ajax/mysqlPerformance.php', {sid: this.service.sid}, 'get',
             function(data) {
                 coords[coords.length-1][1]=parseFloat(data);
@@ -133,15 +133,13 @@ conpaas.ui = (function (this_module) {
             }
         }
         // get the last update usage data from the cluster
-        this.server.req('ajax/mysqlPerformance.php', {sid: this.service.sid}, 'get',
+        this.server.req('ajax/getMysqlStats.php', {sid: this.service.sid}, 'get',
             function (data) {
-                var parsed= JSON.parse(data);
-
                 statsPS[stats.length-1]=[ '0s', 
-                parsed['result']['meanSelect'] ,
-                parsed['result']['meanUpdate'] ,
-                parsed['result']['meanInsert'],
-                parsed['result']['meanDelete'] ];
+                data['result']['meanSelect'] ,
+                data['result']['meanUpdate'] ,
+                data['result']['meanInsert'],
+                data['result']['meanDelete'] ];
 
                 stats[stats.length-1]=[ '0s',
                 statsPS[statsPS.length-1][1]-statsPS[statsPS.length-2][1] ,
@@ -343,6 +341,7 @@ conpaas.ui = (function (this_module) {
 
                 if (z[index]["hostname"]!="Manager"){
                     var a = document.createElement('input');
+                    var sid = this.service.sid;
                     a.setAttribute("class","elimina");
                     a.setAttribute("value","Delete");
                     a.setAttribute("type","button");

@@ -23,7 +23,7 @@ try {
 			$log = $service->fetchLog();
 		}
 	} else {
-		$applications_data = ApplicationData::getApplications($_SESSION['uid'], $aid);
+		$applications_data = ApplicationData::getApplications($_SESSION['uid'], $_SESSION['aid']);
 		if (count($applications_data) > 0) {
 			$application = new Application($applications_data[0]);
 			$log = $application->fetchLog();

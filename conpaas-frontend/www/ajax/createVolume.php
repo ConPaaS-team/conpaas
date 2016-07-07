@@ -22,7 +22,7 @@ try {
 
 	$volumeName = $_POST['volumeName'];
 	$owner = $_POST['owner'];
-	$response = $service->createVolume($volumeName, $owner);
+	$response = $service->createXFSVolume($volumeName, $owner);
 	echo $response;
 } catch (Exception $e) {
 	echo json_encode(array('error' => $e->getMessage()));

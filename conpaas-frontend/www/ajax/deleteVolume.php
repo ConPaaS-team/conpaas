@@ -21,7 +21,7 @@ try {
 	}
 
 	$volumeName = $_POST['volumeName'];
-	$response = $service->deleteVolume($volumeName);
+	$response = $service->deleteXFSVolume($volumeName);
 	echo $response;
 } catch (Exception $e) {
 	echo json_encode(array('error' => $e->getMessage()));

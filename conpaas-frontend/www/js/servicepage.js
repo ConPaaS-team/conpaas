@@ -178,7 +178,7 @@ conpaas.ui = (function (this_module) {
     onClickStart: function (event) {
         var page = event.data;
         page.freezeInput(true);
-        page.displayInfo('command sent, waiting to start...');
+        page.displayInfo('command sent, waiting...');
         page.start(function (response) {
             page.pollState(function () {
                 window.location.reload();
@@ -195,7 +195,7 @@ conpaas.ui = (function (this_module) {
             return;
         }
         page.freezeInput(true);
-        page.displayInfo('command sent, waiting to stop...');
+        page.displayInfo('command sent, waiting...');
         page.stop(function (response) {
             page.pollState(function () {
                 window.location.reload();
@@ -296,10 +296,10 @@ conpaas.ui = (function (this_module) {
         }
         page.freezeInput(true);
         if (add) {
-            page.displayInfo('command sent, waiting to start...');
+            page.displayInfo('command sent, waiting...');
             page.addNodes(toChange, successHandler, errorHandler);
         } else {
-            page.displayInfo('command sent, waiting to stop...');
+            page.displayInfo('command sent, waiting...');
             page.removeNodes(toChange, successHandler, errorHandler);
         }
     }

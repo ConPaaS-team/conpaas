@@ -35,7 +35,7 @@ class UserData {
            /* 'password' => (isset($_SESSION['password']) ? $_SESSION['password'] : 'avoid "Undefined index: password" message')  */
            ));
 
-       user_error('getUserByOpenid: HTTPS on director /login with openid = <' . $openid . '> returns ' . $res, E_USER_NOTICE);
+       // user_error('getUserByOpenid: HTTPS on director /login with openid = <' . $openid . '> returns ' . $res, E_USER_NOTICE);
        return self::set_up_user(null, $res, $refresh_certs);
     }
 
@@ -44,7 +44,7 @@ class UserData {
            /* 'password' => (isset($_SESSION['password']) ? $_SESSION['password'] : 'avoid "Undefined index: password" message')  */
            ));
 
-       user_error('getUserByUuid: HTTPS on director /login with uuid = <' . $uuid . '> returns ' . $res, E_USER_NOTICE);
+       // user_error('getUserByUuid: HTTPS on director /login with uuid = <' . $uuid . '> returns ' . $res, E_USER_NOTICE);
        return self::set_up_user(null, $res, $refresh_certs);
     }
 
@@ -52,7 +52,7 @@ class UserData {
        $res = HTTPS::post(Conf::DIRECTOR . '/login', array('username' => $username, 
            'password' => (isset($_SESSION['password']) ? $_SESSION['password'] : 'avoid "Undefined index: password" message')));
 
-       user_error('getUserByName: HTTPS on director /login with username = <' . $username . '> returns ' . $res, E_USER_NOTICE);
+       // user_error('getUserByName: HTTPS on director /login with username = <' . $username . '> returns ' . $res, E_USER_NOTICE);
        return self::set_up_user($username, $res, $refresh_certs);
     }
 

@@ -14,7 +14,7 @@ try {
 	$service_data = ServiceData::getServiceById($sid);
 	$service = ServiceFactory::create($service_data);
 
-	$volumes = $service->viewVolumes();
+	$volumes = $service->viewXFSVolumes();
 } catch (Exception $e) {
 	$volumes = 'Volumes information not available';
 }

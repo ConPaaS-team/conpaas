@@ -11,7 +11,7 @@ try {
 	}
 
 	$specs = "";
-	if (is_uploaded_file($_FILES['specfile']['tmp_name'])) {
+	if (isset($_FILES['specfile']) && is_uploaded_file($_FILES['specfile']['tmp_name'])) {
 		$specs = file_get_contents($_FILES['specfile']['tmp_name']);
 	} else if (isset($_POST['json'])) {
 		$specs = $_POST['json'];

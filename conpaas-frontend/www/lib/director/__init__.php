@@ -25,7 +25,7 @@ class Director {
     public static function getSupportExternalIdp() {
         if (self::$support_external_idp == "-") {
             self::$support_external_idp = HTTPS::get(Conf::DIRECTOR . '/support_external_idp');
-            user_error('support_external_idp = ' . self::$support_external_idp);
+            // user_error('support_external_idp = ' . self::$support_external_idp);
             if ( strtolower(self::$support_external_idp) == 'true' ) {
                 self::$support_external_idp = true;
             } else {
@@ -38,7 +38,7 @@ class Director {
     public static function getSupportOpenID() {
         if (self::$support_openid == "-") {
             self::$support_openid = HTTPS::get(Conf::DIRECTOR . '/support_openid');
-            user_error('support_openid = ' . self::$support_openid);
+            // user_error('support_openid = ' . self::$support_openid);
             if ( strtolower(self::$support_openid) == 'true' ) {
                 self::$support_openid = true;
             } else {
@@ -51,7 +51,7 @@ class Director {
     public static function getJsDebugLevel() {
         if (self::$js_debug_level == "-") {
             self::$js_debug_level = HTTPS::get(Conf::DIRECTOR . '/debug_level/js');
-            user_error('js_debug_level = ' . self::$js_debug_level);
+            // user_error('js_debug_level = ' . self::$js_debug_level);
         }
         return self::$js_debug_level;
     }
@@ -59,7 +59,7 @@ class Director {
     public static function getAjaxDebugLevel() {
         if (self::$ajax_debug_level == "-") {
             self::$ajax_debug_level = HTTPS::get(Conf::DIRECTOR . '/debug_level/ajax');
-            user_error('ajax_debug_level = ' . self::$ajax_debug_level);
+            // user_error('ajax_debug_level = ' . self::$ajax_debug_level);
         }
         return self::$ajax_debug_level;
     }
@@ -67,7 +67,7 @@ class Director {
     public static function getPhpDebugLevel() {
         if (self::$php_debug_level == "-") {
             self::$php_debug_level = HTTPS::get(Conf::DIRECTOR . '/debug_level/php');
-            user_error('php_debug_level = ' . self::$php_debug_level);
+            // user_error('php_debug_level = ' . self::$php_debug_level);
         }
         return self::$php_debug_level;
     }
@@ -75,7 +75,7 @@ class Director {
     public static function getPythonDebugLevel() {
         if (self::$python_debug_level == "-") {
             self::$python_debug_level = HTTPS::get(Conf::DIRECTOR . '/debug_level/python');
-            user_error('python_debug_level = ' . self::$python_debug_level);
+            // user_error('python_debug_level = ' . self::$python_debug_level);
         }
         return self::$python_debug_level;
     }

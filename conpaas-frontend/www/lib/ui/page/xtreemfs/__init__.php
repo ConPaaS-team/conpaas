@@ -416,7 +416,7 @@ class XtreemFSPage extends ServicePage {
 		$html .= $this->renderClientCertificateSection();
 //		$html .= $this->renderUserCertificateSection();
 		if($this->service->isRunning()){
-			$volumes = $this->service->listVolumes();
+			$volumes = $this->service->listXFSVolumes();
 			$html .= $this->renderManageVolumesSection($volumes);
 			$html .= $this->renderAccessSection($volumes);
 		}

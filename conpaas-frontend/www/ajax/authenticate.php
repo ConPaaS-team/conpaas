@@ -10,40 +10,40 @@ require_module('logging');
 try {
     $user = new User();
     if ($user->isAuthenticated()) {
-        user_error('-- user passed');
+        // user_error('-- user passed');
         echo json_encode(array('authenticated' => 1));
         exit();
     }
 
-    user_error('check username and password');
+    // user_error('check username and password');
     if ( isset($_POST['username']) && isset($_POST['password']) ) {
         $authenticated = $user->authenticate($_POST['username'], $_POST['password']);
         if ($authenticated) {
-            user_error('- uname + pw passed');
+            // user_error('- uname + pw passed');
             echo json_encode(array('authenticated' => 1));
             exit();
         }
-        user_error('- uname + pw failed');
+        // user_error('- uname + pw failed');
     }
-    user_error('check uuid');
+    // user_error('check uuid');
     if ( isset($_POST['uuid']) && ($_POST['uuid'] != "<none>") ) {
         $authenticated = $user->authenticate_uuid($_POST['uuid']);
         if ($authenticated) {
-            user_error('- uuid passed');
+            // user_error('- uuid passed');
             echo json_encode(array('authenticated' => 1));
             exit();
         }
-        user_error('- uuid failed');
+        // user_error('- uuid failed');
     }
-    user_error('check openid');
+    // user_error('check openid');
     if ( isset($_POST['openid']) && ($_POST['openid'] != "<none>") ) {
         $authenticated = $user->authenticate_openid($_POST['openid']);
         if ($authenticated) {
-            user_error('- openid passed');
+            // user_error('- openid passed');
             echo json_encode(array('authenticated' => 1));
             exit();
         }
-        user_error('- openid failed');
+        // user_error('- openid failed');
     }
     # TODO add openid 
 
@@ -52,7 +52,7 @@ try {
         'error' => 'username and password don\'t match')
     );
 } catch (Exception $e) {
-    user_error('-- authentication exception');
+    // user_error('-- authentication exception');
     dlog($e->getMessage());
         echo json_encode(array(
         'error' => $e->getMessage(),

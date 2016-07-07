@@ -13,9 +13,7 @@ try {
 	$sid = $_GET['sid'];
 	$service_data = ServiceData::getServiceById($sid);
 	$service = ServiceFactory::create($service_data);
-	$json = $service-> getMySqlStats();
-	
-
+	$json = $service->getMySqlStats();
 } catch (Exception $e) {
 	$json = 'Stats not available';
 }

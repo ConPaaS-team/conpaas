@@ -13,9 +13,9 @@ try {
 	$sid = $_GET['sid'];
 	$service_data = ServiceData::getServiceById($sid);
 	$service = ServiceFactory::create($service_data);
-	$json = $service-> getMeanLoad();
+	$json = $service->getMeanLoad();
  	$load = json_decode($json, true);
- 	$load['result']['meanLoad'];
+ 	// $load['result']['meanLoad'];
 } catch (Exception $e) {
 	$load = 'Load not available';
 }

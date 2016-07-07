@@ -102,10 +102,10 @@ conpaas.ui = (function (this_module) {
                         $("#btnStopApp").hide();
                         $("#appRightMenu").hide();
                         if (app.status == 'PROLOGUE') {
-                            that.displayInfo_('starting application manager...');
+                            that.displayInfo_('application is starting up...');
                             return false
                         } else if (app.status == 'EPILOGUE') {
-                            that.displayInfo_('stopping application manager...');
+                            that.displayInfo_('application is releasing resources...');
                             return false
                         } else {
                             $("#btnStartApp").show();

@@ -41,7 +41,7 @@ switch ($target) {
 		break;
 	case 'xtreemfs_volumes':
 		$page = PageFactory::create($service);
-		$volumes = $service->listVolumes();
+		$volumes = $service->listXFSVolumes();
 		$volumeList = $page->renderVolumeList($volumes);
 		$volumeSelector = $page->renderVolumeSelectorOptions($volumes);
 		$response = array("volumeList"=>$volumeList,

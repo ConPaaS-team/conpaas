@@ -35,36 +35,39 @@ class XtreemFSService extends Service {
 		return new XtreemFSInstance($info);
 	}
 
-	public function createVolume($volumeName,$owner) {
+	public function createXFSVolume($volumeName,$owner) {
 		$resp = $this->managerRequest('post', 'createVolume', array(
                 'volumeName' => $volumeName,
                 'owner' => $owner));
 		return $resp;
 	}
-	public function deleteVolume($volumeName) {
+	public function deleteXFSVolume($volumeName) {
 		$resp = $this->managerRequest('post', 'deleteVolume', array(
 				'volumeName' => $volumeName));
 		return $resp;
 	}
 
- 	public function viewVolumes() {
+ 	public function viewXFSVolumes() {
  		$json = $this->managerRequest('get', 'listVolumes', array());
  		$volumes = json_decode($json, true);
  		return $volumes['result']['volumes'];
  	}
 
-	public function listVolumes() {
-		$volumesText = $this->viewVolumes();
+	public function listXFSVolumes() {
+		$volumesText = $this->viewXFSVolumes();
 		preg_match_all("/^\t(.+)\t->\t(.+)$/m", $volumesText,
 				$out, PREG_PATTERN_ORDER);
+		$volumes = array();
 		for($i = 0; $i < count($out[1]); $i++) {
 			$volume['volumeName'] = $out[1][$i];
 			$volume['volumeUUID'] = $out[2][$i];
 			$volumes[$i] = $volume;
 		}
-		usort($volumes, function ($a, $b) {
-			return strcmp($a['volumeName'], $b['volumeName']);
-		});
+		if ($volumes) {
+			usort($volumes, function ($a, $b) {
+				return strcmp($a['volumeName'], $b['volumeName']);
+			});
+		}
 		return $volumes;
 	}
 
