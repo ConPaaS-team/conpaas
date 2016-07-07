@@ -230,8 +230,15 @@ dist_bin_SCRIPTS = \
 	bin/cps-tools \
 	bin/cps-application \
 	bin/cps-service \
+	bin/cps-user \
 	bin/cps-cloud \
-	bin/cps-user
+	bin/cps-director \
+	bin/cps-php \
+	bin/cps-java \
+	bin/cps-mysql \
+	bin/cps-xtreemfs \
+	bin/cps-generic \
+	bin/cps-helloworld
 
 all: all-recursive
 
@@ -777,7 +784,7 @@ uninstall-am: uninstall-dist_binSCRIPTS uninstall-dist_sysconfDATA
 
 
 install-exec-hook:
-	for cmd in cps-tools cps-user cps-application cps-service cps-cloud; \
+	for cmd in cps-tools cps-application cps-service cps-user cps-cloud cps-director cps-php cps-java cps-mysql cps-xtreemfs cps-generic cps-helloworld; \
 	do \
 	  eval "$$(register-python-argcomplete $$cmd)"; \
 	done; \

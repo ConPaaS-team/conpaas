@@ -6,11 +6,12 @@ import StringIO
 import sys
 import traceback
 import zipfile
-from base import BaseClient
+
+from .base import BaseClient
+from .config import config
 
 from conpaas.core import https
 
-from .config import config
 
 ## TODO: should be configurable in cps-tools.conf
 DEFAULT_CREDIT = 50
@@ -237,16 +238,16 @@ def main():
     console.setFormatter(formatter)
     logger.addHandler(console)
 
-    client = BaseClient(logger)
+    cmd_client = BaseClient(logger)
 
     parser, argv = config('Manage ConPaaS users.', logger)
 
-    _user_cmd = UserCmd(parser, client)
+    _user_cmd = UserCmd(parser, cmd_client)
 
     argcomplete.autocomplete(parser)
     args = parser.parse_args(argv)
-    client.set_config(args.director_url, args.username, args.password,
-                      args.debug)
+    cmd_client.set_config(args.director_url, args.username, args.password,
+                          args.debug)
     try:
         args.run_cmd(args)
     except Exception:

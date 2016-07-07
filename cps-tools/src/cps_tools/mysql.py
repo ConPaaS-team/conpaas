@@ -141,7 +141,7 @@ def main():
 
     parser, argv = config('Manage ConPaaS MySQL services.', logger)
 
-    _serv_cmd = MySqlCmd(parser, cmd_client)
+    _serv_cmd = MySQLCmd(parser, cmd_client)
 
     argcomplete.autocomplete(parser)
     args = parser.parse_args(argv)
