@@ -37,6 +37,8 @@ class ServiceCmd(object):
         self._add_stop()
 #        self._add_get_config()
         self._add_get_state()
+        self._add_get_script()
+        self._add_set_script()
         self._add_get_log()
         self._add_get_agent_log()
         self._add_get_history()
@@ -346,7 +348,7 @@ class ServiceCmd(object):
     # ========== list_nodes
     def _add_list_nodes(self):
         subparser = self.add_parser('list_nodes',
-                                    help="list nodes of a service")
+                                    help="list the nodes of a service")
         subparser.set_defaults(run_cmd=self.list_nodes, parser=subparser)
         subparser.add_argument('app_name_or_id',
                                help="Name or identifier of an application")
@@ -593,6 +595,48 @@ class ServiceCmd(object):
         res = self.client.call_manager_get(app_id, 0, "get_agent_log", params)
 
         print res['log']
+
+    # ========== get_script
+    def _add_get_script(self):
+        subparser = self.add_parser('get_script', help="get the service's startup script")
+        subparser.set_defaults(run_cmd=self.get_script, parser=subparser)
+        subparser.add_argument('app_name_or_id',
+                               help="Name or identifier of an application")
+        subparser.add_argument('serv_name_or_id',
+                               help="Name or identifier of a service")
+
+    def get_script(self, args):
+        app_id, service_id = self.check_service(args.app_name_or_id, args.serv_name_or_id)
+
+        data = { 'sid': service_id }
+        res = self.client.call_manager_get(app_id, 0, "get_startup_script", data)
+
+        print res
+
+    # ========== set_script
+    def _add_set_script(self):
+        subparser = self.add_parser('set_script', help="set the service's startup script")
+        subparser.set_defaults(run_cmd=self.set_script, parser=subparser)
+        subparser.add_argument('app_name_or_id',
+                               help="Name or identifier of an application")
+        subparser.add_argument('serv_name_or_id',
+                               help="Name or identifier of a service")
+        subparser.add_argument('filename',
+                               help="File containing the script")
+
+    def set_script(self, args):
+        app_id, service_id = self.check_service(args.app_name_or_id, args.serv_name_or_id)
+
+        data = {
+            'sid': service_id,
+            'method': 'upload_startup_script'
+        }
+        contents = open(args.filename).read()
+        files = [ ( 'script', args.filename, contents ) ]
+
+        self.client.call_manager_post(app_id, 0, "/", data, files)
+
+        print "Startup script uploaded successfully."
 
 
 def main():

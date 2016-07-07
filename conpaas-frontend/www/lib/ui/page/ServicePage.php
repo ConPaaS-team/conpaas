@@ -307,7 +307,7 @@ class ServicePage extends Page {
             .'<div class="clear"></div>'
         .'</div>'
 		.'<div class="actionsbar">'
-           .'<textarea id="startupscript" cols="50" rows="5" name="startupscript"></textarea><br />'
+           .'<textarea id="startupscript" cols="94" rows="5" name="startupscript"></textarea><br />'
            .'<div class="additionalStartup">'
            .'<img class="loading invisible" '
                .' src="images/icon_loading.gif" />'
