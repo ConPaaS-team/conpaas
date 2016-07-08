@@ -158,6 +158,7 @@ class XtreemFSAgent(BaseAgent):
     @expose('POST')
     def stopDIR(self, kwargs):
         """Kill the DIR service"""
+        orig_kwargs = copy.copy(kwargs)
         try:
             exp_params = []
             check_arguments(exp_params, kwargs)
@@ -165,11 +166,12 @@ class XtreemFSAgent(BaseAgent):
             return HttpErrorResponse("%s" % ex)
 
         with self.dir_lock:
-            return self._stop(kwargs, self.dir_file, self.DIR)
+            return self._stop(orig_kwargs, self.dir_file, self.DIR)
 
     @expose('POST')
     def stopMRC(self, kwargs):
         """Kill the MRC service"""
+        orig_kwargs = copy.copy(kwargs)
         try:
             exp_params = []
             check_arguments(exp_params, kwargs)
@@ -177,11 +179,12 @@ class XtreemFSAgent(BaseAgent):
             return HttpErrorResponse("%s" % ex)
 
         with self.mrc_lock:
-            return self._stop(kwargs, self.mrc_file, self.MRC)
+            return self._stop(orig_kwargs, self.mrc_file, self.MRC)
 
     @expose('POST')
     def stopOSD(self, kwargs):
         """Kill the OSD service"""
+        orig_kwargs = copy.copy(kwargs)
         try:
             exp_params = [('drain', is_bool, False)]
             check_arguments(exp_params, kwargs)
@@ -189,7 +192,7 @@ class XtreemFSAgent(BaseAgent):
             return HttpErrorResponse("%s" % ex)
 
         with self.osd_lock:
-            return self._stop(kwargs, self.osd_file, self.OSD)
+            return self._stop(orig_kwargs, self.osd_file, self.OSD)
 
     @expose('POST')
     def startup(self, kwargs):

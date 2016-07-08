@@ -384,6 +384,8 @@ class ApplicationManager(BaseManager):
 
                 self.nodes.remove(filter(lambda n: n.id == node.id, self.nodes)[0])
             self.callbacker.remove_nodes(nodes)
+        else:
+            service_manager.state_set(self.S_STOPPED)
 
         if remove:
             code_repo = service_manager.config_parser.get('manager', 'CODE_REPO')
