@@ -21,6 +21,14 @@ $page = new ResourcePage();
   <body class="<?php echo $page->getBrowserClass(); ?>">
   <?php echo $page->renderHeader(); ?>
     <div class="pagecontent">
+      <div class="pageheader">
+         <div class="info">
+           <div class="name">
+             Resources in use
+           </div>
+         </div>
+         <div class="clear"></div>
+      </div>
       <div id="resourcesWrapper" style="padding:40px">
       </div>
     </div>

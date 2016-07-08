@@ -31,7 +31,7 @@ class DashboardServiceUI {
 
 		return
 			'<div class="icon">'
-				.'<img src="images/'.$filename.'" height="64" />'
+				.'<img src="images/'.$filename.'" height="60" />'
 			.'</div>';
 	}
 
@@ -178,8 +178,10 @@ class DashboardServiceUI {
 		return
 			'<tr class="service" id="service-'.$this->service->getSID().'">'
 				.$this->renderColorTag()
-				.'<td class="wrapper '.$lastClass.'">'
+				.'<td class="wrapper-left '.$lastClass.'">'
 					.$this->renderImage()
+				.'</td>'
+				.'<td class="wrapper-right '.$lastClass.'">'
 					.'<div class="content">'
 						.$this->renderTitle()
 						.$this->renderActions()

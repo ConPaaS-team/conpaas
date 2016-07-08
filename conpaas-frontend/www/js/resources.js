@@ -12,7 +12,6 @@ conpaas.ui = (function (this_module) {
         var that = this;
         this.poller.setLoadingText('checking resources...').poll(
             function (response) {
-                // alert('lesh')
                 resources = response.data
                 apps = {}
                 html = "<strong>No resources are being used.</strong>"
@@ -39,7 +38,7 @@ conpaas.ui = (function (this_module) {
                             else 
                                 style = ''
                             html += '<tr ><td '+style+'rowspan="'+apps[property]['res'].length+'">'
-                            html += '<a href="services.php?aid='+property+'">' +apps[property]['name'] + '</a></td>'
+                            html += '<a href="services.php?aid='+property+'" style="font-weight: bold;">' +apps[property]['name'] + '</a></td>'
                             for(i=0; i<apps[property]['res'].length; i++){
                                 res = apps[property]['res'][i]
                                 html += '<td '+style+'>'+ res.vmid + '</td>'

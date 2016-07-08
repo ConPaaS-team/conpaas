@@ -24,19 +24,21 @@ $page = new ManifestPage();
 
       <div class="pagecontent createpage">
          <div class="pageheader">
-            <h1> <img src="images/create.png" /> Deploy application</h1>
+            <div class="info">
+              <div class="name">
+                Deploy application
+              </div>
+            </div>
             <div class="clear"></div>
          </div>
-         <div class="manifestpage">
-            <br><br>
-            Please choose the manifest file to upload:
-            <br><br><br>
-            <form id="fileForm" enctype="multipart/form-data" action="ajax/uploadManifest.php">
-                <input name="specfile" type="file"><br>
-            </form>
-            <br><br><br><br><br>
-            or select one of the available ready-made applications:
-            <br><br>
+         <div class="manifesttext">
+           Please choose the manifest file to upload:<br><br>
+           <form id="fileForm" enctype="multipart/form-data" action="ajax/uploadManifest.php">
+             <input class="manifestfile" name="specfile" type="file"><br>
+           </form><br><br>
+         </div>
+         <div class="manifesttext">
+           or select one of the available ready-made applications:
          </div>
          <table class="form" cellspacing="0" cellpading="0">
            <!--

@@ -14,14 +14,16 @@ class XtreemFSPage extends ServicePage {
 	}
 
 	protected function renderRightMenu() {
-		$links = LinkUI('manager log',
+		$links = '';
+		if ($this->service->isRunning()) {
+			$links .= LinkUI('volumes', 'viewVolumes.php?sid='.$this->service->getSID())
+					->setExternal(true);
+			$links .= ' &middot; ';
+		}
+		$links .= LinkUI('manager log',
 			'viewlog.php?sid='.$this->service->getSID())
 			->setExternal(true);
-		if ($this->service->isRunning()) {
-			$links .= ' &middot; '
-				.LinkUI('volumes', 'viewVolumes.php?sid='.$this->service->getSID())
-					->setExternal(true);
-		}
+
 		return '<div class="rightmenu">'.$links.'</div>';
 	}
 

@@ -471,6 +471,21 @@ tr.service {
 	border-top: 1px solid #ddd;
 }
 
+.service .wrapper-left {
+	width: 85px;
+	padding-left: 20px;
+	vertical-align: middle;
+	text-align: center;
+	border-left: 1px solid #ddd;
+	border-top: 1px solid #ddd;
+}
+
+.service .wrapper-right {
+	padding: 10px 10px 10px 0px;
+	border-right: 1px solid #ccc;
+	border-top: 1px solid #ddd;
+}
+
 .service:hover .wrapper {
 	background-color: #eee;
 }
@@ -512,7 +527,7 @@ tr.service {
 
 .service .icon {
 	width: 85px;
-	height: 50px;
+	height: 60px;
 }
 
 .service .led {
@@ -612,12 +627,30 @@ tr.service {
 	width: 60px;
 }
 
-.manifestpage {
+.manifesttext {
 	color: #666;
 	font-size: 12px;
-	font-weight: bold;
-	padding: 5px 5px 5px 10px;
+	padding: 25px 5px 5px 10px;
 	text-align: left;
+	color: #666;
+}
+
+.manifestfile {
+	color: #666;
+    font-size: 14px;
+    font-weight: bold;
+    vertical-align: middle;
+    padding-left: 10px;
+    font-family: Verdana, Tahoma, sans serif;
+}
+
+.manifestfile:hover {
+	color: black;
+}
+
+.manifestfile.selected {
+	color: black;
+    background-color: #DFE5EB;
 }
 
 .createpage .form .service {

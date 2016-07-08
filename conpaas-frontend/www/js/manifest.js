@@ -13,12 +13,32 @@ manifest['mediawiki'] = '{ "Application" : "New MediaWiki application", "Service
 
 
 $(document).ready(function() {
+	var selectedManifest = null;
+
 	$('input:file').change(function() {
-		$('input[name=type]').attr('checked', false);
+		if (selectedManifest) {
+			selectedManifest.removeClass("selectedservice");
+			selectedManifest.addClass("service");
+		}
+		$(this).addClass("selected");
+		selectedManifest = null;
+		$('input[name=type]').prop('checked', false);
 	});
 
-	$('input[name=type]').change(function() {
+	$('.createpage .form .service').click(function () {
+		if (selectedManifest === $(this)) {
+			return;
+		}
+		if (selectedManifest) {
+			selectedManifest.removeClass("selectedservice");
+			selectedManifest.addClass("service");
+		}
+		selectedManifest = $(this);
+		$(this).removeClass("service");
+		$(this).addClass("selectedservice");
+		$(this).find(':radio').prop('checked', true);
 		$('input:file').val('');
+		$('input:file').removeClass("selected");
 	});
 
     $('#logout').click(function () {
@@ -41,8 +61,6 @@ $(document).ready(function() {
 				success: function(response) {
 					if (typeof response.error != 'undefined' && response.error != null) {
 						alert('Error: ' + response.error);
-						$('input:file').val('');
-						$('input[name=type]').attr('checked', false);
 						return;
 					}
 					alert("The manifest was correctly uploaded. Now it can take a while to start everything.")
@@ -57,12 +75,12 @@ $(document).ready(function() {
 			return;
 		}
 
-		type = $('input[name=type]:checked').val();
-		if (type == undefined) {
+		if (!selectedManifest) {
 			alert("Please upload a file or select a ready-made application to continue.");
 			return;
 		}
 
+		type = selectedManifest.find(':radio').val();
 		if (manifest[type] == '') {
 			alert("There is no manifest for this application.");
 			return;
@@ -79,17 +97,11 @@ $(document).ready(function() {
 		}).done(function(response) {
 			if (typeof response.error != 'undefined' && response.error != null) {
 				alert('Error: ' + response.error);
-				$('input:file').val('');
-				$('input[name=type]').attr('checked', false);
 				return;
 			}
 			alert("The manifest was correctly uploaded. Now it can take a while to start everything.")
 			window.location = 'services.php?aid=' + response.aid;
 		});
 
-	});
-
-	$('.createpage .form .service').click(function () {
-		$(this).find(':radio').attr('checked', true);
 	});
 });
