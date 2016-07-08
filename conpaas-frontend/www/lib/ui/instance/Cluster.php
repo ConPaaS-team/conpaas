@@ -56,11 +56,16 @@ class Cluster {
 	}
 
 	public function render() {
+		$role = $this->getRole();
+		if ($role == 'dir' || $role == 'mrc' || $role == 'osd') {
+			$role = strtoupper($role);
+		}
 		$html =
 			'<div class="cluster '.$this->getRoleClass().'">'.
 			'<div class="cluster-header">'.
 				'<div class="tag '.$this->getRoleColor().'">'.
-					$this->getRole().'</div>'.
+					$role.
+				'</div>'.
 			'</div>';
 		foreach ($this->nodes as $instance) {
 			$html .= $instance->renderInCluster();

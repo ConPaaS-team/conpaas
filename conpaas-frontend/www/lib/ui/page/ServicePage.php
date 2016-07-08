@@ -131,53 +131,74 @@ class ServicePage extends Page {
 	}
 
 	public function getNodes() {
+		// If we already have the list of nodes, do not compute it again
 		if ($this->nodes !== null) {
 			return $this->nodes;
 		}
-		$nodes = array();
-		$nodes_info = array();
-		$selected = array();
+
+		$nodesInfo = array(); // final list
+		$selected = array(); // nodes that are already added to it
 		$nodesLists = $this->service->getNodesLists();
-		// if ($this->service->hasDedicatedManager()) {
-		// 	// $manager = $this->service->getManagerInstance();
-		// 	$application = $this->service->getApplication();
-		// 	$nodes_info[] = new ManagerInstance($application->getVMID(),
-		// 		$application->getManager());
-		// }
-		$roles = $this->service->getInstanceRoles();
-		if ($roles === false) {
-			$roles = array_keys($nodesLists);
-		}
+
+		// Get the list of roles
+		$roles = array_keys($nodesLists);
+
+		// Get the list of nodes
+		$nodes = array();
 		foreach ($roles as $role) {
-			if (!isset($nodesLists[$role])) {
-				continue;
+			$nodes = array_merge($nodes, $nodesLists[$role]);
+		}
+		$nodes = array_unique($nodes);
+
+		// For each node, if it has more than one role, add it alone to the final list
+		foreach ($nodes as $node) {
+			$nrRoles = 0;
+			foreach ($roles as $role) {
+				if (in_array($node, $nodesLists[$role])) {
+					$nrRoles++;
+				}
 			}
-			$nodesList = $nodesLists[$role];
-			// HACK: empty list for a role
-			if (count($nodesList) == 0) {
+			if ($nrRoles > 1) {
+				$info = $this->service->getNodeInfo($node);
+				if ($info !== false) {
+					$nodesInfo[] = $this->service->createInstanceUI($node);
+				}
+				$selected[$node] = true;
+			}
+		}
+
+		// For each role, get the remaining nodes (that were not added already)
+		foreach ($roles as $role) {
+			$remainingNodes = array();
+			foreach ($nodesLists[$role] as $node) {
+				if (!array_key_exists($node, $selected)) {
+					$remainingNodes[] = $node;
+				}
+			}
+			if (count($remainingNodes) == 0) {
+				// No more nodes left with this role
 				continue;
-			} elseif (count($nodesList) > 1 || $this->service->getType() === 'generic') {
+			} else if (count($remainingNodes) > 1 || $this->service->getType() === 'generic') {
+				// We add all these nodes together in a cluster
 				$cluster = new Cluster($role);
-				foreach ($nodesList as $node) {
+				foreach ($remainingNodes as $node) {
 					$info = $this->service->getNodeInfo($node);
 					if ($info !== false) {
-						$cluster->addNode($this->service->createInstanceUI(
-							$node));
+						$cluster->addNode($this->service->createInstanceUI($node));
 					}
 				}
-				$nodes_info[] = $cluster;
+				$nodesInfo[] = $cluster;
 			} else {
-				/* just one node for this role */
-				$node = $nodesList[0];
+				// We add this node alone in the final list
 				$info = $this->service->getNodeInfo($node);
-				$id = $info['id'];
-				if ($info !== false && !array_key_exists($id, $selected)) {
-					$nodes_info[] = $this->service->createInstanceUI($node);
-					$selected[$id] = true;
+				if ($info !== false) {
+					$nodesInfo[] = $this->service->createInstanceUI($node);
 				}
 			}
 		}
-		$this->nodes = $nodes_info;
+
+		// Store the final list and return it
+		$this->nodes = $nodesInfo;
 		return $this->nodes;
 	}
 

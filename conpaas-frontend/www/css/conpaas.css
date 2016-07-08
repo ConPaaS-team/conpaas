@@ -1283,7 +1283,7 @@ ul.versions li .timestamp {
 	border-color: purple;
 }
 
-#instances .cluster-proxy, #instances .cluster-workers, #instances .cluster-slaves, #instances .cluster-node {
+#instances .cluster-proxy, #instances .cluster-workers, #instances .cluster-slaves, #instances .cluster-node, #instances .cluster-osd {
 	border-color: orange;
 }
 
