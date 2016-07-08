@@ -82,9 +82,9 @@ class UserCmd:
                      'affiliation': affiliation,
                      'password': password,
                      'credit': credit, }
-        self.client.call_director_post('new_user', arguments)
+        self.client.call_director_post('new_user', arguments, use_certs=False)
 
-        print("User %s created." % username)
+        print "User '%s' created successfully." % username
 
     # ========== create
     def _add_create(self):
@@ -110,8 +110,16 @@ class UserCmd:
         self._check_director()
         username, fname, lname, email, affiliation, password, credit = \
             self._get_new_user_args(args)
-        cpsdirector.user.create_user(username, fname, lname, email,
-                                     affiliation, password, credit)
+
+        try:
+            cpsdirector.user.create_user(username, fname, lname, email,
+                                         affiliation, password, credit)
+        except sqlalchemy.exc.OperationalError:
+            raise Exception("Unable to update the director's database."
+                            "\nMaybe you don't have access rights?"
+                            " Try again with 'sudo'.")
+
+        print "User '%s' created successfully." % username
 
     def _get_new_user_args(self, args):
         if args.username is not None or len(args.username) > 0:
@@ -201,11 +209,8 @@ class UserCmd:
 
     def get_config(self, args):
         res = self.client.call_director_get("user_config")
-        if not res:
-            raise Exception("failed to authenticate user with user certificate.")
-        else:
-            for key, value in res.items():
-                print "%s: %s" % (key, value)
+        for key, value in res.items():
+            print "%s: %s" % (key, value)
 
     # ========== get_credit
     def _add_get_credit(self):
@@ -214,13 +219,11 @@ class UserCmd:
 
     def get_credit(self, args):
         res = self.client.call_director_get("user_credit")
-        if not res:
-            raise Exception("failed to authenticate user with user certificate.")
         print "%s" % res
 
-    # ========== get_credit
+    # ========== add_credit
     def _add_add_credit(self):
-        subparser = self.add_parser('add_credit', help="add credit to user")
+        subparser = self.add_parser('add_credit', help="add credit to user (on director's machine only)")
         subparser.set_defaults(run_cmd=self.add_credit, parser=subparser)
         subparser.add_argument('username', help="User's username")
         subparser.add_argument('credit', type=int, help="Credit to add (positive or negative integer)")
@@ -228,7 +231,15 @@ class UserCmd:
     def add_credit(self, args):
         """Create a new user calling directly the local director."""
         self._check_director()
-        cpsdirector.user.add_credit(args.username, args.credit)
+        try:
+            new_credit = cpsdirector.user.add_credit(args.username, args.credit)
+        except sqlalchemy.exc.OperationalError:
+            raise Exception("Unable to update the director's database."
+                            "\nMaybe you don't have access rights?"
+                            " Try again with 'sudo'.")
+
+        print "Credit added successfully to user '%s', the new credit is %s."\
+              % (args.username, new_credit)
 
 
 def main():

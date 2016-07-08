@@ -236,22 +236,24 @@ def login_required(fn):
 @user_page.route("/new_user", methods=['POST'])
 def new_user():
     values = {}
-    required_fields = ('username', 'fname', 'lname', 'email',
-                       'affiliation', 'password', 'credit', 'uuid', 'openid')
+    all_fields = ('username', 'fname', 'lname', 'email',
+                  'affiliation', 'password', 'credit', 'uuid', 'openid')
+    required_fields = ('username', 'email', 'password')
 
     log('New user "%s <%s>" creation attempt' % (
         request.values.get('username'), request.values.get('email')))
 
     # check for presence of mandatory fields
-    for field in required_fields:
+    for field in all_fields:
         values[field] = request.values.get(field)
-
-        if not values[field]:
-            msg = 'Missing required field: %s' % field
-            log_error(msg)
-            return build_response(jsonify(error_response(msg)))
         if field == 'uuid' and values[field] == '<none>':
             values[field] = ''
+
+    for field in required_fields:
+        if not values[field]:
+            msg = "Missing required field: '%s'" % field
+            log_error(msg)
+            return build_response(jsonify(error_response(msg)))
 
     # check if the provided username already exists
     if User.query.filter_by(username=values['username']).first():
@@ -260,8 +262,8 @@ def new_user():
         return build_response(jsonify(error_response(msg)))
 
     # check if the provided email already exists
-    if False and User.query.filter_by(email=values['email']).first(): # for debugging purposes allow duplicate email address
-        msg = 'E-mail "%s" is already registered' % values['email']
+    if User.query.filter_by(email=values['email']).first():
+        msg = "E-mail '%s' is already registered" % values['email']
         log_error(msg)
         return build_response(jsonify(error_response(msg)))
 
@@ -271,27 +273,27 @@ def new_user():
         try:
             max_credit = int(max_credit)
         except ValueError:
-            log_error('Parameter MAX_CREDIT "%s" is not a valid integer.'
-                ' Defaulting to maximum credit %s.' % (max_credit, default_max_credit))
+            log_error("Parameter MAX_CREDIT '%s' is not a valid integer."
+                " Defaulting to maximum credit %s." % (max_credit, default_max_credit))
             max_credit = default_max_credit
         if max_credit < 0:
-            log_error('Parameter MAX_CREDIT "%s" cannot be a negative number.'
-                ' Defaulting to maximum credit %s.' % (max_credit, default_max_credit))
+            log_error("Parameter MAX_CREDIT '%s' cannot be a negative number."
+                " Defaulting to maximum credit %s." % (max_credit, default_max_credit))
             max_credit = default_max_credit
     else:
         max_credit = default_max_credit
     try:
         req_credit = int(values['credit'])
     except ValueError:
-        msg = 'Required credit "%s" is not a valid integer.' % values['credit']
+        msg = "Required credit '%s' is not a valid integer." % values['credit']
         log_error(msg)
         return build_response(jsonify(error_response(msg)))
     if req_credit < 0:
-        msg = 'Required credit "%s" cannot be a negative integer.' % values['credit']
+        msg = "Required credit %s cannot be a negative integer." % values['credit']
         log_error(msg)
         return build_response(jsonify(error_response(msg)))
     if req_credit > max_credit:
-        msg = 'Cannot allocate %s credit for a new user (max credit %s).' % (values['credit'], max_credit)
+        msg = "Cannot allocate %s credit for a new user (max credit %s)." % (values['credit'], max_credit)
         log_error(msg)
         return build_response(jsonify(error_response(msg)))
 
@@ -425,3 +427,4 @@ def add_credit(username, credit):
     if user.credit < 0:
         user.credit = 0
     db.session.commit()
+    return user.credit

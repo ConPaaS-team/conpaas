@@ -109,13 +109,15 @@ class BaseClient(object):
             raise Exception("Cannot call the ConPaaS director:"
                             " the director URL address is not specified.")
 
-        if self.username is None:
-            raise Exception("Cannot call the ConPaaS director:"
-                            " user name is not specified.")
-
         if data is None:
             data = {}
-        data['username'] = self.username
+
+        if not 'username' in data:
+            data['username'] = self.username
+
+        if data['username'] is None:
+            raise Exception("Cannot call the ConPaaS director:"
+                            " user name is not specified.")
 
         if use_certs:
             # If certificates are used, the ssl context should already have
@@ -131,7 +133,12 @@ class BaseClient(object):
         else:
             # If not, we need to send the user's password and initialize the
             # ssl context with one that does not use certificates
-            data['password'] = self._get_password()
+            if not 'password' in data:
+                if self.password is None:
+                    data['password'] = self._get_password()
+                else:
+                    data['password'] = self.password
+
             client.conpaas_init_ssl_ctx_no_certs()
 
             if self.debug:
