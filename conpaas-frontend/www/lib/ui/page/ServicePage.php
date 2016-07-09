@@ -260,7 +260,8 @@ class ServicePage extends Page {
 			'<div class="rightmenu">'.
 				$this->renderApplicationAccess().
 				LinkUI('manager log',
-						'viewlog.php?sid='.$this->service->getSID())
+						'viewlog.php?aid='.$this->service->getAID()
+				                  .'&sid='.$this->service->getSID())
 					->setExternal(true).
 			'</div>';
 	}

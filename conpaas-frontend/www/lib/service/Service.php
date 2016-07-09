@@ -381,6 +381,10 @@ class Service {
 		return $this->nodesCount;
 	}
 
+	public function getAID() {
+		return $this->application->getAID();
+	}
+
 	public function getSID() {
 		return $this->sid;
 	}

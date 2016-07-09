@@ -162,7 +162,10 @@ class DashboardServiceUI {
 			$title = $this->service->getName();
 		} else {
 			$title =
-			'<a href="service.php?sid='.$this->service->getSID().'">'
+			'<a href="service.php?'
+						.'aid='.$this->service->getAID().'&'
+						.'sid='.$this->service->getSID()
+						.'">'
 				.$this->service->getName()
 			.'</a>';
 		}

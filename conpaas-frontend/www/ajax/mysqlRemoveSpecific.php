@@ -10,6 +10,7 @@ require_module('ui/page');
 
 try {
 	$page = new Page(); // this will check the authentication
+	$aid = $_SESSION['aid'];
 	$sid = $_GET['sid'];
 	$ip= $_GET['ip'];
 	$service_data = ServiceData::getServiceById($sid);
@@ -23,6 +24,6 @@ try {
 	$json = 'Elimination Error';
 }
 echo json_encode($json);
-header("location: ../service.php?sid=".$sid); 
+header("location: ../service.php?aid=".$aid."&sid=".$sid);
 
  ?>

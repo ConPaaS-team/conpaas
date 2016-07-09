@@ -12,7 +12,7 @@ require_module('ui/service');
 
 if (isset($_GET['aid'])) {
 	$_SESSION['aid'] = $_GET['aid'];
-} else if (! isset($_SESSION['aid'])) {
+} else if (!isset($_SESSION['aid'])) {
 	$_SESSION['aid'] = 1;
 }
 

@@ -163,16 +163,19 @@ class GenericInstance extends Instance {
 
     private function renderAgentLogs() {
         $linkAgentLogs = LinkUI('agent log',
-            'viewlog.php?sid='.$this->info['sid']
+            'viewlog.php?aid='.$_SESSION['aid']
+            .'&sid='.$this->info['sid']
             .'&agentId='.$this->info['id']
         )->setExternal(true);
         $linkAgentOut = LinkUI('agent output',
-            'viewlog.php?sid='.$this->info['sid']
+            'viewlog.php?aid='.$_SESSION['aid']
+            .'&sid='.$this->info['sid']
             .'&agentId='.$this->info['id']
             .'&filename=agent.out'
         )->setExternal(true);
         $linkAgentErr = LinkUI('agent error',
-            'viewlog.php?sid='.$this->info['sid']
+            'viewlog.php?aid='.$_SESSION['aid']
+            .'&sid='.$this->info['sid']
             .'&agentId='.$this->info['id']
             .'&filename=agent.err'
         )->setExternal(true);

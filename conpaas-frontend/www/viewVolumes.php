@@ -8,6 +8,12 @@ require_module('service');
 require_module('service/factory');
 require_module('ui/page');
 
+if (isset($_GET['aid'])) {
+	$_SESSION['aid'] = $_GET['aid'];
+} else if (!isset($_SESSION['aid'])) {
+	$_SESSION['aid'] = 1;
+}
+
 try {
 	$page = new Page(); // this will check the authentication
 	$sid = $_GET['sid'];

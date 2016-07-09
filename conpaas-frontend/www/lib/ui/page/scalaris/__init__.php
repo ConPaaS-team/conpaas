@@ -27,7 +27,8 @@ class ScalarisPage extends ServicePage {
 		return '<div class="rightmenu">'
 			.$this->renderMngmtConsole()
 			.LinkUI('manager log',
-				'viewlog.php?sid='.$this->service->getSID())
+				'viewlog.php?aid='.$this->service->getAID()
+				          .'&sid='.$this->service->getSID())
 				       ->setExternal(true)
 			.'</div>';
 	}

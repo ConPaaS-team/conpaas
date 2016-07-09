@@ -9,6 +9,12 @@ require_module('service/factory');
 require_module('ui/page');
 require_module('application');
 
+if (isset($_GET['aid'])) {
+	$_SESSION['aid'] = $_GET['aid'];
+} else if (!isset($_SESSION['aid'])) {
+	$_SESSION['aid'] = 1;
+}
+
 try {
 	$page = new Page(); // this will check the authentication
 	if (isset($_GET['sid'])) {
@@ -17,6 +23,7 @@ try {
 		$service = ServiceFactory::create($service_data);
 
 		if (isset($_GET['agentId'])) {
+			unset($_GET['aid']);
 			unset($_GET['sid']);
 			$log = $service->fetchAgentLog($_GET);
 		} else {

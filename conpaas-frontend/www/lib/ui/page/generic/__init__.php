@@ -54,7 +54,8 @@ class GenericPage extends ServicePage {
 
     protected function renderRightMenu() {
         $links = LinkUI('manager log',
-            'viewlog.php?sid='.$this->service->getSID())->setExternal(true);
+            'viewlog.php?aid='.$this->service->getAID()
+				      .'&sid='.$this->service->getSID())->setExternal(true);
 
         return '<div class="rightmenu">'.$links.'</div>';
     }

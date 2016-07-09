@@ -16,6 +16,12 @@ if (!isset($_SESSION['uid'])) {
     Page::redirect('login.php');
 }
 
+if (isset($_GET['aid'])) {
+	$_SESSION['aid'] = $_GET['aid'];
+} else if (!isset($_SESSION['aid'])) {
+	$_SESSION['aid'] = 1;
+}
+
 $sid = $_GET['sid'];
 $aid = $_SESSION['aid'];
 $uid = $_SESSION['uid'];

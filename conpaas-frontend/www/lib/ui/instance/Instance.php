@@ -13,7 +13,8 @@ class Instance {
 
     private function renderAgentLogs() {
         $linkAgentLogs = LinkUI('agent log',
-            'viewlog.php?sid='.$this->info['sid']
+            'viewlog.php?aid='.$_SESSION['aid']
+            .'&sid='.$this->info['sid']
             .'&agentId='.$this->info['id']
         )->setExternal(true);
         $html = $linkAgentLogs;
