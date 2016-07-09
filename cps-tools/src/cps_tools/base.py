@@ -255,6 +255,8 @@ class BaseClient(object):
         if files is None:
             files = []
 
+        url = "https://%s/" % application['manager']
+
         # Certificates are always used, the ssl context should already have
         # been initialized with the user's certificates in __init__
         if not client.is_ssl_ctx_initialized():
@@ -264,7 +266,6 @@ class BaseClient(object):
                             " first.")
         if self.debug:
             self.logger.debug("User certificates are present and will be used.")
-            url = "https://%s/" % application['manager']
             self.logger.info("Requesting '%s' with aid %s, sid %s, method '%s', "
                               "data %s and %s files." %
                               (url, app_id, service_id, method, data, len(files)))
