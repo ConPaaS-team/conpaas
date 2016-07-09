@@ -122,9 +122,13 @@ conpaas.http = (function (this_module) {
     },
     /* methods */{
     handleError: function (error) {
-        // If the error is "User not logged in", better redirect to the login page
-        if (error.details.toLowerCase().indexOf("not logged in") >= 0) {
-            window.location = 'login.php';
+        /* If the error is "User not logged in" (session expired)
+         * or "alert decrypt error" (server's SSL certificate changed)
+         * better logout (to clear the session data), this will redirect
+         * us to the login page. */
+        if (error.details.toLowerCase().indexOf("not logged in") >= 0 ||
+            error.details.toLowerCase().indexOf("alert decrypt error") >= 0) {
+            $('#logout').click();
             return;
         }
         $('#pgstatErrorName').html(error.name);

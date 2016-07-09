@@ -4,15 +4,13 @@
 require_once('../__init__.php');
 require_module('user');
 
-if (!isset($_SESSION['uid'])) {
-    // not logged in
-    echo json_encode(array('logout' => 1));
-    exit;
-}
-
 try {
 	$user = new User();
-        $username = $_SESSION['username'];
+	if (isset($_SESSION['username'])) {
+            $username = $_SESSION['username'];
+        } else {
+            $username = null;
+        }
         if (isset($_SESSION['openid'])) {
             $openid = $_SESSION['openid'];
         } else {

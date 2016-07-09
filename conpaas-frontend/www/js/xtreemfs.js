@@ -346,6 +346,6 @@ $(document).ready(function () {
         }
     }, function () {
         // error
-        window.location = 'services.php';
+        window.location = 'application.php';
     })
 });

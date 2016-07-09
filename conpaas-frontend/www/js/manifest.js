@@ -64,7 +64,7 @@ $(document).ready(function() {
 						return;
 					}
 					alert("The manifest was correctly uploaded. Now it can take a while to start everything.")
-					window.location = 'services.php?aid=' + response.aid;
+					window.location = 'application.php?aid=' + response.aid;
 				},
 				error: function(response) {
 					alert('#fileForm.ajaxForm() error: ' + response.error);
@@ -100,7 +100,7 @@ $(document).ready(function() {
 				return;
 			}
 			alert("The manifest was correctly uploaded. Now it can take a while to start everything.")
-			window.location = 'services.php?aid=' + response.aid;
+			window.location = 'application.php?aid=' + response.aid;
 		});
 
 	});

@@ -209,7 +209,7 @@ conpaas.ui = (function (this_module) {
         var page = event.data;
         
         page.remove(function (response) {
-            window.location = 'services.php';
+            window.location = 'application.php';
         });
     },
     onInstanceRoleClick: function (event) {

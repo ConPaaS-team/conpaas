@@ -15,7 +15,7 @@ class CreatePage extends Page {
 		$app = LinkUI('Dashboard', 'index.php')
 			->setIconPosition(LinkUI::POS_LEFT)
 			->setIconURL('images/link_s_back.png');
-		$dashboard = LinkUI('This application', 'services.php?aid='.$_SESSION['aid'])
+		$dashboard = LinkUI('This application', 'application.php?aid='.$_SESSION['aid'])
 			->setIconPosition(LinkUI::POS_LEFT)
 			->setIconURL('images/link_s_back.png');
 

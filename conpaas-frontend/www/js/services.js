@@ -4,7 +4,7 @@
 
 
 /**
- * interaction for services.php - main dashboard
+ * interaction for application.php - main dashboard
  * @require conpaas.js
  */
 conpaas.ui = (function (this_module) {

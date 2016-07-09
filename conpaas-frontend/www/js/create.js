@@ -57,7 +57,7 @@ conpaas.ui = (function (this_module) {
                 service = new conpaas.model.Service(response.sid, 'PREINIT');
                 servicePage = new conpaas.ui.ServicePage(page.server, service);
                 servicePage.pollState(function () {
-                    window.location = 'services.php';
+                    window.location = 'application.php';
                 });
             }
         }, function (response) {
