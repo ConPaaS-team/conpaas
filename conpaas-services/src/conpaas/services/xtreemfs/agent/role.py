@@ -249,12 +249,12 @@ class OSD:
             if drain:
                 # remove (drain) OSD to avoid data loss
                 logger.info('OSD Service remove commandline: ' + str(self.remove_args))
-                logger.info('OSD Service stop commandline: ' + str(self.stop_args))
                 proc = Popen(self.remove_args, stdout = devnull_fd, stderr = devnull_fd, close_fds = True)
                 if proc.wait() != 0:
                     logger.critical('Failed to remove OSD service:(code=%d)' %proc.returncode)
                 logger.info('OSD Service removed.')
             # stop OSD
+            logger.info('OSD Service stop commandline: ' + str(self.stop_args))
             proc = Popen(self.stop_args, stdout = devnull_fd, stderr = devnull_fd, close_fds = True)
             if proc.wait() != 0:
                 logger.critical('Failed to stop OSD service:(code=%d)' %proc.returncode)
