@@ -31,11 +31,21 @@ class XtreemFSAgent(BaseAgent):
         BaseAgent.__init__(self, config_parser)
         role.init(config_parser)
 
-        self.VAR_TMP = config_parser.get('agent','VAR_TMP')
+        self.VAR_TMP = config_parser.get('agent', 'VAR_TMP')
+        self.dir_file = join(self.VAR_TMP, 'dir.pickle')
+        self.mrc_file = join(self.VAR_TMP, 'mrc.pickle')
+        self.osd_file = join(self.VAR_TMP, 'osd.pickle')
 
-        self.dir_file = join(self.VAR_TMP,'dir.pickle')
-        self.mrc_file = join(self.VAR_TMP,'mrc.pickle')
-        self.osd_file = join(self.VAR_TMP,'osd.pickle')
+        self.CERTS_PATH = config_parser.get('agent', 'CERTS_PATH')
+        self.DIR_CERT_PATH = join(self.CERTS_PATH,
+                config_parser.get('dir', 'DIR_CERT'))
+        self.MRC_CERT_PATH = join(self.CERTS_PATH,
+                config_parser.get('mrc', 'MRC_CERT'))
+        self.OSD_CERT_PATH = join(self.CERTS_PATH,
+                config_parser.get('osd', 'OSD_CERT'))
+        self.TRUSTED_CA_PATH = join(self.CERTS_PATH,
+                config_parser.get('agent', 'TRUSTED_CA'))
+
         self.mrc_lock = Lock()
         self.dir_lock = Lock()
         self.osd_lock = Lock()
@@ -265,12 +275,11 @@ class XtreemFSAgent(BaseAgent):
         self.logger.debug('set_snapshot called')
 
         # write certificates and truststore to the xtreemfs config directory
-        path = "/etc/xos/xtreemfs/truststore/certs"
-        if not exists(path):
-            makedirs(path)
-        open(path + "/dir.p12", 'wb').write(base64.b64decode(dir_cert))
-        open(path + "/mrc.p12", 'wb').write(base64.b64decode(mrc_cert))
-        open(path + "/osd.p12", 'wb').write(base64.b64decode(osd_cert))
-        open(path + "/trusted.jks", 'wb').write(base64.b64decode(trusted))
+        if not exists(self.CERTS_PATH):
+            makedirs(self.CERTS_PATH)
+        open(self.DIR_CERT_PATH, 'wb').write(base64.b64decode(dir_cert))
+        open(self.MRC_CERT_PATH, 'wb').write(base64.b64decode(mrc_cert))
+        open(self.OSD_CERT_PATH, 'wb').write(base64.b64decode(osd_cert))
+        open(self.TRUSTED_CA_PATH, 'wb').write(base64.b64decode(trusted))
 
         return HttpJsonResponse()

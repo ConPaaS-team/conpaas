@@ -25,16 +25,36 @@ MRC_STARTUP = None
 DIR_STARTUP = None
 OSD_STARTUP = None
 OSD_REMOVE = None
+PROTOCOL = None
+CERTS_PATH = None
+TRUSTED_CA_PATH = None
+TRUSTED_CA_PASS = None
+OSD_CERT_PATH = None
+OSD_CERT_PASS = None
 ETC = None
 
 def init(config_parser):
-    global MRC_STARTUP,DIR_STARTUP,OSD_STARTUP,OSD_REMOVE,XTREEM_TMPL
-    MRC_STARTUP = config_parser.get('mrc','MRC_STARTUP')
-    DIR_STARTUP = config_parser.get('dir','DIR_STARTUP')
-    OSD_STARTUP = config_parser.get('osd','OSD_STARTUP')
-    OSD_REMOVE  = config_parser.get('osd','OSD_REMOVE')
+
+    global MRC_STARTUP, DIR_STARTUP, OSD_STARTUP, OSD_REMOVE
+    MRC_STARTUP = config_parser.get('mrc', 'MRC_STARTUP')
+    DIR_STARTUP = config_parser.get('dir', 'DIR_STARTUP')
+    OSD_STARTUP = config_parser.get('osd', 'OSD_STARTUP')
+    OSD_REMOVE  = config_parser.get('osd', 'OSD_REMOVE')
+
+    global PROTOCOL, CERTS_PATH, TRUSTED_CA_PATH, TRUSTED_CA_PASS
+    PROTOCOL = config_parser.get('agent', 'PROTOCOL')
+    CERTS_PATH = config_parser.get('agent', 'CERTS_PATH')
+    TRUSTED_CA_PATH = join(CERTS_PATH,
+            config_parser.get('agent', 'TRUSTED_CA'))
+    TRUSTED_CA_PASS = config_parser.get('agent', 'TRUSTED_CA_PASS')
+
+    global OSD_CERT_PATH, OSD_CERT_PASS
+    OSD_CERT_PATH = join(CERTS_PATH,
+            config_parser.get('osd', 'OSD_CERT'))
+    OSD_CERT_PASS = config_parser.get('osd', 'OSD_CERT_PASS')
+
     global ETC
-    ETC = config_parser.get('agent','ETC')
+    ETC = config_parser.get('agent', 'ETC')
 
 class DIR():
     def __init__(self, uuid):
@@ -152,7 +172,16 @@ class OSD:
         self.fuser_args = ['fuser', '-km', self.mount_point]
         self.start_args = [OSD_STARTUP, 'start']
         self.stop_args = [OSD_STARTUP, 'stop']
-        self.remove_args = [OSD_REMOVE, '-dir ' + str(self.dir_serviceHost) + ':' + str(self.dir_servicePort), 'uuid:' + str(self.uuid)]
+        self.remove_args = [
+            OSD_REMOVE,
+            '-c ' + OSD_CERT_PATH,
+            '-cpass ' + OSD_CERT_PASS,
+            '-t ' + TRUSTED_CA_PATH,
+            '-tpass ' + TRUSTED_CA_PASS,
+            '-dir ' + PROTOCOL + '://' + str(self.dir_serviceHost) +
+                      ':' + str(self.dir_servicePort),
+            'uuid:' + str(self.uuid)
+        ]
         self._write_config()
         logger.info('OSD server initialized.')
         self.start(mkfs)
