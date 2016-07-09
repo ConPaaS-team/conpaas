@@ -35,6 +35,14 @@ def invalid_arg(msg):
     return HttpErrorResponse(ManagerException(
         ManagerException.E_ARGS_INVALID, detail=msg).message)
 
+def clean_output(output):
+    return '\n'.join([
+        line
+        for line in output.split('\n')
+        if 'verify error' not in line
+        and line.strip() != ''
+    ])
+
 class XtreemFSManager(BaseManager):
 
     def __init__(self, config_parser, **kwargs):
@@ -128,8 +136,8 @@ class XtreemFSManager(BaseManager):
             creation_cmd += "/src/conpaas/services/xtreemfs/etc/"
             creation_cmd += "generate_certificate.sh -dmo -t"
             out, err = run_cmd(creation_cmd, tmpdir)
-            self.logger.debug('_create_certs: stderr %s' % out)
-            self.logger.debug('_create_certs: stdout %s' % err)
+            self.logger.debug('_create_certs: stdout %s' % clean_output(out))
+            # self.logger.debug('_create_certs: stderr %s' % err)
             # store result as base64 encoded string into dictionary for transfer
             certs['dir'] = base64.b64encode(open(tmpdir + "/dir.p12", 'rb').read())
             certs['mrc'] = base64.b64encode(open(tmpdir + "/mrc.p12", 'rb').read())
@@ -140,9 +148,9 @@ class XtreemFSManager(BaseManager):
 
     def _create_client_cert(self, passphrase, adminflag):
         # create a temporary directory
-        self.logger.debug('_create_client_cert: creating tmp dir')
+        # self.logger.debug('_create_client_cert: creating tmp dir')
         tmpdir = tempfile.mkdtemp()
-        self.logger.debug('_create_client_cert: created tmp dir')
+        # self.logger.debug('_create_client_cert: created tmp dir')
         # create certificates and truststore
         creation_cmd  = "bash "
         creation_cmd += self.config_parser.get('manager', 'CONPAAS_HOME')
@@ -152,16 +160,16 @@ class XtreemFSManager(BaseManager):
             creation_cmd += " -s"
         self.logger.debug('_create_client_cert: executing script')
         out, err = run_cmd(creation_cmd, tmpdir)
-        self.logger.debug('_create_client_cert: stderr %s' % out)
-        self.logger.debug('_create_client_cert: stdout %s' % err)
+        self.logger.debug('_create_client_cert: stdout %s' % clean_output(out))
+        # self.logger.debug('_create_client_cert: stderr %s' % err)
         # store result as base64 encoded string into dictionary for transfer
         return open(tmpdir + "/client.p12", 'rb').read()
 
     def _create_user_cert(self, user, group, passphrase, adminflag):
         # create a temporary directory
-        self.logger.debug('_create_user_cert: creating tmp dir')
+        # self.logger.debug('_create_user_cert: creating tmp dir')
         tmpdir = tempfile.mkdtemp()
-        self.logger.debug('_create_user_cert: created tmp dir')
+        # self.logger.debug('_create_user_cert: created tmp dir')
         # create certificates and truststore
         creation_cmd  = "bash "
         creation_cmd += self.config_parser.get('manager', 'CONPAAS_HOME')
@@ -171,8 +179,8 @@ class XtreemFSManager(BaseManager):
             creation_cmd += " -s"
         self.logger.debug('_create_user_cert: executing script')
         out, err = run_cmd(creation_cmd, tmpdir)
-        self.logger.debug('_create_user_cert: stderr %s' % out)
-        self.logger.debug('_create_user_cert: stdout %s' % err)
+        self.logger.debug('_create_user_cert: stdout %s' % clean_output(out))
+        # self.logger.debug('_create_user_cert: stderr %s' % err)
         # store result as base64 encoded string into dictionary for transfer
         return open(tmpdir + "/" + user + ".p12", 'rb').read()
 
@@ -877,7 +885,7 @@ class XtreemFSManager(BaseManager):
             self.logger.info('Failed to create volume: %s; %s', stdout, stderr)
             return HttpErrorResponse("The volume could not be created")
 
-        self.logger.info('Creating Volume: %s; %s', stdout, stderr)
+        self.logger.info("XtreemFS Volume '%s' created successfully." % volumeName)
         return HttpJsonResponse()
 
     @expose('POST')
@@ -903,7 +911,7 @@ class XtreemFSManager(BaseManager):
             self.logger.info('Failed to delete volume: %s; %s', stdout, stderr)
             return HttpErrorResponse("The volume could not be deleted")
 
-        self.logger.info('Deleting Volume: %s; %s', stdout, stderr)
+        self.logger.info("XtreemFS Volume '%s' deleted successfully." % volumeName)
         # TODO(maybe): issue xtfs_cleanup on all OSDs to free space (or don't and assume xtfs_cleanup is run by a cron job or something)
         return HttpJsonResponse()
 
@@ -929,7 +937,7 @@ class XtreemFSManager(BaseManager):
             self.logger.info('Failed to view volume: %s; %s', stdout, stderr)
             return HttpErrorResponse("The volume list cannot be accessed")
 
-        return HttpJsonResponse({ 'volumes': stdout })
+        return HttpJsonResponse({ 'volumes': clean_output(stdout) })
 
     # NOTE: see xtfsutil for the available policies
     @expose('GET')
