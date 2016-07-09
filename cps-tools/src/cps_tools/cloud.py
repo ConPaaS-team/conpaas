@@ -1,4 +1,5 @@
 
+import traceback
 import argcomplete
 import logging
 import sys
