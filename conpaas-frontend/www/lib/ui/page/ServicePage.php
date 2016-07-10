@@ -141,7 +141,13 @@ class ServicePage extends Page {
 		$nodesLists = $this->service->getNodesLists();
 
 		// Get the list of roles
-		$roles = array_keys($nodesLists);
+		$roles = $this->service->getInstanceRoles();
+		if ($roles === false) {
+			$roles = array_keys($nodesLists);
+		} else {
+			// Make sure we don't use roles which are not currently present
+			$roles = array_intersect($roles, array_keys($nodesLists));
+		}
 
 		// Get the list of nodes
 		$nodes = array();
