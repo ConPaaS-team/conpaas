@@ -26,7 +26,7 @@ class XtreemFSCmd(ServiceCmd):
 
     def __init__(self, xtreemfs_parser, client):
         ServiceCmd.__init__(self, xtreemfs_parser, client, "xtreemfs",
-                            ['osd', 'mrc', 'dir'],
+                            [('osd', 1)], # (role name, default number)
                             "XtreemFS service sub-commands help")
         self._add_add_xfs_volume()
         self._add_list_xfs_volumes()

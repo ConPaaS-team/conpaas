@@ -8,7 +8,7 @@ class WebCmd(ServiceCmd):
 
     def __init__(self, web_parser, client, service_type="web",
                  description="Web server service sub-commands help"):
-        roles = ['backend', 'proxy', 'web']
+        roles = [('backend', 1), ('proxy', 0), ('web', 0)] # (role name, default number)
         ServiceCmd.__init__(self, web_parser, client, service_type, roles,
                             description)
         self._add_upload_key()

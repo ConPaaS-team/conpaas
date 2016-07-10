@@ -14,7 +14,8 @@ class GenericCmd(ServiceCmd):
 
     def __init__(self, generic_parser, client):
         ServiceCmd.__init__(self, generic_parser, client, "generic",
-                            ['node'], "Generic service sub-commands help")
+                            [('nodes', 1)], # (role name, default number)
+                            "Generic service sub-commands help")
         self._add_upload_key()
         self._add_list_keys()
         self._add_upload_code()

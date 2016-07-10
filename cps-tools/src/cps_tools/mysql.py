@@ -13,7 +13,8 @@ from .service import ServiceCmd
 class MySQLCmd(ServiceCmd):
 
     def __init__(self, mysql_parser, client):
-        ServiceCmd.__init__(self, mysql_parser, client, "mysql", ['nodes', 'glb_nodes'],
+        ServiceCmd.__init__(self, mysql_parser, client, "mysql",
+                            [('nodes', 1), ('glb_nodes', 0)], # (role name, default number)
                             "MySQL service sub-commands help")
         self._add_change_pwd()
         self._add_migrate_nodes()

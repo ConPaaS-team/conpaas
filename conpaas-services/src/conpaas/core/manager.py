@@ -53,6 +53,10 @@ class BaseManager(ConpaasRequestHandlerComponent):
     S_STOPPED  = 'STOPPED'  # manager stopped
     S_ERROR    = 'ERROR'    # manager is in error state
 
+    # Node types
+    ROLE_DEFAULT = 'nodes'  # default node type used by cps-tools when the
+                            # service type is not specified
+
     # String template for error messages returned when performing actions in
     # the wrong state
     WRONG_STATE_MSG = "ERROR: cannot perform %(action)s in state %(curstate)s"
@@ -102,6 +106,24 @@ class BaseManager(ConpaasRequestHandlerComponent):
             raise Exception("Wrong service state: was expecting one of %s"\
                             " but current state is '%s'" \
                             % (expected_states, state))
+
+    def check_node_roles(self, noderoles):
+        valid_roles = self.get_node_roles()
+        default_role = valid_roles[0] # the first one is always the default
+
+        for role, count in noderoles.items():
+            if role in valid_roles:
+                # we received a valid role, nothing to do
+                pass
+            elif role == self.ROLE_DEFAULT:
+                # the role was not specified in cps-tools, let's replace
+                # it with the default role for this service
+                del noderoles[role]
+                noderoles[default_role] = count
+            else:
+                # invalid role, raise an exception
+                raise Exception("Wrong node type '%s' for service type '%s'."
+                                % (role, self.get_service_type()))
 
     def check_credits(self):
         credit = self.callbacker.get_credit()
@@ -157,6 +179,10 @@ class BaseManager(ConpaasRequestHandlerComponent):
     # this should be overwritten from all the service managers
     def get_service_type(self):
         raise Exception("get_service_type method not implemented for this service (%s)" % self.__class__.__name__)
+
+    # this should be overwritten from all the service managers
+    def get_node_roles(self):
+        raise Exception("get_node_roles method not implemented for this service (%s)" % self.__class__.__name__)
 
     @expose('GET')
     def get_service_history(self, kwargs):
@@ -405,6 +431,7 @@ class ApplicationManager(BaseManager):
             self.check_credits()
 
             service_manager = self.httpsserver.instances[service_id]
+            service_manager.check_node_roles(noderoles)
             service_manager.check_state([self.S_RUNNING])
         except Exception as ex:
             return HttpErrorResponse("%s" % ex)
@@ -443,6 +470,7 @@ class ApplicationManager(BaseManager):
             service_id, noderoles = check_arguments(exp_params, kwargs)
 
             service_manager = self.httpsserver.instances[service_id]
+            service_manager.check_node_roles(noderoles)
             service_manager.check_state([self.S_RUNNING])
         except Exception as ex:
             return HttpErrorResponse("%s" % ex)

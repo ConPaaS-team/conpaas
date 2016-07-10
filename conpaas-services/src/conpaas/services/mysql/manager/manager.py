@@ -31,9 +31,8 @@ import MySQLdb
 class MySQLManager(BaseManager):
 
     # MySQL Galera node types
-    REGULAR_NODE = 'node'  # regular node running a mysqld daemon
-    GLB_NODE = 'glb_node'  # load balancer running a glbd daemon
-    volumes_dict = {}
+    ROLE_REGULAR = 'nodes'  # regular node running a mysqld daemon
+    ROLE_GLB = 'glb_nodes'  # load balancer running a glbd daemon
 
     def __init__(self, conf, **kwargs):
         BaseManager.__init__(self, conf)
@@ -48,6 +47,10 @@ class MySQLManager(BaseManager):
 
     def get_service_type(self):
         return 'mysql'
+
+    def get_node_roles(self):
+        # The first node type is the default when adding / removing nodes
+        return [ self.ROLE_REGULAR, self.ROLE_GLB ]
 
     def get_starting_nodes(self):
         device_name=self.config_parser.get('manager', 'DEV_TARGET')
@@ -143,9 +146,11 @@ class MySQLManager(BaseManager):
         except:
             return HttpJsonResponse({})
 
-        return HttpJsonResponse({'nodes': [node.id for node in self.config.get_nodes()],
-                                 'glb_nodes': [node.id for node in self.config.get_glb_nodes()],
-                                 })
+        return HttpJsonResponse({ self.ROLE_REGULAR:
+                                    [ node.id for node in self.config.get_nodes() ],
+                                  self.ROLE_GLB:
+                                    [ node.id for node in self.config.get_glb_nodes() ]
+                                })
 
     @expose('GET')
     def get_node_info(self, kwargs):
@@ -191,12 +196,12 @@ class MySQLManager(BaseManager):
         for node in nodes:
             self.logger.info('add node role: %s' % node.role)
 
-        reg_nodes = filter(lambda n: n.role=='nodes', nodes)
+        reg_nodes = filter(lambda n: n.role == self.ROLE_REGULAR, nodes)
         if len(reg_nodes):
             self._start_mysqld(reg_nodes)
             self.config.addMySQLServiceNodes(reg_nodes)
 
-        gal_nodes = filter(lambda n: n.role=='glb_nodes', nodes)
+        gal_nodes = filter(lambda n: n.role == self.ROLE_GLB, nodes)
         if len(gal_nodes):
             self._start_glbd(gal_nodes)
             self.config.addGLBServiceNodes(gal_nodes)
@@ -335,8 +340,8 @@ class MySQLManager(BaseManager):
 
     def on_remove_nodes(self, noderoles):
         # We assume arguments are checked here!
-        nodes = noderoles.get('nodes', 0)
-        glb_nodes = noderoles.get('glb_nodes', 0)
+        nodes = noderoles.get(self.ROLE_REGULAR, 0)
+        glb_nodes = noderoles.get(self.ROLE_GLB, 0)
         rm_reg_nodes = self.config.get_nodes()[:nodes]
         rm_glb_nodes = self.config.get_glb_nodes()[:glb_nodes]
         return self._do_remove_nodes(rm_reg_nodes,rm_glb_nodes)

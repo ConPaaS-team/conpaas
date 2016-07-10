@@ -86,6 +86,11 @@ from conpaas.core import git
 
 class BasicWebserversManager(BaseManager):
 
+    # Webserver node types
+    ROLE_BACKEND = 'backend'  # Backend node (PHP / Java)
+    ROLE_WEB     = 'web'      # Web server node
+    ROLE_PROXY   = 'proxy'    # Web proxy node
+
     # Default load balancing weight for nodes.
     DEFAULT_NODE_WEIGHT = 100
 
@@ -98,6 +103,10 @@ class BasicWebserversManager(BaseManager):
 
     def get_service_type(self):
         return 'web'
+
+    def get_node_roles(self):
+        # The first node type is the default when adding / removing nodes
+        return [ self.ROLE_BACKEND, self.ROLE_WEB, self.ROLE_PROXY ]
 
     def _configuration_get(self):
         return self.service_config
@@ -394,9 +403,9 @@ class BasicWebserversManager(BaseManager):
 
     def on_add_nodes(self, nodes):
         config = self._configuration_get()
-        backend = len(filter(lambda n: n.role=='backend', nodes))
-        web = len(filter(lambda n: n.role=='web', nodes))
-        proxy = len(filter(lambda n: n.role=='proxy', nodes))
+        backend = len(filter(lambda n: n.role == self.ROLE_BACKEND, nodes))
+        web = len(filter(lambda n: n.role == self.ROLE_WEB, nodes))
+        proxy = len(filter(lambda n: n.role == self.ROLE_PROXY, nodes))
 
         webNodesNew = []
         proxyNodesNew = []
@@ -743,14 +752,14 @@ class BasicWebserversManager(BaseManager):
         # no checks on parameters here (should be done in base class)
         # no remove from ip supported
         backend = web = proxy = 0
-        if 'backend' in node_roles:
-            backend = node_roles['backend']
+        if self.ROLE_BACKEND in node_roles:
+            backend = node_roles[self.ROLE_BACKEND]
 
-        if 'web' in node_roles:
-            web = node_roles['web']
+        if self.ROLE_WEB in node_roles:
+            web = node_roles[self.ROLE_WEB]
 
-        if 'proxy' in node_roles:
-            proxy = node_roles['proxy']
+        if self.ROLE_PROXY in node_roles:
+            proxy = node_roles[self.ROLE_PROXY]
 
         node_ip = None
 
@@ -1107,9 +1116,15 @@ class BasicWebserversManager(BaseManager):
 
         config = self._configuration_get()
         return HttpJsonResponse({
-            'proxy': [serviceNode.id for serviceNode in config.getProxyServiceNodes()],
-            'web': [serviceNode.id for serviceNode in config.getWebServiceNodes()],
-            'backend': [serviceNode.id for serviceNode in config.getBackendServiceNodes()]
+            self.ROLE_PROXY:
+                    [ serviceNode.id
+                      for serviceNode in config.getProxyServiceNodes() ],
+            self.ROLE_WEB:
+                    [ serviceNode.id
+                      for serviceNode in config.getWebServiceNodes() ],
+            self.ROLE_BACKEND:
+                    [ serviceNode.id
+                      for serviceNode in config.getBackendServiceNodes() ]
         })
 
     @expose('GET')

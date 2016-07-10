@@ -45,6 +45,11 @@ def clean_output(output):
 
 class XtreemFSManager(BaseManager):
 
+    # XtreemFS node types
+    ROLE_DIR = 'dir'  # Directory service
+    ROLE_MRC = 'mrc'  # Metadata and Replica Catalog
+    ROLE_OSD = 'osd'  # Object Storage Device
+
     def __init__(self, config_parser, **kwargs):
         BaseManager.__init__(self, config_parser)
 
@@ -83,6 +88,10 @@ class XtreemFSManager(BaseManager):
     def get_service_type(self):
         return 'xtreemfs'
 
+    def get_node_roles(self):
+        # The first node type is the default when adding / removing nodes
+        return [ self.ROLE_OSD, self.ROLE_MRC, self.ROLE_DIR ]
+
     def get_starting_nodes(self):
         device_name=self.config_parser.get('manager', 'DEV_TARGET')
         volume = {'vol_name':'osd-%(vm_id)s', 'vol_size': self.osd_volume_size, 'dev_name':device_name}
@@ -103,11 +112,11 @@ class XtreemFSManager(BaseManager):
         return nodes_info
 
     def __get__uuid(self, node_id, node_type):
-        if node_type == 'dir':
+        if node_type == self.ROLE_DIR:
             node_map = self.dir_node_uuid_map
-        elif node_type == 'mrc':
+        elif node_type == self.ROLE_MRC:
             node_map = self.mrc_node_uuid_map
-        elif node_type == 'osd':
+        elif node_type == self.ROLE_OSD:
             node_map = self.osd_node_uuid_map
         else:
             raise Exception("Unknown node type: %s" % node_type)
@@ -189,7 +198,7 @@ class XtreemFSManager(BaseManager):
 
         for node in nodes:
             try:
-                dir_uuid = self.__get__uuid(node.id, 'dir')
+                dir_uuid = self.__get__uuid(node.id, self.ROLE_DIR)
                 client.createDIR(node.ip, 5555, dir_uuid)
             except client.AgentException:
                 self.logger.exception('Failed to start DIR at node %s' % node)
@@ -210,7 +219,7 @@ class XtreemFSManager(BaseManager):
     def _start_mrc(self, nodes):
         for node in nodes:
             try:
-                mrc_uuid = self.__get__uuid(node.id, 'mrc')
+                mrc_uuid = self.__get__uuid(node.id, self.ROLE_MRC)
                 client.createMRC(node.ip, 5555, self.dirNodes[0].ip, mrc_uuid)
             except client.AgentException:
                 self.logger.exception('Failed to start MRC at node %s' % node)
@@ -232,7 +241,7 @@ class XtreemFSManager(BaseManager):
         dev_name = None
         for idx, node in enumerate(nodes):
             volume_associated = False
-            osd_uuid = self.__get__uuid(node.id, 'osd')
+            osd_uuid = self.__get__uuid(node.id, self.ROLE_OSD)
             # osd_uuid = node.volumes[0].vol_name
             self.osd_uuid_volume_map[osd_uuid] = node.volumes[0].vol_id
             dev_name = node.volumes[0].dev_name
@@ -247,7 +256,7 @@ class XtreemFSManager(BaseManager):
     # def _start_osd(self, nodes, cloud=None):
     #     dev_name = None
     #     for idx, node in enumerate(nodes):
-    #         osd_uuid = self.__get__uuid(node.id, 'osd')
+    #         osd_uuid = self.__get__uuid(node.id, self.ROLE_OSD)
 
     #         volume_associated = osd_uuid in self.osd_uuid_volume_map
 
@@ -484,9 +493,9 @@ class XtreemFSManager(BaseManager):
         # if nr_osd < 0:
         #     return invalid_arg('Expected a positive integer value for "nr osd"')
 
-        dirNodesAdded = filter(lambda n: n.role == 'dir', nodes)
-        mrcNodesAdded = filter(lambda n: n.role == 'mrc', nodes)
-        osdNodesAdded = filter(lambda n: n.role == 'osd', nodes)
+        dirNodesAdded = filter(lambda n: n.role == self.ROLE_DIR, nodes)
+        mrcNodesAdded = filter(lambda n: n.role == self.ROLE_MRC, nodes)
+        osdNodesAdded = filter(lambda n: n.role == self.ROLE_OSD, nodes)
         self.dirNodes += dirNodesAdded
         self.mrcNodes += mrcNodesAdded
         self.osdNodes += osdNodesAdded
@@ -617,9 +626,9 @@ class XtreemFSManager(BaseManager):
             return HttpJsonResponse({})
 
         return HttpJsonResponse({
-              'dir': [node.id for node in self.dirNodes ],
-              'mrc': [node.id for node in self.mrcNodes],
-              'osd': [node.id for node in self.osdNodes]
+              self.ROLE_DIR: [ node.id for node in self.dirNodes ],
+              self.ROLE_MRC: [ node.id for node in self.mrcNodes ],
+              self.ROLE_OSD: [ node.id for node in self.osdNodes ]
               })
 
     @expose('GET')
@@ -700,9 +709,9 @@ class XtreemFSManager(BaseManager):
         # if nr_osd > self.osdCount - 1: # we need at least 1 OSD
         #     return invalid_arg('Cannot remove_nodes that many OSD nodes')
 
-        nr_dir = noderoles.get('dir', 0)
-        nr_mrc = noderoles.get('mrc', 0)
-        nr_osd = noderoles.get('osd', 0)
+        nr_dir = noderoles.get(self.ROLE_DIR, 0)
+        nr_mrc = noderoles.get(self.ROLE_MRC, 0)
+        nr_osd = noderoles.get(self.ROLE_OSD, 0)
 
         self.logger.info('Removing %s dir, %s mrc and %s osd nodes' % (nr_dir, nr_mrc, nr_osd))
         rem_nodes = []

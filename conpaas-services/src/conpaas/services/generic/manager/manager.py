@@ -65,6 +65,10 @@ from conpaas.core.misc import check_arguments, is_in_list, is_not_in_list,\
 
 class GenericManager(BaseManager):
 
+    # Generic node types
+    ROLE_MASTER  = 'master'  # master node (the first one started)
+    ROLE_REGULAR = 'node'    # regular node (any other node)
+
     # String used as an error message when 'interrupt' is called when no
     # scripts are currently running
     NO_SCRIPTS_ARE_RUNNING_MSG = "ERROR: No scripts are currently running inside "\
@@ -113,6 +117,10 @@ echo "" >> /root/generic.out
     def get_service_type(self):
         return 'generic'
 
+    def get_node_roles(self):
+        # The first node type is the default when adding / removing nodes
+        return [ self.ROLE_REGULAR, self.ROLE_MASTER ]
+
     def _create_initial_configuration(self):
         self.logger.info("Creating initial configuration")
 
@@ -149,7 +157,7 @@ echo "" >> /root/generic.out
         try:
             config = self._configuration_get()
 
-            roles = {'master':'1'}
+            roles = { self.ROLE_MASTER: '1' }
 
             agents_info = self._update_agents_info(nodes, roles)
 
@@ -207,7 +215,7 @@ echo "" >> /root/generic.out
 
     def on_add_nodes(self, node_instances):
         # (genc): i have to figure out how to deal with the roles
-        start_role = 'node'
+        start_role = self.ROLE_REGULAR
         roles = {start_role: str(len(node_instances))}
         # Startup agents
         agents_info = self._update_agents_info(node_instances, roles)
@@ -266,8 +274,8 @@ echo "" >> /root/generic.out
         ]
 
         return HttpJsonResponse({
-            'master': generic_master,
-            'node': generic_nodes
+            self.ROLE_MASTER: generic_master,
+            self.ROLE_REGULAR: generic_nodes
         })
 
     @expose('GET')

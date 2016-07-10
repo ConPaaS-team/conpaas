@@ -19,7 +19,7 @@ class ServiceCmd(object):
         self.services = None  # cache for service list
         self.type = service_type
         if roles is None:
-            self.roles = ['node']
+            self.roles = [('nodes', 1)] # (role name, default number)
         else:
             self.roles = roles
         self.initial_expected_state = 'INIT'
@@ -404,7 +404,7 @@ class ServiceCmd(object):
     def _get_roles_nb(self, args):
         total_nodes = 0
         data = {}
-        for role in self.roles:
+        for role, _ in self.roles:
             node_nb = getattr(args, role)
             total_nodes += node_nb
             data[role] = node_nb
@@ -416,9 +416,10 @@ class ServiceCmd(object):
         subparser.set_defaults(run_cmd=self.add_nodes, parser=subparser)
         subparser.add_argument('app_name_or_id', help="Name or identifier of an application")
         subparser.add_argument('serv_name_or_id', help="Name or identifier of a service")
-        for role in self.roles:
-            subparser.add_argument('--%s' % role, type=int, default=1,
-                                   help="Number of %s to add" % role)
+        for role, count in self.roles:
+            name = role if role.endswith('nodes') else role + ' nodes'
+            subparser.add_argument('--%s' % role, metavar='COUNT', type=int, default=count,
+                                   help="Number of %s to add (default %s)" % (name, count))
         subparser.add_argument('-c', '--cloud', metavar='CLOUD_NAME', default='default',
                                help="Name of the cloud where to add nodes")
 
@@ -455,9 +456,11 @@ class ServiceCmd(object):
                                help="Name or identifier of an application")
         subparser.add_argument('serv_name_or_id',
                                help="Name or identifier of a service")
-        for role in self.roles:
-            subparser.add_argument('--%s' % role, type=int, default=1,
-                                   help="Number of %s nodes to remove" % role)
+        for role, count in self.roles:
+            name = role if role.endswith('nodes') else role + ' nodes'
+            subparser.add_argument('--%s' % role, metavar='COUNT', type=int, default=count,
+                                   help="Number of %s to remove (default %s)"
+                                        % (name, count))
 
     def remove_nodes(self, args):
         app_id, service_id = self.check_service(args.app_name_or_id, args.serv_name_or_id)
