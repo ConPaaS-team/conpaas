@@ -341,10 +341,10 @@ class MGeneral(object):
             sid = Service.query.filter_by(application_id=appid, type='mysql').first().sid
             nodes = callmanager(appid, sid, "list_nodes", False, {})
 
-            if nodes['glb_nodes']:
-                params = { 'serviceNodeId': nodes['glb_nodes'][0] }
+            if nodes['glb']:
+                params = { 'serviceNodeId': nodes['glb'][0] }
             else:
-                params = { 'serviceNodeId': nodes['nodes'][0] }
+                params = { 'serviceNodeId': nodes['mysql'][0] }
             details = callmanager(appid, sid, "get_node_info", False, params)
             env = env + 'echo "env[MYSQL_IP]=\'%s\'" >> /root/ConPaaS/src/conpaas/services/webservers/etc/fpm.tmpl\n' % details['serviceNode']['ip']
             env = env + 'export MYSQL_IP=\'%s\'\n' % details['serviceNode']['ip']
@@ -667,16 +667,16 @@ class MMySql(MGeneral):
 
         if json.get('StartupInstances'):
             params = {
-                    'nodes': 0,
-                    'glb_nodes': 0
+                    'mysql': 0,
+                    'glb': 0
             }
 
-            if json.get('StartupInstances').get('nodes'):
-                params['nodes'] = int(json.get('StartupInstances').get('nodes'))
-            if json.get('StartupInstances').get('glb_nodes'):
-                params['glb_nodes'] = int(json.get('StartupInstances').get('glb_nodes'))
+            if json.get('StartupInstances').get('mysql'):
+                params['mysql'] = int(json.get('StartupInstances').get('mysql'))
+            if json.get('StartupInstances').get('glb'):
+                params['glb'] = int(json.get('StartupInstances').get('glb'))
 
-            if params['nodes'] or params['glb_nodes']:
+            if params['mysql'] or params['glb']:
                 res = self.add_nodes(appid, sid, params)
                 if 'error' in res:
                     return res['error']

@@ -587,7 +587,7 @@ To obtain the better performances from a cluster, it is a best
 practice to use it in balanced fashion, so that each node has
 approximatively the same load of the others. To achieve this, the
 service allows users to allocate special load balancer nodes
-(``glb_nodes``) which implement load balancing. Load balancer nodes
+(``glb``) which implement load balancing. Load balancer nodes
 are designed to receive all incoming database queries and
 automatically schedule them between the database nodes, making sure
 they all process equivalent workload.

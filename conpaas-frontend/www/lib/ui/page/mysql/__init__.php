@@ -50,8 +50,8 @@ class MySQLPage extends ServicePage {
 
 		$html = '';
                 static $roles = array(
-                        'glb_nodes' => 'blue',
-                        'nodes' => 'orange',
+                        'glb' => 'blue',
+                        'mysql' => 'orange',
                         );
                 foreach ($roles as $role => $color) {
                         $name = ($role == 'backend') ? $this->service->getType() : $role;
@@ -69,13 +69,13 @@ class MySQLPage extends ServicePage {
 /*
 		return EditableTag()
 			->setColor('blue')
-			->setID('nodes')
+			->setID('mysql')
 			->setValue('0')
-			->setText('nodes')
+			->setText('mysql')
 			->setColor('orange')
-                        ->setID('glb_nodes')
+                        ->setID('glb')
                         ->setValue('0')
-                        ->setText('glb_nodes')
+                        ->setText('glb')
 					;
 */	}
 

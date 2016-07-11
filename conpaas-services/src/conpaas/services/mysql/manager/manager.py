@@ -34,8 +34,8 @@ import MySQLdb
 class MySQLManager(BaseManager):
 
     # MySQL Galera node types
-    ROLE_REGULAR = 'nodes'  # regular node running a mysqld daemon
-    ROLE_GLB = 'glb_nodes'  # load balancer running a glbd daemon
+    ROLE_MYSQL = 'mysql'  # regular node running a mysqld daemon
+    ROLE_GLB   = 'glb'    # load balancer running a glbd daemon
 
     def __init__(self, conf, **kwargs):
         BaseManager.__init__(self, conf)
@@ -53,7 +53,7 @@ class MySQLManager(BaseManager):
 
     def get_node_roles(self):
         # The first node type is the default when adding / removing nodes
-        return [ self.ROLE_REGULAR, self.ROLE_GLB ]
+        return [ self.ROLE_MYSQL, self.ROLE_GLB ]
 
     def get_starting_nodes(self):
         device_name=self.config_parser.get('manager', 'DEV_TARGET')
@@ -65,7 +65,7 @@ class MySQLManager(BaseManager):
         device_name=self.config_parser.get('manager', 'DEV_TARGET')
         count = sum(node_roles.values())
         nodes_info = [{'cloud':cloud} for _ in range(count)]
-        reg_nodes = node_roles.get('nodes', 0)
+        reg_nodes = node_roles.get(self.ROLE_MYSQL, 0)
         for node_info in nodes_info:
             if reg_nodes:
                 volume = {'vol_name':'mysql-%(vm_id)s', 'vol_size': 1024, 'dev_name':device_name}
@@ -149,7 +149,7 @@ class MySQLManager(BaseManager):
         except:
             return HttpJsonResponse({})
 
-        return HttpJsonResponse({ self.ROLE_REGULAR:
+        return HttpJsonResponse({ self.ROLE_MYSQL:
                                     [ node.id for node in self.config.get_nodes() ],
                                   self.ROLE_GLB:
                                     [ node.id for node in self.config.get_glb_nodes() ]
@@ -199,7 +199,7 @@ class MySQLManager(BaseManager):
         for node in nodes:
             self.logger.info('add node role: %s' % node.role)
 
-        reg_nodes = filter(lambda n: n.role == self.ROLE_REGULAR, nodes)
+        reg_nodes = filter(lambda n: n.role == self.ROLE_MYSQL, nodes)
         if len(reg_nodes):
             self._start_mysqld(reg_nodes)
             self.config.addMySQLServiceNodes(reg_nodes)
@@ -342,10 +342,10 @@ class MySQLManager(BaseManager):
                                  })
 
     def check_remove_nodes(self, node_roles):
-        nodes = node_roles.get(self.ROLE_REGULAR, 0)
+        nodes = node_roles.get(self.ROLE_MYSQL, 0)
         total_nodes = len(self.config.get_nodes())
         if nodes >= total_nodes: # at least one mysql node should remain
-            raise WrongNrNodesException(nodes, total_nodes - 1, self.ROLE_REGULAR)
+            raise WrongNrNodesException(nodes, total_nodes - 1, self.ROLE_MYSQL)
 
         glb_nodes = node_roles.get(self.ROLE_GLB, 0)
         total_glb_nodes = len(self.config.get_glb_nodes())
@@ -354,7 +354,7 @@ class MySQLManager(BaseManager):
 
     def on_remove_nodes(self, node_roles):
         # We assume arguments are checked here!
-        nodes = node_roles.get(self.ROLE_REGULAR, 0)
+        nodes = node_roles.get(self.ROLE_MYSQL, 0)
         glb_nodes = node_roles.get(self.ROLE_GLB, 0)
         rm_reg_nodes = self.config.get_nodes()[:nodes]
         rm_glb_nodes = self.config.get_glb_nodes()[:glb_nodes]

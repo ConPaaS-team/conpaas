@@ -26,7 +26,7 @@ class MySQLService extends Service {
 	}
 
 	public function getInstanceRoles() {
-		return array('nodes', 'glb_nodes');
+		return array('mysql', 'glb');
 	}
 
 	public function createInstanceUI($node) {
@@ -52,12 +52,12 @@ class MySQLService extends Service {
 
 	public function getMasterAddr() {
                 $list=$this->nodesLists;
-		if(count($list['glb_nodes'])>0){
-			$accessnode=$this->getNodeInfo($list['glb_nodes'][0]);
+		if(count($list['glb'])>0){
+			$accessnode=$this->getNodeInfo($list['glb'][0]);
 			$port='8010';
 		}
 	        else{
-                        $accessnode=$this->getNodeInfo($this->nodesLists['nodes'][0]);
+                        $accessnode=$this->getNodeInfo($this->nodesLists['mysql'][0]);
 			$port='3306';
 		}
                 return array('ip' =>$accessnode['ip'] ,'port' => $port);

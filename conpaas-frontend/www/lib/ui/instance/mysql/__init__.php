@@ -14,10 +14,10 @@ class MySQLInstance extends Instance {
 	protected function renderCapabs() {
 		$html = '';
 		if ($this->info['isNode']) {
-			$html .= '<div class="tag orange">node</div>';
+			$html .= '<div class="tag orange">mysql</div>';
 		}
 		if ($this->info['isGlb_node']) {
-			$html .= '<div class="tag blue">Glb node</div>';
+			$html .= '<div class="tag blue">glb</div>';
 		}
 		return $html;
 	}

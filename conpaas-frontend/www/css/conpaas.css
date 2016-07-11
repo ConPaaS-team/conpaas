@@ -1275,7 +1275,7 @@ ul.versions li .timestamp {
 	padding: 5px 3px 5px 5px;
 }
 
-#instances .cluster-web, #instances .cluster-masters, #instances .cluster-scalaris, #instances .cluster-master {
+#instances .cluster-web, #instances .cluster-masters, #instances .cluster-scalaris, #instances .cluster-master, #instances .cluster-glb {
 	border-color: blue;
 }
 
@@ -1283,7 +1283,7 @@ ul.versions li .timestamp {
 	border-color: purple;
 }
 
-#instances .cluster-proxy, #instances .cluster-workers, #instances .cluster-slaves, #instances .cluster-node, #instances .cluster-osd {
+#instances .cluster-proxy, #instances .cluster-workers, #instances .cluster-slaves, #instances .cluster-node, #instances .cluster-osd, #instances .cluster-mysql {
 	border-color: orange;
 }
 

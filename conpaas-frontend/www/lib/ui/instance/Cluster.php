@@ -20,7 +20,6 @@ class Cluster {
 		static $roles = array(
 			'node'=>'orange',
 			'nodes'=>'orange',
-			'glb_nodes'=>'blue',
 			'backend' => 'purple',
 			'web' => 'blue',
 			'proxy' => 'orange',
@@ -30,6 +29,8 @@ class Cluster {
 			'scalaris' => 'blue',
 			'slaves' => 'orange',
 			'workers' => 'orange',
+			'mysql'=>'orange',
+			'glb'=>'blue',
 			'dir' => 'purple',
 			'mrc' => 'blue',
 			'osd' => 'orange'
