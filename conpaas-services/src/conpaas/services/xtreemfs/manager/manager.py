@@ -10,6 +10,7 @@ from conpaas.core.expose import expose
 
 from conpaas.core.manager import BaseManager
 from conpaas.core.manager import ManagerException
+from conpaas.core.manager import WrongNrNodesException
 
 from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse
 from conpaas.core.misc import run_cmd
@@ -54,7 +55,6 @@ class XtreemFSManager(BaseManager):
         BaseManager.__init__(self, config_parser)
 
         # node lists
-        self.nodes = []    # all nodes
         self.osdNodes = [] # only the OSD nodes
         self.mrcNodes = [] # only the MRC nodes
         self.dirNodes = [] # only the DIR nodes
@@ -98,11 +98,11 @@ class XtreemFSManager(BaseManager):
         nodes = [{'cloud':None, 'volumes':[volume]}]
         return nodes
 
-    def get_add_nodes_info(self, noderoles, cloud):
+    def get_add_nodes_info(self, node_roles, cloud):
         device_name=self.config_parser.get('manager', 'DEV_TARGET')
-        count = sum(noderoles.values())
+        count = sum(node_roles.values())
         nodes_info = [{'cloud':cloud} for _ in range(count)]
-        osd_nodes = noderoles.get('osd', 0)
+        osd_nodes = node_roles.get('osd', 0)
         for node_info in nodes_info:
             if osd_nodes:
                 volume = {'vol_name':'osd-%(vm_id)s', 'vol_size': self.osd_volume_size, 'dev_name':device_name}
@@ -673,7 +673,19 @@ class XtreemFSManager(BaseManager):
                             }
             })
 
-    def on_remove_nodes(self, noderoles):
+    def check_remove_nodes(self, node_roles):
+        nr_osd = node_roles.get(self.ROLE_OSD, 0)
+        total_osd = len(self.osdNodes)
+        if nr_osd >= total_osd: # at least one OSD node should remain
+            raise WrongNrNodesException(nr_osd, total_osd - 1, self.ROLE_OSD)
+
+        if node_roles.get(self.ROLE_DIR, 0) > 0:
+            raise Exception("Cannot remove the DIR node.")
+
+        if node_roles.get(self.ROLE_MRC, 0) > 0:
+            raise Exception("Cannot remove the MRC node.")
+
+    def on_remove_nodes(self, node_roles):
 
         # (genc): again make a method to check these parameters
         # # Removing DIR Nodes
@@ -709,9 +721,9 @@ class XtreemFSManager(BaseManager):
         # if nr_osd > self.osdCount - 1: # we need at least 1 OSD
         #     return invalid_arg('Cannot remove_nodes that many OSD nodes')
 
-        nr_dir = noderoles.get(self.ROLE_DIR, 0)
-        nr_mrc = noderoles.get(self.ROLE_MRC, 0)
-        nr_osd = noderoles.get(self.ROLE_OSD, 0)
+        nr_dir = node_roles.get(self.ROLE_DIR, 0)
+        nr_mrc = node_roles.get(self.ROLE_MRC, 0)
+        nr_osd = node_roles.get(self.ROLE_OSD, 0)
 
         self.logger.info('Removing %s dir, %s mrc and %s osd nodes' % (nr_dir, nr_mrc, nr_osd))
         rem_nodes = []

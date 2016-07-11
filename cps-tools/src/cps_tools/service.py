@@ -401,11 +401,16 @@ class ServiceCmd(object):
         else:
             print "No existing nodes"
 
-    def _get_roles_nb(self, args):
+    def _get_roles_nb(self, args=None): # if args is None we use the defaults
         total_nodes = 0
         data = {}
-        for role, _ in self.roles:
-            node_nb = getattr(args, role)
+        for role, count in self.roles:
+            if args:
+                node_nb = getattr(args, role)
+                if node_nb < 0:
+                    raise Exception("Invalid number of nodes %s." % node_nb)
+            else:
+                node_nb = count
             total_nodes += node_nb
             data[role] = node_nb
         return total_nodes, data
@@ -418,15 +423,17 @@ class ServiceCmd(object):
         subparser.add_argument('serv_name_or_id', help="Name or identifier of a service")
         for role, count in self.roles:
             name = role if role.endswith('nodes') else role + ' nodes'
-            subparser.add_argument('--%s' % role, metavar='COUNT', type=int, default=count,
+            subparser.add_argument('--%s' % role, metavar='COUNT', type=int, default=0,
                                    help="Number of %s to add (default %s)" % (name, count))
         subparser.add_argument('-c', '--cloud', metavar='CLOUD_NAME', default='default',
                                help="Name of the cloud where to add nodes")
 
     def add_nodes(self, args):
         total_nodes, nodes = self._get_roles_nb(args)
-        if total_nodes <= 0:
-            raise Exception("Invalid number of nodes: %s." % total_nodes)
+        if total_nodes == 0:
+            if args.debug:
+                self.client.logger.info("No node was specified, using the default number of nodes")
+            total_nodes, nodes = self._get_roles_nb()
 
         app_id, service_id = self.check_service(args.app_name_or_id, args.serv_name_or_id)
         check_cloud(self.client, args.cloud)
@@ -458,7 +465,7 @@ class ServiceCmd(object):
                                help="Name or identifier of a service")
         for role, count in self.roles:
             name = role if role.endswith('nodes') else role + ' nodes'
-            subparser.add_argument('--%s' % role, metavar='COUNT', type=int, default=count,
+            subparser.add_argument('--%s' % role, metavar='COUNT', type=int, default=0,
                                    help="Number of %s to remove (default %s)"
                                         % (name, count))
 
@@ -466,8 +473,10 @@ class ServiceCmd(object):
         app_id, service_id = self.check_service(args.app_name_or_id, args.serv_name_or_id)
 
         total_nodes, nodes = self._get_roles_nb(args)
-        if total_nodes <= 0:
-            raise Exception("Invalid number of nodes: %s." % total_nodes)
+        if total_nodes == 0:
+            if args.debug:
+                self.client.logger.info("No node was specified, using the default number of nodes")
+            total_nodes, nodes = self._get_roles_nb()
 
         data = {
             'nodes': nodes,

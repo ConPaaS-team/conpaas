@@ -130,8 +130,8 @@ class ServiceConfiguration(object):
     '''Representation of the deployment configuration'''
 
     def __init__(self):
-        self.proxy_count = 0
-        self.web_count = 1
+        self.proxy_count = 1
+        self.web_count = 0
         self.backend_count = 0
 
         self.serviceNodes = {}

@@ -61,7 +61,6 @@ class BaseManager(ConpaasRequestHandlerComponent):
     # the wrong state
     WRONG_STATE_MSG = "ERROR: cannot perform %(action)s in state %(curstate)s"
 
-    WRONG_NR_NODES = "ERROR: requestion to delete %(count)s while only %(current)s nodes available"
     # String template for error messages returned when a required argument is
     # missing
     REQUIRED_ARG_MSG = "ERROR: %(arg)s is a required argument"
@@ -107,19 +106,25 @@ class BaseManager(ConpaasRequestHandlerComponent):
                             " but current state is '%s'" \
                             % (expected_states, state))
 
-    def check_node_roles(self, noderoles):
+    def check_node_roles(self, node_roles):
+        if sum(node_roles.values()) == 0:
+            raise Exception("Need a positive value for at least one role")
+
         valid_roles = self.get_node_roles()
         default_role = valid_roles[0] # the first one is always the default
 
-        for role, count in noderoles.items():
+        for role, count in node_roles.items():
+            if count < 0:
+                raise Exception("Invalid number of nodes %s" % count)
+
             if role in valid_roles:
                 # we received a valid role, nothing to do
                 pass
             elif role == self.ROLE_DEFAULT:
                 # the role was not specified in cps-tools, let's replace
                 # it with the default role for this service
-                del noderoles[role]
-                noderoles[default_role] = count
+                del node_roles[role]
+                node_roles[default_role] = count
             else:
                 # invalid role, raise an exception
                 raise Exception("Wrong node type '%s' for service type '%s'."
@@ -149,14 +154,28 @@ class BaseManager(ConpaasRequestHandlerComponent):
     def on_stop(self):
         raise Exception("stop method not implemented for this service")
 
+    def check_add_nodes(self, node_roles):
+        pass
+
     def on_add_nodes(self, nodes):
         raise Exception("add_nodes method not implemented for this service")
 
-    def on_remove_nodes(self, noderoles):
+    def check_remove_nodes(self, node_roles):
+        count = sum(node_roles.values())
+        if count >= len(self.nodes):
+            raise WrongNrNodesException(count, len(self.nodes) - 1)
+
+    def on_remove_nodes(self, node_roles):
         raise Exception("remove_nodes method not implemented for this service")
+
+    def check_create_volume(self, volume_name, volume_size, agent_id):
+        raise Exception("create_volume method not currently supported for this service")
 
     def on_create_volume(self, node, volume):
         pass
+
+    def check_delete_volume(self, node, volume):
+        raise Exception("delete_volume method not currently supported for this service")
 
     def on_delete_volume(self, node, volume):
         pass
@@ -168,8 +187,8 @@ class BaseManager(ConpaasRequestHandlerComponent):
         return [{'cloud':'default'}]
 
     # overwrite this method in case the newly added nodes also require volumes
-    def get_add_nodes_info(self, noderoles, cloud):
-        count = sum(noderoles.values())
+    def get_add_nodes_info(self, node_roles, cloud):
+        count = sum(node_roles.values())
         return [{'cloud':cloud} for _ in range(count)]
 
     # this should be overwritten from the service managers if applicable
@@ -427,29 +446,30 @@ class ApplicationManager(BaseManager):
                       ('nodes', is_dict),
                       ('cloud', is_string)]
         try:
-            service_id, noderoles, cloud = check_arguments(exp_params, kwargs)
+            service_id, node_roles, cloud = check_arguments(exp_params, kwargs)
             self.check_credits()
 
             service_manager = self.httpsserver.instances[service_id]
-            service_manager.check_node_roles(noderoles)
+            service_manager.check_node_roles(node_roles)
             service_manager.check_state([self.S_RUNNING])
+            service_manager.check_add_nodes(node_roles)
         except Exception as ex:
             return HttpErrorResponse("%s" % ex)
 
         service_manager.state_set(self.S_ADAPTING)
-        Thread(target=self._do_add_nodes, args=[service_id, noderoles, cloud]).start()
+        Thread(target=self._do_add_nodes, args=[service_id, node_roles, cloud]).start()
         return HttpJsonResponse({ 'state': service_manager.state_get() })
 
-    def _do_add_nodes(self, service_id, noderoles, cloud):
+    def _do_add_nodes(self, service_id, node_roles, cloud):
         service_manager = self.httpsserver.instances[service_id]
-        count = sum(noderoles.values())
-        nodes_info = service_manager.get_add_nodes_info(noderoles, cloud)
+        count = sum(node_roles.values())
+        nodes_info = service_manager.get_add_nodes_info(node_roles, cloud)
         # nodes_info = [{'cloud':cloud} for _ in range(count)]
         nodes = self.callbacker.create_nodes(nodes_info, service_id, service_manager)
         #assing roles
         roles = []
-        for role in noderoles:
-            for count in range(noderoles[role]):
+        for role in node_roles:
+            for count in range(node_roles[role]):
                 roles.append(role)
 
         for i in range(len(nodes)):
@@ -467,26 +487,22 @@ class ApplicationManager(BaseManager):
         exp_params = [('service_id', is_in_list(self.httpsserver.instances.keys())),
                       ('nodes', is_dict)]
         try:
-            service_id, noderoles = check_arguments(exp_params, kwargs)
+            service_id, node_roles = check_arguments(exp_params, kwargs)
 
             service_manager = self.httpsserver.instances[service_id]
-            service_manager.check_node_roles(noderoles)
+            service_manager.check_node_roles(node_roles)
             service_manager.check_state([self.S_RUNNING])
+            service_manager.check_remove_nodes(node_roles)
         except Exception as ex:
             return HttpErrorResponse("%s" % ex)
 
-        count = sum(noderoles.values())
-        if count > len(service_manager.nodes):
-            vals = { 'count': count, 'current': len(service_manager.nodes) }
-            return HttpErrorResponse(self.WRONG_NR_NODES % vals)
-
         service_manager.state_set(self.S_ADAPTING)
-        Thread(target=self._do_remove_nodes, args=[service_id, noderoles]).start()
+        Thread(target=self._do_remove_nodes, args=[service_id, node_roles]).start()
         return HttpJsonResponse({ 'state': service_manager.state_get() })
 
-    def _do_remove_nodes(self, service_id, noderoles):
+    def _do_remove_nodes(self, service_id, node_roles):
         service_manager = self.httpsserver.instances[service_id]
-        nodes = service_manager.on_remove_nodes(noderoles)
+        nodes = service_manager.on_remove_nodes(node_roles)
         for node in nodes:
             for k, v in self.volumes.items():
                     if v['vm_id']==node.id:
@@ -500,8 +516,8 @@ class ApplicationManager(BaseManager):
         # else:
         #     service_manager.state_set(self.S_RUNNING)
 
-    def check_volume_name(self, volumeName):
-        if not re.compile('^[A-za-z0-9-_]+$').match(volumeName):
+    def check_volume_name(self, vol_name):
+        if not re.compile('^[A-za-z0-9-_]+$').match(vol_name):
             raise Exception('Volume name contains invalid characters')
 
     @expose('POST')
@@ -511,40 +527,35 @@ class ApplicationManager(BaseManager):
                       ('volumeSize', is_pos_int),
                       ('agentId', is_in_list(node_ids))]
         try:
-            volumeName, volumeSize, agentId = check_arguments(exp_params, kwargs)
-            self.check_volume_name(volumeName)
+            vol_name, vol_size, agent_id = check_arguments(exp_params, kwargs)
+            self.check_volume_name(vol_name)
 
-            service_id, _ = self.get_service_id_by_vm_id(agentId)
+            service_id, _ = self.get_service_id_by_vm_id(agent_id)
 
             service_manager = self.httpsserver.instances[service_id]
             service_manager.check_state([self.S_RUNNING])
+            service_manager.check_create_volume(vol_name, vol_size, agent_id)
         except Exception as ex:
             return HttpErrorResponse("%s" % ex)
 
-        # TODO: decide if this methods gets pulled to appmanager or we have a before_create_volume()
-        # in the serice managers
-        # if self._are_scripts_running():
-        #     self.logger.info("Volume creation is disabled when scripts are running")
-        #     return HttpErrorResponse(self.SCRIPTS_ARE_RUNNING_MSG);
-
         service_manager.state_set(self.S_ADAPTING)
-        Thread(target=self._do_create_volume, args=[volumeName, volumeSize, agentId, service_manager]).start()
+        Thread(target=self._do_create_volume, args=[vol_name, vol_size, agent_id, service_manager]).start()
 
         return HttpJsonResponse({ 'service_id': service_id })
 
-    def _do_create_volume(self, volumeName, volumeSize, agentId, service_manager):
+    def _do_create_volume(self, vol_name, vol_size, agent_id, service_manager):
         """Create a new volume and attach it to the specified agent"""
 
         service_manager.logger.info("Going to create a new volume")
 
         try:
-            node = [ node for node in self.nodes if node.id == agentId ][0]
+            node = [ node for node in self.nodes if node.id == agent_id ][0]
             try:
                 # We try to create a new volume.
-                volume_name = "vol-%s" % volumeName
+                volume_name = "vol-%s" % vol_name
                 service_manager.logger.debug("Trying to create a volume for the node=%s" % node.id)
 
-                volume = self.callbacker.create_volume(volumeSize, volume_name, node.vmid, node.cloud_name)
+                volume = self.callbacker.create_volume(vol_size, volume_name, node.vmid, node.cloud_name)
                 volume_id = volume['volume_id']
             except Exception, ex:
                 service_manager.logger.exception("Failed to create volume %s: %s" % (volume_name, ex))
@@ -552,7 +563,7 @@ class ApplicationManager(BaseManager):
 
             try:
                 # try to find a dev name that is not already in use by the node
-                dev_names_in_use = [ vol['dev_name'] for vol in self.volumes.values() if vol['vm_id'] == agentId]
+                dev_names_in_use = [ vol['dev_name'] for vol in self.volumes.values() if vol['vm_id'] == agent_id]
                 dev_name = self.config_parser.get('manager', 'DEV_TARGET')
                 while dev_name in dev_names_in_use:
                     # increment the last char from dev_name
@@ -565,9 +576,9 @@ class ApplicationManager(BaseManager):
                 self.destroy_volume({'vol_id':volume_id, 'cloud': node.cloud_name})
                 raise
 
-            volume = {'vol_name':volumeName, 'vol_id' : volume_id,
-                      'vol_size': volumeSize, 'vm_id': agentId,
-                      'dev_name':dev_name, 'cloud':node.cloud_name}
+            volume = {'vol_name': vol_name, 'vol_id' : volume_id,
+                      'vol_size': vol_size, 'vm_id': agent_id,
+                      'dev_name': dev_name, 'cloud': node.cloud_name}
             try:
                 service_manager.on_create_volume(node, volume)
             except Exception, ex:
@@ -580,9 +591,9 @@ class ApplicationManager(BaseManager):
             service_manager.state_set(self.S_ERROR)
             return
 
-        self.volumes[str(volumeName)] = volume
+        self.volumes[str(vol_name)] = volume
 
-        service_manager.logger.info('Volume %s created and attached' % volumeName)
+        service_manager.logger.info('Volume %s created and attached' % vol_name)
         self.logger.info('Current volumes %s ' % self.volumes.keys())
         service_manager.state_set(self.S_RUNNING)
 
@@ -616,24 +627,20 @@ class ApplicationManager(BaseManager):
 
     @expose('POST')
     def delete_volume(self, kwargs):
-
         exp_params = [('volumeName', is_in_list(self.volumes.keys()))]
         try:
-            volumeName = check_arguments(exp_params, kwargs)
-            self.check_volume_name(volumeName)
+            vol_name = check_arguments(exp_params, kwargs)
+            self.check_volume_name(vol_name)
 
-            volume = self.volumes[volumeName]
+            volume = self.volumes[vol_name]
             node = [ node for node in self.nodes if node.id == volume['vm_id'] ][0]
             service_id, _ = self.get_service_id_by_vm_id(node.id)
 
             service_manager = self.httpsserver.instances[service_id]
             service_manager.check_state([self.S_RUNNING])
+            service_manager.check_delete_volume(node, volume)
         except Exception as ex:
             return HttpErrorResponse("%s" % ex)
-
-        # if self._are_scripts_running():
-        #     self.logger.info("Volume removal is disabled when scripts are running")
-        #     return HttpErrorResponse(self.SCRIPTS_ARE_RUNNING_MSG);
 
         service_manager.state_set(self.S_ADAPTING)
         Thread(target=self._do_delete_volume, args=[volume, node, service_manager]).start()
@@ -848,10 +855,10 @@ class ApplicationManager(BaseManager):
         exp_params = [('agentId', is_in_list(node_ids)),
                       ('filename', is_string, None)]
         try:
-            agentId, filename = check_arguments(exp_params, kwargs)
+            agent_id, filename = check_arguments(exp_params, kwargs)
 
             node_ip = [ node.ip for node in self.nodes
-                        if node.id == agentId ][0]
+                        if node.id == agent_id ][0]
             res = self.fetch_agent_log(node_ip, self.AGENT_PORT, filename)
             return HttpJsonResponse(res)
         except Exception as ex:
@@ -909,3 +916,15 @@ class ManagerException(Exception):
                 (self.E_STRINGS[code] % args), str(kwargs['detail']))
         else:
             self.message = self.E_STRINGS[code] % args
+
+
+class WrongNrNodesException(Exception):
+
+    WRONG_NR_NODES = "Requesting to delete %(count)s%(role)s nodes "\
+                     "while %(current)s can be removed"
+
+    def __init__(self, count, current, role=None):
+        vals = { 'count': count,
+                 'role': ' ' + role if role else '',
+                 'current': 'only ' + str(current) if current > 0 else 'none' }
+        Exception.__init__(self, self.WRONG_NR_NODES % vals)

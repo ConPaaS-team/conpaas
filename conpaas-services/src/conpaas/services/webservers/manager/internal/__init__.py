@@ -215,7 +215,7 @@ class BasicWebserversManager(BaseManager):
                 serviceNodeKwargs = [{'runBackend': True}
                                      for _ in range(config.backend_count)]
                 serviceNodeKwargs.append({'runProxy': True, 'runWeb': True})
-            # proxy separated, backend packed
+            # web separated, backend packed
             elif config.web_count > 0 and config.backend_count == 0:
                 serviceNodeKwargs = [{'runWeb': True}
                                      for _ in range(config.web_count)]
@@ -400,6 +400,20 @@ class BasicWebserversManager(BaseManager):
     #     config.serviceNodes = {}
     #     self.state_set(self.S_STOPPED)
     #     self._configuration_set(config)
+
+    def check_add_nodes(self, node_roles):
+        backend = node_roles.get(self.ROLE_BACKEND, 0)
+        web = node_roles.get(self.ROLE_WEB, 0)
+        proxy = node_roles.get(self.ROLE_PROXY, 0)
+
+        config = self._configuration_get()
+
+        if (proxy + config.proxy_count > 1
+             and (web + config.web_count == 0 or
+                  backend + config.backend_count == 0)):
+            raise Exception("Cannot add more proxy servers without "
+                            "at least one stand-alone 'web' node and one "
+                            "stand-alone 'backend' node")
 
     def on_add_nodes(self, nodes):
         config = self._configuration_get()
@@ -748,18 +762,34 @@ class BasicWebserversManager(BaseManager):
     #     self._configuration_set(config)
     #     self.memcache.set('nodes_additional', [])
 
+    def check_remove_nodes(self, node_roles):
+        backend = node_roles.get(self.ROLE_BACKEND, 0)
+        web = node_roles.get(self.ROLE_WEB, 0)
+        proxy = node_roles.get(self.ROLE_PROXY, 0)
+
+        config = self._configuration_get()
+
+        if config.proxy_count - proxy < 1:
+            raise Exception("Not enough 'proxy' nodes will be left")
+
+        if config.web_count - web < 1 and config.proxy_count - proxy > 1:
+            raise Exception("Not enough 'web' nodes will be left")
+
+        if config.web_count - web < 0:
+            raise Exception("Not enough 'web' nodes will be left")
+
+        if config.backend_count - backend < 1 and config.proxy_count - proxy > 1:
+            raise Exception("Not enough 'backend' nodes will be left")
+
+        if config.backend_count - backend < 0:
+            raise Exception("Not enough 'backend' nodes will be left")
+
     def on_remove_nodes(self, node_roles):
         # no checks on parameters here (should be done in base class)
         # no remove from ip supported
-        backend = web = proxy = 0
-        if self.ROLE_BACKEND in node_roles:
-            backend = node_roles[self.ROLE_BACKEND]
-
-        if self.ROLE_WEB in node_roles:
-            web = node_roles[self.ROLE_WEB]
-
-        if self.ROLE_PROXY in node_roles:
-            proxy = node_roles[self.ROLE_PROXY]
+        backend = node_roles.get(self.ROLE_BACKEND, 0)
+        web = node_roles.get(self.ROLE_WEB, 0)
+        proxy = node_roles.get(self.ROLE_PROXY, 0)
 
         node_ip = None
 

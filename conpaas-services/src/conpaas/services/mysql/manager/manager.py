@@ -11,9 +11,12 @@ import string
 from random import choice
 import collections
 
+from conpaas.core.manager import BaseManager
+from conpaas.core.manager import ManagerException
+from conpaas.core.manager import WrongNrNodesException
+
 from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse, FileUploadField
 from conpaas.core.expose import expose
-from conpaas.core.manager import BaseManager, ManagerException
 from conpaas.core.misc import check_arguments, is_in_list, is_not_in_list,\
     is_list, is_non_empty_list, is_list_dict, is_list_dict2, is_string,\
     is_int, is_pos_nul_int, is_pos_int, is_dict, is_dict2, is_bool,\
@@ -58,11 +61,11 @@ class MySQLManager(BaseManager):
         nodes = [{'cloud':None, 'volumes':[volume]}]
         return nodes
 
-    def get_add_nodes_info(self, noderoles, cloud):
+    def get_add_nodes_info(self, node_roles, cloud):
         device_name=self.config_parser.get('manager', 'DEV_TARGET')
-        count = sum(noderoles.values())
+        count = sum(node_roles.values())
         nodes_info = [{'cloud':cloud} for _ in range(count)]
-        reg_nodes = noderoles.get('nodes', 0)
+        reg_nodes = node_roles.get('nodes', 0)
         for node_info in nodes_info:
             if reg_nodes:
                 volume = {'vol_name':'mysql-%(vm_id)s', 'vol_size': 1024, 'dev_name':device_name}
@@ -338,15 +341,26 @@ class MySQLManager(BaseManager):
                                  'response_time': 0,
                                  })
 
-    def on_remove_nodes(self, noderoles):
+    def check_remove_nodes(self, node_roles):
+        nodes = node_roles.get(self.ROLE_REGULAR, 0)
+        total_nodes = len(self.config.get_nodes())
+        if nodes >= total_nodes: # at least one mysql node should remain
+            raise WrongNrNodesException(nodes, total_nodes - 1, self.ROLE_REGULAR)
+
+        glb_nodes = node_roles.get(self.ROLE_GLB, 0)
+        total_glb_nodes = len(self.config.get_glb_nodes())
+        if glb_nodes > total_glb_nodes:
+            raise WrongNrNodesException(glb_nodes, total_glb_nodes, self.ROLE_GLB)
+
+    def on_remove_nodes(self, node_roles):
         # We assume arguments are checked here!
-        nodes = noderoles.get(self.ROLE_REGULAR, 0)
-        glb_nodes = noderoles.get(self.ROLE_GLB, 0)
+        nodes = node_roles.get(self.ROLE_REGULAR, 0)
+        glb_nodes = node_roles.get(self.ROLE_GLB, 0)
         rm_reg_nodes = self.config.get_nodes()[:nodes]
         rm_glb_nodes = self.config.get_glb_nodes()[:glb_nodes]
         return self._do_remove_nodes(rm_reg_nodes,rm_glb_nodes)
 
-    def _do_remove_nodes(self,rm_reg_nodes,rm_glb_nodes):
+    def _do_remove_nodes(self, rm_reg_nodes, rm_glb_nodes):
         glb_nodes = self.config.get_glb_nodes()
         nodesIp = ["%s:%s" % (node.ip, self.config.MYSQL_PORT)  # FIXME: find real mysql port instead of default 3306
                          for node in rm_reg_nodes]

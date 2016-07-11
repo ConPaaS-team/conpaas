@@ -91,7 +91,6 @@ class GenericManager(BaseManager):
         if kwargs['reset_config']:
             self._create_initial_configuration()
 
-        # self.nodes = []
         self.agents_info = []
         self.master_ip = None
 
@@ -229,6 +228,12 @@ echo "" >> /root/generic.out
 
         self._do_execute_script('notify', nodes_before)
         return True
+
+    def check_remove_nodes(self, node_roles):
+        BaseManager.check_remove_nodes(self, node_roles)
+
+        if node_roles.get(self.ROLE_MASTER, 0) > 0:
+            raise Exception("Cannot remove the master node.")
 
     def on_remove_nodes(self, node_roles):
         count = sum(node_roles.values())
@@ -519,8 +524,21 @@ echo "" >> /root/generic.out
 
         return HttpJsonResponse()
 
+    def check_create_volume(self, volume_name, volume_size, agent_id):
+        if self._are_scripts_running():
+            self.logger.info("Volume creation is disabled when scripts "
+                             "are running")
+            raise Exception(self.SCRIPTS_ARE_RUNNING_MSG)
+
     def on_create_volume(self, node, volume):
-        client.mount_volume(node.ip, self.AGENT_PORT, volume['dev_name'], volume['vol_name'])
+        client.mount_volume(node.ip, self.AGENT_PORT, volume['dev_name'],
+                            volume['vol_name'])
+
+    def check_delete_volume(self, node, volume):
+        if self._are_scripts_running():
+            self.logger.info("Volume removal is disabled when scripts "
+                             "are running")
+            raise Exception(self.SCRIPTS_ARE_RUNNING_MSG)
 
     def on_delete_volume(self, node, volume):
         client.unmount_volume(node.ip, self.AGENT_PORT, volume['vol_name'])

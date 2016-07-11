@@ -19,7 +19,6 @@ class HelloWorldManager(BaseManager):
 
     def __init__(self, config_parser, **kwargs):
         BaseManager.__init__(self, config_parser)
-        self.nodes = []
         # Setup the clouds' controller
         # self.controller.generate_context('helloworld')
         self.state = self.S_INIT
@@ -44,8 +43,8 @@ class HelloWorldManager(BaseManager):
     def on_add_nodes(self, nodes):
         return self.on_new_nodes(nodes)
 
-    def on_remove_nodes(self, noderoles):
-        count = sum(noderoles.values())
+    def on_remove_nodes(self, node_roles):
+        count = sum(node_roles.values())
         del_nodes = []
         cp_nodes = self.nodes[:]
         for _ in range(0, count):
