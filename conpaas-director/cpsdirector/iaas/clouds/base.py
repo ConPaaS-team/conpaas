@@ -149,20 +149,23 @@ class Cloud:
         if type(instances) is list:
             ret = []
             for node in instances:
+                role = 'manager'
                 if instances_info and len(instances_info) > 0:
                     node_info = filter(lambda n: n['id']==node.id, instances_info)[0]
                     if 'volumes' in node_info:
                         volumes = node_info['volumes']
-                ret += [self.__create_one_service_node(node, volumes, has_private_ip)]
+                    role = node_info.get('role', 'node')
+                ret += [self.__create_one_service_node(node, volumes, has_private_ip, role)]
             return ret
 
         
         node_info = filter(lambda n: n['id']==instances.id, instances_info)[0] 
         if 'volumes' in node_info:
             volumes = node_info['volumes']
-        return self.__create_one_service_node(instances, volumes, has_private_ip)
+        role = node_info.get('role', 'node')
+        return self.__create_one_service_node(instances, volumes, has_private_ip, role)
 
-    def __create_one_service_node(self, instance, volumes, has_private_ip=True):
+    def __create_one_service_node(self, instance, volumes, has_private_ip=True, role='node'):
         '''
         creates a single ServiceNode
 
@@ -174,7 +177,7 @@ class Cloud:
 
         '''
         ip, private_ip = self.__get_ips(instance, has_private_ip)
-        sn = ServiceNode(instance.id, ip, private_ip, self.cloud_name)
+        sn = ServiceNode(instance.id, ip, private_ip, self.cloud_name, role=role)
         svols = [ServiceVolume.from_dict(volume) for volume in volumes]
         if len(svols) > 0:
             sn.volumes = svols

@@ -13,7 +13,7 @@ class HelloWorldCmd(ServiceCmd):
 
     def __init__(self, helloworld_parser, client):
         ServiceCmd.__init__(self, helloworld_parser, client, "helloworld",
-                            [('nodes', 1)], # (role name, default number)
+                            [('count', 1)], # (role name, default number)
                             "HelloWorld service sub-commands help")
         self._add_get_helloworld()
 

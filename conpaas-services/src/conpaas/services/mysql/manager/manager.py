@@ -42,6 +42,9 @@ class MySQLManager(BaseManager):
 
         self.logger.debug("Entering MySQLServerManager initialization")
 
+        # default value for mysql volume size
+        self.mysql_volume_size = 1024
+
         #(genc): this is ignored at the moment
         # self.controller.config_clouds({"mem": "512", "cpu": "1"})
         self.root_pass = None
@@ -52,33 +55,18 @@ class MySQLManager(BaseManager):
         return 'mysql'
 
     def get_node_roles(self):
-        # The first node type is the default when adding / removing nodes
         return [ self.ROLE_MYSQL, self.ROLE_GLB ]
 
-    def get_starting_nodes(self):
-        device_name=self.config_parser.get('manager', 'DEV_TARGET')
-        volume = {'vol_name':'mysql-%(vm_id)s', 'vol_size': 1024, 'dev_name':device_name}
-        nodes = [{'cloud':None, 'volumes':[volume]}]
-        return nodes
+    def get_default_role(self):
+        return self.ROLE_MYSQL
 
-    def get_add_nodes_info(self, node_roles, cloud):
-        device_name=self.config_parser.get('manager', 'DEV_TARGET')
-        count = sum(node_roles.values())
-        nodes_info = [{'cloud':cloud} for _ in range(count)]
-        reg_nodes = node_roles.get(self.ROLE_MYSQL, 0)
-        for node_info in nodes_info:
-            if reg_nodes:
-                volume = {'vol_name':'mysql-%(vm_id)s', 'vol_size': 1024, 'dev_name':device_name}
-                node_info['volumes'] = [volume]
-                reg_nodes -= 1
-
-        return nodes_info
-
-    def get_node_volumes(self, nodes):
-        device_name=self.config_parser.get('manager', 'DEV_TARGET')
-        volume = {'vol_name':'mysql-%(vm_id)s', 'vol_size': 1024, 'dev_name':device_name}
-        nodes = [{'cloud':None, 'volumes':[volume]}]
-        return nodes
+    def get_role_sninfo(self, role, cloud):
+        if role == self.ROLE_MYSQL:
+            return self.get_standard_sninfo_with_volume(
+                        role, cloud, 'mysql-%(vm_id)s',
+                        self.mysql_volume_size)
+        else:
+            return BaseManager.get_role_sninfo(self, role, cloud)
 
     def get_context_replacement(self):
         if not self.root_pass:
@@ -91,7 +79,6 @@ class MySQLManager(BaseManager):
         succ = self._start_mysqld(nodes)
         self.config.addMySQLServiceNodes(nodes)
         return succ
-
 
     def _start_mysqld(self, nodes):
         dev_name = None

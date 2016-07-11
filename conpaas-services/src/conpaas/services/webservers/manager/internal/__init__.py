@@ -91,6 +91,11 @@ class BasicWebserversManager(BaseManager):
     ROLE_WEB     = 'web'      # Web server node
     ROLE_PROXY   = 'proxy'    # Web proxy node
 
+    # Packed node types
+    ROLE_PROXY_BACKEND_WEB = 'proxybackendweb'    # Proxy + Backend + Web
+    ROLE_PROXY_BACKEND     = 'proxybackend'       # Proxy + Backend
+    ROLE_PROXY_WEB         = 'proxyweb'           # Proxy + Web
+
     # Default load balancing weight for nodes.
     DEFAULT_NODE_WEIGHT = 100
 
@@ -105,14 +110,48 @@ class BasicWebserversManager(BaseManager):
         return 'web'
 
     def get_node_roles(self):
-        # The first node type is the default when adding / removing nodes
         return [ self.ROLE_BACKEND, self.ROLE_WEB, self.ROLE_PROXY ]
+
+    def get_default_role(self):
+        return self.ROLE_BACKEND
+
+    def get_starting_nodes(self):
+        node_roles = {}
+        config = self._configuration_get()
+
+        if config.proxy_count == 1 \
+                and (config.web_count == 0 or config.backend_count == 0):  # at least one is packed
+            if config.web_count == 0 and config.backend_count == 0:  # packed
+                node_roles[self.ROLE_PROXY_BACKEND_WEB] = 1
+            # web packed, backend separated
+            elif config.web_count == 0 and config.backend_count > 0:
+                node_roles[self.ROLE_BACKEND] = config.backend_count
+                node_roles[self.ROLE_PROXY_WEB] = 1
+            # web separated, backend packed
+            elif config.web_count > 0 and config.backend_count == 0:
+                node_roles[self.ROLE_WEB] = config.web_count
+                node_roles[self.ROLE_PROXY_WEB] = 1
+        else:
+            if config.web_count < 1:
+                config.web_count = 1  # have to have at least one web
+            if config.backend_count < 1:
+                config.backend_count = 1  # have to have at least one backend
+            node_roles[self.ROLE_PROXY] = config.proxy_count
+            node_roles[self.ROLE_WEB] = config.web_count
+            node_roles[self.ROLE_BACKEND] = config.backend_count
+
+        self._configuration_set(config)
+        return node_roles
 
     def _configuration_get(self):
         return self.service_config
 
     def _configuration_set(self, config):
         self.service_config = config
+
+    def _create_initial_configuration(self):
+        # Will be overridden by extending classes
+        pass
 
     # def _adapting_set_count(self, count):
     #     self.memcache.set('adapting_count', count)
@@ -192,54 +231,26 @@ class BasicWebserversManager(BaseManager):
     def _stop_backend(self, config, nodes):
         raise Exception("BasicWebservicesManager._stop_backend(...) must be overridden by extending classes.")
 
-    def get_starting_nodes(self):
-        config = self._configuration_get()
-        nr_agents = config.proxy_count + config.web_count + config.backend_count
-        if nr_agents == 0:
-            nr_agents = 1
-
-        # (genc): maybe not neccessary at this moment
-        # self._adapting_set_count(nr_agents)
-        return [{'cloud':None} for _ in range(nr_agents)]
-
     def on_start(self, nodes):
         config = self._configuration_get()
-
-        if config.proxy_count == 1 \
-                and (config.web_count == 0 or config.backend_count == 0):  # at least one is packed
-            if config.web_count == 0 and config.backend_count == 0:  # packed
-                serviceNodeKwargs = [
-                    {'runProxy': True, 'runWeb': True, 'runBackend': True}]
-            # web packed, backend separated
-            elif config.web_count == 0 and config.backend_count > 0:
-                serviceNodeKwargs = [{'runBackend': True}
-                                     for _ in range(config.backend_count)]
-                serviceNodeKwargs.append({'runProxy': True, 'runWeb': True})
-            # web separated, backend packed
-            elif config.web_count > 0 and config.backend_count == 0:
-                serviceNodeKwargs = [{'runWeb': True}
-                                     for _ in range(config.web_count)]
-                serviceNodeKwargs.append(
-                    {'runProxy': True, 'runBackend': True})
-        else:
-            if config.web_count < 1:
-                config.web_count = 1  # have to have at least one web
-            if config.backend_count < 1:
-                config.backend_count = 1  # have to have at least one backend
-            serviceNodeKwargs = [{'runProxy': True}
-                                 for _ in range(config.proxy_count)]
-            serviceNodeKwargs.extend([{'runWeb': True}
-                                     for _ in range(config.web_count)])
-            serviceNodeKwargs.extend([{'runBackend': True}
-                                     for _ in range(config.backend_count)])
-
-        node_instances = nodes
         config.serviceNodes.clear()
-        i = 0
-        for kwargs in serviceNodeKwargs:
-            config.serviceNodes[node_instances[i].id] = WebServiceNode(
-                node_instances[i], **kwargs)
-            i += 1
+
+        for node in nodes:
+            if node.role == self.ROLE_PROXY_BACKEND_WEB:
+                kwargs = {'runProxy': True, 'runWeb': True, 'runBackend': True}
+            elif node.role == self.ROLE_PROXY_BACKEND:
+                kwargs = {'runProxy': True, 'runBackend': True}
+            elif node.role == self.ROLE_PROXY_WEB:
+                kwargs = {'runProxy': True, 'runWeb': True}
+            elif node.role == self.ROLE_PROXY:
+                kwargs = {'runProxy': True}
+            elif node.role == self.ROLE_WEB:
+                kwargs = {'runWeb': True}
+            elif node.role == self.ROLE_BACKEND:
+                kwargs = {'runBackend': True}
+
+            config.serviceNodes[node.id] = WebServiceNode(node, **kwargs)
+
         config.update_mappings()
 
         # start the Scalaris process to keep the session data

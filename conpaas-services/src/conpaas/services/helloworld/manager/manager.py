@@ -14,21 +14,12 @@ from conpaas.core.misc import check_arguments, is_in_list, is_not_in_list,\
 
 class HelloWorldManager(BaseManager):
 
-    # HelloWorld node types
-    ROLE_REGULAR = 'node'    # regular node
-
     def __init__(self, config_parser, **kwargs):
         BaseManager.__init__(self, config_parser)
-        # Setup the clouds' controller
-        # self.controller.generate_context('helloworld')
         self.state = self.S_INIT
 
     def get_service_type(self):
         return 'helloworld'
-
-    def get_node_roles(self):
-        # The first node type is the default when adding / removing nodes
-        return [ self.ROLE_REGULAR ]
 
     def get_context_replacement(self):
         return dict(STRING='helloworld')

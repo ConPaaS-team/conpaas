@@ -160,10 +160,10 @@ class MySQLServer(object):
                 sql_logger.info("MySQL daemon is not ready yet: %s %s."
                                 " Returned error code %s."
                                 " Retrying in %s seconds."
-                                % (out, error, code, wait_time))
+                                % (out.strip(), error.strip(), code, wait_time))
                 time.sleep(wait_time)
             else:
-                sql_logger.info("MySQL daemon is ready with state: %s" % out)
+                sql_logger.info("MySQL daemon is ready with state: %s" % out.strip())
 
     def start(self):
         # Note: There seems to be a bug in the debian/mysql package. Sometimes, mysql says it

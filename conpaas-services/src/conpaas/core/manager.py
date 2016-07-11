@@ -54,8 +54,11 @@ class BaseManager(ConpaasRequestHandlerComponent):
     S_ERROR    = 'ERROR'    # manager is in error state
 
     # Node types
-    ROLE_DEFAULT = 'nodes'  # default node type used by cps-tools when the
-                            # service type is not specified
+    ROLE_DEFAULT = 'count'  # default node type used by cps-tools when the
+                            # service type is not specified; will be replaced
+                            # in check_node_roles() with the default role
+                            # for the service
+    ROLE_REGULAR = 'node'   # nondescript node role
 
     # String template for error messages returned when performing actions in
     # the wrong state
@@ -111,7 +114,7 @@ class BaseManager(ConpaasRequestHandlerComponent):
             raise Exception("Need a positive value for at least one role")
 
         valid_roles = self.get_node_roles()
-        default_role = valid_roles[0] # the first one is always the default
+        default_role = self.get_default_role()
 
         for role, count in node_roles.items():
             if count < 0:
@@ -146,6 +149,90 @@ class BaseManager(ConpaasRequestHandlerComponent):
             raise Exception("Timeout after %s seconds with a polling interval of %s seconds"
                             " while waiting for manager state to become one of %s."
                             % (timeout, polling_interval, expected_states))
+
+    def get_service_type(self):
+        """Returns the service name (type).
+
+        It should be overwritten by all the service managers.
+        """
+        return "<unnamed service>"
+
+    def get_node_roles(self):
+        """Returns a list of node roles used by the service manager.
+
+        It should be overwritten by the service managers if using more
+        than one role.
+        """
+        return [ self.ROLE_REGULAR ]
+
+    def get_default_role(self):
+        """Returns the default role for this service.
+
+        The default role is used when starting the service or adding /
+        removing nodes to / from the service when no other role is
+        specified (for example when using the non-specific 'cps-tools
+        service' command instead of 'cps-tools php/java/mysql/etc.'.
+
+        It should be overwritten by the service managers if using more
+        than one role.
+        """
+        return self.ROLE_REGULAR
+
+    def get_starting_nodes(self):
+        """Specifies the roles and number of nodes from each role that
+        should be started when the service is started.
+
+        Returns a dict with roles as keys and the number of nodes from
+        each role as values.
+
+        It should be overwritten by the service managers if starting with
+        a role different from the default one or with more than one node.
+        """
+        return { self.get_default_role(): 1 }
+
+    def get_standard_sninfo(self, role, cloud):
+        return { 'role': role, 'cloud': cloud }
+
+    def get_standard_sninfo_with_volume(self, role, cloud, vol_name, vol_size):
+        device_name = self.config_parser.get('manager', 'DEV_TARGET')
+        volume = { 'vol_name': vol_name,
+                   'vol_size': vol_size,
+                   'dev_name': device_name }
+        node_info = self.get_standard_sninfo(role, cloud)
+        node_info['volumes'] = [ volume ]
+        return node_info
+
+    def get_role_sninfo(self, role, cloud):
+        """Returns a dict containing the node information that will be
+        provided to the cloud controller when starting nodes of the specified
+        type (role). This will be the basis for the creation of a ServiceNode
+        (hence the name sninfo - ServiceNode info).
+
+        It should be overwritten by the service managers if roles use
+        storage volumes, other special configurations or support running
+        only on a specific cloud.
+
+        To get a basic configuration that can be customized, the following
+        standard methods can be used:
+            self.get_standard_sninfo(role, cloud)
+            self.get_standard_sninfo_with_volume(role, cloud, vol_name, vol_size)
+        """
+        return self.get_standard_sninfo(role, cloud)
+
+    def get_sninfo(self, node_roles, cloud):
+        sninfo = []
+        for role, count in node_roles.iteritems():
+            for _ in range(count):
+                sninfo.append(self.get_role_sninfo(role, cloud))
+        return sninfo
+
+    def get_context_replacement(self):
+        """Returns a dict used to fill in the values of variables in the
+        VM contextualization script.
+
+        It should be overwritten by the service managers if applicable.
+        """
+        return {}
 
     # return true if successful
     def on_start(self, nodes):
@@ -182,26 +269,6 @@ class BaseManager(ConpaasRequestHandlerComponent):
 
     def on_git_push(self):
         pass
-
-    def get_starting_nodes(self):
-        return [{'cloud':'default'}]
-
-    # overwrite this method in case the newly added nodes also require volumes
-    def get_add_nodes_info(self, node_roles, cloud):
-        count = sum(node_roles.values())
-        return [{'cloud':cloud} for _ in range(count)]
-
-    # this should be overwritten from the service managers if applicable
-    def get_context_replacement(self):
-        return {}
-
-    # this should be overwritten from all the service managers
-    def get_service_type(self):
-        raise Exception("get_service_type method not implemented for this service (%s)" % self.__class__.__name__)
-
-    # this should be overwritten from all the service managers
-    def get_node_roles(self):
-        raise Exception("get_node_roles method not implemented for this service (%s)" % self.__class__.__name__)
 
     @expose('GET')
     def get_service_history(self, kwargs):
@@ -390,10 +457,11 @@ class ApplicationManager(BaseManager):
 
     def _do_start_service(self, service_id, cloud):
         service_manager = self.httpsserver.instances[service_id]
-        nodes_info = service_manager.get_starting_nodes()
-        for ni in nodes_info:
-            ni['cloud'] = cloud
-        nodes = self.callbacker.create_nodes(nodes_info, service_id, service_manager)
+
+        node_roles = service_manager.get_starting_nodes()
+        sninfo = service_manager.get_sninfo(node_roles, cloud)
+        nodes = self.callbacker.create_nodes(sninfo, service_id, service_manager)
+
         self.nodes += nodes
         service_manager.nodes = nodes
         if service_manager.on_start(nodes):
@@ -462,18 +530,9 @@ class ApplicationManager(BaseManager):
 
     def _do_add_nodes(self, service_id, node_roles, cloud):
         service_manager = self.httpsserver.instances[service_id]
-        count = sum(node_roles.values())
-        nodes_info = service_manager.get_add_nodes_info(node_roles, cloud)
-        # nodes_info = [{'cloud':cloud} for _ in range(count)]
-        nodes = self.callbacker.create_nodes(nodes_info, service_id, service_manager)
-        #assing roles
-        roles = []
-        for role in node_roles:
-            for count in range(node_roles[role]):
-                roles.append(role)
 
-        for i in range(len(nodes)):
-            nodes[i].role = roles[i]
+        sninfo = service_manager.get_sninfo(node_roles, cloud)
+        nodes = self.callbacker.create_nodes(sninfo, service_id, service_manager)
 
         self.nodes += nodes
         service_manager.nodes += nodes

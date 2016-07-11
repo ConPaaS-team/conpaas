@@ -89,27 +89,18 @@ class XtreemFSManager(BaseManager):
         return 'xtreemfs'
 
     def get_node_roles(self):
-        # The first node type is the default when adding / removing nodes
         return [ self.ROLE_OSD, self.ROLE_MRC, self.ROLE_DIR ]
 
-    def get_starting_nodes(self):
-        device_name=self.config_parser.get('manager', 'DEV_TARGET')
-        volume = {'vol_name':'osd-%(vm_id)s', 'vol_size': self.osd_volume_size, 'dev_name':device_name}
-        nodes = [{'cloud':None, 'volumes':[volume]}]
-        return nodes
+    def get_default_role(self):
+        return self.ROLE_OSD
 
-    def get_add_nodes_info(self, node_roles, cloud):
-        device_name=self.config_parser.get('manager', 'DEV_TARGET')
-        count = sum(node_roles.values())
-        nodes_info = [{'cloud':cloud} for _ in range(count)]
-        osd_nodes = node_roles.get('osd', 0)
-        for node_info in nodes_info:
-            if osd_nodes:
-                volume = {'vol_name':'osd-%(vm_id)s', 'vol_size': self.osd_volume_size, 'dev_name':device_name}
-                node_info['volumes'] = [volume]
-                osd_nodes -= 1
-
-        return nodes_info
+    def get_role_sninfo(self, role, cloud):
+        if role == self.ROLE_OSD:
+            return self.get_standard_sninfo_with_volume(
+                        role, cloud, 'osd-%(vm_id)s',
+                        self.osd_volume_size)
+        else:
+            return BaseManager.get_role_sninfo(self, role, cloud)
 
     def __get__uuid(self, node_id, node_type):
         if node_type == self.ROLE_DIR:

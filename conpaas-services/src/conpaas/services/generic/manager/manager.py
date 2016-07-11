@@ -67,7 +67,7 @@ class GenericManager(BaseManager):
 
     # Generic node types
     ROLE_MASTER  = 'master'  # master node (the first one started)
-    ROLE_REGULAR = 'node'    # regular node (any other node)
+    # a regular node (the role used by any other node) is defined in base class
 
     # String used as an error message when 'interrupt' is called when no
     # scripts are currently running
@@ -117,8 +117,10 @@ echo "" >> /root/generic.out
         return 'generic'
 
     def get_node_roles(self):
-        # The first node type is the default when adding / removing nodes
-        return [ self.ROLE_REGULAR, self.ROLE_MASTER ]
+        return [ self.ROLE_MASTER, self.ROLE_REGULAR ]
+
+    def get_starting_nodes(self):
+        return { self.ROLE_MASTER: 1 }
 
     def _create_initial_configuration(self):
         self.logger.info("Creating initial configuration")

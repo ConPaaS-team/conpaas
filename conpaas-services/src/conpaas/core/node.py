@@ -42,7 +42,7 @@ class ServiceNode(object):
         self.created = datetime.now()
 
     def __repr__(self):
-        return 'ServiceNode(id=%s, ip=%s)' % (str(self.id), self.ip)
+        return 'ServiceNode(id=%s, ip=%s, role=%s)' % (str(self.id), self.ip, self.role)
 
     def __cmp__(self, other):
         if self.id == other.id and self.cloud_name == other.cloud_name:
@@ -67,12 +67,14 @@ class ServiceNode(object):
                 'private_ip':self.private_ip, 
                 'cloud_name':self.cloud_name,
                 'weight_backend':self.weight_backend,
+                'role':self.role,
                 'volumes':[volume.to_dict() for volume in self.volumes]
                 }
 
     @staticmethod
     def from_dict(node):
-        s = ServiceNode(node['vmid'], node['ip'],node['private_ip'],node['cloud_name'],node['weight_backend'])
+        role = node.get('role', 'node')
+        s = ServiceNode(node['vmid'], node['ip'],node['private_ip'],node['cloud_name'],node['weight_backend'],role)
         if 'volumes' in node and node['volumes']:
             for volume in node['volumes']:
                 s.volumes += [ServiceVolume.from_dict(volume)]
