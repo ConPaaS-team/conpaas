@@ -22,6 +22,7 @@ from conpaas.core.misc import check_arguments, is_in_list, is_not_in_list,\
     is_int, is_pos_nul_int, is_pos_int, is_dict, is_dict2, is_bool,\
     is_uploaded_file
 
+import time
 import uuid
 import base64
 import subprocess
@@ -335,8 +336,29 @@ class XtreemFSManager(BaseManager):
         self.osdCount = 1
 
         self.logger.info('Created 1 node with DIR, MRC and OSD services')
-        self.logger.info('XtreemFS service was started up')
-        return True
+
+        # make sure that we return only after the service is fully operational
+        retries = 20
+        wait_time = 5
+        for i in range(retries):
+            try:
+                self.logger.debug('Checking if the XtreemFS service is up, '
+                                 'retry number %s.' % str(i + 1))
+                last_try = not (i < retries - 1)
+                self._lsfs_xtreemfs(last_try)
+            except:
+                if not last_try:
+                    self.logger.debug('The XtreemFS service is not ready yet, '
+                                      'waiting %s more seconds...' % wait_time)
+                    time.sleep(wait_time)
+                else:
+                    self.logger.info('The XtreemFS service is not ready '
+                                     'after %s seconds, giving up.'
+                                     % (retries * wait_time))
+                    return False
+            else:
+                self.logger.info('The XtreemFS service is up and running.')
+                return True
 
     # def _do_startup(self, cloud, resuming=False):
     #     """Starts up the service. The first nodes will contain all services.
@@ -927,15 +949,7 @@ class XtreemFSManager(BaseManager):
         # TODO(maybe): issue xtfs_cleanup on all OSDs to free space (or don't and assume xtfs_cleanup is run by a cron job or something)
         return HttpJsonResponse()
 
-    @expose('GET')
-    def listVolumes(self, kwargs):
-        try:
-            exp_params = []
-            check_arguments(exp_params, kwargs)
-            self.check_state([self.S_RUNNING])
-        except Exception as ex:
-            return HttpErrorResponse("%s" % ex)
-
+    def _lsfs_xtreemfs(self, print_to_log=True):
         args = [ 'lsfs.xtreemfs',
                  "--pkcs12-file-path", self.client_cert_filename,
                  "--pkcs12-passphrase", self.client_cert_passphrase,
@@ -946,10 +960,24 @@ class XtreemFSManager(BaseManager):
         process.poll()
 
         if process.returncode != 0:
-            self.logger.info('Failed to view volume: %s; %s', stdout, stderr)
-            return HttpErrorResponse("The volume list cannot be accessed")
+            if print_to_log:
+                self.logger.info('Failed to view volume: %s; %s', stdout, stderr)
+            raise Exception("The volume list cannot be accessed")
 
-        return HttpJsonResponse({ 'volumes': clean_output(stdout) })
+        return clean_output(stdout)
+
+    @expose('GET')
+    def listVolumes(self, kwargs):
+        try:
+            exp_params = []
+            check_arguments(exp_params, kwargs)
+            self.check_state([self.S_RUNNING])
+
+            output = self._lsfs_xtreemfs()
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
+
+        return HttpJsonResponse({ 'volumes': output })
 
     # NOTE: see xtfsutil for the available policies
     @expose('GET')
