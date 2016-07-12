@@ -156,18 +156,20 @@ class ServicePage extends Page {
 		}
 		$nodes = array_unique($nodes);
 
-		// For each node, if it has more than one role, add it alone to the final list
+		// For each node, if it has more than one role, add it separately
 		foreach ($nodes as $node) {
-			$nrRoles = 0;
+			$nodeRoles = array();
 			foreach ($roles as $role) {
 				if (in_array($node, $nodesLists[$role])) {
-					$nrRoles++;
+					$nodeRoles[] = $role;
 				}
 			}
-			if ($nrRoles > 1) {
+			if (count($nodeRoles) > 1) {
 				$info = $this->service->getNodeInfo($node);
 				if ($info !== false) {
-					$nodesInfo[] = $this->service->createInstanceUI($node);
+					$cluster = new Cluster($nodeRoles);
+					$cluster->addNode($this->service->createInstanceUI($node));
+					$nodesInfo[] = $cluster;
 				}
 				$selected[$node] = true;
 			}
@@ -178,28 +180,19 @@ class ServicePage extends Page {
 			$remainingNodes = array();
 			foreach ($nodesLists[$role] as $node) {
 				if (!array_key_exists($node, $selected)) {
-					$remainingNodes[] = $node;
-				}
-			}
-			if (count($remainingNodes) == 0) {
-				// No more nodes left with this role
-				continue;
-			} else if (count($remainingNodes) > 1 || $this->service->getType() === 'generic') {
-				// We add all these nodes together in a cluster
-				$cluster = new Cluster($role);
-				foreach ($remainingNodes as $node) {
 					$info = $this->service->getNodeInfo($node);
 					if ($info !== false) {
-						$cluster->addNode($this->service->createInstanceUI($node));
+						$remainingNodes[] = $node;
 					}
 				}
-				$nodesInfo[] = $cluster;
-			} else {
-				// We add this node alone in the final list
-				$info = $this->service->getNodeInfo($node);
-				if ($info !== false) {
-					$nodesInfo[] = $this->service->createInstanceUI($node);
+			}
+			if (count($remainingNodes) > 0) {
+				// We add all these nodes together in a cluster
+				$cluster = new Cluster(array($role));
+				foreach ($remainingNodes as $node) {
+					$cluster->addNode($this->service->createInstanceUI($node));
 				}
+				$nodesInfo[] = $cluster;
 			}
 		}
 

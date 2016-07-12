@@ -5,18 +5,18 @@
 
 class Cluster {
 
-	private $role; /* web, php or proxy */
+	private $roles; /* array of roles (web, php, proxy etc.) */
 	private $nodes = array();
 
-	public function __construct($role) {
-		$this->role = $role;
+	public function __construct($roles) {
+		$this->roles = $roles;
 	}
 
 	public function addNode(Instance $node) {
 		$this->nodes[] = $node;
 	}
 
-	private function getRoleColor() {
+	private function getRoleColor($role) {
 		static $roles = array(
 			'node'=>'orange',
 			'nodes'=>'orange',
@@ -35,15 +35,15 @@ class Cluster {
 			'mrc' => 'blue',
 			'osd' => 'orange'
 		);
-		return $roles[$this->role];
+		return $roles[$role];
 	}
 
-	private function getRoleClass() {
-		return 'cluster-'.$this->role;
+	private function getRoleClass($role) {
+		return 'cluster-'.$role;
 	}
 
-	private function getRole() {
-		if ($this->role == 'backend') {
+	private function getRoleText($role) {
+		if ($role == 'backend') {
 			if (count($this->nodes) > 0) {
 				$first = $this->nodes[0];
 				if ($first instanceof JavaInstance) {
@@ -52,26 +52,57 @@ class Cluster {
 					return 'php';
 				}
 			}
+		} else if ($role == 'dir' || $role == 'mrc' || $role == 'osd') {
+			return strtoupper($role);
+		} else {
+			return $role;
 		}
-		return $this->role;
 	}
 
-	public function render() {
-		$role = $this->getRole();
-		if ($role == 'dir' || $role == 'mrc' || $role == 'osd') {
-			$role = strtoupper($role);
+	public function renderRoleTags() {
+		$html = '';
+		foreach ($this->roles as $role) {
+			$html .=
+				'<div class="tag '.$this->getRoleColor($role).'">'.
+					$this->getRoleText($role).
+				'</div>';
 		}
-		$html =
-			'<div class="cluster '.$this->getRoleClass().'">'.
-			'<div class="cluster-header">'.
-				'<div class="tag '.$this->getRoleColor().'">'.
-					$role.
-				'</div>'.
-			'</div>';
+		return $html;
+	}
+
+	public function renderInstanceList() {
+		$html = '';
 		foreach ($this->nodes as $instance) {
 			$html .= $instance->renderInCluster();
 		}
-		$html .= '</div>';
+		return $html;
+	}
+
+	public function renderCluster() {
+		return
+			'<div class="cluster-header">'.
+				$this->renderRoleTags().
+			'</div>'.
+			$this->renderInstanceList();
+	}
+
+	public function render() {
+		$html = '<table class="cluster-table" cellspacing="0" cellpadding="0">';
+		$first = true;
+		foreach ($this->roles as $role) {
+			$html .= '<tr>';
+			$html .= '<td class="cluster-border '.$this->getRoleClass($role).'">'.
+						'&nbsp;'.
+					 '</td>';
+			if ($first) {
+				$html .= '<td class="cluster" rowspan="'.count($this->roles).'">'.
+							$this->renderCluster().
+					     '</td>';
+				$first = false;
+			}
+			$html .= '</tr>';
+		}
+		$html .= '</table>';
 		return $html;
 	}
 

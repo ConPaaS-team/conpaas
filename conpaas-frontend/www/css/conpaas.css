@@ -1261,10 +1261,15 @@ ul.versions li .timestamp {
 	color: #aaa;
 }
 
+#instances .cluster-table {
+	width: 100%;
+}
+
+#instances .cluster-border {
+	width: 10px;
+}
+
 #instances .cluster {
-	padding: 5px 0 0 0px;
-	margin-bottom: 1px;
-	border-left: 10px solid;
 }
 
 #instances .cluster .instance {
@@ -1275,16 +1280,16 @@ ul.versions li .timestamp {
 	padding: 5px 3px 5px 5px;
 }
 
-#instances .cluster-web, #instances .cluster-masters, #instances .cluster-scalaris, #instances .cluster-master, #instances .cluster-glb {
-	border-color: blue;
+#instances .cluster-web, #instances .cluster-masters, #instances .cluster-scalaris, #instances .cluster-master, #instances .cluster-mrc, #instances .cluster-glb {
+	background-color: blue;
 }
 
-#instances .cluster-backend {
-	border-color: purple;
+#instances .cluster-backend, #instances .cluster-dir {
+	background-color: purple;
 }
 
 #instances .cluster-proxy, #instances .cluster-workers, #instances .cluster-slaves, #instances .cluster-node, #instances .cluster-osd, #instances .cluster-mysql {
-	border-color: orange;
+	background-color: orange;
 }
 
 #instances .cluster .tag {
