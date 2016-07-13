@@ -17,7 +17,7 @@ class AppPage extends Page {
 
     public function renderAppManagerSection() {
         return
-            '<div class="form-section">'
+            '<div class="form-section small">'
 		.'<div id="instancesWrapper" style="display:none">'
 		    .'<div class="brief">1 instance running</div>'
 		    .'<div id="instances">'
@@ -29,7 +29,7 @@ class AppPage extends Page {
 
     public function renderServicesSection() {
         return
-            '<div class="form-section">'
+            '<div class="form-section small last">'
                 .'<div id="servicesWrapper">'
                 .'</div>'
             .'</div>';

@@ -57,13 +57,15 @@ class Cluster {
 
 	public function renderCluster() {
 		return
-			'<div class="cluster-header">'.
-				$this->renderRoleTags().
-			'</div>'.
-			$this->renderInstanceList();
+			'<div class="cluster">'.
+				'<div class="cluster-header">'.
+					$this->renderRoleTags().
+				'</div>'.
+				$this->renderInstanceList().
+			'</div>';
 	}
 
-	public function render() {
+	public function renderClusterWithBorder() {
 		$html = '<table class="cluster-table" cellspacing="0" cellpadding="0">';
 		$n = 1;
 		foreach ($this->roles as $role) {
@@ -80,7 +82,7 @@ class Cluster {
 						'</td>';
 			if ($n == 1) {
 				$rowspan = count($this->roles);
-				$html .= '<td class="cluster" rowspan="'.$rowspan.'">'.
+				$html .= '<td rowspan="'.$rowspan.'">'.
 							$this->renderCluster().
 					     '</td>';
 			}
@@ -90,6 +92,14 @@ class Cluster {
 		}
 		$html .= '</table>';
 		return $html;
+	}
+
+	public function render() {
+		if (count($this->roles) == 1 && $this->roles[0] === 'manager') {
+			return $this->renderCluster();
+		} else {
+			return $this->renderClusterWithBorder();
+		}
 	}
 
 	public function getSize() {

@@ -773,6 +773,14 @@ input.button {
 	font-weight: normal;
 }
 
+.form-section.small {
+	padding: 5px;
+}
+
+.form-section.last {
+	padding-bottom: 35px;
+}
+
 .form-section .form-header {
 	background-color: #e9f1f9;
 	border-top: 1px solid #0055A5;
