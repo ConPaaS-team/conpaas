@@ -8,67 +8,87 @@
  * @require conpaas.js
  */
 conpaas.ui = (function (this_module) {
-    this_module.Dashboard = conpaas.new_constructor(
+    this_module.Application = conpaas.new_constructor(
     /* extends */conpaas.ui.Page,
     /* constructor */function (server) {
         this.server = server;
-        this.poller = new conpaas.http.Poller(server, 'ajax/checkServices.php',
+        this.poller = new conpaas.http.Poller(server, 'ajax/checkApplications.php',
                 'get');
     },
     /* methods */{
-    /**
-     * @param {Service} service that caused the polling to be continued
-     */
-    displayInfo_: function (service) {
-        var info = 'at least one service is in a transient state';
-        if (!service.reachable) {
-            info = 'at least one service is unreachable'
-        }
-        $('#pgstatInfoText').html(info);
-        conpaas.ui.visible('pgstatInfo', true);
-    },
-    makeDeleteHandler_: function (service) {
+    makeDeleteHandler_: function (application) {
         var that = this;
         return function () {
-            that.deleteService(service);
+            that.deleteApplication(application);
         };
     },
-    checkServices: function () {
+    makeCreateHandler_: function (application) {
         var that = this;
-        this.poller.setLoadingText('checking services...').poll(
+        return function () {
+            that.createApplication(application);
+        };
+    },
+    checkApplications: function () {
+        var that = this;
+        this.poller.setLoadingText('checking applications...').poll(
                 function (response) {
-            var service,
-                services,
-                i,
-                continuePolling = true;
-            services = response.data.services;
+            var application,
+                i;
+            that.applications = response.data;
             $('#servicesWrapper').html(response.html);
-            for (i = 0; i < services.length; i++) {
-                service = new conpaas.model.Service(services[i].sid,
-                        services[i].state, services[i].instanceRoles,
-                        services[i].reachable);
-                if (service.needsPolling()) {
-                    that.displayInfo_(service);
-                    continuePolling = false;
-                }
+            for (i = 0; i < that.applications.length; i++) {
+                application = new conpaas.model.Application(that.applications[i].aid);
                 // HACK: attach handlers for delete buttons;
                 // without using the id trick we cannot avoid using global vars
-                $('#service-' + service.sid + ' .deleteService').click(
-                        that.makeDeleteHandler_(service));
+		$('.deleteApplication-' + application.aid).click(
+                        that.makeDeleteHandler_(application));
             }
+            $('#newapp').click(that.makeCreateHandler_(application));
+            $('#newapplink').click(that.makeCreateHandler_(application));
             conpaas.ui.visible('pgstatInfo', false);
-            return continuePolling;
+
+	    return true; /* Never do polling */
         });
     },
-    deleteService: function (service) {
-        var that = this,
-            servicePage = new conpaas.ui.ServicePage(this.server, service);
-        servicePage.terminate(function () {
-            $('#service-' + service.sid).hide();
-        }, function () {
-            // error
-            that.poller.stop();
-        });
+    createApplication: function (application) {
+	var appNames = this.applications.map(function(a){ return a.name });
+
+	// find a suitable default name for the application
+	var defaultName = "New Application";
+	var i = 1;
+	while ($.inArray(defaultName, appNames) > -1) {
+	    defaultName = "New Application (" + ++i + ")";
+	}
+
+	var newapp = prompt("Application name : ", defaultName);
+        if (newapp == null) { // user clicked Cancel button
+                return;
+        }
+
+	this.server.req('ajax/createApplication.php', {
+		name: newapp
+	}, 'post', function (response) {
+		window.location = 'index.php';
+		return;
+	}, function (error) {
+		page.displayError(error.name, error.details);
+	});
+    },
+
+    deleteApplication: function (application) {
+	var r = confirm('Are you sure to delete the application?');
+	if (r == false) {
+		return;
+	}
+
+	this.server.req('ajax/deleteApplication.php', {
+		aid: application.aid
+	}, 'post', function (response) {
+		window.location = 'index.php';
+		return;
+	}, function (error) {
+		page.displayError(error.name, error.details);
+	});
     }
     });
 
@@ -77,7 +97,7 @@ conpaas.ui = (function (this_module) {
 
 $(document).ready(function () {
     var server = new conpaas.http.Xhr(),
-        page = new conpaas.ui.Dashboard(server);
+        page = new conpaas.ui.Application(server);
     page.attachHandlers();
-    page.checkServices();
+    page.checkApplications();
 });

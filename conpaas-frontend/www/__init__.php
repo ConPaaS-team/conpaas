@@ -35,8 +35,8 @@ class Conf {
 		$r_uri = $_SERVER["REQUEST_URI"];
 
 		// Note: the page url looks like:
-		//       http://domainname.org/path/to/frontend/ajax/create.php
-		//       so we also have to strip /ajax/create.php to
+		//       http://domainname.org/path/to/frontend/ajax/addService.php
+		//       so we also have to strip /ajax/addService.php to
 		//       obtain the path to frontend.
 		// Attention!! If the directory structure of the frontend changes,
 		// this code must also be changed

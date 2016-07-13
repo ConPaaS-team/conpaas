@@ -60,7 +60,9 @@ $page = new ManifestPage();
            </tr>
          </table>
 
-        <?php echo $page->renderCloudProviders(true); ?>
+         <div class="manifesttext">
+            <?php echo $page->renderCloudProviders('default', true); ?>
+         </div>
 
          <a id="deploy" class="button" href="javascript: void(0);">
                   <img src="images/play.png" style="vertical-align: top;"/> Deploy Application

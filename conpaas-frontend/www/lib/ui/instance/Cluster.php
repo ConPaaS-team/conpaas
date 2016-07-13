@@ -88,19 +88,25 @@ class Cluster {
 
 	public function render() {
 		$html = '<table class="cluster-table" cellspacing="0" cellpadding="0">';
-		$first = true;
+		$n = 1;
 		foreach ($this->roles as $role) {
-			$html .= '<tr>';
-			$html .= '<td class="cluster-border '.$this->getRoleClass($role).'">'.
-						'&nbsp;'.
-					 '</td>';
-			if ($first) {
-				$html .= '<td class="cluster" rowspan="'.count($this->roles).'">'.
+			$class = 'cluster-border '.$this->getRoleClass($role);
+			if ($n == count($this->roles))
+				$class .= ' last';
+
+			$html .= '<tr>'.
+						'<td class="'.$class.'">'.
+							'&nbsp;'.
+						'</td>';
+			if ($n == 1) {
+				$rowspan = count($this->roles);
+				$html .= '<td class="cluster" rowspan="'.$rowspan.'">'.
 							$this->renderCluster().
 					     '</td>';
-				$first = false;
 			}
 			$html .= '</tr>';
+
+			$n++;
 		}
 		$html .= '</table>';
 		return $html;

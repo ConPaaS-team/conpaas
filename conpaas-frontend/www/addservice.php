@@ -122,7 +122,7 @@ $page = new CreatePage();
         </div>
       </div>
     <?php echo $page->renderFooter(); ?>
-    <script type="text/javascript" src="js/servicepage.js"></script>
-    <script type="text/javascript" src="js/create.js"></script>
+    <script type="text/javascript" src="js/service.js"></script>
+    <script type="text/javascript" src="js/addservice.js"></script>
   </body>
 </html>

@@ -983,7 +983,7 @@ input.button {
 
 .tag {
 	vertical-align: top;
-	font-size: 10px;
+	font-size: 11px;
 	display: inline-block;
 	padding: 5px;
 	margin: 3px;
@@ -1292,12 +1292,38 @@ ul.versions li .timestamp {
 	background-color: orange;
 }
 
+#instances .last {
+	border-bottom: 1px solid #999;
+}
+
 #instances .cluster .tag {
 	margin-left: 3px;
 }
 
 #instances .instance:hover {
 	background-color: #eee;
+}
+
+.cloud {
+	display: inline;
+    font-size: 12px;
+    padding-right: 5px;
+}
+
+.cloud-descr {
+    color: #666;
+	line-height: 20px;
+    text-align: right;
+    width: 55px;
+}
+
+.cloud-choice {
+    color: #333;
+}
+
+.actionsbar input[type="button"] {
+	vertical-align: top;
+	margin: 5px;
 }
 
 /* MapReduce */

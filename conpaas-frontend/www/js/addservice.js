@@ -4,8 +4,8 @@
 
 
 /**
- * interaction for create.php
- * @require conpaas.js, servicepage.js
+ * interaction for addservice.php
+ * @require conpaas.js, service.js
  */
 conpaas.ui = (function (this_module) {
     this_module.CreatePage = conpaas.new_constructor(

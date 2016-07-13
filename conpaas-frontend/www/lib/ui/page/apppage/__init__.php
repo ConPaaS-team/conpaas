@@ -9,8 +9,8 @@ class AppPage extends Page {
 
 	public function __construct() {
 		parent::__construct();
-		$this->addJS('js/servicepage.js');
-		$this->addJS('js/application.js');
+		$this->addJS('js/service.js');
+		$this->addJS('js/index.js');
 	}
 
 	public function renderPageHeader() {

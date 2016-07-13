@@ -25,7 +25,7 @@ class ServicePage extends Page {
 	public function __construct(Service $service) {
 		parent::__construct();
 		$this->service = $service;
-		$this->addJS('js/servicepage.js');
+		$this->addJS('js/service.js');
 	}
 
 	public function is_transient($state) {
@@ -57,6 +57,14 @@ class ServicePage extends Page {
 		return $app . $dashboard;
 	}
 
+	public function getSelectedCloud() {
+		$selectedCloud = $this->service->getApplication()->getCloud();
+		if ($selectedCloud === 'iaas') {
+			$selectedCloud = 'default';
+		}
+		return $selectedCloud;
+	}
+
 	public function renderActions() {
 		$startButton = InputButton('start')
 			->setId('start');
@@ -65,27 +73,7 @@ class ServicePage extends Page {
 		$removeButton = InputButton('remove')
 			->setId('remove');
 
-        $clouds = json_decode(HTTPS::get(Conf::DIRECTOR . '/available_clouds'));
-        $selectedCloud = $this->service->getApplication()->getCloud();
-        if ($selectedCloud === 'iaas') {
-            $selectedCloud = 'default';
-        }
-        $radios = '';
-        foreach($clouds as $cloud){
-            $radio = Radio($cloud);
-            $radio->setTitle("available_clouds");
-
-            if ($cloud === $selectedCloud) {
-                $radio->setDefault();
-            }
-            if ($cloud === 'default') {
-                $radios = $radio;
-            } else {
-                $radios = $radios.'<br>'.$radio;
-            }
-        }
-        $cloudChoice = Tag();
-        $cloudChoice->setHTML($radios);
+		$state = $this->service->getState();
 
 		$serviceSelection = '';
 		$serviceSelector = $this->renderServiceSelection();
@@ -94,7 +82,14 @@ class ServicePage extends Page {
 				$serviceSelection->setHTML($serviceSelector);
 		}
 
-		switch ($this->service->getState()) {
+		if ($state === Service::STATE_INIT || $state === Service::STATE_STOPPED) {
+			$selectedCloud = $this->getSelectedCloud();
+			$cloudChoice = $this->renderCloudProviders($selectedCloud, true);
+		} else {
+			$cloudChoice = '';
+		}
+
+		switch ($state) {
 			case Service::STATE_INIT:
 				$stopButton->setVisible(false);
 				break;
@@ -210,7 +205,6 @@ class ServicePage extends Page {
 		$html =
 			'<div class="brief">'.
 				$this->service->getNodesCount().' '.$instances_txt.' running '.
-				'in '.$this->service->getCloudName().
 			'</div>'.
 			'<div id="instances">';
 
@@ -313,6 +307,7 @@ class ServicePage extends Page {
 		.'</div>'
 		.'<div class="actionsbar">'
 			.$this->renderInstanceActions()
+			.$this->renderCloudProviders($this->getSelectedCloud(), true)
 			.'<input type="button" id="submitnodes" value="submit" '
 				.' disabled="disabled" />'
 			.'<img class="loading invisible" '

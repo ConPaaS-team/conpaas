@@ -61,7 +61,10 @@ class GenericPage extends ServicePage {
     }
 
     protected function renderInstanceActions() {
-        return EditableTag()->setColor('purple')->setID('node')->setValue('0')->setText('Generic Nodes');
+        return EditableTag()->setColor('orange')
+                            ->setID('node')
+                            ->setValue('0')
+                            ->setText('nodes');
     }
 
 	public function renderInstances() {

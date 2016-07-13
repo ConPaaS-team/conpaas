@@ -36,7 +36,7 @@
  */
 
 /**
- * @require conpaas.js, servicepage.js
+ * @require conpaas.js, service.js
  */
 conpaas.ui = (function (this_module) {
     /**

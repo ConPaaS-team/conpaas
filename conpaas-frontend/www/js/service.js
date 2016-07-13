@@ -4,7 +4,7 @@
 
 
 /**
- * @require conpaas.js, servicepage.js
+ * @require conpaas.js, service.js
  */
 conpaas.ui = (function (this_module) {
     /**
@@ -207,7 +207,7 @@ conpaas.ui = (function (this_module) {
     },
     onClickRemove: function (event) {
         var page = event.data;
-        
+
         page.remove(function (response) {
             window.location = 'application.php';
         });
@@ -226,9 +226,9 @@ conpaas.ui = (function (this_module) {
         if (isNaN(value)) {
             return;
         }
-        // do not allow to add & remove nodes in the same time by zeroing
+        // do not allow to add & remove nodes at the same time by zeroing
         // the values that are different with the current input
-        function sign (value) {
+        function sign(value) {
             if (value > 0) {
                 return +1;
             } else if (value < 0) {
@@ -236,12 +236,14 @@ conpaas.ui = (function (this_module) {
             }
             return 0;
         }
-        page.service.instanceRoles.forEach(function (role) {
-            var otherValue = +$('#' + role).html();
-            if (otherValue && sign(value) !== sign(otherValue)) {
-                $('#' + role).html('0');
-            }
-        });
+        if (value) {
+            page.service.instanceRoles.forEach(function (role) {
+                var otherValue = +$('#' + role).html();
+                if (otherValue && sign(value) !== sign(otherValue)) {
+                    $('#' + role).html('0');
+                }
+            });
+        }
         prefix = (value > 0) ? '+' : '';
         $(this).html(prefix + value);
         allZero = true;
@@ -293,6 +295,9 @@ conpaas.ui = (function (this_module) {
         errorHandler = function () {
             conpaas.ui.visible('pgstatInfo', false);
             page.freezeInput(false);
+            page.service.instanceRoles.forEach(function (role) {
+                $('#' + role).html('0');
+            });
         }
         page.freezeInput(true);
         if (add) {

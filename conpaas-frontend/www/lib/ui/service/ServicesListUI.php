@@ -53,7 +53,7 @@ class ServicesListUI {
 			return
 			'<div class="box infobox">'
 				.'You have no services in the dashboard. '
-				.'Go ahead and <a href="create.php">add a service</a>.'
+				.'Go ahead and <a href="addservice.php">add a service</a>.'
 			.'</div>';
 		}
 		return

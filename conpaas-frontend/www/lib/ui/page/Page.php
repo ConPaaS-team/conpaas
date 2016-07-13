@@ -222,12 +222,12 @@ class Page {
 			'</div>';
 	}
 
-	public function renderCloudProviders($display) {
+	public function renderCloudProviders($default, $visible) {
 		$clouds = json_decode(HTTPS::get(Conf::DIRECTOR . '/available_clouds'));
 		$clouds_html = '';
 
 		foreach($clouds as $cloud) {
-			if ($cloud === 'default')
+			if ($cloud === $default)
 				$checked = 'checked';
 			else
 				$checked = '';
@@ -238,15 +238,13 @@ class Page {
 		}
 
 		return
-			'<table id="cloudProviders" class="form" cellspacing="0" cellpading="0"'
-					.($display ? '' : ' style="display:none"')
+			'<table class="cloud" id="cloudProviders"'
+					.' cellspacing="0" cellpading="0"'
+					.($visible ? '' : ' style="display:none"')
 				.'>'
 				.'<tr>'
-				.'<td colspan="2">&nbsp;</td>'
-				.'</tr>'
-				.'<tr>'
-				.'<td class="appdescription">cloud provider</td>'
-				.'<td class="input">'
+				.'<td class="cloud-descr">cloud provider</td>'
+				.'<td class="cloud-choice">'
 				.$clouds_html
 				.'</td>'
 				.'</tr>'

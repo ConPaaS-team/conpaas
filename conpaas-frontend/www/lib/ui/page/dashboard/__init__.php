@@ -10,21 +10,22 @@ class Dashboard extends Page {
 
 	public function __construct() {
 		parent::__construct();
-		$this->addJS('js/servicepage.js');
-		$this->addJS('js/services.js');
+		$this->addJS('js/service.js');
+		$this->addJS('js/application.js');
 	}
 
 	public function renderPageHeader() {
 		return
 			'<div class="menu">'
   				.'<table style="width:100%"><tr><td>'
-  				.'<a id="btnAddService" class="button" href="create.php" style="display:none">'
+  				.'<a id="btnAddService" class="button" href="addservice.php" style="display:none">'
   					.'<img  src="images/service-plus.png"/> add new service'
   				.'</a>'
   				.'<a id="btnStartApp" class="button" href="#" style="display:none">'
   					.'<img  src="images/play.png"/> start application'
   				.'</a>'
-				.$this->renderCloudProviders(false)
+				.'<br><br>'
+				.$this->renderCloudProviders('default', false)
 				.'</td><td align="right">'
   				.'<a id="btnStopApp" class="button" href="#" style="display:none">'
   					.'<img  src="images/remove.png"/> stop application'
