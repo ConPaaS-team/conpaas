@@ -1279,21 +1279,6 @@ ul.versions li .timestamp {
 #instances .cluster .cluster-header {
 	padding: 5px 3px 5px 5px;
 }
-#instances .cluster-manager {
-	background-color: black;
-}
-
-#instances .cluster-web, #instances .cluster-masters, #instances .cluster-scalaris, #instances .cluster-master, #instances .cluster-mrc, #instances .cluster-glb {
-	background-color: blue;
-}
-
-#instances .cluster-backend, #instances .cluster-dir {
-	background-color: purple;
-}
-
-#instances .cluster-proxy, #instances .cluster-workers, #instances .cluster-slaves, #instances .cluster-node, #instances .cluster-osd, #instances .cluster-mysql {
-	background-color: orange;
-}
 
 #instances .last {
 	border-bottom: 1px solid #999;

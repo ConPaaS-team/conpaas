@@ -18,29 +18,46 @@ class Cluster {
 
 	private function getRoleColor($role) {
 		static $roles = array(
+			// application manager
 			'manager' => 'black',
-			'node'=>'orange',
-			'nodes'=>'orange',
+
+			// web services (php / java)
 			'backend' => 'purple',
 			'web' => 'blue',
 			'proxy' => 'orange',
-			'peers' => 'blue',
-			'master' => 'blue',
-			'masters' => 'blue',
-			'scalaris' => 'blue',
-			'slaves' => 'orange',
-			'workers' => 'orange',
+
+			// mysql
 			'mysql'=>'orange',
 			'glb'=>'blue',
+
+			// xtreemfs
 			'dir' => 'purple',
 			'mrc' => 'blue',
-			'osd' => 'orange'
+			'osd' => 'orange',
+
+			// generic
+			'master' => 'blue',
+			'node'=>'orange',
+
+			// outdated / unused
+			'nodes'=>'orange',
+			'peers' => 'blue',
+			'masters' => 'blue',
+			'slaves' => 'orange',
+			'workers' => 'orange',
+			'scalaris' => 'blue'
 		);
 		return $roles[$role];
 	}
 
-	private function getRoleClass($role) {
-		return 'cluster-'.$role;
+	private function getRoleTagStyle($role) {
+		$color = $this->getRoleColor($role);
+		return 'color: '.$color.'; border-color: '.$color.';';
+	}
+
+	private function getRoleBorderStyle($role) {
+		$color = $this->getRoleColor($role);
+		return 'background-color: '.$color.';';
 	}
 
 	private function getRoleText($role) {
@@ -65,8 +82,9 @@ class Cluster {
 	public function renderRoleTags() {
 		$html = '';
 		foreach ($this->roles as $role) {
+			$style = $this->getRoleTagStyle($role);
 			$html .=
-				'<div class="tag '.$this->getRoleColor($role).'">'.
+				'<div class="tag" style="'.$style.'">'.
 					$this->getRoleText($role).
 				'</div>';
 		}
@@ -93,12 +111,14 @@ class Cluster {
 		$html = '<table class="cluster-table" cellspacing="0" cellpadding="0">';
 		$n = 1;
 		foreach ($this->roles as $role) {
-			$class = 'cluster-border '.$this->getRoleClass($role);
+			$style = $this->getRoleBorderStyle($role);
+			$class = '';
 			if ($n == count($this->roles))
 				$class .= ' last';
 
 			$html .= '<tr>'.
-						'<td class="'.$class.'">'.
+						'<td class="cluster-border'.$class.'"'.
+								' style="'.$style.'">'.
 							'&nbsp;'.
 						'</td>';
 			if ($n == 1) {
