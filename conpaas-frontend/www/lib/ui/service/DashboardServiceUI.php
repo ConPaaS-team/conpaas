@@ -143,21 +143,6 @@ class DashboardServiceUI {
 		return $this->renderStatistic($delete ,'').$this->renderInstances();
 	}
 
-	private function renderColorTag() {
-		$color_class = 'colortag-stopped';
-		static $active_states = array(
-			Service::STATE_RUNNING => true,
-			Service::STATE_ADAPTING => true,
-			Service::STATE_PROLOGUE => true,
-			Service::STATE_EPILOGUE => true,
-		);
-		if (array_key_exists($this->service->getState(), $active_states)) {
-			$color_class = 'colortag-active';
-		}
-		return
-			'<td class="colortag '.$color_class.'"></td>';
-	}
-
 	private function renderTitle() {
 		if (!$this->service->isConfigurable()) {
 			$title = $this->service->getName();
@@ -181,7 +166,7 @@ class DashboardServiceUI {
 		$lastClass = $this->last ? 'last' : '';
 		return
 			'<tr class="service" id="service-'.$this->service->getSID().'">'
-				.$this->renderColorTag()
+				.ColorTag($this->service->getState())
 				.'<td class="wrapper-left '.$lastClass.'">'
 					.$this->renderImage()
 				.'</td>'

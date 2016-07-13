@@ -52,6 +52,7 @@ class DashboardApplicationUI {
 		$lastClass = $this->last ? 'last' : '';
 		return
 			'<tr class="service" id="service-'.$this->application->getAID().'">'
+				.ColorTag($this->application->getStatus())
 				.'<td class="wrapper '.$lastClass.'">'
 					.'<div class="content">'
 						.$this->renderTitle()

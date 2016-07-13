@@ -13,6 +13,7 @@ require_once($dir.'Button.php');
 require_once($dir.'InputButton.php');
 require_once($dir.'Radio.php');
 require_once($dir.'Tag.php');
+require_once($dir.'ColorTag.php');
 require_once($dir.'EditableTag.php');
 require_once($dir.'MessageBox.php');
 require_once($dir.'StatNumber.php');
