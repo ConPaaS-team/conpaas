@@ -13,11 +13,6 @@ class Tag {
     protected $visible = '';
     private $html = '';
 
-    /**
-     * posible colors are "blue", "purple" & "orange"
-     * If you want to add more colors, edit main CSS file
-     * @param string $color
-     */
     public function setColor($color) {
         $this->color = $color;
         return $this;
@@ -37,8 +32,9 @@ class Tag {
     }
 
     public function __toString() {
+        $style = 'color: '.$this->color.'; border-color: '.$this->color.';';
         return
-            '<div class="tag '.$this->color.$this->visible.'">'
+            '<div class="tag '.$this->visible.'" style="'.$style.'">'
                 .$this->renderContent()
             .'</div>';
     }

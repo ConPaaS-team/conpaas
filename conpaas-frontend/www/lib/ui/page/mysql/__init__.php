@@ -47,37 +47,17 @@ class MySQLPage extends ServicePage {
 	}
 
 	protected function renderInstanceActions() {
-
 		$html = '';
-                static $roles = array(
-                        'glb' => 'blue',
-                        'mysql' => 'orange',
-                        );
-                foreach ($roles as $role => $color) {
-                        $name = ($role == 'backend') ? $this->service->getType() : $role;
+                static $roles = array('mysql', 'glb');
+                foreach ($roles as $role) {
                         $html .= EditableTag()
-                                ->setColor($color)
+                                ->setColor(Color::getRoleColor($role))
                                 ->setID($role)
                                 ->setValue('0')
-                                ->setText($name);
+                                ->setText($role);
                 }
                 return $html;
-
-
-
-
-/*
-		return EditableTag()
-			->setColor('blue')
-			->setID('mysql')
-			->setValue('0')
-			->setText('mysql')
-			->setColor('orange')
-                        ->setID('glb')
-                        ->setValue('0')
-                        ->setText('glb')
-					;
-*/	}
+	}
 
 	private function renderFormRow($name, $details) {
 		return

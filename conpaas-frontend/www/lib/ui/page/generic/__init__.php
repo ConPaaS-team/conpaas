@@ -61,8 +61,9 @@ class GenericPage extends ServicePage {
     }
 
     protected function renderInstanceActions() {
-        return EditableTag()->setColor('orange')
-                            ->setID('node')
+        $role = 'node';
+        return EditableTag()->setColor(Color::getRoleColor($role))
+                            ->setID($role)
                             ->setValue('0')
                             ->setText('nodes');
     }

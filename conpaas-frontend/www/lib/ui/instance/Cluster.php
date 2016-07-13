@@ -2,6 +2,8 @@
 /* Copyright (C) 2010-2013 by Contrail Consortium. */
 
 
+require_module('ui');
+
 
 class Cluster {
 
@@ -14,50 +16,6 @@ class Cluster {
 
 	public function addNode(Instance $node) {
 		$this->nodes[] = $node;
-	}
-
-	private function getRoleColor($role) {
-		static $roles = array(
-			// application manager
-			'manager' => 'black',
-
-			// web services (php / java)
-			'backend' => 'purple',
-			'web' => 'blue',
-			'proxy' => 'orange',
-
-			// mysql
-			'mysql'=>'orange',
-			'glb'=>'blue',
-
-			// xtreemfs
-			'dir' => 'purple',
-			'mrc' => 'blue',
-			'osd' => 'orange',
-
-			// generic
-			'master' => 'blue',
-			'node'=>'orange',
-
-			// outdated / unused
-			'nodes'=>'orange',
-			'peers' => 'blue',
-			'masters' => 'blue',
-			'slaves' => 'orange',
-			'workers' => 'orange',
-			'scalaris' => 'blue'
-		);
-		return $roles[$role];
-	}
-
-	private function getRoleTagStyle($role) {
-		$color = $this->getRoleColor($role);
-		return 'color: '.$color.'; border-color: '.$color.';';
-	}
-
-	private function getRoleBorderStyle($role) {
-		$color = $this->getRoleColor($role);
-		return 'background-color: '.$color.';';
 	}
 
 	private function getRoleText($role) {
@@ -73,7 +31,7 @@ class Cluster {
 		} else if ($role == 'dir' || $role == 'mrc' || $role == 'osd') {
 			return strtoupper($role);
 		} else if ($role == 'manager') {
-			return 'Application manager';
+			return '&nbsp;&nbsp;&nbsp;Application manager&nbsp;&nbsp;&nbsp;';
 		} else {
 			return $role;
 		}
@@ -82,11 +40,9 @@ class Cluster {
 	public function renderRoleTags() {
 		$html = '';
 		foreach ($this->roles as $role) {
-			$style = $this->getRoleTagStyle($role);
-			$html .=
-				'<div class="tag" style="'.$style.'">'.
-					$this->getRoleText($role).
-				'</div>';
+			$html .= Tag()
+				->setColor(Color::getRoleColor($role))
+				->setHTML($this->getRoleText($role));
 		}
 		return $html;
 	}
@@ -111,7 +67,8 @@ class Cluster {
 		$html = '<table class="cluster-table" cellspacing="0" cellpadding="0">';
 		$n = 1;
 		foreach ($this->roles as $role) {
-			$style = $this->getRoleBorderStyle($role);
+			$color = Color::getRoleColor($role);
+			$style = 'background-color: '.$color.';';
 			$class = '';
 			if ($n == count($this->roles))
 				$class .= ' last';

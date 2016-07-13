@@ -65,10 +65,11 @@ class DashboardServiceUI {
 		if ($nodes === 0) {
 			return '';
 		}
-		$title = 'virtual instance';
+		$title = 'instance';
 		if ($nodes > 1) {
 			$title .= 's'; // plural
 		}
+		$title .= ' running';
 		return
 			$this->renderStatistic(
 				'<i class="text">'.$nodes.'</i>'

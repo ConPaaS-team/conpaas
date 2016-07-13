@@ -27,15 +27,11 @@ class HostingPage extends ServicePage {
 
 	protected function renderInstanceActions() {
 		$html = '';
-		static $roles = array(
-			'proxy' => 'orange',
-			'web' => 'blue',
-			'backend' => 'purple'
-		);
-		foreach ($roles as $role => $color) {
+		static $roles = array('proxy', 'web', 'backend');
+		foreach ($roles as $role) {
 			$name = ($role == 'backend') ? $this->service->getType() : $role;
 			$html .= EditableTag()
-				->setColor($color)
+				->setColor(Color::getRoleColor($role))
 				->setID($role)
 				->setValue('0')
 				->setText($name);

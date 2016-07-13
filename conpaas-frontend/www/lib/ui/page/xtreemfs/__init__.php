@@ -2,8 +2,8 @@
 /* Copyright (C) 2010-2013 by Contrail Consortium. */
 
 
-
 require_module('ui/page');
+
 
 class XtreemFSPage extends ServicePage {
 
@@ -31,9 +31,10 @@ class XtreemFSPage extends ServicePage {
 	}
 
 	protected function renderInstanceActions() {
+		$role = 'osd';
 		return EditableTag()
-			->setColor('orange')
-			->setID('osd')
+			->setColor(Color::getRoleColor($role))
+			->setID($role)
 			->setValue('0')
 			->setText('XtreemFS OSD');
 	}
