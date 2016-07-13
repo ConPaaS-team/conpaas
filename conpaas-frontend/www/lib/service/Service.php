@@ -185,6 +185,9 @@ class Service {
 		}
 		$info = $info['result']['serviceNode'];
 		$info['sid'] = $this->sid;
+		if ($info['cloud'] === 'iaas') {
+			$info['cloud'] = 'default';
+		}
 		return $info;
 	}
 

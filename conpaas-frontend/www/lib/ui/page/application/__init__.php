@@ -47,7 +47,7 @@ class AppPage extends Page {
         $cluster = new Cluster(array('manager'));
         // actual values for the ID and IP address will be filled in
         // by the javascript in application.js
-        $cluster->addNode(new ManagerInstance('', ''));
+        $cluster->addNode(new ManagerInstance('', '', ''));
         return $cluster->render();
     }
 

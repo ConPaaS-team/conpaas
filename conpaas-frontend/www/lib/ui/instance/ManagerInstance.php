@@ -5,8 +5,8 @@
 
 class ManagerInstance extends Instance {
 
-	public function __construct($id, $ip) {
-		parent::__construct(array('id' => $id, 'ip' => $ip));
+	public function __construct($id, $ip, $cloud) {
+		parent::__construct(array('id' => $id, 'ip' => $ip, 'cloud' => $cloud));
 	}
 
 	protected function renderCapabs() {

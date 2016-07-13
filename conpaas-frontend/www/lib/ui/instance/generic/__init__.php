@@ -193,7 +193,9 @@ class GenericInstance extends Instance {
             .'<div class="left">'
                 .'<div class="left generic-instance-name">'
                     .'<i class="title">Instance '.$this->info['id'].'</i>'
-                    .'<span class="right brief">running</span>'
+                    .'<span class="cloud-name" title="cloud provider">'
+                        .$this->info['cloud']
+                    .'</span>'
                 .'</div>'
                 .'<div class="clear"></div>'
                 .'<div class="left">'

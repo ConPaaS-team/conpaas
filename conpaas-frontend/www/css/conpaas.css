@@ -1313,6 +1313,13 @@ ul.versions li .timestamp {
     padding-right: 5px;
 }
 
+.cloud-name {
+	float: right;
+	padding: 3px;
+	color: #999;
+	font-style: italic;
+}
+
 .cloud-descr {
     color: #666;
 	line-height: 20px;

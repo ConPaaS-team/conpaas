@@ -29,7 +29,9 @@ class Instance {
 			.'<div class="left">'
 				.'<i class="title">Instance '.$this->info['id'].'</i>'
 				.$this->renderCapabs()
-				.'<div class="brief">running</div>'
+				.'<div class="cloud-name" title="cloud provider">'
+					.$this->info['cloud']
+				.'</div>'
 			.'</div>'
 			.'<div class="right agent-ip-address">'
 				.'<i class="address">'.$this->info['ip'].'</i>'
@@ -44,7 +46,9 @@ class Instance {
 		'<div class="instance dualbox">'
 			.'<div class="left">'
 				.'<i class="title">Instance '.$this->info['id'].'</i>'
-				.'<i class="timestamp">running</i>'
+				.'<i class="cloud-name" title="cloud provider">'
+					.$this->info['cloud']
+				.'</i>'
 			.'</div>'
 			.'<div class="right agent-ip-address">'
 				.'<i class="address">'.$this->info['ip'].'</i>'

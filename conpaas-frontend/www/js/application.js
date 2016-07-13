@@ -122,6 +122,8 @@ conpaas.ui = (function (this_module) {
                             'Instance ' + app.cloud + app.vmid);
                         $("#instancesWrapper .instance .address").html(
                             app.manager.replace('https://', ''));
+                        $("#instancesWrapper .instance .cloud-name").html(
+                            app.cloud == 'iaas' ? 'default' : app.cloud);
                         $("#instancesWrapper").show();
 
                         that.startingApp = false;
