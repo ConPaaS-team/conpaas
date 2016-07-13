@@ -11,13 +11,15 @@ class Instance {
 		$this->info = $info;
 	}
 
-    private function renderAgentLogs() {
+    protected function renderAgentLogs() {
         $linkAgentLogs = LinkUI('agent log',
             'viewlog.php?aid='.$_SESSION['aid']
             .'&sid='.$this->info['sid']
             .'&agentId='.$this->info['id']
         )->setExternal(true);
-        $html = $linkAgentLogs;
+        $html = '<div class="right agent-logs">'
+					.$linkAgentLogs
+				.'</div>';
         return $html;
     }
 
@@ -32,9 +34,7 @@ class Instance {
 			.'<div class="right agent-ip-address">'
 				.'<i class="address">'.$this->info['ip'].'</i>'
 			.'</div>'
-			.'<div class="right agent-logs">'
-				.$this->renderAgentLogs()
-			.'</div>'
+			.$this->renderAgentLogs()
 			.'<div class="clear"></div>'
 		.'</div>';
 	}
@@ -49,9 +49,7 @@ class Instance {
 			.'<div class="right agent-ip-address">'
 				.'<i class="address">'.$this->info['ip'].'</i>'
 			.'</div>'
-			.'<div class="right agent-logs">'
-				.$this->renderAgentLogs()
-			.'</div>'
+			.$this->renderAgentLogs()
 			.'<div class="clear"></div>'
 		.'</div>';
 	}

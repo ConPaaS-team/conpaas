@@ -10,8 +10,13 @@ class ManagerInstance extends Instance {
 	}
 
 	protected function renderCapabs() {
-		return '<div class="tag black">manager</div>';
+		return '<div class="tag black">Application manager</div>';
 	}
+
+    protected function renderAgentLogs() {
+        return '';
+    }
+
 }
 
 ?>

@@ -347,7 +347,7 @@ class ServicePage extends Page {
 					.$this->renderInstances()
 				.'</div>'
 				.$this->renderInstanceActionsSection()
-                                .$this->renderIncompleteGUI()
+				.$this->renderIncompleteGUI()
 			.'</div>';
 	}
 }

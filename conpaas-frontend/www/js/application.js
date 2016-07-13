@@ -100,6 +100,7 @@ conpaas.ui = (function (this_module) {
                         $("#btnAddService").hide();
                         $("#btnStopApp").hide();
                         $("#appRightMenu").hide();
+                        $("#instancesWrapper").hide();
                         if (app.status == 'PROLOGUE') {
                             that.displayInfo_('application is starting up...');
                             return false
@@ -116,8 +117,13 @@ conpaas.ui = (function (this_module) {
                         $("#btnAddService").show();
                         $("#btnStopApp").show();
                         $("#appRightMenu").show();
-                        html = '<div class="instance dualbox"><div class="left"><i class="title">Instance '+app.cloud+app.vmid+'</i><div class="tag blue">&nbsp;Application manager&nbsp;</div><div class="brief">running</div></div><div class="right"><i class="address">'+app.manager.replace('https://', '')+'</i></div><div class="clear"></div></div>'
-                        $("#instances").html(html);
+
+                        $("#instancesWrapper .instance .title").html(
+                            'Instance ' + app.cloud + app.vmid);
+                        $("#instancesWrapper .instance .address").html(
+                            app.manager.replace('https://', ''));
+                        $("#instancesWrapper").show();
+
                         that.startingApp = false;
                         that.poller = new conpaas.http.Poller(that.server, 'ajax/checkServices.php', 'get');
                         that.checkServices();

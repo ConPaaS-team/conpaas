@@ -29,16 +29,12 @@ $services = ServiceData::getServicesByUser($page->getUID(), $_SESSION['aid']);
     <?php echo $page->renderHeaderCSS(); ?>
   </head>
   <body class="<?php echo $page->getBrowserClass(); ?>">
-	<?php echo $page->renderHeader(); ?>
-	<div class="pagecontent">
-		<?php echo $page->renderTopMenu(); ?>
-		<div class="pageheader">
-			<?php echo $page->renderPageHeader(); ?>
-		</div>
-		<div id="servicesWrapper">
-		</div>
-	</div>
-	<?php echo $page->renderFooter(); ?>
-	<?php echo $page->renderJSLoad(); ?>
+    <?php echo $page->renderHeader(); ?>
+    <div class="pagecontent">
+      <?php echo $page->renderTopMenu(); ?>
+      <?php echo $page->renderContent(); ?>
+    </div>
+    <?php echo $page->renderFooter(); ?>
+    <?php echo $page->renderJSLoad(); ?>
   </body>
 </html>

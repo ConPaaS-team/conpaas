@@ -275,8 +275,8 @@ a:hover {
 .pageheader .rightmenu {
     margin-top: 5px;
     padding: 5px;
-	float: right;
-        display: inline-block;
+    float: right;
+    display: inline-block;
 }
 
 .menu img.loading {
@@ -1278,6 +1278,9 @@ ul.versions li .timestamp {
 
 #instances .cluster .cluster-header {
 	padding: 5px 3px 5px 5px;
+}
+#instances .cluster-manager {
+	background-color: black;
 }
 
 #instances .cluster-web, #instances .cluster-masters, #instances .cluster-scalaris, #instances .cluster-master, #instances .cluster-mrc, #instances .cluster-glb {

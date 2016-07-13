@@ -18,6 +18,7 @@ class Cluster {
 
 	private function getRoleColor($role) {
 		static $roles = array(
+			'manager' => 'black',
 			'node'=>'orange',
 			'nodes'=>'orange',
 			'backend' => 'purple',
@@ -54,6 +55,8 @@ class Cluster {
 			}
 		} else if ($role == 'dir' || $role == 'mrc' || $role == 'osd') {
 			return strtoupper($role);
+		} else if ($role == 'manager') {
+			return 'Application manager';
 		} else {
 			return $role;
 		}
