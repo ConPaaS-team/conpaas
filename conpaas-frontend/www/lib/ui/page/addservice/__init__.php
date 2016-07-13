@@ -5,7 +5,7 @@
 
 require_module('ui/page');
 
-class CreatePage extends Page {
+class AddServicePage extends Page {
 
 	public function __construct() {
 		parent::__construct();

@@ -8,7 +8,7 @@
  * @require conpaas.js, service.js
  */
 conpaas.ui = (function (this_module) {
-    this_module.CreatePage = conpaas.new_constructor(
+    this_module.AddServicePage = conpaas.new_constructor(
     /* extends */conpaas.ui.Page,
     /* constructor */function (server) {
         this.server = server;
@@ -74,6 +74,6 @@ conpaas.ui = (function (this_module) {
 
 $(document).ready(function () {
     var server = new conpaas.http.Xhr(),
-        page = new conpaas.ui.CreatePage(server);
+        page = new conpaas.ui.AddServicePage(server);
     page.attachHandlers();
 });

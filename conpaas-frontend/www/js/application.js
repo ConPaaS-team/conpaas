@@ -4,11 +4,11 @@
 
 
 /**
- * interaction for application.php - main dashboard
+ * interaction for application.php
  * @require conpaas.js
  */
 conpaas.ui = (function (this_module) {
-    this_module.Dashboard = conpaas.new_constructor(
+    this_module.AppPage = conpaas.new_constructor(
     /* extends */conpaas.ui.Page,
     /* constructor */function (server) {
         this.server = server;
@@ -201,7 +201,7 @@ conpaas.ui = (function (this_module) {
 
 $(document).ready(function () {
     var server = new conpaas.http.Xhr(),
-        page = new conpaas.ui.Dashboard(server);
+        page = new conpaas.ui.AppPage(server);
     page.attachHandlers();
     page.checkApplication();
     // page.checkServices();

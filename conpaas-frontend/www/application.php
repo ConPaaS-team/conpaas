@@ -7,7 +7,7 @@ require_once('__init__.php');
 require_module('logging');
 require_module('service');
 require_module('service/factory');
-require_module('ui/page/dashboard');
+require_module('ui/page/application');
 require_module('ui/service');
 
 if (isset($_GET['aid'])) {
@@ -16,7 +16,7 @@ if (isset($_GET['aid'])) {
 	$_SESSION['aid'] = 1;
 }
 
-$page = new Dashboard();
+$page = new AppPage();
 $services = ServiceData::getServicesByUser($page->getUID(), $_SESSION['aid']);
 
 ?>

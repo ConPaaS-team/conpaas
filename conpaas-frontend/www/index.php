@@ -6,16 +6,16 @@
 require_once('__init__.php');
 require_module('logging');
 require_module('application');
-require_module('ui/page/apppage');
+require_module('ui/page/dashboard');
 require_module('ui/application');
 
-$page = new AppPage();
+$page = new Dashboard();
 ?>
 <?php echo $page->renderDoctype(); ?>
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <?php echo $page->renderContentType(); ?>
-    <?php echo $page->renderTitle(' - Index'); ?>
+    <?php echo $page->renderTitle(' - Dashboard'); ?>
     <?php echo $page->renderIcon(); ?>
     <?php echo $page->renderHeaderCSS(); ?>
   </head>
