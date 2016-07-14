@@ -105,7 +105,7 @@ if __name__ == '__main__':
 
     append_str_to_output('# The name and size of the image file '\
             'that will be generated.\n')
-   
+
     if nutshell:
         append_str_to_output('FILENAME=' + config.get('NUTSHELL','filename') + '\n')
         append_str_to_output('CONT_FILENAME=' + config.get('CUSTOMIZABLE','filename') + '\n')
@@ -121,7 +121,7 @@ if __name__ == '__main__':
         append_str_to_output('FILESIZE=' + config.get('CUSTOMIZABLE', 'filesize') + '\n\n')
 
         append_str_to_output('# The Debian distribution that you would '\
-            'like to have installed (we recommend squeeze).\n')
+            'like to have installed (we recommend jessie).\n')
         append_str_to_output('DEBIAN_DIST=' + config.get('RECOMMENDED', 'debian_dist') + '\n')
         append_str_to_output('DEBIAN_MIRROR=' + config.get('RECOMMENDED', 'debian_mirror') + '\n\n')
 
@@ -134,7 +134,7 @@ if __name__ == '__main__':
     hypervisor = config.get('CUSTOMIZABLE', 'hypervisor')
     if hypervisor != 'kvm' and hypervisor != 'xen':
         error('Unknown hypervisor "%s".' % hypervisor)
-    
+
     cloud = config.get('CUSTOMIZABLE', 'cloud')
     if cloud == 'opennebula' or cloud == 'vbox' or cloud == 'openstack':
         pass
@@ -147,7 +147,7 @@ if __name__ == '__main__':
 
     if container:
         cloud = config.get('NUTSHELL', 'cloud')
-    
+
     append_str_to_output('CLOUD=' + cloud + '\n')
     append_str_to_output('HYPERVISOR=' + hypervisor + '\n')
 
@@ -159,28 +159,28 @@ if __name__ == '__main__':
     else:
         error('Unknown arch "%s".' % arch)
     append_str_to_output('ARCH=%s\n' % arch)
-    
+
     debian_dist = config.get('RECOMMENDED', 'debian_dist')
     if debian_dist == 'squeeze':
         if hypervisor == 'kvm':
             kernel_version = 'linux-image-%s' % kernel_arch
         elif hypervisor == 'xen':
             kernel_version = 'linux-image-xen-%s' % kernel_arch
-    elif debian_dist == 'wheezy':
-        # Debian wheezy use the same kernel image both for kvm and xen
+    elif debian_dist == 'wheezy' or debian_dist == 'jessie':
+        # Debian wheezy and jessie use the same kernel image both for kvm and xen
         kernel_version = 'linux-image-%s' % kernel_arch
     else:
         error('Unknown Debian distribution "%s".' % debian_dist)
-    
+
     if nutshell:
        append_str_to_output('OPTIMIZE=' + config.get('CUSTOMIZABLE', 'optimize') + '\n')
        if hypervisor == 'kvm':
            kernel_version = config.get('NUTSHELL', 'kvm_ubuntu_kernel_version')
        elif hypervisor == 'xen':
-           kernel_version = config.get('NUTSHELL', 'xen_ubuntu_kernel_version')    
+           kernel_version = config.get('NUTSHELL', 'xen_ubuntu_kernel_version')
 
     append_str_to_output('KERNEL=%s\n' % kernel_version)
-    
+
     append_str_to_output('\n\n')
 
 
@@ -191,7 +191,7 @@ if __name__ == '__main__':
     #filenames = config.get('SCRIPT_FILE_NAMES', 'general_scripts')
     #for filename in filenames.split():
     #    append_file_to_output(root_dir + filename)
-   
+
     if nutshell:
         filename = config.get('SCRIPT_FILE_NAMES', 'image_script_nutshell')
     elif container:
@@ -199,7 +199,7 @@ if __name__ == '__main__':
     else:
         filename = config.get('SCRIPT_FILE_NAMES', 'image_script')
 
-    append_file_to_output(root_dir + filename)    
+    append_file_to_output(root_dir + filename)
 
     if nutshell:
         filenames = config.get('SCRIPT_FILE_NAMES', 'nutshell_config_scripts')
@@ -240,14 +240,14 @@ if __name__ == '__main__':
 
 
     suffix = '_nushell' if nutshell else ''
- 
+
     # Write contextualization script
     if cloud == 'opennebula':
         filename = config.get('SCRIPT_FILE_NAMES', 'opennebula_script'+suffix)
     elif cloud == 'ec2':
         filename = config.get('SCRIPT_FILE_NAMES', 'ec2_script'+suffix)
     elif cloud == 'openstack':
-       filename = config.get('SCRIPT_FILE_NAMES', 'openstack_script') 
+       filename = config.get('SCRIPT_FILE_NAMES', 'openstack_script')
     elif cloud == 'vbox':
         filename = config.get('SCRIPT_FILE_NAMES', 'vbox_script'+suffix)
     append_file_to_output(root_dir + filename)
@@ -258,10 +258,10 @@ if __name__ == '__main__':
                 filename = config.get('SCRIPT_FILE_NAMES', 'resize_container_script')
             else:
                 filename = config.get('SCRIPT_FILE_NAMES', 'resize_script')
-            append_file_to_output(root_dir + filename)   
+            append_file_to_output(root_dir + filename)
 
 
     close_output_file()
-   
+
     print "\nPlease run " +output_filename+ " as root"
-  
+

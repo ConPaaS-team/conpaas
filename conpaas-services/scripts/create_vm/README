@@ -5,8 +5,7 @@ Script to build a ConPaaS disk image
 
 Update file 'create-img-script.cfg' with your preferences.
 Warning:
- * choosing 'debian_dist = wheezy'  the resulting image will not work, yet, there is still bugs to fix
- * only cloud 'ec2' with hypervisor 'xen',  and cloud 'opennebula' with hypervisor 'kvm' are supported
+ * only cloud 'ec2' with hypervisor 'xen' and cloud 'openstack' with hypervisor 'kvm' are supported
 
 Then run script:
    ./create-img-script.py
@@ -16,7 +15,7 @@ Then run that script as root
    sudo ./create-img-conpaas.sh |& tee image-creation.log
 
 
-Default password for root is 'contrail'.
+Default password for root is 'conpaas'.
 
 
 Mount locally the generated image:

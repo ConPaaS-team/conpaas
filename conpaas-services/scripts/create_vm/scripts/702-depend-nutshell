@@ -9,11 +9,11 @@ function cecho() {
 }
 
 # set root passwd
-echo "root:contrail" | chpasswd
+echo "root:conpaas" | chpasswd
 
 
 # install dependencies
-apt-get -f -y update
+apt-get -y update
 # pre-accept sun-java6 licence
 echo "debconf shared/accepted-sun-dlj-v1-1 boolean true" | debconf-set-selections
 DEBIAN_FRONTEND=noninteractive apt-get -y --force-yes --no-install-recommends --no-upgrade \

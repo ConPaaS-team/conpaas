@@ -224,13 +224,13 @@ function cecho() {
 }
 
 # set root passwd
-echo "root:contrail" | chpasswd
+echo "root:conpaas" | chpasswd
 
 # fix apt sources
 sed --in-place 's/main/main contrib non-free/' /etc/apt/sources.list
 
 # install dependencies
-apt-get -f -y update
+apt-get -y update
 # pre-accept sun-java6 licence
 echo "debconf shared/accepted-sun-dlj-v1-1 boolean true" | debconf-set-selections
 DEBIAN_FRONTEND=noninteractive apt-get -y --force-yes --no-install-recommends --no-upgrade \
@@ -269,7 +269,7 @@ cecho "===== add dotdeb repo for php fpm ====="
 # add dotdeb repo for php fpm
 echo "deb http://packages.dotdeb.org $DEBIAN_DIST all" >> /etc/apt/sources.list
 wget -O - http://www.dotdeb.org/dotdeb.gpg 2>/dev/null | apt-key add -
-apt-get -f -y update
+apt-get -y update
 apt-get -f -y --no-install-recommends --no-upgrade install php5-fpm php5-curl \
               php5-mcrypt php5-mysql php5-odbc \
               php5-pgsql php5-sqlite php5-sybase php5-xmlrpc php5-xsl \
@@ -278,7 +278,7 @@ update-rc.d php5-fpm disable
 
 # remove dotdeb repo
 sed --in-place "s%deb http://packages.dotdeb.org $DEBIAN_DIST all%%" /etc/apt/sources.list
-apt-get -f -y update
+apt-get -y update
 
 # remove cached .debs from /var/cache/apt/archives to save disk space
 apt-get clean
@@ -353,7 +353,7 @@ echo "deb http://backports.debian.org/debian-backports $DEBIAN_DIST-backports ma
 echo "deb http://mozilla.debian.net/ $DEBIAN_DIST-backports iceweasel-esr" >> /etc/apt/sources.list
 echo "deb http://dl.google.com/linux/deb/ stable main" >> /etc/apt/sources.list
     
-apt-get -f -y update
+apt-get -y update
 apt-get -f -y --force-yes install -t $DEBIAN_DIST-backports iceweasel
 apt-get -f -y --force-yes install google-chrome-stable
 
@@ -365,7 +365,7 @@ cecho "===== install cloudera repo for hadoop ====="
 # add cloudera repo for hadoop
 echo "deb http://archive.cloudera.com/debian $DEBIAN_DIST-cdh3 contrib" >> /etc/apt/sources.list
 wget -O - http://archive.cloudera.com/debian/archive.key 2>/dev/null | apt-key add -
-apt-get -f -y update
+apt-get -y update
 apt-get -f -y --no-install-recommends --no-upgrade install \
   hadoop-0.20 hadoop-0.20-namenode hadoop-0.20-datanode \
   hadoop-0.20-secondarynamenode hadoop-0.20-jobtracker  \
@@ -382,7 +382,7 @@ mkdir -p /etc/hadoop-0.20/conf.contrail
 update-alternatives --install /etc/hadoop-0.20/conf hadoop-0.20-conf /etc/hadoop-0.20/conf.contrail 99
 # remove cloudera repo
 sed --in-place "s%deb http://archive.cloudera.com/debian $DEBIAN_DIST-cdh3 contrib%%" /etc/apt/sources.list
-apt-get -f -y update
+apt-get -y update
 
 
 EOF
@@ -393,12 +393,12 @@ cecho "===== install scalaris repo ====="
 # add scalaris repo
 echo "deb http://download.opensuse.org/repositories/home:/scalaris/Debian_6.0 /" >> /etc/apt/sources.list
 wget -O - http://download.opensuse.org/repositories/home:/scalaris/Debian_6.0/Release.key 2>/dev/null | apt-key add -
-apt-get -f -y update
+apt-get -y update
 apt-get -f -y --no-install-recommends --no-upgrade install scalaris screen
 update-rc.d scalaris disable
 # remove scalaris repo
 sed --in-place 's%deb http://download.opensuse.org/repositories/home:/scalaris/Debian_6.0 /%%' /etc/apt/sources.list
-apt-get -f -y update
+apt-get -y update
 
 EOF
 
@@ -408,14 +408,14 @@ cecho "===== install xtreemfs repo ====="
 # add xtreemfs repo
 echo "deb http://download.opensuse.org/repositories/home:/xtreemfs:/unstable/Debian_6.0 /" >> /etc/apt/sources.list
 wget -O - http://download.opensuse.org/repositories/home:/xtreemfs:/unstable/Debian_6.0/Release.key 2>/dev/null | apt-key add -
-apt-get -f -y update
+apt-get -y update
 apt-get -f -y --no-install-recommends --no-upgrade install xtreemfs-server xtreemfs-client xtreemfs-tools
 update-rc.d xtreemfs-osd disable
 update-rc.d xtreemfs-mrc disable
 update-rc.d xtreemfs-dir disable
 # remove xtreemfs repo
 sed --in-place 's%deb http://download.opensuse.org/repositories/home:/xtreemfs:/unstable/Debian_6.0 /%%' /etc/apt/sources.list
-apt-get -f -y update
+apt-get -y update
 
 EOF
 
@@ -439,7 +439,7 @@ EOF
 # BLUE_PRINT_INSERT_SOFTWARE            do not remove this line: it is a placeholder for installing new services
 
 cat <<EOF >> $ROOT_DIR/conpaas_install
-apt-get -f -y clean
+apt-get -y clean
 exit 0
 EOF
 

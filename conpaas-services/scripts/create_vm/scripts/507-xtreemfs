@@ -11,18 +11,22 @@ elif [ "$DEBIAN_DIST" == "wheezy" ]
 then
     echo "deb http://download.opensuse.org/repositories/home:/xtreemfs:/unstable/Debian_7.0 /" >> /etc/apt/sources.list
     wget -O - http://download.opensuse.org/repositories/home:/xtreemfs:/unstable/Debian_7.0/Release.key 2>/dev/null | apt-key add -
+elif [ "$DEBIAN_DIST" == "jessie" ]
+then
+    echo "deb http://download.opensuse.org/repositories/home:/xtreemfs:/unstable/Debian_8.0 /" >> /etc/apt/sources.list
+    wget -O - http://download.opensuse.org/repositories/home:/xtreemfs:/unstable/Debian_8.0/Release.key 2>/dev/null | apt-key add -
 else
     echo "ERROR: unknown Debian distribution '$DEBIAN_DIST'."
     exit 1
 fi
-apt-get -f -y update
+apt-get -y update
 apt-get -f -y --no-install-recommends --no-upgrade install xtreemfs-server xtreemfs-client xtreemfs-tools
 update-rc.d xtreemfs-osd disable
 update-rc.d xtreemfs-mrc disable
 update-rc.d xtreemfs-dir disable
 # remove xtreemfs repo
 sed --in-place 's%deb http://download.opensuse.org/repositories/home:/xtreemfs:/unstable/Debian_..0 /%%' /etc/apt/sources.list
-apt-get -f -y update
+apt-get -y update
 
 EOF
 

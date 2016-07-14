@@ -49,7 +49,7 @@ DEBIAN_DIST=squeeze
 function install_deb() {
   sed --in-place '/non-free/!s/main/main non-free/' /etc/apt/sources.list
   sed --in-place '/contrib/!s/main/main contrib/' /etc/apt/sources.list
-  apt-get -f -y update
+  apt-get -y update
  
   export LC_ALL=C
   # set keyboard layout
@@ -83,7 +83,7 @@ function install_deb() {
   # add dotdeb repo for php fpm
   echo "deb http://packages.dotdeb.org $DEBIAN_DIST all" >> /etc/apt/sources.list
   wget -O - http://www.dotdeb.org/dotdeb.gpg 2>/dev/null | apt-key add -
-  apt-get -f -y update
+  apt-get -y update
   apt-get -f -y --no-install-recommends --no-upgrade install php5-fpm php5-curl \
               php5-mcrypt php5-mysql php5-odbc \
               php5-pgsql php5-sqlite php5-sybase php5-xmlrpc php5-xsl \
@@ -125,14 +125,14 @@ function install_deb() {
   echo "deb http://mozilla.debian.net/ $DEBIAN_DIST-backports iceweasel-esr" >> /etc/apt/sources.list
   echo "deb http://dl.google.com/linux/deb/ stable main" >> /etc/apt/sources.list
 
-  apt-get -f -y update
+  apt-get -y update
   apt-get -f -y --force-yes install -t $DEBIAN_DIST-backports iceweasel
   apt-get -f -y --force-yes install google-chrome-stable
 
   # add cloudera repo for hadoop
   echo "deb http://archive.cloudera.com/debian $DEBIAN_DIST-cdh3 contrib" >> /etc/apt/sources.list
   wget -O - http://archive.cloudera.com/debian/archive.key 2>/dev/null | apt-key add -
-  apt-get -f -y update
+  apt-get -y update
   apt-get -f -y --no-install-recommends --no-upgrade install \
     hadoop-0.20 hadoop-0.20-namenode hadoop-0.20-datanode \
     hadoop-0.20-secondarynamenode hadoop-0.20-jobtracker  \
@@ -153,7 +153,7 @@ function install_deb() {
   # add scalaris repo
   echo "deb http://download.opensuse.org/repositories/home:/scalaris/Debian_6.0 /" >> /etc/apt/sources.list
   wget -O - http://download.opensuse.org/repositories/home:/scalaris/Debian_6.0/Release.key 2>/dev/null | apt-key add -
-  apt-get -f -y update
+  apt-get -y update
   apt-get -f -y --no-install-recommends --no-upgrade install scalaris screen
   update-rc.d scalaris disable
   # remove scalaris repo
@@ -162,14 +162,14 @@ function install_deb() {
   # add xtreemfs repo
   echo "deb http://download.opensuse.org/repositories/home:/xtreemfs:/unstable/Debian_6.0 /" >> /etc/apt/sources.list
   wget -O - http://download.opensuse.org/repositories/home:/xtreemfs:/unstable/Debian_6.0/Release.key 2>/dev/null | apt-key add -
-  apt-get -f -y update
+  apt-get -y update
   apt-get -f -y --no-install-recommends --no-upgrade install xtreemfs-server xtreemfs-client xtreemfs-tools
   update-rc.d xtreemfs-osd disable
   update-rc.d xtreemfs-mrc disable
   update-rc.d xtreemfs-dir disable
   # remove xtreemfs repo
   sed --in-place 's%deb http://download.opensuse.org/repositories/home:/xtreemfs:/unstable/Debian_6.0 /%%' /etc/apt/sources.list
-  apt-get -f -y update
+  apt-get -y update
 
   echo "deb http://www.grid-appliance.org/files/packages/deb/ stable contrib" >> /etc/apt/sources.list
   wget -O - http://www.grid-appliance.org/files/packages/deb/repo.key | apt-key add -

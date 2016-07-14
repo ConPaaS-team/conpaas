@@ -2,7 +2,7 @@
 
 cat <<EOF >> $ROOT_DIR/conpaas_install
 
-apt-get -f -y update
+apt-get -y update
 DEBIAN_FRONTEND=noninteractive apt-get -y --force-yes --no-install-recommends --no-upgrade install \
 		psmisc libaio1 libdbi-perl libdbd-mysql-perl mysql-client rsync python-mysqldb make
 
@@ -56,6 +56,25 @@ then
     rm -f mysql-server-wsrep-5.5.34-25.9-$ARCH.deb
     rm -f galera-25.3.1-src.tar.gz
 
+elif [ $DEBIAN_DIST == "jessie" ]
+then
+
+    apt-get -f -y --no-install-recommends --no-upgrade install python-software-properties
+    apt-key adv --keyserver keyserver.ubuntu.com --recv BC19DDBA
+
+    # add galera repo
+    echo "deb http://releases.galeracluster.com/debian jessie main" >> /etc/apt/sources.list
+    apt-get -y update
+
+    apt-get -f -y --no-install-recommends --no-upgrade install galera-3 mysql-wsrep-5.5
+
+    # remove galera repo
+    sed --in-place 's%deb http://releases.galeracluster.com/debian jessie main%%' /etc/apt/sources.list
+    apt-get -y update
+
+    # remove cached .debs from /var/cache/apt/archives to save disk space
+    apt-get clean
+
 else
     echo "ERROR: unknown Debian distribution '$DEBIAN_DIST': cannot select correct MySQL Galera packages."
     exit 1
@@ -87,7 +106,7 @@ sed -i 's/#LISTEN_ADDR/LISTEN_ADDR/' /etc/default/glbd
 sed -i 's/#CONTROL_ADDR/CONTROL_ADDR/' /etc/default/glbd
 sed -i 's/nc \$CONTROL_IP/nc -q 1 \$CONTROL_IP/' /etc/init.d/glbd
 cd ..
-rm -fr glb-\${glb_version} glb-\${glb_version}.tar.gz
+rm -rf glb
 
 
 EOF

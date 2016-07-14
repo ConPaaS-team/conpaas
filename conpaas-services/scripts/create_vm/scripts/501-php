@@ -5,10 +5,17 @@ cecho "===== add dotdeb repo for php fpm ====="
 # add dotdeb repo for php fpm
 echo "deb http://packages.dotdeb.org $DEBIAN_DIST all" >> /etc/apt/sources.list
 wget -O - http://www.dotdeb.org/dotdeb.gpg 2>/dev/null | apt-key add -
-apt-get -f -y update
+apt-get -y update
 apt-get -f -y --no-install-recommends --no-upgrade install php5-fpm php5-curl \
         php5-mcrypt php5-mysql php5-odbc php5-pgsql php5-sqlite php5-sybase php5-xmlrpc \
-        php5-xsl php5-adodb php5-memcache php5-gd nginx git tomcat6-user memcached
+        php5-xsl php5-adodb php5-memcache php5-gd nginx git memcached
+
+if [ $DEBIAN_DIST == "jessie" ]
+then
+    apt-get -f -y --no-install-recommends --no-upgrade install tomcat7-user
+else
+    apt-get -f -y --no-install-recommends --no-upgrade install tomcat6-user
+fi
 
 # For autoscaling
 apt-get -f -y --no-install-recommends --no-upgrade install libatlas-base-dev libatlas3gf-base \
@@ -17,11 +24,17 @@ easy_install numpy
 easy_install -U numpy
 easy_install pandas 
 easy_install patsy 
-easy_install statsmodels==0.5.0
 
-# Fix a bug in the scipy python module
-sed -i 's/from scipy import factorial/from scipy.misc import factorial/g' \
-    /usr/lib/python2.6/dist-packages/scipy/interpolate/polyint.py
+if [ $DEBIAN_DIST == "jessie" ]
+then
+    easy_install statsmodels
+else
+    easy_install statsmodels==0.5.0
+
+    # Fix a bug in the scipy python module
+    sed -i 's/from scipy import factorial/from scipy.misc import factorial/g' \
+        /usr/lib/python2.6/dist-packages/scipy/interpolate/polyint.py
+fi
 
 update-rc.d php5-fpm disable
 update-rc.d memcached disable
@@ -29,7 +42,7 @@ update-rc.d nginx disable
 
 # remove dotdeb repo
 sed --in-place 's%deb http://packages.dotdeb.org $DEBIAN_DIST all%%' /etc/apt/sources.list
-apt-get -f -y update
+apt-get -y update
 
 # remove cached .debs from /var/cache/apt/archives to save disk space
 apt-get clean

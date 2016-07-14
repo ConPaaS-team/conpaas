@@ -1,7 +1,7 @@
 # Section: 996-tail
 
 cat <<EOF >> $ROOT_DIR/conpaas_install
-apt-get -f -y clean
+apt-get -y clean
 exit 0
 EOF
 

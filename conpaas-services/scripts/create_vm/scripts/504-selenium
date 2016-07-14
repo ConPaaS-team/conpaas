@@ -9,12 +9,12 @@ then
     echo "deb http://backports.debian.org/debian-backports $DEBIAN_DIST-backports main" >> /etc/apt/sources.list
     echo "deb http://mozilla.debian.net/ $DEBIAN_DIST-backports iceweasel-esr" >> /etc/apt/sources.list
 
-    apt-get -f -y update
+    apt-get -y update
     apt-get -f -y --force-yes install -t $DEBIAN_DIST-backports iceweasel
     apt-get -f -y --force-yes install xvfb xinit chromium-browser sun-java6-jdk
 elif [ $DEBIAN_DIST == "wheezy" ]
 then
-    apt-get -f -y update
+    apt-get -y update
     apt-get -f -y --force-yes install iceweasel xvfb xinit chromium-browser openjdk-7-jre-headless
 else
     echo "Error: unknown Debian distribution '$DEBIAN_DIST': cannot select correct Selenium packages."
