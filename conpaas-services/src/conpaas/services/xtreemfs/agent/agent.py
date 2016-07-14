@@ -225,8 +225,8 @@ class XtreemFSAgent(BaseAgent):
 
         self.logger.info('set_snapshot: restoring archive')
 
-        archive_cmd = "wget --ca-certificate /etc/cpsagent/certs/ca_cert.pem "
-        archive_cmd += archive_url + " -O - | tar xz -C /"
+        archive_cmd = "curl --cacert /etc/cpsagent/certs/ca_cert.pem "
+        archive_cmd += archive_url + " | tar xz -C /"
 
         self.logger.debug('set_snapshot: %s' % archive_cmd)
 

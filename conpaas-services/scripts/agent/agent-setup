@@ -22,6 +22,6 @@ mkdir $CERT_DIR
 mv /tmp/*.pem $CERT_DIR
 
 # Source is filled in by the manager
-wget --ca-certificate=$CERT_DIR/ca_cert.pem -P $ROOT_DIR/ $SOURCE/ConPaaS.tar.gz
+curl --cacert $CERT_DIR/ca_cert.pem -o $ROOT_DIR/ConPaaS.tar.gz $SOURCE/ConPaaS.tar.gz
 tar -zxf $ROOT_DIR/ConPaaS.tar.gz -C $ROOT_DIR/
 export PYTHONPATH=$CPS_HOME/src/:$CPS_HOME/contrib/
