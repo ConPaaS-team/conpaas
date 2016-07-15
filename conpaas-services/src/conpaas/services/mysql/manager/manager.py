@@ -70,8 +70,8 @@ class MySQLManager(BaseManager):
 
     def get_context_replacement(self):
         if not self.root_pass:
-            self.root_pass='password'
-            # self.root_pass = ''.join([choice(string.letters + string.digits) for i in range(10)])
+            # self.root_pass='password'
+            self.root_pass = ''.join([choice(string.letters + string.digits) for i in range(10)])
         # self.logger.debug('setting context to %s' % dict(mysql_username='mysqldb', mysql_password=self.root_pass))
         return dict(mysql_username='mysqldb', mysql_password=str(self.root_pass))
 

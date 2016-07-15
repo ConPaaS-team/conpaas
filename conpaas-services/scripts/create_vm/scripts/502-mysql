@@ -75,6 +75,9 @@ then
     # remove cached .debs from /var/cache/apt/archives to save disk space
     apt-get clean
 
+    # copy the Galera configuration script to the correct location
+    cp /usr/share/mysql/wsrep.cnf /etc/mysql/conf.d/
+
 else
     echo "ERROR: unknown Debian distribution '$DEBIAN_DIST': cannot select correct MySQL Galera packages."
     exit 1

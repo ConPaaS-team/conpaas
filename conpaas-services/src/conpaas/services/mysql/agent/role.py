@@ -66,13 +66,7 @@ class MySQLServer(object):
             self.mysqldump_path = config.get('agent', 'MYSQLDUMP_PATH')
             self.mycnf_filepath = config.get("MySQL_configuration", "my_cnf_file")
             self.path_mysql_ssr = config.get("MySQL_configuration", "path_mysql_ssr")
-            # We need to remove the bind-address option (the default one is
-            # 127.0.0.1 = accepting connections only on local interface)
-            #ConfigParser can't be used for my.cnf because of options without value, thus:
-            f = open(self.mycnf_filepath, "r")
-            lines = f.readlines()
-            f.close()
-            f = open(self.mycnf_filepath, "w")
+
             #Creating the MySQL directory tree in the external disk
             sql_logger.debug("Creating the MySQL directory tree in the external disk")
             run_cmd("mkdir -p %s/data/" % self.mount_point)
@@ -80,15 +74,25 @@ class MySQLServer(object):
             run_cmd("cp -a /var/lib/mysql/* %s/data/" % self.mount_point)
             run_cmd("chown  -R mysql:mysql  %s/" % self.mount_point)
 
+            # We need to remove the bind-address option (the default one is
+            # 127.0.0.1 = accepting connections only on local interface)
+            #ConfigParser can't be used for my.cnf because of options without value
+            sql_logger.debug("Updating the MySQL configuration files")
+            f = open(self.mycnf_filepath, "r")
+            lines = f.readlines()
+            f.close()
+            f = open(self.mycnf_filepath, "w")
             for line in lines:
                 if "datadir" in line:
-                    f.write("datadir=%s/data/\n" % self.mount_point)
+                    f.write("datadir = %s/data/\n" % self.mount_point)
+                elif "log_error" in line:
+                    f.write("log_error = /root/mysql.log\n")
                 #elif "socket" in line:
-                #    f.write("socket=%s/data/\n" % self.mount_point)
-                elif not "bind-address" in line:
+                #    f.write("socket = %s/data/\n" % self.mount_point)
+                elif "bind-address" in line:
+                    pass
+                else:
                     f.write(line)
-                if "expire_logs_days" in line:
-                    f.write("log_error=/root/mysql.log\n" )
             f.close()
 
             self.wsrep_filepath = config.get("Galera_configuration", "wsrep_file")
@@ -102,23 +106,23 @@ class MySQLServer(object):
             self.wsrepconfig = ConfigParser.ConfigParser()
             self.wsrepconfig.optionxform = str  # to preserve case in option names
             self.wsrepconfig.read(self.wsrep_filepath)
-            path = self.wsrep_filepath
             cluster_nodes = ','.join(nodes)
             self.wsrepconfig.set("mysqld", "wsrep_cluster_address", "\"gcomm://%s\"" % cluster_nodes)
             self.wsrepconfig.set("mysqld", "wsrep_provider", self.wsrep_provider)
             self.wsrepconfig.set("mysqld", "wsrep_sst_method", self.wsrep_sst_method)
             self.wsrepconfig.set("mysqld", "wsrep_sst_auth", "%s:%s" % (self.wsrep_user, self.wsrep_password))
-            os.remove(path)
-            newf = open(path, "w")
+            os.remove(self.wsrep_filepath)
+            newf = open(self.wsrep_filepath, "w")
             self.wsrepconfig.write(newf)
             newf.close()
 
+            is_first_node = len(nodes) == 0
+
             self.state = S_STOPPED
             # Start
-            self.start()
+            self.start(is_first_node)
 
             # Change root password when starting
-            is_first_node = len(nodes) == 0
             if is_first_node:
                 os.system("mysqladmin -u root password " + self.conn_password)
                 #TODO: add user conn_userame and grant privileges to it from any host
@@ -140,19 +144,26 @@ class MySQLServer(object):
             d = open('/tmp/mysqldump.db', 'w')
             d.write(mysqldump)
             d.close()
-            os.system("mysql -u root  -p" + self.conn_password + " < /tmp/mysqldump.db")
+            os.system("mysql -u root -p" + self.conn_password + " < /tmp/mysqldump.db")
             #os.system('rm /tmp/mysqldump.db')
             sql_logger.debug("Leaving load_dump")
         except Exception as e:
             sql_logger.exception('Failed to load dump')
             raise e
 
-    def _wait_daemon_started(self):
+    def _wait_daemon_started(self, is_first_node):
+        if is_first_node:
+            # for the first node there is no password set yet
+            password = ""
+        else:
+            password = "-p%s " % self.conn_password
+
         code = 1
         while code != 0:
-            poll_cmd = "mysql -u mysql" \
-                       + " -BN" \
-                       + " -e \"SHOW STATUS LIKE 'wsrep_local_state_comment';\""
+            poll_cmd = ("mysql -u root %s"
+                        "-BN "
+                        "-e \"SHOW STATUS LIKE 'wsrep_local_state_comment';\""
+                        % password)
             sql_logger.debug("Polling mysql daemon: %s" % poll_cmd)
             out, error, code = run_cmd_code(poll_cmd)
             if code != 0:
@@ -165,7 +176,7 @@ class MySQLServer(object):
             else:
                 sql_logger.info("MySQL daemon is ready with state: %s" % out.strip())
 
-    def start(self):
+    def start(self, is_first_node):
         # Note: There seems to be a bug in the debian/mysql package. Sometimes, mysql says it
         # failed to start, even though it started - mysql conpaas service tries to restart myql server
         # three times if this error is reported, but when testing Galera this led into "address
@@ -174,14 +185,15 @@ class MySQLServer(object):
             sql_logger.warning("Ignoring a start MySQL call because state is already RUNNING.")
         else:
             self.state = S_STARTING
+            sql_logger.debug('Starting the MySQL server')
             devnull_fd = open(devnull, 'w')
             proc = Popen([self.path_mysql_ssr, "start"], stdout=devnull_fd, stderr=devnull_fd, close_fds=True)
             return_code = proc.wait()
             if return_code != 0:
                 self.state = S_STOPPED
                 raise Exception('Failed to start MySQL Galera daemon: return code is %s.' % return_code)
-            self._wait_daemon_started()
-            sql_logger.debug('MySQL server started')
+            sql_logger.info('MySQL server started, checking if it\'s ready')
+            self._wait_daemon_started(is_first_node)
             self.state = S_RUNNING
 
     def stop(self):
@@ -376,7 +388,7 @@ class MySQLServer(object):
             if err:
                 sql_logger.critical('Failed to mount storage device: %s' % err)
             else:
-                sql_logger.info("OSD node has prepared and mounted %s" % self.dev_name)
+                sql_logger.info("MySQL node has prepared and mounted %s" % self.dev_name)
         else:
             sql_logger.critical("Block device %s unavailable, falling back to image space"
                     % self.dev_name)
