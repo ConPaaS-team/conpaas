@@ -155,6 +155,13 @@ class SSLConnectionWrapper(object):
         fileobject.seek(0)
         return fileobject
 
+    def shutdown(self, _arg):
+        """
+            Forward the shutdown call to the underlying socket,
+            ignoring the argument.
+        """
+        return self._ssl_conn.shutdown()
+
 
 def _init_context(protocol, cert_file, key_file,
                  ca_cert_file, verify_callback, verify_depth=9):

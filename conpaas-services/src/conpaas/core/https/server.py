@@ -83,6 +83,10 @@ class HTTPSServer(HTTPServer):
         self.server_bind()
         self.server_activate()
 
+    def shutdown_request(self, request):
+        request.shutdown()
+
+
 class ConpaasRequestHandlerComponent(object):
     def __init__(self):
         self.exposed_functions = {}

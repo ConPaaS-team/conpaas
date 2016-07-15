@@ -373,6 +373,18 @@ class ApplicationManager(BaseManager):
                                 'volumes': self.volumes.keys()
                                 })
 
+    def __copy_config_parser(self, base_config):
+        # Create a deep copy of the configuration object
+        config_string = StringIO.StringIO()
+        base_config.write(config_string)
+
+        # We must reset the buffer to make it ready for reading.
+        config_string.seek(0)
+        new_config = ConfigParser.ConfigParser()
+        new_config.readfp(config_string)
+
+        return new_config
+
     @expose('POST')
     def add_service(self, kwargs):
         """Expose methods relative to a specific service manager"""
@@ -406,7 +418,7 @@ class ApplicationManager(BaseManager):
         #probably lock it
         self.service_id = self.service_id + 1
 
-        service_config_parser = copy.deepcopy(self.config_parser)
+        service_config_parser = self.__copy_config_parser(self.config_parser)
         self._add_manager_configuration(service_config_parser, str(self.service_id), service_type)
         # self._run_manager_start_script(service_config_parser, service_type)
 
