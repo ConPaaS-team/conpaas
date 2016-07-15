@@ -36,7 +36,7 @@ $page = new AddServicePage();
               <tr class="service">
                   <td class="description"> <img src="images/php.png" height="32" /></td>
                   <td class="radio"><input type="radio" name="type" value="php" /> php</td>
-                  <td class="info"> PHP version 5.3 with Nginx </td>
+                  <td class="info"> PHP version 5.6 with Nginx </td>
               </tr>
               <tr class="service">
                   <td class="description"> <img src="images/java.png" height="32" /></td>

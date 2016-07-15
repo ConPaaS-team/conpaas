@@ -211,6 +211,10 @@ if __name__ == '__main__':
         filename = config.get('SCRIPT_FILE_NAMES', 'conpaas_core_script')
         append_file_to_output(root_dir + filename)
 
+        # The php service depends on scalaris for storing session data
+        if config.get('SERVICES', 'php_service') == 'true':
+            config.set('SERVICES', 'scalaris_service', 'true')
+
         # Write service scripts
         rm_script_args = ''
         for servicename, should_include in config.items('SERVICES'):

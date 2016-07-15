@@ -458,8 +458,10 @@ class ScalarisProcessManager:
         # starting Scalaris
         scalaris_args = [ SCALARIS_CTL, '-d' ]
         if first_node:
-            scalaris_args.append('-f')
-        scalaris_args.extend([ '-s', 'start' ])
+            scalaris_args.extend(['-t', 'first'])
+        else:
+            scalaris_args.extend(['-t', 'joining'])
+        scalaris_args.append('start')
         logger.info('cmd ' + ' '.join(scalaris_args))
         devnull_fd = open(devnull, 'w')
         proc = Popen(scalaris_args, stdout=devnull_fd, stderr=devnull_fd, close_fds=True,
