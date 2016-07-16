@@ -51,10 +51,11 @@ class MySQLPage extends ServicePage {
                 static $roles = array('mysql', 'glb');
                 foreach ($roles as $role) {
                         $html .= EditableTag()
-                                ->setColor(Color::getRoleColor($role))
+                                ->setColor(Role::getColor($role))
                                 ->setID($role)
                                 ->setValue('0')
-                                ->setText($role);
+                                ->setText(Role::getText($role))
+                                ->setTooltip(Role::getInfo($role));
                 }
                 return $html;
 	}

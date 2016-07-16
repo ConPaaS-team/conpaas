@@ -17,4 +17,4 @@ require_once($dir.'ColorTag.php');
 require_once($dir.'EditableTag.php');
 require_once($dir.'MessageBox.php');
 require_once($dir.'StatNumber.php');
-require_once($dir.'Color.php');
+require_once($dir.'Role.php');

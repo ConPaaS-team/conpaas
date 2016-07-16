@@ -33,10 +33,11 @@ class XtreemFSPage extends ServicePage {
 	protected function renderInstanceActions() {
 		$role = 'osd';
 		return EditableTag()
-			->setColor(Color::getRoleColor($role))
+			->setColor(Role::getColor($role))
 			->setID($role)
 			->setValue('0')
-			->setText('XtreemFS OSD');
+			->setText('XtreemFS OSD')
+			->setTooltip(Role::getInfo($role));
 	}
 
 	private function renderVolumeInput() {

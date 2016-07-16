@@ -31,10 +31,11 @@ class HostingPage extends ServicePage {
 		foreach ($roles as $role) {
 			$name = ($role == 'backend') ? $this->service->getType() : $role;
 			$html .= EditableTag()
-				->setColor(Color::getRoleColor($role))
+				->setColor(Role::getColor($name))
 				->setID($role)
 				->setValue('0')
-				->setText($name);
+				->setText(Role::getText($name))
+				->setTooltip(Role::getInfo($name));
 		}
 		return $html;
 	}

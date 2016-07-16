@@ -18,7 +18,7 @@ class Cluster {
 		$this->nodes[] = $node;
 	}
 
-	private function getRoleText($role) {
+	private function getTrueRole($role) {
 		if ($role == 'backend') {
 			if (count($this->nodes) > 0) {
 				$first = $this->nodes[0];
@@ -28,21 +28,18 @@ class Cluster {
 					return 'php';
 				}
 			}
-		} else if ($role == 'dir' || $role == 'mrc' || $role == 'osd') {
-			return strtoupper($role);
-		} else if ($role == 'manager') {
-			return '&nbsp;&nbsp;&nbsp;Application manager&nbsp;&nbsp;&nbsp;';
-		} else {
-			return $role;
 		}
+		return $role;
 	}
 
 	public function renderRoleTags() {
 		$html = '';
 		foreach ($this->roles as $role) {
+			$role = $this->getTrueRole($role);
 			$html .= Tag()
-				->setColor(Color::getRoleColor($role))
-				->setHTML($this->getRoleText($role));
+				->setColor(Role::getColor($role))
+				->setHTML(Role::getText($role))
+				->setTooltip(Role::getInfo($role));
 		}
 		return $html;
 	}
@@ -69,7 +66,8 @@ class Cluster {
 		$html = '<table class="cluster-table" cellspacing="0" cellpadding="0">';
 		$n = 1;
 		foreach ($this->roles as $role) {
-			$color = Color::getRoleColor($role);
+			$role = $this->getTrueRole($role);
+			$color = Role::getColor($role);
 			$style = 'background-color: '.$color.';';
 			$class = '';
 			if ($n == count($this->roles))
