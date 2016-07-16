@@ -243,7 +243,7 @@ class NginxProxy(Nginx):
                 }
 
 
-class Tomcat6:
+class Tomcat:
 
     def __init__(self, tomcat_port=None):
         self.config_template = join(ETC, 'tomcat-server-xml.tmpl')
@@ -474,14 +474,14 @@ class ScalarisProcessManager:
 
     def stop(self):
 
-            # stopping Scalaris
-            scalaris_args = [ SCALARIS_CTL, 'stop' ]
-            logger.info('cmd ' + ' '.join(scalaris_args))
-            devnull_fd = open(devnull, 'w')
-            proc = Popen(scalaris_args, stdout=devnull_fd, stderr=devnull_fd, close_fds=True,
-                     env=dict(environ, HOME=SCALARIS_HOME))
+        # stopping Scalaris
+        scalaris_args = [ SCALARIS_CTL, 'stop' ]
+        logger.info('cmd ' + ' '.join(scalaris_args))
+        devnull_fd = open(devnull, 'w')
+        proc = Popen(scalaris_args, stdout=devnull_fd, stderr=devnull_fd, close_fds=True,
+                 env=dict(environ, HOME=SCALARIS_HOME))
 
-            if proc.wait() != 0:
-                logger.critical('Failed to stop Scalaris')
-            else:
-                logger.info('Scalaris stopped')
+        if proc.wait() != 0:
+            logger.critical('Failed to stop Scalaris')
+        else:
+            logger.info('Scalaris stopped')

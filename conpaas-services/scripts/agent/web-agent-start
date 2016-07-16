@@ -5,6 +5,9 @@ cp $CPS_HOME/src/conpaas/services/webservers/etc/* $ETC/
 mkdir $VAR_CACHE/www
 cp $CPS_HOME/src/conpaas/services/webservers/agent/session/* $VAR_CACHE/www/ 2> /tmp/error
 
+# Make sure that java will choose ipv4 over ipv6
+export _JAVA_OPTIONS="-Djava.net.preferIPv4Stack=true"
+
 $CPS_HOME/sbin/agent/web-cpsagent -c $ROOT_DIR/config.cfg 1>$ROOT_DIR/agent.out 2>$ROOT_DIR/agent.err &
 agent_pid=$!
 echo $agent_pid > $ROOT_DIR/agent.pid

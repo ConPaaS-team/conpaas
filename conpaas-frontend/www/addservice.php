@@ -41,7 +41,7 @@ $page = new AddServicePage();
               <tr class="service">
                   <td class="description"> <img src="images/java.png" height="32" /></td>
                   <td class="radio"><input type="radio" name="type" value="java" /> java</td>
-                  <td class="info"> Apache Tomcat 6.0 servlet container </td>
+                  <td class="info"> Apache Tomcat 7.0 servlet container </td>
               </tr>
           </table>
           <table class="form" cellspacing="0" cellpading="0">

@@ -380,7 +380,7 @@ class WebServersAgent(BaseAgent):
 
     @expose('GET')
     def getTomcatState(self, kwargs):
-        """GET state of Tomcat6"""
+        """GET state of Tomcat"""
         try:
             exp_params = []
             check_arguments(exp_params, kwargs)
@@ -388,11 +388,11 @@ class WebServersAgent(BaseAgent):
             return HttpErrorResponse("%s" % ex)
 
         with self.tomcat_lock:
-            return self._get(kwargs, self.tomcat_file, role.Tomcat6)
+            return self._get(kwargs, self.tomcat_file, role.Tomcat)
 
     @expose('POST')
     def createTomcat(self, kwargs):
-        """Create Tomcat6"""
+        """Create Tomcat"""
         orig_kwargs = copy.copy(kwargs)
         exp_params = [('tomcat_port', is_pos_int)]
         try:
@@ -401,11 +401,11 @@ class WebServersAgent(BaseAgent):
             return HttpErrorResponse("%s" % ex)
 
         with self.tomcat_lock:
-            return self._create(orig_kwargs, self.tomcat_file, role.Tomcat6)
+            return self._create(orig_kwargs, self.tomcat_file, role.Tomcat)
 
     @expose('POST')
     def stopTomcat(self, kwargs):
-        """KILL Tomcat6"""
+        """KILL Tomcat"""
         try:
             exp_params = []
             check_arguments(exp_params, kwargs)
@@ -413,7 +413,7 @@ class WebServersAgent(BaseAgent):
             return HttpErrorResponse("%s" % ex)
 
         with self.tomcat_lock:
-            return self._stop(kwargs, self.tomcat_file, role.Tomcat6)
+            return self._stop(kwargs, self.tomcat_file, role.Tomcat)
 
     @expose('UPLOAD')
     def updateTomcatCode(self, kwargs):
