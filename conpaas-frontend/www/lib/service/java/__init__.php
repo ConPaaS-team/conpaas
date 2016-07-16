@@ -17,8 +17,7 @@ class JavaService extends Service {
 			$params);
 	}
 
-	public function createInstanceUI($node) {
-		$info = $this->getNodeInfo($node);
+	public function createInstanceUI($info) {
 		return new JavaInstance($info);
 	}
 

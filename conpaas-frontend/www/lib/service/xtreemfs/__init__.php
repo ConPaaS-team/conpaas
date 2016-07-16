@@ -30,8 +30,7 @@ class XtreemFSService extends Service {
 		return parent::needsPolling() || $this->state == self::STATE_INIT;
 	}
 
-	public function createInstanceUI($node) {
-		$info = $this->getNodeInfo($node);
+	public function createInstanceUI($info) {
 		return new XtreemFSInstance($info);
 	}
 

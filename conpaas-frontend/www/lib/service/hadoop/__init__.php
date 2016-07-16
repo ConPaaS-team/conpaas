@@ -35,8 +35,7 @@ class HadoopService extends Service {
 		return 'http://'.$master_node['ip'];
 	}
 
-	public function createInstanceUI($node) {
-		$info = $this->getNodeInfo($node);
+	public function createInstanceUI($info) {
 		if ($this->nodesLists !== false) {
 			foreach ($this->nodesLists as $role => $nodesList) {
 				if (in_array($info['id'], $nodesList)) {

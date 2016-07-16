@@ -63,15 +63,15 @@ class GenericService extends Service {
 		return array('master', 'node');
 	}
 
-	public function createInstanceUI($node) {
-		$info = $this->getNodeInfo($node);
+	public function createInstanceUI($info) {
+		$nodeId = $info['id'];
 		if ($this->scriptStatus) {
-			$scriptStatus = $this->scriptStatus[$node];
+			$scriptStatus = $this->scriptStatus[$nodeId];
 		} else {
 			$scriptStatus = null;
 		}
 		if ($this->volumes) {
-			$volumes = $this->volumes[$node];
+			$volumes = $this->volumes[$nodeId];
 		} else {
 			$volumes = null;
 		}

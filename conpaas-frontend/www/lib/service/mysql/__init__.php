@@ -29,8 +29,7 @@ class MySQLService extends Service {
 		return array('mysql', 'glb');
 	}
 
-	public function createInstanceUI($node) {
-		$info = $this->getNodeInfo($node);
+	public function createInstanceUI($info) {
 		return new MySQLInstance($info);
 	}
 

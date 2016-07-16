@@ -37,8 +37,7 @@ class HTCService extends Service {
 		return array();
 	}
 
-	public function createInstanceUI($node) {
-		$info = $this->getNodeInfo($node);
+	public function createInstanceUI($info) {
 		return new HTCInstance($info);
 	}
 

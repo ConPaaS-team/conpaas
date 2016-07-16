@@ -163,7 +163,7 @@ class ServicePage extends Page {
 				$info = $this->service->getNodeInfo($node);
 				if ($info !== false) {
 					$cluster = new Cluster($nodeRoles);
-					$cluster->addNode($this->service->createInstanceUI($node));
+					$cluster->addNode($this->service->createInstanceUI($info));
 					$nodesInfo[] = $cluster;
 				}
 				$selected[$node] = true;
@@ -172,20 +172,25 @@ class ServicePage extends Page {
 
 		// For each role, get the remaining nodes (that were not added already)
 		foreach ($roles as $role) {
-			$remainingNodes = array();
+			$remainingNodesInfo = array();
 			foreach ($nodesLists[$role] as $node) {
 				if (!array_key_exists($node, $selected)) {
 					$info = $this->service->getNodeInfo($node);
 					if ($info !== false) {
-						$remainingNodes[] = $node;
+						$remainingNodesInfo[] = $info;
 					}
 				}
 			}
-			if (count($remainingNodes) > 0) {
+			if (count($remainingNodesInfo) > 0) {
+				// Sort the nodes by the IP address
+				usort($remainingNodesInfo, function($i1, $i2) {
+					return strcmp($i1['ip'], $i2['ip']);
+				});
+
 				// We add all these nodes together in a cluster
 				$cluster = new Cluster(array($role));
-				foreach ($remainingNodes as $node) {
-					$cluster->addNode($this->service->createInstanceUI($node));
+				foreach ($remainingNodesInfo as $info) {
+					$cluster->addNode($this->service->createInstanceUI($info));
 				}
 				$nodesInfo[] = $cluster;
 			}

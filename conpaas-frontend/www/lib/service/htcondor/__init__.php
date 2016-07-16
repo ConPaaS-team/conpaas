@@ -36,8 +36,7 @@ class HTCondorService extends Service {
 		return array();
 	}
 
-	public function createInstanceUI($node) {
-		$info = $this->getNodeInfo($node);
+	public function createInstanceUI($info) {
 		return new HTCondorInstance($info);
 	}
 
