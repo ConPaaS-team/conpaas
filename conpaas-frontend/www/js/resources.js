@@ -14,7 +14,7 @@ conpaas.ui = (function (this_module) {
             function (response) {
                 resources = response.data
                 apps = {}
-                html = "<strong>No resources are being used.</strong>"
+                html = '<div class="box infobox">No resources are being used.</div>'
                 for(i=0; i<resources.length; i++){
                     res = resources[i]
                     if (!(res.app_id in apps)){
