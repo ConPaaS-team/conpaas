@@ -13,7 +13,10 @@ conpaas.ui = (function (this_module) {
             this.service = service;
             this.setupPoller_();
             this.monitor_interval = null;
-            this.monitor_timer = 5000;
+            this.monitor_timer = 1000;
+            this.stats = new Array(10);
+            this.statsPS = new Array(10);
+            this.chart = [];
         },
         /* methods */{
     /**
@@ -70,14 +73,32 @@ conpaas.ui = (function (this_module) {
         $('#loadform .loading').hide();this
         $('#loadform .error').html('Error: <b>' + error + '</b>').show();        
     },
-    // handlers
-    toggleStats: function(event){
+
+    initStats: function(event) {
+        this.stats[0] = ['10s', 'Select%', 'Update%', 'Insert%', 'Delete%'];
+        for (var i = 1; i < 10; i++) {
+            this.stats[i] = [''+10-i+'s',0,0,0,0];
+            this.statsPS[i] = [''+10-i+'s',0,0,0,0];
+        }
+        this.drawStats();
+    },
+
+    initChart: function(event) {
+        this.coords = [['time', 'Misalignment' ]]
+        for (i = 10; i >= 0; i--)
+            this.coords.push([i+'s', 0])
+        this.drawChart();
+    },
+
+    toggleStats: function(event) {
         var page = event.data
         text = $(event.target).html();
         if (text == 'show'){
             $("#monitor_div").show(500);
             $(event.target).html('hide');
-            
+
+            page.initStats();
+            page.initChart();
             page.monitor_interval = setInterval(page.updateMonitor.bind(page), page.monitor_timer);
         }
         else{
@@ -88,19 +109,17 @@ conpaas.ui = (function (this_module) {
     },
 
     updateMonitor: function(){
-        this.drawChart();
-        this.drawStats();
+        this.updateChart();
+        this.updateStats();
         this.gangliaMonitor();
     },
 
-    drawChart: function() {
-        //update table data
-        coords=[['time', 'Misalignment' ]]
-        for(i=10; i>=0;i--)
-            coords.push([i+'s', 0])
+    updateChart: function() {
+        var coords = this.coords;
 
-        for (i=1;i<coords.length-1;i++)
-            coords[i][1]=coords[i+1][1];
+        //update table data
+        for (i = 1; i < coords.length-1; i++)
+            coords[i][1] = coords[i+1][1];
 
         this.server.req('ajax/mysqlPerformance.php', {sid: this.service.sid}, 'get',
             function(data) {
@@ -109,7 +128,11 @@ conpaas.ui = (function (this_module) {
             }
         );
 
-        var data = google.visualization.arrayToDataTable(coords);
+        this.drawChart();
+    },
+
+    drawChart: function() {
+        var data = google.visualization.arrayToDataTable(this.coords);
         var options = {
           title: 'MySQL Mean Misalignment'
         };
@@ -117,31 +140,27 @@ conpaas.ui = (function (this_module) {
         chart.draw(data, options);
     },
 
-    drawStats: function() {
-        var stats= new Array(10);
-        var statsPS= new Array(10);
-        stats[0]=['10s', 'Select%', 'Update%', 'Insert%', 'Delete%'];
-        for ( var i =1; i<10;i++){
-            stats[i]=[''+10-i+'s',0,0,0,0];
-            statsPS[i]=[''+10-i+'s',0,0,0,0];
-        }
+    updateStats: function() {
+        var stats = this.stats;
+        var statsPS = this.statsPS;
         //chart time shifting
-        for ( var i =1; i<9;i++){
-            for (var j=1; j<stats[i].length;j++){
-                stats[i][j]=stats[i+1][j];
-                statsPS[i][j]=statsPS[i+1][j];
+        for (var i = 1; i < 9; i++) {
+            for (var j = 1; j < stats[i].length; j++) {
+                stats[i][j] = stats[i+1][j];
+                statsPS[i][j] = statsPS[i+1][j];
             }
         }
         // get the last update usage data from the cluster
         this.server.req('ajax/getMysqlStats.php', {sid: this.service.sid}, 'get',
             function (data) {
-                statsPS[stats.length-1]=[ '0s', 
-                data['result']['meanSelect'] ,
-                data['result']['meanUpdate'] ,
-                data['result']['meanInsert'],
-                data['result']['meanDelete'] ];
 
-                stats[stats.length-1]=[ '0s',
+                statsPS[stats.length-1]=[ '1s',
+                    data['meanSelect'] ,
+                    data['meanUpdate'] ,
+                    data['meanInsert'],
+                    data['meanDelete'] ];
+
+                stats[stats.length-1]=[ '1s',
                 statsPS[statsPS.length-1][1]-statsPS[statsPS.length-2][1] ,
                 statsPS[statsPS.length-1][2]-statsPS[statsPS.length-2][2] ,
                 statsPS[statsPS.length-1][3]-statsPS[statsPS.length-2][3] ,
@@ -152,7 +171,7 @@ conpaas.ui = (function (this_module) {
                                     +stats[stats.length-1][3]
                                     +stats[stats.length-1][4]
                                     )/100; //normalization to get in percentage
-                stats[stats.length-1]=[ '0s',
+                stats[stats.length-1]=[ '1s',
                 stats[stats.length-1][1]/ tot_operation ,
                 stats[stats.length-1][2]/ tot_operation ,
                 stats[stats.length-1][3]/ tot_operation ,
@@ -161,8 +180,11 @@ conpaas.ui = (function (this_module) {
             }, 
             function () { console.log("Error"); }
         );
+        this.drawStats();
+    },
 
-        var data = google.visualization.arrayToDataTable(stats);
+    drawStats: function() {
+        var data = google.visualization.arrayToDataTable(this.stats);
         var options = {
             title: 'Cluster Usage',
             hAxis: {title: 'Time in Sec',  titleTextStyle: {color: '#333'}},
@@ -187,7 +209,7 @@ conpaas.ui = (function (this_module) {
                     if ($(this).attr("IP") =="127.0.0.1" || $(this).attr("NAME") =="conpaas")
                         host["hostname"]="Manager";
                     else 
-                       host["hostname"]=$(this).attr("IP");
+                        host["hostname"]=$(this).attr("IP");
 
 
                    $(this).find('METRIC[NAME="cpu_idle"]').each(function (){
@@ -228,8 +250,13 @@ conpaas.ui = (function (this_module) {
 
                    $(this).find('METRIC[NAME="bytes_in"]').each(function (){
                      host[$(this).attr("NAME")]=$(this).attr("VAL"); });
-                    
-                    nodesStats.push(host);
+
+                    // Make sure a node is not added twice
+                    var sameNodes = nodesStats.filter(function (otherHost) {
+                        return otherHost['hostname'] == host['hostname'];
+                    });
+                    if (sameNodes.length == 0)
+                        nodesStats.push(host);
                 });
 
                 var found=false;
@@ -334,10 +361,20 @@ conpaas.ui = (function (this_module) {
                 var tx = document.createTextNode((z[index]["bytes_out"]/1024).toFixed(2));
                 td.appendChild(tx);
                 newtr.appendChild(td);
-                var td = document.createElement('td');
-                newtr.appendChild(td);
+
                 //  if (cpuUsage>MAXCPUUSAGE || memUsage>MAXMEMUSAGE || diskUsage>MAXDISKUSAGE )
                 //  newtr.style.backgroundColor="#fb4b4b";
+
+                // Deleting a specific node is not supported at the moment because
+                // the request will not go to the Application manager, so the node
+                // will not actually be deleted but only removed from the service
+                // manager's list.
+
+                // TODO: enable this again and fix the issue
+
+                /*
+                var td = document.createElement('td');
+                newtr.appendChild(td);
 
                 if (z[index]["hostname"]!="Manager"){
                     var a = document.createElement('input');
@@ -364,6 +401,7 @@ conpaas.ui = (function (this_module) {
 
                     td.appendChild(a);
                 }
+                */
             }
         }
     },
@@ -423,13 +461,6 @@ $(document).ready(function () {
             page.pollState(function () {
                 window.location.reload();
             });
-        }else
-        {
-            if(page.service.reachable && page.service.state == 'RUNNING'){
-                // google.load("visualization", "1", {packages:["corechart"]}); 
-                
-            }
-            
         }
     }, function () {
         // error

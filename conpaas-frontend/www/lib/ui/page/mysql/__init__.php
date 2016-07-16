@@ -197,7 +197,7 @@ class MySQLPage extends ServicePage {
 			<td>Outgoing<br>Packets</td>
 			<td>Incoming<br>KBytes</td>
 			<td>Outgoing<br>KBytes</td>
-			<td>Delete</td>
+			<!--<td>Delete</td>-->
     			</tr>
   			</thead>
   			<tbody>

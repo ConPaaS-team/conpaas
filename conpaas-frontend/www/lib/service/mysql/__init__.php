@@ -83,7 +83,7 @@ class MySQLService extends Service {
 			));
 	}
 
-	public function getCPU(){
+	public function getCPU() {
 			$json_info = $this->managerRequest('get', 'get_service_performance',array() );
                 	$info = json_decode($json_info, true);
                 if ($info == null) {
@@ -92,43 +92,43 @@ class MySQLService extends Service {
 		//print_r($info);
                return $info[ 'result' ]['throughput'];//var_export($info, true);
         }
-	public function getMeanLoad(){
-        $json_info = $this->managerRequest('get', 'getMeanLoad',array() );
-        $info = json_decode($json_info, true);
-        if ($info == null) 
-            return false;
-        return $info['result']['meanLoad'];
-    }
 
-	public function getMySqlStats(){
-        $json_info = $this->managerRequest('get', 'getMeanLoad',array() );
-        $info = json_decode($json_info, true);
-        if ($info == null) {
-            return false;
-        }            
-       return $info;
-    }
-
-	public function getGangliaParams(){
-        $json_info = $this->managerRequest('get', 'getGangliaParams',array() );
-        $info = json_decode($json_info, true);
-        if ($info == null) {
-            return false;
-            }
-
-       return $info;
+	public function getMeanLoad() {
+	    $json_info = $this->managerRequest('get', 'getMeanLoad',array() );
+	    $info = json_decode($json_info, true);
+	    if ($info == null)
+		return false;
+	    return $info['result']['meanLoad'];
 	}
 
+	public function getMySqlStats() {
+	    $json_info = $this->managerRequest('get', 'getMeanLoad',array() );
+	    $info = json_decode($json_info, true);
+	    if ($info == null) {
+		return false;
+	    }
+	   return $info;
+	}
 
-	public function remove_specific_node($ip){
-        $json_info = $this->managerRequest('get', 'remove_specific_nodes',array('ip' => $ip) );
-        $info = json_decode($json_info, true);
-        if ($info == null) {
-            return false;
-        }
+	public function getGangliaParams() {
+	    $json_info = $this->managerRequest('get', 'getGangliaParams',array() );
+	    $info = json_decode($json_info, true);
+	    if ($info == null) {
+		return false;
+	    }
 
-       return $info;
-    }
+	    return $info;
+	}
+
+	public function remove_specific_node($ip) {
+	    $json_info = $this->managerRequest('get', 'remove_specific_nodes',array('ip' => $ip) );
+	    $info = json_decode($json_info, true);
+	    if ($info == null) {
+		return false;
+	    }
+
+	   return $info;
+	}
 
 }
 ?>

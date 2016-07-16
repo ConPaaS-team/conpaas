@@ -15,7 +15,6 @@ try {
 	$service = ServiceFactory::create($service_data);
 	$json = $service->getMeanLoad();
  	$load = json_decode($json, true);
- 	// $load['result']['meanLoad'];
 } catch (Exception $e) {
 	$load = 'Load not available';
 }
