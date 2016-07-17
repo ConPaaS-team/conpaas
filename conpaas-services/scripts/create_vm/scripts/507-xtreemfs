@@ -28,5 +28,13 @@ update-rc.d xtreemfs-dir disable
 sed --in-place 's%deb http://download.opensuse.org/repositories/home:/xtreemfs:/unstable/Debian_..0 /%%' /etc/apt/sources.list
 apt-get -y update
 
+if [ "$DEBIAN_DIST" == "jessie" ]
+then
+    groupadd fuse
+    usermod -aG fuse root
+    usermod -aG fuse www-data
+    chsh -s /bin/bash www-data
+fi
+
 EOF
 
