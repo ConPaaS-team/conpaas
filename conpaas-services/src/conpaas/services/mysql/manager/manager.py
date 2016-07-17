@@ -91,7 +91,7 @@ class MySQLManager(BaseManager):
                 raise
         try:
             glb_nodes = self.config.get_glb_nodes()
-            self.logger.debug('MySQL Galera node already active: %s' % glb_nodes)
+            self.logger.debug('MySQL nodes already active: %s' % glb_nodes)
             nodesIp=[]
             nodesIp = ["%s:%s" % (node.ip, self.config.MYSQL_PORT)  # FIXME: find real mysql port instead of default 3306
                          for node in nodes]
@@ -99,7 +99,7 @@ class MySQLManager(BaseManager):
                 agent.add_glbd_nodes(glb.ip, self.config.AGENT_PORT, nodesIp)
             return True
         except Exception as ex:
-            self.logger.exception('Failed to configure new MySQL GLB: %s' % ex)
+            self.logger.exception('Failed to configure new GLB node: %s' % ex)
             raise
 
     def _start_glbd(self, new_glb_nodes):
@@ -111,7 +111,7 @@ class MySQLManager(BaseManager):
                 self.logger.debug('create_glb_node for new_glb.ip  = %s' % new_glb.ip)
                 agent.start_glbd(new_glb.ip, self.config.AGENT_PORT, nodes)
             except AgentException:
-                self.logger.exception('Failed to start MySQL GLB Node at node %s' % new_glb.ip)
+                self.logger.exception('Failed to start GLB at node %s' % new_glb.ip)
                 raise
 
     @expose('GET')
@@ -230,8 +230,8 @@ class MySQLManager(BaseManager):
         inserts=[]
         insert=0
         for node in nodes:
-            # self.logger.debug('connecting to: %s, using username: %s and pwd: %s' % (node.ip, 'mysqldb', self.root_pass))
-            db = MySQLdb.connect(node.ip, 'mysqldb', self.root_pass)
+            # self.logger.debug('connecting to: %s, using username: %s and pwd: %s' % (node.ip, 'root', self.root_pass))
+            db = MySQLdb.connect(node.ip, 'root', self.root_pass)
             exc = db.cursor()
             exc.execute("SHOW STATUS LIKE 'wsrep_local_recv_queue_avg';")
             localLoad=exc.fetchone()[1]
@@ -441,7 +441,7 @@ class MySQLManager(BaseManager):
             new_nodes = []
             # TODO: make it parallel
             for cloud, count in new_vm_nb.iteritems():
-                self.controller.add_context_replacement(dict(mysql_username='mysqldb',
+                self.controller.add_context_replacement(dict(mysql_username='root',
                                                              mysql_password=self.root_pass),
                                                         cloud=cloud)
 
@@ -526,13 +526,12 @@ class MySQLManager(BaseManager):
             user, password = check_arguments(exp_params, kwargs)
             self.check_state([self.S_RUNNING])
         except Exception as ex:
-            return HttpErrorResponse("Cannot set new password: %s." % ex)
+            return HttpErrorResponse("%s" % ex)
 
         one_node = self.config.get_nodes()[0]
 
         try:
             agent.set_password(one_node.ip, self.config.AGENT_PORT, user, password)
-            self.root_pass = password
         except Exception as ex:
             self.logger.exception()
             return HttpErrorResponse('Failed to set new password: %s.' % ex)
@@ -596,10 +595,10 @@ class MySQLManager(BaseManager):
         one_node = self.config.get_nodes()[0]
         # adding option '--skip-lock-tables' to avoid issue
         #  mysqldump: Got error: 1142: SELECT,LOCK TABL command denied to user
-        #   'mysqldb'@'10.158.0.28' for table 'cond_instances'
+        #   'root'@'10.158.0.28' for table 'cond_instances'
         #   when using LOCK TABLES
         # FIXME: is it MySQL 5.1 only? does it still occur with MySQL 5.5?
-        cmd = 'mysqldump -u mysqldb -h %s --password=%s -A --skip-lock-tables' \
+        cmd = 'mysqldump -u root -h %s --password=%s -A --skip-lock-tables' \
               % (one_node.ip, self.root_pass)
         out, error, return_code = run_cmd_code(cmd)
 
@@ -673,13 +672,13 @@ class MySQLManager(BaseManager):
             self.check_state([self.S_RUNNING])
             nodes = self.config.get_nodes()
             for node in nodes:
-                db = MySQLdb.connect(node.ip, 'mysqldb', self.root_pass)
+                db = MySQLdb.connect(node.ip, 'root', self.root_pass)
                 exc = db.cursor()
                 exc.execute('set global ' + variable + ' = ' + value + ';')
             '''glb_nodes = self.config.get_glb_nodes()
             n=len(nodes)*value
                 for node in glb_nodes:
-                    db = MySQLdb.connect(node.ip, 'mysqldb', self.root_pass,port=8010)
+                    db = MySQLdb.connect(node.ip, 'root', self.root_pass,port=8010)
                     exc = db.cursor()
                     exc.execute('set global ' + variable + ' = ' + n + ';')'''
         except Exception as ex:

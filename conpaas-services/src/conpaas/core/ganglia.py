@@ -147,5 +147,5 @@ class AgentGanglia(BaseGanglia):
         """Same as for the base case, but with proper manager_ip"""
         BaseGanglia.__init__(self)
 
-        self.manager_ip = config_parser.get('agent', 'IP_WHITE_LIST')
+        self.manager_ip = config_parser.get('agent', 'MANAGER_IP')
         self.cps_home   = config_parser.get('agent', 'CONPAAS_HOME')

@@ -104,11 +104,9 @@ class Controller(object):
     #=========================================================================#
     #               generate_context(self, service_name, replace, cloud)      #
     #=========================================================================#
-    def generate_context(self, clouds, context_replacement={}, startup_script=None, ip_whitelist=None):
+    def generate_context(self, clouds, context_replacement={}, startup_script=None):
         """Generates the contextualization file for the given clouds.
         """
-        # COMMENT (genc): what is ip_whitelist?
-
         for cloud_name in clouds:
             cloud = self.get_cloud_by_name(cloud_name)
 

@@ -118,7 +118,7 @@ VAR_RUN =
 CONPAAS_HOME = /home/miha/projects/conpaas
 
 # Will be filled in by the manager
-IP_WHITE_LIST = 
+MANAGER_IP = 
 
 IPOP_BASE_NAMESPACE = $IPOP_BASE_NAMESPACE
 

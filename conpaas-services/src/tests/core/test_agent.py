@@ -16,7 +16,7 @@ def config_parser():
     config_parser.set('agent', 'TYPE', 'test')
     config_parser.set('agent', 'USER_ID', '1')
     config_parser.set('agent', 'SERVICE_ID', '1')
-    config_parser.set('agent', 'IP_WHITE_LIST', '127.0.0.1')
+    config_parser.set('agent', 'MANAGER_IP', '127.0.0.1')
     config_parser.set('agent', 'CONPAAS_HOME', '/dev/null')
     return config_parser
 

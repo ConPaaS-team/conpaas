@@ -10,7 +10,7 @@ CONDOR_HOST = master.htc
 ALLOW_WRITE = *.htc
 " >> /etc/condor/condor_config.local
 
-grep IP_WHITE_LIST $ROOT_DIR/config.cfg | sed 's/.*= //;s/$/	master.htc/' >> /etc/hosts
+grep MANAGER_IP $ROOT_DIR/config.cfg | sed 's/.*= //;s/$/	master.htc/' >> /etc/hosts
 # TODO: run everything as user condor, for now make the execute directory writable for world
 chmod 777 /var/lib/condor/execute
 condor_restart

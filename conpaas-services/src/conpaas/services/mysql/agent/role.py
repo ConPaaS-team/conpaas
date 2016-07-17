@@ -49,7 +49,7 @@ class MySQLServer(object):
             self.mkdir_cmd = "mkdir -p %s" % self.mount_point
             self.mount(True)
         except ConfigParser.Error:
-            sql_logger.exception('Could not mount the device')
+            sql_logger.warning('Could not mount the device')
         sql_logger.debug("Entering init MySQLServerConfiguration")
         try:
             #hostname = socket.gethostname()
@@ -59,10 +59,11 @@ class MySQLServer(object):
             sql_logger.debug("Trying to get params from configuration file ")
             self.conn_location = config.get('MySQL_root_connection', 'location')
             self.conn_username = config.get("MySQL_root_connection", "username")
-            self.conn_password = config.get("MySQL_root_connection", "password")
+            self.conn_password = config.get("MySQL_root_connection", "password") # root password
             sql_logger.debug("Got parameters for root connection to MySQL")
 
             # Get MySQL configuration parameters
+            self.manager_ip = config.get('agent', 'MANAGER_IP')
             self.mysqldump_path = config.get('agent', 'MYSQLDUMP_PATH')
             self.mycnf_filepath = config.get("MySQL_configuration", "my_cnf_file")
             self.path_mysql_ssr = config.get("MySQL_configuration", "path_mysql_ssr")
@@ -125,14 +126,14 @@ class MySQLServer(object):
             # Change root password when starting
             if is_first_node:
                 os.system("mysqladmin -u root password " + self.conn_password)
-                #TODO: add user conn_userame and grant privileges to it from any host
+                self.allow_root_connections(self.manager_ip)
                 self.add_user(self.conn_username, self.conn_password)
                 self.add_user(self.wsrep_user, self.wsrep_password)
 
         except ConfigParser.Error:
-            sql_logger.exception('Could not read config file')
+            sql_logger.warning('Could not read config file')
         except IOError:
-            sql_logger.exception('Config file doesn\'t exist')
+            sql_logger.warning('Config file doesn\'t exist')
 
         # Creating a supervisor object
         sql_logger.debug("Leaving init MySQLServerConfiguration")
@@ -148,7 +149,7 @@ class MySQLServer(object):
             #os.system('rm /tmp/mysqldump.db')
             sql_logger.debug("Leaving load_dump")
         except Exception as e:
-            sql_logger.exception('Failed to load dump')
+            sql_logger.warning('Failed to load dump')
             raise e
 
     def _wait_daemon_started(self, is_first_node):
@@ -164,7 +165,7 @@ class MySQLServer(object):
                         "-BN "
                         "-e \"SHOW STATUS LIKE 'wsrep_local_state_comment';\""
                         % password)
-            sql_logger.debug("Polling mysql daemon: %s" % poll_cmd)
+            sql_logger.debug("Polling the MySQL daemon") #: %s" % poll_cmd)
             out, error, code = run_cmd_code(poll_cmd)
             if code != 0:
                 wait_time = 5
@@ -191,7 +192,7 @@ class MySQLServer(object):
             return_code = proc.wait()
             if return_code != 0:
                 self.state = S_STOPPED
-                raise Exception('Failed to start MySQL Galera daemon: return code is %s.' % return_code)
+                raise Exception('Failed to start MySQL daemon: return code is %s.' % return_code)
             sql_logger.info('MySQL server started, checking if it\'s ready')
             self._wait_daemon_started(is_first_node)
             self.state = S_RUNNING
@@ -208,12 +209,12 @@ class MySQLServer(object):
                 self.state = S_STOPPED
                 sql_logger.info('Daemon mysqld stopped')
             except Exception as e:
-                sql_logger.exception('Failed to stop MySQL daemon: %s' % e)
+                sql_logger.warning('Failed to stop MySQL daemon: %s' % e)
                 raise e
             try:
                 self.unmount()
             except Exception as e:
-                sql_logger.exception('Failed to unmount disk %s' % self.dev_name)
+                sql_logger.warning('Failed to unmount disk %s' % self.dev_name)
                 raise e
         else:
             sql_logger.warning('Requested to stop MySQL daemon'
@@ -285,6 +286,14 @@ class MySQLServer(object):
         db1.close()
         return ret
 
+    def allow_root_connections(self, manager_ip):
+        db = MySQLdb.connect(self.conn_location, 'root', self.conn_password)
+        exc = db.cursor()
+        exc.execute("create user 'root'@'" + manager_ip + "' identified by '" + self.conn_password + "'")
+        exc.execute("grant all privileges on *.* TO 'root'@'" + manager_ip + "' with grant option;")
+        exc.execute("flush privileges;")
+        db.close()
+
     def add_user(self, new_username, new_password):
         db = MySQLdb.connect(self.conn_location, 'root', self.conn_password)
         exc = db.cursor()
@@ -341,7 +350,7 @@ class MySQLServer(object):
         dev_prefix = self.dev_name.split('/')[2][:-1]
 
         for attempt in range(1, 11):
-            sql_logger.info("Galera node waiting for block device %s" % self.dev_name)
+            sql_logger.info("MySQL node waiting for block device %s" % self.dev_name)
             if lexists(self.dev_name):
                 dev_found = True
                 break
@@ -359,7 +368,7 @@ class MySQLServer(object):
         run_cmd(self.mkdir_cmd)
 
         if dev_found:
-            sql_logger.info("Galera node has now access to %s" % self.dev_name)
+            sql_logger.info("MySQL node has now access to %s" % self.dev_name)
 
             # prepare block device
             if mkfs:
@@ -395,14 +404,14 @@ class MySQLServer(object):
 
     def unmount(self):
         # kill all processes still using the volume
-        sql_logger.info("Killing all processes using the Galera Disk")
+        sql_logger.info("Killing all processes using the storage volume")
         fuser_args = ['fuser', '-km', self.dev_name]
         fuser_cmd = ' '.join(fuser_args)
         sql_logger.debug("Running command '%s'" % fuser_cmd)
         run_cmd(fuser_cmd)
 
         # unmount
-        sql_logger.info("Trying to unmount the Galera Disk")
+        sql_logger.info("Trying to unmount the storage volume")
         unmount_args = ['umount', self.dev_name]
         unmount_cmd = ' '.join(unmount_args)
         sql_logger.debug("Running command '%s'" % unmount_cmd)
@@ -410,7 +419,7 @@ class MySQLServer(object):
         if err:
             sql_logger.critical('Failed to unmount storage device: %s' % err)
         else:
-            sql_logger.info("Galera node has succesfully unmounted %s" % self.dev_name)
+            sql_logger.info("MySQL node has succesfully unmounted %s" % self.dev_name)
 
 
 class GLBNode(object):
