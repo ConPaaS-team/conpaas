@@ -19,8 +19,8 @@ class PHPCmd(WebCmd):
         self._add_enable_code()
         self._add_get_configuration()
         self._add_debug()
-        self._add_enable_autoscaling()
-        self._add_disable_autoscaling()
+        # self._add_enable_autoscaling()
+        # self._add_disable_autoscaling()
 
 
     # ========== enable_code
