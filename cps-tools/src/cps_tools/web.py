@@ -38,7 +38,7 @@ class WebCmd(ServiceCmd):
         params = { 'service_id': service_id,
                    'method': "upload_authorized_key" }
         files = [('key', args.filename, contents)]
-        res = self.client.call_manager_post(service_id, "/", params, files)
+        res = self.client.call_manager_post(app_id, service_id, "/", params, files)
 
         print res['outcome']
 
@@ -74,9 +74,9 @@ class WebCmd(ServiceCmd):
     def upload_code(self, args):
         app_id, service_id = self.check_service(args.app_name_or_id, args.serv_name_or_id)
 
-        contents = open(args.filename).read()
         params = { 'service_id': service_id,
                    'method': "upload_code_version" }
+        contents = open(args.filename).read()
         files = [('code', args.filename, contents)]
         res = self.client.call_manager_post(app_id, service_id, "/", params, files)
 
