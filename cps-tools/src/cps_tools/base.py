@@ -123,10 +123,10 @@ class BaseClient(object):
             # If certificates are used, the ssl context should already have
             # been initialized with the user's certificates in __init__
             if not client.is_ssl_ctx_initialized():
-                raise Exception("Cannot call the ConPaaS director:"
-                                " user certificates are not present.\n"
-                                "Try to run 'cps-user get_certificate'"
-                                " first.")
+                raise Exception("Cannot call the ConPaaS director: "
+                                "user certificates are not present.\n"
+                                "Try to run 'cps-user get_certificate' "
+                                "first.")
 
             if self.debug:
                 self.logger.debug("User certificates are present and will be used.")
@@ -170,10 +170,16 @@ class BaseClient(object):
                                                 parsed_url.port or 443,
                                                 url,
                                                 data)
-        except:
+        except Exception as ex:
+            if 'certificate verify failed' in str(ex):
+                raise Exception("The ConPaaS director's SSL certificate "
+                                "failed verification.\n"
+                                "You may be the victim of a man-in-the-middle "
+                                "attack or, if you recently changed the "
+                                "ConPaaS deployment, you need to run "
+                                "'cps-user get_certificate' first.")
             if self.debug:
                 traceback.print_exc()
-            ex = sys.exc_info()[1]
             raise Exception("Cannot contact the director at URL '%s': %s"
                             % (url, ex))
 
@@ -260,10 +266,10 @@ class BaseClient(object):
         # Certificates are always used, the ssl context should already have
         # been initialized with the user's certificates in __init__
         if not client.is_ssl_ctx_initialized():
-            raise Exception("Cannot call the manager:"
-                            " user certificates are not present.\n"
-                            "Try to run 'cps-user get_certificate'"
-                            " first.")
+            raise Exception("Cannot call the manager: "
+                            "user certificates are not present.\n"
+                            "Try to run 'cps-user get_certificate' "
+                            "first.")
         if self.debug:
             self.logger.debug("User certificates are present and will be used.")
             self.logger.info("Requesting '%s' with aid %s, sid %s, method '%s', "
@@ -283,10 +289,16 @@ class BaseClient(object):
             else:
                 status, body = client.jsonrpc_get(application['manager'], 443,
                                         '/', method, service_id, data)
-        except:
+        except Exception as ex:
+            if 'certificate verify failed' in str(ex):
+                raise Exception("The ConPaaS manager's SSL certificate "
+                                "failed verification.\n"
+                                "You may be the victim of a man-in-the-middle "
+                                "attack or, if you recently changed the "
+                                "ConPaaS deployment, you need to run "
+                                "'cps-user get_certificate' first.")
             if self.debug:
                 traceback.print_exc()
-            ex = sys.exc_info()[1]
             raise Exception("Cannot contact the manager at URL '%s': %s"
                             % (url, ex))
 
