@@ -21,7 +21,6 @@ class PHPService extends Service {
 		}
 	}
 
-
 	public function getConfiguration() {
 		if (!$this->isReachable()) {
 			return null;

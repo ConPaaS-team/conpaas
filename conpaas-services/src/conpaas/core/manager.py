@@ -950,7 +950,7 @@ class ApplicationManager(BaseManager):
             if service_id != 0:
                 self.httpsserver.instances[service_id].on_git_push()
 
-        return HttpJsonResponse({ 'revision' : revision })
+        return HttpJsonResponse('code version: git-%s' % revision)
 
 
 class ManagerException(Exception):

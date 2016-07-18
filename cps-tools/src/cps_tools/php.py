@@ -17,7 +17,7 @@ class PHPCmd(WebCmd):
         WebCmd.__init__(self, php_parser, client, "php",
                         "PHP server sub-commands help")
         self._add_enable_code()
-        self._add_get_configuration()
+        self._add_get_config()
         self._add_debug()
         # self._add_enable_autoscaling()
         # self._add_disable_autoscaling()
@@ -53,22 +53,28 @@ class PHPCmd(WebCmd):
         else:
             print "FAILED!"
 
-    # ========== get_configuration
-    def _add_get_configuration(self):
-        subparser = self.add_parser('get_configuration',
+    # ========== get_config
+    def _add_get_config(self):
+        subparser = self.add_parser('get_config',
                                     help="return the PHP configuration")
-        subparser.set_defaults(run_cmd=self.get_configuration, parser=subparser)
+        subparser.set_defaults(run_cmd=self.get_config, parser=subparser)
         subparser.add_argument('app_name_or_id',
                                help="Name or identifier of an application")
         subparser.add_argument('serv_name_or_id',
                                help="Name or identifier of a service")
 
-    def get_configuration(self, args):
+    def get_config(self, args):
         app_id, service_id = self.check_service(args.app_name_or_id, args.serv_name_or_id)
 
         conf = self.client.call_manager_get(app_id, service_id, 'get_configuration')
 
-        print "%s" % conf
+        for key, value in conf.iteritems():
+            if key == 'phpconf':
+                print "phpconf:"
+                for key2, value2 in value.iteritems():
+                    print "\t%s: %s" % (key2, value2)
+            else:
+                print "%s: %s" % (key, value)
 
     # ========== debug
     def _add_debug(self):

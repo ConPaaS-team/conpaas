@@ -17,6 +17,7 @@ LOCALHOST = '127.0.0.1'
 
 iaas = None
 
+import copy
 import time
 from conpaas.core.node import ServiceNode
 
@@ -65,17 +66,18 @@ class CodeVersion(object):
 
 
 class PHPINIConfiguration(object):
-    disable_functions = 'disk_free_space, diskfreespace, dl, exec, '\
-        'fsockopen, highlight_file, ini_alter, ini_restore, mail, openlog, '\
-        'parse_ini_file, passthru, phpinfo, popen, proc_close, '\
-        'proc_get_status, proc_nice, proc_open, proc_terminate, '\
-        'set_time_limit, shell_exec, show_source, symlink, system'
+    disable_functions = 'pcntl_alarm,pcntl_fork,pcntl_waitpid,pcntl_wait,'\
+        'pcntl_wifexited,pcntl_wifstopped,pcntl_wifsignaled,'\
+        'pcntl_wexitstatus,pcntl_wtermsig,pcntl_wstopsig,pcntl_signal,'\
+        'pcntl_signal_dispatch,pcntl_get_last_error,pcntl_strerror,'\
+        'pcntl_sigprocmask,pcntl_sigwaitinfo,pcntl_sigtimedwait,'\
+        'pcntl_exec,pcntl_getpriority,pcntl_setpriority'
     defaults = {'max_execution_time': '30',
                 'memory_limit': '128M',
                 'log_errors': 'Off',
                 'display_errors': 'Off',
                 'upload_max_filesize': '2M',
-                'post_max_size': '4M',
+                'post_max_size': '8M',
                 'disable_functions': disable_functions,
                 }
     # Do not use $ to match end of string because it matches the end of the
@@ -91,7 +93,7 @@ class PHPINIConfiguration(object):
               }
 
     def __init__(self):
-        self.conf = {}
+        self.conf = copy.deepcopy(self.defaults)
 
     def setAttribute(self, attr_name, value):
         self.conf[attr_name] = value

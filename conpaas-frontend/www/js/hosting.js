@@ -69,7 +69,7 @@ conpaas.ui = (function (this_module) {
             $('.deployactions').toggleClass('invisible');
         });
         // configuration handlers
-        $('#conf-maxexec, #conf-memlim, #conf-uploadmaxsize, #conf-postmaxsize').change(function() {
+        $('#conf-maxexec, #conf-memlim, #conf-uploadmaxsize, #conf-postmaxsize, #conf-debugmode').change(function() {
             $('#saveconf').removeAttr('disabled');
         });
         $('#conf-disablefunctions').focus(function() {
@@ -230,6 +230,7 @@ conpaas.ui = (function (this_module) {
                 upload_max_filesize: $('#conf-uploadmaxsize').val(),
                 post_max_size: $('#conf-postmaxsize').val(),
                 disable_functions: $('#conf-disablefunctions').val(),
+                display_errors: $('#conf-debugmode').val(),
             }};
         $(event.target).attr('disabled', 'disabled');
         page.updateConfiguration(params, function () {
