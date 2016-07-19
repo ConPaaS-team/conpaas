@@ -15,12 +15,13 @@ class JavaCmd(WebCmd):
         WebCmd.__init__(self, java_parser, client, "java",
                         "Java server sub-commands help")
         self._add_enable_code()
+        self._add_help(java_parser) # defined in base class (ServiceCmd)
 
 
     # ========== enable_code
     def _add_enable_code(self):
         subparser = self.add_parser('enable_code',
-                                    help="select Java code to enable")
+                                    help="select the code version to enable")
         subparser.set_defaults(run_cmd=self.enable_code, parser=subparser)
         subparser.add_argument('app_name_or_id',
                                help="Name or identifier of an application")

@@ -22,7 +22,7 @@ class WebCmd(ServiceCmd):
     # ========== upload_key
     def _add_upload_key(self):
         subparser = self.add_parser('upload_key',
-                                    help="upload key to Web server")
+                                    help="upload an SSH key to a service")
         subparser.set_defaults(run_cmd=self.upload_key, parser=subparser)
         subparser.add_argument('app_name_or_id',
                                help="Name or identifier of an application")
@@ -40,12 +40,12 @@ class WebCmd(ServiceCmd):
         files = [('key', args.filename, contents)]
         res = self.client.call_manager_post(app_id, service_id, "/", params, files)
 
-        print res['outcome']
+        print "%s." % res['outcome']
 
     # ========== list_keys
     def _add_list_keys(self):
         subparser = self.add_parser('list_keys',
-                                    help="list authorized keys of Web service")
+                                    help="list the authorized SSH keys of a service")
         subparser.set_defaults(run_cmd=self.list_keys, parser=subparser)
         subparser.add_argument('app_name_or_id',
                                help="Name or identifier of an application")
@@ -57,7 +57,8 @@ class WebCmd(ServiceCmd):
 
         res = self.client.call_manager_get(app_id, service_id, "list_authorized_keys")
 
-        print "%s" % res['authorizedKeys']
+        for key in res['authorizedKeys']:
+            print "%s" % key
 
     # ========== upload_code
     def _add_upload_code(self):
@@ -80,7 +81,7 @@ class WebCmd(ServiceCmd):
         files = [('code', args.filename, contents)]
         res = self.client.call_manager_post(app_id, service_id, "/", params, files)
 
-        print "Code version %(codeVersionId)s uploaded" % res
+        print "Code version '%(codeVersionId)s' uploaded." % res
 
     # ========== list_codes
     def _add_list_codes(self):
@@ -112,7 +113,7 @@ class WebCmd(ServiceCmd):
     # ========== download_code
     def _add_download_code(self):
         subparser = self.add_parser('download_code',
-                                    help="download code from Web server")
+                                    help="download a specific code version")
         subparser.set_defaults(run_cmd=self.download_code, parser=subparser)
         subparser.add_argument('app_name_or_id',
                                help="Name or identifier of an application")
@@ -150,7 +151,7 @@ class WebCmd(ServiceCmd):
                 if 'current' in code:
                     return code['filename']
 
-            raise Exception("There is no code version currently enabled")
+            raise Exception("There is no code version currently enabled.")
 
     # ========== delete_code
     def _add_delete_code(self):
@@ -171,7 +172,7 @@ class WebCmd(ServiceCmd):
         params = { 'codeVersionId': code_version }
         self.client.call_manager_post(app_id, service_id, "delete_code_version", params)
 
-        print code_version, 'deleted'
+        print "Code version '%s' deleted." % code_version
 
     # ========== migrate_nodes
     def _add_migrate_nodes(self):

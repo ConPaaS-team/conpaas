@@ -11,14 +11,13 @@ from .service import ServiceCmd
 import base64
 
 POLICIES = {'osd_sel': {'list': 'list_osd_sel_policies',
-                        'set': 'set_osd_sel_policy',
-                        },
+                        'set': 'set_osd_sel_policy'},
             'replica_sel': {'list': 'list_replica_sel_policies',
-                            'set': 'set_replica_sel_policy',
-                            },
+                            'set': 'set_replica_sel_policy'},
             'replication': {'list': 'list_replication_policies',
-                            'set': 'set_replication_policy',
-                            },
+                            'set': 'set_replication_policy'},
+            'striping': {'list': 'list_striping_policies',
+                            'set': 'set_striping_policy'}
             }
 
 
@@ -37,11 +36,12 @@ class XtreemFSCmd(ServiceCmd):
         self._add_set_policy()
         # self._add_toggle_persistent()
         self._add_set_osd_size()
+        self._add_help(xtreemfs_parser) # defined in base class (ServiceCmd)
 
     # ========== list_xfs_volumes
     def _add_list_xfs_volumes(self):
         subparser = self.add_parser('list_xfs_volumes',
-                                    help="list volumes of an XtreemFS service")
+                                    help="list XtreemFS volumes")
         subparser.set_defaults(run_cmd=self.list_xfs_volumes, parser=subparser)
         subparser.add_argument('app_name_or_id',
                                help="Name or identifier of an application")
@@ -58,7 +58,7 @@ class XtreemFSCmd(ServiceCmd):
     # ========== add_xfs_volume
     def _add_add_xfs_volume(self):
         subparser = self.add_parser('add_xfs_volume',
-                                    help="add a volume to XtreemFS service")
+                                    help="add an XtreemFS volume")
         subparser.set_defaults(run_cmd=self.add_xfs_volume, parser=subparser)
         subparser.add_argument('app_name_or_id',
                                help="Name or identifier of an application")
@@ -72,12 +72,12 @@ class XtreemFSCmd(ServiceCmd):
         data = {'volumeName': args.volume_name}
         self.client.call_manager_post(app_id, service_id, "createVolume", data)
 
-        print("Volume %s has been added." % args.volume_name)
+        print("XtreemFS volume '%s' has been successfully added." % args.volume_name)
 
     # ========== remove_xfs_volume
     def _add_remove_xfs_volume(self):
         subparser = self.add_parser('remove_xfs_volume',
-                                    help="remove volume from XtreemFS service")
+                                    help="remove an XtreemFS volume")
         subparser.set_defaults(run_cmd=self.remove_xfs_volume, parser=subparser)
         subparser.add_argument('app_name_or_id',
                                help="Name or identifier of an application")
@@ -91,8 +91,7 @@ class XtreemFSCmd(ServiceCmd):
         data = {'volumeName': args.volume_name}
         self.client.call_manager_post(app_id, service_id, "deleteVolume", data)
 
-        print("Volume %s has been successfully removed from XtreemFS service %d."
-              % (args.volume_name, service_id))
+        print("XtreemFS volume '%s' has been successfully removed." % args.volume_name)
 
     # ========== get_client_cert
     def _add_get_client_cert(self):
@@ -119,8 +118,8 @@ class XtreemFSCmd(ServiceCmd):
         res = self.client.call_manager_post(app_id, service_id, "get_client_cert", data)
 
         open(filename, 'wb').write(base64.b64decode(res['cert']))
-        print("Client certificate '%s' has been successfully created from XtreemFS service %d."
-              % (args.filename, service_id))
+        print("Client certificate '%s' has been successfully created."
+              % args.filename)
 
     # ========== get_user_cert
     def _add_get_user_cert(self):
@@ -153,13 +152,13 @@ class XtreemFSCmd(ServiceCmd):
         res = self.client.call_manager_post(app_id, service_id, "get_user_cert", data)
 
         open(filename, 'wb').write(base64.b64decode(res['cert']))
-        print("User certificate '%s' has been successfully created from XtreemFS service %d."
-              % (args.filename, service_id))
+        print("User certificate '%s' has been successfully created."
+              % args.filename)
 
     # ========== list_policies
     def _add_list_policies(self):
         subparser = self.add_parser('list_policies',
-                                    help="List XtreemFS policies")
+                                    help="list XtreemFS policies")
         subparser.set_defaults(run_cmd=self.list_policies, parser=subparser)
         subparser.add_argument('app_name_or_id',
                                help="Name or identifier of an application")
@@ -178,7 +177,7 @@ class XtreemFSCmd(ServiceCmd):
     # ========== set_policy
     def _add_set_policy(self):
         subparser = self.add_parser('set_policy',
-                                    help="Set an XtreemFS policy")
+                                    help="set an XtreemFS policy")
         subparser.set_defaults(run_cmd=self.set_policy, parser=subparser)
         subparser.add_argument('app_name_or_id',
                                help="Name or identifier of an application")
@@ -197,7 +196,7 @@ class XtreemFSCmd(ServiceCmd):
     # ========== toggle_persistent
     def _add_toggle_persistent(self):
         subparser = self.add_parser('toggle_persistent',
-                                    help="Toggle persistency of an XtreemFS service")
+                                    help="toggle persistency of an XtreemFS service")
         subparser.set_defaults(run_cmd=self.toggle_persistent, parser=subparser)
         subparser.add_argument('app_name_or_id',
                                help="Name or identifier of an application")
@@ -214,7 +213,7 @@ class XtreemFSCmd(ServiceCmd):
     # ========== set_osd_size
     def _add_set_osd_size(self):
         subparser = self.add_parser('set_osd_size',
-                                    help="Set a new size for an XtreemFS volume")
+                                    help="set a new size for the storage volume")
         subparser.set_defaults(run_cmd=self.set_osd_size, parser=subparser)
         subparser.add_argument('app_name_or_id',
                                help="Name or identifier of an application")
@@ -232,7 +231,7 @@ class XtreemFSCmd(ServiceCmd):
         data = {'size': args.volume_size}
         res = self.client.call_manager_post(app_id, service_id, 'set_osd_size', data)
 
-        print "OSD volume size is now %s MBs" % res['osd_volume_size']
+        print "OSD volume size is now %s MBs." % res['osd_volume_size']
 
 
 def main():

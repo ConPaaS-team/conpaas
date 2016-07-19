@@ -22,7 +22,7 @@ def check_application(client, appl_name_or_id):
     app_ids = [appl['aid'] for appl in apps]
 
     if not apps:
-        raise Exception('No existing applications')
+        raise Exception('No existing applications.')
 
     if appl_name_or_id is None:
         return (None, None)
@@ -105,7 +105,7 @@ class ApplicationCmd:
         if apps:
             print(self.client.prettytable(('aid', 'name', 'manager', 'cloud', 'status'), apps))
         else:
-            print "No existing applications"
+            print "No existing applications."
 
     # ========== rename
     def _add_rename(self):

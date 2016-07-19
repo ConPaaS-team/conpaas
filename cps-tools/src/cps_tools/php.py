@@ -17,16 +17,17 @@ class PHPCmd(WebCmd):
         WebCmd.__init__(self, php_parser, client, "php",
                         "PHP server sub-commands help")
         self._add_enable_code()
-        self._add_get_config()
+        self._add_get_php_config()
         self._add_debug()
         # self._add_enable_autoscaling()
         # self._add_disable_autoscaling()
+        self._add_help(php_parser) # defined in base class (ServiceCmd)
 
 
     # ========== enable_code
     def _add_enable_code(self):
         subparser = self.add_parser('enable_code',
-                                    help="select PHP code to enable")
+                                    help="select the code version to enable")
         subparser.set_defaults(run_cmd=self.enable_code, parser=subparser)
         subparser.add_argument('app_name_or_id',
                                help="Name or identifier of an application")
@@ -53,17 +54,17 @@ class PHPCmd(WebCmd):
         else:
             print "FAILED!"
 
-    # ========== get_config
-    def _add_get_config(self):
-        subparser = self.add_parser('get_config',
-                                    help="return the PHP configuration")
-        subparser.set_defaults(run_cmd=self.get_config, parser=subparser)
+    # ========== get_php_config
+    def _add_get_php_config(self):
+        subparser = self.add_parser('get_php_config',
+                                    help="get the PHP server's configuration")
+        subparser.set_defaults(run_cmd=self.get_php_config, parser=subparser)
         subparser.add_argument('app_name_or_id',
                                help="Name or identifier of an application")
         subparser.add_argument('serv_name_or_id',
                                help="Name or identifier of a service")
 
-    def get_config(self, args):
+    def get_php_config(self, args):
         app_id, service_id = self.check_service(args.app_name_or_id, args.serv_name_or_id)
 
         conf = self.client.call_manager_get(app_id, service_id, 'get_configuration')
@@ -79,7 +80,7 @@ class PHPCmd(WebCmd):
     # ========== debug
     def _add_debug(self):
         subparser = self.add_parser('debug',
-                                    help="enable or disable debug mode")
+                                    help="enable or disable PHP server's debug mode")
         subparser.set_defaults(run_cmd=self.debug, parser=subparser)
         subparser.add_argument('app_name_or_id',
                                help="Name or identifier of an application")
@@ -102,7 +103,7 @@ class PHPCmd(WebCmd):
                                             "update_php_configuration",
                                             params)
 
-        print("Debug mode set to %s." % args.on_off)
+        print("Debug mode set to '%s'." % debug_mode)
 
     # ========== enable_autoscaling
     def _add_enable_autoscaling(self):

@@ -16,6 +16,9 @@ class GenericCmd(ServiceCmd):
         ServiceCmd.__init__(self, generic_parser, client, "generic",
                             [('count', 1)], # (role name, default number)
                             "Generic service sub-commands help")
+        self._add_create_volume() # defined in base class (ServiceCmd)
+        self._add_delete_volume() # defined in base class (ServiceCmd)
+        self._add_list_volumes()  # defined in base class (ServiceCmd)
         self._add_upload_key()
         self._add_list_keys()
         self._add_upload_code()
@@ -27,11 +30,12 @@ class GenericCmd(ServiceCmd):
         self._add_interrupt()
         self._add_cleanup()
         self._add_get_script_status()
+        self._add_help(generic_parser) # defined in base class (ServiceCmd)
 
     # ========== upload_key
     def _add_upload_key(self):
         subparser = self.add_parser('upload_key',
-                                    help="upload key to Generic server")
+                                    help="upload an SSH key to a service")
         subparser.set_defaults(run_cmd=self.upload_key, parser=subparser)
         subparser.add_argument('app_name_or_id',
                                help="Name or identifier of an application")
@@ -49,12 +53,12 @@ class GenericCmd(ServiceCmd):
         files = [('key', args.filename, contents)]
         res = self.client.call_manager_post(app_id, service_id, "/", params, files)
 
-        print res['outcome']
+        print "%s." % res['outcome']
 
     # ========== list_keys
     def _add_list_keys(self):
         subparser = self.add_parser('list_keys',
-                                    help="list authorized keys of Generic service")
+                                    help="list the authorized SSH keys of a service")
         subparser.set_defaults(run_cmd=self.list_keys, parser=subparser)
         subparser.add_argument('app_name_or_id',
                                help="Name or identifier of an application")
@@ -66,7 +70,8 @@ class GenericCmd(ServiceCmd):
 
         res = self.client.call_manager_get(app_id, service_id, "list_authorized_keys")
 
-        print "%s" % res['authorizedKeys']
+        for key in res['authorizedKeys']:
+            print "%s" % key
 
     # ========== upload_code
     def _add_upload_code(self):
@@ -95,7 +100,7 @@ class GenericCmd(ServiceCmd):
 
         res = self.client.call_manager_post(app_id, service_id, "/", params, files)
 
-        print "Code version %(codeVersionId)s uploaded" % res
+        print "Code version '%(codeVersionId)s' uploaded." % res
 
     # ========== list_codes
     def _add_list_codes(self):
@@ -127,7 +132,7 @@ class GenericCmd(ServiceCmd):
     # ========== download_code
     def _add_download_code(self):
         subparser = self.add_parser('download_code',
-                                    help="download code from Generic service")
+                                    help="download a specific code version")
         subparser.set_defaults(run_cmd=self.download_code, parser=subparser)
         subparser.add_argument('app_name_or_id',
                                help="Name or identifier of an application")
@@ -165,12 +170,12 @@ class GenericCmd(ServiceCmd):
                 if 'current' in code:
                     return code['filename']
 
-            raise Exception("There is no code version currently enabled")
+            raise Exception("There is no code version currently enabled.")
 
     # ========== enable_code
     def _add_enable_code(self):
         subparser = self.add_parser('enable_code',
-                                    help="set a specific code version active")
+                                    help="select the code version to enable")
         subparser.set_defaults(run_cmd=self.enable_code, parser=subparser)
         subparser.add_argument('app_name_or_id',
                                help="Name or identifier of an application")
@@ -215,12 +220,12 @@ class GenericCmd(ServiceCmd):
         params = { 'codeVersionId': code_version }
         self.client.call_manager_post(app_id, service_id, "delete_code_version", params)
 
-        print code_version, 'deleted'
+        print "Code version '%s' deleted." % code_version
 
     # ========== run
     def _add_run(self):
         subparser = self.add_parser('run',
-                                    help="execute the run.sh script")
+                                    help="execute the 'run.sh' script")
         subparser.set_defaults(run_cmd=self.run, parser=subparser)
         subparser.add_argument('app_name_or_id',
                                help="Name or identifier of an application")
@@ -240,7 +245,7 @@ class GenericCmd(ServiceCmd):
     # ========== interrupt
     def _add_interrupt(self):
         subparser = self.add_parser('interrupt',
-                                    help="execute the interrupt.sh script")
+                                    help="execute the 'interrupt.sh' script")
         subparser.set_defaults(run_cmd=self.interrupt, parser=subparser)
         subparser.add_argument('app_name_or_id',
                                help="Name or identifier of an application")
@@ -261,7 +266,7 @@ class GenericCmd(ServiceCmd):
     # ========== cleanup
     def _add_cleanup(self):
         subparser = self.add_parser('cleanup',
-                                    help="execute the cleanup.sh script")
+                                    help="execute the 'cleanup.sh' script")
         subparser.set_defaults(run_cmd=self.cleanup, parser=subparser)
         subparser.add_argument('app_name_or_id',
                                help="Name or identifier of an application")
@@ -303,7 +308,7 @@ class GenericCmd(ServiceCmd):
                     print "  %s\t%s" % (script, status[script])
                 print
         else:
-            print "No generic agents are running"
+            print "No generic agents are running."
 
 
 def main():

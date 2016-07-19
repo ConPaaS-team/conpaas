@@ -29,7 +29,8 @@ class ServiceCmd(object):
                                                      metavar="<sub-command>")
         if service_type is not None:
             serv_parser.set_defaults(service_type=service_type)
-        self._add_get_types()
+        if not self.type:
+            self._add_get_types()
         self._add_add()
         self._add_remove()
         self._add_list()
@@ -46,10 +47,8 @@ class ServiceCmd(object):
         self._add_add_nodes()
         self._add_remove_nodes()
         self._add_list_nodes()
-        self._add_create_volume()
-        self._add_delete_volume()
-        self._add_list_volumes()
-        self._add_help(serv_parser)
+        if not self.type:
+            self._add_help(serv_parser)
 
     def add_parser(self, *args, **kwargs):
         return self.subparsers.add_parser(*args, **kwargs)
@@ -172,11 +171,11 @@ class ServiceCmd(object):
         if table:
             print "%s" % table
         else:
-            print "No existing services"
+            print "No existing services."
 
     # ========== start
     def _add_start(self):
-        subparser = self.add_parser('start', help="start a service from the app manager")
+        subparser = self.add_parser('start', help="start a service")
         subparser.set_defaults(run_cmd=self.start_serv, parser=subparser)
         subparser.add_argument('app_name_or_id',
                                help="Name or identifier of an application")
@@ -399,7 +398,7 @@ class ServiceCmd(object):
 
             print(self.client.prettytable(('aid', 'sid', 'role', 'ip', 'agent_id', 'cloud'), sorted_nodes))
         else:
-            print "No existing nodes"
+            print "No existing nodes."
 
     def _get_roles_nb(self, args=None): # if args is None we use the defaults
         total_nodes = 0
@@ -559,7 +558,7 @@ class ServiceCmd(object):
 
             print(self.client.prettytable(('aid', 'sid', 'vol_name', 'vol_size', 'agent_id', 'cloud'), sorted_vols))
         else:
-            print "No existing storage volumes"
+            print "No existing storage volumes."
 
     # ========== delete_volume
     def _add_delete_volume(self):

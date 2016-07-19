@@ -20,6 +20,7 @@ class MySQLCmd(ServiceCmd):
         # self._add_migrate_nodes()
         self._add_dump()
         self._add_load_dump()
+        self._add_help(mysql_parser) # defined in base class (ServiceCmd)
 
     # ========== change_password
     def _add_change_pwd(self):
@@ -46,10 +47,11 @@ class MySQLCmd(ServiceCmd):
                 print('Passwords do not match. Try again')
                 pwd1, pwd2 = pprompt()
 
-        data = { 'user': 'mysqldb', 'password': pwd1 }
+        user = 'mysqldb'
+        data = { 'user': user, 'password': pwd1 }
         self.client.call_manager_post(app_id, service_id, "set_password", data)
 
-        print("MySQL password updated successfully.")
+        print("MySQL password successfully updated for user '%s'." % user)
 
     # ========== migrate_nodes
     def _add_migrate_nodes(self):
@@ -131,7 +133,7 @@ class MySQLCmd(ServiceCmd):
 
         self.client.call_manager_post(app_id, service_id, "/", params, files)
 
-        print "MySQL dump loaded successfully."
+        print "MySQL dump '%s' loaded successfully." % args.filename
 
 def main():
     logger = logging.getLogger(__name__)
