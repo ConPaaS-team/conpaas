@@ -42,6 +42,7 @@ def clean_output(output):
         line
         for line in output.split('\n')
         if 'verify error' not in line
+        and 'additional certificates' not in line
         and line.strip() != ''
     ])
 
@@ -1028,7 +1029,7 @@ class XtreemFSManager(BaseManager):
         (stdout, stderr) = process.communicate()
         process.poll()
         if process.returncode != 0:
-            self.logger.info('Failed to set %s policy: %s; %s', policyName, stdout, stderr)
+            self.logger.warning('Failed to set %s policy: %s; %s', policyName, stdout, stderr)
             return HttpErrorResponse("Failed to set %s policy: %s; %s" % (policyName, stdout, stderr))
 
         # mount.xtreemfs <dir_ip>:32638/<volumename> <mountpoint>
@@ -1041,7 +1042,7 @@ class XtreemFSManager(BaseManager):
         (stdout, stderr) = process.communicate()
         process.poll()
         if process.returncode != 0:
-            self.logger.info('Failed to set %s policy: %s; %s', policyName, stdout, stderr)
+            self.logger.warning('Failed to set %s policy: %s; %s', policyName, stdout, stderr)
             return HttpErrorResponse("Failed to set %s policy: %s; %s" % (policyName, stdout, stderr))
 
 #        # with python 2.7
@@ -1062,7 +1063,7 @@ class XtreemFSManager(BaseManager):
         process.poll()
 
         if process.returncode != 0:
-            self.logger.info('Failed to set %s policy: %s; %s', policyName, stdout, stderr)
+            self.logger.warning('Failed to set %s policy: %s; %s', policyName, stdout, stderr)
             return HttpErrorResponse("Failed to set %s policy: %s; %s" % (policyName, stdout, stderr))
 
         # umount <mountpoint>
@@ -1071,7 +1072,7 @@ class XtreemFSManager(BaseManager):
         (stdout, stderr) = process.communicate()
         process.poll()
         if process.returncode != 0:
-            self.logger.info('Failed to set %s policy: %s; %s', policyName, stdout, stderr)
+            self.logger.warning('Failed to set %s policy: %s; %s', policyName, stdout, stderr)
             return HttpErrorResponse("Failed to set %s policy: %s; %s" % (policyName, stdout, stderr))
 
         # rmdir <mountpoint>
@@ -1079,7 +1080,7 @@ class XtreemFSManager(BaseManager):
         (stdout, stderr) = process.communicate()
         process.poll()
         if process.returncode != 0:
-            self.logger.info('Failed to set %s policy: %s; %s', policyName, stdout, stderr)
+            self.logger.warning('Failed to set %s policy: %s; %s', policyName, stdout, stderr)
             return HttpErrorResponse("Failed to set %s policy: %s; %s" % (policyName, stdout, stderr))
 
 #        # with python 2.7
@@ -1093,8 +1094,8 @@ class XtreemFSManager(BaseManager):
 #        except subprocess.CalledProcessError as e:
 #            return HttpErrorResponse('ERROR: could not unmount volume: ' + e.output)
 
-        self.logger.info('Setting %s policy: %s; %s', policyName, stdout_xtfsutil, stderr_xtfsutil)
-        return HttpJsonResponse({ 'stdout': stdout_xtfsutil })
+        self.logger.info('Setting %s policy: %s', policyName, clean_output(stdout_xtfsutil))
+        return HttpJsonResponse({ 'stdout': clean_output(stdout_xtfsutil) })
 
     @expose('POST')
     def set_osd_sel_policy(self, kwargs):
@@ -1124,13 +1125,13 @@ class XtreemFSManager(BaseManager):
         # xtfsutil <path> --set-rsp <policy>
         args = [ '--set-rsp', policy ]
 
-        return self.set_policy(volumeName, 'Replica selection', args)
+        return self.set_policy(volumeName, 'replica selection', args)
 
     @expose('POST')
     def set_replication_policy(self, kwargs):
         exp_params = [('volumeName', is_string),
                       ('policy', is_in_list(REPLICATION_POLICIES)),
-                      ('factor', is_string)]
+                      ('factor', is_pos_int)]
         try:
             volumeName, policy, factor = check_arguments(exp_params, kwargs)
             self.check_state([self.S_RUNNING])
@@ -1140,16 +1141,16 @@ class XtreemFSManager(BaseManager):
         # xtfsutil <path> --set-drp --replication-policy <policy> --replication-factor <factor>
         args = [ '--set-drp',
                  '--replication-policy', policy,
-                 '--replication-factor', factor ]
+                 '--replication-factor', str(factor) ]
 
-        return self.set_policy(volumeName, 'Replication', args)
+        return self.set_policy(volumeName, 'replication', args)
 
     @expose('POST')
     def set_striping_policy(self, kwargs):
         exp_params = [('volumeName', is_string),
-                      ('policy', is_in_list(REPLICATION_POLICIES)),
-                      ('width', is_string),
-                      ('stripe-size', is_string)]
+                      ('policy', is_in_list(STRIPING_POLICIES)),
+                      ('width', is_pos_int),
+                      ('stripe-size', is_pos_int)]
         try:
             volumeName, policy, width, stripe_size = check_arguments(exp_params, kwargs)
             self.check_state([self.S_RUNNING])
@@ -1159,10 +1160,10 @@ class XtreemFSManager(BaseManager):
         # xtfsutil <path> --set-dsp --striping-policy <policy> --striping-policy-width <width> --striping-policy-stripe-size <stripe-size>
         args = [ '--set-dsp',
                  '--striping-policy', policy,
-                 '--striping-policy-width', width,
-                 '--striping-policy-stripe-size', stripe_size ]
+                 '--striping-policy-width', str(width),
+                 '--striping-policy-stripe-size', str(stripe_size) ]
 
-        return self.set_policy(volumeName, 'Striping', args)
+        return self.set_policy(volumeName, 'striping', args)
 
     @expose('POST')
     def toggle_persistent(self, kwargs):

@@ -165,7 +165,7 @@ class XtreemFSCmd(ServiceCmd):
         subparser.add_argument('serv_name_or_id',
                                help="Name or identifier of a service")
         subparser.add_argument('policy_type', choices=POLICIES.keys(),
-                               help="Type of XtreemFS policy.")
+                               help="Type of XtreemFS policy")
 
     def list_policies(self, args):
         app_id, service_id = self.check_service(args.app_name_or_id, args.serv_name_or_id)
@@ -184,12 +184,42 @@ class XtreemFSCmd(ServiceCmd):
         subparser.add_argument('serv_name_or_id',
                                help="Name or identifier of a service")
         subparser.add_argument('policy_type', choices=POLICIES.keys(),
-                               help="Type of XtreemFS policy.")
+                               help="Type of the XtreemFS policy")
+        subparser.add_argument('policy',
+                               help="The XtreemFS policy (run list_policies for options)")
+        subparser.add_argument('volume_name',
+                               help="Name of the XtreemFS volume")
+        subparser.add_argument('--factor', metavar='FACTOR',
+                               default=-1, help="Factor for the replication policy type")
+        subparser.add_argument('--width', metavar='WIDTH',
+                               default=-1, help="Width for the striping policy type")
+        subparser.add_argument('--size', metavar='SIZE',
+                               default=-1, help="Stripe size for the striping policy type")
 
     def set_policy(self, args):
         app_id, service_id = self.check_service(args.app_name_or_id, args.serv_name_or_id)
 
-        res = self.client.call_manager_post(app_id, service_id, POLICIES[args.policy_type]['set'])
+        data = { 'volumeName': args.volume_name,
+                 'policy': args.policy }
+
+        if args.policy_type == 'replication':
+            if args.factor == -1:
+                raise Exception("The 'factor' parameter is mandatory for "
+                                "the replication policy type.")
+            data['factor'] = args.factor
+
+        elif args.policy_type == 'striping':
+            if args.width == -1:
+                raise Exception("The 'width' parameter is mandatory for "
+                                "the striping policy type.")
+            if args.size == -1:
+                raise Exception("The 'size' parameter is mandatory for "
+                                "the striping policy type.")
+            data['width'] = args.width
+            data['stripe-size'] = args.size
+
+        method = POLICIES[args.policy_type]['set']
+        res = self.client.call_manager_post(app_id, service_id, method, data)
 
         print '%s' % res['stdout']
 
