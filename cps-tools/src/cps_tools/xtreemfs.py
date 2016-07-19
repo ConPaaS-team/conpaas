@@ -35,7 +35,7 @@ class XtreemFSCmd(ServiceCmd):
         self._add_get_user_cert()
         self._add_list_policies()
         self._add_set_policy()
-        self._add_toggle_persistent()
+        # self._add_toggle_persistent()
         self._add_set_osd_size()
 
     # ========== list_xfs_volumes

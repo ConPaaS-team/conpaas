@@ -17,7 +17,7 @@ class WebCmd(ServiceCmd):
         self._add_list_codes()
         self._add_download_code()
         self._add_delete_code()
-        self._add_migrate_nodes()
+        # self._add_migrate_nodes()
 
     # ========== upload_key
     def _add_upload_key(self):
