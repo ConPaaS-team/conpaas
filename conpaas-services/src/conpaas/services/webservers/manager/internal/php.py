@@ -24,11 +24,11 @@ from conpaas.core.misc import check_arguments, is_in_list, is_not_in_list,\
     is_int, is_pos_nul_int, is_pos_int, is_dict, is_dict2, is_bool,\
     is_uploaded_file
 
-try:
-    from conpaas.services.webservers.manager.autoscaling.scaler import ProvisioningManager
-except ImportError as ex:
-    provision_mng_error = "%s" % ex
-    ProvisioningManager = None
+# try:
+#     from conpaas.services.webservers.manager.autoscaling.scaler import ProvisioningManager
+# except ImportError as ex:
+#     provision_mng_error = "%s" % ex
+ProvisioningManager = None
 
 from multiprocessing.pool import ThreadPool
 
@@ -41,7 +41,7 @@ class PHPManager(BasicWebserversManager):
             self._create_initial_configuration()
 
         if ProvisioningManager is None:
-            self.logger.info('Provisioning Manager can not be initialized: %s' % provision_mng_error)
+            # self.logger.info('Provisioning Manager can not be initialized: %s' % provision_mng_error)
             self.scaler = None
         else:
             try:

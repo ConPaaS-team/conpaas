@@ -22,6 +22,7 @@ from conpaas.core import https
 from ConfigParser import ConfigParser
 from cpsdirector.common import config_parser as default_config_parser
 
+
 class Controller(object):
 
     def __init__(self):
@@ -99,11 +100,6 @@ class Controller(object):
                 raise e
             self._logger.debug("succeeded iaas.get_clouds()")
 
-
-
-    #=========================================================================#
-    #               generate_context(self, service_name, replace, cloud)      #
-    #=========================================================================#
     def generate_context(self, clouds, context_replacement={}, startup_script=None):
         """Generates the contextualization file for the given clouds.
         """
@@ -112,11 +108,6 @@ class Controller(object):
 
             context = self._generate_context_file(cloud, context_replacement, startup_script)
             cloud.set_context(context)
-
-    def generate_config_file(self, cloud_name):
-        #TODO (genc) copy the config generation part of the method below here
-        pass
-
 
     def get_cloud_by_name(self, cloud_name):
         """
@@ -132,9 +123,6 @@ class Controller(object):
         except IndexError:
             raise Exception("Unknown cloud: %s. Available clouds: %s" % (cloud_name, self._available_clouds))
 
-    #=========================================================================#
-    #               create_nodes(self, count, contextFile, test_agent)        #
-    #=========================================================================#
     def create_nodes(self, nodes_info, clouds):
         self._logger.debug('[create_nodes]: %s' % nodes_info)
 
@@ -185,7 +173,6 @@ class Controller(object):
             ni['name'] = name
         self._logger.debug("[create_nodes]: cloud.new_instances(%s)" % str(nodes_info) )
         return cloud.new_instances(nodes_info)
-
 
     # def create_nodes(self, count, cloud_name=None, inst_type=None):
     #     """
@@ -368,9 +355,6 @@ class Controller(object):
 
         return False
 
-    #=========================================================================#
-    #                    list_vms(self, cloud=None)                           #
-    #=========================================================================#
     def list_vms(self, cloud=None):
         """Returns an array with the VMs running at the given/default(s) cloud.
 
@@ -382,9 +366,6 @@ class Controller(object):
 
         return cloud.list_vms()
 
-    #=========================================================================#
-    #                    delete_nodes(self, nodes)                            #
-    #=========================================================================#
     def delete_nodes(self, nodes):
         """Kills the VMs associated with the list of nodes.
 
@@ -415,7 +396,6 @@ class Controller(object):
         self._logger.debug("create_volume(cloud=%s, size=%s, name='%s')" % (cloud.cloud_name, size, name))
 
         return cloud.create_volume(size, name, vm_id)
-
 
     def attach_volume(self, vm_id, volume_id, device, cloud=None):
         cloud = self.get_cloud_by_name(cloud)
@@ -448,7 +428,6 @@ class Controller(object):
             id = volume_id
         self._logger.debug("destroy_volume(volume=%s)" % volume.id)
         return cloud.destroy_volume(volume)
-
 
     def _create_manager_config(self, user_id, app_id, vpn=None):
         """Add manager configuration"""
@@ -494,6 +473,7 @@ class Controller(object):
         return self._check(https.client.jsonrpc_get(host, self.port, '/', method))
 
 class AgentController(Controller):
+
     def __init__(self, user_id, app_id, service_id, service_type, manager_ip):
         Controller.__init__(self)
         self.config_parser = self._create_agent_config(str(user_id), str(app_id), service_id, service_type, manager_ip)
@@ -511,37 +491,10 @@ class AgentController(Controller):
         config_parser.set('manager', 'MANAGER_IP', manager_ip)
         return config_parser
 
-    def _generate_context_file(self, cloud, context_replacement={}, startup_script=None):
-        '''
-        the context file runs the scripts necessary on each node created
-        it's installing all the necessary dependencies for the service
-        on the cloud you are installing
-
-        '''
-
-        cloud_type = cloud.get_cloud_type()
-        # conpaas_home = self.config_parser.get('manager', 'CONPAAS_HOME')
+    def generate_config_file(self, context_replacement):
         conpaas_home = self.config_parser.get('conpaas', 'CONF_DIR')
-
-        cloud_scripts_dir = conpaas_home + '/scripts/cloud'
         agent_cfg_dir = conpaas_home + '/config/agent'
-        agent_scripts_dir = conpaas_home + '/scripts/agent'
-
-        # COMMENT (genc): the following line is temporarily commented, should be uncommented when we know how to reactivate ipop
-        # bootstrap = self.config_parser.get('manager', 'BOOTSTRAP')
-        # bootstrap = 'lesh'
-        director = self.config_parser.get('director', 'DIRECTOR_URL')
         manager_ip = self.config_parser.get('manager', 'MANAGER_IP')
-
-
-        # Get contextualization script for the corresponding cloud
-        cloud_script_file = open(cloud_scripts_dir + '/' + cloud_type, 'r')
-        cloud_script = cloud_script_file.read()
-
-        # Get agent setup file
-        agent_setup_file = open(agent_scripts_dir + '/agent-setup', 'r')
-
-        agent_setup = Template(agent_setup_file.read()).safe_substitute(DIRECTOR=director)
 
         # Get agent config file - add to the default one the one specific
         # to the service if it exists
@@ -552,7 +505,6 @@ class AgentController(Controller):
             CONPAAS_USER_ID=self._conpaas_user_id,
             CONPAAS_SERVICE_ID=self._conpaas_service_id,
             CONPAAS_APP_ID=self._conpaas_app_id,
-            CLOUD_TYPE=cloud_type,
             # IPOP_BASE_NAMESPACE=self._ipop_base_namespace
             )
 
@@ -566,8 +518,38 @@ class AgentController(Controller):
 
         if os.path.isfile(agent_cfg_dir + '/' + self._conpaas_service_type + '-agent.cfg'):
             agent_cfg_file = open(agent_cfg_dir +'/' + self._conpaas_service_type + '-agent.cfg')
-            # agent_cfg += '\n' + Template(agent_cfg_file.read()).safe_substitute(CLOUD_TYPE=cloud_type,)
             agent_cfg += '\n' + Template(agent_cfg_file.read()).safe_substitute(context_replacement)
+
+        return agent_cfg
+
+    def _generate_context_file(self, cloud, context_replacement={}, startup_script=None):
+        '''
+        the context file runs the scripts necessary on each node created
+        it's installing all the necessary dependencies for the service
+        on the cloud you are installing
+
+        '''
+        cloud_type = cloud.get_cloud_type()
+        # conpaas_home = self.config_parser.get('manager', 'CONPAAS_HOME')
+        conpaas_home = self.config_parser.get('conpaas', 'CONF_DIR')
+
+        cloud_scripts_dir = conpaas_home + '/scripts/cloud'
+        agent_scripts_dir = conpaas_home + '/scripts/agent'
+
+        # COMMENT (genc): the following line is temporarily commented, should be uncommented when we know how to reactivate ipop
+        # bootstrap = self.config_parser.get('manager', 'BOOTSTRAP')
+        director = self.config_parser.get('director', 'DIRECTOR_URL')
+
+        # Get contextualization script for the corresponding cloud
+        cloud_script_file = open(cloud_scripts_dir + '/' + cloud_type, 'r')
+        cloud_script = cloud_script_file.read()
+
+        # Get agent setup file
+        agent_setup_file = open(agent_scripts_dir + '/agent-setup', 'r')
+        agent_setup = Template(agent_setup_file.read()).safe_substitute(DIRECTOR=director)
+
+        # Get agent config file
+        agent_cfg = self.generate_config_file(context_replacement)
 
         # Get agent start file - if none for this service, use the default one
         if os.path.isfile(agent_scripts_dir +'/' + self._conpaas_service_type + '-agent-start'):
@@ -577,7 +559,6 @@ class AgentController(Controller):
         agent_start = agent_start_file.read()
 
         # Get key and a certificate from CA
-        # agent_certs = self._get_certificate()
         agent_certs = self._get_certificate(role="agent",
                                             email="info@conpaas.eu",
                                             cn="ConPaaS",
@@ -595,17 +576,7 @@ class AgentController(Controller):
                         + 'cat <<EOF > $ROOT_DIR/config.cfg\n'
                         + agent_cfg + '\n' + 'EOF\n\n')
 
-        # COMMENT (genc): the following code copies the start script from the menager to agents
-        # i don't know if this can be possible at this point since we are at the director and agent
-        # startup scritps are at the manager
-
-        # # Get user-provided startup script's absolute path
-        # basedir = self.config_parser.get('manager', 'CONPAAS_HOME')
-        # startup_script = os.path.join(basedir, 'startup.sh')
-
         # # Append user-provided startup script (if any)
-        # if os.path.isfile(startup_script):
-        #     context_file += open(startup_script).read() + '\n'
         if startup_script:
             context_file += startup_script + '\n'
 
@@ -625,7 +596,6 @@ class ManagerController(Controller):
         self.port = 443
 
     def generate_config_file(self):
-        tmpl_values = {}
         # cloud_name = cloud.get_cloud_name()
         conpaas_home = self.config_parser.get('conpaas', 'CONF_DIR')
         mngr_cfg_dir = os.path.join(conpaas_home, 'config', 'manager')
@@ -635,26 +605,9 @@ class ManagerController(Controller):
         else:
             conpaas_deployment_name = 'conpaas'
 
-        cloud_sections = ['iaas']
-        if self.config_parser.has_option('iaas', 'OTHER_CLOUDS'):
-            cloud_sections.extend(
-                [cld_name for cld_name
-                 in self.config_parser.get('iaas', 'OTHER_CLOUDS').split(',')
-                 if self.config_parser.has_section(cld_name)])
-
-
-        def _extract_cloud_cfg(section_name):
-            tmpl_values['cloud_cfg'] += "["+section_name+"]\n"
-            for key, value in self.config_parser.items(section_name):
-                tmpl_values['cloud_cfg'] += key.upper() + " = " + value + "\n"
-
-        tmpl_values['cloud_cfg'] = ''
-        for section_name in cloud_sections:
-            _extract_cloud_cfg(section_name)
-
         # Get manager config file
-        # mngr_cfg = file_get_contents(os.path.join(mngr_cfg_dir, 'default-manager.cfg'))
         # TODO (genc): Don't forget about having two default manager files (delete one when done)
+        # mngr_cfg = file_get_contents(os.path.join(mngr_cfg_dir, 'default-manager.cfg'))
         mngr_cfg = file_get_contents(os.path.join(mngr_cfg_dir, 'default-manager-new.cfg'))
 
         # Modify manager config file setting the required variables
@@ -686,7 +639,6 @@ class ManagerController(Controller):
         # # mngr_cfg = mngr_cfg.replace('%CLOUD_COST_PER_TIME%', cloud_cost_per_time);
 
 
-
         # COMMENT (genc): the IPOP part is commented  until we have a working IPOP
 
         # # Check if we want to use IPOP. If so, add IPOP directives to manager
@@ -707,11 +659,7 @@ class ManagerController(Controller):
         #     if self.config_parser.has_option('conpaas', 'VPN_BOOTSTRAP_NODES'):
         #         mngr_cfg += '\nIPOP_BOOTSTRAP_NODES = %s' % self.config_parser.get('conpaas', 'VPN_BOOTSTRAP_NODES')
 
-        tmpl_values['mngr_cfg'] = mngr_cfg
-        return """
-%(cloud_cfg)s
-%(mngr_cfg)s
-""" % tmpl_values
+        return mngr_cfg
 
     def _generate_context_file(self, cloud, context_replacement={}, startup_script=None):
         """Override default _get_context_file. Here we generate the context
