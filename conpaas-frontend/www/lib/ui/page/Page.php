@@ -224,8 +224,11 @@ class Page {
 
 	public function renderCloudProviders($default, $visible) {
 		$clouds = json_decode(HTTPS::get(Conf::DIRECTOR . '/available_clouds'));
-		$clouds_html = '';
+		if (count($clouds) <= 1) {
+			return '';
+		}
 
+		$clouds_html = '';
 		foreach($clouds as $cloud) {
 			if ($cloud === $default)
 				$checked = 'checked';

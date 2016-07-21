@@ -149,11 +149,15 @@ conpaas.ui = (function (this_module) {
 
     onClickStartApp: function(event){
         var page = event.data;
+        var cloud = $('input[name=available_clouds]:checked').val();
+        if (cloud == null) {
+            cloud = 'default';
+        }
         page.startingApp = true;
         $("#btnStartApp").hide();
         $("#cloudProviders").hide();
         page.server.req('ajax/startApplication.php', {
-                cloud: $('input[name=available_clouds]:checked').val()
+                cloud: cloud
             }, 'post',
             function(){
                 page.displayInfo_('starting application manager...');

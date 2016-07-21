@@ -52,10 +52,15 @@ $(document).ready(function() {
     });
 
 	$('#deploy').click(function() {
+		var cloud = $('input[name=available_clouds]:checked').val();
+		if (cloud == null) {
+			cloud = 'default';
+		}
+
 		if ($('input:file').val() != '') {
 			$('#fileForm').ajaxForm({
 				data: {
-					cloud: $('input[name=available_clouds]:checked').val()
+					cloud: cloud
 				},
 				dataType: 'json',
 				success: function(response) {
@@ -91,7 +96,7 @@ $(document).ready(function() {
 			url: "ajax/uploadManifest.php",
 			data: {
 				json: manifest[type],
-				cloud: $('input[name=available_clouds]:checked').val()
+				cloud: cloud
 			},
 			dataType: 'json'
 		}).done(function(response) {
