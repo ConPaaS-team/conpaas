@@ -53,6 +53,9 @@ class XtreemFSManager(BaseManager):
     ROLE_MRC = 'mrc'  # Metadata and Replica Catalog
     ROLE_OSD = 'osd'  # Object Storage Device
 
+    # Packed node types
+    ROLE_DIR_MRC_OSD = 'dir_mrc_osd'    # DIR + MRC + OSD
+
     def __init__(self, config_parser, **kwargs):
         BaseManager.__init__(self, config_parser)
 
@@ -96,13 +99,41 @@ class XtreemFSManager(BaseManager):
     def get_default_role(self):
         return self.ROLE_OSD
 
+    def get_starting_nodes(self):
+        return { self.ROLE_DIR_MRC_OSD: 1 }
+
     def get_role_sninfo(self, role, cloud):
-        if role == self.ROLE_OSD:
+        if role == self.ROLE_OSD or role == self.ROLE_DIR_MRC_OSD:
             return self.get_standard_sninfo_with_volume(
                         role, cloud, 'osd-%(vm_id)s',
                         self.osd_volume_size)
         else:
             return BaseManager.get_role_sninfo(self, role, cloud)
+
+    def get_role_logs(self, role, add_default=True):
+        if add_default:
+            logs = BaseManager.get_role_logs(self, role)
+        else:
+            logs = []
+
+        if role == self.ROLE_DIR:
+            logs.extend([{'filename': 'dir.log',
+                          'description': 'DIR log',
+                          'path': '/var/log/xtreemfs/dir.log'}]);
+        elif role == self.ROLE_MRC:
+            logs.extend([{'filename': 'mrc.log',
+                          'description': 'MRC log',
+                          'path': '/var/log/xtreemfs/mrc.log'}]);
+        elif role == self.ROLE_OSD:
+            logs.extend([{'filename': 'osd.log',
+                          'description': 'OSD log',
+                          'path': '/var/log/xtreemfs/osd.log'}]);
+        elif role == self.ROLE_DIR_MRC_OSD:
+            logs.extend(self.get_role_logs(self.ROLE_DIR, False))
+            logs.extend(self.get_role_logs(self.ROLE_MRC, False))
+            logs.extend(self.get_role_logs(self.ROLE_OSD, False))
+
+        return logs
 
     def __get__uuid(self, node_id, node_type):
         if node_type == self.ROLE_DIR:
@@ -683,7 +714,9 @@ class XtreemFSManager(BaseManager):
                             'cloud': serviceNode.cloud_name,
                             'dir': serviceNode in self.dirNodes,
                             'mrc': serviceNode in self.mrcNodes,
-                            'osd': serviceNode in self.osdNodes
+                            'osd': serviceNode in self.osdNodes,
+                            'role': serviceNode.role,
+                            'logs': self.get_role_logs(serviceNode.role)
                             }
             })
 

@@ -104,7 +104,9 @@ class HelloWorldManager(BaseManager):
                             'id': serviceNode.id,
                             'ip': serviceNode.ip,
                             'vmid': serviceNode.vmid,
-                            'cloud': serviceNode.cloud_name
+                            'cloud': serviceNode.cloud_name,
+                            'role': serviceNode.role,
+                            'logs': self.get_role_logs(serviceNode.role)
                             }
             })
 

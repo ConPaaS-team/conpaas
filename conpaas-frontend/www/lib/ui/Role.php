@@ -81,8 +81,8 @@ class Role {
 			'backend' => '',
 			'php' => 'PHP server',
 			'java' => 'Apache Tomcat servlet container',
-			'web' => 'static web server (NGINX)',
-			'proxy' => 'load balancer (NGINX)',
+			'web' => 'static web server (Nginx)',
+			'proxy' => 'load balancer (Nginx)',
 
 			// mysql
 			'mysql'=>'MySQL with Galera extensions',

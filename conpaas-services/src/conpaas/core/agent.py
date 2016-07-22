@@ -80,15 +80,11 @@ class BaseAgent(ConpaasRequestHandlerComponent):
     @expose('GET')
     def get_log(self, kwargs):
         """Return the contents of a logfile"""
-        other_log_files = [ 'agent.out', 'agent.err' ]
-        exp_params = [('filename', is_in_list(other_log_files), self.LOG_FILE)]
+        exp_params = [('filename', is_string, self.LOG_FILE)]
         try:
             filename = check_arguments(exp_params, kwargs)
         except Exception as ex:
             return HttpErrorResponse("%s" % ex)
-
-        if filename in other_log_files:
-            filename = os.path.join(self.ROOT_DIR, filename)
 
         try:
             return HttpJsonResponse({'log': file_get_contents(filename)})

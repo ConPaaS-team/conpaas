@@ -143,6 +143,39 @@ class BasicWebserversManager(BaseManager):
         self._configuration_set(config)
         return node_roles
 
+    def get_role_logs(self, role, add_default=True):
+        if add_default:
+            logs = BaseManager.get_role_logs(self, role)
+        else:
+            logs = []
+
+        if role == self.ROLE_WEB:
+            logs.extend([{'filename': 'nginx-static-access.log',
+                          'description': 'Nginx web access',
+                          'path': '/var/cache/cpsagent/nginx-static-access.log'},
+                         {'filename': 'nginx-static-error.log',
+                          'description': 'Nginx web error',
+                          'path': '/var/cache/cpsagent/nginx-static-error.log'}]);
+        elif role == self.ROLE_PROXY:
+            logs.extend([{'filename': 'nginx-proxy-access.log',
+                          'description': 'Nginx proxy access',
+                          'path': '/var/cache/cpsagent/nginx-proxy-access.log'},
+                         {'filename': 'nginx-proxy-error.log',
+                          'description': 'Nginx proxy error',
+                          'path': '/var/cache/cpsagent/nginx-proxy-error.log'}]);
+        elif role == self.ROLE_PROXY_BACKEND_WEB:
+            logs.extend(self.get_role_logs(self.ROLE_PROXY, False))
+            logs.extend(self.get_role_logs(self.ROLE_WEB, False))
+            logs.extend(self.get_role_logs(self.ROLE_BACKEND, False))
+        elif role == self.ROLE_PROXY_BACKEND:
+            logs.extend(self.get_role_logs(self.ROLE_PROXY, False))
+            logs.extend(self.get_role_logs(self.ROLE_BACKEND, False))
+        elif role == self.ROLE_PROXY_WEB:
+            logs.extend(self.get_role_logs(self.ROLE_PROXY, False))
+            logs.extend(self.get_role_logs(self.ROLE_WEB, False))
+
+        return logs
+
     def _configuration_get(self):
         return self.service_config
 
@@ -158,6 +191,21 @@ class BasicWebserversManager(BaseManager):
 
     # def _adapting_get_count(self):
     #     return self.memcache.get('adapting_count')
+
+    def _update_roles(self, nodes):
+        for node in nodes:
+            if node.isRunningProxy and node.isRunningWeb and node.isRunningBackend:
+                node.role = self.ROLE_PROXY_BACKEND_WEB
+            elif node.isRunningProxy and node.isRunningBackend:
+                node.role = self.ROLE_PROXY_BACKEND
+            elif node.isRunningProxy and node.isRunningWeb:
+                node.role = self.ROLE_PROXY_WEB
+            elif node.isRunningBackend:
+                node.role = self.ROLE_BACKEND
+            elif node.isRunningProxy:
+                node.role = self.ROLE_PROXY
+            elif node.isRunningWeb:
+                node.role = self.ROLE_WEB
 
     def _start_scalaris(self, config, nodes, first_start):
         # If needed, must be overridden by extending classes
@@ -249,7 +297,7 @@ class BasicWebserversManager(BaseManager):
             elif node.role == self.ROLE_BACKEND:
                 kwargs = {'runBackend': True}
 
-            config.serviceNodes[node.id] = WebServiceNode(node, **kwargs)
+            config.serviceNodes[str(node.id)] = WebServiceNode(node, **kwargs)
 
         config.update_mappings()
 
@@ -456,26 +504,25 @@ class BasicWebserversManager(BaseManager):
         for i in backendNodesKill:
             i.isRunningBackend = False
 
-        node_instances = nodes
-        # node_instances = []
+        # nodes = []
         # try:
         #     self._adapting_set_count(
         #         len(proxyNodesNew) + len(webNodesNew) + len(backendNodesNew))
         #     if proxy > 0:
-        #         node_instances += self.controller.create_nodes(
+        #         nodes += self.controller.create_nodes(
         #             len(proxyNodesNew), client.check_agent_process, self.AGENT_PORT, cloud)
         #     if web > 0 and vm_web_type is None:
-        #         node_instances += self.controller.create_nodes(
+        #         nodes += self.controller.create_nodes(
         #             len(webNodesNew), client.check_agent_process, self.AGENT_PORT, cloud)
         #     elif web > 0:
-        #         node_instances += self.controller.create_nodes(
+        #         nodes += self.controller.create_nodes(
         #             len(webNodesNew), client.check_agent_process, self.AGENT_PORT, cloud, inst_type=vm_web_type)
 
         #     if backend > 0 and vm_backend_type is None:
-        #         node_instances += self.controller.create_nodes(
+        #         nodes += self.controller.create_nodes(
         #             len(backendNodesNew), client.check_agent_process, self.AGENT_PORT, cloud)
         #     elif backend > 0:
-        #         node_instances += self.controller.create_nodes(
+        #         nodes += self.controller.create_nodes(
         #             len(backendNodesNew), client.check_agent_process, self.AGENT_PORT, cloud, inst_type=vm_backend_type)
         # except:
         #     self.logger.exception(
@@ -490,11 +537,12 @@ class BasicWebserversManager(BaseManager):
         i = 0
         newNodes = []
         for kwargs in proxyNodesNew + webNodesNew + backendNodesNew:
-            config.serviceNodes[node_instances[i].id] = WebServiceNode(
-                node_instances[i], self.DEFAULT_NODE_WEIGHT, self.DEFAULT_NODE_WEIGHT, **kwargs)
-            newNodes += [config.serviceNodes[node_instances[i].id]]
+            config.serviceNodes[str(nodes[i].id)] = WebServiceNode(
+                nodes[i], self.DEFAULT_NODE_WEIGHT, self.DEFAULT_NODE_WEIGHT, **kwargs)
+            newNodes += [config.serviceNodes[nodes[i].id]]
             i += 1
         config.update_mappings()
+        self._update_roles(config.serviceNodes.values())
 
         # start the Scalaris process to keep the session data
         self._start_scalaris(config, nodes, False)
@@ -522,8 +570,8 @@ class BasicWebserversManager(BaseManager):
             self._update_proxy(
                 config, [i for i in config.serviceNodes.values()
                          if i.isRunningProxy and i not in newNodes])
-        # remove_nodes old ones
 
+        # remove_nodes old ones
         self._stop_backend(config, backendNodesKill)
         self._stop_web(config, webNodesKill)
 
@@ -850,6 +898,7 @@ class BasicWebserversManager(BaseManager):
             packingNode.isRunningWeb = True
 
         config.update_mappings()
+        self._update_roles(config.serviceNodes.values())
         self.logger.info("Remove_nodes " + str(config.serviceNodes))
         # new nodes
         if packBackend:
@@ -1171,7 +1220,7 @@ class BasicWebserversManager(BaseManager):
     @expose('GET')
     def get_node_info(self, kwargs):
         config = self._configuration_get()
-        exp_params = [('serviceNodeId', is_in_list(config.serviceNodes))]
+        exp_params = [('serviceNodeId', is_in_list(config.serviceNodes.keys()))]
         try:
             serviceNodeId = check_arguments(exp_params, kwargs)
         except Exception as ex:
@@ -1187,7 +1236,9 @@ class BasicWebserversManager(BaseManager):
                             'isRunningWeb': serviceNode.isRunningWeb,
                             'isRunningBackend': serviceNode.isRunningBackend,
                             'weightWeb': serviceNode.weightWeb,
-                            'weightBackend': serviceNode.weightBackend
+                            'weightBackend': serviceNode.weightBackend,
+                            'role': serviceNode.role,
+                            'logs': self.get_role_logs(serviceNode.role)
                             }
         })
 
@@ -1315,6 +1366,7 @@ class BasicWebserversManager(BaseManager):
             raise ex
         finally:
             config.update_mappings()
+            self._update_roles(config.serviceNodes.values())
             config.proxy_count = len(config.getProxyServiceNodes())
             config.backend_count = len(config.getBackendServiceNodes())
             if config.backend_count == 1 and config.getBackendServiceNodes()[0] in config.getProxyServiceNodes():

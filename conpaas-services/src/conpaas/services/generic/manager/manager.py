@@ -122,6 +122,18 @@ echo "" >> /root/generic.out
     def get_starting_nodes(self):
         return { self.ROLE_MASTER: 1 }
 
+    def get_role_logs(self, role):
+        logs = BaseManager.get_role_logs(self, role)
+
+        logs.extend([{'filename': 'agent.out',
+                      'description': 'agent output',
+                      'path': '/root/agent.out'},
+                     {'filename': 'agent.err',
+                      'description': 'agent error',
+                      'path': '/root/agent.err'}]);
+
+        return logs
+
     def _create_initial_configuration(self):
         self.logger.info("Creating initial configuration")
 
@@ -320,7 +332,10 @@ echo "" >> /root/generic.out
                 'ip': serviceNode.ip,
                 'vmid': serviceNode.vmid,
                 'cloud': serviceNode.cloud_name,
-                'is_master': self.__is_master(serviceNode)
+                'is_master': self.__is_master(serviceNode),
+                'role': serviceNode.role,
+                'logs': self.get_role_logs(serviceNode.role)
+
             }
         })
 

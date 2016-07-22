@@ -42,6 +42,7 @@ class ServiceCmd(object):
         self._add_get_script()
         self._add_set_script()
         self._add_get_log()
+        self._add_list_agent_logs()
         self._add_get_agent_log()
         self._add_get_history()
         self._add_add_nodes()
@@ -367,11 +368,7 @@ class ServiceCmd(object):
                     params = { 'serviceNodeId': node }
                     details = self.client.call_manager_get(app_id, service_id, "get_node_info", params)
                 except Exception:
-                    print "WARNING: got node identifier from list_nodes but failed on get_node_info",
-                    if type(details) is dict and 'error' in details:
-                        print ": %s" % details['error']
-                    else:
-                        print "."
+                    print "WARNING: got node identifier from list_nodes but failed on get_node_info."
                     row = {
                         'aid': app_id,
                         'sid': service_id,
@@ -584,6 +581,26 @@ class ServiceCmd(object):
         else:
             print "FAILED!"
 
+    # ========== list_agent_logs
+    def _add_list_agent_logs(self):
+        subparser = self.add_parser('list_agent_logs',
+                                    help="list the log files available for an agent")
+        subparser.set_defaults(run_cmd=self.list_agent_logs, parser=subparser)
+        subparser.add_argument('app_name_or_id',
+                               help="Name or identifier of an application")
+        subparser.add_argument('serv_name_or_id',
+                               help="Name or identifier of a service")
+        subparser.add_argument('agent_id',
+                               help="Id of the agent (use list_nodes to find it)")
+
+    def list_agent_logs(self, args):
+        app_id, service_id = self.check_service(args.app_name_or_id, args.serv_name_or_id)
+
+        params = { 'serviceNodeId': args.agent_id }
+        res = self.client.call_manager_get(app_id, service_id, "get_node_info", params)
+
+        print self.client.prettytable(('filename', 'description'), res['serviceNode']['logs'])
+
     # ========== get_agent_log
     def _add_get_agent_log(self):
         subparser = self.add_parser('get_agent_log',
@@ -596,7 +613,8 @@ class ServiceCmd(object):
         subparser.add_argument('agent_id',
                                help="Id of the agent (use list_nodes to find it)")
         subparser.add_argument('-f', '--filename', metavar='FILENAME',
-                               default=None, help="log file name")
+                               default=None, help="log file name (use "
+                                                  "list_agent_logs to find it)")
 
     def get_agent_log(self, args):
         app_id, service_id = self.check_service(args.app_name_or_id, args.serv_name_or_id)
@@ -604,7 +622,7 @@ class ServiceCmd(object):
         params = { 'agentId': args.agent_id }
         if args.filename:
             params['filename'] = args.filename
-        res = self.client.call_manager_get(app_id, 0, "get_agent_log", params)
+        res = self.client.call_manager_get(app_id, service_id, "get_agent_log", params)
 
         print res['log']
 

@@ -40,7 +40,7 @@ class SQLServiceNode(ServiceNode):
     def __init__(self, node):
         ServiceNode.__init__(self, node.vmid,
                              node.ip, node.private_ip,
-                             node.cloud_name)
+                             node.cloud_name, role=node.role)
         self.port = 5555
 
     '''String representation of the ServiceNode.
@@ -65,7 +65,7 @@ class GLBServiceNode(ServiceNode):
     def __init__(self, node):
         ServiceNode.__init__(self, node.vmid,
                              node.ip, node.private_ip,
-                             node.cloud_name)
+                             node.cloud_name, role=node.role)
         self.port = 5555
 
     '''String representation of the ServiceNode.
@@ -112,13 +112,12 @@ class Configuration(object):
         return [serviceNode for serviceNode in self.glb_service_nodes.values()]
 
     def getMySQLNode(self, id):
-	# self.logger.debug('Entering getMysqlNodes id= %s ' % id)
-	if self.serviceNodes.has_key(id) :
-        	node = self.serviceNodes[id]
-	else:
-		node = self.glb_service_nodes[id]
-	# self.logger.debug('Exit getMySQlNode node = %s' %node)
-	return node
+        if self.serviceNodes.has_key(id):
+            node = self.serviceNodes[id]
+        else:
+            node = self.glb_service_nodes[id]
+
+        return node
 
     def addGLBServiceNodes(self, nodes):
         '''
@@ -126,7 +125,7 @@ class Configuration(object):
         '''
         self.logger.debug('Entering addGLBServiceNodes')
         for node in nodes:
-            self.glb_service_nodes[node.id] = GLBServiceNode(node)
+            self.glb_service_nodes[str(node.id)] = GLBServiceNode(node)
         self.logger.debug('Exiting addGLBServiceNodes')
 
     def removeGLBServiceNode(self, id):
@@ -144,7 +143,7 @@ class Configuration(object):
           Add new Service Node to the server (configuration).
         '''
         for node in nodes:
-            self.serviceNodes[node.id] = SQLServiceNode(node)
+            self.serviceNodes[str(node.id)] = SQLServiceNode(node)
 
     def removeMySQLServiceNode(self, id):
         '''

@@ -251,7 +251,7 @@ class Service {
  	}
 
 	public function fetchAgentLog($params) {
-		$json = $this->application->managerRequest('get', 'get_agent_log', 0, $params);
+		$json = $this->application->managerRequest('get', 'get_agent_log', $this->sid, $params);
 		$log = json_decode($json, true);
 		return $log['result']['log'];
 	}

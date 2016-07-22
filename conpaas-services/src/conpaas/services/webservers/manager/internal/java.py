@@ -12,12 +12,14 @@ import zipfile
 import tempfile
 import stat
 import os.path
+import datetime
 
 from conpaas.services.webservers.manager.config import CodeVersion, JavaServiceConfiguration
 from conpaas.services.webservers.agent import client
 from conpaas.services.webservers.misc import archive_open, archive_get_members
 from conpaas.core.https.server import HttpErrorResponse, HttpJsonResponse
 
+from conpaas.core.manager import BaseManager
 from . import BasicWebserversManager, ManagerException
 from conpaas.core.expose import expose
 from conpaas.core import git
@@ -34,6 +36,30 @@ class JavaManager(BasicWebserversManager):
         BasicWebserversManager.__init__(self, config_parser)
         if kwargs['reset_config']:
             self._create_initial_configuration()
+
+    def get_role_logs(self, role, add_default=True):
+        if add_default:
+            logs = BaseManager.get_role_logs(self, role)
+        else:
+            logs = []
+
+        if role == self.ROLE_BACKEND:
+            now = datetime.datetime.now()
+            access_log = ('localhost_access_log.%d-%02d-%02d.txt' %
+                              (now.year, now.month, now.day))
+
+            logs.extend([{'filename': 'access_log.txt',
+                          'description': 'Tomcat access',
+                          'path': '/var/cache/cpsagent/tomcat_instance/logs/'
+                                  '%s' % access_log},
+                         {'filename': 'catalina.out',
+                          'description': 'Tomcat output',
+                          'path': '/var/cache/cpsagent/tomcat_instance/logs/'
+                                  'catalina.out'}]);
+        else:
+            logs.extend(BasicWebserversManager.get_role_logs(self, role, False))
+
+        return logs
 
     def _update_code(self, config, nodes):
         for serviceNode in nodes:

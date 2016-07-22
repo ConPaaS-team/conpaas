@@ -161,41 +161,15 @@ class GenericInstance extends Instance {
         return $html;
     }
 
-    protected function renderAgentLogs() {
-        $linkAgentLogs = LinkUI('agent log',
-            'viewlog.php?aid='.$_SESSION['aid']
-            .'&sid='.$this->info['sid']
-            .'&agentId='.$this->info['id']
-        )->setExternal(true);
-        $linkAgentOut = LinkUI('agent output',
-            'viewlog.php?aid='.$_SESSION['aid']
-            .'&sid='.$this->info['sid']
-            .'&agentId='.$this->info['id']
-            .'&filename=agent.out'
-        )->setExternal(true);
-        $linkAgentErr = LinkUI('agent error',
-            'viewlog.php?aid='.$_SESSION['aid']
-            .'&sid='.$this->info['sid']
-            .'&agentId='.$this->info['id']
-            .'&filename=agent.err'
-        )->setExternal(true);
-        $html = '<div class="right agent-logs">'
-                    .$linkAgentLogs
-                    .$linkAgentOut
-                    .$linkAgentErr
-				.'</div>';
-        return $html;
-    }
-
     public function renderInCluster() {
         return
         '<div class="instance dualbox">'
             .'<div class="left">'
                 .'<div class="left generic-instance-name">'
                     .'<i class="title">Instance '.$this->info['id'].'</i>'
-                    .'<span class="cloud-name" title="cloud provider">'
+                    .'<i class="cloud-name" title="cloud provider">'
                         .$this->info['cloud']
-                    .'</span>'
+                    .'</i>'
                 .'</div>'
                 .'<div class="clear"></div>'
                 .'<div class="left">'
@@ -212,9 +186,7 @@ class GenericInstance extends Instance {
             .'<div class="right agent-ip-address">'
                 .'<i class="address">'.$this->info['ip'].'</i>'
             .'</div>'
-            .'<div class="right agent-logs">'
-                .$this->renderAgentLogs()
-            .'</div>'
+            .$this->renderAgentLogs()
             .'<div class="clear"></div>'
             .$this->renderVolumeCreateButton()
         .'</div>';

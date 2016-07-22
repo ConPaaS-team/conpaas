@@ -68,6 +68,16 @@ class MySQLManager(BaseManager):
         else:
             return BaseManager.get_role_sninfo(self, role, cloud)
 
+    def get_role_logs(self, role):
+        logs = BaseManager.get_role_logs(self, role)
+
+        if role == self.ROLE_MYSQL:
+            logs.extend([{'filename': 'mysql.log',
+                          'description': 'MySQL log',
+                          'path': '/var/cache/cpsagent/mysql.log'}]);
+
+        return logs
+
     def get_context_replacement(self):
         if not self.root_pass:
             # self.root_pass='password'
@@ -164,21 +174,21 @@ class MySQLManager(BaseManager):
                 name of cloud provider
         """
         try:
-            exp_params = [('serviceNodeId', is_string)]
+            node_ids = self.config.serviceNodes.keys() + self.config.glb_service_nodes.keys()
+            exp_params = [('serviceNodeId', is_in_list(node_ids))]
             serviceNodeId = check_arguments(exp_params, kwargs)
         except Exception as ex:
             return HttpErrorResponse("%s" % ex)
 
-        if serviceNodeId not in self.config.serviceNodes and serviceNodeId not in self.config.glb_service_nodes :
-            return HttpErrorResponse('Unknown "serviceNodeId" %s, should be one of %s.'
-                                     % (serviceNodeId, self.config.serviceNodes.keys()))
         serviceNode = self.config.getMySQLNode(serviceNodeId)
         return HttpJsonResponse({'serviceNode': {'id': serviceNode.id,
                                                  'ip': serviceNode.ip,
                                                  'vmid': serviceNode.vmid,
                                                  'cloud': serviceNode.cloud_name,
                                                  'isNode': serviceNode.isNode,
-                                                 'isGlb_node': serviceNode.isGlb_node
+                                                 'isGlb_node': serviceNode.isGlb_node,
+                                                 'role': serviceNode.role,
+                                                 'logs': self.get_role_logs(serviceNode.role)
                                                  }
                                  })
 

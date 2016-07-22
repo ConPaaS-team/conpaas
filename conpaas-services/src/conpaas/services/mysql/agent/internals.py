@@ -99,8 +99,6 @@ class MySQLAgent(BaseAgent):
 
         No parameters.
         """
-        if len(kwargs) > 0:
-            self.logger.warning('MySQL agent "stop" was called with arguments that will be ignored: "%s"' % kwargs)
         try:
             exp_params = []
             check_arguments(exp_params, kwargs)
@@ -263,8 +261,6 @@ class MySQLAgent(BaseAgent):
         Returns the local load of the single nodes.
 
         """
-	if len(kwargs) > 0:
-            self.logger.warning('MySQL agent "stop" was called with arguments that will be ignored: "%s"' % kwargs)
         try:
 	    exp_params = []
 	    check_arguments(exp_params, kwargs)

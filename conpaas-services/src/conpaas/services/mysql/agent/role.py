@@ -65,6 +65,8 @@ class MySQLServer(object):
             # Get MySQL configuration parameters
             self.manager_ip = config.get('agent', 'MANAGER_IP')
             self.mysqldump_path = config.get('agent', 'MYSQLDUMP_PATH')
+            self.var_cache = config.get('agent', 'VAR_CACHE')
+            self.error_log = join(self.var_cache, 'mysql.log')
             self.mycnf_filepath = config.get("MySQL_configuration", "my_cnf_file")
             self.path_mysql_ssr = config.get("MySQL_configuration", "path_mysql_ssr")
 
@@ -87,7 +89,7 @@ class MySQLServer(object):
                 if "datadir" in line:
                     f.write("datadir = %s/data/\n" % self.mount_point)
                 elif "log_error" in line:
-                    f.write("log_error = /root/mysql.log\n")
+                    f.write("log_error = %s\n" % self.error_log)
                 #elif "socket" in line:
                 #    f.write("socket = %s/data/\n" % self.mount_point)
                 elif "bind-address" in line:

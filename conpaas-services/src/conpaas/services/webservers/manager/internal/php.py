@@ -14,6 +14,8 @@ import os.path
 from conpaas.services.webservers.manager.config import CodeVersion, PHPServiceConfiguration
 from conpaas.services.webservers.agent import client
 from conpaas.core.https.server import HttpErrorResponse, HttpJsonResponse
+
+from conpaas.core.manager import BaseManager
 from . import BasicWebserversManager, ManagerException
 from conpaas.core.expose import expose
 
@@ -48,6 +50,24 @@ class PHPManager(BasicWebserversManager):
                 self.scaler = ProvisioningManager(config_parser)
             except Exception as ex:
                 self.logger.exception('Failed to initialize the Provisioning Manager %s' % str(ex))
+
+    def get_role_logs(self, role, add_default=True):
+        if add_default:
+            logs = BaseManager.get_role_logs(self, role)
+        else:
+            logs = []
+
+        if role == self.ROLE_BACKEND:
+            logs.extend([{'filename': 'fpm-access.log',
+                          'description': 'PHP access',
+                          'path': '/var/cache/cpsagent/fpm-access.log'},
+                         {'filename': 'fpm-error.log',
+                          'description': 'PHP error',
+                          'path': '/var/cache/cpsagent/fpm-error.log'}]);
+        else:
+            logs.extend(BasicWebserversManager.get_role_logs(self, role, False))
+
+        return logs
 
     def _render_scalaris_node(self, node, role):
         ip = node.ip.replace('.', ',')

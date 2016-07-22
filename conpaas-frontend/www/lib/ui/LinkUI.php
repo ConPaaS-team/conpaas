@@ -49,7 +49,8 @@ class LinkUI {
 
 	private function renderSymbol() {
 		return
-			'<img src="'.$this->iconURL.'" style="vertical-align: middle;" />';
+			'<img src="'.$this->iconURL.'" width="14" height="14"'
+				.' style="vertical-align: middle;" />';
 	}
 
 	public function __toString() {

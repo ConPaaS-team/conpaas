@@ -226,6 +226,19 @@ class BaseManager(ConpaasRequestHandlerComponent):
                 sninfo.append(self.get_role_sninfo(role, cloud))
         return sninfo
 
+    def get_role_logs(self, role):
+        """Returns a list containing the logs that are be exposed by an agent
+        of the specified type (role). Each log is represented by a dict
+        containing the name of the log file, the description and the file
+        path inside the agent.
+
+        It should be overwritten by the service managers if specific roles
+        need to expose additional log files.
+        """
+        return [ {'filename': 'cpsagent.log',
+                  'description': 'agent log',
+                  'path': '/var/log/cpsagent.log'} ]
+
     def get_context_replacement(self):
         """Returns a dict used to fill in the values of variables in the
         VM contextualization script.
@@ -293,6 +306,37 @@ class BaseManager(ConpaasRequestHandlerComponent):
             return HttpJsonResponse({'log': file_get_contents(self.logfile)})
         except:
             return HttpErrorResponse('Failed to read log')
+
+    @expose('GET')
+    def get_agent_log(self, kwargs):
+        """Return logfile"""
+        node_ids = [ str(node.id) for node in self.nodes ]
+        exp_params = [('agentId', is_in_list(node_ids)),
+                      ('filename', is_string, None)]
+        try:
+            agent_id, filename = check_arguments(exp_params, kwargs)
+
+            # Get the node that has the specified agent_id
+            node = [ node for node in self.nodes if node.id == agent_id ][0]
+
+            # If a filename was specified...
+            if filename:
+                # Get the logs for the node's role
+                logs = self.get_role_logs(node.role)
+
+                # Check that the filename is valid for that role
+                filenames = map(lambda log: log['filename'], logs)
+                exp_params = [('filename', is_in_list(filenames))]
+                check_arguments(exp_params, dict(filename=filename))
+
+                # Replace the filename with its corresponding path in the agent
+                filename = [ log['path'] for log in logs
+                                         if log['filename'] == filename ][0]
+
+            res = self.fetch_agent_log(node.ip, self.AGENT_PORT, filename)
+            return HttpJsonResponse(res)
+        except Exception as ex:
+            return HttpErrorResponse("%s" % ex)
 
     # the following two methods are the base agent client
     def _check(self, response):
@@ -918,22 +962,6 @@ class ApplicationManager(BaseManager):
             return HttpJsonResponse(file_get_contents(fullpath))
         except IOError:
             return HttpErrorResponse('No startup script')
-
-    @expose('GET')
-    def get_agent_log(self, kwargs):
-        """Return logfile"""
-        node_ids = [ str(node.id) for node in self.nodes ]
-        exp_params = [('agentId', is_in_list(node_ids)),
-                      ('filename', is_string, None)]
-        try:
-            agent_id, filename = check_arguments(exp_params, kwargs)
-
-            node_ip = [ node.ip for node in self.nodes
-                        if node.id == agent_id ][0]
-            res = self.fetch_agent_log(node_ip, self.AGENT_PORT, filename)
-            return HttpJsonResponse(res)
-        except Exception as ex:
-            return HttpErrorResponse("%s" % ex)
 
     @expose('POST')
     def git_push_hook(self, kwargs):
