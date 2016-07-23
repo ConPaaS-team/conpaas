@@ -215,8 +215,24 @@ class EC2Cloud(Cloud):
 
 
     def create_volume(self, size, name, vm_id):
-        node = [ node for node in self.driver.list_nodes() 
-                if node.id == vm_id ][0]
+
+        # Make sure that we wait a little until the new node shows up
+        while True:
+            try:
+                nodes = self.driver.list_nodes()
+            except:
+                self.logger.debug('[create_volume] list_nodes() failed,'
+                                  ' sleeping 1 second')
+                time.sleep(1)
+                continue
+            nodes = [ node for node in nodes if node.id == vm_id ]
+            if nodes:
+                node = nodes[0]
+                break
+            else:
+                self.logger.debug('[create_volume] new node is not in'
+                                  ' list_nodes(), sleeping 1 second')
+                time.sleep(1)
 
         # We have to create the volume in the same availability zone as the
         # instance we want to attach it to. Let's find out the availability
