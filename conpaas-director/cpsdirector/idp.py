@@ -15,7 +15,7 @@ import flask_openid
 #from flask import Flask, render_template, request, g, session, flash, \
 from flask import render_template, request, g, session, flash, \
      redirect, url_for, abort
-# from flask.ext.openid import OpenID
+# from flask_openid import OpenID
 from openid.extensions import pape
 from cpsdirector import oid, db
 db_session = db.session()

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
 from flask import Flask
-from flask.ext.sqlalchemy import SQLAlchemy
-from flask.ext.openid import OpenID
+from flask_sqlalchemy import SQLAlchemy
+from flask_openid import OpenID
 from openid.extensions import pape
 # from celery import Celery
 
