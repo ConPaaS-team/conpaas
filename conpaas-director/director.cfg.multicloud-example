@@ -7,34 +7,22 @@ SUPPORT_EXTERNAL_IDP = false
 
 [iaas]
 # Our default cloud
-DRIVER = opennebula
-IMAGE_ID = 42
-INST_TYPE = small
-USER = oneadmin
+DRIVER = openstack
+USER = admin
 PASSWORD = password
-URL = http://occi-server.example.org:4567
-NET_ID = 1
-NET_GATEWAY = gateway.example.org
-NET_NAMESERVER = 8.8.8.8
-NET_NETMASK = 255.255.255.0
-OS_ARCH = x86_64
-OS_ROOT = hda
-DISK_TARGET = hda
-CONTEXT_TARGET = hdc
-# specify COST_PER_TIME as currency amount / ATU (in seconds)
-# so            $ 6.00 / 3600  is 6 dollar per hour             (or part thereof)
-# and           $ 1.00 / 600   is 1 dollar per 10 minutes       (or part thereof)
-COST_PER_TIME = $ 1.00/600
-MAX_VMS = 9
+HOST = 172.16.0.1
+SECURITY_GROUP_NAME = default
+KEY_NAME = test
+IMAGE_ID = conpaas
+SIZE_ID = m1.micro
 
 # Here we specify the names of our additional clouds
-OTHER_CLOUDS = ec2virginia, amsterdam
+OTHER_CLOUDS = ec2virginia
 
 # We need one section for each cloud name listed in OTHER_CLOUDS
 
 [ec2virginia]
 # We want to use EC2 Virginia as one of our additional clouds
-
 DRIVER = ec2
 USER = EC2USERNAME
 PASSWORD = EC2PASSWORD
@@ -43,34 +31,6 @@ KEY_NAME = my_keyname
 REGION = ec2.us-east-1.amazonaws.com
 IMAGE_ID = ami-7a565912
 SIZE_ID = t1.micro
-# specify COST_PER_TIME as currency amount / ATU (in seconds)
-# so            $ 6.00 / 3600  is 6 dollar per hour             (or part thereof)
-# and           $ 1.00 / 600   is 1 dollar per 10 minutes       (or part thereof)
-COST_PER_TIME = $ 12.00/3600
-MAX_VMS = 9
-
-[amsterdam]
-# We also have a data center in Amsterdam with a running OpenNebula installation 
-
-DRIVER = opennebula
-IMAGE_ID = 2
-INST_TYPE = small
-USER = oneadmin
-PASSWORD = password
-URL = http://occi-server-amsterdam.example.org:4567
-NET_ID = 1
-NET_GATEWAY = gateway-amsterdam.example.org
-NET_NAMESERVER = 8.8.8.8
-NET_NETMASK = 255.255.255.0
-OS_ARCH = x86_64
-OS_ROOT = hda
-DISK_TARGET = hda
-CONTEXT_TARGET = hdc
-# specify COST_PER_TIME as currency amount / ATU (in seconds)
-# so            $ 6.00 / 3600  is 6 dollar per hour             (or part thereof)
-# and           $ 1.00 / 600   is 1 dollar per 10 minutes       (or part thereof)
-COST_PER_TIME = $ 6.00/3600
-MAX_VMS = 9
 
 
 [director]
