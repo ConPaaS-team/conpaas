@@ -13,6 +13,7 @@ CPSVERSION = '2.0.0'
 
 CONFDIR = '/etc/cpsdirector'
 LOGDIR = '/var/log/cpsdirector'
+PYTHON_EGGS = '/var/www/.python-eggs'
 
 if not os.geteuid() == 0:
     CONFDIR = 'cpsdirectorconf'
@@ -36,7 +37,7 @@ setup(name='cpsdirector',
       package_data={ 'cpsdirector': [ 'ConPaaS.tar.gz',] },
       data_files=[ ( CONFDIR, [ 'director.cfg.example', 'director.cfg.multicloud-example', 'ConPaaS.tar.gz' ] ), ],
       scripts=[ 'cpsadduser.py', 'director.wsgi', 'cpsconf.py', 'cpscheck.py', 'add-user-columns-to-db.sh' ],
-      install_requires=[ 'cpslib', 'flask-sqlalchemy', 'apache-libcloud', 'netaddr', 'flask-openid' ],
+      install_requires=[ 'cpslib', 'flask-sqlalchemy', 'apache-libcloud', 'netaddr', 'flask-openid', 'Cheetah' ],
       dependency_links=[ 'http://www.conpaas.eu/dl/cpslib-%s.tar.gz' % CPSVERSION, ],)
 
 if __name__ == "__main__" and sys.argv[1] == "install":
@@ -82,3 +83,11 @@ if __name__ == "__main__" and sys.argv[1] == "install":
     except OSError:
         print "W: 'chown www-data:www-data %s' failed" % CONFDIR + '/data'
 
+    # create and set permissions for the .python-eggs dir
+    if not os.path.exists(PYTHON_EGGS):
+        os.mkdir(PYTHON_EGGS)
+    try:
+        os.chown(PYTHON_EGGS, getpwnam('www-data').pw_uid, 
+            getgrnam('www-data').gr_gid)
+    except OSError:
+        print "W: 'chown www-data:www-data %s' failed" % PYTHON_EGGS
