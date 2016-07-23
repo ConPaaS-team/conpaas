@@ -73,6 +73,7 @@ order to setup your ConPaaS Director installation.
 #. Install the required packages::
 
    $ sudo apt-get update
+   $ sudo apt-get install libssl-dev libffi-dev
    $ sudo apt-get install build-essential python-setuptools python-dev 
    $ sudo apt-get install apache2 libapache2-mod-wsgi libcurl4-openssl-dev
 
