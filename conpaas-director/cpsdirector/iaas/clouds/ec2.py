@@ -47,27 +47,26 @@ class EC2Cloud(Cloud):
 
     # connect to ec2 cloud
     def _connect(self):
+        EC2Driver = get_driver(Provider.EC2)
         if self.ec2_region == "ec2.us-east-1.amazonaws.com":
-            EC2Driver = get_driver(Provider.EC2_US_EAST)
+            self.driver = EC2Driver(self.user, self.passwd, region='us-east-1')
         elif self.ec2_region == "ec2.us-west-1.amazonaws.com":
-            EC2Driver = get_driver(Provider.EC2_US_WEST)
+            self.driver = EC2Driver(self.user, self.passwd, region='us-west-1')
         elif self.ec2_region == "ec2.us-west-2.amazonaws.com":
-            EC2Driver = get_driver(Provider.EC2_US_WEST_OREGON)
+            self.driver = EC2Driver(self.user, self.passwd, region='us-west-2')
         elif self.ec2_region == "ec2.eu-west-1.amazonaws.com":
-            EC2Driver = get_driver(Provider.EC2_EU_WEST)
+            self.driver = EC2Driver(self.user, self.passwd, region='eu-west-1')
         elif self.ec2_region == "ec2.sa-east-1.amazonaws.com":
-            EC2Driver = get_driver(Provider.EC2_SA_EAST)
+            self.driver = EC2Driver(self.user, self.passwd, region='sa-east-1')
         elif self.ec2_region == "ec2.ap-northeast-1.amazonaws.com":
-            EC2Driver = get_driver(Provider.EC2_AP_NORTHEAST)
+            self.driver = EC2Driver(self.user, self.passwd, region='ap-northeast-1')
         elif self.ec2_region == "ec2.ap-southeast-1.amazonaws.com":
-            EC2Driver = get_driver(Provider.EC2_AP_SOUTHEAST)
+            self.driver = EC2Driver(self.user, self.passwd, region='ap-southeast-1')
         elif self.ec2_region == "ec2.ap-southeast-2.amazonaws.com":
-            EC2Driver = get_driver(Provider.EC2_AP_SOUTHEAST2)
+            self.driver = EC2Driver(self.user, self.passwd, region='ap-southeast-2')
         else:
             raise Exception('Unknown EC2 region: %s' % self.ec2_region)
 
-        self.driver = EC2Driver(self.user,
-                                self.passwd)
         self.connected = True
 
     def config(self, config_params={}, context=None):
