@@ -206,6 +206,7 @@ class OpenStackCloud(Cloud):
                 attach_res = False
                 time.sleep(5)
 
+        self.logger.debug('Attaching volume succeeded. Result: %s' % attach_res)
         return attach_res
 
     def detach_volume(self, volume):
