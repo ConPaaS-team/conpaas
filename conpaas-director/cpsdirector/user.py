@@ -228,7 +228,9 @@ def login_required(fn):
                 return fn(*args, **kwargs)
 
         # authentication failed
-        return build_response(simplejson.dumps(False))
+        msg = "User authentication failed"
+        log_error(msg)
+        return build_response(jsonify(error_response(msg)))
 
     return decorated_view
 
