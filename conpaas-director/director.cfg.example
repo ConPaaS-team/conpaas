@@ -11,15 +11,19 @@ DEPLOYMENT_NAME = conpaas-online
 # Support for external identity providers
 SUPPORT_EXTERNAL_IDP = false
 
+# Maximum credit for new users created through the director's interface /new_user
+MAX_CREDIT = 50
+
+
 # Uncomment the following directives in case you want to use per-application
 # Virtual Private Networks. In the default config presented below, the maximum
 # number of services per application is 32 (2^5), with no more than 32767
-# agents each (2^(32-12-5)-1). 
-# 
+# agents each (2^(32-12-5)-1).
+#
 # VPN_BASE_NETWORK = 172.16.0.0
 # VPN_NETMASK = 255.240.0.0
-# VPN_SERVICE_BITS = 5 
-
+# VPN_SERVICE_BITS = 5
+#
 # If you want to use your own bootstrap nodes, give the list here of their IP
 # address, their port and their access protocol (UDP or TCP). Set one address
 # per line. If this configuration variable is commented or empty, then the
@@ -29,11 +33,6 @@ SUPPORT_EXTERNAL_IDP = false
 #    udp://aaa.bbb.ccc.ddd:port1
 #    tcp://eee.fff.ggg.hhh:port2
 #    ...
-
-
-# Maximum credit for new users created through the director's interface /new_user
-#
-# MAX_CREDIT = 50
 
 
 [iaas]
@@ -49,53 +48,53 @@ SUPPORT_EXTERNAL_IDP = false
 
 # OTHER_CLOUDS = cloud1,cloud2
 
-# Uncomment the following directives and set them to the appropriate values if
-# you want to use ConPaaS on Amazon EC2. If you want to use OpenNebula or
-# OpenStack, skip this part and fill in the directives for OpenNebula or
-# OpenStack, which you can find further down in this file.
+# Uncomment the following directives and set them to the appropriate values
+# if you want to use ConPaaS on Amazon EC2. If you want to use OpenStack,
+# skip this part and fill in the directives for OpenStack, which you can
+# find further down in this file.
 
 # Uncomment the following line to use ConPaaS on Amazon EC2:
 # DRIVER = ec2
 
 # USER should be set to your EC2 user name. Beware: this is not the
-# email address you normally use to login at the AWS management console. 
+# email address you normally use to login at the AWS management console.
 # An EC2 user name is a long opaque string. It can be found at
 # https://console.aws.amazon.com/iam/home?#users
-# under the name "Access key ID" in the "Security Credentials" tab 
+# under the name "Access key ID" in the "Security Credentials" tab
 # at the bottom of the page after you select one of the users in the
 # list. If the list is empty, then you must create a new one.
 
-# USER = 
+# USER =
 
 # PASSWORD should be set to the corresponding password.
 # Again, this is a long opaque string (longer than the USER). You should
 # normally have saved this information when you created a user. If you
-# have lost this information then the only thing you can do is create a 
+# have lost this information then the only thing you can do is create a
 # new access key for this user (by clicking "Manage Access Keys").
 
-# PASSWORD = 
+# PASSWORD =
 
 # This variable contains the created security group from the Web hosting
-# service. Your security groups can be found under "NETWORK & SECURITY" 
+# service. Your security groups can be found under "NETWORK & SECURITY"
 # in the left-side column of
 # https://console.aws.amazon.com/ec2/.
 # Please make sure that the security group you specify here exists in the
 # region you want to use.
 
-# SECURITY_GROUP_NAME = 
+# SECURITY_GROUP_NAME =
 
 # This variable contains the Key Pair name  to be used.  Your keypairs can be
 # found under "NETWORK & SECURITY" on https://console.aws.amazon.com/ec2/
 # Please make sure that the keypair you specify here exists in the region you
 # want to use.
 
-# KEY_NAME = 
+# KEY_NAME =
 
-# Amazon EC2 region. 
-# 
+# Amazon EC2 region.
+#
 # Valid values are:
 #
-# - ec2.us-east-1.amazonaws.com      # United States East (Northern Virginia) 
+# - ec2.us-east-1.amazonaws.com      # United States East (Northern Virginia)
 # - ec2.us-west-1.amazonaws.com      # United States West (Northern California)
 # - ec2.us-west-2.amazonaws.com      # United States West (Oregon)
 # - ec2.eu-west-1.amazonaws.com      # Europe West (Ireland)
@@ -107,11 +106,11 @@ SUPPORT_EXTERNAL_IDP = false
 # REGION = ec2.us-east-1.amazonaws.com
 
 # This variable contains the identifier of the ConPaaS Amazon Machine Image.
-# 
-# Please set this value according to the region you want to use (see
-# REGION). 
 #
-# ConPaaS official AMI ids are: 
+# Please set this value according to the region you want to use (see
+# REGION).
+#
+# ConPaaS official AMI ids are:
 #
 # - ami-7a565912 United States East (Northern Virginia)
 # - ami-b7dd31f3 United States West (Northern California)
@@ -135,21 +134,18 @@ SUPPORT_EXTERNAL_IDP = false
 #############
 
 # Uncomment the following directives and set them to the appropriate values if
-# you want to use ConPaaS on OpenStack. If you want to use OpenNebula, skip
-# this part and fill in the directives for OpenNebula, which you can find
-# further down in this file.
+# you want to use ConPaaS on OpenStack. If you want to use Amazon EC2, skip
+# this part and fill in the directives for Amazon EC2, which you can find
+# above.
 
 # DRIVER = openstack
 
-# USER and PASSWORD correspond to the values of EC2 Access Key and EC2 Secret Key
-# and are needed by the ConPaaS system to manage the OpenStack deployment using
-# the EC2 API. These values can be retrieved as explained in the ConPaaS installation
-# guide in the "Getting the OpenStack API access credentials" section.
-# Beware: these are long opaque strings and are different from the credentials used
-# to login into the OpenStack dashboard (Horizon).
+# USER and PASSWORD should be set to the credentials that you have for your
+# OpenStack deployment. These are the same credentials that you use to login
+# into the OpenStack dashboard (Horizon).
 
-# USER = 
-# PASSWORD = 
+# USER = admin
+# PASSWORD = password
 
 # HOST should contain the fully qualified domain name (FQDN) or IP address of
 # the controller node where OpenStack services are running.
@@ -172,37 +168,39 @@ SUPPORT_EXTERNAL_IDP = false
 # pairs can be listed using "nova keypair-list". In the default configuration
 # there is no key pair created, so you should create one.
 
-# KEY_NAME = 
+# KEY_NAME = test-key
 
-# TODO: this is not true when not using eucaliptus driver!
-# This variable contains the identifier of the ConPaaS image, as should be used
-# in the EC2 API. The value starts with "ami-" and can be obtained using the
-# "euca-describe-images" command. For more information on how to register a new
-# image, please consult the "Registering your ConPaaS image to OpenStack" section
-# of the ConPaaS installation guide.
+# This variable contains the name of the ConPaaS image as it is registered
+# in OpenStack. In Horizon, the value can be obtained by navigating to the
+# "Admin" > "System" > "Images" menu. Using the command line, the registered
+# images can be listed using the "glance image-list" command. For more information
+# on how to register a new image, please consult the "Registering your ConPaaS
+# image to OpenStack" section of the ConPaaS installation guide.
 
-# IMAGE_ID = ami-
+# IMAGE_ID = conpaas
 
 # This variable contains the type of OpenStack instances to use, called "flavor"
 # in OpenStack terminology. In Horizon, the accepted values can be obtained by
 # navigating to the "Admin" > "System" > "Flavors" menu. Using the command line,
 # the available flavors can be listed using "nova flavor-list".
 
-# SIZE_ID = m1.small
+# SIZE_ID = m1.micro
 
-# This variable contains the name or the id of the network where the VM (container)
-# will be booted. If there is only one network, it is not neccessary to set this 
-# parameter, Openstack will pick the default one 
+# This variable contains the name or the id of the network where the VM or container
+# will be booted. If there is only one network, it is not neccessary to set this
+# parameter, Openstack will pick the default one.
 
 # NETWORK_ID = conpaas-net
 
-# The following variable should match the ability of the network component of OpenStack to auto-assigning
-# public (floating) IPs to the newly created VMs. For example if you use nova-network, auto
-# assignment is possible, therefore this flag should be set to "true". However, neutron
-# does not support auto-assignment of floating ips, hence that has to be done by ConPaaS. In order
-# to instruct ConPaaS to do that, this flag has to be set to "false". If not set the system
-# will take "true" as the default value. Note that if this flag is left "true" while the network 
-# component does not support auto-assignment will result in the director waiting forever for the manager to start
+# The following variable should match the ability of the network component of
+# OpenStack to auto-assigning public (floating) IPs to the newly created VMs.
+# For example if you use nova-network, auto assignment is possible, therefore
+# this flag should be set to "true". However, neutron does not support auto-assignment
+# of floating ips, hence that has to be done by ConPaaS. In order to instruct
+# ConPaaS to do that, this flag has to be set to "false". If not set the system
+# will take "true" as the default value. Note that if this flag is left "true"
+# while the network component does not support auto-assignment will result in
+# the director waiting forever for the manager to start.
 
 # AUTO_ASSIGN_FLOATING_IP = true
 
