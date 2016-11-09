@@ -1,5 +1,5 @@
               ConPaaS: an integrated runtime environment
-		   for elastic Cloud applications 
+                   for elastic Cloud applications
                        http://www.conpaas.eu
 
 
@@ -16,11 +16,10 @@ distributed application.
 Each ConPaaS service is self-managed and elastic: it can deploy itself
 on the Cloud, monitor its own performance, and increase or decrease
 its processing capacity by dynamically (de-)provisioning instances of
-itself in the Cloud.  Services are designed to be composable: an
+itself in the Cloud. Services are designed to be composable: an
 application can for example use a Web hosting service, a database
-service to store the internal application state, a file storage
-service to store access logs, and a MapReduce service to periodically
-compute statistics from these logs. Application providers simply need
+service to store the internal application state and a file storage
+service to store access logs. Application providers simply need
 to submit a manifest file describing the structure of their
 application and its performance requirements.
 
@@ -39,15 +38,10 @@ ConPaaS currently contains:
 
 - One service dedicated to hosting MySQL databases.
 
-- One service dedicated to hosting a Scalarix key-value store.
-
-- One service dedicated to MapReduce.
-
-- One service dedicated to Task Farming.
-
-- One service dedicated to functional testing of web applications.
-
 - One service dedicated to XtreemFS volumes.
+
+- One service for executing arbitrary applications (the so-called “Generic
+  service”).
 
 - More services are currently being developed. They will be released
   as soon as they are reasonably well tested and integrated with the
