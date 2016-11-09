@@ -9,9 +9,7 @@ more. **cpsdirector** is a web service exposing all its
 functionalities via an HTTP-based API.
 
 ConPaaS can be used either via a command line interface (called
-**cpsclient**) or through a web frontend (**cpsfrontend**). More
-recently, a new command line interface called **cps-tools** has
-become available (note: **cps-tools** requires Python 2.7). This
+**cps-tools**) or through a web frontend (**cpsfrontend**). This
 document explains how to install and configure all the aforementioned
 components.
 
@@ -19,13 +17,13 @@ components.
 .. _ConPaaS: http://www.conpaas.eu
 .. _Flask: http://flask.pocoo.org/
 
-ConPaaS's **cpsdirector** and its two clients, **cpsclient** and **cpsfrontend**,
+ConPaaS's **cpsdirector** and its two clients, **cps-tools** and **cpsfrontend**,
 can be installed on your own hardware or on virtual machines running on public
 or private clouds. If you wish to install them on Amazon EC2, the Official Debian
 Wheezy, Ubuntu 12.04, Ubuntu 14.04 and Ubuntu 16.04 images are known to work well.
 
-ConPaaS services are designed to run either in an `OpenStack` or `OpenNebula` cloud
-installation or in the `Amazon Web Services` cloud.
+ConPaaS services are designed to run either in an `OpenStack` cloud installation
+or in the `Amazon Web Services` cloud.
 
 Installing ConPaaS requires to take the following steps:
 
@@ -34,15 +32,11 @@ Installing ConPaaS requires to take the following steps:
    where ConPaaS will run. Instructions on how to configure ConPaaS with
    Amazon EC2 can be found in :ref:`conpaas-on-ec2`. The section
    :ref:`conpaas-on-openstack` describes how to configure ConPaaS to work
-   with an OpenStack cloud and section :ref:`conpaas-on-opennebula` describes
-   the configurations needed for an OpenNebula cloud.
+   with an OpenStack cloud.
 
 #. Install and configure **cpsdirector** as explained in
    :ref:`director-installation`. All system configuration takes place in the
    director. 
-
-#. Install and configure **cpsclient** as explained in
-   :ref:`cpsclient-installation`.
 
 #. Install and configure **cps-tools** as explained in
    :ref:`cpstools-installation`.
@@ -98,14 +92,12 @@ order to setup your ConPaaS Director installation.
 
 #. Edit :file:`/etc/cpsdirector/director.cfg` providing your cloud
    configuration. Among other things, you will have to choose an Amazon
-   Machine Image (AMI) in case you want to use ConPaaS on Amazon EC2,
-   an OpenStack image if you want to use ConPaaS on OpenStack, or
-   an OpenNebula image if you want to use ConPaaS on OpenNebula.
+   Machine Image (AMI) in case you want to use ConPaaS on Amazon EC2 or
+   an OpenStack image if you want to use ConPaaS on OpenStack.
    Section :ref:`conpaas-on-ec2` explains how to use the Amazon Machine Images
    provided by the ConPaaS team, as well as how to make your own images
    if you wish to do so. A description of how to create an OpenStack
-   image suitable for ConPaaS is available in :ref:`conpaas-on-openstack` and
-   :ref:`conpaas-on-opennebula` contains instructions for OpenNebula.
+   image suitable for ConPaaS is available in :ref:`conpaas-on-openstack`.
 
 The installation process will create an `Apache VirtualHost` for the ConPaaS
 director in :file:`/etc/apache2/sites-available/conpaas-director.conf` for Apache 2.4
@@ -160,72 +152,7 @@ as follows::
     $ sudo apt-get install sqlite3
     $ sudo sqlite3 /etc/cpsdirector/director.db
 
-If you have an existing installation (version 1.4.0 and earlier) you
-should upgrade your database to contain the extra ``uuid`` field needed 
-for external IdP usage (see next topic) and the extra ``openid`` field
-needed for OpenID support::
-
-    $ sudo add-user-columns-to-db.sh
-
-This script will warn you when you try to upgrade an already upgraded database.
-
 On a fresh installation the database will be created on the fly.
-
-Contrail IdP and SimpleSAML
----------------------------
-ConPaaS can optionally delegate its user authentication to an external
-service. For registration and login through the Contrail
-Identification Provider you have to install the SimpleSAML package
-simplesamlphp-1.11.0 as follows::
-
-    $ wget http://simplesamlphp.googlecode.com/files/simplesamlphp-1.11.0.tar.gz
-    $ tar xzf simplesamlphp-1.11.0.tar.gz
-    $ cd simplesamlphp-1.11.0
-    $ cd cert ; openssl req -newkey rsa:2048 -new -x509 -days 3652 -nodes -out saml.crt -keyout saml.pem
-
-Edit file :file:`../metadata/saml20-idp-remote.php` and replace the ``$metadata
-array`` by the code found in the simpleSAMLphp flat file format part at 
-the end of the browser output of
-https://multi.contrail.xlab.si/simplesaml/saml2/idp/metadata.php?output=xhtml .
-
-Modify the authentication sources to contain the following lines (do 
-not copy the line numbers)::
-
-    $ cd ../config ; vi authsources.php
-    25                  // 'idp' => NULL,
-    26                  'idp' => 'https://multi.contrail.xlab.si/simplesaml/saml2/idp/metadata.php',
-
-    32                  //  next lines added by (your name)
-    33                  'privatekey' => 'saml.pem',
-    34                  'certificate' => 'saml.crt',
-
-Copy your SimpleSAML tree to :file:`/usr/share` ::
-
-    $ cd ../../
-    $ tar cf - simplesamlphp-1.11.0 | ( cd /usr/share ; sudo tar xf - )
-
-Change ownerships::
-        
-    $ cd /usr/share/simplesamlphp-1.11.0
-    $ sudo chown www-data www log
-    $ sudo chgrp www-data www log
-
-Now edit :file:`/etc/apache2/sites-enabled/default-ssl.conf` to contain the
-following lines (line numbers may vary depending on your current 
-situation)::
-
-    5          Alias /simplesaml /usr/share/simplesamlphp-1.11.0/www
-
-    18         <Directory /usr/share/simplesamlphp-1.11.0/www>
-    19                 Options Indexes FollowSymLinks MultiViews
-    20                 AllowOverride None
-    21                 Order allow,deny
-    22                 allow from all
-    23         </Directory>
-
-And the last thing to do: **register** your director domain name or IP at
-*contrail@lists.xlab.si*. This will enable you to use the federated login
-service provided by the Contrail project.
 
 Multi-cloud support
 -------------------
@@ -237,66 +164,6 @@ the :envvar:`OTHER_CLOUDS` variable in the **[iaas]** section of
 :envvar:`OTHER_CLOUDS` you need to create a new configuration section named
 after the cloud itself. Please refer to
 :file:`/etc/cpsdirector/director.cfg.multicloud-example` for an example.
-
-Virtual Private Networks with IPOP
-----------------------------------
-Network connectivity between private clouds running on different
-networks can be achieved in ConPaaS by using IPOP_ (IP over P2P). This
-is useful in particular to deploy ConPaaS instances across multiple
-clouds. IPOP adds a virtual network interface to all ConPaaS instances
-belonging to an application, allowing services to communicate over a
-virtual private network as if they were deployed on the same LAN. This
-is achieved transparently to the user and applications - the only
-configuration needed to enable IPOP is to determine the network's base
-IP address, mask, and the number of IP addresses in this virtual
-network that are allocated to each service.
-
-VPN support in ConPaaS is per-application: each application you create will get
-its own isolated IPOP Virtual Private Network. VMs running in the same application will
-be able to communicate with each other.
-
-In order to enable IPOP you need to set the following variables in
-:file:`/etc/cpsdirector/director.cfg`:
-
-    * :envvar:`VPN_BASE_NETWORK` 
-    * :envvar:`VPN_NETMASK`
-    * :envvar:`VPN_SERVICE_BITS`
-
-Unless you need to access 172.16.0.0/12 networks, the default settings
-available in :file:`/etc/cpsdirector/director.cfg.example` are probably going
-to work just fine.
-
-The maximum number of services per application, as well as the number of agents
-per service, is influenced by your choice of :envvar:`VPN_NETMASK` and
-:envvar:`VPN_SERVICE_BITS`::
-
-    services_per_application = 2^VPN_SERVICE_BITS
-    agents_per_service = 2^(32 - NETMASK_CIDR - VPN_SERVICE_BITS) - 1
-
-For example, by using 172.16.0.0 for :envvar:`VPN_BASE_NETWORK`, 255.240.0.0
-(/12) for :envvar:`VPN_NETMASK`, and 5 :envvar:`VPN_SERVICE_BITS`, you will get
-a 172.16.0.0/12 network for each of your applications. Such a network space
-will be then logically partitioned between services in the same application.
-With 5 bits to identify the service, you will get a maximum number of 32
-services per application (2^5) and 32767 agents per service (2^(32-12-5)-1).
-
-*Optional*: specify your own bootstrap nodes.
-When two VMs use IPOP, they need a bootstrap node to find each other.
-IPOP comes with a default list of bootstrap nodes from PlanetLab servers which
-is enough for most use cases.
-However, you may want to specify your own bootstrap nodes (replacing the default list).
-Uncomment and set :envvar:`VPN_BOOTSTRAP_NODES` to the list of addresses
-of your bootstrap nodes, one address per line.
-A bootstrap node address specifies a protocol, an IP address and a port.
-For example::
-
-    VPN_BOOTSTRAP_NODES =
-        udp://192.168.35.2:40000
-        tcp://192.168.122.1:40000
-        tcp://172.16.98.5:40001
-
-
-.. _IPOP: http://www.grid-appliance.org/wiki/index.php/IPOP
 
 Troubleshooting
 ---------------
@@ -379,42 +246,7 @@ ssh into your manager VM as root and:
 Command line tool installation
 ================================
 
-There are two command line clients: an old one called ``cpsclient.py``
-and a more recent one called ``cps-tools``.
-
-.. _cpsclient-installation:
-
-Installing and configuring cpsclient.py
----------------------------------------
-
-The command line tool ``cpsclient`` can be installed as root or as a
-regular user. Please note that libcurl development files (binary package
-:file:`libcurl4-openssl-dev` on Debian/Ubuntu systems) need to be installed on
-your system.
-
-As root::
-    
-    $ sudo easy_install http://www.conpaas.eu/dl/cpsclient-1.x.x.tar.gz
-
-(do not forget to replace 1.x.x with the exact number of the ConPaaS release you are using)
-
-Or, if you do not have root privileges, ``cpsclient`` can also be installed in
-a Python virtual environment if ``virtualenv`` is available on your machine::
-
-    $ virtualenv conpaas # create the 'conpaas' virtualenv
-    $ cd conpaas
-    $ source bin/activate # activate it
-    $ easy_install http://www.conpaas.eu/dl/cpsclient-1.x.x.tar.gz
-
-Configuring ``cpsclient.py``::
-
-    $ cpsclient.py credentials
-    Enter the director URL: https://your.director.name:5555
-    Enter your username: xxxxx
-    Enter your password: 
-    Authentication succeeded
-
-
+The new command line client for ConPaaS is called ``cps-tools``.
 
 .. _cpstools-installation:
 
@@ -592,8 +424,8 @@ ConPaaS on Amazon EC2
 ConPaaS is capable of running over the Elastic Compute Cloud (EC2) of Amazon
 Web Services (AWS). This section describes the process of configuring an AWS
 account to run ConPaaS. You can skip this section if you plan to install ConPaaS
-over OpenStack or OpenNebula, or use specialized versions such as the Nutshell
-or ConPaaS on Raspberry PI.
+over OpenStack or use specialized versions such as the Nutshell or ConPaaS on
+Raspberry PI.
 
 If you are new to EC2, you will need to create an account on the `Amazon
 Elastic Compute Cloud <http://aws.amazon.com/ec2/>`_. A very good introduction
@@ -705,7 +537,7 @@ ConPaaS on OpenStack
 ConPaaS can be deployed over an OpenStack installation. This section
 describes the process of configuring the DevStack version of OpenStack
 to run ConPaaS. You can skip this section if you plan to deploy
-ConPaaS over Amazon Web Services or OpenNebula.
+ConPaaS over Amazon Web Services.
 
 In the rest of this section, the command-line examples assume that the user is
 authenticated and able to run OpenStack commands (such as ``nova list``) on the
@@ -886,112 +718,6 @@ be obtained using::
     $ nova flavor-list
 
 
-.. _conpaas-on-opennebula:
-
-ConPaaS on OpenNebula
-=====================
-ConPaaS is capable of running over an OpenNebula installation. This section
-describes the process of configuring OpenNebula to run ConPaaS. You can skip
-this section if you plan to deploy ConPaaS over Amazon Web Services or OpenStack,
-or use specialized versions such as the Nutshell or ConPaaS on Raspberry PI.
-
-.. _registering-image-on-opennebula:
-
-Registering your ConPaaS image to OpenNebula
---------------------------------------------
-The prebuilt ConPaaS image suitable to be used with OpenNebula can be downloaded
-from the following link:
-
-**ConPaaS VM image for OpenNebula with KVM (x86_64):**
-  | http://www.conpaas.eu/dl/conpaas-opennebula-kvm.img
-  | MD5: 32022d0e50f3253b121198d30c336ae8
-  | size: 2.0 GB
-
-This section assumes that you already downloaded the image from the link above or
-created one as explained in :ref:`image-creation`. Upload your image (i.e.
-``conpaas.img``) to your OpenNebula headnode. The headnode is where OpenNebula
-services are running. You need have a valid OpenNebula account on the headnode
-(i.e. ``onevm list`` works!). Although you have a valid account on OpenNebula,
-you may have a problem similar to this:
-
-*/usr/lib/one/ruby/opennebula/client.rb:119:in `initialize': ONE_AUTH file not present (RuntimeError)*
-
-You can fix it setting the ``ONE_AUTH`` variable like follows::
-
-    $ export ONE_AUTH="/var/lib/one/.one/one_auth"
-
-To register your image, you should execute ``register-image-opennebula.sh`` on
-the headnode. ``register-image-opennebula.sh`` needs the path to ``conpaas.img`` as
-well as OpenNebula's datastore ID and architecture type.
-
-To get the datastore ID, you should execute this command on the headnode::
-    
-    $ onedatastore list
-
-The output of ``register-image-opennebula.sh`` will be your ConPaaS OpenNebula
-image ID.
-
-Make sure OpenNebula is properly configured
--------------------------------------------
-OpenNebula’s OCCI daemon is used by ConPaaS to communicate with your
-OpenNebula cluster. The OCCI daemon is included in OpenNebula only up to
-version 4.6 (inclusive), so later versions of OpenNebula are not officially
-supported at the moment.
-
-#. The OCCI server should be configured to listen on the correct interface so that
-   it can receive connections from the managers located on the VMs. This can be 
-   achieved by modifying the "host" IP (or FQDN - fully qualified domain name) 
-   parameter from ``/etc/one/occi-server.conf`` and restarting the OCCI server.
-
-#. Ensure the OCCI server configuration file ``/etc/one/occi-server.conf``
-   contains the following lines in section instance\_types::
-
-       :custom:
-         :template: custom.erb
-
-#. At the end of the OCCI profile file ``/etc/one/occi_templates/common.erb``
-   from your OpenNebula installation, append the following lines::
-   
-       <% @vm_info.each('OS') do |os| %>
-            <% if os.attr('TYPE', 'arch') %>
-              OS = [ arch = "<%= os.attr('TYPE', 'arch').split('/').last %>" ]
-            <% end %>
-       <% end %>
-       GRAPHICS = [type="vnc",listen="0.0.0.0"]
-
-
-   These new lines adds a number of improvements from the standard version:
-
-   -  The match for ``OS TYPE:arch`` allows the caller to specify the
-      architecture of the machine.
-
-   -  The last line allows for using VNC to connect to the VM. This
-      is very useful for debugging purposes and is not necessary once
-      testing is complete.
-
-#. Make sure you started OpenNebula’s OCCI daemon::
-
-       sudo occi-server start
-
-Please note that, by default, OpenNebula's OCCI server performs a reverse DNS
-lookup for each and every request it handles. This can lead to very poor
-performances in case of lookup issues. It is recommended *not* to install
-**avahi-daemon** on the host where your OCCI server is running. If it is
-installed, you can remove it as follows::
-    
-       sudo apt-get remove avahi-daemon
-
-If your OCCI server still performs badly after removing **avahi-daemon**, we
-suggest to disable reverse lookups on your OCCI server by editing
-``/usr/lib/ruby/$YOUR_RUBY_VERSION/webrick/config.rb`` and replacing the line::
-
-    :DoNotReverseLookup => nil,
-
-with::
-
-    :DoNotReverseLookup => true,
-
-
 .. _conpaas-in-a-nutshell:
 
 ConPaaS in a Nutshell
@@ -1005,7 +731,7 @@ as a ConPaaS installation, including all of its components, already configured
 to work in this environment.
 
 The Nutshell VM can be deployed on various virtual environments, not only
-standard clouds such as OpenNebula, OpenStack and EC2 but also on simpler 
+standard clouds such as OpenStack and EC2 but also on simpler 
 virtualization tools such as VirtualBox. Therefore, it provides a great developing 
 and testing environment for ConPaaS without the need of accessing a cloud.
 
@@ -1023,7 +749,7 @@ for VirtualBox. This can be done from the following link:
   can use the ``md5sum`` command.
 
 Alternatively, you can also create such an image or a similar one that runs
-on standard clouds (OpenNebula, OpenStack and Amazon EC2 are supported) by
+on standard clouds (OpenStack and Amazon EC2 are supported) by
 following the instructions in the Internals guide, section :ref:`creating-a-nutshell`.
 
 Running the Nutshell in VirtualBox

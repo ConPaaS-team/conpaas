@@ -50,7 +50,6 @@ the PHP service either with the web client (button start on the PHP service
 page) or with command line client (``cpsclient.py start <php_serv_id>``).
 
 
-
 MediaWiki example
 -----------------
 
@@ -97,23 +96,6 @@ machines are started from the beginning.
 Unfortunately the option of choosing a static IP for the database is not
 yet available, so we cannot specify it in the Java service at startup.
 
-------------------------------------------------
-Generating a manifest from a created application
-------------------------------------------------
-
-You can generate a manifest from an existing ConPaaS application with command line client:
-::
-  cpsclient.py download_manifest appl_id > myappl.mnf
-
-You can edit the generated manifest ``myappl.mnf`` to your liking.
-Then you can create a new application with this manifest::
-  cpslient.py manifest myappl.mnf
-
-
-Note: in ConPaaS 1.3.1, you cannot get a manifest of an existing application
-through the web client. It's only available through the command line client or
-through the API.
-
 
 -------------------------------------------
 Complete description of the manifest fields
@@ -130,15 +112,9 @@ Currently, the available service types are:
 
 -  mysql
 
--  scalaris
-
--  hadoop
-
--  selenium
-
 -  xtreemfs
 
--  taskfarm
+-  generic
 
 These are the required fields for each service
 
@@ -176,15 +152,11 @@ described in the following table:
 +----------+---------------------+
 | java     | proxy, web, backend |
 +----------+---------------------+
-| mysql    | slaves              |
-+----------+---------------------+
-| scalaris | scalaris            |
-+----------+---------------------+
-| hadoop   | workers             |
-+----------+---------------------+
-| selenium | node                |
+| mysql    | mysql, glb          |
 +----------+---------------------+
 | xtreemfs | osd                 |
++----------+---------------------+
+| generic  | master, node        |
 +----------+---------------------+
 
 Next, I'll show all the manifest fields that are specific for each
@@ -270,34 +242,7 @@ available::
      "Start" : 0,
      "Dump" : "http://mywebsite.com/dump.sql",
      "StartupInstances" : {
-      "slaves" : "1"
-     }
-    },
-    {
-     "ServiceName" : "Meaningful Scalaris service name",
-     "Type" : "scalaris",
-     "Cloud" : "default",
-     "Start" : 0,
-     "StartupInstances" : {
-      "scalaris" : "1"
-     }
-    },
-    {
-     "ServiceName" : "Meaningful Hadoop service name",
-     "Type" : "hadoop",
-     "Cloud" : "default",
-     "Start" : 0,
-     "StartupInstances" : {
-      "workers" : "1"
-     }
-    },
-    {
-     "ServiceName" : "Meaningful Selenium service name",
-     "Type" : "selenium",
-     "Cloud" : "default",
-     "Start" : 0,
-     "StartupInstances" : {
-      "node" : "1"
+      "mysql" : "1"
      }
     },
     {
@@ -312,6 +257,15 @@ available::
      "StartupInstances" : {
       "osd" : "1"
      }
-    }
+    },
+    {
+     "ServiceName" : "Meaningful Generic service name",
+     "Type" : "generic",
+     "Cloud" : "default",
+     "Start" : 0,
+     "StartupInstances" : {
+      "master" : "1"
+     }
+    },
    ]
   }

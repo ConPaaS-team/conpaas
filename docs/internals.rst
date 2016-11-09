@@ -51,7 +51,6 @@ A new service should be added in a new python module under the
     │   │   │   │   │── dummy.py
     │   │   │   │   │── ec2.py
     │   │   │   │   │── federation.py
-    │   │   │   │   │── opennebula.py
     │   │   │   │   │── openstack.py
     │   │   │   │── agent.py
     │   │   │   │── controller.py
@@ -148,7 +147,7 @@ as described below.
 
    (1) CONPAAS\_HOME/config/cloud/\ *cloud\_name*.cfg, where
    *cloud\_name* refers to the clouds supported by the system (for now
-   OpenNebula and EC2). So there is one such file for each cloud the
+   OpenStack and EC2). So there is one such file for each cloud the
    system supports. These files are filled in by the administrator. They
    contain information such as the username and password to access the
    cloud, the OS image to be used with the VMs, etc. These files are
@@ -156,10 +155,10 @@ as described below.
    to start VMs.
 
    (2) CONPAAS\_HOME/scripts/cloud/\ *cloud\_name*, where *cloud\_name*
-   refers to the clouds supported by the system (for now OpenNebula and
+   refers to the clouds supported by the system (for now OpenStack and
    EC2). So, as above, there is one such file for each cloud the system
    supports. These scripts will be included in the contextualization
-   files. For example, for OpenNebula, this file sets up the network.
+   files. For example, for OpenStack, this file sets up the network.
 
 -  Files specific to the Manager:
 
@@ -193,19 +192,19 @@ as described below.
 
    Examples:
 
-.. |lst:opennebulacfg| replace:: Listing 1
+.. |lst:ec2cfg| replace:: Listing 1
 
-.. centered:: |lst:opennebulacfg|: Script (1) ConPaaS/config/cloud/opennebula.cfg
+.. centered:: |lst:ec2cfg|: Script (1) ConPaaS/config/cloud/ec2.cfg
 
-.. literalinclude:: ../conpaas-services/config/cloud/opennebula.cfg
+.. literalinclude:: ../conpaas-services/config/cloud/ec2.cfg
     :language: cfg
 
 
-.. |lst:opennebula| replace:: Listing 2
+.. |lst:ec2| replace:: Listing 2
 
-.. centered:: |lst:opennebula|: Script (2) ConPaaS/scripts/cloud/opennebula
+.. centered:: |lst:ec2|: Script (2) ConPaaS/scripts/cloud/ec2
 
-.. literalinclude:: ../conpaas-services/scripts/cloud/opennebula
+.. literalinclude:: ../conpaas-services/scripts/cloud/ec2
     :language: sh
 
 
@@ -271,8 +270,6 @@ configuration files described above.
     │   │   │── clouds-template.cfg
     │   │   │── ec2.cfg
     │   │   │── ec2.cfg.example
-    │   │   │── opennebula.cfg
-    │   │   │── opennebula.cfg.example
     │   │── ganglia
     │   │   │── ganglia_frontend.tmpl
     │   │   │── ganglia-gmetad.tmpl
@@ -313,7 +310,6 @@ configuration files described above.
         │   │── dummy
         │   │── ec2
         │   │── federation
-        │   │── opennebula
         │   │── openstack
         │── create_vm
         │   │── 40_custom
@@ -323,7 +319,6 @@ configuration files described above.
         │   │── README
         │   │── register-image-ec2-ebs.sh
         │   │── register-image-ec2-s3.sh
-        │   │── register-image-opennebula.sh
         │   │── scripts
         │       │── 000-head
         │       │── 003-create-image
@@ -340,7 +335,6 @@ configuration files described above.
         │       │── 996-user
         │       │── 997-tail
         │       │── 998-ec2
-        │       │── 998-opennebula
         │       │── 999-resize-image
         │── manager
             │── cds-manager-start
@@ -429,10 +423,6 @@ will be adjusted similarly::
     conpaas-frontend/www/create.php
     conpaas-frontend/www/lib/ui/page/PageFactory.php
     conpaas-frontend/www/lib/service/factory/__init__.php
-
-.. :TODO: need to check these files, or replacements thereof
-    conpaas-services/scripts/create_vm/select-services.sh
-    conpaas-services/scripts/create_vm/opennebula-create-new-vm-image.sh
 
 Now you are ready to set up the specifics for your service. In most newly created files you will find the following comment 
 
@@ -647,7 +637,7 @@ The configuration file for customizing your VM image is located at
 ``conpaas-services/scripts/create_vm/create-img-script.cfg``.
 
 In the **CUSTOMIZABLE** section of the configuration file, you can define
-whether you plan to run ConPaaS on Amazon EC2, OpenStack or OpenNebula. Depending
+whether you plan to run ConPaaS on Amazon EC2 or OpenStack. Depending
 on the virtualization technology that your target cloud uses, you should choose
 either KVM or Xen for the hypervisor. Note that for Amazon EC2 this variable
 needs to be set to Xen. Please do not make the recommended size for the image
@@ -851,11 +841,6 @@ ConPaaS Services Image. The current section describes this process.
      | MD5: 45296e4cfcd44325a13703dc67da1d0b
      | size: 1.8 GB
    
-   **ConPaaS VM image for OpenNebula with KVM (x86_64):**
-     | http://www.conpaas.eu/dl/conpaas-opennebula-kvm.img
-     | MD5: 32022d0e50f3253b121198d30c336ae8
-     | size: 2.0 GB
-   
    **ConPaaS VM image for OpenStack with LXC for the Raspberry Pi (arm):**
      | http://www.conpaas.eu/dl/ConPaaS-RPI/conpaas-rpi.img
      | MD5: c29cd086e8e0ebe7f0793e7d54304da4
@@ -1017,6 +1002,3 @@ in the Installation guide:
 
 **For OpenStack:**
   :ref:`registering-image-on-openstack`
-
-**For OpenNebula:**
-  :ref:`registering-image-on-opennebula`

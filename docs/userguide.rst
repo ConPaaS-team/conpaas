@@ -7,30 +7,20 @@ ConPaaS currently contains the following services:
 -  **Two Web hosting services** respectively specialized for hosting PHP
    and JSP applications;
 
--  **MySQL** offering a multi-master replicated load-balanced database service;
-
--  **Scalarix service** offering a scalable in-memory key-value store;
-
--  **MapReduce service** providing the well-known high-performance
-   computation framework;
-
--  **TaskFarming service** high-performance batch processing;
-
--  **Selenium service** for functional testing of web applications;
+-  **MySQL** offering a multi-master replicated load-balanced database
+   service;
 
 -  **XtreemFS service** offering a distributed and replicated file
    system;
-
--  **HTC service** providing a throughput-oriented scheduler for bags of tasks
-   submitted on demand;
 
 -  **Generic service** allowing the execution of arbitrary applications.
 
 ConPaaS applications can be composed of any number of services. For
 example, a bio-informatics application may make use of a PHP and a MySQL
 service to host a Web-based frontend, and link this frontend to a
-MapReduce backend service for conducting high-performance genomic
+Generic backend service for conducting high-performance genomic
 computations on demand.
+
 
 Usage overview
 ==============
@@ -58,36 +48,9 @@ All the functionalities of the frontend are also available using a
 command-line interface. This allows one to script commands for ConPaaS.
 The command-line interface also features additional advanced
 functionalities, which are not available using the front-end.
-(The use of external Identification Provider at Contrail is not yet 
-available from the command-line interface.)
 
-It exists two command line clients: ``cpsclient.py`` and ``cps-tools``.
+The new command line client for ConPaaS is called ``cps-tools``.
 
-``cpsclient.py``
-    Installation and configuration:
-    see :ref:`cpsclient-installation`.
-
-    Command arguments::
-
-        $ cpsclient.py usage
-
-    Available service types::
-
-        $ cpsclient.py available
-
-    Service command specific arguments::
-
-        $ cpsclient.py usage <service_type>
-
-    Create a service::
-
-        $ cpsclient.py create <service_type>
-
-    List services::
-
-        $ cpsclient.py list
-
-``cps-tools``
     Installation and configuration:
         see :ref:`cpstools-installation`.
 
@@ -241,6 +204,7 @@ state. The reason is that stopped services still have one “manager”
 instance running. To stop using credits you must completely terminate
 your services.
 
+
 Tutorial: hosting WordPress in ConPaaS
 ======================================
 
@@ -293,6 +257,7 @@ If a subsequent request for this file is processed by another PHP server
 then the file will not be found.
 The solution to that issue consists in using the shared file-system
 service called XtreemFS to store the uploaded files.
+
 
 The PHP Web hosting service
 ===========================
@@ -447,74 +412,6 @@ For example, the following command will remove one backend node::
   Requesting for one more backend node will create a new VM that will
   run an additional backend.
 
-Autoscaling
------------
-
-One of the worries of a service owner is the trade-off between the performance
-of the service and the cost of running it. The service owner can add nodes to
-improve the performance of the service, which will have more nodes to balance the
-load, or remove nodes from the service to decrease the cost per hour, but
-increase the load per node.
-
-Adding and removing nodes as described above is interactive: the service owner
-has to run a command line or push some buttons on the web frontend GUI. However,
-the service owner is not always watching for the performance of his Web service.
-
-Autoscaling for the PHP service will add or remove nodes according to the load
-on the Web service. If the load on nodes running a Web service exceeds a given
-threshold and the autoscaling mechanism estimates that it will last, then the
-autoscaling mechanism will automatically add nodes for the service to balance
-the load. If the load on nodes running a Web service is low and the autoscaling
-mechanism estimates that it will last and that removing some nodes will not
-increase the load on nodes beyond the given threshold, then the autoscaling
-mechanism will automatically remove nodes from the service to decrease the cost
-per hour of the service.
-
-Autoscaling for the PHP service will also take into account the different kind
-of nodes that the cloud providers propose. They usually propose small instances,
-middle range instances and large instances. So, the autoscaling mechanism will
-select different kind of nodes depending on the service owner strategy choice.
-
-To enable autoscaling for the PHP service, run the command::
-
-    $ cpsclient.py on_autoscaling <sid> <adapt_interval> <response_time_threshold> <strategy>
-    
-where:
-  * <sid> is the service identifier
-  * <adapt_interval> is the time in minutes between automatic adaptation point
-  * <response_time_threshold> is the desired response time in milliseconds
-  * <strategy> is the policy used to select instance type when adding nodes, it must be one of:
-
-    - "low": will always select the smallest (and cheapest) instance proposed by the cloud provider
-    - "medium_down"
-    - "medium"
-    - "medium_up"
-    - "high"
-
-For example::
-
-    $ cpsclient.py on_autoscaling 1 5 2000 low
-
-enables autoscaling for PHP service 1, with an adaptation every 5 minutes, a
-response time threshold of 2000 milliseconds (2 seconds), and using the strategy
-low. This means that every 5 minutes, autoscaling will determine if it will add
-nodes, remove nodes, or do nothing, by looking at the history of the Web service
-response time and comparing it to the desired 2000 milliseconds. According the
-specified "low" strategy, if it decides to create nodes, it will always select the
-smallest instance from the cloud provider.
-
-Any time, the service owner may re-run the "on_autoscaling" command to tune autoscaling with different parameters::
-
-    $ cpsclient.py on_autoscaling 1 10 1500 low
-
-this command updates the previous call to "on_autoscaling" and changes the
-adaptation interval to 10 minutes, and setting a lower threshold to 15000
-milliseconds.
-
-Autoscaling may be disabled by running command::
-
-    $ cpsclient.py off_autoscaling <sid>
-
 
 The Java Web hosting service
 ============================
@@ -549,6 +446,7 @@ Access the application
 
 The frontend gives a link to the running application. This URL will
 remain valid as long as you do not stop the service.
+
 
 The MySQL Database Service
 ===============================================
@@ -672,104 +570,6 @@ It consists of three main components.
   the writesets as quickly as they arrive, resulting in replication
   throttling.
 
-The Scalarix key-value store service
-====================================
-
-The Scalarix service provides an in-memory key-value store. It is highly
-scalable and fault-tolerant. This service deviates slightly from the
-organization of other services in that it does not have a separate
-manager virtual machine instance. Scalarix is fully symmetric so any
-Scalarix node can act as a service manager.
-
-Accessing the key-value store
------------------------------
-
-Clients of the Scalarix service need the IP address of (at least) one
-node to connect to the service. Copy-paste the address of any of the
-running instances in the client. A good choice is the first instance in
-the list: when scaling the service up and down, other instances may be
-created or removed. The first instance will however remain across these
-reconfigurations, until the service is terminated.
-
-Managing the key-value store
-----------------------------
-
-Scalarix provides its own Web-based interface to monitor the state and
-performance of the key-value store, manually add or query key-value
-pairs, etc. For convenience reasons the ConPaaS front-end provides a
-link to this interface.
-
-The MapReduce service
-=====================
-
-The MapReduce service provides the well-known Apache Hadoop framework in
-ConPaaS. Once the MapReduce service is created and started, the
-front-end provides useful links to the Hadoop namenode, the job tracker,
-and to a graphical interface which allows to upload/download data
-to/from the service and issue MapReduce jobs. 
-
-.. warning::
-  This service requires virtual machines with **at least** 384 MB of RAM to
-  function properly.
-
-The TaskFarming service
-====================
-
-The TaskFarming service provides a bag of tasks scheduler for ConPaaS. The
-user needs to provide a list of independent tasks to be executed on the
-cloud and a file system location where the tasks can read input data
-and/or write output data to it. The service first enters a sampling
-phase, where its agents sample the runtime of the given tasks on
-different cloud instances. The service then based on the sampled
-runtimes, provides the user with a list of schedules. Schedules are
-presented in a graph and the user can choose between cost/makespan of
-different schedules for the given set of tasks. After the choice is made,
-the service enters the execution phase and completes the execution of
-the rest of the tasks according to the user’s choice.
-
-Preparing the ConPaaS services image
-------------------------------------
-
-By default, the TaskFarming service can execute the user code that is
-supported by the default ConPaaS services image. If user’s tasks depend
-on specific libraries and/or applications that do not ship with the
-default ConPaaS services image, the user needs to configure the ConPaaS
-services image accordingly and use the customized image ID in ConPaaS
-configuration files.
-
-The bag of tasks file
----------------------
-
-The bag of tasks file is a simple plain text file that contains the list
-of tasks along with their arguments to be executed. The tasks are
-separated by new lines. This file needs to be uploaded to the service,
-before the service can start sampling. Below is an example of a simple
-bag of tasks file containing three tasks::
-
-    /bin/sleep 1 && echo "slept for 1 seconds" >> /mnt/xtreemfs/log
-    /bin/sleep 2 && echo "slept for 2 seconds" >> /mnt/xtreemfs/log
-    /bin/sleep 3 && echo "slept for 3 seconds" >> /mnt/xtreemfs/log
-
-The minimum number of tasks required by the service to start sampling is
-depending on the number of tasks itself, but a bag with more than thirty
-tasks is large enough.
-
-The filesystem location
------------------------
-
-The TaskFarming service uses XtreemFS for data input/output. The actual task
-code can also reside in the XtreemFS. The user can optionally provide an
-XtreemFS location which is then mounted on TaskFarming agents.
-
-The demo mode
--------------
-
-With large bags of tasks and/or with long running tasks, the TaskFarming
-service can take a long time to execute the given bag. The service
-provides its users with a progress bar and reports the amount of money
-spent so far. The TaskFarming service also provides a “demo” mode where the
-users can try the service with custom bags without spending time and
-money.
 
 The XtreemFS service
 ====================
@@ -782,7 +582,6 @@ service and the MRC contains meta data. By default, one instance of each runs
 inside the first agent virtual machine and the service can be scaled up and 
 down by adding and removing additional OSD nodes. The XtreemFS documentation 
 can be found at http://xtreemfs.org/userguide.php.
-
 
 SSL Certificates
 ----------------
@@ -870,64 +669,6 @@ The download_manifest operation of the XtreemFS service will also shut the
 service down. This behaviour might differ from other ConPaaS services, but is 
 necessary to avoid copying the whole filesystem (which would be a very 
 expensive operation). This might change in future releases.
-
-The HTC service
-===============
-The HTC service provides a throughput-oriented scheduler for bags of tasks
-submitted on demand for ConPaaS. An initial bag of tasks is sampled generating a
-throughput = f(cost) function.  The user is allowed at any point, including
-upon new tasks submission, to request the latest throughput = f(cost) function
-and insert his target throughput.  After the first bag is sampled and submitted
-for execution the user is allowed to add tasks to the job with the
-corresponding identifier. The user is allowed at any point, including upon new
-tasks submission, to request the latest throughput = f(cost) function and adjust
-his target throughput.  All tasks that are added are immediately submitted for
-execution using the latest configuration requested by the user, corresponding
-to the target throughput.
-
-Available commands
-------------------
-``start service_id``: prompts the user to specify a mode (’real’ or ’demo’) and
-type (’batch’, ’online’ or ’workflow’) for the service. Starts the service
-under the selected context and initializes all the internal data structures for
-running the service.
-
-``stop service_id``: stops and releases all running VMs that exist in the pool
-of workers regardless of the tasks running.
-
-``terminate service_id``: stops and releases the manager VM along with the
-running algorithm and existing data structures.
-
-``create_worker service_id type count``: adds count workers to the pool returns
-the worker_ids. The worker is added to the table. The manager starts the worker
-on a VM requested of the selected type.
-
-``remove_worker service_id worker_id``: removes a worker from the condor pool.
-The worker_id is removed from the table.
-
-``create_job service_id .bot_file``: creates a new job on the manager and
-returns a job_id. It uploads the .bot_file on the manager and assign a queue to
-the job which will contain the path of all .bot_files submitted to this job_id.
-
-``sample service_id job_id``: samples the job on all available machine types in
-the cloud according to the HTC model.
-
-``throughput service_id``: prompts the user to select a target throughput
-within [0,TMAX] and returns the cost for that throughput.
-
-``configuration service_id``: prompts the user to select a target throughput
-within [0,TMAX] and returns the machine configuration required for that
-throughput. At this point the user can manually create the pool of workers
-using create_worker and remove_worker.
-
-``select service_id``: prompts the user to select a target throughput within
-[0,TMAX] and creates the pool of workers needed to obtain that throughput. 
-
-``submit service_id job_id``: submits all the bags in this job_id for execution
-with the current configuration of workers.
-
-``add service_id job_id .bot_file``: submits a .bot_file for execution on
-demand.  The bag is executed with the existing configuration.
 
 
 .. _the-generic-service:

@@ -95,32 +95,8 @@ of their behavior.
 
         Used by ConPaaS services. Download a tarball with the ConPaaS source code.
 
-    POST /callback/decrementUserCredit.php
-        
-        Used by ConPaaS services. 'sid' and 'decrement' are the required parameters.
-
-        Decrement user credit and check if it is enough.  Return a dictionary with
-        the 'error' attribute set to false if the user had enough credit, true
-        otherwise.
-
-        This method requires the client to present a valid SSL certificate of type
-        'manager'. The 'serviceLocator' field in the supplied certificate has to match
-        the 'sid'.
-
-    POST /ca/get_cert.php
-
-        Used by ConPaaS services. The only required argument is a file called 'csr'
-        holding a certificate signing request. A certificate is returned.
-
-        This method requires the client to present a valid SSL certificate of type
-        'manager'..
-
 The first three methods, namely **new\_user**, **login** and
 **get\_user\_certs** do not need a client SSL certificate to be called.
 
 **available\_services**, **start**, **stop**, **rename** and **list**
 all need a valid user certificate in order to be called.
-
-The last two methods are used by ConPaaS managers to decrement users’
-credit and create agent certificates. They both need a valid manager
-certificate to be called.
