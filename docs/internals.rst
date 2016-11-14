@@ -9,10 +9,10 @@ A ConPaaS application represents a collection of ConPaaS services working
 together. The application manager is a process that resides in the first
 VM that is created when the application is started and is in charge of
 managing the entire application. The application manager represents the
-single control point over the entire application.
+single control point for the entire application.
 
 A ConPaaS service consists of three main entities: the service manager,
-the service agent and the web frontend. The service manager is a component
+the service agent, and the web frontend. The service manager is a component
 that supplements the application manager with service-specific functionality.
 Its role is to manage the service by providing supporting agents, maintaining
 a stable configuration at any time and by permanently monitoring the
@@ -23,10 +23,10 @@ To implement a new ConPaaS service, you must provide a new service
 manager, a new service agent and a new service frontend (we assume that
 each ConPaaS service can be mapped on the three entities architecture).
 To ease the process of adding a new ConPaaS service, we propose a
-framework which implements common functionality of the ConPaaS services.
-So far, the framework provides abstraction for the IaaS layer (adding
+framework which implements the common functionality of the ConPaaS services.
+So far, the framework provides abstractions for the IaaS layer (adding
 support for a new cloud provider should not require modifications in any
-ConPaaS service implementation) and it also provides abstraction for the
+ConPaaS service implementation) and it also provides abstractions for the
 HTTP communication (we assume that HTTP is the preferred protocol for
 the communication between the three entities).
 
@@ -78,13 +78,13 @@ A new service should be added in a new python module under the
     │── sbin
     │── scripts
 
-In the next paragraphs we describe how to add the new ConPaaS service.
+In the next paragraphs, we describe how to add the new ConPaaS service.
 
 
 Implementing a new ConPaaS service
 ==================================
 
-In this section we describe how to implement a new ConPaaS service by
+In this section, we describe how to implement a new ConPaaS service by
 providing an example which can be used as a starting point. The new
 service is called *helloworld* and will just generate helloworld
 strings. Thus, the manager will provide a method, called get\_helloworld
@@ -105,7 +105,7 @@ filled in behind the scenes. This dictionary is used by the built-in
 server in the conpaas.core package to dispatch the HTTP requests. The
 module conpaas.core.http contains some useful methods, like
 HttpJsonResponse and HttpErrorResponse that are used to respond to the
-HTTP request dispatched to the corresponding method. In this class we
+HTTP request dispatched to the corresponding method. In this class, we
 also implemented a method called startup, which only prints a line of
 text in the agent's log file. This method could be used, for example,
 to make some initializations in the agent.
@@ -153,7 +153,7 @@ Next, we will implement the service manager in the same manner: we will
 write the *HelloWorldManager* class and place it in the file
 *conpaas/services/helloworld/manager/manager.py*.
 (See |lst:helloworldmanagermanager|) A service manager supplements the
-application manager with service specific functionality. It does so by
+application manager with service-specific functionality. It does so by
 overriding the methods inherited from the base manager class. These
 methods will be called by the application manager when the corresponding
 event occurs. For example, *on\_start* is called immediately after the
@@ -182,8 +182,8 @@ agent services, called *web* which is used by both webservices.
 Integrating the new service with the frontend
 =============================================
 
-So far there is no easy way to add a new frontend service. Each service
-may require distinct graphical elements. In this section we explain how
+So far, there is no easy way to add a new frontend service. Each service
+may require distinct graphical elements. In this section, we explain how
 to create the web frontend page for a service.
 
 Manager states
@@ -311,8 +311,8 @@ might not always reset your system to its original state. To undo
 everything the script has done, follow these instructions:
 
 #. The image has been mounted as a separate file system. Find the
-   mounted directory using command ``df -h``. The directory should be in
-   the form of ``/tmp/tmp.X``.
+   mounted directory using the ``df -h`` command. The directory should be
+   in the form of ``/tmp/tmp.X``.
 
 #. There may be a ``dev`` and a ``proc`` directories mounted inside it.
    Unmount everything using::
@@ -364,16 +364,16 @@ configuration file, *nutshell* and *container* which control the kind of image
 that is going to be generated. Since these two flags can take either value
 *true* of *false*, we distinguish four cases:
 
-#. *nutshell = false*, *container = false*: In this case a standard ConPaaS VM
+#. *nutshell = false*, *container = false*: In this case, a standard ConPaaS VM
    image is generated and the nutshell configurations are not taken into
    consideration. This is the default configuration which should be used when
    ConPaaS is deployed on a standard cloud.
 
-#. *nutshell = false*, *container = true*: In this case the user indicates that
+#. *nutshell = false*, *container = true*: In this case, the user indicates that
    the image that will be generated will be a LXC container image. This image
    is similar to a standard VM one, but it does not contain a kernel installation. 
 
-#. *nutshell = true*, *container = false*. In this case a Nutshell image is
+#. *nutshell = true*, *container = false*. In this case, a Nutshell image is
    generated and a standard ConPaaS VM image will be embedded in it. This
    configuration should be used for deploying ConPaaS in nested standard VMs
    within a single VM.
@@ -428,7 +428,7 @@ Preinstalling an application into a ConPaaS Services Image
 
 A ConPaaS Services Image contains all the necessary components needed in order
 to run the ConPaaS services. For deploying arbitrary applications using ConPaaS,
-the :ref:`the-generic-service` provides a mechanism to install and run the application,
+:ref:`the-generic-service` provides a mechanism to install and run the application,
 along with its dependencies. The installation, however, has to happen during the
 initialization of every new node that is started, for example in the ``init.sh``
 script of the Generic Service. If installing the application with its dependencies
@@ -462,7 +462,7 @@ ConPaaS Services Image. The current section describes this process.
    .. warning::
      If you choose to use one of the images above, it is always a good idea to check
      its integrity before continuing to the next step. A corrupt image may result in
-     unexpected behaviour which may be hard to trace. You can check the integrity by
+     unexpected behavior which may be hard to trace. You can check the integrity by
      verifying the MD5 hash with the ``md5sum`` command.
    
    Alternatively, you can also create one such image using the instructions provided
@@ -474,10 +474,10 @@ ConPaaS Services Image. The current section describes this process.
    
    .. warning::
      The following steps need to be performed on a machine with the same architecture
-     and a similar operating system. For the regular images, this means the 64 bit
+     and a similar operating system. For the regular images, this means the 64-bit
      version of a Debian or Ubuntu system. For the Raspberry PI image, the steps need
      to be performed on the Raspberry PI itself (with a Raspbian installation, arm
-     architecture). Trying to customize the Raspberry PI image on a x86 system will not
+     architecture). Trying to customize the Raspberry PI image on an x86 system will not
      work!
 
 #. Log in as **root** and change to the directory where you downloaded the image.
@@ -512,7 +512,7 @@ ConPaaS Services Image. The current section describes this process.
      correct device in the following commands.
 
 #. If you increased the size of the image in step 3, you now need to also expand the
-   file system. First, check the integrity of the file system with the following
+   file system. First, check the integrity of the filesystem with the following
    command::
    
      root@raspberrypi:/home/pi# e2fsck -f /dev/loop0
@@ -560,7 +560,7 @@ ConPaaS Services Image. The current section describes this process.
    
      root@raspberrypi:/# echo "nameserver 8.8.8.8" > /etc/resolv.conf
    
-   This example uses the Google Public DNS, you may however use any DNS server you
+   This example uses the Google Public DNS; you may, however, use any DNS server you
    prefer.
    
    Check that the Internet works in this new environment::

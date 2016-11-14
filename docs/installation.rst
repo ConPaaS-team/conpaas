@@ -130,7 +130,7 @@ between you and the director, but also to ensure that only authorized
 parties such as yourself and the various components of ConPaaS can
 interact with the system.
 
-It is therefore crucial that the SSL certificate of your director contains the
+It is, therefore, crucial that the SSL certificate of your director contains the
 proper information. In particular, the `commonName` field of the certificate
 should carry the **public hostname of your director**, and it should match the
 *hostname* part of :envvar:`DIRECTOR_URL` in
@@ -255,9 +255,9 @@ Installing and configuring cps-tools
 
 The command line ``cps-tools`` is a command line client to interact with
 ConPaaS. It has essentially a modular internal architecture that is easier
-to extend. It has also "object-oriented" arguments where "ConPaaS" objects
-are services, users, clouds and applications. The argument consists in
-stating the "object" first and then calling a sub-command on it. It also
+to extend. It has also *object-oriented* arguments where ConPaaS objects
+are services, users, clouds, and applications. The arguments consist of
+stating the object first and then calling a sub-command on it. It also
 replaces the command line tool ``cpsadduser.py``.
 
 ``cps-tools`` requires:
@@ -341,7 +341,7 @@ Activate ``virtualenv``::
     Python 2.7.2
     (ve)$
 
-Install python argparse and argcomplete modules::
+Install python ``argparse`` and ``argcomplete`` modules::
 
     (ve)$ pip install argparse
     (ve)$ pip install argcomplete
@@ -433,7 +433,7 @@ to EC2 is `Getting Started with Amazon EC2 Linux Instances
 Pre-built Amazon Machine Images
 -------------------------------
 ConPaaS requires the usage of an Amazon Machine Image (AMI) to contain the
-dependencies of its processes. For your convenience we provide a pre-built
+dependencies of its processes. For your convenience, we provide a pre-built
 public AMI, already configured and ready to be used on Amazon EC2, for each
 availability zone supported by ConPaaS. The AMI IDs of said images are:
 
@@ -485,15 +485,15 @@ S3-backed AMIs are usually more cost-efficient, but if you plan to use *t1.micro
 (free tier) your VM image should be hosted on EBS.
 
 For an EBS-backed AMI, you should either create your ``conpaas.img`` on an Amazon
-EC2 instance, or transfer the image to one. Once ``conpaas.img`` is there, you
+EC2 instance or transfer the image to one. Once ``conpaas.img`` is there, you
 should execute ``register-image-ec2-ebs.sh`` as root on the EC2 instance to
 register your AMI. The script requires your **EC2_ACCESS_KEY** and
 **EC2_SECRET_KEY** to proceed. At the end, the script will output your new AMI
 ID. You can check this in your Amazon dashboard in the AMI section.
 
-For a S3-backed AMI, you do not need to register your image from an EC2
+For an S3-backed AMI, you do not need to register your image from an EC2
 instance. Simply run ``register-image-ec2-s3.sh`` where you have created your
-``conpaas.img``. Note that you need an EC2 certificate with private key to be
+``conpaas.img``. Note that you need an EC2 certificate with a private key to be
 able to do so. Registering an S3-backed AMI requires administrator privileges.
 More information on Amazon credentials can be found at
 `About AWS Security Credentials <http://docs.aws.amazon.com/AWSSecurityCredentials/1.0/AboutAWSCredentials.html>`_.
@@ -508,7 +508,7 @@ inbound traffic. Therefore, one needs to specify a whitelist of
 protocols and destination ports that are accessible from the outside.
 The following ports should be open for all running instances:
 
--  TCP ports 443 and 5555 used by the ConPaaS system (director, managers
+-  TCP ports 443 and 5555 used by the ConPaaS system (director, managers,
    and agents)
 
 -  TCP ports 80, 8000, 8080 and 9000 – used by the Web Hosting service
@@ -549,7 +549,7 @@ set the environment variables that authenticate the user is to source the
 Registering your ConPaaS image to OpenStack
 --------------------------------------------
 The prebuilt ConPaaS images suitable to be used with OpenStack can be downloaded
-from the following links, depending on the virtualization tehnology and
+from the following links, depending on the virtualization technology and
 system architecture you are using:
 
 **ConPaaS VM image for OpenStack with KVM (x86_64):**
@@ -613,7 +613,7 @@ section of the nova configuration file (``/etc/nova/nova.conf``)::
 Security Group
 --------------
 As in the case of Amazon Web Services deployments, OpenStack deployments use
-security groups to limit the the network connections allowed to an instance.
+security groups to limit the network connections allowed to an instance.
 The list of ports that should be opened for every instance is the same as in
 the case of Amazon Web Services and can be consulted here: :ref:`security-group-ec2`.
 
@@ -626,7 +626,7 @@ Using the command line, the security groups can be listed using::
     $ nova secgroup-list
 
 You can use the ``default`` security group that is automatically created in every
-project. However note that, unless the its default settings are changed, this
+project. However note that, unless its default settings are changed, this
 security group denies all incoming traffic.
 
 For more details on creating and editing a security group, please refer to the
@@ -655,7 +655,7 @@ ConPaaS needs to know which instance type it can use, called *flavor* in OpenSta
 terminology. There are quite a few flavors configured by default, which can also
 be customized if needed.
 
-The list of available flavors can obtained in Horizon by navigating to the
+The list of available flavors can be obtained in Horizon by navigating to the
 *Admin* > *System* > *Flavors* menu. Using the command line, the same result can
 be obtained using::
 
@@ -688,7 +688,7 @@ for VirtualBox. This can be done from the following link:
 
 .. warning::
   It is always a good idea to check the integrity of a downloaded image before continuing
-  with the next step, as a corrupted image can lead to unexpected behaviour. You can do
+  with the next step, as a corrupted image can lead to unexpected behavior. You can do
   this by comparing its MD5 hash with the one shown above. To obtain the MD5 hash, you
   can use the ``md5sum`` command.
 
@@ -717,7 +717,7 @@ The recommended system requirements for optimal performance::
 
 .. warning::
   It is highly advised to run the Nutshell on a system that meets the recommended
-  system requirements, or else the its performance may be severely impacted. For
+  system requirements, or else its performance may be severely impacted. For
   systems that do not meet the recommended requirements (but still meet the minimum
   requirements), a very careful split of the resources between the VM and the host
   system needs to be performed.
@@ -773,11 +773,11 @@ The recommended system requirements for optimal performance::
    then following the menu: *Settings* > *System* > *Motherboard* / *Processor*.
    We recommend allocating at least 4 GB of RAM for the Nutshell to function properly.
    Make sure that enough memory remains for the host system to operate properly and
-   never allocate more CPUs than what is available in your host computer.
+   never allocate more CPUs than what is available on your host computer.
 
 #. It is also a very good idea to create a snapshot of the initial state of the
    Nutshell VM, immediately after it was imported. This allows the possibility to
-   quickly revert to the initial state without importing the VM again, when something
+   quickly revert to the initial state without importing the VM again when something
    goes wrong.
 
 For more information regarding the usage of the Nutshell please consult the
@@ -817,7 +817,7 @@ The two images can be downloaded from the following links:
 
 .. warning::
   It is always a good idea to check the integrity of a downloaded image before continuing
-  with the next steps, as a corrupted image can lead to unexpected behaviour. You can do
+  with the next steps, as a corrupted image can lead to unexpected behavior. You can do
   this by comparing its MD5 hash with the ones shown above. To obtain the MD5 hash, you
   can use the ``md5sum`` command.
 

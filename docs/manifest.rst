@@ -3,7 +3,7 @@ Manifest Guide
 ==============
 
 A manifest is a JSON file that describes a ConPaaS application. It can be
-written with your favourite text editor.
+written with your favorite text editor.
 
 ---------------------------------------
 Creating an application from a manifest
@@ -31,7 +31,7 @@ sudoku PHP program). File ``sudoku.mnf``::
 This simple example states the application name and the service list which is
 here a single PHP service. It gives the name of the service, its type, whether
 it should be automatically started (1 for autostart, 0 otherwise), and it gives
-the path to the PHP program that will be uploaded into the created PHP service.
+the path to the PHP program that will be uploaded to the newly created PHP service.
 
 To create an application from a manifest, you can use either the web client or
 the command line client.
@@ -46,7 +46,8 @@ the command line client.
 
 In this example, once the application has been created, you will have to start
 the PHP service either with the web client (button start on the PHP service
-page) or with command line client (``cps-service start <app_id> <php_serv_id>``).
+page) or with the command line client
+(``cps-service start <app_id> <php_serv_id>``).
 
 
 MediaWiki example
@@ -87,8 +88,8 @@ MediaWiki application as the one provided by the ConPaaS system::
    }
 
 Even if the application is more complicated than the sudoku, the manifest
-file is not very different. In this case the file specifies three different
-services: PHP, MySQL and XtreemFS.
+file is not very different. In this case, the file specifies three different
+services: PHP, MySQL, and XtreemFS.
 
 
 -------------------------------------------
@@ -129,7 +130,7 @@ The following fields are optional and are available in all the services.
    the startup of the agents
 
 It is not required to define how many instances the service needs. By
-default if the user starts a service, one instance will be created. If the
+default, if the user starts a service, one instance will be created. If the
 user wants to create more instances, then the user can use this option in the manifest.
 
 -  *StartupInstances*: Specify how many instances of each type needs to
@@ -159,19 +160,19 @@ service.
 php
 ---
 
--  *Archive*: Specify an URL where the service should fetch the source
+-  *Archive*: Specify a URL where the service should fetch the source
    archive.
 
 java
 ----
 
--  *Archive*: Specify an URL where the service should fetch the source
+-  *Archive*: Specify a URL where the service should fetch the source
    archive.
 
 mysql
 -----
 
--  *Dump*: Specify an URL where the service should fetch the dump
+-  *Dump*: Specify a URL where the service should fetch the dump
 
 xtreemfs
 --------
@@ -192,7 +193,7 @@ file (see the full example in the end) are the following:
 
 -  *Application*: Specify the application name on which your services
    will start. It can be a new application or an existing one. If it is
-   omitted, a default application name will be choosen.
+   omitted, a default application name will be chosen.
 
 Full specification file
 =======================

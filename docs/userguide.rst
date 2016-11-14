@@ -61,7 +61,7 @@ Add a service.
     Click on “add new service”, then select the service you want to
     add. This operation adds extra functionalities to the application
     manager which are specific to a certain service. These functionalities
-    enable the application manager to be charge of taking care of the
+    enable the application manager to be in charge of taking care of the
     service, but it does not host applications itself. Other instances in
     charge of running the actual application are called “agent” instances.
 
@@ -71,7 +71,7 @@ Start a service.
     depending on the type of service.
 
 Rename the service.
-    By default all new services are named “New service”. To give a
+    By default, all new services are named “New service”. To give a
     meaningful name to a service, click on this name in the
     service-specific page and enter a new name.
 
@@ -82,7 +82,7 @@ Check the list of virtual instances.
     service. Certain services use a single role for all instances, while
     other services specialize different instances to take different
     roles. For example, the PHP Web hosting service distinguishes three
-    roles: load balancers, web servers and PHP servers.
+    roles: load balancers, web servers, and PHP servers.
 
 Scale the service up and down.
     When a service is started it uses a single “agent” instance. To add
@@ -96,7 +96,7 @@ Stop the service.
     button to stop the service. This stops all instances of the service.
 
 Remove the service.
-    Click “remove” to delete the service. At this point all the state of
+    Click “remove” to delete the service. At this point, all the state of
     the service manager is lost.
 
 Stop the application.
@@ -343,10 +343,10 @@ action is necessary to use PHP sessions in ConPaaS.
 Debug mode
 ----------
 
-By default the PHP service does not display anything in case PHP errors
+By default, the PHP service does not display anything in case PHP errors
 occur while executing the application. This setting is useful for
 production, when you do not want to reveal internal information to
-external users. While developing an application it is however useful to
+external users. While developing an application it is, however, useful to
 let PHP display errors.
 
 ::
@@ -373,7 +373,7 @@ for a PHP page.
 
 If your PHP service has a slow response time, increase the number of backend nodes.
 
-On the command line, the ``add_nodes`` sub-command can be used to add
+On the command line, the ``add_nodes`` subcommand can be used to add
 additional nodes to a service. It takes as arguments the number of backend nodes,
 web nodes and proxy nodes to add::
 
@@ -463,15 +463,15 @@ The MySQL service offers the capability to instantiate multiple
 instances of database nodes, which can be used to increase the
 throughput and to improve features of fault tolerance through
 replication. The multi-master structure allows any database node to
-process incoming updates, because the replication system is
+process incoming updates, the replication system being
 responsible for propagating the data modifications made by each member
 to the rest of the group and resolving any conflicts that might arise
 between concurrent changes made by different members. These features
 can be used to increase the throughput of the cluster. 
 
-To obtain the better performance from a cluster, it is a best
-practice to use it in balanced fashion, so that each node has
-approximatively the same load of the others. To achieve this, the
+To obtain better performance from a cluster, it is a best
+practice to use it in a balanced fashion, so that each node has
+approximately the same load of the others. To achieve this, the
 service allows users to allocate special load balancer nodes
 (``glb``) which implement load balancing. Load balancer nodes
 are designed to receive all incoming database queries and
@@ -518,7 +518,7 @@ Performance Monitoring
 The MySQL service interface provides a sophisticated mechanism to monitor the
 service. The user interface, in the frontend, shows a monitoring control,
 called "Performance Monitor", that can be used to monitor a large cluster's
-behaviour. It interacts with "Ganglia", "Galera" and "MySQL" to obtain various
+behavior. It interacts with "Ganglia", "Galera" and "MySQL" to obtain various
 kinds of information. Thus, "Performance Monitor" provides a solution for
 maintaining control and visibility of all nodes, with a monitoring dynamic data
 every few seconds. 
@@ -533,18 +533,18 @@ It consists of three main components.
 
 - The second control highlights the cluster’s performance, with a
   table detailing the load, memory usage, CPU utilization, and network
-  traffic for each node of the cluster.  Users can use these
-  informations in order to detect problems in their applications. The
+  traffic for each node of the cluster.  Users can use this
+  information in order to detect problems in their applications. The
   table displays the resource utilization across all nodes, and
-  highlight the parameters which suggest an abnormality. For example
-  if CPU utilization is high, or free memory is very low this is shown
+  highlight the parameters which suggest an abnormality. For example,
+  if CPU utilization is high or free memory is very low, this is shown
   clearly. This may mean that processes on this node will start to
-  slow down, and that it may be time to add additional nodes to the
-  cluster. On the other hand this may indicate a malfunction of the
+  slow down and that it may be time to add additional nodes to the
+  cluster. On the other hand, this may indicate a malfunction of the
   specific node.
 
 - "Galera Mean Misalignment" draws a real-time measure of the mean
-  misalignment across the nodes. This information is derived by
+  misalignment across the nodes. This information is derived from
   Galera metrics about the average length of the receive queue since
   the most recent status query. If this value is noticeably larger
   than zero, the nodes are likely to be overloaded, and cannot apply
@@ -559,7 +559,7 @@ The XtreemFS service provides POSIX compatible storage for ConPaaS. Users can
 create volumes that can be mounted remotely or used by other ConPaaS services,
 or inside applications. An XtreemFS instance consists of multiple DIR, MRC and 
 OSD servers. The OSDs contain the actual storage, while the DIR is a directory 
-service and the MRC contains meta data. By default, one instance of each runs 
+service and the MRC contains metadata. By default, one instance of each runs 
 inside the first agent virtual machine and the service can be scaled up and 
 down by adding and removing additional OSD nodes. The XtreemFS documentation 
 can be found at http://xtreemfs.org/userguide.php.
@@ -570,7 +570,7 @@ SSL Certificates
 The XtreemFS service uses SSL certificates for authorization and authentication.
 There are two types of certificates, user-certificates and client-certificates.
 Both certificates can additionally be flagged as administrator certificates which
-allows performing administrative file-systems tasks when using them to access
+allow performing administrative file-systems tasks when used to access
 XtreemFS. Certificates are only valid for the service that was used to create them.
 The generated certificates are in P12-format.
 
@@ -580,7 +580,7 @@ take the user and group with whom an XtreemFS command is called, or a mounted Xt
 volume is accessed. So multiple users might share a single client-certificate.
 On the other hand, user-certificates contain a user and group inside the certificate.
 So usually, each user has her personal user-certificate. Both kinds of certificate can
-be used in parallel. Client-certificates are less secure, since the user and group with
+be used in parallel. Client-certificates are less secure since the user and group with
 whom files are accessed can be arbitrarily changed if the mounting user has local
 superuser rights. So client-certificates should only be used in trusted environments.
 
@@ -595,7 +595,7 @@ Accessing volumes directly
 
 Once a volume has been created, it can be directly mounted on a remote site by
 using the ``mount.xtreemfs`` command. A mounted volume can be used like any local
-POSIX-compatible filesystem. You need a certificate for mounting (see last section).
+POSIX-compatible filesystem. You need a certificate for mounting (see the last section).
 The command looks like this, where <address> is the IP of an agent running
 an XtreemFS directory service (usually the first agent)::
 
@@ -611,7 +611,7 @@ Policies
 --------
 
 Different aspects of XtreemFS (e.g. replica- and OSD-selection) can be 
-customised by setting certain policies. Those policies can be set via the 
+customized by setting certain policies. Those policies can be set via the
 ConPaaS command line client (recommended) or directly via ``xtfsutil`` (see the
 XtreemFS user guide). The commands are like follows, were <policy_type> is
 ``osd_sel``, ``replica_sel``, or ``replication``::
@@ -624,7 +624,7 @@ Important notes
 
 When a service is scaled down by removing OSDs, the data of those OSDs is
 migrated to the remaining OSDs. Always make sure there is enough free space 
-for this operation to succeed. Otherwise you risk data loss.
+for this operation to succeed. Otherwise, you risk data loss.
 
 
 .. _the-generic-service:
@@ -922,7 +922,7 @@ execution is completed.
 In the web frontend, the ``run``, ``interrupt`` and ``cleanup`` buttons
 are conveniently located on the top of the page, above the instances view.
 Pressing such a button will execute the corresponding script in all the agents.
-Above the buttons there is also a parameters field which allow the user to
+Above the buttons, there is also a parameters field which allows the user to
 specify parameters which will be forwarded to the script during the execution.
 
 On the command line, the following commands may be used::
@@ -1013,7 +1013,7 @@ you may want to check these instructions first: :ref:`conpaas-in-a-nutshell`.
    that may appear in the VM window at this stage are usually harmless debug
    messages which can be ignored.
 
-#. When the the login prompt appears, the Nutshell VM is ready to be used.
+#. When the login prompt appears, the Nutshell VM is ready to be used.
 
 Using the Nutshell via the graphical frontend
 ---------------------------------------------
@@ -1042,7 +1042,7 @@ You can now use the frontend in the same way as any ConPaaS system,
 creating applications, services etc. Note that the services are also
 only accessible from your local machine.
 
-Note that also *Horizon* (the Openstack dashboard) is running on it as
+Note that also *Horizon* (the OpenStack dashboard) is running on it as
 well. In case you are curious and want to have a look under the hood,
 Horizon can be reached (using HTTP, not HTTPS) at the same IP address::
 
@@ -1088,7 +1088,7 @@ lists all the active instances and::
 
 lists all the existing storage volumes.
 
-The Nutshell contains a *Devstack* installation of Openstack,
+The Nutshell contains a *Devstack* installation of OpenStack,
 therefore different services run and log on different tabs of a
 *screen* session. In order to stop, start or consult the logs of these
 services, connect to the screen session by executing::
