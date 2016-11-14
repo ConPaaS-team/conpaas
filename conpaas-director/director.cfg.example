@@ -15,26 +15,6 @@ SUPPORT_EXTERNAL_IDP = false
 MAX_CREDIT = 50
 
 
-# Uncomment the following directives in case you want to use per-application
-# Virtual Private Networks. In the default config presented below, the maximum
-# number of services per application is 32 (2^5), with no more than 32767
-# agents each (2^(32-12-5)-1).
-#
-# VPN_BASE_NETWORK = 172.16.0.0
-# VPN_NETMASK = 255.240.0.0
-# VPN_SERVICE_BITS = 5
-#
-# If you want to use your own bootstrap nodes, give the list here of their IP
-# address, their port and their access protocol (UDP or TCP). Set one address
-# per line. If this configuration variable is commented or empty, then the
-# default list of bootstrap nodes is used.
-#
-# VPN_BOOTSTRAP_NODES =
-#    udp://aaa.bbb.ccc.ddd:port1
-#    tcp://eee.fff.ggg.hhh:port2
-#    ...
-
-
 [iaas]
 ##############
 # Amazon EC2 #
@@ -112,16 +92,16 @@ MAX_CREDIT = 50
 #
 # ConPaaS official AMI ids are:
 #
-# - ami-7a565912 United States East (Northern Virginia)
-# - ami-b7dd31f3 United States West (Northern California)
-# - ami-e57f49d5 United States West (Oregon)
-# - ami-7f7e1108 Europe West (Ireland)
-# - ami-3a0bc83a Asia Pacific (Tokyo)
-# - ami-fcdde1ae Asia Pacific (Singapore)
-# - ami-0b473b31 Asia Pacific (Sydney)
-# - ami-a154d0bc South America (Sao Paulo)
+# - ami-41890256 United States East (Northern Virginia)
+# - ami-f7aaeb97 United States West (Northern California)
+# - ami-2531fd45 United States West (Oregon)
+# - ami-8fa1c3fc Europe West (Ireland)
+# - ami-148a7175 Asia Pacific (Tokyo)
+# - ami-558b5436 Asia Pacific (Singapore)
+# - ami-6690ba05 Asia Pacific (Sydney)
+# - ami-7af56216 South America (Sao Paulo)
 
-# IMAGE_ID = ami-7a565912
+# IMAGE_ID = ami-41890256
 
 # This variable contains the type of EC2 instances to use. A good value to use
 # inexpensive, low-performance instances is "t1.micro".

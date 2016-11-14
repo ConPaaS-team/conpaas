@@ -59,7 +59,7 @@ Xerus) are officially supported. Also, only official APT repositories should be
 enabled in :file:`/etc/apt/sources.list` and :file:`/etc/apt/sources.list.d/`.
 
 **cpsdirector** is available here:
-http://www.conpaas.eu/dl/cpsdirector-1.x.x.tar.gz. The tarball includes an
+http://www.conpaas.eu/dl/cpsdirector-2.x.x.tar.gz. The tarball includes an
 installation script called :file:`install.sh` for your convenience. You can
 either run it as root or follow the installation procedure outlined below in
 order to setup your ConPaaS Director installation.
@@ -82,7 +82,7 @@ order to setup your ConPaaS Director installation.
     >> and again
     $ sudo ntpdate 0.us.pool.ntp.org
 
-#. Download http://www.conpaas.eu/dl/cpsdirector-1.x.x.tar.gz and
+#. Download http://www.conpaas.eu/dl/cpsdirector-2.x.x.tar.gz and
    uncompress it
 
 #. Run :command:`make install` as root
@@ -117,7 +117,7 @@ If you experience any problems with the previously mentioned commands,
 it might be that the default VirtualHost created by the ConPaaS director
 installation process conflicts with your Apache configuration. The
 Apache Virtual Host documentation might be useful to fix those issues:
-http://httpd.apache.org/docs/2.2/vhosts/.
+http://httpd.apache.org/docs/2.4/vhosts/.
 
 Finally, you can start adding users to your ConPaaS installation as follows::
 
@@ -253,12 +253,12 @@ The new command line client for ConPaaS is called ``cps-tools``.
 Installing and configuring cps-tools
 ------------------------------------
 
-The command line ``cps-tools`` is a more recent command line client to interact
-with ConPaaS.
-It has essentially a modular internal architecture that is easier to extend.
-It has also "object-oriented" arguments where "ConPaaS" objects are services, users, clouds and applications.
-The argument consists in stating the "object" first and then calling a sub-command on it.
-It also replaces the command line tool ``cpsadduser.py``.
+The command line ``cps-tools`` is a command line client to interact with
+ConPaaS. It has essentially a modular internal architecture that is easier
+to extend. It has also "object-oriented" arguments where "ConPaaS" objects
+are services, users, clouds and applications. The argument consists in
+stating the "object" first and then calling a sub-command on it. It also
+replaces the command line tool ``cpsadduser.py``.
 
 ``cps-tools`` requires:
 
@@ -270,18 +270,16 @@ If these are not yet installed, first follow the guidelines in :ref:`python-and-
 
 Installing ``cps-tools``::
 
-    $ tar -xaf cps-tools-1.x.x.tar.gz
-    $ cd cps-tools-1.x.x
+    $ tar -xaf cps-tools-2.x.x.tar.gz
+    $ cd cps-tools-2.x.x
     $ ./configure --sysconf=/etc
     $ sudo make install
-
-or::
-	
+    >> or:
     $ make prefix=$HOME/src/virtualenv-1.11.4/ve install |& tee my-make-install.log
     $  cd ..
     $  pip install simplejson |& tee sjson.log
     $  apt-get install libffi-dev |& tee libffi.log
-    $  pip install cpslib-1.x.x.tar.gz |& tee my-ve-cpslib.log
+    $  pip install cpslib-2.x.x.tar.gz |& tee my-ve-cpslib.log
 
 Configuring ``cps-tools``::
 
@@ -361,7 +359,7 @@ enabled. In a typical setup, Director and Frontend are installed on the same
 host, but such does not need to be the case.
 
 The ConPaaS Frontend can be downloaded from
-http://www.conpaas.eu/dl/cpsfrontend-1.x.x.tar.gz. 
+http://www.conpaas.eu/dl/cpsfrontend-2.x.x.tar.gz.
 
 After having uncompressed it you should install the required packages::
 
@@ -439,21 +437,21 @@ dependencies of its processes. For your convenience we provide a pre-built
 public AMI, already configured and ready to be used on Amazon EC2, for each
 availability zone supported by ConPaaS. The AMI IDs of said images are:
 
--  ``ami-7a565912`` United States East (Northern Virginia)
+-  ``ami-41890256`` United States East (Northern Virginia)
 
--  ``ami-b7dd31f3`` United States West (Northern California)
+-  ``ami-f7aaeb97`` United States West (Northern California)
 
--  ``ami-e57f49d5`` United States West (Oregon)
+-  ``ami-2531fd45`` United States West (Oregon)
 
--  ``ami-7f7e1108`` Europe West (Ireland)
+-  ``ami-8fa1c3fc`` Europe West (Ireland)
 
--  ``ami-3a0bc83a`` Asia Pacific (Tokyo)
+-  ``ami-148a7175`` Asia Pacific (Tokyo)
 
--  ``ami-fcdde1ae`` Asia Pacific (Singapore)
+-  ``ami-558b5436`` Asia Pacific (Singapore)
 
--  ``ami-0b473b31`` Asia Pacific (Sydney)
+-  ``ami-6690ba05`` Asia Pacific (Sydney)
 
--  ``ami-a154d0bc`` South America (Sao Paulo)
+-  ``ami-7af56216`` South America (Sao Paulo)
 
 You can use one of these values when configuring your ConPaaS director
 installation as described in :ref:`director-installation`.
@@ -472,9 +470,9 @@ used with Amazon EC2, for example in case you wish to run ConPaaS in a different
 Availability Zone. This image is available from the following link:
 
 **ConPaaS VM image for Amazon EC2 (x86_64):**
-  | http://www.conpaas.eu/dl/conpaas-amazon.img
-  | MD5: f883943fa01c5b1c094d6dddeb64da86
-  | size: 2.0 GB
+  | http://www.conpaas.eu/dl/conpaas-2.0.0-amazon.img.tar.gz
+  | MD5: c6017f277f01777121dae3f2fb085e92
+  | size: 481 MB
 
 In case you prefer to use a custom services image, you can also create a new
 Amazon Machine Image yourself, by following the instructions from the Internals
@@ -510,18 +508,13 @@ inbound traffic. Therefore, one needs to specify a whitelist of
 protocols and destination ports that are accessible from the outside.
 The following ports should be open for all running instances:
 
--  TCP ports 80, 443, 5555, 8000, 8080 and 9000 – used by the Web
-   Hosting service
+-  TCP ports 443 and 5555 used by the ConPaaS system (director, managers
+   and agents)
+
+-  TCP ports 80, 8000, 8080 and 9000 – used by the Web Hosting service
 
 -  TCP ports 3306, 4444, 4567, 4568 – used by the MySQL service with
    Galera extensions
-
--  TCP ports 8020, 8021, 8088, 50010, 50020, 50030, 50060, 50070, 50075,
-   50090, 50105, 54310 and 54311 – used by the Map Reduce service
-
--  TCP ports 4369, 14194 and 14195 – used by the Scalarix service
-
--  TCP ports 2633, 8475, 8999 – used by the TaskFarm service
 
 -  TCP ports 32636, 32638 and 32640 – used by the XtreemFS service
 
@@ -551,47 +544,6 @@ set the environment variables that authenticate the user is to source the
 
     $ source devstack/openrc admin admin
 
-Getting the OpenStack API access credentials
---------------------------------------------
-ConPaaS talks with an OpenStack deployment using the EC2 API, so first make
-sure that EC2 API access is enabled for the OpenStack deployment and note
-down the EC2 Access Key and EC2 Secret Key.
-
-Using Horizon (the OpenStack dashboard), the EC2 access credentials can be
-recovered by navigating to the *Project* > *Compute* > *Access & Security*
-menu in the left pane of the dashboard and then selecting the *API Access*
-tab. The EC2 Access Key and EC2 Secret key can be revealed by pressing the
-*View Credentials* button located on the right side of the page.
-
-Using the command line, the same credentials can be obtained by interrogating
-Keystone (the OpenStack identity manager service) using the following command::
-
-    $ keystone ec2-credentials-list
-
-For testing the EC2 API or obtaining necessary information, it is very often
-useful to install the Eucalyptus client API tools (euca2ools). On a Debian /
-Ubuntu system, this can be done using the following command::
-
-    $ sudo apt-get install euca2ools
-
-Before executing any commands from this package, you must first export the
-**EC2_URL**, **EC2_ACCESS_KEY** and **EC2_SECRET_KEY** environment variables,
-using the values obtained by following the instructions above. In newer versions
-of this package, these environment variables are renamed to **EC2_URL**,
-**AWS_ACCESS_KEY** and **AWS_SECRET_KEY**.
-
-Alternatively, OpenStack provides a script that, when sourced, automatically
-exports all the required environment variables. Using the Horizon dashboard,
-this script can be found by navigating to the *Project* > *Compute* > *Access &
-Security* menu in the left pane and then selecting the *API Access* tab. An
-archive containing this script (named ``ec2rc.sh``) can be downloaded by
-pressing the *Download EC2 Credentials* button.
-
-An easy way to check that euca2ools commands work is by listing all the active
-instances using::
-
-    $ euca-describe-instances
-
 .. _registering-image-on-openstack:
 
 Registering your ConPaaS image to OpenStack
@@ -601,25 +553,25 @@ from the following links, depending on the virtualization tehnology and
 system architecture you are using:
 
 **ConPaaS VM image for OpenStack with KVM (x86_64):**
-  | http://www.conpaas.eu/dl/conpaas-openstack-kvm.img
-  | MD5: 28299ac49cc216dde57b107000078c4f
-  | size: 1.8 GB
+  | http://www.conpaas.eu/dl/conpaas-2.0.0-openstack-kvm.img.tar.gz
+  | MD5: 495098f986b8a059041e4e0063bb20c4
+  | size: 480 MB
 
 **ConPaaS VM image for OpenStack with LXC (x86_64):**
-  | http://www.conpaas.eu/dl/conpaas-openstack-lxc.img
-  | MD5: 45296e4cfcd44325a13703dc67da1d0b
-  | size: 1.8 GB
+  | http://www.conpaas.eu/dl/conpaas-2.0.0-openstack-lxc.img.tar.gz
+  | MD5: 24d67aa77aa1e6a2b3a74c1b291579e6
+  | size: 449 MB
 
 **ConPaaS VM image for OpenStack with LXC for the Raspberry Pi (arm):**
   | http://www.conpaas.eu/dl/ConPaaS-RPI/conpaas-rpi.img
   | MD5: c29cd086e8e0ebe7f0793e7d54304da4
   | size: 2.0 GB
 
-This section assumes that you already downloaded one of the images above or
-created one as explained in :ref:`image-creation` and uploaded it to your
-OpenStack controller node. To register this image with OpenStack, you may
-use either Horizon or the command line client of Glance (the OpenStack image
-management service).
+This section assumes that you already downloaded and decompressed one of the
+images above or created one as explained in :ref:`image-creation` and uploaded
+it to your OpenStack controller node. To register this image with OpenStack,
+you may use either Horizon or the command line client of Glance (the OpenStack
+image management service).
 
 In Horizon, you can register the ConPaaS image by navigating to the *Project* >
 *Compute* > *Images* menu in the left pane and then pressing the *Create Image*
@@ -630,15 +582,7 @@ image (i.e. *conpaas.img*). The image format should be set to *Raw*.
 Alternatively, using the command line, the ConPaaS image can be registered in
 the following way::
 
-    $ glance image-create --name <image_name> --disk-format raw --container-format bare --file <conpaas.img>
-
-In both cases, you need to obtain the AMI ID associated with the image in order
-to allow ConPaaS to refer to it when using the EC2 API. To do this, you need to
-execute the following command::
-
-    $ euca-describe-images
-
-The AMI ID appears in the second column of the output.
+    $ glance image-create --name <image-name> --disk-format raw --container-format bare --file <conpaas.img>
 
 Networking setup
 ----------------
@@ -738,9 +682,9 @@ and testing environment for ConPaaS without the need of accessing a cloud.
 The easiest way to try the Nutshell is to download the preassembled image
 for VirtualBox. This can be done from the following link:
 
-**VirtualBox VM containing ConPaaS in a Nutshell (7.6 GB):**
-  | http://www.conpaas.eu/dl/Nutshell-1.5.1.ova
-  | MD5: 018ea0eaa6b6108ef020e00391ef3a96
+**VirtualBox VM containing ConPaaS in a Nutshell (2.5 GB):**
+  | http://www.conpaas.eu/dl/ConPaaS-Nutshell-2.0.0.ova
+  | MD5: 81ef97d50c9f2cd6d029e5213a7a5d2a
 
 .. warning::
   It is always a good idea to check the integrity of a downloaded image before continuing
@@ -827,10 +771,9 @@ The recommended system requirements for optimal performance::
 #. Once the Nutshell has been imported, you may adjust the amount of memory and
    the number of CPUs you want to dedicate to it by clicking on the Nutshell VM,
    then following the menu: *Settings* > *System* > *Motherboard* / *Processor*.
-   We recommend allocating at least 3 GB of RAM for the Nutshell to function properly
-   (4 GB is recommended). Make sure that enough memory remains for the host system to
-   operate properly and never allocate more CPUs than what is available in your host
-   computer.
+   We recommend allocating at least 4 GB of RAM for the Nutshell to function properly.
+   Make sure that enough memory remains for the host system to operate properly and
+   never allocate more CPUs than what is available in your host computer.
 
 #. It is also a very good idea to create a snapshot of the initial state of the
    Nutshell VM, immediately after it was imported. This allows the possibility to
@@ -846,7 +789,7 @@ For more information regarding the usage of the Nutshell please consult the
 ConPaaS on Raspberry PI
 =======================
 ConPaaS on Raspberry PI is an extension to the ConPaaS project which uses one (or more)
-Raspberry PI(s) 2 Model B to create a cloud for deploying applications. Each Raspberry PI is
+Raspberry PI(s) 2 or 3 Model B to create a cloud for deploying applications. Each Raspberry PI is
 configured as an OpenStack compute node (using LXC containers), running only the minimal
 number of OpenStack services required on such a node (``nova-compute`` and ``cinder-volume``).
 All the other OpenStack services, such as Glance, Keystone, Horizon etc., are moved outside
@@ -857,7 +800,7 @@ To ease the deployment of the system, we provide an image containing the raw con
 the Raspberry PI's SD card, along with a VirtualBox VM image (in the Open Virtualization
 Archive format) that contains the controller node and can be deployed on any machine
 connected to the same local network as the Raspberry PI(s). So, for a minimal working setup,
-you will need at least one Raspberry PI 2 Model B (equipped with a 32 GB SD card) and one
+you will need at least one Raspberry PI 2 or 3 Model B (equipped with a 32 GB SD card) and one
 laptop/desktop computer (with VirtualBox installed) that will host the backend VM. The two
 have to be connected to the same local network which, in the default configuration, uses IPs
 in the ``172.16.0.0/24`` range.

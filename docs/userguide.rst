@@ -16,10 +16,9 @@ ConPaaS currently contains the following services:
 -  **Generic service** allowing the execution of arbitrary applications.
 
 ConPaaS applications can be composed of any number of services. For
-example, a bio-informatics application may make use of a PHP and a MySQL
-service to host a Web-based frontend, and link this frontend to a
-Generic backend service for conducting high-performance genomic
-computations on demand.
+example, an application can use a Web hosting service, a database
+service to store the internal application state and a file storage
+service to store access logs.
 
 
 Usage overview
@@ -28,88 +27,48 @@ Usage overview
 Web-based interface
 -------------------
 
-Most operations in ConPaaS can be done using the ConPaaS frontend, which
-gives a Web-based interface to the system. The front-end allows users to
-register (directly with ConPaaS or through an external Identification 
-Provider at Contrail), create services, upload code and data to the 
-services, and configure each service.
+Most operations in ConPaaS can be performed using the ConPaaS frontend, which
+provides a Web-based interface to the system. The frontend allows users to
+register, create and start applications, add and start services, upload
+code and configure each service.
 
--  The Dashboard page displays the list of services currently active in
-   the system.
+-  The Dashboard page displays the list of applications created by the
+   current user.
 
--  Each service comes with a separate page which allows one to configure
-   it, upload code and data, and scale it up and down.
+-  Each application has a separate page which allows the user to add or
+   remove services.
+   
+-  Each service has its own separate page which allows the user to
+   configure it, upload code and data, and scale it up and down.
 
-
-Command line interfaces
------------------------
-
-All the functionalities of the frontend are also available using a
-command-line interface. This allows one to script commands for ConPaaS.
-The command-line interface also features additional advanced
-functionalities, which are not available using the front-end.
-
-The new command line client for ConPaaS is called ``cps-tools``.
-
-    Installation and configuration:
-        see :ref:`cpstools-installation`.
-
-    Command arguments::
-
-        $ cps-tools --help
-
-    Available service types::
-
-        $ cps-tools service get_types
-        $ cps-service get-types
-
-    Service command specific arguments::
-
-        $ cps-tools <service_type> --help
-        $ cps-<service_type> --help
-
-    Create a service::
-
-        $ cps-tools service create <service_type>
-        $ cps-tools <service_type> create
-        $ cps-<service_type> create
-
-    List services::
-
-        $ cps-tools service list
-        $ cps-service list
-
-    List applications::
-
-        $ cps-tools application list
-        $ cps-application list
-
-    List clouds::
-
-       $ cps-tools cloud list
-       $ cps-cloud list
-
-
-Controlling services using the front-end
-----------------------------------------
-
-The ConPaaS front-end provides a simple and intuitive interface for
-controlling services. We discuss here the features that are common to
-all services, and refer to the next sections for service-specific
+The ConPaaS front-end provides simple and intuitive interfaces for
+controlling applications and services. We describe here the most common
+features. Please refer to the next sections for service-specific
 functionality.
 
-Create a service.
+Create an application.
+    In the main ConPaaS Dashboard, click on “create new application”.
+    Write the application's name and click on “OK”. The application's
+    name must be unique.
+
+Start an application.
+    From the main ConPaaS Dashboard, click on the desired application.
+    To start the application, click on the “start application” button.
+    This will create a new virtual machine which hosts the Application's
+    Manager, a ConPaaS component in charge of managing the entire application.
+
+Add a service.
     Click on “add new service”, then select the service you want to
-    add. This operation adds extra functionalities to the 
-    application manager which are specific to a certain service.
-    These functionalities enable the application manager to be 
-    charge of taking care of the service, but it does not host applications itself. 
-    Other instances in charge
-    of running the actual application are called “agent” instances.
+    add. This operation adds extra functionalities to the application
+    manager which are specific to a certain service. These functionalities
+    enable the application manager to be charge of taking care of the
+    service, but it does not host applications itself. Other instances in
+    charge of running the actual application are called “agent” instances.
 
 Start a service.
-    Click on “start”, this will create a new virtual machine which can
-    host applications, depending on the type of service.
+    Click on the newly created service, then click on the “start” button.
+    This will create a new virtual machine which can host applications,
+    depending on the type of service.
 
 Rename the service.
     By default all new services are named “New service”. To give a
@@ -123,7 +82,7 @@ Check the list of virtual instances.
     service. Certain services use a single role for all instances, while
     other services specialize different instances to take different
     roles. For example, the PHP Web hosting service distinguishes three
-    roles: load balancers, web servers, and PHP servers.
+    roles: load balancers, web servers and PHP servers.
 
 Scale the service up and down.
     When a service is started it uses a single “agent” instance. To add
@@ -133,59 +92,89 @@ Scale the service up and down.
     reconfigures itself without any service interruption.
 
 Stop the service.
-    When you do not need to run the application any more, click “stop”
-    to stop the service. This stops all instances except the manager
-    which keeps on running.
+    When you do not need to run the service anymore, click on the “stop”
+    button to stop the service. This stops all instances of the service.
 
-Terminate the service.
-    Click “terminate” to terminate the service. At this point all the
-    state of the service manager will be lost.
+Remove the service.
+    Click “remove” to delete the service. At this point all the state of
+    the service manager is lost.
 
-Controlling services using the command-line interfaces
-------------------------------------------------------
+Stop the application.
+    Even when all the services from an application are stopped, the application's
+    manager will keep on running. To stop it, in the application's page,
+    click on the “stop application” button. The application will not use
+    resources anymore.
 
-Command-line interfaces allow one to control services without using the
-graphical interface. The command-line interfaces also offer additional
-functionalities for advanced usage of the services.
-See :ref:`cpsclient-installation` to install it.
 
-List all options of the command-line tool.
-     
+Command line interface
+----------------------
 
-    ::
+All the functionalities of the frontend are also available using a
+command line interface. This allows one to script commands for ConPaaS.
+The command line interface also features additional advanced
+functionalities, which are not available using the frontend.
 
-        $ cpsclient.py help 
+The new command line client for ConPaaS is called ``cps-tools``.
 
-Create a service.
-     
+    Installation and configuration:
+        see :ref:`cpstools-installation`.
 
-    ::
+    Command arguments::
 
-        $ cpsclient.py create php
+        $ cps-tools --help
 
-List available services.
-     
+    Create an application::
 
-    ::
+        $ cps-tools application create <appl_name>
+        $ cps-application create <appl_name>
 
-        $ cpsclient.py list
+    List applications::
 
-List service-specific options.
-     
+        $ cps-tools application list
+        $ cps-application list
 
-    ::
+    Start an application::
 
-        # in this example the id of our service is 1
-        $ cpsclient.py usage 1 
+        $ cps-tools application start <app_name_or_id>
+        $ cps-application start <app_name_or_id>
 
-Scale the service up and down.
-     
+    Available service types::
 
-    ::
+        $ cps-tools service get_types
+        $ cps-service get_types
 
-        $ cpsclient.py usage 1
-        $ cpsclient.py add_nodes 1 1 1 0 
-        $ cpsclient.py remove_nodes 1 1 1 0 
+    Add a service to an application::
+
+        $ cps-tools service add <service_type> <app_name_or_id>
+        $ cps-tools <service_type> add <app_name_or_id>
+        $ cps-<service_type> add <app_name_or_id>
+
+    List services::
+
+        $ cps-tools service list
+        $ cps-service list
+
+    Start a service::
+
+        $ cps-tools <service_type> start <app_name_or_id> <serv_name_or_id>
+        $ cps-service start <app_name_or_id> <serv_name_or_id>
+        $ cps-<service_type> start <app_name_or_id> <serv_name_or_id>
+
+    Service command specific arguments::
+
+        $ cps-tools <service_type> --help
+        $ cps-<service_type> --help
+
+    Scale the service up and down::
+
+        $ cps-service add_nodes <app_name_or_id> <serv_name_or_id>
+        $ cps-service remove_nodes <app_name_or_id> <serv_name_or_id>
+
+    List the available clouds::
+
+        $ cps-tools cloud list
+        $ cps-cloud list
+
 
 The credit system
 -----------------
@@ -197,12 +186,12 @@ hour of execution of one virtual machine. The number of available
 credits is always mentioned in the top-right corner of the front-end.
 Once credits are exhausted, your running instances will be stopped and
 you will not be able to use the system until the administrator decides
-to give additional credit.
+to give you additional credit.
 
-Note that every service consumes credit, even if it is in “stopped”
-state. The reason is that stopped services still have one “manager”
-instance running. To stop using credits you must completely terminate
-your services.
+Note that every running application consumes credit, even if all its
+services are in the “stopped” state. The reason is that the application
+still has one “Application Manager” instance running. To stop using any
+credits you must also stop all your applications.
 
 
 Tutorial: hosting WordPress in ConPaaS
@@ -250,11 +239,11 @@ we will need a PHP and a MySQL service in ConPaaS.
 
 #. That’s it! The system works, and can be scaled up and down.
 
-Note that, for this simple example, the “file upload” functionality of WordPress will not work if
-you scale the system up. This is because WordPress stores files in the
-local file system of the PHP server where the upload has been processed.
-If a subsequent request for this file is processed by another PHP server
-then the file will not be found.
+Note that, for this simple example, the “file upload” functionality of
+WordPress will not work if you scale the system up. This is because
+WordPress stores files in the local file system of the PHP server where
+the upload has been processed. If a subsequent request for this file is
+processed by another PHP server then the file will not be found.
 The solution to that issue consists in using the shared file-system
 service called XtreemFS to store the uploaded files.
 
@@ -264,7 +253,6 @@ The PHP Web hosting service
 
 The PHP Web hosting service is dedicated to hosting Web applications
 written in PHP. It can also host static Web content.
-
 
 .. _code_upload:
 
@@ -290,18 +278,18 @@ certain size. To upload large archives, you must use the command-line
 tools or Git.
 
 The following example illustrates how to upload an archive to the
-service with id 1 using the ``cpsclient.py`` command line tool:
+service with id 1 of application with id 1 using the command line tool:
 
 ::
 
-    $ cpsclient.py upload_code 1 path/to/archive.zip
+    $ cps-php upload_code 1 1 path/to/archive.zip
 
 To enable Git-based code uploads you first need to upload your SSH
 public key. This can be done either using the command line tool:
 
 ::
 
-    $ cpsclient.py upload_key serviceid filename
+    $ cps-php upload_key <app_name_or_id> <serv_name_or_id> <filename>
 
 An SSH public key can also be uploaded using the ConPaaS frontend by
 choosing the “checking out repository” option in the “Code management”
@@ -363,15 +351,14 @@ let PHP display errors.
 
 ::
 
-    $ cpsclient.py toggle_debug serviceid
+    $ cps-php debug <app_name_or_id> <serv_name_or_id> <on | off>
 
 Adding and removing nodes
 -------------------------
 
-Like all ConPaaS services, the PHP service is elastic:
-service owner can add or remove nodes.
-The PHP service (like the Java service) belongs to a class of web services
-that deals with three types of nodes:
+Like all ConPaaS services, the PHP service is elastic: service owner can
+add or remove nodes. The PHP service (like the Java service) belongs to
+a class of web services that deals with three types of nodes:
 
 proxy
   a node that is used as an entry point for the web application and as a load balancer
@@ -380,29 +367,30 @@ web
 backend
   a node that deals with PHP requests only
 
-When a proxy node receives a request, it redirects it to 
-a web node if it is a request for a static page,
-or a backend node if it is a request for a PHP page.
+When a proxy node receives a request, it redirects it to  a web node if
+it is a request for a static page, or a backend node if it is a request
+for a PHP page.
 
 If your PHP service has a slow response time, increase the number of backend nodes.
 
-On command line, you can use ``cpsclient.py`` to add nodes.
-The ``add_nodes`` sub-command takes 4 arguments in that order: the PHP service identifier,
-the number of backend nodes, the number of web nodes and the number of proxy nodes to add.
-It also take a 5th optional argument that specify in which cloud nodes will be created.
-For example, adding two backend nodes to PHP service id 1::
+On the command line, the ``add_nodes`` sub-command can be used to add
+additional nodes to a service. It takes as arguments the number of backend nodes,
+web nodes and proxy nodes to add::
 
-  $ cpsclient.py add_nodes 1 2 0 0
+  $ cps-php add_nodes <app_name_or_id> <serv_name_or_id> --backend COUNT --proxy COUNT --web COUNT
+
+For example, adding two backend nodes to PHP service id 1 of application 1::
+
+  $ cps-php add_nodes 1 1 -- backend 2
 
 Adding one backend node and one web node in a cloud provider called ``mycloud``::
 
-  $ cpsclient.py add_nodes 1 1 1 0 mycloud
+  $ cps-php add_nodes 1 1 --backend 1 --web 1 --cloud mycloud
 
-You can also remove nodes using ``cpsclient.py``.
+You can also remove nodes using the command line.
 For example, the following command will remove one backend node::
 
-  $ cpsclient.py remove_nodes 1 1 0 0
-
+  $ cps-php remove_nodes 1 1 --backend 1
 
 .. warning::
   Initially, an instance of each node is running on one single VM.
@@ -434,9 +422,9 @@ certain size. To upload large archives, you must use the command-line
 tools or Git.
 
 The following example illustrates how to upload an archive with the
-``cpsclient.py`` command line tool::
+command line tool::
 
-    $ cpsclient.py upload_code serviceid archivename
+    $ cps-java upload_code <app_name_or_id> <serv_name_or_id> <path/to/archive.war>
 
 To upload new versions of your application via Git, please refer to
 section :ref:`code_upload`.
@@ -481,7 +469,7 @@ to the rest of the group and resolving any conflicts that might arise
 between concurrent changes made by different members. These features
 can be used to increase the throughput of the cluster. 
 
-To obtain the better performances from a cluster, it is a best
+To obtain the better performance from a cluster, it is a best
 practice to use it in balanced fashion, so that each node has
 approximatively the same load of the others. To achieve this, the
 service allows users to allocate special load balancer nodes
@@ -522,7 +510,7 @@ MySQL service. Note that this functionality is restricted to dumps of
 a relatively small size. To upload larger dumps you can always use the
 regular mysql command for this::
 
-    $ mysql mysql-ip-address -u mysqldb -p < dumpfile.sql
+    $ mysql <mysql-ip-address> -u mysqldb -p < dumpfile.sql
 
 Performance Monitoring
 ----------------------
@@ -554,13 +542,6 @@ It consists of three main components.
   slow down, and that it may be time to add additional nodes to the
   cluster. On the other hand this may indicate a malfunction of the
   specific node.
-
-  In this latter case, in a multimaster system, it may be a good idea to
-  kill the node and replace it with another one. The monitoring
-  system also simplifies this kind of operations through buttons which
-  allow to directly kill a specific node. Keep in mind, however,
-  that high CPU utilization may not necessarily affect application
-  performance.
 
 - "Galera Mean Misalignment" draws a real-time measure of the mean
   misalignment across the nodes. This information is derived by
@@ -606,14 +587,14 @@ superuser rights. So client-certificates should only be used in trusted environm
 Using the command line client, certificates can be created like this, where <adminflag>
 can be "true", "yes", or "1" to grant administrator rights::
 
-    $ cpsclient.py get_client_cert <service-id> <passphrase> <adminflag> <filename.p12>
-    $ cpsclient.py get_user_cert <service-id> <user> <group> <passphrase> <adminflag> <filename.p12>
+    $ cps-xtreemfs get_client_cert <app_name_or_id> <serv_name_or_id> <passphrase> <adminflag> <filename.p12>
+    $ cps-xtreemfs get_user_cert <app_name_or_id> <serv_name_or_id> <user> <group> <passphrase> <adminflag> <filename.p12>
 
 Accessing volumes directly
 --------------------------
 
 Once a volume has been created, it can be directly mounted on a remote site by
-using the mount.xtreemfs command. A mounted volume can be used like any local
+using the ``mount.xtreemfs`` command. A mounted volume can be used like any local
 POSIX-compatible filesystem. You need a certificate for mounting (see last section).
 The command looks like this, where <address> is the IP of an agent running
 an XtreemFS directory service (usually the first agent)::
@@ -631,33 +612,12 @@ Policies
 
 Different aspects of XtreemFS (e.g. replica- and OSD-selection) can be 
 customised by setting certain policies. Those policies can be set via the 
-ConPaaS command line client (recommended) or directly via xtfsutil (see the
+ConPaaS command line client (recommended) or directly via ``xtfsutil`` (see the
 XtreemFS user guide). The commands are like follows, were <policy_type> is
-"osd_sel", "replica_sel", or "replication"::
+``osd_sel``, ``replica_sel``, or ``replication``::
 
-   $ cpsclient.py list_policies <service-id> <policy_type>
-   $ cpsclient.py set_policy <service-id> <policy_type> <volume> <policy> [factor]
-
-Persistency
------------
-
-If the XtreemFS service is shut down, all its data is permanently lost. If 
-persistency beyond the service runtime is needed, the XtreemFS service can be
-moved into a snapshot by using the download_manifest operation of the command
-line client.
-
-.. warning::
-  This operation will automatically shut down the service and its application.
-
-The whole application containing the service and all of its stored volumes 
-with their data can be moved back into a running ConPaaS application by using
-the manifest operation.
-
-The commands are::
-
-    $ cpsclient.py download_manifest <application-id> > <filename>
-    $ cpsclient.py manifest <filename>
-
+   $ cps-xtreemfs list_policies <app_name_or_id> <serv_name_or_id> <policy_type>
+   $ cps-xtreemfs set_policy <app_name_or_id> <serv_name_or_id> <policy_type> <policy> <volume>
 
 Important notes
 ---------------
@@ -665,10 +625,6 @@ Important notes
 When a service is scaled down by removing OSDs, the data of those OSDs is
 migrated to the remaining OSDs. Always make sure there is enough free space 
 for this operation to succeed. Otherwise you risk data loss.
-The download_manifest operation of the XtreemFS service will also shut the 
-service down. This behaviour might differ from other ConPaaS services, but is 
-necessary to avoid copying the whole filesystem (which would be a very 
-expensive operation). This might change in future releases.
 
 
 .. _the-generic-service:
@@ -786,13 +742,13 @@ version cannot be deleted.
 
 Using the command-line interface, uploading and enabling a new code version
 is just as simple. The following example illustrates how to upload and activate
-an archive to the service with id 1 using the ``cpsclient.py`` command line tool::
+an archive to the service with id 1 using the command line tool::
 
-  $ cpsclient.py upload_code 1 test-code.tar.gz
+  $ cps-generic upload_code 1 1 test-code.tar.gz
   Code version code-pw1LKs uploaded
-  $ cpsclient.py enable_code 1 code-pw1LKs
+  $ cps-generic enable_code 1 1 code-pw1LKs
   code-pw1LKs enabled
-  $ cpsclient.py list_uploads 1
+  $ cps-generic list_codes 1 1
   current codeVersionId filename         description
   ------------------------------------------------------
         * code-pw1LKs   test-code.tar.gz
@@ -800,7 +756,7 @@ an archive to the service with id 1 using the ``cpsclient.py`` command line tool
 
 To download a specific code version, the following command may be used::
 
-  $ cpsclient.py download_code <serviceid> <code-version>
+  $ cps-generic download_code <app_name_or_id> <serv_name_or_id> --version <code-version>
 
 The archive will be downloaded using the original name in the current directory.
 
@@ -811,7 +767,7 @@ The archive will be downloaded using the original name in the current directory.
 The command-line client also allows deleting a code version, with the exception
 of the currently active version::
 
-  $ cpsclient.py delete_code <serviceid> <code-version>
+  $ cps-generic delete_code <app_name_or_id> <serv_name_or_id> <code-version>
 
 It is a good idea to delete the code versions which are not needed anymore, as
 all the available code versions are stored in the Generic manager's file system,
@@ -828,12 +784,12 @@ To enable Git-based code uploads, you first need to upload your SSH public key.
 This can be done either using the web frontend, in the “Code management” section,
 after selecting “checking out repository” or using the command-line client::
 
-  $ cpsclient.py upload_key <serviceid> <filename>
+  $ cps-generic upload_key <app_name_or_id> <serv_name_or_id> <filename>
 
 You can check that the key was successfully uploaded by listing the trusted
 SSH keys::
 
-  $ cpsclient.py list_keys <serviceid>
+  $ cps-generic list_keys <app_name_or_id> <serv_name_or_id>
 
 There is only one git repository per application, so you only need to upload
 your SSH key once.
@@ -871,7 +827,7 @@ and checkout a specific commit. The version number represents the first part
 of the commit hash, so you can use that as a parameter for the ``git checkout``
 command::
 
-  $ cpsclient.py list_uploads 1
+  $ cps-generic list_codes 1 1
   current codeVersionId filename            description
   ---------------------------------------------------------
           git-7235de9   7235de9             Git upload
@@ -914,20 +870,20 @@ you can press the red X icon after the volume's size.
 Using the command-line client, a volume can be created and attached to a
 specific agent with the following command::
 
-  $ cpsclient.py create_volume <serviceid> <vol_name> <size> <agent_id>
+  $ cps-generic create_volume <app_name_or_id> <vol_name> <vol_size> <agent_id>
 
 Size must always be specified in MB. To find out the *agent_id* of a specific
 instance, you may issue the following command::
 
-  $ cpsclient.py list_nodes <serviceid>
+  $ cps-generic list_nodes <app_name_or_id> <serv_name_or_id>
 
 The list of all storage volumes can be retrieved with::
 
-  $ cpsclient.py list_volumes <serviceid>
+  $ cps-generic list_volumes <app_name_or_id> <serv_name_or_id>
 
 This command detaches and deletes a storage volume::
 
-  $ cpsclient.py delete_volume <serviceid> <agent_id>
+  $ cps-generic delete_volume <app_name_or_id> <agent_id>
 
 Controlling the application's life cycle
 ----------------------------------------
@@ -942,7 +898,7 @@ removal of the specified number of nodes.
 
 On the command-line, nodes can be added with the following command::
 
-  $ cpsclient.py add_nodes <serviceid> <number_of_nodes>
+  $ cps-generic add_nodes <app_name_or_id> <serv_name_or_id> --count <number_of_nodes>
 
 Immediately after the new nodes are ready, the active code version is copied
 to the new nodes and the ``init.sh`` script is executed in each of the new
@@ -953,7 +909,7 @@ executed twice for the same agent and the same code version.
 
 Nodes can be removed with::
 
-  $ cpsclient.py remove_nodes <serviceid> <number_of_nodes>
+  $ cps-generic remove_nodes <app_name_or_id> <serv_name_or_id> --count <number_of_nodes>
 
 After the command completes and the specified number of nodes are terminated,
 the ``notify.sh`` script is executed for all the remaining nodes to notify
@@ -971,9 +927,9 @@ specify parameters which will be forwarded to the script during the execution.
 
 On the command line, the following commands may be used::
 
-  $ cpsclient.py run <serviceid> [parameters]
-  $ cpsclient.py interrupt <serviceid> [parameters]
-  $ cpsclient.py cleanup <serviceid> [parameters]
+  $ cps-generic run <app_name_or_id> <serv_name_or_id> -p <parameters>
+  $ cps-generic interrupt <app_name_or_id> <serv_name_or_id> -p <parameters>
+  $ cps-generic cleanup <app_name_or_id> <serv_name_or_id> -p <parameters>
 
 The parameters are optional and, if not present, will be replaced by an empty
 list.
@@ -989,7 +945,7 @@ completes execution and the application is still running, the application will
 be automatically killed. When ``interrupt.sh`` itself has to be
 killed, the ``interrupt`` command can be issued again. In this case, it will
 kill all the running scripts (including ``interrupt.sh``). In the web frontend,
-this is highlighted by renaiming the ``interrupt`` button to ``kill``.
+this is highlighted by renaming the ``interrupt`` button to ``kill``.
 
 .. warning::
   issuing the ``interrupt`` command twice kills all the running
@@ -1017,18 +973,20 @@ text.
 With the command-line interface, the status of the scripts for each agent
 can be listed using the following command::
 
-  $ cpsclient.py get_script_status <serviceid>
+  $ cps-generic get_script_status <app_name_or_id> <serv_name_or_id>
 
 The Generic service also facilitates retrieving the agent's log file and
 the contents of standard output and error streams. In the web frontend,
 three links are present in the instance's view of each agent. Using the
-command line, the logs can be retrieved with the following command::
+command line, the logs can be retrieved with the following commands::
 
-  $ cpsclient.py get_script_status <serviceid> <agent_id>
+  $ cps-generic get_agent_log <app_name_or_id> <serv_name_or_id> <agent_id>
+  $ cps-generic get_agent_log <app_name_or_id> <serv_name_or_id> <agent_id> -f agent.out
+  $ cps-generic get_agent_log <app_name_or_id> <serv_name_or_id> <agent_id> -f agent.err
 
 To find out the agent_id of a specific instance, you may issue the following command::
 
-  $ cpsclient.py list_nodes <serviceid>
+  $ cps-generic list_nodes <app_name_or_id> <serv_name_or_id>
 
 
 .. _nutshell-guide:
@@ -1047,27 +1005,15 @@ In this section, we assume that the Nutshell is already installed into VirtualBo
 according to the instructions in the Installation guide. If this is not the case,
 you may want to check these instructions first: :ref:`conpaas-in-a-nutshell`.
 
-#. Open VirtualBox and start the Nutshell by selecting it from the list on the left
-   side and then clicking the *Start* button. Wait a few seconds until you see a
-   login prompt. Any messages that may appear in the VM window at this stage are
-   usually harmless debug messages which can be ignored.
+#. Open VirtualBox and start the Nutshell VM by selecting it from the list on the
+   left side and then clicking the *Start* button.
 
-#. Once the Nutshell is started and the login prompt appears, you can log into it.
-   The login credentials are::
-   
-    Username: stack
-    Password: contrail
+#. Wait for the Nutshell VM to finish booting. Depending on your computer's
+   hardware configuration, this process may take a few minutes. Any messages
+   that may appear in the VM window at this stage are usually harmless debug
+   messages which can be ignored.
 
-#. One important piece of information which you may want to note down is
-   the IP address assigned to the Nutshell VM. This can be used to access
-   the web frontend directly from your host machine or to SSH into the Nutshell
-   VM in order to execute command-line interface commands or to copy files.
-   To find it, type the following command::
-   
-     $ ifconfig br200
-   
-   The IP address will appear in the second line of text.
-
+#. When the the login prompt appears, the Nutshell VM is ready to be used.
 
 Using the Nutshell via the graphical frontend
 ---------------------------------------------
@@ -1075,19 +1021,18 @@ Using the Nutshell via the graphical frontend
 You can access the ConPaaS frontend by inserting the IP address of the
 Nutshell VM in your Web browser, **making sure to add https:// in front of it**::
 
-  https://192.168.56.xxx 
+  https://192.168.56.2
 
 .. warning::
   The first time you access the web frontend, a security warning will appear,
   stating that the SSL certificate of the website is invalid. This is normal, as
-  the certificate is self-signed and the server name is usually different from the
-  IP address you are using to access it. To proceed further, you need to confirm
+  the certificate is self-signed. To proceed further, you need to confirm
   that you want to continue anyway. The procedure is different depending on your
   web browser.
 
-Note that the frontend is accessible only from your local
-machine. Other machines will not be able to access it. A default user
-is available for you, its credentials are::
+Note that the frontend is accessible only from your local machine. Other
+machines will not be able to access it. A default ConPaaS user is available
+for you, its credentials are::
 
   ConPaaS
   Username: test
@@ -1101,7 +1046,7 @@ Note that also *Horizon* (the Openstack dashboard) is running on it as
 well. In case you are curious and want to have a look under the hood,
 Horizon can be reached (using HTTP, not HTTPS) at the same IP address::
 
-  http://192.168.56.xxx
+  http://192.168.56.2
 
 The credentials for Horizon are::
 
@@ -1115,17 +1060,23 @@ Using the Nutshell via the command-line interface
 
 You can also use the command-line to control your Nutshell installation.
 You need to log in as the *stack* user directly in the VirtualBox window
-or using SSH to connect to the Nutshell VM's IP address (the preferred method).
+or using SSH to connect to the Nutshell VM's IP address (the preferred method)::
+
+  $ ssh stack@192.168.56.2
+
+The login credentials are::
+   
+    Username: stack
+    Password: contrail
 
 On login, both the ConPaaS and OpenStack users will already be authenticated.
-You should be able to execute ConPaaS commands, for example starting a
-*helloworld* service can be done with::
+You should be able to execute ConPaaS commands, for example creating an
+application and starting a *helloworld* service can be done with::
 
-  $ cpsclient.py create helloworld
-
-or::
-
-  $ cps-tools service create helloworld
+  $ cps-tools application create "First app"
+  $ cps-tools application start 1
+  $ cps-tools service add helloworld 1
+  $ cps-tools service start 1 1
 
 OpenStack commands are also available. For example::
 
@@ -1135,7 +1086,7 @@ lists all the active instances and::
 
   $ cinder list
 
-lists all the existing volumes.
+lists all the existing storage volumes.
 
 The Nutshell contains a *Devstack* installation of Openstack,
 therefore different services run and log on different tabs of a
@@ -1155,22 +1106,44 @@ for the *screen* command.
 Changing the IP address space used by the Nutshell
 --------------------------------------------------
 
-The Nutshell VM uses an IP address assigned by the DHCP server of the
-host-only network of VirtualBox. In the default settings, the DHCP server
-uses a range from ``192.168.56.101`` to ``192.168.56.254``. If you want to change
-this IP range, you can do this in the VirtualBox window by going to *File* >
-*Preferences* > *Network* > *Host-only Networks*. Select the *vboxnet0* network
-and click on the *Edit host-only network* button and then *DHCP server*.
+In the standard configuration, the Nutshell VM is assigned the static IP
+address ``192.168.56.2``, part of the ``192.168.56.0/24`` subnet that is
+used by the host-only network of VirtualBox. ConPaaS services running
+inside the Nutshell VM also need to have IP addresses assigned, one for
+each container that is started inside the Nutshell VM. This is done using
+OpenStack's floating IP mechanism, which is configured to use an IP range
+from ``192.168.56.10`` to ``192.168.56.99``, part of the same
+``192.168.56.0/24`` subnet.
 
-Note that ConPaaS services running inside the Nutshell VM also need to have
-IP addresses assigned. This is done using OpenStack's floating IP mechanism.
-The default configuration uses an IP range from ``192.168.56.10`` to ``192.168.56.99``,
-which does not overlap with the default one used by the DHCP server of the
-host-only network in VirtualBox. If you want to modify this IP range, execute
-the following commands on the Nutshell as the *stack* user::
+This configuration was carefully chosen to not overlap with the pool used
+by the DHCP server of the host-only network of VirtualBox which, in the
+default settings, uses a range from ``192.168.56.101`` to ``192.168.56.254``.
+To check the range that is used in your system, you can navigate in the
+VirtualBox window to the following menu: *File* > *Preferences* > *Network*
+> *Host-only Networks*. Select the *vboxnet0* network and click on the
+*Edit host-only network* button and then *DHCP server*.
+
+To modify the IP address range used by the Nutshell VM, you need to change
+the static address assigned to the Nutshell VM itself and also the IP range
+used by OpenStack to assign floating IP addresses to the containers. You
+need to make sure that all these addresses are part of the subnet used by
+the host-only network of VirtualBox and also that they do not overlap with
+this network's DHCP server pool (in the case other VMs with interfaces in
+the host-only network are started and receive addresses from this pool).
+You may need to adjust the host-only network's configuration in VirtualBox
+for this these conditions to be met.
+
+The static IP address of the Nutshell VM can be changed by editing the
+``/etc/network/interfaces`` file. The interface that is part of the host-only
+network is the second one (``eth1``), this is the one that should have the
+IP assigned. The first one (``eth0``) is only used to provide Internet access
+to the Nutshell VM.
+
+To modify the IP range used to assign floating IP addresses to containers,
+execute the following commands on the Nutshell as the *stack* user::
 
   $ nova floating-ip-bulk-delete 192.168.56.0/25
-  $ nova floating-ip-bulk-create --pool public --interface br200 <new_range>
+  $ nova floating-ip-bulk-create --pool public --interface eth1 <new_range>
 
 The first command removes the default IP range for floating IPs and the
 second adds the new range. After executing these two commands, do not
@@ -1191,13 +1164,12 @@ other machines in the network and routing for this range is correctly implemente
 
 If the ConPaaS frontend itself needs to be publicly accessible, the host-only
 network of VirtualBox can be replaced with a bridged network connected to a
-physical network interface that provides Internet access. Note that this
-bridge network must use a DHCP server that assigns a public IP address to the
-Nutshell or, alternatively, the Nutshell can be configured to use a static IP
-address (for example by editing the file ``/etc/network/interfaces``). If the
-Nutshell is publicly accessible, you may want to make sure that tighter security
-is implemented: the default user for the ConPaaS frontend is removed and access
-to SSH and OpenStack dashboard is blocked.
+physical network interface that provides Internet access. As in the previous
+scenario, the Nutshell's IP address can be configured by editing the
+``/etc/network/interfaces`` file. If the Nutshell is publicly accessible,
+you may want to make sure that tighter security is implemented: the default
+user for the ConPaaS frontend should be removed and access to SSH and OpenStack
+dashboard should be blocked.
 
 
 .. _raspberrypi-guide:
@@ -1207,9 +1179,9 @@ ConPaaS on Raspberry PI
 
 The following ConPaaS services are supported on the Raspberry PI version of ConPaaS:
 
--  **php**: PHP version 5.3 with Nginx
+-  **php**: PHP version 5.6 with Nginx
 
--  **java**: Apache Tomcat 6.0 servlet container
+-  **java**: Apache Tomcat 7.0 servlet container
 
 -  **xtreemfs**: XtreemFS-1.5 distributed file system
 
@@ -1295,16 +1267,16 @@ command line tools. The same outcome can also be achieved using the graphical fr
 can be accessed using the backend VM's IP address (note that the protocol should be
 **HTTPS**, not HTTP): https://172.16.0.1/
 
-1. Start the Backend VM. Start the Raspberry PI. Allow them some time to finish booting.
+#. Start the Backend VM. Start the Raspberry PI. Allow them some time to finish booting.
 
-2. Make sure the time is synchronized between the Raspberry PI and the Backend VM. This step
+#. Make sure the time is synchronized between the Raspberry PI and the Backend VM. This step
    is crucial in order to allow the SSL certificates-based authentication in ConPaaS to succeed. 
    As the Raspberry PI does not have an internal battery to keep the time when powered off, it
    relies on the NTP protocol to set its time. If there is no Internet connectivity or updating
    the time through NTP fails, the correct time will have to be set manually using the ``date``
    command after every reboot.
 
-3. Check that the OpenStack services are up and running. On the backend server, run the
+#. Check that the OpenStack services are up and running. On the backend server, run the
    following command::
    
      stack@nutshell:~$ nova-manage service list
@@ -1323,32 +1295,42 @@ can be accessed using the backend VM's IP address (note that the protocol should
    
    Do not proceed further if any service is down.
 
-4. Create a new Generic Service using ConPaaS. This will start a new container for the
-   ConPaaS Manager::
+#. Create a new application using ConPaaS::
    
-     stack@nutshell:~$ time cps-tools service create generic
-     Creating new manager on 172.16.0.225...  done.
+     stack@nutshell:~$ cps-tools application create "Test application"
+     Application 'Test application' created with id 1.
+
+#. Start the application. This will start a new container for the
+   Application Manager::
+   
+     stack@nutshell:~$ time cps-tools application start 1
+     Application 'Test application' with id 1 is starting...  done.
      
      real	2m04.515s
      user	0m0.704s
      sys	0m0.152s
    
    This step should take around 2-3 minutes. During this time, the first container is created
-   and the ConPaaS Manager is started and initialized.
+   and the ConPaaS Application Manager is started and initialized.
    
    Check that the container is up and running with ``nova list``::
    
      stack@nutshell:~$ nova list
-     +--------------------------------------+---------------------------------------------+--------+------------+-------------+-----------------------------------+
-     | ID                                   | Name                                        | Status | Task State | Power State | Networks                          |
-     +--------------------------------------+---------------------------------------------+--------+------------+-------------+-----------------------------------+
-     | 3c5c3375-1e73-4e0a-b6cc-223460c726e0 | Server 3c5c3375-1e73-4e0a-b6cc-223460c726e0 | ACTIVE | -          | Running     | private=172.16.0.42, 172.16.0.225 |
-     +--------------------------------------+---------------------------------------------+--------+------------+-------------+-----------------------------------+
+     +--------------------------------------+-----------------------+--------+------------+-------------+-----------------------------------+
+     | ID                                   | Name                  | Status | Task State | Power State | Networks                          |
+     +--------------------------------------+-----------------------+--------+------------+-------------+-----------------------------------+
+     | 3c5c3375-1e73-4e0a-b6cc-223460c726e0 | conpaas-rpi-u1-a1-mgr | ACTIVE | -          | Running     | private=172.16.0.42, 172.16.0.225 |
+     +--------------------------------------+-----------------------+--------+------------+-------------+-----------------------------------+
 
-5. Start the newly created service. This will start the second container on the Raspberry PI
+#. Add a Generic service to the application::
+   
+   stack@nutshell:~$ cps-tools service add generic 1
+   Service generic successfully added to application 1 with id 1.
+
+#. Start the newly added service. This will start the second container on the Raspberry PI
    in which the first ConPaaS agent can host an application::
    
-     stack@nutshell:~$ time cps-tools service start 1
+     stack@nutshell:~$ time cps-tools service start 1 1
      Service 1 is starting...
      
      real	1m02.043s
@@ -1358,22 +1340,24 @@ can be accessed using the backend VM's IP address (note that the protocol should
    This step should take around 1-2 minutes. During this time, the second container is created
    and the ConPaaS Agent is started and initialized.
 
-6. Find out the IP address of the newly started container::
+#. Find out the IP address of the newly started container::
    
-     stack@nutshell:~$ cps-tools generic list_nodes 1
-     master: node iaasi-00000012 with IP address 172.16.0.226
+     stack@nutshell:~$ cps-tools generic list_nodes 1 1
+     aid sid role   ip           agent_id       cloud  
+     --------------------------------------------------
+       1   1 master 172.16.0.226 iaasi-00000012 default
    
    You can also determine the IP addresses of the containers with ``nova list``::
    
      stack@nutshell:~$ nova list
-     +--------------------------------------+---------------------------------------------+--------+------------+-------------+-----------------------------------+
-     | ID                                   | Name                                        | Status | Task State | Power State | Networks                          |
-     +--------------------------------------+---------------------------------------------+--------+------------+-------------+-----------------------------------+
-     | 2a1d758d-5300-4d7f-8ba2-4f1499838a7d | Server 2a1d758d-5300-4d7f-8ba2-4f1499838a7d | ACTIVE | -          | Running     | private=172.16.0.43, 172.16.0.226 |
-     | 3c5c3375-1e73-4e0a-b6cc-223460c726e0 | Server 3c5c3375-1e73-4e0a-b6cc-223460c726e0 | ACTIVE | -          | Running     | private=172.16.0.42, 172.16.0.225 |
-     +--------------------------------------+---------------------------------------------+--------+------------+-------------+-----------------------------------+
+     +--------------------------------------+------------------------------+--------+------------+-------------+-----------------------------------+
+     | ID                                   | Name                         | Status | Task State | Power State | Networks                          |
+     +--------------------------------------+------------------------------+--------+------------+-------------+-----------------------------------+
+     | 3c5c3375-1e73-4e0a-b6cc-223460c726e0 | conpaas-rpi-u1-a1-mgr        | ACTIVE | -          | Running     | private=172.16.0.42, 172.16.0.225 |
+     | 2a1d758d-5300-4d7f-8ba2-4f1499838a7d | conpaas-rpi-u1-a1-s1-generic | ACTIVE | -          | Running     | private=172.16.0.43, 172.16.0.226 |
+     +--------------------------------------+------------------------------+--------+------------+-------------+-----------------------------------+
 
-7. Log on to the container and check that the ConPaaS Agent is running correctly (the default
+#. Log on to the container and check that the ConPaaS Agent is running correctly (the default
    script just prints some information)::
    
      stack@nutshell:~$ ssh root@172.16.0.226
@@ -1392,10 +1376,9 @@ can be accessed using the backend VM's IP address (note that the protocol should
    
    If the output looks like in the example above, everything is running smoothly!
    
-   For more information on ConPaaS, please refer to section :ref:`the-generic-service`.
+   For more information on the Generic service, please refer to section :ref:`the-generic-service`.
 
-8. Do not forget to delete the service after you're done with it::
+#. Do not forget to delete the service after you're done with it::
    
-     stack@nutshell:~$ cps-tools service delete 1
-     Deleting service... 
-     Service 1 has been deleted.
+     stack@nutshell:~$ cps-tools service remove 1 1
+     Service 1 of application 1 has been successfully removed.

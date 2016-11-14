@@ -3,8 +3,7 @@ Manifest Guide
 ==============
 
 A manifest is a JSON file that describes a ConPaaS application. It can be
-written with your favourite text editor, or automatically generated from a
-running ConPaaS application.
+written with your favourite text editor.
 
 ---------------------------------------
 Creating an application from a manifest
@@ -43,58 +42,53 @@ the command line client.
 
  * On the command line, you can simply run:
    ::
-     cpsclient.py manifest sudoku.mnf
+     cps-application manifest sudoku.mnf
 
 In this example, once the application has been created, you will have to start
 the PHP service either with the web client (button start on the PHP service
-page) or with command line client (``cpsclient.py start <php_serv_id>``).
+page) or with command line client (``cps-service start <app_id> <php_serv_id>``).
 
 
 MediaWiki example
 -----------------
 
-On the ConPaaS website there is a short video
-(http://www.youtube.com/watch?v=kMzx8sgr96I) that shows how to setup a
-MediaWiki installation using the ConPaaS frontend.
-In this section we are going to create a manifest file that replicates
-exactly the same MediaWiki application shown in the video::
-
+The ConPaaS frontend offers the option to deploy two ready-made applications
+from predefined manifest files: one WordPress and one MediaWiki installation.
+In this section we are going to list the manifest file that creates the same
+MediaWiki application as the one provided by the ConPaaS system::
 
    {
-    "Application" : "Wiki in the Cloud",
-
-    "Services" : [
-     {
-      "ServiceName" : "Wiki-Webserver",
-      "Type" : "java",
-      "Archive" : "http://mywebsite.com/scalaris-wiki.war",
-      "StartupInstances" :
-       {
-        "proxy" : "1",
-        "web" : "1",
-        "backend" : "5"
-       },
-      "Start" : 1
-     },
-     {
-      "ServiceName" : "Wiki-Database",
-      "Type" : "scalaris",
-      "Archive" : "http://mywebsite.com/wikipediadump",
-      "Start" : 1
-     }
-    ]
+       "Application": "New MediaWiki application",
+       "Services": [
+           {
+               "Type": "php",
+               "ServiceName": "PHP service",
+               "Start": 1,
+               "Archive": "https://online.conpaas.eu/mediawiki/mediawiki.tar.gz",
+               "StartupScript": "https://online.conpaas.eu/mediawiki/mediawiki.sh"
+           },
+           {
+               "Type": "mysql",
+               "ServiceName": "MySQL service",
+               "Start": 1,
+               "Dump": "https://online.conpaas.eu/mediawiki/mediawiki.sql",
+               "Password": "contrail123"
+           },
+           {
+               "Type": "xtreemfs",
+               "ServiceName": "XtreemFS service",
+               "Start": 1,
+               "VolumeStartup": {
+                   "volumeName": "data",
+                   "owner": "www-data"
+               }
+           }
+       ]
    }
 
-Even if the application is more complicated than the sudoku, the
-manifest file is not very different.
-In this case the file specifies two different services: Java and
-Scalaris (which is a NoSQL database). Also, given that the service might
-receive lots of traffic, 5 instances of the Java backend are started.
-In the presentation the Java instances are added later, but in this
-example to show how the *StartupInstances* works, 5 Java virtual
-machines are started from the beginning.
-Unfortunately the option of choosing a static IP for the database is not
-yet available, so we cannot specify it in the Java service at startup.
+Even if the application is more complicated than the sudoku, the manifest
+file is not very different. In this case the file specifies three different
+services: PHP, MySQL and XtreemFS.
 
 
 -------------------------------------------
@@ -184,9 +178,9 @@ xtreemfs
 
 -  *VolumeStartup*: Specify a volume that should be created at startup.
    This needs to be an object with the following fields inside
-
+   
    -  *volumeName*: Name of the volume
-
+   
    -  *owner*: Owner of the volume
 
 Other fields are optional and are not service-specific, but
@@ -194,11 +188,11 @@ manifest-specific instead, so they need to be specified on top of the
 file (see the full example in the end) are the following:
 
 -  *Description*: This is just a description of the manifest. It is not
-   parsed by ConPaaS, so it is needed just as a reminder for yourself
+   parsed by ConPaaS, so it is needed just as a reminder for yourself.
 
 -  *Application*: Specify the application name on which your services
    will start. It can be a new application or an existing one. If it is
-   omitted, the default application will be choose.
+   omitted, a default application name will be choosen.
 
 Full specification file
 =======================

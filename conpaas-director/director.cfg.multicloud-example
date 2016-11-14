@@ -29,7 +29,7 @@ PASSWORD = EC2PASSWORD
 SECURITY_GROUP_NAME = my_securitygroup
 KEY_NAME = my_keyname
 REGION = ec2.us-east-1.amazonaws.com
-IMAGE_ID = ami-7a565912
+IMAGE_ID = ami-41890256
 SIZE_ID = t1.micro
 
 
