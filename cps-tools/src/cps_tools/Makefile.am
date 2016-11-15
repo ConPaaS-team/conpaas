@@ -16,6 +16,7 @@ dist_cpstools_PYTHON = \
 	xtreemfs.py \
 	helloworld.py \
 	generic.py \
+	flink.py \
 	web.py
 
 ##htc.py \

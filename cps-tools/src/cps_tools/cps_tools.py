@@ -29,6 +29,7 @@ from .config import config
 from .xtreemfs import XtreemFSCmd
 from .helloworld import HelloWorldCmd
 from .generic import GenericCmd
+from .flink import FlinkCmd
 
 CONF_FILE = "cps-tools.conf"
 
@@ -82,6 +83,7 @@ def main():
     add_sub_command('xtreemfs', "manage XtreemFS services", XtreemFSCmd)
     add_sub_command('helloworld', "manage HelloWorld services", HelloWorldCmd)
     add_sub_command('generic', "manage Generic services", GenericCmd)
+    add_sub_command('flink', "manage Flink services", FlinkCmd)
 
     _help_cmd = HelpCmd(subparsers, parser)
 

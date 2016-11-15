@@ -16,6 +16,7 @@ dist_bin_SCRIPTS = \
 	bin/cps-mysql \
 	bin/cps-xtreemfs \
 	bin/cps-generic \
+	bin/cps-flink \
 	bin/cps-helloworld
 	#\
 	#bin/cps-scalaris \
@@ -23,7 +24,7 @@ dist_bin_SCRIPTS = \
 
 
 install-exec-hook:
-	for cmd in cps-tools cps-application cps-service cps-user cps-cloud cps-director cps-php cps-java cps-mysql cps-xtreemfs cps-generic cps-helloworld; \
+	for cmd in cps-tools cps-application cps-service cps-user cps-cloud cps-director cps-php cps-java cps-mysql cps-xtreemfs cps-generic cps-flink cps-helloworld; \
 	do \
 	  eval "$$(register-python-argcomplete $$cmd)"; \
 	done; \

@@ -77,6 +77,7 @@ class FlinkAgent(BaseAgent):
         f.write("akka.ask.timeout: %s\n" % TIMEOUT)
         f.write("akka.lookup.timeout: %s\n" % TIMEOUT)
         f.write("akka.logger-startup-timeout: %s\n" % TIMEOUT)
+        f.write("fs.overwrite-files: true\n")
         f.close()
 
         self.logger.info('Agent initialized')

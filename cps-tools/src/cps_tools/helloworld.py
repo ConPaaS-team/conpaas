@@ -16,6 +16,7 @@ class HelloWorldCmd(ServiceCmd):
                             [('count', 1)], # (role name, default number)
                             "HelloWorld service sub-commands help")
         self._add_get_helloworld()
+        self._add_help(helloworld_parser) # defined in base class (ServiceCmd)
 
     # ========== get_helloworld
     def _add_get_helloworld(self):
