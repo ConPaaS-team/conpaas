@@ -626,10 +626,6 @@ class ApplicationManager(BaseManager):
             service_manager.nodes.remove(filter(lambda n: n.id == node.id, service_manager.nodes)[0])
         self.logger.debug("Current nodes: %s, current volumes: %s" % (self.nodes, self.volumes.keys()))
         self.callbacker.remove_nodes(nodes)
-        # if len(service_manager.nodes) == 0:
-        #     service_manager.state_set(self.S_STOPPED)
-        # else:
-        #     service_manager.state_set(self.S_RUNNING)
 
     def check_volume_name(self, vol_name):
         if not re.compile('^[A-za-z0-9-_]+$').match(vol_name):

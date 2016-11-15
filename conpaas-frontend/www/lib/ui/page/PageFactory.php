@@ -44,6 +44,9 @@ class PageFactory {
 			case 'htc':
 				require_module('ui/page/htc');
 				return new HTCPage($service);
+			case 'flink':
+				require_module('ui/page/flink');
+				return new FlinkPage($service);
 			case 'generic':
 				require_module('ui/page/generic');
 				return new GenericPage($service);

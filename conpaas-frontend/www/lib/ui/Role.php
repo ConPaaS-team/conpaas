@@ -2,109 +2,148 @@
 
 class Role {
 
-	public static function getColor($role) {
+	public static function getColor($serviceType, $role) {
 		return array(
 			// application manager
-			'manager' => '#333333',
+			'manager' => array(
+				'manager' => '#333333'
+			),
 
-			// web services (php / java)
-			'backend' => '#0C72BA',
-			'php' => '#4F5B93',
-			'java' => '#0C72BA',
-			'web' => '#E32C2E',
-			'proxy' => '#149639',
+			// php service
+			'php' => array(
+				'backend' => '#4F5B93',
+				'web' => '#E32C2E',
+				'proxy' => '#149639'
+			),
 
-			// mysql
-			'mysql'=>'#f59620',
-			'glb'=>'#3e78a6',
+			// java service
+			'java' => array(
+				'backend' => '#0C72BA',
+				'web' => '#E32C2E',
+				'proxy' => '#149639'
+			),
 
-			// xtreemfs
-			'dir' => '#333333',
-			'mrc' => '#314E7E',
-			'osd' => '#0088cc',
+			// mysql service
+			'mysql' => array(
+				'mysql' => '#f59620',
+				'glb' => '#3e78a6'
+			),
 
-			// generic
-			'master' => '#262E38',
-			'node'=>'#496480',
+			// xtreemfs service
+			'xtreemfs' => array(
+				'dir' => '#333333',
+				'mrc' => '#314E7E',
+				'osd' => '#0088cc'
+			),
 
-			// outdated / unused
-			'nodes'=>'orange',
-			'peers' => 'blue',
-			'masters' => 'blue',
-			'slaves' => 'orange',
-			'workers' => 'orange',
-			'scalaris' => 'blue'
-		)[$role];
+			// generic service
+			'generic' => array(
+				'master' => '#262E38',
+				'node' =>'#496480'
+			),
+
+			// flink service
+			'flink' => array(
+				'master' => '#A265CB',
+				'worker' => '#E6526F'
+			)
+		)[$serviceType][$role];
 	}
 
-	public static function getText($role) {
+	public static function getText($serviceType, $role) {
 		return array(
 			// application manager
-			'manager' => '&nbsp;&nbsp;&nbsp;Application manager&nbsp;&nbsp;&nbsp;',
+			'manager' => array(
+				'manager' => '&nbsp;&nbsp;&nbsp;Application manager&nbsp;&nbsp;&nbsp;'
+			),
 
-			// web services (php / java)
-			'backend' => 'backend',
-			'php' => 'php',
-			'java' => 'java',
-			'web' => 'web',
-			'proxy' => 'proxy',
+			// php service
+			'php' => array(
+				'backend' => 'php',
+				'web' => 'web',
+				'proxy' => 'proxy'
+			),
 
-			// mysql
-			'mysql'=>'MySQL',
-			'glb'=>'GLB',
+			// java service
+			'java' => array(
+				'backend' => 'java',
+				'web' => 'web',
+				'proxy' => 'proxy'
+			),
 
-			// xtreemfs
-			'dir' => 'DIR',
-			'mrc' => 'MRC',
-			'osd' => 'OSD',
+			// mysql service
+			'mysql' => array(
+				'mysql' => 'MySQL',
+				'glb' => 'GLB'
+			),
 
-			// generic
-			'master' => 'master',
-			'node'=>'node',
+			// xtreemfs service
+			'xtreemfs' => array(
+				'dir' => 'DIR',
+				'mrc' => 'MRC',
+				'osd' => 'OSD'
+			),
 
-			// outdated / unused
-			'nodes'=>'nodes',
-			'peers' => 'peers',
-			'masters' => 'masters',
-			'slaves' => 'slaves',
-			'workers' => 'workers',
-			'scalaris' => 'scalaris'
-		)[$role];
+			// generic service
+			'generic' => array(
+				'master' => 'master',
+				'node' =>'node'
+			),
+
+			// flink service
+			'flink' => array(
+				'master' => 'master',
+				'worker' => 'worker'
+			)
+		)[$serviceType][$role];
 	}
 
-	public static function getInfo($role) {
+	public static function getInfo($serviceType, $role) {
 		return array(
 			// application manager
-			'manager' => '',
+			'manager' => array(
+				'manager' => ''
+			),
 
-			// web services (php / java)
-			'backend' => '',
-			'php' => 'PHP server',
-			'java' => 'Apache Tomcat servlet container',
-			'web' => 'static web server (Nginx)',
-			'proxy' => 'load balancer (Nginx)',
+			// php service
+			'php' => array(
+				'backend' => 'PHP server',
+				'web' => 'static web server (NGINX)',
+				'proxy' => 'load balancer (NGINX)'
+			),
 
-			// mysql
-			'mysql'=>'MySQL with Galera extensions',
-			'glb'=>'Galera Load Balancer',
+			// java service
+			'java' => array(
+				'backend' => 'Apache Tomcat servlet container',
+				'web' => 'static web server (NGINX)',
+				'proxy' => 'load balancer (NGINX)'
+			),
 
-			// xtreemfs
-			'dir' => 'XtreemFS Directory service',
-			'mrc' => 'XtreemFS Metadata and Replica catalog',
-			'osd' => 'XtreemFS Object Storage Device',
+			// mysql service
+			'mysql' => array(
+				'mysql' => 'MySQL with Galera extensions',
+				'glb' => 'Galera Load Balancer'
+			),
 
-			// generic
-			'master' => 'generic master node',
-			'node'=>'generic regular node',
+			// xtreemfs service
+			'xtreemfs' => array(
+				'dir' => 'XtreemFS Directory service',
+				'mrc' => 'XtreemFS Metadata and Replica catalog',
+				'osd' => 'XtreemFS Object Storage Device'
+			),
 
-			// outdated / unused
-			'nodes'=>'',
-			'peers' => '',
-			'masters' => '',
-			'slaves' => '',
-			'workers' => '',
-			'scalaris' => ''
-		)[$role];
+			// generic service
+			'generic' => array(
+				'master' => 'generic master node',
+				'node' =>'generic regular node'
+			),
+
+			// flink service
+			'flink' => array(
+				'master' => 'Flink master running a JobManager',
+				'worker' => 'Flink worker running a TaskManager'
+			)
+		)[$serviceType][$role];
 	}
 
 }

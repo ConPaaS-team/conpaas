@@ -7,10 +7,12 @@ require_module('ui');
 
 class Cluster {
 
-	private $roles; /* array of roles (web, php, proxy etc.) */
+	private $serviceType;
+	private $roles; /* array of roles (web, backend, proxy etc.) */
 	private $nodes = array();
 
-	public function __construct($roles) {
+	public function __construct($serviceType, $roles) {
+		$this->serviceType = $serviceType;
 		$this->roles = $roles;
 	}
 
@@ -18,28 +20,13 @@ class Cluster {
 		$this->nodes[] = $node;
 	}
 
-	private function getTrueRole($role) {
-		if ($role == 'backend') {
-			if (count($this->nodes) > 0) {
-				$first = $this->nodes[0];
-				if ($first instanceof JavaInstance) {
-					return 'java';
-				} else if ($first instanceof PHPInstance) {
-					return 'php';
-				}
-			}
-		}
-		return $role;
-	}
-
 	public function renderRoleTags() {
 		$html = '';
 		foreach ($this->roles as $role) {
-			$role = $this->getTrueRole($role);
 			$html .= Tag()
-				->setColor(Role::getColor($role))
-				->setHTML(Role::getText($role))
-				->setTooltip(Role::getInfo($role));
+				->setColor(Role::getColor($this->serviceType, $role))
+				->setHTML(Role::getText($this->serviceType, $role))
+				->setTooltip(Role::getInfo($this->serviceType, $role));
 		}
 		return $html;
 	}
@@ -66,8 +53,7 @@ class Cluster {
 		$html = '<table class="cluster-table" cellspacing="0" cellpadding="0">';
 		$n = 1;
 		foreach ($this->roles as $role) {
-			$role = $this->getTrueRole($role);
-			$color = Role::getColor($role);
+			$color = Role::getColor($this->serviceType, $role);
 			$style = 'background-color: '.$color.';';
 			$class = '';
 			if ($n == count($this->roles))

@@ -29,13 +29,13 @@ class HostingPage extends ServicePage {
 		$html = '';
 		static $roles = array('proxy', 'web', 'backend');
 		foreach ($roles as $role) {
-			$name = ($role == 'backend') ? $this->service->getType() : $role;
+			$serviceType = $this->service->getType();
 			$html .= EditableTag()
-				->setColor(Role::getColor($name))
+				->setColor(Role::getColor($serviceType, $role))
 				->setID($role)
 				->setValue('0')
-				->setText(Role::getText($name))
-				->setTooltip(Role::getInfo($name));
+				->setText(Role::getText($serviceType, $role))
+				->setTooltip(Role::getInfo($serviceType, $role));
 		}
 		return $html;
 	}

@@ -49,6 +49,9 @@ class ServiceFactory {
 			case 'htc':
 				require_module('service/htc');
 				return new HTCService($service_data, $application);
+			case 'flink':
+				require_module('service/flink');
+				return new FlinkService($service_data, $application);
 			case 'generic':
 				require_module('service/generic');
 				return new GenericService($service_data, $application);

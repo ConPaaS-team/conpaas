@@ -86,6 +86,16 @@ $page = new AddServicePage();
           </table-->
           <table class="form" cellspacing="0" cellpading="0">
               <div class="serviceheader">
+                  Stream and Batch Data Processing
+              </div>
+              <tr class="service">
+                  <td class="description"> <img src="images/flink.png" height="32" /></td>
+                  <td class="radio"><input type="radio" name="type" value="flink" /> flink</td>
+                  <td class="info"> Apache Flink 1.1 </td>
+              </tr>
+          </table>
+          <table class="form" cellspacing="0" cellpading="0">
+              <div class="serviceheader">
                   Miscellaneous
               </div>
               <!--tr class="service">

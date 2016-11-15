@@ -62,11 +62,11 @@ class GenericPage extends ServicePage {
 
     protected function renderInstanceActions() {
         $role = 'node';
-        return EditableTag()->setColor(Role::getColor($role))
+        return EditableTag()->setColor(Role::getColor('generic', $role))
                             ->setID($role)
                             ->setValue('0')
                             ->setText('nodes')
-                            ->setTooltip(Role::getInfo($role));
+                            ->setTooltip(Role::getInfo('generic', $role));
     }
 
 	public function renderInstances() {

@@ -162,7 +162,7 @@ class ServicePage extends Page {
 			if (count($nodeRoles) > 1) {
 				$info = $this->service->getNodeInfo($node);
 				if ($info !== false) {
-					$cluster = new Cluster($nodeRoles);
+					$cluster = new Cluster($this->service->getType(), $nodeRoles);
 					$cluster->addNode($this->service->createInstanceUI($info));
 					$nodesInfo[] = $cluster;
 				}
@@ -188,7 +188,7 @@ class ServicePage extends Page {
 				});
 
 				// We add all these nodes together in a cluster
-				$cluster = new Cluster(array($role));
+				$cluster = new Cluster($this->service->getType(), array($role));
 				foreach ($remainingNodesInfo as $info) {
 					$cluster->addNode($this->service->createInstanceUI($info));
 				}
