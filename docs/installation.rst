@@ -437,21 +437,21 @@ dependencies of its processes. For your convenience, we provide a pre-built
 public AMI, already configured and ready to be used on Amazon EC2, for each
 availability zone supported by ConPaaS. The AMI IDs of said images are:
 
--  ``ami-41890256`` United States East (Northern Virginia)
+-  ``ami-14f2d903`` United States East (Northern Virginia)
 
--  ``ami-f7aaeb97`` United States West (Northern California)
+-  ``ami-0db8ed6d`` United States West (Northern California)
 
--  ``ami-2531fd45`` United States West (Oregon)
+-  ``ami-9dae03fd`` United States West (Oregon)
 
--  ``ami-8fa1c3fc`` Europe West (Ireland)
+-  ``ami-db5e0da8`` Europe West (Ireland)
 
--  ``ami-148a7175`` Asia Pacific (Tokyo)
+-  ``ami-36f15b57`` Asia Pacific (Tokyo)
 
--  ``ami-558b5436`` Asia Pacific (Singapore)
+-  ``ami-45389b26`` Asia Pacific (Singapore)
 
--  ``ami-6690ba05`` Asia Pacific (Sydney)
+-  ``ami-5f84bb3c`` Asia Pacific (Sydney)
 
--  ``ami-7af56216`` South America (Sao Paulo)
+-  ``ami-5b1c8337`` South America (Sao Paulo)
 
 You can use one of these values when configuring your ConPaaS director
 installation as described in :ref:`director-installation`.
