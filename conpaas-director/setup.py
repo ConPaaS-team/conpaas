@@ -13,7 +13,22 @@ CPSVERSION = '2.1.0'
 
 CONFDIR = '/etc/cpsdirector'
 LOGDIR = '/var/log/cpsdirector'
-PYTHON_EGGS = '/var/www/.python-eggs'
+PYTHON_EGG_DIRS = [
+    '/var/www/.python-eggs',
+    '/var/www/.cache',
+    '/var/www/.cache/Python-Eggs'
+]
+
+def create_dir(dir_path):
+    # create and set permissions for the directory
+    try:
+        if not os.path.exists(dir_path):
+            os.mkdir(dir_path)
+
+        os.chown(dir_path, getpwnam('www-data').pw_uid,
+            getgrnam('www-data').gr_gid)
+    except OSError:
+        print "W: 'creating dir %s' failed" % dir_path
 
 if not os.geteuid() == 0:
     CONFDIR = 'cpsdirectorconf'
@@ -84,10 +99,5 @@ if __name__ == "__main__" and sys.argv[1] == "install":
         print "W: 'chown www-data:www-data %s' failed" % CONFDIR + '/data'
 
     # create and set permissions for the .python-eggs dir
-    if not os.path.exists(PYTHON_EGGS):
-        os.mkdir(PYTHON_EGGS)
-    try:
-        os.chown(PYTHON_EGGS, getpwnam('www-data').pw_uid, 
-            getgrnam('www-data').gr_gid)
-    except OSError:
-        print "W: 'chown www-data:www-data %s' failed" % PYTHON_EGGS
+    for egg_dir in PYTHON_EGG_DIRS:
+        create_dir(egg_dir)
