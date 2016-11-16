@@ -213,5 +213,20 @@ class OpenStackCloud(Cloud):
         volume = filter(lambda x: x.id==volume.id, self.driver.list_volumes())[0]
         return self.driver.detach_volume(volume)
 
+    def destroy_volume(self, volume):
+        trials = 10
+        while trials > 0:
+            trials -= 1
+            try:
+                res = self.driver.destroy_volume(volume)
+                break
+            except Exception, err: # FIXME: be more specific
+                self.logger.debug('Destroying volume failed. Error: %s' % err)
+                res = False
+                time.sleep(5)
+
+        self.logger.debug('Destroying volume succeeded. Result: %s' % res)
+        return res
+
     def list_instance_volumes(self, instance):
         return filter(lambda x: False if len(x.extra['attachments'])==0 else x.extra['attachments'][0]['serverId']==instance.id, self.driver.list_volumes())

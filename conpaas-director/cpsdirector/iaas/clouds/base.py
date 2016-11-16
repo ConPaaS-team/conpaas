@@ -217,18 +217,10 @@ class Cloud:
 
         libcloud_node = node.as_libcloud_node()
 
-        # Delete also the volumes atached to the node (not sure if this is cross-cloud)
-
-        # (teodor) This of course does not work on Amazon EC2.
-        #          For the moment, I ignore any exception thrown, which will result in
-        #          volumes not being deleted on EC2.
-        # TODO:    This needs to be fixed asap.!
-
-        
-        # volumes = filter(lambda x: False if len(x.extra['attachments'])==0 else x.extra['attachments'][0]['serverId']==libcloud_node.id, self.driver.list_volumes())
+        # Delete also the volumes atached to the node
         volumes = self.list_instance_volumes(libcloud_node)
         self.logger.debug('delete these volumes: %s' % volumes)
-        
+
         for volume in volumes:
             max_trials = 20
             self.detach_volume(volume)
