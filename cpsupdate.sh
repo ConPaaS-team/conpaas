@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # supported_comps=('director' 'manager' 'lib' 'tools' 'frontend')
-CPSVERSION="2.0.0"
+CPSVERSION="2.1.0"
 director="cpsdirector-$CPSVERSION.tar.gz"
 manager="ConPaaS-$CPSVERSION.tar.gz"
 lib="cpslib-$CPSVERSION.tar.gz"

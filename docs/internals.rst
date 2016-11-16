@@ -440,17 +440,17 @@ ConPaaS Services Image. The current section describes this process.
    and virtualization technology. Here are the download links for the latest images:
    
    **ConPaaS VM image for Amazon EC2 (x86_64):**
-     | http://www.conpaas.eu/dl/conpaas-2.0.0-amazon.img.tar.gz
+     | http://www.conpaas.eu/dl/conpaas-2.1.0-amazon.img.tar.gz
      | MD5: c6017f277f01777121dae3f2fb085e92
      | size: 481 MB
    
    **ConPaaS VM image for OpenStack with KVM (x86_64):**
-     | http://www.conpaas.eu/dl/conpaas-2.0.0-openstack-kvm.img.tar.gz
+     | http://www.conpaas.eu/dl/conpaas-2.1.0-openstack-kvm.img.tar.gz
      | MD5: 495098f986b8a059041e4e0063bb20c4
      | size: 480 MB
    
    **ConPaaS VM image for OpenStack with LXC (x86_64):**
-     | http://www.conpaas.eu/dl/conpaas-2.0.0-openstack-lxc.img.tar.gz
+     | http://www.conpaas.eu/dl/conpaas-2.1.0-openstack-lxc.img.tar.gz
      | MD5: 24d67aa77aa1e6a2b3a74c1b291579e6
      | size: 449 MB
    

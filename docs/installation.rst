@@ -59,7 +59,7 @@ Xerus) are officially supported. Also, only official APT repositories should be
 enabled in :file:`/etc/apt/sources.list` and :file:`/etc/apt/sources.list.d/`.
 
 **cpsdirector** is available here:
-http://www.conpaas.eu/dl/cpsdirector-2.x.x.tar.gz. The tarball includes an
+http://www.conpaas.eu/dl/cpsdirector-2.1.0.tar.gz. The tarball includes an
 installation script called :file:`install.sh` for your convenience. You can
 either run it as root or follow the installation procedure outlined below in
 order to setup your ConPaaS Director installation.
@@ -82,7 +82,7 @@ order to setup your ConPaaS Director installation.
     >> and again
     $ sudo ntpdate 0.us.pool.ntp.org
 
-#. Download http://www.conpaas.eu/dl/cpsdirector-2.x.x.tar.gz and
+#. Download http://www.conpaas.eu/dl/cpsdirector-2.1.0.tar.gz and
    uncompress it
 
 #. Run :command:`make install` as root
@@ -270,8 +270,8 @@ If these are not yet installed, first follow the guidelines in :ref:`python-and-
 
 Installing ``cps-tools``::
 
-    $ tar -xaf cps-tools-2.x.x.tar.gz
-    $ cd cps-tools-2.x.x
+    $ tar -xaf cps-tools-2.1.0.tar.gz
+    $ cd cps-tools-2.1.0
     $ ./configure --sysconf=/etc
     $ sudo make install
     >> or:
@@ -279,7 +279,7 @@ Installing ``cps-tools``::
     $  cd ..
     $  pip install simplejson |& tee sjson.log
     $  apt-get install libffi-dev |& tee libffi.log
-    $  pip install cpslib-2.x.x.tar.gz |& tee my-ve-cpslib.log
+    $  pip install cpslib-2.1.0.tar.gz |& tee my-ve-cpslib.log
 
 Configuring ``cps-tools``::
 
@@ -359,7 +359,7 @@ enabled. In a typical setup, Director and Frontend are installed on the same
 host, but such does not need to be the case.
 
 The ConPaaS Frontend can be downloaded from
-http://www.conpaas.eu/dl/cpsfrontend-2.x.x.tar.gz.
+http://www.conpaas.eu/dl/cpsfrontend-2.1.0.tar.gz.
 
 After having uncompressed it you should install the required packages::
 
@@ -470,7 +470,7 @@ used with Amazon EC2, for example in case you wish to run ConPaaS in a different
 Availability Zone. This image is available from the following link:
 
 **ConPaaS VM image for Amazon EC2 (x86_64):**
-  | http://www.conpaas.eu/dl/conpaas-2.0.0-amazon.img.tar.gz
+  | http://www.conpaas.eu/dl/conpaas-2.1.0-amazon.img.tar.gz
   | MD5: c6017f277f01777121dae3f2fb085e92
   | size: 481 MB
 
@@ -553,12 +553,12 @@ from the following links, depending on the virtualization technology and
 system architecture you are using:
 
 **ConPaaS VM image for OpenStack with KVM (x86_64):**
-  | http://www.conpaas.eu/dl/conpaas-2.0.0-openstack-kvm.img.tar.gz
+  | http://www.conpaas.eu/dl/conpaas-2.1.0-openstack-kvm.img.tar.gz
   | MD5: 495098f986b8a059041e4e0063bb20c4
   | size: 480 MB
 
 **ConPaaS VM image for OpenStack with LXC (x86_64):**
-  | http://www.conpaas.eu/dl/conpaas-2.0.0-openstack-lxc.img.tar.gz
+  | http://www.conpaas.eu/dl/conpaas-2.1.0-openstack-lxc.img.tar.gz
   | MD5: 24d67aa77aa1e6a2b3a74c1b291579e6
   | size: 449 MB
 
@@ -683,7 +683,7 @@ The easiest way to try the Nutshell is to download the preassembled image
 for VirtualBox. This can be done from the following link:
 
 **VirtualBox VM containing ConPaaS in a Nutshell (2.5 GB):**
-  | http://www.conpaas.eu/dl/ConPaaS-Nutshell-2.0.0.ova
+  | http://www.conpaas.eu/dl/ConPaaS-Nutshell-2.1.0.ova
   | MD5: 81ef97d50c9f2cd6d029e5213a7a5d2a
 
 .. warning::
