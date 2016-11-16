@@ -288,7 +288,6 @@ function cp3_img_to_ebs_volume {
     tune2fs -i 0 $device_path
 
     # Mounting dst.
-    sleep 1
     local dst_dir=$(mktemp -d)
     mount $device_path $dst_dir
     log "The volume is mounted at $dst_dir"
@@ -302,6 +301,7 @@ function cp3_img_to_ebs_volume {
     kpartx -a $src_loop
 
     local src_dir=$(mktemp -d)
+    sleep 1
     mount -o loop $partition $src_dir
 
     # Copy files.
