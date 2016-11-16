@@ -55,7 +55,7 @@ from conpaas.core.https.server import HttpJsonResponse, HttpErrorResponse,\
     FileUploadField
 from conpaas.core.agent import BaseAgent, AgentException
 from conpaas.core import git
-from conpaas.core.misc import run_cmd
+from conpaas.core.misc import running_on_rpi, run_cmd
 from conpaas.core.misc import check_arguments, is_in_list, is_not_in_list,\
     is_list, is_non_empty_list, is_list_dict, is_list_dict2, is_string,\
     is_int, is_pos_nul_int, is_pos_int, is_dict, is_dict2, is_bool,\
@@ -193,6 +193,10 @@ class GenericAgent(BaseAgent):
         if not lexists(dev_name):
             return False
 
+        # if running on the Rapberry PI, the other checks are not supported
+        if running_on_rpi():
+            return True
+
         # force the kernel to re-read the partition table
         # this allows reusing the device name after a volume was detached
         run_cmd('sfdisk -R %s' % dev_name)
@@ -290,10 +294,11 @@ class GenericAgent(BaseAgent):
         mount_point = join(self.VOLUME_DIR, vol_name)
 
         # kill all processes still using the volume
-        fuser_args = ['fuser', '-km', mount_point]
-        fuser_cmd = ' '.join(fuser_args)
-        self.logger.debug("Running command '%s'" % fuser_cmd)
-        run_cmd(fuser_cmd)
+        if not running_on_rpi():
+            fuser_args = ['fuser', '-km', mount_point]
+            fuser_cmd = ' '.join(fuser_args)
+            self.logger.debug("Running command '%s'" % fuser_cmd)
+            run_cmd(fuser_cmd)
 
         # unmount
         unmount_args = ['umount', mount_point]

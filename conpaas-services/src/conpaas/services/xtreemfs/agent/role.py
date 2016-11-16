@@ -10,7 +10,7 @@ from os.path import join, devnull, lexists
 from subprocess import Popen, PIPE
 from Cheetah.Template import Template
 from conpaas.core.log import create_logger
-from conpaas.core.misc import run_cmd
+from conpaas.core.misc import running_on_rpi, run_cmd
 import time
 
 S_INIT        = 'INIT'
@@ -289,9 +289,10 @@ class OSD:
                 logger.critical('Failed to stop OSD service:(code=%d)' %proc.returncode)
             logger.info('OSD Service stopped.')
             # kill all processes still using the storage block device
-            fuser_cmd = ' '.join(self.fuser_args)
-            logger.debug("Running command '%s'" % fuser_cmd)
-            run_cmd(fuser_cmd)
+            if not running_on_rpi():
+                fuser_cmd = ' '.join(self.fuser_args)
+                logger.debug("Running command '%s'" % fuser_cmd)
+                run_cmd(fuser_cmd)
             # unmount storage block device
             proc = Popen(self.umount_args, stdout = devnull_fd, stderr = devnull_fd, close_fds = True)
             if proc.wait() != 0:

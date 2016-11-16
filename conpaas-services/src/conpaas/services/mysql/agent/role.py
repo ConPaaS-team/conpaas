@@ -14,7 +14,7 @@ from os.path import devnull, join, lexists
 from subprocess import Popen, PIPE
 
 from conpaas.core.log import create_logger
-from conpaas.core.misc import run_cmd_code, run_cmd
+from conpaas.core.misc import running_on_rpi, run_cmd_code, run_cmd
 
 S_INIT = 'INIT'
 S_STARTING = 'STARTING'
@@ -406,11 +406,12 @@ class MySQLServer(object):
 
     def unmount(self):
         # kill all processes still using the volume
-        sql_logger.info("Killing all processes using the storage volume")
-        fuser_args = ['fuser', '-km', self.dev_name]
-        fuser_cmd = ' '.join(fuser_args)
-        sql_logger.debug("Running command '%s'" % fuser_cmd)
-        run_cmd(fuser_cmd)
+        if not running_on_rpi():
+            sql_logger.info("Killing all processes using the storage volume")
+            fuser_args = ['fuser', '-km', self.dev_name]
+            fuser_cmd = ' '.join(fuser_args)
+            sql_logger.debug("Running command '%s'" % fuser_cmd)
+            run_cmd(fuser_cmd)
 
         # unmount
         sql_logger.info("Trying to unmount the storage volume")

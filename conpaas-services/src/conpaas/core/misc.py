@@ -4,11 +4,15 @@ import struct
 import zipfile
 import tarfile
 import readline
+import platform
 
 from subprocess import Popen, PIPE
 
 from conpaas.core.https.server import FileUploadField
 
+
+def running_on_rpi():
+    return 'arm' in platform.machine()
 
 def file_get_contents(filepath):
     f = open(filepath, 'r')
