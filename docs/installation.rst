@@ -471,8 +471,8 @@ Availability Zone. This image is available from the following link:
 
 **ConPaaS VM image for Amazon EC2 (x86_64):**
   | http://www.conpaas.eu/dl/conpaas-2.1.0-amazon.img.tar.gz
-  | MD5: c6017f277f01777121dae3f2fb085e92
-  | size: 481 MB
+  | MD5: 2d2af415a29c8413b898eacfcc2f1343
+  | size: 541 MB
 
 In case you prefer to use a custom services image, you can also create a new
 Amazon Machine Image yourself, by following the instructions from the Internals
@@ -554,18 +554,18 @@ system architecture you are using:
 
 **ConPaaS VM image for OpenStack with KVM (x86_64):**
   | http://www.conpaas.eu/dl/conpaas-2.1.0-openstack-kvm.img.tar.gz
-  | MD5: 495098f986b8a059041e4e0063bb20c4
-  | size: 480 MB
+  | MD5: 02ea7ef89ff81bf03668003a8d2feac6
+  | size: 541 MB
 
 **ConPaaS VM image for OpenStack with LXC (x86_64):**
   | http://www.conpaas.eu/dl/conpaas-2.1.0-openstack-lxc.img.tar.gz
-  | MD5: 24d67aa77aa1e6a2b3a74c1b291579e6
-  | size: 449 MB
+  | MD5: f04e9dcc3059c5d10f599e72243055d3
+  | size: 509 MB
 
 **ConPaaS VM image for OpenStack with LXC for the Raspberry Pi (arm):**
-  | http://www.conpaas.eu/dl/ConPaaS-RPI/conpaas-rpi.img
-  | MD5: c29cd086e8e0ebe7f0793e7d54304da4
-  | size: 2.0 GB
+  | http://www.conpaas.eu/dl/conpaas-2.1.0-rpi.img.tar.gz
+  | MD5: 1eb2b8b369af3940460f85b12642f2e1
+  | size: 528 MB
 
 This section assumes that you already downloaded and decompressed one of the
 images above or created one as explained in :ref:`image-creation` and uploaded
@@ -684,7 +684,7 @@ for VirtualBox. This can be done from the following link:
 
 **VirtualBox VM containing ConPaaS in a Nutshell (2.5 GB):**
   | http://www.conpaas.eu/dl/ConPaaS-Nutshell-2.1.0.ova
-  | MD5: 81ef97d50c9f2cd6d029e5213a7a5d2a
+  | MD5: 9b01b07c1d0c45266345085cf65890ab
 
 .. warning::
   It is always a good idea to check the integrity of a downloaded image before continuing
@@ -807,13 +807,13 @@ in the ``172.16.0.0/24`` range.
 
 The two images can be downloaded from the following links:
 
-**RPI's SD card image (4.7 GB):**
-  | http://www.conpaas.eu/dl/ConPaaS-RPI/ConPaaS-RPI-SDCard-32G.img.tar.gz
-  | MD5: b49a33dac4c6bdba9417b4feef1cd2aa
+**RPI's SD card image (2.4 GB):**
+  | http://www.conpaas.eu/dl/ConPaaS-RPI-2.1.0-SDCard-32G.img.tar.gz
+  | MD5: 6a8459104f8d10806b3a964bf21330c6
 
-**VirtualBox VM containing the backend server (7.4 GB):**
-  | http://www.conpaas.eu/dl/ConPaaS-RPI/ConPaaS-RPI-Backend-VM.ova
-  | MD5: 0e6022423b3f940c73204320a5f4f669
+**VirtualBox VM containing the backend server (2.7 GB):**
+  | http://www.conpaas.eu/dl/ConPaaS-RPI-2.1.0-Backend-VM.ova
+  | MD5: b469741091f8e282b3e22635963f5783
 
 .. warning::
   It is always a good idea to check the integrity of a downloaded image before continuing
