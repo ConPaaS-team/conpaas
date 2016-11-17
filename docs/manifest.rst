@@ -109,6 +109,8 @@ Currently, the available service types are:
 
 -  xtreemfs
 
+-  flink
+
 -  generic
 
 These are the required fields for each service
@@ -150,6 +152,8 @@ described in the following table:
 | mysql    | mysql, glb          |
 +----------+---------------------+
 | xtreemfs | osd                 |
++----------+---------------------+
+| flink    | master, worker      |
 +----------+---------------------+
 | generic  | master, node        |
 +----------+---------------------+
@@ -254,6 +258,15 @@ available::
      }
     },
     {
+     "ServiceName" : "Meaningful Flink service name",
+     "Type" : "flink",
+     "Cloud" : "default",
+     "Start" : 0,
+     "StartupInstances" : {
+      "master" : "1"
+     }
+    },
+    {
      "ServiceName" : "Meaningful Generic service name",
      "Type" : "generic",
      "Cloud" : "default",
@@ -261,6 +274,6 @@ available::
      "StartupInstances" : {
       "master" : "1"
      }
-    },
+    }
    ]
   }

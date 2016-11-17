@@ -518,6 +518,8 @@ The following ports should be open for all running instances:
 
 -  TCP ports 32636, 32638 and 32640 – used by the XtreemFS service
 
+-  TCP ports 22, 6121, 6122, 6123, 6130 and 8081 – used by the Flink service
+
 AWS documentation is available at
 http://docs.amazonwebservices.com/AWSEC2/latest/UserGuide/index.html?using-network-security.html.
 
@@ -599,10 +601,10 @@ the following command::
 
     $ nova floating-ip-bulk-create --pool public --interface <interface> <new_range>
 
-for example, using the **br100** interface and the **172.16.0.224/27** address
+for example, using the **eth1** interface and the **172.16.0.224/27** address
 range::
 
-    $ nova floating-ip-bulk-create --pool public --interface br100 172.16.0.224/27
+    $ nova floating-ip-bulk-create --pool public --interface eth1 172.16.0.224/27
 
 Second, OpenStack should be configured to assign a floating IP address at every
 new instance creation. This can be done by adding the following line to the *[DEFAULT]*

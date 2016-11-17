@@ -40,6 +40,8 @@ ConPaaS currently contains:
 
 - One service dedicated to XtreemFS volumes.
 
+- One service dedicated to running Apache Flink applications.
+
 - One service for executing arbitrary applications (the so-called “Generic
   service”).
 

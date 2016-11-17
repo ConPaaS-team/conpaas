@@ -66,6 +66,7 @@ A new service should be added in a new python module under the
     │   │   │   │── node.py
     │   │   │   │── services.py
     │   │   │── services
+    │   │       │── flink/
     │   │       │── generic/
     │   │       │── helloworld/
     │   │       │── mysql/

@@ -13,6 +13,8 @@ ConPaaS currently contains the following services:
 -  **XtreemFS service** offering a distributed and replicated file
    system;
 
+-  **Flink service** offering distributed stream and batch data processing;
+
 -  **Generic service** allowing the execution of arbitrary applications.
 
 ConPaaS applications can be composed of any number of services. For
@@ -116,64 +118,64 @@ functionalities, which are not available using the frontend.
 
 The new command line client for ConPaaS is called ``cps-tools``.
 
-    Installation and configuration:
-        see :ref:`cpstools-installation`.
+Installation and configuration:
+    see :ref:`cpstools-installation`.
 
-    Command arguments::
+Command arguments::
 
-        $ cps-tools --help
+    $ cps-tools --help
 
-    Create an application::
+Create an application::
 
-        $ cps-tools application create <appl_name>
-        $ cps-application create <appl_name>
+    $ cps-tools application create <appl_name>
+    $ cps-application create <appl_name>
 
-    List applications::
+List applications::
 
-        $ cps-tools application list
-        $ cps-application list
+    $ cps-tools application list
+    $ cps-application list
 
-    Start an application::
+Start an application::
 
-        $ cps-tools application start <app_name_or_id>
-        $ cps-application start <app_name_or_id>
+    $ cps-tools application start <app_name_or_id>
+    $ cps-application start <app_name_or_id>
 
-    Available service types::
+Available service types::
 
-        $ cps-tools service get_types
-        $ cps-service get_types
+    $ cps-tools service get_types
+    $ cps-service get_types
 
-    Add a service to an application::
+Add a service to an application::
 
-        $ cps-tools service add <service_type> <app_name_or_id>
-        $ cps-tools <service_type> add <app_name_or_id>
-        $ cps-<service_type> add <app_name_or_id>
+    $ cps-tools service add <service_type> <app_name_or_id>
+    $ cps-tools <service_type> add <app_name_or_id>
+    $ cps-<service_type> add <app_name_or_id>
 
-    List services::
+List services::
 
-        $ cps-tools service list
-        $ cps-service list
+    $ cps-tools service list
+    $ cps-service list
 
-    Start a service::
+Start a service::
 
-        $ cps-tools <service_type> start <app_name_or_id> <serv_name_or_id>
-        $ cps-service start <app_name_or_id> <serv_name_or_id>
-        $ cps-<service_type> start <app_name_or_id> <serv_name_or_id>
+    $ cps-tools <service_type> start <app_name_or_id> <serv_name_or_id>
+    $ cps-service start <app_name_or_id> <serv_name_or_id>
+    $ cps-<service_type> start <app_name_or_id> <serv_name_or_id>
 
-    Service command specific arguments::
+Service command specific arguments::
 
-        $ cps-tools <service_type> --help
-        $ cps-<service_type> --help
+    $ cps-tools <service_type> --help
+    $ cps-<service_type> --help
 
-    Scale the service up and down::
+Scale the service up and down::
 
-        $ cps-service add_nodes <app_name_or_id> <serv_name_or_id>
-        $ cps-service remove_nodes <app_name_or_id> <serv_name_or_id>
+    $ cps-service add_nodes <app_name_or_id> <serv_name_or_id>
+    $ cps-service remove_nodes <app_name_or_id> <serv_name_or_id>
 
-    List the available clouds::
+List the available clouds::
 
-        $ cps-tools cloud list
-        $ cps-cloud list
+    $ cps-tools cloud list
+    $ cps-cloud list
 
 
 The credit system
@@ -360,11 +362,11 @@ Like all ConPaaS services, the PHP service is elastic: service owner can
 add or remove nodes. The PHP service (like the Java service) belongs to
 a class of web services that deals with three types of nodes:
 
-proxy
+**proxy**
   a node that is used as an entry point for the web application and as a load balancer
-web
+**web**
   a node that deals with static pages only
-backend
+**backend**
   a node that deals with PHP requests only
 
 When a proxy node receives a request, it redirects it to  a web node if
@@ -625,6 +627,58 @@ Important notes
 When a service is scaled down by removing OSDs, the data of those OSDs is
 migrated to the remaining OSDs. Always make sure there is enough free space 
 for this operation to succeed. Otherwise, you risk data loss.
+
+
+The Flink service
+====================
+
+The Flink service facilitates the deployment of applications that use the
+Apache Flink platform for distributed stream and batch data processing.
+Flink provides data distribution, communication, and fault tolerance for
+distributed computations over data streams. Flink also supports batch
+processing applications, treated as special cases of stream processing.
+
+A Flink node can assume two possible roles: **master** or **worker**. A master
+(also called *JobManager*) coordinates the distributed execution. It schedules
+tasks, coordinates checkpoints and recovery on failures, etc. The workers
+(also called *TaskManagers*) execute the tasks of a dataflow, and buffer
+and exchange the data streams. A Flink service will always have exactly
+one master and one or more workers. The first instance that is started by
+the service will always assume both roles (master and worker). All the other
+instances will be considered as worker nodes.
+
+Running a Flink application
+---------------------------
+
+After a Flink service is started, the user can access the Flink Dashboard
+using the link that appears in the upper-right corner of the service page.
+From the dashboard, the Flink deployment can be used in the same way as
+a regular installation.
+
+As an example, we will illustrate how to upload and execute the WordCount
+sample application. The **jar** containing the application can be found in
+the *examples* directory inside the Flink binary package, which can be
+downloaded from the official website:
+
+http://www-eu.apache.org/dist/flink/flink-1.1.1/flink-1.1.1-bin-hadoop1-scala_2.10.tgz
+
+Start a Flink service, wait for it to become ready and access the Flink
+Dashboard using the link that appears in the upper-right corner of the
+service page. Go to the "Submit new Job" page and click on the "Add new"
+button. Select the *WordCount.jar* file and click on "Upload". Tick the
+box in front of the job's name. To be able to see the output, redirect it
+to the TaskManager's output file by entering the following text in the
+"Program Arguments" field::
+
+--output file:///var/cache/cpsagent/flink-taskmanager.log
+
+To run the job, press the "Submit" button. You will be shown a page where
+you can monitor the progress of your job. When the job finished execution,
+you can check the output by accessing the "TaskManager out" link from the
+Flink service's page.
+
+For more information on using Flink, please consult the official documentation:
+https://ci.apache.org/projects/flink/flink-docs-release-1.1/
 
 
 .. _the-generic-service:
@@ -1067,7 +1121,7 @@ or using SSH to connect to the Nutshell VM's IP address (the preferred method)::
 The login credentials are::
    
     Username: stack
-    Password: contrail
+    Password: conpaas
 
 On login, both the ConPaaS and OpenStack users will already be authenticated.
 You should be able to execute ConPaaS commands, for example creating an
@@ -1185,6 +1239,8 @@ The following ConPaaS services are supported on the Raspberry PI version of ConP
 
 -  **xtreemfs**: XtreemFS-1.5 distributed file system
 
+-  **flink**: Apache Flink 1.1 stream and batch data processing
+
 -  **generic**: deployment of arbitrary server-side applications
 
 For instructions on how to install the Raspberry PI version of ConPaaS, please refer
@@ -1225,7 +1281,7 @@ For the ConPaaS web frontend::
   IP addresses (public): between 172.16.0.225 and 172.16.0.254
   IP addresses (private): between 172.16.0.32 and 172.16.0.61
   user: root
-  password: contrail
+  password: conpaas
 
 
 Networking setup
@@ -1361,7 +1417,7 @@ can be accessed using the backend VM's IP address (note that the protocol should
    script just prints some information)::
    
      stack@nutshell:~$ ssh root@172.16.0.226
-     root@172.16.0.226's password: [contrail]
+     root@172.16.0.226's password: [conpaas]
      Linux conpaas 4.1.12-v7+ #824 SMP PREEMPT Wed Oct 28 16:46:35 GMT 2015 armv7l
      [... welcome message omitted ...]
      root@server-2a1d758d-5300-4d7f-8ba2-4f1499838a7d:~# cat generic.out
