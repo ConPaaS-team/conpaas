@@ -174,7 +174,7 @@ class RackspaceDNSDriver(DNSDriver, OpenStackDriverMixin):
         record = self._to_record(data=response, zone=zone)
         return record
 
-    def create_zone(self, domain, type='master', ttl=None, extra=None):
+    def create_zone(self, domain, type='main', ttl=None, extra=None):
         extra = extra if extra else {}
 
         # Email address is required
@@ -313,7 +313,7 @@ class RackspaceDNSDriver(DNSDriver, OpenStackDriverMixin):
     def _to_zone(self, data):
         id = data['id']
         domain = data['name']
-        type = 'master'
+        type = 'main'
         ttl = data.get('ttl', 0)
         extra = {}
 

@@ -100,6 +100,6 @@ class HTCAgent(BaseAgent):
 
     @expose('POST')
     def condor_off(self,kwargs):
-        """Turn off local condor daemons, so the master will know we are gone"""
+        """Turn off local condor daemons, so the main will know we are gone"""
         os.system("condor_off")
         return HttpJsonResponse()

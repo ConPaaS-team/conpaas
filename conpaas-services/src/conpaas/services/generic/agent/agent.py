@@ -98,11 +98,11 @@ class GenericAgent(BaseAgent):
             simplejson.dump(agents_info, outfile)
 
         agent_role = [i['role'] for i in agents_info if i['ip'] == agent_ip][0]
-        master_ip = [i['ip'] for i in agents_info if i['role'] == 'master'][0]
+        main_ip = [i['ip'] for i in agents_info if i['role'] == 'main'][0]
 
         self.env.update({'MY_IP':agent_ip})
         self.env.update({'MY_ROLE':agent_role})
-        self.env.update({'MASTER_IP':master_ip})
+        self.env.update({'MASTER_IP':main_ip})
 
         self.logger.info('Agent initialized')
         return HttpJsonResponse()

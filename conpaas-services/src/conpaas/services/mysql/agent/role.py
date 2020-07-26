@@ -236,11 +236,11 @@ class MySQLServer(object):
 
     """Before creating a data snapshot or starting
     the replication process, you should record the
-    position of the binary log on the master. You will
-    need this information when configuring the slave so
-    that the slave knows where within the binary log to
+    position of the binary log on the main. You will
+    need this information when configuring the subordinate so
+    that the subordinate knows where within the binary log to
     start executing events. See Section 15.1.1.4, Obtaining
-    the Replication Master Binary Log Coordinates.
+    the Replication Main Binary Log Coordinates.
 
     1st session
     mysql> FLUSH TABLES WITH READ LOCK;
@@ -251,7 +251,7 @@ class MySQLServer(object):
 
     close 2nd session
 
-    on the master
+    on the main
     mysqldump --all-databases --lock-all-tables >dbdump.db
 
     1st session

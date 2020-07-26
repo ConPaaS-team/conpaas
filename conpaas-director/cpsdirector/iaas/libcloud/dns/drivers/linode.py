@@ -26,7 +26,7 @@ from libcloud.dns.base import DNSDriver, Zone, Record
 
 
 VALID_ZONE_EXTRA_PARAMS = ['SOA_Email', 'Refresh_sec', 'Retry_sec',
-                           'Expire_sec', 'status', 'master_ips']
+                           'Expire_sec', 'status', 'main_ips']
 
 VALID_RECORD_EXTRA_PARAMS = ['Priority', 'Weight', 'Port', 'Protocol',
                              'TTL_sec']
@@ -108,7 +108,7 @@ class LinodeDNSDriver(DNSDriver):
 
         return records[0]
 
-    def create_zone(self, domain, type='master', ttl=None, extra=None):
+    def create_zone(self, domain, type='main', ttl=None, extra=None):
         """
         Create a new zone.
 

@@ -58,7 +58,7 @@ def remove_authorized_keys(keys):
 
 def git_push(repo, destination_ip):
     """Push repository contents to the given destination_ip"""
-    cmd = 'git push git@%s:%s master' % (destination_ip, DEFAULT_CODE_REPO)
+    cmd = 'git push git@%s:%s main' % (destination_ip, DEFAULT_CODE_REPO)
     return run_cmd(cmd, repo)
 
 def git_create_tmp_repo():

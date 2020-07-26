@@ -66,7 +66,7 @@ from conpaas.core.misc import check_arguments, is_in_list, is_not_in_list,\
 class GenericManager(BaseManager):
 
     # Generic node types
-    ROLE_MASTER  = 'master'  # master node (the first one started)
+    ROLE_MASTER  = 'main'  # main node (the first one started)
     # a regular node (the role used by any other node) is defined in base class
 
     # String used as an error message when 'interrupt' is called when no
@@ -92,7 +92,7 @@ class GenericManager(BaseManager):
             self._create_initial_configuration()
 
         self.agents_info = []
-        self.master_ip = None
+        self.main_ip = None
 
     def _prepare_default_config_script(self, script_name):
         fileno, path = tempfile.mkstemp()
@@ -103,7 +103,7 @@ echo "Executing script ${0##*/}" >> /root/generic.out
 echo "Parameters ($#): $@" >> /root/generic.out
 echo "My IP is $MY_IP" >> /root/generic.out
 echo "My role is $MY_ROLE" >> /root/generic.out
-echo "My master IP is $MASTER_IP" >> /root/generic.out
+echo "My main IP is $MASTER_IP" >> /root/generic.out
 echo "Information about other agents is stored at /var/cache/cpsagent/agents.json" >> /root/generic.out
 cat /var/cache/cpsagent/agents.json >> /root/generic.out
 echo "" >> /root/generic.out
@@ -161,7 +161,7 @@ echo "" >> /root/generic.out
         self._configuration_set(config)
 
     def on_start(self, nodes):
-        """Start up the service. The first node will be the master node."""
+        """Start up the service. The first node will be the main node."""
 
         nr_instances = 1
 
@@ -180,7 +180,7 @@ echo "" >> /root/generic.out
             # Extend the nodes list with the newly created one
 
             self.agents_info += agents_info
-            self.master_ip = nodes[0].ip
+            self.main_ip = nodes[0].ip
             return True
         except Exception, err:
             self.logger.exception('_do_startup: Failed to create agents: %s' % err)
@@ -223,7 +223,7 @@ echo "" >> /root/generic.out
         # self.controller.delete_nodes(self.nodes)
         del_nodes = self.nodes[:]
         self.agents_info = []
-        self.master_ip = None
+        self.main_ip = None
         return del_nodes
 
     def on_add_nodes(self, node_instances):
@@ -247,7 +247,7 @@ echo "" >> /root/generic.out
         BaseManager.check_remove_nodes(self, node_roles)
 
         if node_roles.get(self.ROLE_MASTER, 0) > 0:
-            raise Exception("Cannot remove the master node.")
+            raise Exception("Cannot remove the main node.")
 
     def on_remove_nodes(self, node_roles):
         count = sum(node_roles.values())
@@ -259,7 +259,7 @@ echo "" >> /root/generic.out
             self.agents_info.pop()
             self.logger.info("Removing node with IP %s" % node.ip)
         if not cp_nodes:
-            self.master_ip = None
+            self.main_ip = None
             self.state_set(self.S_STOPPED)
         else:
             self._do_execute_script('notify', cp_nodes)
@@ -267,9 +267,9 @@ echo "" >> /root/generic.out
 
         return del_nodes
 
-    def __is_master(self, node):
-        """Return True if the given node is the Generic master"""
-        return node.ip == self.master_ip
+    def __is_main(self, node):
+        """Return True if the given node is the Generic main"""
+        return node.ip == self.main_ip
 
     @expose('GET')
     def list_nodes(self, kwargs):
@@ -286,14 +286,14 @@ echo "" >> /root/generic.out
             return HttpJsonResponse({})
 
         generic_nodes = [
-            node.id for node in self.nodes if not self.__is_master(node)
+            node.id for node in self.nodes if not self.__is_main(node)
         ]
-        generic_master = [
-            node.id for node in self.nodes if self.__is_master(node)
+        generic_main = [
+            node.id for node in self.nodes if self.__is_main(node)
         ]
 
         return HttpJsonResponse({
-            self.ROLE_MASTER: generic_master,
+            self.ROLE_MASTER: generic_main,
             self.ROLE_REGULAR: generic_nodes
         })
 
@@ -332,7 +332,7 @@ echo "" >> /root/generic.out
                 'ip': serviceNode.ip,
                 'vmid': serviceNode.vmid,
                 'cloud': serviceNode.cloud_name,
-                'is_master': self.__is_master(serviceNode),
+                'is_main': self.__is_main(serviceNode),
                 'role': serviceNode.role,
                 'logs': self.get_role_logs(serviceNode.role)
 

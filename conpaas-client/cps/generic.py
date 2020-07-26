@@ -9,12 +9,12 @@ class Client(BaseClient):
         service = BaseClient.info(self, app_id, service_id)
 
         nodes = self.callmanager(app_id, service['sid'], "list_nodes", False, {})
-        if 'master' in nodes and nodes['master']:
-            # Only one master
-            master = nodes['master'][0]
-            params = { 'serviceNodeId': master }
+        if 'main' in nodes and nodes['main']:
+            # Only one main
+            main = nodes['main'][0]
+            params = { 'serviceNodeId': main }
             details = self.callmanager(app_id, service['sid'], "get_node_info", False, params)
-            print "master:", details['serviceNode']['ip']
+            print "main:", details['serviceNode']['ip']
 
         if 'node' in nodes:
             # Multiple nodes

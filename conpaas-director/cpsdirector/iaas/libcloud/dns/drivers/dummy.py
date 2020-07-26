@@ -69,7 +69,7 @@ class DummyDNSDriver(DNSDriver):
     def list_records(self, zone):
         """
         >>> driver = DummyDNSDriver('key', 'secret')
-        >>> zone = driver.create_zone(domain='apache.org', type='master',
+        >>> zone = driver.create_zone(domain='apache.org', type='main',
         ...                           ttl=100)
         >>> list(zone.list_records())
         []
@@ -117,14 +117,14 @@ class DummyDNSDriver(DNSDriver):
 
         return zone_records[record_id]
 
-    def create_zone(self, domain, type='master', ttl=None, extra=None):
+    def create_zone(self, domain, type='main', ttl=None, extra=None):
         """
         >>> driver = DummyDNSDriver('key', 'secret')
-        >>> zone = driver.create_zone(domain='apache.org', type='master',
+        >>> zone = driver.create_zone(domain='apache.org', type='main',
         ...                           ttl=100)
         >>> zone
         <Zone: domain=apache.org, ttl=100, provider=Dummy DNS Provider ...>
-        >>> zone = driver.create_zone(domain='apache.org', type='master',
+        >>> zone = driver.create_zone(domain='apache.org', type='main',
         ...                           ttl=100)
         ... #doctest: +IGNORE_EXCEPTION_DETAIL
         Traceback (most recent call last):
@@ -147,7 +147,7 @@ class DummyDNSDriver(DNSDriver):
     def create_record(self, name, zone, type, data, extra=None):
         """
         >>> driver = DummyDNSDriver('key', 'secret')
-        >>> zone = driver.create_zone(domain='apache.org', type='master',
+        >>> zone = driver.create_zone(domain='apache.org', type='main',
         ...                           ttl=100)
         >>> record = driver.create_record(name='libcloud', zone=zone,
         ...                               type=RecordType.A, data='127.0.0.1')
@@ -177,7 +177,7 @@ class DummyDNSDriver(DNSDriver):
     def delete_zone(self, zone):
         """
         >>> driver = DummyDNSDriver('key', 'secret')
-        >>> zone = driver.create_zone(domain='apache.org', type='master',
+        >>> zone = driver.create_zone(domain='apache.org', type='main',
         ...                           ttl=100)
         >>> driver.delete_zone(zone)
         True
@@ -195,7 +195,7 @@ class DummyDNSDriver(DNSDriver):
     def delete_record(self, record):
         """
         >>> driver = DummyDNSDriver('key', 'secret')
-        >>> zone = driver.create_zone(domain='apache.org', type='master',
+        >>> zone = driver.create_zone(domain='apache.org', type='main',
         ...                           ttl=100)
         >>> record = driver.create_record(name='libcloud', zone=zone,
         ...                               type=RecordType.A, data='127.0.0.1')

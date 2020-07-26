@@ -104,7 +104,7 @@ class GandiDNSDriver(BaseGandiDriver, DNSDriver):
         return Zone(
             id=str(zone['id']),
             domain=zone['name'],
-            type='master',
+            type='main',
             ttl=0,
             driver=self,
             extra={}
@@ -126,7 +126,7 @@ class GandiDNSDriver(BaseGandiDriver, DNSDriver):
         zone = self.connection.request('domain.zone.info', zid)
         return self._to_zone(zone.object)
 
-    def create_zone(self, domain, type='master', ttl=None, extra=None):
+    def create_zone(self, domain, type='main', ttl=None, extra=None):
         params = {
             'name': domain,
         }

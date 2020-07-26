@@ -27,7 +27,7 @@ class MapReduceManager(BaseManager):
 
     def _do_startup(self, cloud):
         ''' Starts up the service. The first node will be the job 
-            master as well as an hadoop worker.
+            main as well as an hadoop worker.
         '''
         startCloud = self._init_cloud(cloud)
         try:
@@ -108,7 +108,7 @@ class MapReduceManager(BaseManager):
         if self.state != self.S_RUNNING:
             return HttpErrorResponse('ERROR: Wrong state to list_nodes')
         return HttpJsonResponse({
-          'masters' : [self.nodes[0].id],
+          'mains' : [self.nodes[0].id],
           'workers': [ node.id for node in self.nodes[1:] ]
               })
 

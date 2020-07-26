@@ -159,7 +159,7 @@ class Route53DNSDriver(DNSDriver):
 
         return record
 
-    def create_zone(self, domain, type='master', ttl=None, extra=None):
+    def create_zone(self, domain, type='main', ttl=None, extra=None):
         zone = ET.Element('CreateHostedZoneRequest', {'xmlns': NAMESPACE})
         ET.SubElement(zone, 'Name').text = domain
         ET.SubElement(zone, 'CallerReference').text = str(uuid.uuid4())
@@ -272,7 +272,7 @@ class Route53DNSDriver(DNSDriver):
         extra = {'Comment': comment, 'ResourceRecordSetCount':
                  resource_record_count}
 
-        zone = Zone(id=id, domain=name, type='master', ttl=0, driver=self,
+        zone = Zone(id=id, domain=name, type='main', ttl=0, driver=self,
                     extra=extra)
         return zone
 

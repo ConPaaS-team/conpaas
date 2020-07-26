@@ -81,7 +81,7 @@ class HostVirtualDNSDriver(DNSDriver):
         if 'records' in item:
             extra['records'] = item['records']
         if item['type'] == 'NATIVE':
-            item['type'] = 'master'
+            item['type'] = 'main'
         zone = Zone(id=item['id'], domain=item['name'],
                     type=item['type'], ttl=item['ttl'],
                     driver=self, extra=extra)
@@ -154,9 +154,9 @@ class HostVirtualDNSDriver(DNSDriver):
         return bool(result)
 
     def create_zone(self, domain, type='NATIVE', ttl=None, extra=None):
-        if type == 'master':
+        if type == 'main':
             type = 'NATIVE'
-        elif type == 'slave':
+        elif type == 'subordinate':
             type = 'SLAVE'
         params = {'name': domain, 'type': type, 'ttl': ttl}
         result = self.connection.request(

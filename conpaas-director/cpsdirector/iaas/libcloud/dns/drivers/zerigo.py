@@ -39,7 +39,7 @@ API_HOST = 'ns.zerigo.com'
 API_VERSION = '1.1'
 API_ROOT = '/api/%s/' % (API_VERSION)
 
-VALID_ZONE_EXTRA_PARAMS = ['notes', 'tag-list', 'ns1', 'slave-nameservers']
+VALID_ZONE_EXTRA_PARAMS = ['notes', 'tag-list', 'ns1', 'subordinate-nameservers']
 VALID_RECORD_EXTRA_PARAMS = ['notes', 'ttl', 'priority']
 
 # Number of items per page (maximum limit is 1000)
@@ -164,7 +164,7 @@ class ZerigoDNSDriver(DNSDriver):
         record = self._to_record(elem=data, zone=zone)
         return record
 
-    def create_zone(self, domain, type='master', ttl=None, extra=None):
+    def create_zone(self, domain, type='main', ttl=None, extra=None):
         """
         Create a new zone.
 
@@ -276,7 +276,7 @@ class ZerigoDNSDriver(DNSDriver):
         zone = self._to_zone(elem=data)
         return zone
 
-    def ex_force_slave_axfr(self, zone):
+    def ex_force_subordinate_axfr(self, zone):
         """
         Force a zone transfer.
 
@@ -285,7 +285,7 @@ class ZerigoDNSDriver(DNSDriver):
 
         @rtype: L{Zone}
         """
-        path = API_ROOT + 'zones/%s/force_slave_axfr.xml' % (zone.id)
+        path = API_ROOT + 'zones/%s/force_subordinate_axfr.xml' % (zone.id)
         self.connection.set_context({'resource': 'zone', 'id': zone.id})
         response = self.connection.request(path, method='POST')
         assert response.status == httplib.ACCEPTED
@@ -301,28 +301,28 @@ class ZerigoDNSDriver(DNSDriver):
         if type:
             ns_type_elem = ET.SubElement(zone_elem, 'ns-type')
 
-            if type == 'master':
+            if type == 'main':
                 ns_type_elem.text = 'pri_sec'
-            elif type == 'slave':
+            elif type == 'subordinate':
                 if not extra or 'ns1' not in extra:
                     raise LibcloudError('ns1 extra attribute is required ' +
-                                        'when zone type is slave', driver=self)
+                                        'when zone type is subordinate', driver=self)
 
                 ns_type_elem.text = 'sec'
                 ns1_elem = ET.SubElement(zone_elem, 'ns1')
                 ns1_elem.text = extra['ns1']
-            elif type == 'std_master':
+            elif type == 'std_main':
                 # TODO: Each driver should provide supported zone types
-                # Slave name servers are elsewhere
-                if not extra or 'slave-nameservers' not in extra:
-                    raise LibcloudError('slave-nameservers extra ' +
+                # Subordinate name servers are elsewhere
+                if not extra or 'subordinate-nameservers' not in extra:
+                    raise LibcloudError('subordinate-nameservers extra ' +
                                         'attribute is required whenzone ' +
-                                        'type is std_master', driver=self)
+                                        'type is std_main', driver=self)
 
                 ns_type_elem.text = 'pri'
-                slave_nameservers_elem = ET.SubElement(zone_elem,
-                                                       'slave-nameservers')
-                slave_nameservers_elem.text = extra['slave-nameservers']
+                subordinate_nameservers_elem = ET.SubElement(zone_elem,
+                                                       'subordinate-nameservers')
+                subordinate_nameservers_elem.text = extra['subordinate-nameservers']
 
         if ttl:
             default_ttl_elem = ET.SubElement(zone_elem, 'default-ttl')
@@ -383,21 +383,21 @@ class ZerigoDNSDriver(DNSDriver):
         id = findtext(element=elem, xpath='id')
         domain = findtext(element=elem, xpath='domain')
         type = findtext(element=elem, xpath='ns-type')
-        type = 'master' if type.find('pri') == 0 else 'slave'
+        type = 'main' if type.find('pri') == 0 else 'subordinate'
         ttl = findtext(element=elem, xpath='default-ttl')
 
-        hostmaster = findtext(element=elem, xpath='hostmaster')
+        hostmain = findtext(element=elem, xpath='hostmain')
         custom_ns = findtext(element=elem, xpath='custom-ns')
         custom_nameservers = findtext(element=elem, xpath='custom-nameservers')
         notes = findtext(element=elem, xpath='notes')
         nx_ttl = findtext(element=elem, xpath='nx-ttl')
-        slave_nameservers = findtext(element=elem, xpath='slave-nameservers')
+        subordinate_nameservers = findtext(element=elem, xpath='subordinate-nameservers')
         tags = findtext(element=elem, xpath='tag-list')
         tags = tags.split(' ') if tags else []
 
-        extra = {'hostmaster': hostmaster, 'custom-ns': custom_ns,
+        extra = {'hostmain': hostmain, 'custom-ns': custom_ns,
                  'custom-nameservers': custom_nameservers, 'notes': notes,
-                 'nx-ttl': nx_ttl, 'slave-nameservers': slave_nameservers,
+                 'nx-ttl': nx_ttl, 'subordinate-nameservers': subordinate_nameservers,
                  'tags': tags}
         zone = Zone(id=str(id), domain=domain, type=type, ttl=int(ttl),
                     driver=self, extra=extra)
